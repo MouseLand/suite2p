@@ -60,10 +60,20 @@ def oasis(F, ops):
 
 
 def preprocess(F,ops):
-    sig = 3.
-    #Flow = filters.percentile_filter(Flow,    5, int(ops['win']*ops['fs']))
-    Flow = filters.gaussian_filter(F,    sig)
-    Flow = filters.minimum_filter1d(Flow,    int(ops['win']*ops['fs']))
-    Flow = filters.maximum_filter1d(Flow,    int(ops['win']*ops['fs']))
+    sig = ops['sig_baseline']
+    win = int(ops['win_baseline']*ops['fs'])
+    
+    if ops['baseline']=='maximin':    
+        Flow = filters.gaussian_filter(F,    [0., sig])
+        Flow = filters.minimum_filter1d(Flow,    win)
+        Flow = filters.maximum_filter1d(Flow,    win)
+    elif ops['baseline']=='constant':
+        Flow = filters.gaussian_filter(F,    [0., sig])
+        Flow = np.amin(Flow)
+    elif ops['baseline']=='prctile_constant':
+        Flow = np.percentile(F, ops['prctile_baseline'], axis=1)
+    else:
+        Flow = 0.
+        
     F = F - Flow
     return F

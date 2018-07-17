@@ -44,11 +44,9 @@ def conv2(s1, sig, axes=None):
         if sfilt.shape[0] > ns:
             icent = int(np.floor(sfilt.shape[0]/2) - np.floor(ns/2))
             inds  = (icent + np.arange(0,ns)).astype(np.int32)
-            if i==0:
-                sout = sfilt[inds,:,:]
-                snorm = snorm[inds[0]:inds[-1]+1]
-            else:
-                sout = sfilt
+            sout = sfilt[inds,:,:]
+            snorm = snorm[inds[0]:inds[-1]+1]
+            
         #sout = sout / snorm
         dims = np.arange(1,sdim)
         dims = np.insert(dims, axes[i], 0)

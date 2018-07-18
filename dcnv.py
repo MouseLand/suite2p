@@ -38,7 +38,7 @@ def oasis1t(F, ops):
             it += 1
             ip += 1
 
-        s[t[1:ip]] = v[1:ip] - v[:ip-1] * np.exp(g * l[:ip-1])
+        s[t[1:ip]] = v[1:ip] - v[:ip-1] * np.exp(g * l[:ip-1])                
         
         return s
 
@@ -70,10 +70,12 @@ def preprocess(F,ops):
     elif ops['baseline']=='constant':
         Flow = filters.gaussian_filter(F,    [0., sig])
         Flow = np.amin(Flow)
-    elif ops['baseline']=='prctile_constant':
+    elif ops['baseline']=='constant_prctile':
         Flow = np.percentile(F, ops['prctile_baseline'], axis=1)
+        Flow = np.expand_dims(Flow, axis = 1)        
     else:
         Flow = 0.
         
     F = F - Flow
+    
     return F

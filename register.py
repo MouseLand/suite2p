@@ -55,15 +55,21 @@ def prepareMasks(refImg):
     cfRefImg   = np.conj(fft.fft2(refImg));
     absRef     = np.absolute(cfRefImg);
     cfRefImg   = cfRefImg / (eps0 + absRef) * fhg;    
+    
+    maskMul = maskMul.astype('float32')
+    maskOffset = maskOffset.astype('float32')
+    cfRefImg = cfRefImg.astype('complex64')
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(data, cfRefImg):
+def correlation_map(data, refImg):
+    (maskMul, maskOffset, cfRefImg) = prepareMasks(refImg)    
+    data = data.astype('float32') * maskMul + maskOffset    
     X = fft.fft2(data)
-    J = X / (eps0 + np.absolute(X)) 
+    J = X / (eps0 + np.absolute(X))
     J = J * cfRefImg
     cc = np.real(fft.ifft2(J))
     cc = fft.fftshift(cc, axes=(1,2))
-    return cc, X
+    return cc
 
 def getXYup(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls    
@@ -87,15 +93,14 @@ def getXYup(cc, Ls, ops):
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
     return ymax, xmax, cmax
 
-def shift_data(X, ymax,xmax, isfft):
-    if not isfft:
-        X = fft.fft2(X)            
+def shift_data(X, ymax,xmax):    
+    X = fft.fft2(X.astype('float32'))            
     nimg, Ly, Lx = X.shape    
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
     Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
     [Nx,Ny] = np.meshgrid(Nx,Ny)
-    Nx = Nx / Lx
-    Ny = Ny / Ly    
+    Nx = Nx.astype('float32') / Lx
+    Ny = Ny.astype('float32') / Ly    
     dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))    
     Y = np.real(fft.ifft2(X * np.exp((2j * np.pi) * dph)))
     return Y
@@ -109,15 +114,13 @@ def phasecorr_worker(data, refImg, ops, flag_zeroed):
         maxregshift = ops['maxregshift'] 
     else:
         maxregshift = np.round(.1*np.maximum(Ly, Lx))
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    (maskMul, maskOffset, cfRefImg) = prepareMasks(refImg)
-    data = data.astype('float32') * maskMul + maskOffset
-    cc, X = correlation_map(data, cfRefImg)
-    ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)    
+    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))        
+    cc = correlation_map(data, refImg)
+    ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)        
     if flag_zeroed:
         xmax = xmax - xmax.mean()
         ymax = ymax - ymax.mean()        
-    Y = shift_data(X, ymax,xmax, True)    
+    Y = shift_data(data, ymax,xmax)    
     return Y, ymax, xmax, cmax
 
 def phasecorr(data, refImg, ops, flag_zeroed):        
@@ -155,7 +158,7 @@ def get_nFrames(ops):
 
 def register_myshifts(ops, data, ymax, xmax):    
     if ops['num_workers']<0:
-        dreg = shift_data(data, ymax, xmax, False)
+        dreg = shift_data(data, ymax, xmax)
     else:        
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)            
@@ -167,7 +170,7 @@ def register_myshifts(ops, data, ymax, xmax):
         for i in inputs:
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))   
         results = Parallel(n_jobs=num_cores)(delayed(shift_data)(data[irange[j],:, :], 
-                                                                 ymax[irange[j]], xmax[irange[j]], False) for j in range(0,len(irange)))   
+                                                                 ymax[irange[j]], xmax[irange[j]]) for j in range(0,len(irange)))   
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]        
@@ -178,15 +181,13 @@ def register_binary(ops):
     if type(ops) is list:
         for op in ops:
             op = register_binary(op)
-        return ops
-    
+        return ops    
     Ly = ops['Ly']
     Lx = ops['Lx']    
     ops['nframes'] = get_nFrames(ops) 
     refImg = pick_init(ops)    
     nbatch = ops['batch_size']
-    nbytesread = 2 * Ly * Lx * nbatch
-    
+    nbytesread = 2 * Ly * Lx * nbatch    
     if ops['nchannels']>1 and ops['align_by_chan']>1:
         reg_file = open(ops['reg_file_chan2'], 'r+b')    
     else: 
@@ -244,7 +245,13 @@ def register_binary(ops):
             if ops['align_by_chan']>1:
                 ops['meanImg'] = meanImg/ops['nframes']
             else:
-                ops['meanImg_chan2'] = meanImg/ops['nframes']    
+                ops['meanImg_chan2'] = meanImg/ops['nframes']   
+    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
+    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    ops['yrange'] = [int(ymin), int(ymax)]
+    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
+    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    ops['xrange'] = [int(xmin), int(xmax)]
     
     np.save(ops['ops_path'], ops)
     

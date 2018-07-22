@@ -4,6 +4,110 @@ from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
 import utils
+from matplotlib.colors import hsv_to_rgb
+import matplotlib.pyplot as plt
+
+def getSVDdata(ops):
+    nframes = ops['nframes']
+    nt0 = np.ceil(nframes / ops['navg_frames_svd']);
+    nt0 = int(nt0)
+    # load and bin data
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    Lyc = ops['yrange'][-1] - ops['yrange'][0]
+    Lxc = ops['xrange'][-1] - ops['xrange'][0]
+    reg_file = open(ops['reg_file'], 'rb')
+    nimgbatch = np.ceil(nt0 * np.ceil(ops['batch_size']/nt0))
+    nbytesread = np.int64(Ly*Lx*nimgbatch*2)
+    mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
+    ix = 0
+    while True:
+        buff = reg_file.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        nimgd = int(np.floor(data.size / (Ly*Lx)))
+        if nimgd == 0:
+            break
+        data = np.reshape(data.astype(np.float32), (Ly,Lx,nimgd), order='F')
+        data = np.transpose(data, (2,0,1))
+    
+        #data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)        
+        
+        # bin data
+        if nimgd < nimgbatch:
+            nmax = int(np.floor(nimgd / nt0) * nt0)
+            data = data[:nmax,:,:]
+        dbin = np.reshape(data, (-1,nt0,Ly,Lx))
+        dbin = np.squeeze(dbin.mean(axis=1))
+        dbin = dbin - dbin.mean(axis=0)    
+        inds = ix + np.arange(0,dbin.shape[0])
+        # crop into valid area
+        mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+        ix += dbin.shape[0]
+    reg_file.close()    
+    
+    nbins, Lyc, Lxc = np.shape(mov)
+    
+    sig = .5
+    for j in range(nbins):
+        mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], (sig, sig))
+    
+    mov = np.reshape(mov, (-1,Lyc*Lxc))
+    # compute noise variance across frames (assumes slow signal)
+    sdmov = np.mean(np.diff(mov, axis = 0)**2, axis = 0)**.5
+    sdmov = np.maximum(1e-10,sdmov)
+    # normalize pixels by noise variance
+    mov = mov / sdmov
+    
+    # compute covariance of binned frames
+    cov = np.dot(mov,  mov.transpose()) / mov.shape[1]
+    cov = cov.astype('float32')
+    nsvd_for_roi = min(ops['nsvd_for_roi'], cov.shape[0]-2)    
+    u, s, v = np.linalg.svd(cov)
+    u = u[:, :nsvd_for_roi]
+    U = np.dot(u.transpose() , mov)        
+    U = np.reshape(U, (-1,Lyc,Lxc))    
+    
+    return U, sdmov
+    
+def getStU(ops, U):    
+    nbins, Lyc, Lxc = np.shape(U)        
+    S = getNeuropilBasis(ops, Lyc, Lxc)
+    # compute covariance of neuropil masks with spatial masks
+    U = np.reshape(U, (-1,Lyc*Lxc))    
+    StU = S @ U.transpose()
+    StS = S @ S.transpose()
+    U = np.reshape(U, (-1,Lyc,Lxc))    
+    return S, StU , StS
+
+def drawClusters(r,mPix,mLam,Ly,Lx):
+    ncells = mPix.shape[1]
+    r=np.random.random((ncells,))
+    iclust = -1*np.ones((Ly,Lx),np.int32)
+    Lam = np.zeros((Ly,Lx))
+    H = np.zeros((Ly,Lx,1))
+    for n in range(ncells):
+        goodi   = np.array((mPix[:,n]>=0).nonzero()).astype(np.int32)
+        goodi   = goodi.flatten()
+        n0      = n*np.ones(goodi.shape,np.int32)
+        lam     = mLam[goodi,n0]
+        ipix    = mPix[mPix[:,n]>=0,n].astype(np.int32)
+        if ipix is not None:
+            ypix,xpix = np.unravel_index(ipix, (Ly,Lx))
+            isingle = Lam[ypix,xpix]+1e-4 < lam
+            ypix = ypix[isingle]
+            xpix = xpix[isingle]
+            Lam[ypix,xpix] = lam[isingle]
+            iclust[ypix,xpix] = n*np.ones(ypix.shape)
+            H[ypix,xpix,0] = r[n]*np.ones(ypix.shape)
+        
+    S  = np.ones((Ly,Lx,1))
+    V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
+    V  = np.expand_dims(V,axis=2)
+    hsv = np.concatenate((H,S,V),axis=2)
+    rgb = hsv_to_rgb(hsv)
+    
+    return rgb
+    
 
 def getNeuropilBasis(ops, Ly, Lx):
     ''' computes neuropil basis functions
@@ -24,21 +128,30 @@ def getNeuropilBasis(ops, Ly, Lx):
     ys = np.arange(0,Ly)
     xs = np.arange(0,Lx)
         
-    sigy = 4*(Ly - 1)/ntiles
-    sigx = 4*(Lx - 1)/ntiles
-        
-    S = np.zeros((Ly, Lx, ntiles, ntiles), np.float32)
-    for kx in range(ntiles):        
-        for ky in range(ntiles):        
-            cosy = 1 + np.cos(2*math.pi*(ys - yc[ky])/sigy)
-            cosx = 1 + np.cos(2*math.pi*(xs - xc[kx])/sigx)
-            cosy[abs(ys-yc[ky]) > sigy/2] = 0
-            cosx[abs(xs-xc[kx]) > sigx/2] = 0
-            S[:,:,ky,kx] = np.expand_dims(cosy,axis=1) @ np.expand_dims(cosx,axis=1).transpose()
+    Kx = np.zeros((Lx, ntiles), 'float32')
+    Ky = np.zeros((Ly, ntiles), 'float32')
+    for k in range(ntiles):
+        Ky[:,k] = np.cos(math.pi * (ys+0.5) *  k/Ly)
+        Kx[:,k] = np.cos(math.pi * (xs+0.5) *  k/Lx)
     
-    S = np.reshape(S,(Ly*Lx, ntiles*ntiles))
-    S = S / np.expand_dims(np.sum(np.abs(S)**2,axis=-1)**0.5,axis=1)
-    S = S.transpose()
+    S = np.zeros((ntiles, ntiles, Ly, Lx), np.float32)
+    for kx in range(ntiles):        
+        for ky in range(ntiles):    
+            S[ky,kx,:,:] = np.outer(Ky[:,ky], Kx[:,kx])        
+    
+    #sigy = 4*(Ly - 1)/ntiles
+    #sigx = 4*(Lx - 1)/ntiles
+    
+    #for kx in range(ntiles):        
+    #    for ky in range(ntiles):        
+    #        cosy = 1 + np.cos(2*math.pi*(ys - yc[ky])/sigy)
+    #        cosx = 1 + np.cos(2*math.pi*(xs - xc[kx])/sigx)
+    #        cosy[abs(ys-yc[ky]) > sigy/2] = 0
+    #        cosx[abs(xs-xc[kx]) > sigx/2] = 0
+    #        S[ky,kx,:,:] = np.outer(cosy, cosx)
+    
+    S = np.reshape(S,(ntiles*ntiles, Ly*Lx))
+    S = S / np.reshape(np.sum(S**2,axis=-1)**0.5, (-1,1))
     return S
 
 
@@ -59,7 +172,7 @@ def circleMask(d0):
 
 
 def morphOpen(V, footprint):
-    ''' computes the morphological opening of V (correlation map) with (usually circular) footprint'''
+    ''' computes the morphological opening of V (correlation map) with circular footprint'''
     vrem   = filters.minimum_filter(V, footprint=footprint)
     vrem   = -filters.minimum_filter(-vrem, footprint=footprint)
     return vrem
@@ -72,9 +185,8 @@ def localMax(V, footprint, thres):
         outputs:
             i,j: indices of local max greater than thres
     '''
-    
     maxV = filters.maximum_filter(V, footprint=footprint)
-    imax = (V > (maxV - 1e-10)) & (V > thres)
+    imax = V > np.maximum(thres, maxV - 1e-10)
     i,j  = imax.nonzero()
     i    = i.astype(np.int32)
     j    = j.astype(np.int32)

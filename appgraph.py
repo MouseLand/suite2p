@@ -13,13 +13,10 @@ import sys
 import numpy as np
 
 def newwindow():
+    print('meanimg')
     LoadW = QtGui.QWindow()
     LoadW.show()
 
-def plotClicked(pos):
-    print('woot')
-    print(pos)
-    return pos
 
 
 def imageHoverEvent(event, data):
@@ -85,122 +82,68 @@ class MainW(QtGui.QMainWindow):
         y = np.sin(x) / x
 
         ### main widget with plots
-        #self.main_widget = QtGui.QWidget(self)
-        #self.main_widget.resize(500,500)
-        #self.main_widget.move(300,300)
-        #wid = QtGui.QWidget(self)
-        win = pg.GraphicsView()
-        self.setCentralWidget(win)
+        self.win = pg.GraphicsView()
+        self.setCentralWidget(self.win)
         l = pg.GraphicsLayout(border=(100,100,100))
-        win.setCentralItem(l)
-        win.show()
+        self.win.setCentralItem(l)
+        self.win.show()
         l.addLabel('Buttons for views',row=0,col=0)
         p0 = l.addLabel('F*.npy',row=0,col=1,colspan=2)
-        p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=1)
-        #p1.setLimits(xMin=-10, xMax=522,
-             #minXRange=20, maxXRange=522,
-             #yMin=-10, yMax=522,
-             #minYRange=20, maxYRange=522)
-        img = pg.ImageItem()
-        p1.scene().sigMouseClicked.connect(plotClicked)
-
+        # cells image
+        self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=1)
+        self.img1 = pg.ImageItem()
         data = np.random.random((512,512,3))
-        img.setImage(data)
-        p1.addItem(img)
-
-        #pos = p1.scene().sigMouseMoved.connect(plotClicked)
-        #pos = p1.mapSceneToView(pos)
-        #p1.autoRange()
-        p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=2)
-        #p2.setLimits(xMin=-10, xMax=522,
-            #minXRange=20, maxXRange=522,
-            #yMin=-10, yMax=522,
-            #minYRange=20, maxYRange=522)
-
-        img = pg.ImageItem()#np.random.random((512,512,3)),clickable=True)
-        img.setImage(data)
-        p2.addItem(img)
-        img.setImage = np.random.random((512,512,3))
-        #pos = p2.scene().sigMouseMoved.connect(plotClicked)
-        #print(p2.mapSceneToView(pos))
-        p2.autoRange()
-        p2.setXLink('plot1')
-        p2.setYLink('plot1')
-
-        l.nextRow()
+        self.img1.setImage(data)
+        self.p1.addItem(self.img1)
+        # noncells image
+        self.p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=2)
+        self.img2 = pg.ImageItem()
+        self.img2.setImage(data)
+        self.p2.addItem(self.img2)
+        self.p2.autoRange()
+        self.p2.setXLink('plot1')
+        self.p2.setYLink('plot1')
+        # fluorescence trace plot
         p3 = l.addPlot(row=2,col=1,colspan=2)
-        plot = p3.plot(x,y,pen='y')
+        self.trace = p3.plot(x,y,pen='y')
         p3.setMouseEnabled(x=True,y=False)
         p3.enableAutoRange(x=False,y=True)
-
-        proxy = pg.SignalProxy(p3.scene().sigMouseMoved, rateLimit=60 ,slot=mouseMoved)
-        pg.QtGui.QApplication.processEvents()
-
-        #print(proxy)
-
-        #p2 = l.addPlot(x=x,y=y,name='plot2')
-        #l.addItem(p1)
-        #vb.addItem(p1)
-        #l.addItem(vb, 0, 1)
-        #win.addLabel("linked views",colspan=2)
-        #win.nextRow()
-        #win.resize(1500,900)
-        #p1=win.addPlot(x=x,y=y,name="plot1")
-        #p2=win.addPlot(x=x,y=y,name="plot2")
-        #p2.setYLink('plot1')
-        #p2.setXLink('plot1')
-
-
-
-        #self.setCentralWidget(wid)
-        #l = QtGui.QVBoxLayout()
-        #wid.setLayout(l)
-        #self.plot = pg.GraphicsView()
-        #self.plot = PlotCells(self, dpi=100)
-        #self.toolbar = NavigationToolbar(self.plot,self)
-        #self.toolbar.Realize()
-        #tw,th=self.toolbar.GetSizeTuple()
-        #fw,fh=self.plot.GetSizeTuple()
-        #self.toolbar.resize(500,30)
-        #self.toolbar.move(300,0)
-
-        #cid = self.plot.mpl_connect('button_press_event', self.plot.onclick)
-        #self.toolbar = NavigationToolbar(self.sc, self.main_widget)
-        #dc = MyDynamicMplCanvas(self.main_widget, width=5, height=4, dpi=100)
-        #l.addWidget(self.plot)
-        #self.setLayout(self.l)
-        #self.setCentralWidget(l)
-        #l.addWidget(dc)
-        #self.main_widget.setFocus()
-        #self.setCentralWidget(self.main_widget)
-
+        # cell clicking enabled in either cell or noncell image
+        self.win.scene().sigMouseClicked.connect(self.plotClicked)
 
         ### checkboxes
-        checkBox = QtGui.QCheckBox('plot neuropil',self)
-        checkBox.move(100,100)
+        checkBox = QtGui.QCheckBox('ROIs on')
+        checkBox.move(30,100)
         checkBox.stateChanged.connect(self.plot_neuropil)
         checkBox.toggle()
 
-        #self.plots = QtGui.QWidget(self,width=1000,height=300)
-        #layout = QtGui.QGridLayout()
-        #self.plots.setLayout(layout)
-        #plot1 = pg.PlotWidget
-        #layout.addWidget(plot1,0,0,1,1)
-        #elf.plots =  QtGui.QWidget(self,width=1000,height=300)
-        #elf.plots.move(300,100)
-        #self.plots        = PlotCells(self,width=10,height=4)
-
-
-        #layout = QtGui.QVBoxLayout()
-        #layout.addWidget(self.mpl_toolbar)
-        #layout.addWidget(self.plots)
-        #self.setLayout(layout)
-
-        #elf.plots.addWidget(self.navi_toolbar)
-
-
         ### buttons for different views
         self.mask_view()
+
+    def plotClicked(self,event):
+        flip = 0
+        items = self.win.scene().items(event.scenePos())
+        posx=0
+        posy=0
+        goodclick=False
+        for x in items:
+            if x==self.img1:
+                pos = self.p1.mapSceneToView(event.scenePos())
+                posx = pos.x()
+                posy = pos.y()
+                goodclick = True
+            elif x==self.img2:
+                pos = self.p2.mapSceneToView(event.scenePos())
+                posx = pos.x()
+                posy = pos.y()
+                goodclick = True
+        if goodclick:
+            if event.double():
+                print('double click')
+                flip = 1
+        print(posx,posy,flip)
+        print("Plots:", [x for x in items if isinstance(x, pg.ImageItem)])
+        return posx,posy,flip
 
     def windowsize(self):
         print(10)
@@ -221,7 +164,8 @@ class MainW(QtGui.QMainWindow):
 
         if masks.ndim == 2 | (masks.ndim==3 & masks.shape[2]==3):
             self.masks = masks
-            self.plot.plot(masks,masks)
+            self.img1.setImage(masks)
+            self.img2.setImage(masks)
             #pg.image(masks)
             self.selectionMode = True
         else:
@@ -245,7 +189,7 @@ class MainW(QtGui.QMainWindow):
         btn.setShortcut('M')
         btn.clicked.connect(newwindow)
         btn.resize(btn.minimumSizeHint())
-        btn.move(10,30)
+        btn.move(10,60)
         self.show()
 
 class PlotCells(FigureCanvas):

@@ -103,6 +103,7 @@ class MainW(QtGui.QMainWindow):
              #minYRange=20, maxYRange=522)
         img = pg.ImageItem()
         p1.scene().sigMouseClicked.connect(plotClicked)
+
         data = np.random.random((512,512,3))
         img.setImage(data)
         p1.addItem(img)

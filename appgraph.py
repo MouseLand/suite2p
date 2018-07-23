@@ -16,9 +16,40 @@ def newwindow():
     LoadW = QtGui.QWindow()
     LoadW.show()
 
+def plotClicked(pos):
+    print('woot')
+    print(pos)
+    return pos
 
-    
-    
+
+def imageHoverEvent(event, data):
+    """Show the position, pixel, and value under the mouse cursor.
+    """
+    if event.isExit():
+        p1.setTitle("")
+        return
+    pos = event.pos()
+    i, j = pos.y(), pos.x()
+    i = int(np.clip(i, 0, data.shape[0] - 1))
+    j = int(np.clip(j, 0, data.shape[1] - 1))
+    val = data[i, j]
+    ppos = img.mapToParent(pos)
+    x, y = ppos.x(), ppos.y()
+    p1.setTitle("pos: (%0.1f, %0.1f)  pixel: (%d, %d)  value: %g" % (x, y, i, j, val))
+
+def mouseMoved(evt):
+    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+    if p3.sceneBoundingRect().contains(pos):
+        mousePoint = p3.vb.mapSceneToView(evt[0])
+        print(mousePoint)
+        #index = int(mousePoint.x())
+        #if index > 0 and index < len(data1):
+        #       label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
+        #vLine.setPos(mousePoint.x())
+        #hLine.setPos(mousePoint.y())
+        #print(mousePoint.x())
+        #print(mousePoint.y())
+
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
     def __init__(self):
@@ -63,23 +94,49 @@ class MainW(QtGui.QMainWindow):
         l = pg.GraphicsLayout(border=(100,100,100))
         win.setCentralItem(l)
         win.show()
-        l.addLabel('woot',col=1,colspan=4)
-
-        #p0 = l.addViewBox(name='buttons',row=1,col=1,rowspan=3)
-        
-        p1 = l.addViewBox(lockAspect=True,name='plot1',row=2,col=2)
-        img = pg.ImageItem(np.random.random((512,512,3)))
+        l.addLabel('Buttons for views',row=0,col=0)
+        p0 = l.addLabel('F*.npy',row=0,col=1,colspan=2)
+        p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=1)
+        #p1.setLimits(xMin=-10, xMax=522,
+             #minXRange=20, maxXRange=522,
+             #yMin=-10, yMax=522,
+             #minYRange=20, maxYRange=522)
+        img = pg.ImageItem()
+        p1.scene().sigMouseClicked.connect(plotClicked)
+        data = np.random.random((512,512,3))
+        img.setImage(data)
         p1.addItem(img)
-        p1.autoRange()
-        p2 = l.addViewBox(lockAspect=True,name='plot2',row=2,col=3)
-        img = pg.ImageItem(np.random.random((512,512,3)))
+
+        #pos = p1.scene().sigMouseMoved.connect(plotClicked)
+        #pos = p1.mapSceneToView(pos)
+        #p1.autoRange()
+        p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=2)
+        #p2.setLimits(xMin=-10, xMax=522,
+            #minXRange=20, maxXRange=522,
+            #yMin=-10, yMax=522,
+            #minYRange=20, maxYRange=522)
+
+        img = pg.ImageItem()#np.random.random((512,512,3)),clickable=True)
+        img.setImage(data)
         p2.addItem(img)
+        img.setImage = np.random.random((512,512,3))
+        #pos = p2.scene().sigMouseMoved.connect(plotClicked)
+        #print(p2.mapSceneToView(pos))
         p2.autoRange()
         p2.setXLink('plot1')
         p2.setYLink('plot1')
-        
+
         l.nextRow()
-        p3 = l.addPlot(x=x,y=y, row=3,col=2,colspan=2)
+        p3 = l.addPlot(row=2,col=1,colspan=2)
+        plot = p3.plot(x,y,pen='y')
+        p3.setMouseEnabled(x=True,y=False)
+        p3.enableAutoRange(x=False,y=True)
+
+        proxy = pg.SignalProxy(p3.scene().sigMouseMoved, rateLimit=60 ,slot=mouseMoved)
+        pg.QtGui.QApplication.processEvents()
+
+        #print(proxy)
+
         #p2 = l.addPlot(x=x,y=y,name='plot2')
         #l.addItem(p1)
         #vb.addItem(p1)
@@ -91,7 +148,7 @@ class MainW(QtGui.QMainWindow):
         #p2=win.addPlot(x=x,y=y,name="plot2")
         #p2.setYLink('plot1')
         #p2.setXLink('plot1')
-        
+
 
 
         #self.setCentralWidget(wid)
@@ -105,7 +162,7 @@ class MainW(QtGui.QMainWindow):
         #fw,fh=self.plot.GetSizeTuple()
         #self.toolbar.resize(500,30)
         #self.toolbar.move(300,0)
-        
+
         #cid = self.plot.mpl_connect('button_press_event', self.plot.onclick)
         #self.toolbar = NavigationToolbar(self.sc, self.main_widget)
         #dc = MyDynamicMplCanvas(self.main_widget, width=5, height=4, dpi=100)
@@ -116,7 +173,7 @@ class MainW(QtGui.QMainWindow):
         #self.main_widget.setFocus()
         #self.setCentralWidget(self.main_widget)
 
-        
+
         ### checkboxes
         checkBox = QtGui.QCheckBox('plot neuropil',self)
         checkBox.move(100,100)
@@ -137,7 +194,7 @@ class MainW(QtGui.QMainWindow):
         #layout.addWidget(self.mpl_toolbar)
         #layout.addWidget(self.plots)
         #self.setLayout(layout)
-        
+
         #elf.plots.addWidget(self.navi_toolbar)
 
 
@@ -166,7 +223,7 @@ class MainW(QtGui.QMainWindow):
             self.plot.plot(masks,masks)
             #pg.image(masks)
             self.selectionMode = True
-        else:        
+        else:
             tryagain = QtGui.QMessageBox.question(self, 'error',
                                                   'Incorrect file, choose another?',
                                                   QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
@@ -180,7 +237,7 @@ class MainW(QtGui.QMainWindow):
         file = open(name,'w')
         file.write('boop')
         file.close()
-        
+
     # different mask views
     def mask_view(self):
         btn = QtGui.QPushButton('mean image (M)', self)
@@ -194,7 +251,7 @@ class PlotCells(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         #self.axes = fig.add_subplot(111)
-        
+
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -213,7 +270,7 @@ class PlotCells(FigureCanvas):
         self.ax2.axis('off')
         self.ax3 = self.figure.add_axes([0.01,0.02,0.98,0.2])
         self.ax3.set_facecolor('black')
-        
+
     def plot(self, masks1, masks2):
         self.ax1.imshow(masks1)
         self.ax2.imshow(masks2)
@@ -221,7 +278,7 @@ class PlotCells(FigureCanvas):
 
         #ax.set_title('PyQt Matplotlib Example')
         #self.figure.tight_layout()
-                
+
         self.draw()
         self.show()
 
@@ -232,8 +289,8 @@ class PlotCells(FigureCanvas):
                    event.x, event.y, event.xdata, event.ydata))
             if self.ax1 is event.inaxes:
                 print('plot1')
-    
-            
+
+
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
@@ -243,7 +300,7 @@ def run():
     #plot.resize(400,400)
     #plot.sigPointsClicked.connect(plot,meclick)
     sys.exit(app.exec_())
-    
+
 run()
 
 ## Define a top-level widget to hold everything

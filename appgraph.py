@@ -17,35 +17,22 @@ def newwindow():
     LoadW = QtGui.QWindow()
     LoadW.show()
 
-
-
-def imageHoverEvent(event, data):
-    """Show the position, pixel, and value under the mouse cursor.
-    """
-    if event.isExit():
-        p1.setTitle("")
-        return
-    pos = event.pos()
-    i, j = pos.y(), pos.x()
-    i = int(np.clip(i, 0, data.shape[0] - 1))
-    j = int(np.clip(j, 0, data.shape[1] - 1))
-    val = data[i, j]
-    ppos = img.mapToParent(pos)
-    x, y = ppos.x(), ppos.y()
-    p1.setTitle("pos: (%0.1f, %0.1f)  pixel: (%d, %d)  value: %g" % (x, y, i, j, val))
-
-def mouseMoved(evt):
-    pos = evt[0]  ## using signal proxy turns original arguments into a tuple
-    if p3.sceneBoundingRect().contains(pos):
-        mousePoint = p3.vb.mapSceneToView(evt[0])
-        print(mousePoint)
-        #index = int(mousePoint.x())
-        #if index > 0 and index < len(data1):
-        #       label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (mousePoint.x(), data1[index], data2[index]))
-        #vLine.setPos(mousePoint.x())
-        #hLine.setPos(mousePoint.y())
-        #print(mousePoint.x())
-        #print(mousePoint.y())
+class ViewButton(QtGui.QPushButton):
+    def __init__(self, Text, data1, data2, parent=None):
+        super(ViewButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        #self.setGeometry(200,100,60,35)
+        self.resize(self.minimumSizeHint())
+        self.clicked.connect(lambda: self.press(parent, data1, data2))
+        self.show()
+    def press(self, parent, data1, data2):
+        if self.isChecked():
+            parent.img1.setImage(data1)
+            parent.img2.setImage(data2)
+            print('ouch')
+        else:
+            print('ahh')
 
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
@@ -78,25 +65,34 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(loadMask)
         file_menu.addAction(saveFile)
 
-        x = np.linspace(-50, 50, 1000)
-        y = np.sin(x) / x
-
+        cwidget = QtGui.QWidget(self)
         ### main widget with plots
+        self.l0 = QtGui.QGridLayout()
+        cwidget.setLayout(self.l0)
+        self.setCentralWidget(cwidget)
+        checkBox = QtGui.QCheckBox('ROIs on')
+        checkBox.move(30,100)
+        checkBox.stateChanged.connect(self.plot_neuropil)
+        checkBox.toggle()
+        self.l0.addWidget(checkBox,0,0,1,1)
+
         self.win = pg.GraphicsView()
-        self.setCentralWidget(self.win)
+        self.win.move(600,0)
+        self.win.resize(1000,500)
+        self.l0.addWidget(self.win,0,1,8,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
-        self.win.show()
-        l.addLabel('Buttons for views',row=0,col=0)
-        p0 = l.addLabel('F*.npy',row=0,col=1,colspan=2)
+        p0 = l.addLabel('F*.npy',row=0,col=0,colspan=2)
         # cells image
-        self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=1)
+        self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
+        self.p1.setMenuEnabled(False)
         data = np.random.random((512,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
         # noncells image
-        self.p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=2)
+        self.p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=1)
+        self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
@@ -104,46 +100,56 @@ class MainW(QtGui.QMainWindow):
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
         # fluorescence trace plot
-        p3 = l.addPlot(row=2,col=1,colspan=2)
+        p3 = l.addPlot(row=2,col=0,colspan=2)
+        x = np.arange(0,20000)
+        y = np.random.random((20000,))
         self.trace = p3.plot(x,y,pen='y')
         p3.setMouseEnabled(x=True,y=False)
         p3.enableAutoRange(x=False,y=True)
         # cell clicking enabled in either cell or noncell image
-        self.win.scene().sigMouseClicked.connect(self.plotClicked)
+        self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         ### checkboxes
-        checkBox = QtGui.QCheckBox('ROIs on')
-        checkBox.move(30,100)
-        checkBox.stateChanged.connect(self.plot_neuropil)
-        checkBox.toggle()
+        self.show()
 
         ### buttons for different views
-        self.mask_view()
+        self.win.show()
+        self.show()
+        self.show()
+        #self.mask_view()
 
-    def plotClicked(self,event):
-        flip = 0
+    def make_masks_and_buttons(self, name):
+        data = np.load(name)
+        btn = ViewButton('mean image',data,data,self)
+        self.l0.addWidget(btn,1,0,1,1)
+
+    def plot_clicked(self,event):
+        flip = False
         items = self.win.scene().items(event.scenePos())
-        posx=0
-        posy=0
-        goodclick=False
+        posx = 0
+        posy = 0
+        iplot = 0
         for x in items:
             if x==self.img1:
                 pos = self.p1.mapSceneToView(event.scenePos())
                 posx = pos.x()
                 posy = pos.y()
-                goodclick = True
+                iplot = 1
             elif x==self.img2:
                 pos = self.p2.mapSceneToView(event.scenePos())
                 posx = pos.x()
                 posy = pos.y()
-                goodclick = True
-        if goodclick:
-            if event.double():
-                print('double click')
-                flip = 1
+                iplot = 2
+        if iplot > 0:
+            if event.button()==2:
+                flip = True
+        if flip:
+
         print(posx,posy,flip)
         print("Plots:", [x for x in items if isinstance(x, pg.ImageItem)])
-        return posx,posy,flip
+        self.posx = posx
+        self.posy = posy
+        self.flip = flip
 
     def windowsize(self):
         print(10)
@@ -159,23 +165,29 @@ class MainW(QtGui.QMainWindow):
 
     def load_proc(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
-        #print(name)
-        masks = np.load(name[0])
+        if name:
+            print(name[0])
+            try:
+                masks = np.load(name[0])
+            except (OSError, RuntimeError, TypeError, NameError):
+                print('this is not an npy file :(')
+                masks = np.zeros((0,))
 
-        if masks.ndim == 2 | (masks.ndim==3 & masks.shape[2]==3):
-            self.masks = masks
-            self.img1.setImage(masks)
-            self.img2.setImage(masks)
-            #pg.image(masks)
-            self.selectionMode = True
-        else:
-            tryagain = QtGui.QMessageBox.question(self, 'error',
-                                                  'Incorrect file, choose another?',
-                                                  QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-            if tryagain == QtGui.QMessageBox.Yes:
-                self.load_proc(self)
+            if masks.ndim > 1:
+                self.masks = masks
+                self.img1.setImage(masks)
+                self.img2.setImage(masks)
+                self.make_masks_and_buttons(name[0])
+                self.selectionMode = True
             else:
-                pass
+                tryagain = QtGui.QMessageBox.question(self, 'error',
+                                                    'Incorrect file, choose another?',
+                                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                if tryagain == QtGui.QMessageBox.Yes:
+                    self.load_proc()
+                else:
+                    pass
+
 
     def file_save(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Save File')
@@ -184,57 +196,16 @@ class MainW(QtGui.QMainWindow):
         file.close()
 
     # different mask views
-    def mask_view(self):
-        btn = QtGui.QPushButton('mean image (M)', self)
-        btn.setShortcut('M')
-        btn.clicked.connect(newwindow)
-        btn.resize(btn.minimumSizeHint())
-        btn.move(10,60)
-        self.show()
+    #def mask_view(self):
 
-class PlotCells(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        #self.axes = fig.add_subplot(111)
 
-        FigureCanvas.__init__(self, fig)
-        self.setParent(parent)
-        self.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.setFocus()
-        #self.mpl_toolbar = NavigationToolbar(self, parent)
-        FigureCanvas.setSizePolicy(self,
-                                   QtGui.QSizePolicy.Expanding,
-                                   QtGui.QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
 
-        # add axes
-        self.figure.patch.set_facecolor('black')
-        self.ax1 = self.figure.add_axes([0.01,0.2,0.47,0.73])
-        self.ax1.axis('off')
-        self.ax2 = self.figure.add_axes([0.52,0.2,0.47,0.73], sharex=self.ax1, sharey=self.ax1)
-        self.ax2.axis('off')
-        self.ax3 = self.figure.add_axes([0.01,0.02,0.98,0.2])
-        self.ax3.set_facecolor('black')
-
-    def plot(self, masks1, masks2):
-        self.ax1.imshow(masks1)
-        self.ax2.imshow(masks2)
-        self.ax3.plot(np.random.random((1000,)))
-
-        #ax.set_title('PyQt Matplotlib Example')
-        #self.figure.tight_layout()
-
-        self.draw()
-        self.show()
-
-    def onclick(self,event):
-        if event.inaxes:
-            print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-                  ('double' if event.dblclick else 'single', event.button,
-                   event.x, event.y, event.xdata, event.ydata))
-            if self.ax1 is event.inaxes:
-                print('plot1')
-
+    #self.btn = QtGui.QPushButton('mean image (M)', self)
+    #self.meanBtn.setCheckable(True)
+    #self.meanBtn.clicked.connect(newwindow)
+    #self.meanBtn.resize(btn.minimumSizeHint())
+    #btn.move(10,60)
+    #self.show()
 
 def run():
     ## Always start by initializing Qt (only once per application)

@@ -35,17 +35,18 @@ class ViewButton(QtGui.QPushButton):
             parent.btnstate[n] = False
         if ischecked==bid and not waschecked:
             parent.viewbtns.setExclusive(True)
-            parent.img1.setImage(data1)
-            parent.img2.setImage(data2)
+            parent.ops_plot[1] = bid
+            data1, data2 = parent.draw_masks(parent.ops, parent.stat,
+                                            parent.iscell, parent.ops_plot)
+            parent.plot_masks(data1, data2)
             parent.btnstate[bid]=True
         elif ischecked==bid and waschecked:
             parent.viewbtns.setExclusive(False)
             parent.btnstate[bid]=False
-        else:
-            parent.viewbtns.setExclusive(True)
-            parent.img1.setImage(data1)
-            parent.img2.setImage(data2)
-            parent.btnstate[bid] = True
+            parent.ops_plot[1] = -1
+            data1, data2 = parent.draw_masks(parent.ops, parent.stat,
+                                            parent.iscell, parent.ops_plot)
+            parent.plot_masks(data1, data2)
         self.setChecked(parent.btnstate[bid])
 
 ### Changes colors of ROIs
@@ -64,9 +65,6 @@ class ColorButton(QtGui.QPushButton):
             parent.img1.setImage(data1)
             parent.img2.setImage(data2)
 
-
-
-
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
     def __init__(self):
@@ -74,7 +72,7 @@ class MainW(QtGui.QMainWindow):
         self.setGeometry(50,50,1600,1000)
         self.setWindowTitle('suite2p')
         #self.setStyleSheet("QMainWindow {background: 'black';}")
-        self.selectionMode = False
+        self.loaded = False
         self.masks = np.random.random((512,512,3))
         self.resized.connect(self.windowsize)
         ### menu bar options
@@ -105,14 +103,15 @@ class MainW(QtGui.QMainWindow):
         # ROI CHECKBOX
         checkBox = QtGui.QCheckBox('ROIs on')
         checkBox.move(30,100)
-        checkBox.stateChanged.connect(self.plot_neuropil)
+        checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
+        self.plotROI = True
         self.l0.addWidget(checkBox,0,0,1,1)
         # MAIN PLOTTING AREA
         self.win = pg.GraphicsView()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,1,8,12)
+        self.l0.addWidget(self.win,0,1,18,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
         self.p0 = l.addLabel('stat*.npy',row=0,col=0,colspan=2)
@@ -123,15 +122,21 @@ class MainW(QtGui.QMainWindow):
         data = np.random.random((512,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
+        #self.p1.setXRange(0,512,padding=0.25)
+        #self.p1.setYRange(0,512,padding=0.25)
         # noncells image
         self.p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=1)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
-        self.p2.autoRange()
+        #self.p2.autoRange()
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
+        #self.p2.setLimits(minXRange=-50,maxXRange=552,
+        #                      minYRange=-50,maxYRange=552)
+        #self.p2.setXRange(0,512,padding=0.25)
+        #self.p2.setYRange(0,512,padding=0.25)
         # fluorescence trace plot
         p3 = l.addPlot(row=2,col=0,colspan=2)
         x = np.arange(0,20000)
@@ -140,6 +145,8 @@ class MainW(QtGui.QMainWindow):
         p3.setMouseEnabled(x=True,y=False)
         p3.enableAutoRange(x=False,y=True)
         # cell clicking enabled in either cell or noncell image
+
+
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         self.show()
@@ -152,12 +159,10 @@ class MainW(QtGui.QMainWindow):
         colors = ['random','skewness', 'compactness','aspect ratio','classifier']
         n = 0
         self.viewbtns = QtGui.QButtonGroup(self)
-        blabel = QtGui.QLabel(self)
-        blabel.setText('Background')
-        blabel.resize(blabel.minimumSizeHint())
-        blabel.setGeometry(100,10,10,10)
-        #blabel.setAlignment(QtCore.AlignLeft)
-        #self.l0.addWidget(blabel,1,0,1,1)
+        vlabel = QtGui.QLabel(self)
+        vlabel.setText('Background')
+        vlabel.resize(vlabel.minimumSizeHint())
+        self.l0.addWidget(vlabel,1,0,1,1)
         self.btnstate = []
         for names in views:
             btn  = ViewButton(n,names,data,data,self)
@@ -166,16 +171,35 @@ class MainW(QtGui.QMainWindow):
             self.btnstate.append(False)
             n+=1
         self.colorbtns = QtGui.QButtonGroup(self)
-        self.l0.addWidget(QtGui.QLabel('Mask Colors'),5,0,1,1)
+        clabel = QtGui.QLabel(self)
+        clabel.setText('Colors')
+        clabel.resize(clabel.minimumSizeHint())
+        self.l0.addWidget(clabel,n+2,0,1,1)
+        nv = n+2
         n=0
         for names in colors:
             btn  = ColorButton(n,names,data,data,self)
             if n==0:
                 btn.setChecked(True)
+                self.color = 0
             self.colorbtns.addButton(btn,n)
-            self.l0.addWidget(btn,n+6,0,1,1)
+            self.l0.addWidget(btn,nv+n+1,0,1,1)
             self.btnstate.append(False)
             n+=1
+        self.show()
+
+    def ROIs_on(self,state):
+        if state == QtCore.Qt.Checked:
+            self.plotROI = True
+            if self.loaded:
+                data1, data2 = fig.draw_masks(self.ops, self.stat,
+                                            self.iscell, self.ops_plot)
+                self.plot_masks(data1,data2)
+        else:
+            self.plotROI = False
+    def plot_masks(self,data1,data2):
+        self.img1.setImage(data1)
+        self.img2.setImage(data2)
 
     def plot_clicked(self,event):
         flip = False
@@ -230,7 +254,7 @@ class MainW(QtGui.QMainWindow):
                 self.img1.setImage(masks)
                 self.img2.setImage(masks)
                 self.make_masks_and_buttons(name[0])
-                self.selectionMode = True
+                self.loaded = True
             else:
                 tryagain = QtGui.QMessageBox.question(self, 'error',
                                                     'Incorrect file, choose another?',
@@ -240,60 +264,16 @@ class MainW(QtGui.QMainWindow):
                 else:
                     pass
 
-
     def file_save(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Save File')
         file = open(name,'w')
         file.write('boop')
         file.close()
 
-    # different mask views
-    #def mask_view(self):
-
-
-
-    #self.btn = QtGui.QPushButton('mean image (M)', self)
-    #self.meanBtn.setCheckable(True)
-    #self.meanBtn.clicked.connect(newwindow)
-    #self.meanBtn.resize(btn.minimumSizeHint())
-    #btn.move(10,60)
-    #self.show()
-
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     GUI = MainW()
-    #plot = pg.PlotWidget()
-    #GUI.setCentralWidget(plot)
-    #plot.resize(400,400)
-    #plot.sigPointsClicked.connect(plot,meclick)
     sys.exit(app.exec_())
 
 run()
-
-## Define a top-level widget to hold everything
-#w = QtGui.QWidget()
-#w.setGeometry(0,0,900,500)
-#w.setWindowTitle('suite2p')
-
-## Create some widgets to be placed inside
-#btn = QtGui.QPushButton('press me')
-#text = QtGui.QLineEdit('enter text')
-#listw = QtGui.QListWidget()
-#plot = pg.PlotWidget()
-
-## Create a grid layout to manage the widgets size and position
-#layout = QtGui.QGridLayout()
-#w.setLayout(layout)
-
-## Add widgets to the layout in their proper positions
-#layout.addWidget(btn, 0, 0)   # button goes in upper-left
-#layout.addWidget(text, 1, 0)   # text edit goes in middle-left
-#layout.addWidget(listw, 2, 0)  # list widget goes in bottom-left
-#layout.addWidget(plot, 0, 1, 3, 1)  # plot goes on right side, spanning 3 rows
-
-## Display the widget as a new window
-#w.show()
-
-## Start the Qt event loop
-#app.exec_()

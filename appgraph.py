@@ -122,6 +122,14 @@ class MainW(QtGui.QMainWindow):
         data = np.load(name)
         btn = ViewButton('mean image',data,data,self)
         self.l0.addWidget(btn,1,0,1,1)
+        btn = ViewButton('mean image + ROIs',data,data,self)
+        self.l0.addWidget(btn,2,0,1,1)
+        btn = ViewButton('skewness',data,data,self)
+        self.l0.addWidget(btn,3,0,1,1)
+        btn = ViewButton('compactness',data,data,self)
+        self.l0.addWidget(btn,4,0,1,1)
+        btn = ViewButton('aspect ratio',data,data,self)
+        self.l0.addWidget(btn,4,0,1,1)
 
     def plot_clicked(self,event):
         flip = False

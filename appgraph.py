@@ -17,22 +17,55 @@ def newwindow():
     LoadW = QtGui.QWindow()
     LoadW.show()
 
+### custom QPushButton class that plots image when clicked
+# requires buttons to put into a QButtonGroup (parent.viewbtns)
+# allows up to 1 button to pressed at a time
 class ViewButton(QtGui.QPushButton):
-    def __init__(self, Text, data1, data2, parent=None):
+    def __init__(self, bid, Text, data1, data2, parent=None):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
-        #self.setGeometry(200,100,60,35)
         self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, data1, data2))
+        self.clicked.connect(lambda: self.press(parent, bid, data1, data2))
         self.show()
-    def press(self, parent, data1, data2):
-        if self.isChecked():
+    def press(self, parent, bid, data1, data2):
+        ischecked  = parent.viewbtns.checkedId()
+        waschecked = parent.btnstate[bid]
+        for n in range(len(parent.btnstate)):
+            parent.btnstate[n] = False
+        if ischecked==bid and not waschecked:
+            parent.viewbtns.setExclusive(True)
             parent.img1.setImage(data1)
             parent.img2.setImage(data2)
-            print('ouch')
+            parent.btnstate[bid]=True
+        elif ischecked==bid and waschecked:
+            parent.viewbtns.setExclusive(False)
+            parent.btnstate[bid]=False
         else:
-            print('ahh')
+            parent.viewbtns.setExclusive(True)
+            parent.img1.setImage(data1)
+            parent.img2.setImage(data2)
+            parent.btnstate[bid] = True
+        self.setChecked(parent.btnstate[bid])
+
+### Changes colors of ROIs
+# button group is exclusive (at least one color is always chosen)
+class ColorButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, data1, data2, parent=None):
+        super(ColorButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        self.resize(self.minimumSizeHint())
+        self.clicked.connect(lambda: self.press(parent, bid, data1, data2))
+        self.show()
+    def press(self, parent, bid, data1, data2):
+        ischecked  = self.isChecked()
+        if ischecked:
+            parent.img1.setImage(data1)
+            parent.img2.setImage(data2)
+
+
+
 
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
@@ -64,25 +97,25 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(loadProc)
         file_menu.addAction(loadMask)
         file_menu.addAction(saveFile)
-
+        # main widget
         cwidget = QtGui.QWidget(self)
-        ### main widget with plots
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
+        # ROI CHECKBOX
         checkBox = QtGui.QCheckBox('ROIs on')
         checkBox.move(30,100)
         checkBox.stateChanged.connect(self.plot_neuropil)
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
-
+        # MAIN PLOTTING AREA
         self.win = pg.GraphicsView()
         self.win.move(600,0)
         self.win.resize(1000,500)
         self.l0.addWidget(self.win,0,1,8,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
-        p0 = l.addLabel('F*.npy',row=0,col=0,colspan=2)
+        self.p0 = l.addLabel('stat*.npy',row=0,col=0,colspan=2)
         # cells image
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
@@ -109,27 +142,40 @@ class MainW(QtGui.QMainWindow):
         # cell clicking enabled in either cell or noncell image
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
-        ### checkboxes
         self.show()
-
-        ### buttons for different views
         self.win.show()
-        self.show()
-        self.show()
-        #self.mask_view()
 
     def make_masks_and_buttons(self, name):
         data = np.load(name)
-        btn = ViewButton('mean image',data,data,self)
-        self.l0.addWidget(btn,1,0,1,1)
-        btn = ViewButton('mean image + ROIs',data,data,self)
-        self.l0.addWidget(btn,2,0,1,1)
-        btn = ViewButton('skewness',data,data,self)
-        self.l0.addWidget(btn,3,0,1,1)
-        btn = ViewButton('compactness',data,data,self)
-        self.l0.addWidget(btn,4,0,1,1)
-        btn = ViewButton('aspect ratio',data,data,self)
-        self.l0.addWidget(btn,4,0,1,1)
+        self.p0.setText(name)
+        views = ['mean img', 'correlation map','red channel']
+        colors = ['random','skewness', 'compactness','aspect ratio','classifier']
+        n = 0
+        self.viewbtns = QtGui.QButtonGroup(self)
+        blabel = QtGui.QLabel(self)
+        blabel.setText('Background')
+        blabel.resize(blabel.minimumSizeHint())
+        blabel.setGeometry(100,10,10,10)
+        #blabel.setAlignment(QtCore.AlignLeft)
+        #self.l0.addWidget(blabel,1,0,1,1)
+        self.btnstate = []
+        for names in views:
+            btn  = ViewButton(n,names,data,data,self)
+            self.viewbtns.addButton(btn,n)
+            self.l0.addWidget(btn,n+2,0,1,1)
+            self.btnstate.append(False)
+            n+=1
+        self.colorbtns = QtGui.QButtonGroup(self)
+        self.l0.addWidget(QtGui.QLabel('Mask Colors'),5,0,1,1)
+        n=0
+        for names in colors:
+            btn  = ColorButton(n,names,data,data,self)
+            if n==0:
+                btn.setChecked(True)
+            self.colorbtns.addButton(btn,n)
+            self.l0.addWidget(btn,n+6,0,1,1)
+            self.btnstate.append(False)
+            n+=1
 
     def plot_clicked(self,event):
         flip = False
@@ -152,9 +198,7 @@ class MainW(QtGui.QMainWindow):
             if event.button()==2:
                 flip = True
         if flip:
-
-        print(posx,posy,flip)
-        print("Plots:", [x for x in items if isinstance(x, pg.ImageItem)])
+            print(posx,posy,flip)
         self.posx = posx
         self.posy = posy
         self.flip = flip

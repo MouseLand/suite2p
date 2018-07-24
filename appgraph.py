@@ -1,16 +1,8 @@
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget
-
-import matplotlib
-matplotlib.use("Qt5Agg")
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-
 import pyqtgraph as pg
 import sys
 import numpy as np
+import os
 
 def newwindow():
     print('meanimg')
@@ -44,9 +36,9 @@ class ViewButton(QtGui.QPushButton):
             parent.viewbtns.setExclusive(False)
             parent.btnstate[bid]=False
             parent.ops_plot[1] = -1
-            data1, data2 = parent.draw_masks(parent.ops, parent.stat,
-                                            parent.iscell, parent.ops_plot)
-            parent.plot_masks(data1, data2)
+            M1, M2 = parent.draw_masks(parent.ops, parent.stat,
+                                        parent.iscell, parent.ops_plot)
+            parent.plot_masks(M1, M2)
         self.setChecked(parent.btnstate[bid])
 
 ### Changes colors of ROIs
@@ -62,8 +54,10 @@ class ColorButton(QtGui.QPushButton):
     def press(self, parent, bid, data1, data2):
         ischecked  = self.isChecked()
         if ischecked:
-            parent.img1.setImage(data1)
-            parent.img2.setImage(data2)
+            parent.ops_plot[2] = bid
+            M1, M2 = parent.draw_masks(parent.ops, parent.stat,
+                                        parent.iscell, parent.ops_plot)
+            parent.plot_masks(M1, M2)
 
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
@@ -73,7 +67,11 @@ class MainW(QtGui.QMainWindow):
         self.setWindowTitle('suite2p')
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
-        self.masks = np.random.random((512,512,3))
+        self.ops_plot = []
+        self.ops_plot.append(True)
+        self.ops_plot.append(-1)
+        self.ops_plot.append(0)
+
         self.resized.connect(self.windowsize)
         ### menu bar options
         # load processed data
@@ -105,7 +103,6 @@ class MainW(QtGui.QMainWindow):
         checkBox.move(30,100)
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
-        self.plotROI = True
         self.l0.addWidget(checkBox,0,0,1,1)
         # MAIN PLOTTING AREA
         self.win = pg.GraphicsView()
@@ -119,7 +116,7 @@ class MainW(QtGui.QMainWindow):
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
-        data = np.random.random((512,512,3))
+        data = np.zeros((512,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
         #self.p1.setXRange(0,512,padding=0.25)
@@ -138,12 +135,12 @@ class MainW(QtGui.QMainWindow):
         #self.p2.setXRange(0,512,padding=0.25)
         #self.p2.setYRange(0,512,padding=0.25)
         # fluorescence trace plot
-        p3 = l.addPlot(row=2,col=0,colspan=2)
+        self.p3 = l.addPlot(row=2,col=0,colspan=2)
         x = np.arange(0,20000)
-        y = np.random.random((20000,))
-        self.trace = p3.plot(x,y,pen='y')
-        p3.setMouseEnabled(x=True,y=False)
-        p3.enableAutoRange(x=False,y=True)
+        y = np.zeros((20000,))
+        self.p3.plot(x,y,pen='b')
+        self.p3.setMouseEnabled(x=True,y=False)
+        self.p3.enableAutoRange(x=False,y=True)
         # cell clicking enabled in either cell or noncell image
 
 
@@ -153,7 +150,11 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
 
     def make_masks_and_buttons(self, name):
-        data = np.load(name)
+        self.stat = np.load(name)
+        basename, fname = os.path.split(name)
+
+        randcols = np.random.random(len(self.stat,))
+        ops_plot.append(randcols)
         self.p0.setText(name)
         views = ['mean img', 'correlation map','red channel']
         colors = ['random','skewness', 'compactness','aspect ratio','classifier']
@@ -190,13 +191,13 @@ class MainW(QtGui.QMainWindow):
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
-            self.plotROI = True
+            self.ops_plot[0] = True
             if self.loaded:
                 data1, data2 = fig.draw_masks(self.ops, self.stat,
                                             self.iscell, self.ops_plot)
                 self.plot_masks(data1,data2)
         else:
-            self.plotROI = False
+            self.ops_plot[0] = False
     def plot_masks(self,data1,data2):
         self.img1.setImage(data1)
         self.img2.setImage(data2)

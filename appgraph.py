@@ -28,17 +28,17 @@ class ViewButton(QtGui.QPushButton):
         if ischecked==bid and not waschecked:
             parent.viewbtns.setExclusive(True)
             parent.ops_plot[1] = bid
-            data1, data2 = parent.draw_masks(parent.ops, parent.stat,
-                                            parent.iscell, parent.ops_plot)
-            parent.plot_masks(data1, data2)
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+                                parent.iscell, parent.ichosen)
+            parent.plot_masks(M)
             parent.btnstate[bid]=True
         elif ischecked==bid and waschecked:
             parent.viewbtns.setExclusive(False)
             parent.btnstate[bid]=False
             parent.ops_plot[1] = -1
-            M1, M2 = parent.draw_masks(parent.ops, parent.stat,
-                                        parent.iscell, parent.ops_plot)
-            parent.plot_masks(M1, M2)
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+                                parent.iscell, parent.ichosen)
+            parent.plot_masks(M)
         self.setChecked(parent.btnstate[bid])
 
 ### Changes colors of ROIs
@@ -55,9 +55,9 @@ class ColorButton(QtGui.QPushButton):
         ischecked  = self.isChecked()
         if ischecked:
             parent.ops_plot[2] = bid
-            M1, M2 = parent.draw_masks(parent.ops, parent.stat,
-                                        parent.iscell, parent.ops_plot)
-            parent.plot_masks(M1, M2)
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+                                parent.iscell, parent.ichosen)
+            parent.plot_masks(M)
 
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
@@ -150,9 +150,6 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
 
     def make_masks_and_buttons(self, name):
-        self.stat = np.load(name)
-        basename, fname = os.path.split(name)
-
         randcols = np.random.random(len(self.stat,))
         ops_plot.append(randcols)
         self.p0.setText(name)
@@ -193,14 +190,14 @@ class MainW(QtGui.QMainWindow):
         if state == QtCore.Qt.Checked:
             self.ops_plot[0] = True
             if self.loaded:
-                data1, data2 = fig.draw_masks(self.ops, self.stat,
-                                            self.iscell, self.ops_plot)
-                self.plot_masks(data1,data2)
+                M = fig.draw_masks(self.ops, self.stat, self.ops_plot
+                                    self.iscell, self.ichosen)
+                self.plot_masks(M)
         else:
             self.ops_plot[0] = False
-    def plot_masks(self,data1,data2):
-        self.img1.setImage(data1)
-        self.img2.setImage(data2)
+    def plot_masks(self,M):
+        self.img1.setImage(M[0])
+        self.img2.setImage(M[1])
 
     def plot_clicked(self,event):
         flip = False
@@ -245,15 +242,15 @@ class MainW(QtGui.QMainWindow):
         if name:
             print(name[0])
             try:
-                masks = np.load(name[0])
+                self.stat = np.load(name[0])
             except (OSError, RuntimeError, TypeError, NameError):
                 print('this is not an npy file :(')
-                masks = np.zeros((0,))
+                self.stat=[0]
 
-            if masks.ndim > 1:
-                self.masks = masks
-                self.img1.setImage(masks)
-                self.img2.setImage(masks)
+            if 'ipix' in self.stat[0]:
+                self.stat = np.load(name)
+                basename, fname = os.path.split(name)
+
                 self.make_masks_and_buttons(name[0])
                 self.loaded = True
             else:

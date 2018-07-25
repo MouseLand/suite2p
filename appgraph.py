@@ -3,6 +3,9 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 import os
+import glob
+import pickle
+import fig
 
 def newwindow():
     print('meanimg')
@@ -13,14 +16,14 @@ def newwindow():
 # requires buttons to put into a QButtonGroup (parent.viewbtns)
 # allows up to 1 button to pressed at a time
 class ViewButton(QtGui.QPushButton):
-    def __init__(self, bid, Text, data1, data2, parent=None):
+    def __init__(self, bid, Text, parent=None):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid, data1, data2))
+        self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
-    def press(self, parent, bid, data1, data2):
+    def press(self, parent, bid):
         ischecked  = parent.viewbtns.checkedId()
         waschecked = parent.btnstate[bid]
         for n in range(len(parent.btnstate)):
@@ -28,7 +31,7 @@ class ViewButton(QtGui.QPushButton):
         if ischecked==bid and not waschecked:
             parent.viewbtns.setExclusive(True)
             parent.ops_plot[1] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
                                 parent.iscell, parent.ichosen)
             parent.plot_masks(M)
             parent.btnstate[bid]=True
@@ -36,7 +39,7 @@ class ViewButton(QtGui.QPushButton):
             parent.viewbtns.setExclusive(False)
             parent.btnstate[bid]=False
             parent.ops_plot[1] = -1
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
                                 parent.iscell, parent.ichosen)
             parent.plot_masks(M)
         self.setChecked(parent.btnstate[bid])
@@ -44,18 +47,18 @@ class ViewButton(QtGui.QPushButton):
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
 class ColorButton(QtGui.QPushButton):
-    def __init__(self, bid, Text, data1, data2, parent=None):
+    def __init__(self, bid, Text, parent=None):
         super(ColorButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid, data1, data2))
+        self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
-    def press(self, parent, bid, data1, data2):
+    def press(self, parent, bid):
         ischecked  = self.isChecked()
         if ischecked:
             parent.ops_plot[2] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot
+            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
                                 parent.iscell, parent.ichosen)
             parent.plot_masks(M)
 
@@ -68,11 +71,10 @@ class MainW(QtGui.QMainWindow):
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
+        # default plot options
         self.ops_plot.append(True)
         self.ops_plot.append(-1)
         self.ops_plot.append(0)
-
-        self.resized.connect(self.windowsize)
         ### menu bar options
         # load processed data
         loadProc = QtGui.QAction('&Load processed data', self)
@@ -151,7 +153,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self, name):
         randcols = np.random.random(len(self.stat,))
-        ops_plot.append(randcols)
+        self.ops_plot.append(randcols)
         self.p0.setText(name)
         views = ['mean img', 'correlation map','red channel']
         colors = ['random','skewness', 'compactness','aspect ratio','classifier']
@@ -163,7 +165,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(vlabel,1,0,1,1)
         self.btnstate = []
         for names in views:
-            btn  = ViewButton(n,names,data,data,self)
+            btn  = ViewButton(n,names,self)
             self.viewbtns.addButton(btn,n)
             self.l0.addWidget(btn,n+2,0,1,1)
             self.btnstate.append(False)
@@ -176,21 +178,29 @@ class MainW(QtGui.QMainWindow):
         nv = n+2
         n=0
         for names in colors:
-            btn  = ColorButton(n,names,data,data,self)
+            btn  = ColorButton(n,names,self)
             if n==0:
                 btn.setChecked(True)
-                self.color = 0
             self.colorbtns.addButton(btn,n)
             self.l0.addWidget(btn,nv+n+1,0,1,1)
             self.btnstate.append(False)
             n+=1
+        self.iROI = fig.ROI_index(self.ops, self.stat)
+        self.ichosen = int(0)
+        self.iscell = np.ones((len(self.stat),), dtype=bool)
+        M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
+                            self.iscell, self.ichosen)
+        self.plot_masks(M)
+        self.trange = np.arange(0, self.Fcell.shape[1])
+        self.p3.plot(self.trange, self.Fcell[self.ichosen,:],'b')
+        self.p3.plot(self.trange, self.Fneu[self.ichosen,:],'r')
         self.show()
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
             self.ops_plot[0] = True
             if self.loaded:
-                M = fig.draw_masks(self.ops, self.stat, self.ops_plot
+                M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                     self.iscell, self.ichosen)
                 self.plot_masks(M)
         else:
@@ -202,34 +212,34 @@ class MainW(QtGui.QMainWindow):
     def plot_clicked(self,event):
         flip = False
         items = self.win.scene().items(event.scenePos())
-        posx = 0
-        posy = 0
+        posx  = 0
+        posy  = 0
         iplot = 0
-        for x in items:
-            if x==self.img1:
-                pos = self.p1.mapSceneToView(event.scenePos())
-                posx = pos.x()
-                posy = pos.y()
-                iplot = 1
-            elif x==self.img2:
-                pos = self.p2.mapSceneToView(event.scenePos())
-                posx = pos.x()
-                posy = pos.y()
-                iplot = 2
-        if iplot > 0:
-            if event.button()==2:
-                flip = True
-        if flip:
-            print(posx,posy,flip)
-        self.posx = posx
-        self.posy = posy
-        self.flip = flip
-
-    def windowsize(self):
-        print(10)
-    #def resizeEvent(self,event):
-    #    self.resized.emit()
-    #    return super(MainW,self).resizeEvent(event)
+        if self.loaded:
+            for x in items:
+                if x==self.img1:
+                    pos = self.p1.mapSceneToView(event.scenePos())
+                    posx = pos.x()
+                    posy = pos.y()
+                    iplot = 1
+                elif x==self.img2:
+                    pos = self.p2.mapSceneToView(event.scenePos())
+                    posx = pos.x()
+                    posy = pos.y()
+                    iplot = 2
+                if iplot > 0:
+                    if event.button()==2:
+                        flip = True
+                posy = int(posy)
+                posx = int(posx)
+                self.ichosen = int(self.iROI[posx,posy])
+                if flip:
+                    self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
+                M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
+                                    self.iscell, self.ichosen)
+                self.plot_masks(M)
+                self.p3.plot(self.trange,self.Fcell[self.ichosen,:],'b')
+                self.p3.plot(self.trange,self.Fneu[self.ichosen,:],'r')
 
     def plot_neuropil(self,state):
         if state == QtCore.Qt.Checked:
@@ -242,17 +252,42 @@ class MainW(QtGui.QMainWindow):
         if name:
             print(name[0])
             try:
-                self.stat = np.load(name[0])
+                pkl_file = open(name[0], 'rb')
+                self.stat = pickle.load(pkl_file)
+                pkl_file.close()
             except (OSError, RuntimeError, TypeError, NameError):
                 print('this is not an npy file :(')
-                self.stat=[0]
+                self.stat[0] = []
 
             if 'ipix' in self.stat[0]:
-                self.stat = np.load(name)
-                basename, fname = os.path.split(name)
-
-                self.make_masks_and_buttons(name[0])
-                self.loaded = True
+                basename, fname = os.path.split(name[0])
+                goodfolder = True
+                try:
+                    self.Fcell = np.load(basename + '/Fcell.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there are no fluorescence traces in this folder (Fcell.npy)')
+                    goodfolder = False
+                try:
+                    self.Fneu = np.load(basename + '/Fneu.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there are no neuropil traces in this folder (Fneu.npy)')
+                    goodfolder = False
+                try:
+                    self.Spks = np.load(basename + '/Spks.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there are no spike deconvolved traces in this folder (Spks.npy)')
+                try:
+                    pkl_file = open(basename + '/ops.pkl', 'rb')
+                    self.ops = pickle.load(pkl_file)
+                    pkl_file.close()
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there is no ops file in this folder (ops.pkl)')
+                    goodfolder = False
+                if goodfolder:
+                    self.make_masks_and_buttons(name[0])
+                    self.loaded = True
+                else:
+                    print('stat.pkl found, but other files not in folder')
             else:
                 tryagain = QtGui.QMessageBox.question(self, 'error',
                                                     'Incorrect file, choose another?',

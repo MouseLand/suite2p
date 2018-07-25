@@ -60,3 +60,17 @@ def ROI_index(ops, stat):
             xpix = stat[n]['xpix']
             iROI[ypix,xpix] = n
     return iROI
+
+def make_colorbar():
+    H = np.arange(0,100).astype(np.float32)
+    H = H / (100*1.3)
+    H = H + 0.1
+    H = 1 - H
+    H = np.expand_dims(H,axis=1)
+    S = np.ones((100,1))
+    V = np.ones((100,1))
+    hsv = np.concatenate((H,S,V), axis=1)
+    colormat = hsv_to_rgb(hsv)
+    colormat = np.expand_dims(colormat, axis=0)
+    colormat = np.tile(colormat,(20,1,1))
+    return colormat

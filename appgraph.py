@@ -63,6 +63,7 @@ class ColorButton(QtGui.QPushButton):
             M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
                                 parent.iscell, parent.ichosen)
             parent.plot_masks(M)
+            parent.plot_colorbar(bid)
 
 class MainW(QtGui.QMainWindow):
     resized = QtCore.pyqtSignal()
@@ -123,7 +124,7 @@ class MainW(QtGui.QMainWindow):
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
-        data = np.zeros((512,512,3))
+        data = np.zeros((700,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
         #self.p1.setXRange(0,512,padding=0.25)
@@ -150,7 +151,7 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
 
-        self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
+        self.load_proc(['C:/Users/carse/github/data/stat.pkl','*'])
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)
@@ -184,8 +185,8 @@ class MainW(QtGui.QMainWindow):
         self.clabels = []
         # colorbars for different statistics
         self.colorfig = plt.figure(figsize=(1,0.05))
-        canvas = FigureCanvas(self.colorfig)
-        self.colorbar = self.colorfig.add_subplot(111)
+        self.canvas = FigureCanvas(self.colorfig)
+        self.colorbar = self.colorfig.add_subplot(211)
         for names in colors:
             if names in self.stat[0] or b==0:
                 if b > 0:
@@ -193,9 +194,10 @@ class MainW(QtGui.QMainWindow):
                     for n in range(0,ncells):
                         istat[n] = self.stat[n][names]
                     self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
+                    print(self.clabels[b])
                     istat = istat - istat.min()
                     istat = istat / istat.max()
-                    istat = istat / 1.25
+                    istat = istat / 1.3
                     istat = istat + 0.1
                     icols = 1 - istat
                     allcols = np.concatenate((allcols, icols), axis=1)
@@ -208,7 +210,12 @@ class MainW(QtGui.QMainWindow):
                 if b==0:
                     btn.setChecked(True)
                 b+=1
-        self.plot_colorbar(0)
+        self.classbtn  = ColorButton(b,'classifier',self)
+        self.colorbtns.addButton(self.classbtn,b)
+        self.classbtn.setEnabled(False)
+        self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
+        self.btnstate.append(False)
+
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
@@ -216,7 +223,9 @@ class MainW(QtGui.QMainWindow):
         M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                             self.iscell, self.ichosen)
         self.plot_masks(M)
-        self.l0.addWidget(canvas,nv+b+1,0,1,1)
+        self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
+        self.colormat = fig.make_colorbar()
+        self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
         #gl.setParentItem(self.p1)
         self.p1.setXRange(0,self.ops['Lx'])
@@ -231,15 +240,17 @@ class MainW(QtGui.QMainWindow):
     def plot_colorbar(self, bid):
         self.colorbar.clear()
         if bid==0:
-            self.colorbar.imshow(np.zeros((25,100,3)))
-        else:
             self.colorbar.imshow(np.zeros((20,100,3)))
+        else:
+            self.colorbar.imshow(self.colormat)
         self.colorbar.tick_params(axis='y',which='both',left=False,right=False,
                                 labelleft=False,labelright=False)
         self.colorbar.set_xticks([0,50,100])
         self.colorbar.set_xticklabels(['%1.2f'%self.clabels[bid][0],
                                         '%1.2f'%self.clabels[bid][1],
-                                        '%1.2f'%self.clabels[bid][2]])
+                                        '%1.2f'%self.clabels[bid][2]],
+                                        fontsize='small')
+        self.canvas.draw()
 
     def plot_trace(self):
         self.p3.clear()

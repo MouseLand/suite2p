@@ -55,7 +55,7 @@ def ROI_index(ops, stat):
     ncells = len(stat)
     Ly = ops['Ly']
     Lx = ops['Lx']
-    iROI = np.zeros((Ly,Lx))
+    iROI = -1 * np.ones((Ly,Lx), dtype=np.int32)
     for n in range(ncells):
         ypix = stat[n]['ypix']
         if ypix is not None:

@@ -141,15 +141,12 @@ class MainW(QtGui.QMainWindow):
         #self.p2.setYRange(0,512,padding=0.25)
         # fluorescence trace plot
         self.p3 = l.addPlot(row=2,col=0,colspan=2)
-        x = np.arange(0,20000)
-        y = np.zeros((20000,))
-        self.p3.clear()
-        self.p3.plot(x,y,pen='b')
+        #x = np.arange(0,20000)
+        #y = np.zeros((20000,))
+        #self.p3.clear()
+        #self.p3.plot(x,y,pen='b')
         self.p3.setMouseEnabled(x=True,y=False)
-        self.p3.enableAutoRange(x=False,y=True)
-        # cell clicking enabled in either cell or noncell image
-
-
+        self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         self.show()
@@ -246,8 +243,13 @@ class MainW(QtGui.QMainWindow):
                 posy = int(posy)
                 posx = int(posx)
                 if choose:
-                    self.ichosen = int(self.iROI[posx,posy])
-                if flip:
+                    ichosen = int(self.iROI[posx,posy])
+                    print(ichosen)
+                    if ichosen >= 0:
+                        self.ichosen = self.ichosen
+                    else:
+                        choose = False
+                if choose and flip:
                     iscell = int(self.iscell[self.ichosen])
                     if 2-iscell == iplot:
                         self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])

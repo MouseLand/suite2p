@@ -36,7 +36,7 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
         ypix    = stat[n]['ypix'].astype(np.int32)
         if ypix is not None:
             xpix = stat[n]['xpix'].astype(np.int32)
-            wmap = int(iscell[n])*np.ones(ypix.shape,dtype=np.int32)
+            wmap = (1-int(iscell[n]))*np.ones(ypix.shape,dtype=np.int32)
             Lam[wmap,ypix,xpix]    = np.expand_dims(lam,axis=1)
             H[wmap,ypix,xpix]      = cols[n]*np.expand_dims(np.ones(ypix.shape), axis=1)
             if n==ichosen:

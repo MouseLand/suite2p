@@ -77,18 +77,21 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         ### menu bar options
         # load processed data
-        loadProc = QtGui.QAction('&Load processed data', self)
+        loadProc = QtGui.QAction('&Load processed data (choose stat.pkl file)', self)
         loadProc.setShortcut('Ctrl+L')
-        loadProc.setStatusTip('load processed data in suite2p format')
+        loadProc.setStatusTip('load processed data (choose stat.pkl file)')
         loadProc.triggered.connect(self.load_proc)
+        self.addAction(loadProc)
         # load masks
         loadMask = QtGui.QAction('&Load masks and extract traces', self)
-        loadMask.setShortcut('Ctrl+L')
-        loadMask.setStatusTip('load mask pixels in suite2p format')
+        loadMask.setShortcut('Ctrl+M')
+        loadMask.setStatusTip('load mask pixels in stat.pkl format')
+        self.addAction(loadMask)
         # save file
-        saveFile = QtGui.QAction('&Save', self)
+        saveFile = QtGui.QAction('&Save choices', self)
         saveFile.setShortcut('Ctrl+S')
         saveFile.triggered.connect(self.file_save)
+        self.addAction(saveFile)
         # make menuBar!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu('&File')
@@ -113,7 +116,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.win,0,1,18,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
-        self.p0 = l.addLabel('stat*.npy',row=0,col=0,colspan=2)
+        self.p0 = l.addLabel('load a stat.pkl file',row=0,col=0,colspan=2)
         # cells image
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
@@ -240,7 +243,7 @@ class MainW(QtGui.QMainWindow):
                 self.plot_masks(M)
                 self.p3.plot(self.trange,self.Fcell[self.ichosen,:],'b')
                 self.p3.plot(self.trange,self.Fneu[self.ichosen,:],'r')
-
+                self.show()
     def plot_neuropil(self,state):
         if state == QtCore.Qt.Checked:
             print('yay')
@@ -255,47 +258,48 @@ class MainW(QtGui.QMainWindow):
                 pkl_file = open(name[0], 'rb')
                 self.stat = pickle.load(pkl_file)
                 pkl_file.close()
-            except (OSError, RuntimeError, TypeError, NameError):
-                print('this is not an npy file :(')
-                self.stat[0] = []
+            except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                print('this is not a pickled file :(')
+                self.stat = []
+                self.stat.append('bad')
 
-            if 'ipix' in self.stat[0]:
-                basename, fname = os.path.split(name[0])
-                goodfolder = True
-                try:
-                    self.Fcell = np.load(basename + '/Fcell.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
-                    print('there are no fluorescence traces in this folder (Fcell.npy)')
-                    goodfolder = False
-                try:
-                    self.Fneu = np.load(basename + '/Fneu.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
-                    print('there are no neuropil traces in this folder (Fneu.npy)')
-                    goodfolder = False
-                try:
-                    self.Spks = np.load(basename + '/Spks.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
-                    print('there are no spike deconvolved traces in this folder (Spks.npy)')
-                try:
-                    pkl_file = open(basename + '/ops.pkl', 'rb')
-                    self.ops = pickle.load(pkl_file)
-                    pkl_file.close()
-                except (OSError, RuntimeError, TypeError, NameError):
-                    print('there is no ops file in this folder (ops.pkl)')
-                    goodfolder = False
-                if goodfolder:
-                    self.make_masks_and_buttons(name[0])
-                    self.loaded = True
+            if len(self.stat) > 1:
+                if 'ipix' in self.stat[0]:
+                    basename, fname = os.path.split(name[0])
+                    goodfolder = True
+                    try:
+                        self.Fcell = np.load(basename + '/Fcell.npy')
+                        self.Fneu = np.load(basename + '/Fneu.npy')
+                    except (OSError, RuntimeError, TypeError, NameError):
+                        print('there are no fluorescence traces in this folder (Fcell.npy/Fneu.npy)')
+                        goodfolder = False
+                    try:
+                        self.Spks = np.load(basename + '/Spks.npy')
+                    except (OSError, RuntimeError, TypeError, NameError):
+                        print('there are no spike deconvolved traces in this folder (Spks.npy)')
+                    try:
+                        pkl_file = open(basename + '/ops.pkl', 'rb')
+                        self.ops = pickle.load(pkl_file)
+                        pkl_file.close()
+                    except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                        print('there is no ops file in this folder (ops.pkl)')
+                        goodfolder = False
+                    if goodfolder:
+                        self.make_masks_and_buttons(name[0])
+                        self.loaded = True
+                    else:
+                        print('stat.pkl found, but other files not in folder')
                 else:
-                    print('stat.pkl found, but other files not in folder')
+                    self.load_again()
             else:
-                tryagain = QtGui.QMessageBox.question(self, 'error',
-                                                    'Incorrect file, choose another?',
-                                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-                if tryagain == QtGui.QMessageBox.Yes:
-                    self.load_proc()
-                else:
-                    pass
+                self.load_again()
+
+    def load_again(self):
+        tryagain = QtGui.QMessageBox.question(self, 'error',
+                                        'Incorrect file, not a stat.pkl, choose another?',
+                                        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        if tryagain == QtGui.QMessageBox.Yes:
+            self.load_proc()
 
     def file_save(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Save File')

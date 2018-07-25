@@ -143,6 +143,7 @@ class MainW(QtGui.QMainWindow):
         self.p3 = l.addPlot(row=2,col=0,colspan=2)
         x = np.arange(0,20000)
         y = np.zeros((20000,))
+        self.p3.clear()
         self.p3.plot(x,y,pen='b')
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=False,y=True)
@@ -195,9 +196,13 @@ class MainW(QtGui.QMainWindow):
                             self.iscell, self.ichosen)
         self.plot_masks(M)
         self.trange = np.arange(0, self.Fcell.shape[1])
-        self.p3.plot(self.trange, self.Fcell[self.ichosen,:],'b')
-        self.p3.plot(self.trange, self.Fneu[self.ichosen,:],'r')
+        self.plot_trace()
         self.show()
+
+    def plot_trace(self):
+        self.p3.clear()
+        self.p3.plot(self.trange,self.Fcell[self.ichosen,:],pen='b')
+        self.p3.plot(self.trange,self.Fneu[self.ichosen,:],pen='r')
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -213,7 +218,9 @@ class MainW(QtGui.QMainWindow):
         self.img2.setImage(M[1])
 
     def plot_clicked(self,event):
+        '''left-click chooses a cell, right-click flips cell to other view'''
         flip = False
+        choose = False
         items = self.win.scene().items(event.scenePos())
         posx  = 0
         posy  = 0
@@ -233,17 +240,24 @@ class MainW(QtGui.QMainWindow):
                 if iplot > 0:
                     if event.button()==2:
                         flip = True
+                        choose = True
+                    elif event.button()==1:
+                        choose = True
                 posy = int(posy)
                 posx = int(posx)
-                self.ichosen = int(self.iROI[posx,posy])
+                if choose:
+                    self.ichosen = int(self.iROI[posx,posy])
                 if flip:
-                    self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
-                M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
-                                    self.iscell, self.ichosen)
-                self.plot_masks(M)
-                self.p3.plot(self.trange,self.Fcell[self.ichosen,:],'b')
-                self.p3.plot(self.trange,self.Fneu[self.ichosen,:],'r')
-                self.show()
+                    iscell = int(self.iscell[self.ichosen])
+                    if 2-iscell == iplot:
+                        self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
+                if choose:
+                    M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
+                                        self.iscell, self.ichosen)
+                    self.plot_masks(M)
+                    self.plot_trace()
+                    self.show()
+
     def plot_neuropil(self,state):
         if state == QtCore.Qt.Checked:
             print('yay')
@@ -258,45 +272,45 @@ class MainW(QtGui.QMainWindow):
                 pkl_file = open(name[0], 'rb')
                 self.stat = pickle.load(pkl_file)
                 pkl_file.close()
-            except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                print('this is not a pickled file :(')
-                self.stat = []
-                self.stat.append('bad')
+                ypix = self.stat[0]['ypix']
+            except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                print('this is not a stat.pkl file :( (needs stat[n]["ypix"]!)')
+                self.stat = None
 
-            if len(self.stat) > 1:
-                if 'ipix' in self.stat[0]:
-                    basename, fname = os.path.split(name[0])
-                    goodfolder = True
-                    try:
-                        self.Fcell = np.load(basename + '/Fcell.npy')
-                        self.Fneu = np.load(basename + '/Fneu.npy')
-                    except (OSError, RuntimeError, TypeError, NameError):
-                        print('there are no fluorescence traces in this folder (Fcell.npy/Fneu.npy)')
-                        goodfolder = False
-                    try:
-                        self.Spks = np.load(basename + '/Spks.npy')
-                    except (OSError, RuntimeError, TypeError, NameError):
-                        print('there are no spike deconvolved traces in this folder (Spks.npy)')
-                    try:
-                        pkl_file = open(basename + '/ops.pkl', 'rb')
-                        self.ops = pickle.load(pkl_file)
-                        pkl_file.close()
-                    except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                        print('there is no ops file in this folder (ops.pkl)')
-                        goodfolder = False
-                    if goodfolder:
-                        self.make_masks_and_buttons(name[0])
-                        self.loaded = True
-                    else:
-                        print('stat.pkl found, but other files not in folder')
+            if self.stat is not None:
+                basename, fname = os.path.split(name[0])
+                goodfolder = True
+                try:
+                    self.Fcell = np.load(basename + '/Fcell.npy')
+                    self.Fneu = np.load(basename + '/Fneu.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there are no fluorescence traces in this folder (Fcell.npy/Fneu.npy)')
+                    goodfolder = False
+                try:
+                    self.Spks = np.load(basename + '/Spks.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('there are no spike deconvolved traces in this folder (Spks.npy)')
+                try:
+                    pkl_file = open(basename + '/ops.pkl', 'rb')
+                    self.ops = pickle.load(pkl_file)
+                    pkl_file.close()
+                except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                    print('there is no ops file in this folder (ops.pkl)')
+                    goodfolder = False
+                if goodfolder:
+                    self.make_masks_and_buttons(name[0])
+                    self.loaded = True
                 else:
-                    self.load_again()
+                    print('stat.pkl found, but other files not in folder')
+                    self.load_again(Text)
+                    Text = 'stat.pkl found, but other files missing, choose another?'
             else:
-                self.load_again()
+                Text = 'Incorrect file, not a stat.pkl, choose another?'
+                self.load_again(Text)
 
-    def load_again(self):
+    def load_again(self,Text):
         tryagain = QtGui.QMessageBox.question(self, 'error',
-                                        'Incorrect file, not a stat.pkl, choose another?',
+                                        Text,
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if tryagain == QtGui.QMessageBox.Yes:
             self.load_proc()

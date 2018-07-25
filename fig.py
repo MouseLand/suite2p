@@ -18,16 +18,14 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
         M1: ROIs that are True in iscell
         M2: ROIs that are False in iscell
     '''
+    ncells = iscell.shape[0]
     plotROI = ops_plot[0]
     view    = ops_plot[1]
     color   = ops_plot[2]
-    if color == 0:
-        cols = ops_plot[3]
-    else:
-        cols = ops_plot[3]
+    cols    = ops_plot[3][:,color]
+
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = iscell.shape[0]
     Lam = np.zeros((2,Ly,Lx,1))
     H = np.zeros((2,Ly,Lx,1))
     S  = np.ones((2,Ly,Lx,1))
@@ -52,7 +50,7 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
     return M
 
 def ROI_index(ops, stat):
-    ncells = len(stat)
+    ncells = len(stat)-1
     Ly = ops['Ly']
     Lx = ops['Lx']
     iROI = -1 * np.ones((Ly,Lx), dtype=np.int32)

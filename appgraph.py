@@ -6,6 +6,8 @@ import os
 import glob
 import pickle
 import fig
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
 
 def newwindow():
     print('meanimg')
@@ -135,10 +137,6 @@ class MainW(QtGui.QMainWindow):
         #self.p2.autoRange()
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
-        #self.p2.setLimits(minXRange=-50,maxXRange=552,
-        #                      minYRange=-50,maxYRange=552)
-        #self.p2.setXRange(0,512,padding=0.25)
-        #self.p2.setYRange(0,512,padding=0.25)
         # fluorescence trace plot
         self.p3 = l.addPlot(row=2,col=0,colspan=2)
         #x = np.arange(0,20000)
@@ -152,13 +150,16 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
 
+        self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
+
     def make_masks_and_buttons(self, name):
-        randcols = np.random.random(len(self.stat,))
-        self.ops_plot.append(randcols)
         self.p0.setText(name)
-        views = ['mean img', 'correlation map','red channel']
-        colors = ['random','skewness', 'compactness','aspect ratio','classifier']
-        n = 0
+        views = ['mean img', 'correlation map']
+        if 'mean_image_red' in self.ops:
+            views.append('red channel mean')
+        colors = ['random', 'skew', 'compact','footprint',
+                    'aspect_ratio']
+        b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
         vlabel.setText('Background')
@@ -166,40 +167,88 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(vlabel,1,0,1,1)
         self.btnstate = []
         for names in views:
-            btn  = ViewButton(n,names,self)
-            self.viewbtns.addButton(btn,n)
-            self.l0.addWidget(btn,n+2,0,1,1)
+            btn  = ViewButton(b,names,self)
+            self.viewbtns.addButton(btn,b)
+            self.l0.addWidget(btn,b+2,0,1,1)
             self.btnstate.append(False)
-            n+=1
+            b+=1
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
         clabel.resize(clabel.minimumSizeHint())
-        self.l0.addWidget(clabel,n+2,0,1,1)
-        nv = n+2
-        n=0
+        self.l0.addWidget(clabel,b+2,0,1,1)
+        nv = b+2
+        b=0
+        ncells = self.Fcell.shape[0]
+        allcols = np.random.random((ncells,1))
+        self.clabels = []
+        # colorbars for different statistics
+        self.colorfig = plt.figure(figsize=(1,0.05))
+        canvas = FigureCanvas(self.colorfig)
+        self.colorbar = self.colorfig.add_subplot(111)
         for names in colors:
-            btn  = ColorButton(n,names,self)
-            if n==0:
-                btn.setChecked(True)
-            self.colorbtns.addButton(btn,n)
-            self.l0.addWidget(btn,nv+n+1,0,1,1)
-            self.btnstate.append(False)
-            n+=1
+            if names in self.stat[0] or b==0:
+                if b > 0:
+                    istat = np.zeros((ncells,1))
+                    for n in range(0,ncells):
+                        istat[n] = self.stat[n][names]
+                    self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
+                    istat = istat - istat.min()
+                    istat = istat / istat.max()
+                    istat = istat / 1.25
+                    istat = istat + 0.1
+                    icols = 1 - istat
+                    allcols = np.concatenate((allcols, icols), axis=1)
+                else:
+                    self.clabels.append([0,0.5,1])
+                btn  = ColorButton(b,names,self)
+                self.colorbtns.addButton(btn,b)
+                self.l0.addWidget(btn,nv+b+1,0,1,1)
+                self.btnstate.append(False)
+                if b==0:
+                    btn.setChecked(True)
+                b+=1
+        self.plot_colorbar(0)
+        self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
-        self.iscell = np.ones((len(self.stat),), dtype=bool)
+        self.iscell = np.ones((ncells,), dtype=bool)
         M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                             self.iscell, self.ichosen)
         self.plot_masks(M)
+        self.l0.addWidget(canvas,nv+b+1,0,1,1)
+        #gl = pg.GradientLegend((10,300),(10,30))
+        #gl.setParentItem(self.p1)
+        self.p1.setXRange(0,self.ops['Lx'])
+        self.p1.setYRange(0,self.ops['Ly'])
+        self.p2.setXRange(0,self.ops['Lx'])
+        self.p2.setYRange(0,self.ops['Ly'])
+        self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
         self.show()
+
+    def plot_colorbar(self, bid):
+        self.colorbar.clear()
+        if bid==0:
+            self.colorbar.imshow(np.zeros((25,100,3)))
+        else:
+            self.colorbar.imshow(np.zeros((20,100,3)))
+        self.colorbar.tick_params(axis='y',which='both',left=False,right=False,
+                                labelleft=False,labelright=False)
+        self.colorbar.set_xticks([0,50,100])
+        self.colorbar.set_xticklabels(['%1.2f'%self.clabels[bid][0],
+                                        '%1.2f'%self.clabels[bid][1],
+                                        '%1.2f'%self.clabels[bid][2]])
 
     def plot_trace(self):
         self.p3.clear()
         self.p3.plot(self.trange,self.Fcell[self.ichosen,:],pen='b')
         self.p3.plot(self.trange,self.Fneu[self.ichosen,:],pen='r')
+        self.fmax = np.maximum(self.Fcell[self.ichosen,:].max(), self.Fneu[self.ichosen,:].max())
+        self.fmin = np.minimum(self.Fcell[self.ichosen,:].min(), self.Fneu[self.ichosen,:].min())
+        self.p3.setXRange(0,self.Fcell.shape[1])
+        self.p3.setYRange(self.fmin,self.fmax)
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -218,6 +267,7 @@ class MainW(QtGui.QMainWindow):
         '''left-click chooses a cell, right-click flips cell to other view'''
         flip = False
         choose = False
+        zoom = False
         items = self.win.scene().items(event.scenePos())
         posx  = 0
         posy  = 0
@@ -234,19 +284,35 @@ class MainW(QtGui.QMainWindow):
                     posx = pos.x()
                     posy = pos.y()
                     iplot = 2
-                if iplot > 0:
+                elif x==self.p3:
+                    iplot = 3
+                if iplot > 0 and iplot < 3:
                     if event.button()==2:
                         flip = True
                         choose = True
                     elif event.button()==1:
-                        choose = True
+                        if event.double():
+                            zoom = True
+                        else:
+                            choose = True
+                if iplot==3 and event.double():
+                    zoom = True
                 posy = int(posy)
                 posx = int(posx)
+                if zoom:
+                    if iplot==1:
+                        self.p1.setXRange(0,self.ops['Lx'])
+                        self.p1.setYRange(0,self.ops['Ly'])
+                    elif iplot==2:
+                        self.p2.setXRange(0,self.ops['Lx'])
+                        self.p2.setYRange(0,self.ops['Ly'])
+                    else:
+                        self.p3.setXRange(0,self.Fcell.shape[1])
+                        self.p3.setYRange(self.fmin,self.fmax)
                 if choose:
                     ichosen = int(self.iROI[posx,posy])
-                    print(ichosen)
                     if ichosen >= 0:
-                        self.ichosen = self.ichosen
+                        self.ichosen = ichosen
                     else:
                         choose = False
                 if choose and flip:
@@ -260,14 +326,16 @@ class MainW(QtGui.QMainWindow):
                     self.plot_trace()
                     self.show()
 
+
     def plot_neuropil(self,state):
         if state == QtCore.Qt.Checked:
             print('yay')
         else:
             print('boo')
 
-    def load_proc(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+    def load_proc(self, name):
+        if name is None:
+            name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
             print(name[0])
             try:

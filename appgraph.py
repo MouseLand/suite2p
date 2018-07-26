@@ -66,7 +66,6 @@ class ColorButton(QtGui.QPushButton):
             parent.plot_colorbar(bid)
 
 class MainW(QtGui.QMainWindow):
-    resized = QtCore.pyqtSignal()
     def __init__(self):
         super(MainW, self).__init__()
         self.setGeometry(50,50,1600,1000)
@@ -79,28 +78,45 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(-1)
         self.ops_plot.append(0)
         ### menu bar options
+        # run suite2p from scratch
+        #runS2P =  QtGui.QAction('&Run suite2p ', self)
         # load processed data
         loadProc = QtGui.QAction('&Load processed data (choose stat.pkl file)', self)
         loadProc.setShortcut('Ctrl+L')
-        loadProc.setStatusTip('load processed data (choose stat.pkl file)')
         loadProc.triggered.connect(self.load_proc)
         self.addAction(loadProc)
         # load masks
-        loadMask = QtGui.QAction('&Load masks and extract traces', self)
+        loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
         loadMask.setShortcut('Ctrl+M')
-        loadMask.setStatusTip('load mask pixels in stat.pkl format')
         self.addAction(loadMask)
-        # save file
-        saveFile = QtGui.QAction('&Save choices', self)
-        saveFile.setShortcut('Ctrl+S')
-        saveFile.triggered.connect(self.file_save)
-        self.addAction(saveFile)
-        # make menuBar!
+        # make mainmenu!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu('&File')
         file_menu.addAction(loadProc)
         file_menu.addAction(loadMask)
-        file_menu.addAction(saveFile)
+        # classifier menu
+        self.trainfiles = []
+        self.statlabels = None
+        self.chooseStat = QtGui.QAction('&Choose stat fields to use in classifier', self)
+        self.chooseStat.setShortcut('Ctrl+J')
+        self.chooseStat.triggered.connect(self.choose_stat)
+        self.chooseStat.setEnabled(False)
+        self.addAction(self.chooseStat)
+        self.loadTrain = QtGui.QAction('&Load training data (choose stat.pkl file)', self)
+        self.loadTrain.setShortcut('Ctrl+K')
+        self.loadTrain.triggered.connect(self.load_traindata)
+        self.loadTrain.setEnabled(False)
+        self.addAction(self.loadTrain)
+        self.loadText = QtGui.QAction('&Load txt file with list of training data', self)
+        self.loadText.setShortcut('Ctrl+T')
+        self.loadText.triggered.connect(self.load_traintext)
+        self.loadText.setEnabled(False)
+        self.addAction(self.loadText)
+        class_menu = main_menu.addMenu('&Classifier')
+        class_menu.addAction(self.chooseStat)
+        class_menu.addAction(self.loadTrain)
+        class_menu.addAction(self.loadText)
+
         # main widget
         cwidget = QtGui.QWidget(self)
         self.l0 = QtGui.QGridLayout()
@@ -223,7 +239,8 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
-        self.iscell = np.ones((ncells,), dtype=bool)
+        if not hasattr(self, 'iscell'):
+            self.iscell = np.ones((ncells,), dtype=bool)
         M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                             self.iscell, self.ichosen)
         self.plot_masks(M)
@@ -239,6 +256,7 @@ class MainW(QtGui.QMainWindow):
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
+        self.chooseStat.setEnabled(True)
         self.show()
 
     def plot_colorbar(self, bid):
@@ -274,7 +292,7 @@ class MainW(QtGui.QMainWindow):
             M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                 self.iscell, self.ichosen)
             self.plot_masks(M)
-            
+
     def plot_masks(self,M):
         self.img1.setImage(M[0])
         self.img2.setImage(M[1])
@@ -327,15 +345,16 @@ class MainW(QtGui.QMainWindow):
                         self.p3.setYRange(self.fmin,self.fmax)
                 if choose:
                     ichosen = int(self.iROI[posx,posy])
-                    if ichosen >= 0:
-                        self.ichosen = ichosen
-                    else:
+                    if self.ichosen == ichosen:
                         choose = False
-                if choose and flip:
+                    elif ichosen >= 0:
+                        self.ichosen = ichosen
+                if flip:
                     iscell = int(self.iscell[self.ichosen])
                     if 2-iscell == iplot:
                         self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
-                if choose:
+                        np.save(self.basename+'/iscell.npy', self.iscell)
+                if choose or flip:
                     M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                         self.iscell, self.ichosen)
                     self.plot_masks(M)
@@ -365,6 +384,7 @@ class MainW(QtGui.QMainWindow):
 
             if self.stat is not None:
                 basename, fname = os.path.split(name[0])
+                self.basename = basename
                 goodfolder = True
                 try:
                     self.Fcell = np.load(basename + '/Fcell.npy')
@@ -376,6 +396,10 @@ class MainW(QtGui.QMainWindow):
                     self.Spks = np.load(basename + '/Spks.npy')
                 except (OSError, RuntimeError, TypeError, NameError):
                     print('there are no spike deconvolved traces in this folder (Spks.npy)')
+                try:
+                    self.iscell = np.load(basename + '/iscell.npy')
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('no manual labels found (iscell.npy)')
                 try:
                     pkl_file = open(basename + '/ops.pkl', 'rb')
                     self.ops = pickle.load(pkl_file)
@@ -401,11 +425,104 @@ class MainW(QtGui.QMainWindow):
         if tryagain == QtGui.QMessageBox.Yes:
             self.load_proc()
 
-    def file_save(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Save File')
-        file = open(name,'w')
-        file.write('boop')
-        file.close()
+    def choose_stat(self):
+        swindow = QtGui.QMainWindow(self)
+        swindow.show()
+        swindow.setGeometry(700,300,350,400)
+        swindow.setWindowTitle('stats for classifier')
+        win = QtGui.QWidget(swindow)
+        #win.setWindowTitle('Image List')
+        win.setMinimumSize(300, 400)
+        layout = QtGui.QGridLayout()
+        win.setLayout(layout)
+        self.statlist = QtGui.QListWidget(win)
+        self.classlist = QtGui.QListWidget(win)
+        for key in self.stat[0]:
+            try:
+                lkey = len(self.stat[0][key])
+            except (TypeError):
+                lkey = 1
+            if lkey == 1:
+                self.statlabels.append(key)
+                statlist.addItem(key)
+        layout.addWidget(statlist,0,0,4,1)
+        sright = QtGui.QPushButton('-->')
+        sright.resize(sright.minimumSizeHint())
+        sright.clicked.connect(self.add_to_class)
+        sleft.clicked.connect(self.remove_from_class)
+        sleft = QtGui.QPushButton('<--')
+        sleft.resize(sleft.minimumSizeHint())
+        layout.addWidget(sright,1,1,1,1)
+        layout.addWidget(sleft,2,1,1,1)
+        layout.addWidget(classlist,0,2,4,1)
+        done = QtGui.QPushButton('OK')
+        done.resize(done.minimumSizeHint())
+        layout.addWidget(done,4,1,1,1)
+
+        win.show()
+        self.statlabels = []
+        statchosen = True
+        if statchosen:
+            self.loadTrain.setEnabled(True)
+            self.loadText.setEnabled(True)
+
+    def add_to_class(self):
+        print(self.statlist.itemClicked)
+    def remove_from_class(self):
+        print(self.stat)
+
+    def add_item(self):
+        print('yo')
+
+    def load_traindata(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        if name:
+            print(name[0])
+            badfile = False
+            try:
+                iscell = np.load(name[0])
+                ncells = iscell.shape[0]
+            except (OSError, RuntimeError, TypeError, NameError):
+                print('not a numpy array of booleans')
+                badfile = True
+            if not badfile:
+                lstat = 0
+                try:
+                    pkl_file = open(name[0], 'rb')
+                    stat = pickle.load(pkl_file)
+                    pkl_file.close()
+                    ypix = stat[0]['ypix']
+                    lstat = len(stat) - 1
+                except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                    print('ERROR: incorrect or missing stat.pkl file :(')
+                if lstat is not ncells:
+                    print('ERROR: stat.pkl is not the same length as iscell.npy')
+            #else:
+                # add iscell and stat to classifier
+
+    def load_traintext(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        if name:
+            print(name[0])
+            badfile = False
+            try:
+                iscell = np.load(name[0])
+                ncells = iscell.shape[0]
+            except (OSError, RuntimeError, TypeError, NameError):
+                print('not a numpy array of booleans')
+                badfile = True
+            if not badfile:
+                lstat = 0
+                try:
+                    pkl_file = open(name[0], 'rb')
+                    stat = pickle.load(pkl_file)
+                    pkl_file.close()
+                    ypix = stat[0]['ypix']
+                    lstat = len(stat) - 1
+                except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                    print('ERROR: incorrect or missing stat.pkl file :(')
+                if lstat is not ncells:
+                    print('ERROR: stat.pkl is not the same length as iscell.npy')
 
 def run():
     ## Always start by initializing Qt (only once per application)

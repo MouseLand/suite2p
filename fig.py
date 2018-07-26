@@ -32,7 +32,6 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
     '''
     ncells = iscell.shape[0]
     plotROI = ops_plot[0]
-    print(plotROI)
     view    = ops_plot[1]
     color   = ops_plot[2]
     cols    = ops_plot[3][:,color]

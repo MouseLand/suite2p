@@ -43,6 +43,9 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
     V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
     #V  = np.expand_dims(V,axis=2)
     M = []
+    if view>0:
+        S[0,:,:,:] = np.expand_dims(ops['mean_img'],axis=2)
+        S[1,:,:,:] = np.expand_dims(ops['mean_img'],axis=2)
     for j in range(0,2):
         hsv = np.concatenate((H[j,:,:],S[j,:,:],V[j,:,:]),axis=2)
         rgb = hsv_to_rgb(hsv)

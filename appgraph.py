@@ -3,67 +3,11 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 import os
-import glob
 import pickle
-import fig
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
-
-def newwindow():
-    print('meanimg')
-    LoadW = QtGui.QWindow()
-    LoadW.show()
-
-### custom QPushButton class that plots image when clicked
-# requires buttons to put into a QButtonGroup (parent.viewbtns)
-# allows up to 1 button to pressed at a time
-class ViewButton(QtGui.QPushButton):
-    def __init__(self, bid, Text, parent=None):
-        super(ViewButton,self).__init__(parent)
-        self.setText(Text)
-        self.setCheckable(True)
-        self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid))
-        self.show()
-    def press(self, parent, bid):
-        ischecked  = parent.viewbtns.checkedId()
-        waschecked = parent.btnstate[bid]
-        for n in range(len(parent.btnstate)):
-            parent.btnstate[n] = False
-        if ischecked==bid and not waschecked:
-            parent.viewbtns.setExclusive(True)
-            parent.ops_plot[1] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
-            parent.plot_masks(M)
-            parent.btnstate[bid]=True
-        elif ischecked==bid and waschecked:
-            parent.viewbtns.setExclusive(False)
-            parent.btnstate[bid]=False
-            parent.ops_plot[1] = -1
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
-            parent.plot_masks(M)
-        self.setChecked(parent.btnstate[bid])
-
-### Changes colors of ROIs
-# button group is exclusive (at least one color is always chosen)
-class ColorButton(QtGui.QPushButton):
-    def __init__(self, bid, Text, parent=None):
-        super(ColorButton,self).__init__(parent)
-        self.setText(Text)
-        self.setCheckable(True)
-        self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid))
-        self.show()
-    def press(self, parent, bid):
-        ischecked  = self.isChecked()
-        if ischecked:
-            parent.ops_plot[2] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
-            parent.plot_masks(M)
-            parent.plot_colorbar(bid)
+import fig
+import gui
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -97,25 +41,13 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        self.chooseStat = QtGui.QAction('&Choose stat fields to use in classifier', self)
-        self.chooseStat.setShortcut('Ctrl+J')
-        self.chooseStat.triggered.connect(self.choose_stat)
-        self.chooseStat.setEnabled(False)
-        self.addAction(self.chooseStat)
+        self.statclass = ['npix', 'compact', 'radius']
         self.loadTrain = QtGui.QAction('&Load training data (choose stat.pkl file)', self)
         self.loadTrain.setShortcut('Ctrl+K')
         self.loadTrain.triggered.connect(self.load_traindata)
         self.loadTrain.setEnabled(False)
-        self.addAction(self.loadTrain)
-        self.loadText = QtGui.QAction('&Load txt file with list of training data', self)
-        self.loadText.setShortcut('Ctrl+T')
-        self.loadText.triggered.connect(self.load_traintext)
-        self.loadText.setEnabled(False)
-        self.addAction(self.loadText)
         class_menu = main_menu.addMenu('&Classifier')
-        class_menu.addAction(self.chooseStat)
         class_menu.addAction(self.loadTrain)
-        class_menu.addAction(self.loadText)
 
         # main widget
         cwidget = QtGui.QWidget(self)
@@ -166,8 +98,9 @@ class MainW(QtGui.QMainWindow):
 
         self.show()
         self.win.show()
-        #C:/Users/carse/github
-        self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
+        #
+        #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
+        self.load_proc(['C:/Users/carse/github/data/stat.pkl','*'])
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)
@@ -189,7 +122,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(vlabel,1,0,1,1)
         self.btnstate = []
         for names in views:
-            btn  = ViewButton(b,names,self)
+            btn  = gui.ViewButton(b,names,self)
             self.viewbtns.addButton(btn,b)
             self.l0.addWidget(btn,b+2,0,1,1)
             self.btnstate.append(False)
@@ -214,7 +147,6 @@ class MainW(QtGui.QMainWindow):
                     for n in range(0,ncells):
                         istat[n] = self.stat[n][names]
                     self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
-                    print(self.clabels[b])
                     istat = istat - istat.min()
                     istat = istat / istat.max()
                     istat = istat / 1.3
@@ -223,14 +155,14 @@ class MainW(QtGui.QMainWindow):
                     allcols = np.concatenate((allcols, icols), axis=1)
                 else:
                     self.clabels.append([0,0.5,1])
-                btn  = ColorButton(b,names,self)
+                btn  = gui.ColorButton(b,names,self)
                 self.colorbtns.addButton(btn,b)
                 self.l0.addWidget(btn,nv+b+1,0,1,1)
                 self.btnstate.append(False)
                 if b==0:
                     btn.setChecked(True)
                 b+=1
-        self.classbtn  = ColorButton(b,'classifier',self)
+        self.classbtn  = gui.ColorButton(b,'classifier',self)
         self.colorbtns.addButton(self.classbtn,b)
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
@@ -256,7 +188,7 @@ class MainW(QtGui.QMainWindow):
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
-        self.chooseStat.setEnabled(True)
+        self.loadTrain.setEnabled(True)
         self.show()
 
     def plot_colorbar(self, bid):
@@ -361,13 +293,6 @@ class MainW(QtGui.QMainWindow):
                     self.plot_trace()
                     self.show()
 
-
-    def plot_neuropil(self,state):
-        if state == QtCore.Qt.Checked:
-            print('yay')
-        else:
-            print('boo')
-
     def load_proc(self, name):
         if name is None:
             name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
@@ -425,104 +350,48 @@ class MainW(QtGui.QMainWindow):
         if tryagain == QtGui.QMessageBox.Yes:
             self.load_proc()
 
-    def choose_stat(self):
-        swindow = QtGui.QMainWindow(self)
-        swindow.show()
-        swindow.setGeometry(700,300,350,400)
-        swindow.setWindowTitle('stats for classifier')
-        win = QtGui.QWidget(swindow)
-        #win.setWindowTitle('Image List')
-        win.setMinimumSize(300, 400)
-        layout = QtGui.QGridLayout()
-        win.setLayout(layout)
-        self.statlist = QtGui.QListWidget(win)
-        self.classlist = QtGui.QListWidget(win)
-        for key in self.stat[0]:
-            try:
-                lkey = len(self.stat[0][key])
-            except (TypeError):
-                lkey = 1
-            if lkey == 1:
-                self.statlabels.append(key)
-                statlist.addItem(key)
-        layout.addWidget(statlist,0,0,4,1)
-        sright = QtGui.QPushButton('-->')
-        sright.resize(sright.minimumSizeHint())
-        sright.clicked.connect(self.add_to_class)
-        sleft.clicked.connect(self.remove_from_class)
-        sleft = QtGui.QPushButton('<--')
-        sleft.resize(sleft.minimumSizeHint())
-        layout.addWidget(sright,1,1,1,1)
-        layout.addWidget(sleft,2,1,1,1)
-        layout.addWidget(classlist,0,2,4,1)
-        done = QtGui.QPushButton('OK')
-        done.resize(done.minimumSizeHint())
-        layout.addWidget(done,4,1,1,1)
-
-        win.show()
-        self.statlabels = []
-        statchosen = True
-        if statchosen:
-            self.loadTrain.setEnabled(True)
-            self.loadText.setEnabled(True)
-
-    def add_to_class(self):
-        print(self.statlist.itemClicked)
-    def remove_from_class(self):
-        print(self.stat)
-
-    def add_item(self):
-        print('yo')
-
     def load_traindata(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
-        if name:
-            print(name[0])
-            badfile = False
-            try:
-                iscell = np.load(name[0])
-                ncells = iscell.shape[0]
-            except (OSError, RuntimeError, TypeError, NameError):
-                print('not a numpy array of booleans')
-                badfile = True
-            if not badfile:
-                lstat = 0
+        # will return
+        self.traindata = np.zeros((0,len(self.statclass)+1),np.float32)
+        LC = gui.ListChooser('classifier training files', self)
+        result = LC.exec_()
+        if result:
+            self.load_trainfiles()
+    def load_trainfiles(self):
+        if self.trainfiles is not None:
+            for fname in self.trainfiles:
+                badfile = False
                 try:
-                    pkl_file = open(name[0], 'rb')
-                    stat = pickle.load(pkl_file)
-                    pkl_file.close()
-                    ypix = stat[0]['ypix']
-                    lstat = len(stat) - 1
-                except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                    print('ERROR: incorrect or missing stat.pkl file :(')
-                if lstat is not ncells:
-                    print('ERROR: stat.pkl is not the same length as iscell.npy')
-            #else:
-                # add iscell and stat to classifier
-
-    def load_traintext(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
-        if name:
-            print(name[0])
-            badfile = False
-            try:
-                iscell = np.load(name[0])
-                ncells = iscell.shape[0]
-            except (OSError, RuntimeError, TypeError, NameError):
-                print('not a numpy array of booleans')
-                badfile = True
-            if not badfile:
-                lstat = 0
-                try:
-                    pkl_file = open(name[0], 'rb')
-                    stat = pickle.load(pkl_file)
-                    pkl_file.close()
-                    ypix = stat[0]['ypix']
-                    lstat = len(stat) - 1
-                except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                    print('ERROR: incorrect or missing stat.pkl file :(')
-                if lstat is not ncells:
-                    print('ERROR: stat.pkl is not the same length as iscell.npy')
+                    iscell = np.load(fname)
+                    ncells = iscell.shape[0]
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('not a numpy array of booleans')
+                    badfile = True
+                if not badfile:
+                    basename, bname = os.path.split(fname)
+                    lstat = 0
+                    try:
+                        pkl_file = open(basename+'/stat.pkl', 'rb')
+                        stat = pickle.load(pkl_file)
+                        pkl_file.close()
+                        ypix = stat[0]['ypix']
+                        lstat = len(stat) - 1
+                    except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                        print(basename+': incorrect or missing stat.pkl file :(')
+                    if lstat != ncells:
+                        print(basename+': stat.pkl is not the same length as iscell.npy')
+                    else:
+                        # add iscell and stat to classifier
+                        print(fname+' was added to classifier')
+                        iscell = iscell.astype(np.float32)
+                        nall = np.zeros((ncells, len(self.statclass)+1),np.float32)
+                        nall[:,0] = iscell
+                        k=0
+                        for key in self.statclass:
+                            k+=1
+                            for n in range(0,ncells):
+                                nall[n,k] = stat[n][key]
+                        self.traindata = np.concatenate((self.traindata,nall),axis=0)
 
 def run():
     ## Always start by initializing Qt (only once per application)

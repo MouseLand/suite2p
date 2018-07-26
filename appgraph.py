@@ -150,12 +150,17 @@ class MainW(QtGui.QMainWindow):
 
         self.show()
         self.win.show()
-
-        self.load_proc(['C:/Users/carse/github/data/stat.pkl','*'])
+        #C:/Users/carse/github
+        self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)
         views = ['mean img', 'correlation map']
+        # add boundaries to stat for ROI overlays
+        ncells = self.Fcell.shape[0]
+        for n in range(0,ncells):
+            iext = fig.boundary(self.stat[n]['ypix'], self.stat[n]['xpix'])
+            self.stat[n]['iext'] = iext
         if 'mean_image_red' in self.ops:
             views.append('red channel mean')
         colors = ['random', 'skew', 'compact','footprint',
@@ -180,7 +185,6 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(clabel,b+2,0,1,1)
         nv = b+2
         b=0
-        ncells = self.Fcell.shape[0]
         allcols = np.random.random((ncells,1))
         self.clabels = []
         # colorbars for different statistics
@@ -264,12 +268,13 @@ class MainW(QtGui.QMainWindow):
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
             self.ops_plot[0] = True
-            if self.loaded:
-                M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
-                                    self.iscell, self.ichosen)
-                self.plot_masks(M)
         else:
             self.ops_plot[0] = False
+        if self.loaded:
+            M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
+                                self.iscell, self.ichosen)
+            self.plot_masks(M)
+            
     def plot_masks(self,M):
         self.img1.setImage(M[0])
         self.img2.setImage(M[1])

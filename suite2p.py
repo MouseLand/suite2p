@@ -15,9 +15,7 @@ def default_ops():
     ops = {
         'diameter':12, # this is the main parameter for cell detection
         'tau':  1., # this is the main parameter for deconvolution
-        'fs': 10.,  # sampling rate (total across planes)           
-        'data_path': 'H:/DATA/2017-10-13/',
-        'subfolders': ('4'),
+        'fs': 10.,  # sampling rate (total across planes)                   
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane  
         'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
@@ -34,7 +32,7 @@ def default_ops():
         'subpixel' : 10,
         'batch_size': 200, # number of frames per batch
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value        
-        'nimg_init': 400, # subsampled frames for finding reference image        
+        'nimg_init': 200, # subsampled frames for finding reference image        
         'navg_frames_svd': 5000,
         'nsvd_for_roi': 1000,
         'ratio_neuropil': 5,
@@ -67,9 +65,9 @@ def main(ops):
         # extract fluorescence and neuropil
         F, Fneu = celldetect.extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam)
         # deconvolve fluorescence
-        spks = dcnv.oasis(F - ops['neucoeff'] * Fneu, ops1[0])
+        spks = dcnv.oasis(F - ops['neucoeff'] * Fneu, ops)
         # save results
-        np.save(ops['ops_path'], spks)
+        np.save(ops['ops_path'], ops)
         fpath = ops['save_path']
         np.save(os.path.join(fpath,'F.npy'), F)
         np.save(os.path.join(fpath,'Fneu.npy'), Fneu)

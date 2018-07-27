@@ -8,8 +8,8 @@ from matplotlib.colors import hsv_to_rgb
 
 def boundary(ypix,xpix):
     ''' returns pixels of mask that are on the exterior of the mask '''
-    ypix = np.expand_dims(ypix,axis=1)
-    xpix = np.expand_dims(xpix,axis=1)
+    ypix = np.expand_dims(ypix.flatten(),axis=1)
+    xpix = np.expand_dims(xpix.flatten(),axis=1)
     npix = ypix.shape[0]
     idist = ((ypix - ypix.transpose())**2 + (xpix - xpix.transpose())**2)
     idist[np.arange(0,npix),np.arange(0,npix)] = 500
@@ -53,21 +53,24 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
             if view>0:
                 xpix = xpix[stat[n]['iext']]
             wmap = (1-int(iscell[n]))*np.ones(ypix.shape,dtype=np.int32)
-            Lam[wmap,ypix,xpix]    = np.expand_dims(lam,axis=1)
-            H[wmap,ypix,xpix]      = cols[n]*np.expand_dims(np.ones(ypix.shape), axis=1)
-            S[wmap,ypix,xpix]      = np.expand_dims(np.ones(ypix.shape), axis=1)
+            Lam[wmap,ypix,xpix]    = np.expand_dims(lam, axis=2)
+            H[wmap,ypix,xpix]      = cols[n]*np.expand_dims(np.ones(ypix.shape), axis=2)
+            S[wmap,ypix,xpix]      = np.expand_dims(np.ones(ypix.shape), axis=2)
             if n==ichosen:
-                S[wmap,ypix,xpix] = np.expand_dims(np.zeros(ypix.shape), axis=1)
+                S[wmap,ypix,xpix] = np.expand_dims(np.zeros(ypix.shape), axis=2)
 
     V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
     #V  = np.expand_dims(V,axis=2)
     M = []
     if view>=0:
         if view == 0:
-            mimg = ops['mean_image']
+            mimg = ops['meanImg']
             #S = V
         else:
-            mimg = ops['Vcorr']
+            vcorr = ops['Vcorr']
+            mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+            mimg[ops['yrange'][0]:ops['yrange'][1],
+                ops['xrange'][0]:ops['xrange'][1]] = vcorr
         mimg = mimg - mimg.min()
         mimg = mimg / mimg.max()
         V[0,:,:,:] = np.expand_dims(mimg,axis=2)

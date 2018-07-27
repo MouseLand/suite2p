@@ -110,7 +110,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #
         #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
-        self.load_proc(['C:/Users/carse/github/data/stat.pkl','*'])
+        self.load_proc(['C:/Users/carse/github/data/stat.npy','*'])
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)
@@ -119,7 +119,7 @@ class MainW(QtGui.QMainWindow):
         ncells = self.Fcell.shape[0]
         for n in range(0,ncells):
             iext = fig.boundary(self.stat[n]['ypix'], self.stat[n]['xpix'])
-            self.stat[n]['iext'] = iext
+            self.stat[n]['iext'] = np.expand_dims(iext,axis=0)
         if 'mean_image_red' in self.ops:
             views.append('red channel mean')
         colors = ['random', 'skew', 'compact','footprint',
@@ -198,10 +198,10 @@ class MainW(QtGui.QMainWindow):
         self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
         #gl.setParentItem(self.p1)
-        self.p1.setXRange(0,self.ops['Lx'])
-        self.p1.setYRange(0,self.ops['Ly'])
-        self.p2.setXRange(0,self.ops['Lx'])
-        self.p2.setYRange(0,self.ops['Ly'])
+        self.p1.setXRange(0,self.ops['Ly'])
+        self.p1.setYRange(0,self.ops['Lx'])
+        self.p2.setXRange(0,self.ops['Ly'])
+        self.p2.setYRange(0,self.ops['Lx'])
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -284,11 +284,11 @@ class MainW(QtGui.QMainWindow):
                 posx = int(posx)
                 if zoom:
                     if iplot==1:
-                        self.p1.setXRange(0,self.ops['Lx'])
-                        self.p1.setYRange(0,self.ops['Ly'])
+                        self.p1.setXRange(0,self.ops['Ly'])
+                        self.p1.setYRange(0,self.ops['Lx'])
                     elif iplot==2:
-                        self.p2.setXRange(0,self.ops['Lx'])
-                        self.p2.setYRange(0,self.ops['Ly'])
+                        self.p2.setXRange(0,self.ops['Ly'])
+                        self.p2.setYRange(0,self.ops['Lx'])
                     else:
                         self.p3.setXRange(0,self.Fcell.shape[1])
                         self.p3.setYRange(self.fmin,self.fmax)
@@ -321,49 +321,49 @@ class MainW(QtGui.QMainWindow):
         if name:
             print(name[0])
             try:
-                with open(name[0], 'rb') as pkl_file:
-                    self.stat = pickle.load(pkl_file)
+                self.stat = np.load(name[0])
+                self.stat = self.stat.item()
                 ypix = self.stat[0]['ypix']
-            except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                print('this is not a stat.pkl file :( (needs stat[n]["ypix"]!)')
+            except (KeyError, OSError, RuntimeError, TypeError, NameError):
+                print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
                 self.stat = None
             if self.stat is not None:
                 basename, fname = os.path.split(name[0])
                 self.basename = basename
                 goodfolder = True
                 try:
-                    self.Fcell = np.load(basename + '/Fcell.npy')
+                    self.Fcell = np.load(basename + '/F.npy')
                     self.Fneu = np.load(basename + '/Fneu.npy')
                 except (OSError, RuntimeError, TypeError, NameError):
-                    print('there are no fluorescence traces in this folder (Fcell.npy/Fneu.npy)')
+                    print('ERROR: there are no fluorescence traces in this folder (F.npy/Fneu.npy)')
                     goodfolder = False
                 try:
-                    self.Spks = np.load(basename + '/Spks.npy')
+                    self.Spks = np.load(basename + '/spks.npy')
                 except (OSError, RuntimeError, TypeError, NameError):
-                    print('there are no spike deconvolved traces in this folder (Spks.npy)')
+                    print('there are no spike deconvolved traces in this folder (spks.npy)')
                 try:
                     self.iscell = np.load(basename + '/iscell.npy')
                 except (OSError, RuntimeError, TypeError, NameError):
                     print('no manual labels found (iscell.npy)')
                 try:
-                    with open(basename + '/ops.pkl', 'rb') as pkl_file:
-                        self.ops = pickle.load(pkl_file)
-                except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                    print('there is no ops file in this folder (ops.pkl)')
+                    self.ops = np.load(basename + '/ops.npy')
+                    self.ops = self.ops.item()
+                except (OSError, RuntimeError, TypeError, NameError):
+                    print('ERROR: there is no ops file in this folder (ops.npy)')
                     goodfolder = False
                 if goodfolder:
                     self.make_masks_and_buttons(name[0])
                     self.loaded = True
                 else:
-                    print('stat.pkl found, but other files not in folder')
+                    print('stat.npy found, but other files not in folder')
+                    Text = 'stat.npy found, but other files missing, choose another?'
                     self.load_again(Text)
-                    Text = 'stat.pkl found, but other files missing, choose another?'
             else:
                 Text = 'Incorrect file, not a stat.pkl, choose another?'
                 self.load_again(Text)
 
     def load_again(self,Text):
-        tryagain = QtGui.QMessageBox.question(self, 'error',
+        tryagain = QtGui.QMessageBox.question(self, 'ERROR',
                                         Text,
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if tryagain == QtGui.QMessageBox.Yes:
@@ -376,10 +376,11 @@ class MainW(QtGui.QMainWindow):
         result = LC.exec_()
         if result:
             print('Repopulating classifier:')
-            self.traindata, self.trainfiles = gui.load_trainfiles(self.trainfiles, self.statclass)
+            self.model = classifier.Classifier(classfile=None,
+                                               trainfiles=self.trainfiles,
+                                               statclass=self.statclass)
             if self.trainfiles is not None:
                 self.activate_classifier()
-                self.hists = classifier.train(self.traindata)
 
     def activate_classifier(self):
         self.classbtn.setEnabled(True)
@@ -416,7 +417,7 @@ class MainW(QtGui.QMainWindow):
         if len(ftrue)==0:
             self.trainfiles.append(self.basename+'/iscell.npy')
         print('Repopulating classifier including current dataset:')
-        self.traindata, self.trainfiles = gui.load_trainfiles(self.trainfiles, self.statclass)
+        self.traindata, self.trainfiles = classifier.load_data(self.trainfiles, self.statclass)
         self.hists = classifier.train(self.traindata)
 
     def apply_classifier(self):

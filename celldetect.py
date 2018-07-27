@@ -31,56 +31,73 @@ def getSVDdata(ops):
         nimgd = int(np.floor(data.size / (Ly*Lx)))
         if nimgd == 0:
             break
+<<<<<<< HEAD
         #data = np.reshape(data.astype(np.float32), (Ly,Lx,nimgd), order='F')
         #data = np.transpose(data, (2,0,1))    
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)        
         
+=======
+        data = np.reshape(data.astype(np.float32), (Ly,Lx,nimgd), order='F')
+        data = np.transpose(data, (2,0,1))
+
+        #data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+
+>>>>>>> 2fc95e0dd3adefada4c7aea026af56cbfd5aab06
         # bin data
         if nimgd < nimgbatch:
             nmax = int(np.floor(nimgd / nt0) * nt0)
             data = data[:nmax,:,:]
         dbin = np.reshape(data, (-1,nt0,Ly,Lx))
         dbin = np.squeeze(dbin.mean(axis=1))
-        dbin = dbin - dbin.mean(axis=0)    
+        dbin = dbin - dbin.mean(axis=0)
         inds = ix + np.arange(0,dbin.shape[0])
         # crop into valid area
         mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
         ix += dbin.shape[0]
-    reg_file.close()    
-    
+    reg_file.close()
+
     nbins, Lyc, Lxc = np.shape(mov)
-    
+
     sig = .5
     for j in range(nbins):
+<<<<<<< HEAD
         mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     
+=======
+        mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], (sig, sig))
+
+>>>>>>> 2fc95e0dd3adefada4c7aea026af56cbfd5aab06
     mov = np.reshape(mov, (-1,Lyc*Lxc))
     # compute noise variance across frames (assumes slow signal)
     sdmov = np.mean(np.diff(mov, axis = 0)**2, axis = 0)**.5
     sdmov = np.maximum(1e-10,sdmov)
     # normalize pixels by noise variance
     mov = mov / sdmov
-    
+
     # compute covariance of binned frames
     cov = mov @ mov.transpose() / mov.shape[1]
     cov = cov.astype('float32')
+<<<<<<< HEAD
     
     nsvd_for_roi = min(ops['nsvd_for_roi'], cov.shape[0]-2)    
+=======
+    nsvd_for_roi = min(ops['nsvd_for_roi'], cov.shape[0]-2)
+>>>>>>> 2fc95e0dd3adefada4c7aea026af56cbfd5aab06
     u, s, v = np.linalg.svd(cov)
     u = u[:, :nsvd_for_roi]
-    U = np.dot(u.transpose() , mov)        
-    U = np.reshape(U, (-1,Lyc,Lxc))    
-    
+    U = np.dot(u.transpose() , mov)
+    U = np.reshape(U, (-1,Lyc,Lxc))
+
     return U, sdmov
-    
-def getStU(ops, U):    
-    nbins, Lyc, Lxc = np.shape(U)        
+
+def getStU(ops, U):
+    nbins, Lyc, Lxc = np.shape(U)
     S = getNeuropilBasis(ops, Lyc, Lxc)
     # compute covariance of neuropil masks with spatial masks
-    U = np.reshape(U, (-1,Lyc*Lxc))    
+    U = np.reshape(U, (-1,Lyc*Lxc))
     StU = S @ U.transpose()
     StS = S @ S.transpose()
-    U = np.reshape(U, (-1,Lyc,Lxc))    
+    U = np.reshape(U, (-1,Lyc,Lxc))
     return S, StU , StS
 
 def drawClusters(r,mPix,mLam,Ly,Lx):
@@ -103,57 +120,57 @@ def drawClusters(r,mPix,mLam,Ly,Lx):
             Lam[ypix,xpix] = lam[isingle]
             iclust[ypix,xpix] = n*np.ones(ypix.shape)
             H[ypix,xpix,0] = r[n]*np.ones(ypix.shape)
-        
+
     S  = np.ones((Ly,Lx,1))
     V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
     V  = np.expand_dims(V,axis=2)
     hsv = np.concatenate((H,S,V),axis=2)
     rgb = hsv_to_rgb(hsv)
-    
+
     return rgb
-    
+
 
 def getNeuropilBasis(ops, Ly, Lx):
     ''' computes neuropil basis functions
-        inputs: 
+        inputs:
             ops, Ly, Lx
             from ops: ratio_neuropil, tile_factor, diameter, neuropil_type
-        outputs: 
+        outputs:
             basis functions (pixels x nbasis functions)
     '''
     ratio_neuropil = ops['ratio_neuropil']
     tile_factor    = ops['tile_factor']
     diameter       = ops['diameter']
-    
+
     ntiles  = int(np.ceil(tile_factor * (Ly+Lx)/2 / (ratio_neuropil * diameter/2)))
-    
+
     yc = np.linspace(1, Ly, ntiles)
     xc = np.linspace(1, Lx, ntiles)
     ys = np.arange(0,Ly)
     xs = np.arange(0,Lx)
-        
+
     Kx = np.zeros((Lx, ntiles), 'float32')
     Ky = np.zeros((Ly, ntiles), 'float32')
     for k in range(ntiles):
         Ky[:,k] = np.cos(math.pi * (ys+0.5) *  k/Ly)
         Kx[:,k] = np.cos(math.pi * (xs+0.5) *  k/Lx)
-    
+
     S = np.zeros((ntiles, ntiles, Ly, Lx), np.float32)
-    for kx in range(ntiles):        
-        for ky in range(ntiles):    
-            S[ky,kx,:,:] = np.outer(Ky[:,ky], Kx[:,kx])        
-    
+    for kx in range(ntiles):
+        for ky in range(ntiles):
+            S[ky,kx,:,:] = np.outer(Ky[:,ky], Kx[:,kx])
+
     #sigy = 4*(Ly - 1)/ntiles
     #sigx = 4*(Lx - 1)/ntiles
-    
-    #for kx in range(ntiles):        
-    #    for ky in range(ntiles):        
+
+    #for kx in range(ntiles):
+    #    for ky in range(ntiles):
     #        cosy = 1 + np.cos(2*math.pi*(ys - yc[ky])/sigy)
     #        cosx = 1 + np.cos(2*math.pi*(xs - xc[kx])/sigx)
     #        cosy[abs(ys-yc[ky]) > sigy/2] = 0
     #        cosx[abs(xs-xc[kx]) > sigx/2] = 0
     #        S[ky,kx,:,:] = np.outer(cosy, cosx)
-    
+
     S = np.reshape(S,(ntiles*ntiles, Ly*Lx))
     S = S / np.reshape(np.sum(S**2,axis=-1)**0.5, (-1,1))
     return S
@@ -161,9 +178,9 @@ def getNeuropilBasis(ops, Ly, Lx):
 
 def circleMask(d0):
     ''' creates array with indices which are the radius of that x,y point
-        inputs: 
+        inputs:
             d0 (patch of (-d0,d0+1) over which radius computed
-        outputs: 
+        outputs:
             rs: array (2*d0+1,2*d0+1) of radii
             dx,dy: indices in rs where the radius is less than d0
     '''
@@ -180,8 +197,8 @@ def morphOpen(V, footprint):
     vrem   = filters.minimum_filter(V, footprint=footprint)
     vrem   = -filters.minimum_filter(-vrem, footprint=footprint)
     return vrem
-  
-    
+
+
 def localMax(V, footprint, thres):
     ''' find local maxima of V (correlation map) using a filter with (usually circular) footprint
         inputs:
@@ -195,19 +212,19 @@ def localMax(V, footprint, thres):
     i    = i.astype(np.int32)
     j    = j.astype(np.int32)
     return i,j
-    
-    
+
+
 def localRegion(i,j,dy,dx,Ly,Lx):
     ''' returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)'''
     xc = dx + j
     yc = dy + i
     goodi = (xc>=0) & (xc<Lx) & (yc>=0) & (yc<Ly)
     xc = xc[goodi]
-    yc = yc[goodi] 
+    yc = yc[goodi]
     yc = yc.astype(np.int32)
     xc = xc.astype(np.int32)
     return yc, xc, goodi
-        
+
 def connectedRegion(mLam, rsmall, d0):
     mLam0 = np.zeros(rsmall.shape)
     mLam1 = np.zeros(rsmall.shape)
@@ -220,13 +237,19 @@ def connectedRegion(mLam, rsmall, d0):
     mask[mmax] = 1
     mask = np.resize(mask, (2*d0+1, 2*d0+1))
 
+<<<<<<< HEAD
     for m in range(int(np.ceil(mask.shape[0]/2))):        
         mask = filters.maximum_filter1d(mask, 3, axis=0) * mLam0   
         mask = filters.maximum_filter1d(mask, 3, axis=1) * mLam0   
         #mask = filters.maximum_filter(mask, footprint=rsmall<=1.5) * mLam0   
         
+=======
+    for m in range(int(np.ceil(mask.shape[0]/2))):
+        mask = filters.maximum_filter(mask, footprint=rsmall<=float(d0)/4) * mLam0
+
+>>>>>>> 2fc95e0dd3adefada4c7aea026af56cbfd5aab06
     mLam *= mask[rsmall<=d0]
-    return mLam 
+    return mLam
 
 
 def pairwiseDistance(y,x):
@@ -280,14 +303,14 @@ def getStat(Ly, Lx, d0, mPix, mLam, codes, Ucell):
         stat[n]['mrs'] = dd.mean() / d0
         dd = dists_radius[np.ix_(lam>1e-3, lam>1e-3)]
         stat[n]['mrs0'] = dd.mean() / d0
-        
+
         stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
-        
+
     mfoot = np.median(footprints)
     for n in range(ncells):
         stat[n]['footprint'] = stat[n]['footprint'] / mfoot
-        
-    return stat   
+
+    return stat
 
 
 def getOverlaps(stat,Ly,Lx):
@@ -308,7 +331,7 @@ def getOverlaps(stat,Ly,Lx):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         stat[n]['overlap'] = mask[ypix,xpix] > 1
-        
+
     return stat
 
 
@@ -321,7 +344,7 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
     outputs:
         stat, cell_pix (Ly,Lx), cell_masks (ncells,Ly,Lx)
             assigned to stat: radius (minimum of 3 pixels)
-    '''    
+    '''
     ncells = len(stat)
     cell_pix = np.zeros((Ly,Lx))
     cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
@@ -345,7 +368,7 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
         else:
             stat[n]['radius'] = 0
     cell_pix = np.minimum(1, cell_pix)
-    
+
     return stat, cell_pix, cell_masks
 
 
@@ -358,7 +381,7 @@ def neuropilMasks(ops, stat, cell_pix):
             cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
     outputs:
         neuropil_masks (ncells,Ly,Lx)
-    '''    
+    '''
     inner_radius = int(ops['inner_neuropil_radius'])
     outer_radius = ops['outer_neuropil_radius']
     # if outer_radius is infinite, define outer radius as a multiple of the cell radius
@@ -367,7 +390,7 @@ def neuropilMasks(ops, stat, cell_pix):
         ratio      = ops['ratio_neuropil_to_cell']
     # dilate the cell pixels by inner_radius to create ring around cells
     expanded_cell_pix = ndimage.grey_dilation(cell_pix, (inner_radius,inner_radius))
-    
+
     ncells = len(stat)
     Ly = cell_pix.shape[0]
     Lx = cell_pix.shape[1]
@@ -385,13 +408,17 @@ def neuropilMasks(ops, stat, cell_pix):
                     neuropil_on       = (((y - cell_center[1])**2 + (x - cell_center[0])**2)**0.5) <= outer_radius
                     neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
                     npixels = neuropil_no_cells.astype(np.int32).sum()
+<<<<<<< HEAD
                     outer_radius *= 1.25  
+=======
+                    outer_radius *= 1.25
+>>>>>>> 2fc95e0dd3adefada4c7aea026af56cbfd5aab06
                 neuropil_masks[n,:,:] = neuropil_no_cells.astype(np.float32) / npixels
             else:
                 neuropil_on       = ((y - cell_center[0])**2 + (x - cell_center[1])**2)**0.5 <= outer_radius
                 neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
                 neuropil_masks[n,:,:] = neuropil_no_cells.astype(np.float32) / npixels
-                
+
     return neuropil_masks
 
 def getVmap(Ucell, sig):

@@ -3,11 +3,39 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 import os
-import glob
 import pickle
 import fig
 
-### custom layout which makes a list of items you can include/exclude
+### custom QDialog which allows user to fill in ops
+class OpsValues(QtGui.QDialog):
+    def __init__(self, ops_file, parent=None):
+        super(OpsValues, self).__init__(parent)
+        self.setGeometry(100,100,600,500)
+        self.setWindowTitle('Choose run options')
+        self.win = QtGui.QWidget(self)
+        layout = QtGui.QGridLayout()
+        #layout = QtGui.QFormLayout()
+        self.win.setLayout(layout)
+        # initial ops values
+        pkl_file = open(ops_file,'rb')
+        ops = pickle.load(pkl_file)
+        pkl_file.close()
+        k = 0
+        for key in ops:
+            lops = 1
+            try:
+                lops = len(ops[key])
+            except (TypeError):
+                lops = 1
+            if lops==1:
+                qedit = QtGui.QLineEdit()
+                qedit.setInputMask('%5.2f'%float(ops[key]))
+                layout.addWidget(QtGui.QLabel(key),k%18,2*np.floor(float(k)/18),1,1)
+                layout.addWidget(qedit,k%18,2*np.floor(float(k)/18)+1,1,1)
+
+                k+=1
+
+### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):
     def __init__(self, Text, parent=None):
         super(ListChooser, self).__init__(parent)
@@ -118,3 +146,44 @@ class ColorButton(QtGui.QPushButton):
                                 parent.iscell, parent.ichosen)
             parent.plot_masks(M)
             parent.plot_colorbar(bid)
+
+def load_trainfiles(trainfiles, statclass):
+    traindata = np.zeros((0,len(statclass)+1),np.float32)
+    trainfiles_good = []
+    if trainfiles is not None:
+        for fname in trainfiles:
+            badfile = False
+            basename, bname = os.path.split(fname)
+            try:
+                iscell = np.load(fname)
+                ncells = iscell.shape[0]
+            except (OSError, RuntimeError, TypeError, NameError):
+                print(fname+': not a numpy array of booleans')
+                badfile = True
+            if not badfile:
+                basename, bname = os.path.split(fname)
+                lstat = 0
+                try:
+                    pkl_file = open(basename+'/stat.pkl', 'rb')
+                    stat = pickle.load(pkl_file)
+                    pkl_file.close()
+                    ypix = stat[0]['ypix']
+                    lstat = len(stat) - 1
+                except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
+                    print('\t'+'basename+': incorrect or missing stat.pkl file :(')
+                if lstat != ncells:
+                    print('\t'+basename+': stat.pkl is not the same length as iscell.npy')
+                else:
+                    # add iscell and stat to classifier
+                    print('\t'+fname+' was added to classifier')
+                    iscell = iscell.astype(np.float32)
+                    nall = np.zeros((ncells, len(statclass)+1),np.float32)
+                    nall[:,0] = iscell
+                    k=0
+                    for key in statclass:
+                        k+=1
+                        for n in range(0,ncells):
+                            nall[n,k] = stat[n][key]
+                    traindata = np.concatenate((traindata,nall),axis=0)
+                    trainfiles_good.append(fname)
+    return traindata, trainfiles_good

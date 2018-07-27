@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import fig
 import gui
+import classifier
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -23,31 +24,40 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         ### menu bar options
         # run suite2p from scratch
-        #runS2P =  QtGui.QAction('&Run suite2p ', self)
+        runS2P =  QtGui.QAction('&Run suite2p ', self)
+        runS2P.setShortcut('Ctrl+R')
+        runS2P.triggered.connect(self.run_suite2p)
+        self.addAction(runS2P)
         # load processed data
         loadProc = QtGui.QAction('&Load processed data (choose stat.pkl file)', self)
         loadProc.setShortcut('Ctrl+L')
         loadProc.triggered.connect(self.load_proc)
         self.addAction(loadProc)
         # load masks
-        loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
-        loadMask.setShortcut('Ctrl+M')
-        self.addAction(loadMask)
+        #loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
+        #loadMask.setShortcut('Ctrl+M')
+        #self.addAction(loadMask)
         # make mainmenu!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu('&File')
+        file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
-        file_menu.addAction(loadMask)
+        #file_menu.addAction(loadMask)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['npix', 'compact', 'radius']
-        self.loadTrain = QtGui.QAction('&Load training data (choose stat.pkl file)', self)
+        self.loadTrain = QtGui.QAction('&Load training data (choose iscell.npy files)', self)
         self.loadTrain.setShortcut('Ctrl+K')
         self.loadTrain.triggered.connect(self.load_traindata)
         self.loadTrain.setEnabled(False)
+        self.saveTrain = QtGui.QAction('&Save training data list', self)
+        self.saveTrain.setShortcut('Ctrl+S')
+        self.saveTrain.triggered.connect(self.save_trainlist)
+        self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
         class_menu.addAction(self.loadTrain)
+        class_menu.addAction(self.saveTrain)
 
         # main widget
         cwidget = QtGui.QWidget(self)
@@ -167,6 +177,13 @@ class MainW(QtGui.QMainWindow):
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
         self.btnstate.append(False)
+        # statistics from current dataset for Classifier
+        self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
+        k=0
+        for key in self.statclass:
+            for n in range(0,ncells):
+                self.statistics[n,k] = self.stat[n][key]
+            k+=1
 
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
@@ -203,7 +220,7 @@ class MainW(QtGui.QMainWindow):
         self.colorbar.set_xticklabels(['%1.2f'%self.clabels[bid][0],
                                         '%1.2f'%self.clabels[bid][1],
                                         '%1.2f'%self.clabels[bid][2]],
-                                        fontsize='small')
+                                        fontsize=6)
         self.canvas.draw()
 
     def plot_trace(self):
@@ -275,6 +292,7 @@ class MainW(QtGui.QMainWindow):
                     else:
                         self.p3.setXRange(0,self.Fcell.shape[1])
                         self.p3.setYRange(self.fmin,self.fmax)
+                    self.show()
                 if choose:
                     ichosen = int(self.iROI[posx,posy])
                     if self.ichosen == ichosen:
@@ -286,12 +304,16 @@ class MainW(QtGui.QMainWindow):
                     if 2-iscell == iplot:
                         self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
                         np.save(self.basename+'/iscell.npy', self.iscell)
-                if choose or flip:
+                if choose or flip or zoom:
                     M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                         self.iscell, self.ichosen)
                     self.plot_masks(M)
                     self.plot_trace()
                     self.show()
+
+    def run_suite2p(self):
+        LC = gui.OpsValues('C:/Users/carse/github/data/ops.pkl', self)
+        LC.show()
 
     def load_proc(self, name):
         if name is None:
@@ -299,14 +321,12 @@ class MainW(QtGui.QMainWindow):
         if name:
             print(name[0])
             try:
-                pkl_file = open(name[0], 'rb')
-                self.stat = pickle.load(pkl_file)
-                pkl_file.close()
+                with open(name[0], 'rb') as pkl_file:
+                    self.stat = pickle.load(pkl_file)
                 ypix = self.stat[0]['ypix']
             except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
                 print('this is not a stat.pkl file :( (needs stat[n]["ypix"]!)')
                 self.stat = None
-
             if self.stat is not None:
                 basename, fname = os.path.split(name[0])
                 self.basename = basename
@@ -326,9 +346,8 @@ class MainW(QtGui.QMainWindow):
                 except (OSError, RuntimeError, TypeError, NameError):
                     print('no manual labels found (iscell.npy)')
                 try:
-                    pkl_file = open(basename + '/ops.pkl', 'rb')
-                    self.ops = pickle.load(pkl_file)
-                    pkl_file.close()
+                    with open(basename + '/ops.pkl', 'rb') as pkl_file:
+                        self.ops = pickle.load(pkl_file)
                 except (OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
                     print('there is no ops file in this folder (ops.pkl)')
                     goodfolder = False
@@ -356,42 +375,64 @@ class MainW(QtGui.QMainWindow):
         LC = gui.ListChooser('classifier training files', self)
         result = LC.exec_()
         if result:
-            self.load_trainfiles()
-    def load_trainfiles(self):
-        if self.trainfiles is not None:
-            for fname in self.trainfiles:
-                badfile = False
-                try:
-                    iscell = np.load(fname)
-                    ncells = iscell.shape[0]
-                except (OSError, RuntimeError, TypeError, NameError):
-                    print('not a numpy array of booleans')
-                    badfile = True
-                if not badfile:
-                    basename, bname = os.path.split(fname)
-                    lstat = 0
-                    try:
-                        pkl_file = open(basename+'/stat.pkl', 'rb')
-                        stat = pickle.load(pkl_file)
-                        pkl_file.close()
-                        ypix = stat[0]['ypix']
-                        lstat = len(stat) - 1
-                    except (KeyError, OSError, RuntimeError, TypeError, NameError, pickle.UnpicklingError):
-                        print(basename+': incorrect or missing stat.pkl file :(')
-                    if lstat != ncells:
-                        print(basename+': stat.pkl is not the same length as iscell.npy')
-                    else:
-                        # add iscell and stat to classifier
-                        print(fname+' was added to classifier')
-                        iscell = iscell.astype(np.float32)
-                        nall = np.zeros((ncells, len(self.statclass)+1),np.float32)
-                        nall[:,0] = iscell
-                        k=0
-                        for key in self.statclass:
-                            k+=1
-                            for n in range(0,ncells):
-                                nall[n,k] = stat[n][key]
-                        self.traindata = np.concatenate((self.traindata,nall),axis=0)
+            print('Repopulating classifier:')
+            self.traindata, self.trainfiles = gui.load_trainfiles(self.trainfiles, self.statclass)
+            if self.trainfiles is not None:
+                self.activate_classifier()
+                self.hists = classifier.train(self.traindata)
+
+    def activate_classifier(self):
+        self.classbtn.setEnabled(True)
+        self.saveTrain.setEnabled(True)
+        applyclass = QtGui.QPushButton('apply classifier')
+        applyclass.resize(100,50)
+        applyclass.clicked.connect(self.apply_classifier)
+        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),13,0,1,1)
+        self.probedit = QtGui.QDoubleSpinBox(self)
+        self.probedit.setDecimals(3)
+        self.probedit.setMaximum(1.0)
+        self.probedit.setMinimum(0.0)
+        self.probedit.setSingleStep(0.01)
+        self.probedit.setValue(0.5)
+        #self.probedit.setValidator(QtGui.QDoubleValidator())
+        #self.probedit.setText('0.5')
+        #self.probedit.setMaxLength(5)
+        #qedit.move(10,600)
+        self.probedit.setFixedWidth(55)
+        self.l0.addWidget(self.probedit,13,0,1,1)
+        self.l0.addWidget(applyclass,14,0,1,1)
+        addtoclass = QtGui.QPushButton('add current data \n to classifier')
+        addtoclass.resize(100,100)
+        addtoclass.clicked.connect(self.add_to_classifier)
+        self.l0.addWidget(addtoclass,15,0,1,1)
+        saveclass = QtGui.QPushButton('save classifier')
+        saveclass.resize(100,50)
+        saveclass.clicked.connect(self.save_trainlist)
+        self.l0.addWidget(saveclass,16,0,1,1)
+
+    def add_to_classifier(self):
+        fname = self.basename+'/iscell.npy'
+        ftrue =  [f for f in self.trainfiles if fname in f]
+        if len(ftrue)==0:
+            self.trainfiles.append(self.basename+'/iscell.npy')
+        print('Repopulating classifier including current dataset:')
+        self.traindata, self.trainfiles = gui.load_trainfiles(self.trainfiles, self.statclass)
+        self.hists = classifier.train(self.traindata)
+
+    def apply_classifier(self):
+        classval = self.probedit.value()
+        self.iscell = classifier.apply(self.hists, self.statistics, classval)
+
+    def save_trainlist(self):
+        name = QtGui.QFileDialog.getSaveFileName(self,'Save list of iscell.npy')
+        if name:
+            try:
+                with open(name[0],'w') as fid:
+                    for f in self.trainfiles:
+                        fid.write(f)
+                        fid.write('\n')
+            except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
+                print('ERROR: incorrect filename for saving')
 
 def run():
     ## Always start by initializing Qt (only once per application)

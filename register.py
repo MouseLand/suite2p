@@ -7,6 +7,7 @@ from numpy import fft
 from numpy import random as rnd
 from joblib import Parallel, delayed
 import multiprocessing
+from multiprocessing import Pool
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -93,7 +94,8 @@ def getXYup(cc, Ls, ops):
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
     return ymax, xmax, cmax
 
-def shift_data(X, ymax,xmax):    
+def shift_data(inputs):    
+    X, ymax, xmax = inputs    
     X = fft.fft2(X.astype('float32'))            
     nimg, Ly, Lx = X.shape    
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
@@ -105,7 +107,8 @@ def shift_data(X, ymax,xmax):
     Y = np.real(fft.ifft2(X * np.exp((2j * np.pi) * dph)))
     return Y
     
-def phasecorr_worker(data, refImg, ops, flag_zeroed):    
+def phasecorr_worker(inputs):
+    data, refImg, ops, flag_zeroed = inputs
     nimg, Ly, Lx = data.shape        
     refImg = np.reshape(refImg, (1, Ly, Lx))    
     Lyhalf = int(np.floor(Ly/2))
@@ -120,12 +123,12 @@ def phasecorr_worker(data, refImg, ops, flag_zeroed):
     if flag_zeroed:
         xmax = xmax - xmax.mean()
         ymax = ymax - ymax.mean()        
-    Y = shift_data(data, ymax,xmax)    
+    Y = shift_data((data, ymax,xmax))    
     return Y, ymax, xmax, cmax
 
 def phasecorr(data, refImg, ops, flag_zeroed):        
     if ops['num_workers']<0:
-        Y, ymax, xmax = phasecorr_worker(data, refImg, ops)
+        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops, flag_zeroed))
     else:
         nimg = data.shape[0]    
         if ops['num_workers']<1:
@@ -133,13 +136,23 @@ def phasecorr(data, refImg, ops, flag_zeroed):
         num_cores = ops['num_workers']
         
         nbatch = int(np.ceil(nimg/float(num_cores)))    
-        inputs = np.arange(0, nimg, 50)
+        #nbatch = 50
+        inputs = np.arange(0, nimg, nbatch)
+        
+        #for i in inputs:
+         #   irange.append(ilist)            
+        #results = Parallel(n_jobs=num_cores)(delayed(phasecorr_worker)(data[irange[j],:, :], 
+        #                                                              refImg, ops, flag_zeroed) for j in range(0,len(irange)))
+        
         irange = []
+        dsplit = []        
         for i in inputs:
-            irange.append(i + np.arange(0,np.minimum(50, nimg-i)))
-        #if __name__ == '__main__':
-        results = Parallel(n_jobs=num_cores)(delayed(phasecorr_worker)(data[irange[j],:, :], 
-                                                                       refImg, ops, flag_zeroed) for j in range(0,len(irange)))
+            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
+            irange.append(ilist)  
+            dsplit.append([data[ilist,:, :], refImg, ops, flag_zeroed])            
+        with Pool(num_cores) as p:
+            results = p.map(phasecorr_worker, dsplit)
+            
         Y = np.zeros_like(data)
         ymax = np.zeros((nimg,))
         xmax = np.zeros((nimg,))        
@@ -158,19 +171,28 @@ def get_nFrames(ops):
 
 def register_myshifts(ops, data, ymax, xmax):    
     if ops['num_workers']<0:
-        dreg = shift_data(data, ymax, xmax)
+        dreg = shift_data((data, ymax, xmax))
     else:        
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)            
         num_cores = ops['num_workers']       
         nimg = data.shape[0]    
-        nbatch = int(np.ceil(nimg/float(num_cores)))    
-        inputs = range(0, nimg, nbatch)
+        nbatch = int(np.ceil(nimg/float(num_cores))) 
+        #nbatch = 50
+        inputs = np.arange(0, nimg, nbatch)
+        
         irange = []
+        dsplit = []        
         for i in inputs:
+            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))   
-        results = Parallel(n_jobs=num_cores)(delayed(shift_data)(data[irange[j],:, :], 
-                                                                 ymax[irange[j]], xmax[irange[j]]) for j in range(0,len(irange)))   
+            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist]])            
+        with Pool(num_cores) as p:
+            results = p.map(shift_data, dsplit)
+        
+        #results = Parallel(n_jobs=num_cores)(delayed(shift_data)(data[irange[j],:, :], 
+        #                                                         ymax[irange[j]], #xmax[irange[j]]) for j in range(0,len(irange)))   
+        
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]        

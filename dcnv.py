@@ -1,9 +1,10 @@
 import numpy as np
-from joblib import Parallel, delayed
 import multiprocessing
 from scipy.ndimage import filters
+from multiprocessing import Pool
 
-def oasis1t(F, ops):
+def oasis1t(inputs):
+    F, ops = inputs
     ca = F    
     NT = F.shape[0]
     
@@ -48,8 +49,14 @@ def oasis(F, ops):
     F = preprocess(F,ops)
     
     inputs = range(F.shape[0])
-
-    results = Parallel(n_jobs=num_cores)(delayed(oasis1t)(F[i, :], ops) for i in inputs)
+    Fsplit = []
+    for i in inputs:
+        Fsplit.append((F[i,:], ops))
+    
+    with Pool(num_cores) as p:
+        results = p.map(oasis1t, Fsplit)
+        
+    #results = Parallel(n_jobs=num_cores)(delayed(oasis1t)(F[i, :], ops) for i in inputs)
     
     # collect results as numpy array
     sp = np.zeros_like(F)

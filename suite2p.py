@@ -1,15 +1,6 @@
 import numpy as np
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from scipy import ndimage
-import math
-import utils
-from matplotlib.colors import hsv_to_rgb
-import matplotlib.pyplot as plt
-import scipy.sparse as sparse
 import time, os
 import register, dcnv, celldetect
-
 
 def default_ops():
     ops = {
@@ -50,6 +41,12 @@ def default_ops():
     return ops
 
 def main(ops):    
+    # get defaults options
+    ops0 = default_ops()
+
+    # combine with user options
+    ops = {**ops0, **ops} 
+
     # copy tiff to a binary
     ops1 = register.tiff_to_binary(ops)
     # register tiff

@@ -44,12 +44,11 @@ def default_ops():
         'diameter': 12
       }
     return ops
-
 ### custom QDialog which allows user to fill in ops
 class OpsValues(QtGui.QDialog):
     def __init__(self, ops_file, parent=None):
         super(OpsValues, self).__init__(parent)
-        self.setGeometry(100,100,600,500)
+        self.setGeometry(100,100,800,500)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         layout = QtGui.QGridLayout()
@@ -63,16 +62,21 @@ class OpsValues(QtGui.QDialog):
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['tau','win_baseline','sig_baseline','prctile_baseline','neucoeff']
         keys = [tifkeys, regkeys, cellkeys, neukeys, deconvkeys]
+        labels = ['Filepaths','Main settings','Registration','Cell detection','Neuropil','Deconvolution']
         l=0
         for lkey in keys:
             k = 0
+            qlabel = QtGui.QLabel(labels[l])
+            bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+            qlabel.setFont(bigfont)
+            layout.addWidget(qlabel,0,l,1,1)
             for key in lkey:
                 lops = 1
-                if ops[key]:
+                if ops[key] or (ops[key] == 0):
                     qedit = QtGui.QLineEdit()
                     qedit.setText(str(ops[key]))
-                    layout.addWidget(QtGui.QLabel(key),k*2,l,1,1)
-                    layout.addWidget(qedit,k*2+1,l,1,1)
+                    layout.addWidget(QtGui.QLabel(key),k*2+1,l,1,1)
+                    layout.addWidget(qedit,k*2+2,l,1,1)
                 k+=1
             l+=1
 

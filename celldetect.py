@@ -33,20 +33,24 @@ def getSVDdata(ops):
     i0 = tic()
     
     nframes = ops['nframes']
-    nt0 = np.ceil(nframes / ops['navg_frames_svd']);
-    nt0 = int(nt0)
+    bin_min = np.round(nframes / ops['navg_frames_svd']).astype('int32');
+    bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
+    nt0 = max(bin_min, bin_tau)
     ops['navg_frames_svd'] = np.floor(nframes/nt0).astype('int32')
     
-    # load and bin data
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
     reg_file = open(ops['reg_file'], 'rb')
-    nimgbatch = nt0 * np.ceil(2000/nt0)
+    
+    nimgbatch = max(500, np.ceil(750 * ops['fs'])) 
+    nimgbatch = nt0 * np.ceil(nimgbatch/nt0)
+    
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
+    # load and bin data
     while True:
         buff = reg_file.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -60,7 +64,7 @@ def getSVDdata(ops):
             data = data[:nmax,:,:]
         dbin = np.reshape(data, (-1,nt0,Ly,Lx))
         dbin = np.squeeze(dbin.mean(axis=1))
-        dbin = dbin - dbin.mean(axis=0)    
+        dbin -= dbin.mean(axis=0)    
         inds = ix + np.arange(0,dbin.shape[0])
         # crop into valid area
         mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
@@ -85,7 +89,7 @@ def getSVDdata(ops):
     cov = mov @ mov.transpose() / mov.shape[1]
     cov = cov.astype('float32')
     
-    nsvd_for_roi = min(ops['nsvd_for_roi'], cov.shape[0]-2)    
+    nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
     u, s, v = np.linalg.svd(cov)
     
     u = u[:, :nsvd_for_roi]

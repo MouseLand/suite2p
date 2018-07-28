@@ -133,10 +133,10 @@ def phasecorr(data, refImg, ops, flag_zeroed):
         num_cores = ops['num_workers']
         
         nbatch = int(np.ceil(nimg/float(num_cores)))    
-        inputs = range(0, nimg, nbatch)
+        inputs = np.arange(0, nimg, 50)
         irange = []
         for i in inputs:
-            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
+            irange.append(i + np.arange(0,np.minimum(50, nimg-i)))
         #if __name__ == '__main__':
         results = Parallel(n_jobs=num_cores)(delayed(phasecorr_worker)(data[irange[j],:, :], 
                                                                        refImg, ops, flag_zeroed) for j in range(0,len(irange)))

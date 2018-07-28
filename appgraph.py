@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import fig
 import gui
 import classifier
-
+import time
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
@@ -191,6 +191,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
+        self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
         M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
@@ -303,17 +304,23 @@ class MainW(QtGui.QMainWindow):
                         choose = False
                     elif ichosen >= 0:
                         self.ichosen = ichosen
-                if flip:
+                if flip and self.iflip != self.ichosen:
+                    flip = True
                     iscell = int(self.iscell[self.ichosen])
                     if 2-iscell == iplot:
-                        self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
+                        self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
                         np.save(self.basename+'/iscell.npy', self.iscell)
+                    self.iflip = self.ichosen
+                else:
+                    flip = False
                 if choose or flip:
                     M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                         self.iscell, self.ichosen)
+                    t0=time.time()
                     self.plot_masks(M)
                     self.plot_trace()
                     self.show()
+                    print(time.time()-t0)
 
     def run_suite2p(self):
         LC = gui.OpsValues('C:/Users/carse/github/data/ops.pkl', self)

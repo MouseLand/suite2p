@@ -5,6 +5,45 @@ import numpy as np
 import os
 import pickle
 import fig
+#import suite2p
+
+def default_ops():
+    ops = {
+        'diameter':12, # this is the main parameter for cell detection
+        'tau':  1., # this is the main parameter for deconvolution
+        'fs': 10.,  # sampling rate (total across planes)
+        'nplanes' : 1, # each tiff has these many planes in sequence
+        'nchannels' : 1, # each tiff has these many channels per plane
+        'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
+        'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
+        'look_one_level_down': False,
+        'baseline': 'maximin', # baselining mode
+        'win_baseline': 60., # window for maximin
+        'sig_baseline': 10., # smoothing constant for gaussian filter
+        'prctile_baseline': 8.,# smoothing constant for gaussian filter
+        'neucoeff': .7,  # neuropil coefficient
+        'neumax': 1.,  # maximum neuropil coefficient (not implemented)
+        'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
+        'maxregshift': 0.,
+        'subpixel' : 10,
+        'batch_size': 200, # number of frames per batch
+        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
+        'nimg_init': 200, # subsampled frames for finding reference image
+        'navg_frames_svd': 5000,
+        'nsvd_for_roi': 1000,
+        'ratio_neuropil': 5,
+        'tile_factor': 1,
+        'threshold_scaling': 1,
+        'Vcorr': [],
+        'allow_overlap': False,
+        'inner_neuropil_radius': 2,
+        'outer_neuropil_radius': np.inf,
+        'min_neuropil_pixels': 350,
+        'ratio_neuropil_to_cell': 3,
+        'nframes': 1,
+        'diameter': 12
+      }
+    return ops
 
 ### custom QDialog which allows user to fill in ops
 class OpsValues(QtGui.QDialog):
@@ -17,23 +56,25 @@ class OpsValues(QtGui.QDialog):
         #layout = QtGui.QFormLayout()
         self.win.setLayout(layout)
         # initial ops values
-        pkl_file = open(ops_file,'rb')
-        ops = pickle.load(pkl_file)
-        pkl_file.close()
-        k = 0
-        for key in ops:
-            lops = 1
-            try:
-                lops = len(ops[key])
-            except (TypeError):
+        ops = default_ops()
+        tifkeys = ['nplanes','nchannels','fs','num_workers']
+        regkeys = ['nimg_init', 'batch_size', 'subpixel', 'maxregshift', 'align_by_chan']
+        cellkeys = ['diameter','navg_frames_svd','nsvd_for_roi','threshold_scaling', 'allow_overlap']
+        neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
+        deconvkeys = ['tau','win_baseline','sig_baseline','prctile_baseline','neucoeff']
+        keys = [tifkeys, regkeys, cellkeys, neukeys, deconvkeys]
+        l=0
+        for lkey in keys:
+            k = 0
+            for key in lkey:
                 lops = 1
-            if lops==1:
-                qedit = QtGui.QLineEdit()
-                qedit.setInputMask('%5.2f'%float(ops[key]))
-                layout.addWidget(QtGui.QLabel(key),k%18,2*np.floor(float(k)/18),1,1)
-                layout.addWidget(qedit,k%18,2*np.floor(float(k)/18)+1,1,1)
-
+                if ops[key]:
+                    qedit = QtGui.QLineEdit()
+                    qedit.setText(str(ops[key]))
+                    layout.addWidget(QtGui.QLabel(key),k*2,l,1,1)
+                    layout.addWidget(qedit,k*2+1,l,1,1)
                 k+=1
+            l+=1
 
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):

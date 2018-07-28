@@ -29,7 +29,7 @@ class MainW(QtGui.QMainWindow):
         runS2P.triggered.connect(self.run_suite2p)
         self.addAction(runS2P)
         # load processed data
-        loadProc = QtGui.QAction('&Load processed data (choose stat.pkl file)', self)
+        loadProc = QtGui.QAction('&Load processed data (choose stat.npy file)', self)
         loadProc.setShortcut('Ctrl+L')
         loadProc.triggered.connect(self.load_proc)
         self.addAction(loadProc)
@@ -47,16 +47,26 @@ class MainW(QtGui.QMainWindow):
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['npix', 'compact', 'radius']
-        self.loadTrain = QtGui.QAction('&Load training data (choose iscell.npy files)', self)
-        self.loadTrain.setShortcut('Ctrl+K')
+        self.loadClass = QtGui.QAction('&Load classifier', self)
+        self.loadClass.setShortcut('Ctrl+K')
+        self.loadClass.triggered.connect(self.load_classifier)
+        self.loadClass.setEnabled(False)
+        self.loadTrain = QtGui.QAction('&Train classifier (choose iscell.npy files)', self)
+        self.loadTrain.setShortcut('Ctrl+T')
         self.loadTrain.triggered.connect(self.load_traindata)
         self.loadTrain.setEnabled(False)
-        self.saveTrain = QtGui.QAction('&Save training data list', self)
-        self.saveTrain.setShortcut('Ctrl+S')
+        self.saveClass = QtGui.QAction('&Save classifier', self)
+        self.saveClass.setShortcut('Ctrl+S')
+        self.saveClass.triggered.connect(self.save_classifier)
+        self.saveClass.setEnabled(False)
+        self.saveTrain = QtGui.QAction('&Save training list', self)
+        #self.saveTrain.setShortcut('Ctrl+S')
         self.saveTrain.triggered.connect(self.save_trainlist)
         self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
+        class_menu.addAction(self.loadClass)
         class_menu.addAction(self.loadTrain)
+        class_menu.addAction(self.saveClass)
         class_menu.addAction(self.saveTrain)
 
         # main widget
@@ -174,17 +184,10 @@ class MainW(QtGui.QMainWindow):
                 b+=1
         self.classbtn  = gui.ColorButton(b,'classifier',self)
         self.colorbtns.addButton(self.classbtn,b)
+        self.ncolors = b+1
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
         self.btnstate.append(False)
-        # statistics from current dataset for Classifier
-        self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
-        k=0
-        for key in self.statclass:
-            for n in range(0,ncells):
-                self.statistics[n,k] = self.stat[n][key]
-            k+=1
-
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
@@ -205,6 +208,7 @@ class MainW(QtGui.QMainWindow):
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
+        self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
         self.show()
 
@@ -304,7 +308,7 @@ class MainW(QtGui.QMainWindow):
                     if 2-iscell == iplot:
                         self.iscell[self.ichosen] = np.logical_not(self.iscell[self.ichosen])
                         np.save(self.basename+'/iscell.npy', self.iscell)
-                if choose or flip or zoom:
+                if choose or flip:
                     M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
                                         self.iscell, self.ichosen)
                     self.plot_masks(M)
@@ -324,7 +328,7 @@ class MainW(QtGui.QMainWindow):
                 self.stat = np.load(name[0])
                 self.stat = self.stat.item()
                 ypix = self.stat[0]['ypix']
-            except (KeyError, OSError, RuntimeError, TypeError, NameError):
+            except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
                 print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
                 self.stat = None
             if self.stat is not None:
@@ -334,21 +338,21 @@ class MainW(QtGui.QMainWindow):
                 try:
                     self.Fcell = np.load(basename + '/F.npy')
                     self.Fneu = np.load(basename + '/Fneu.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
+                except (ValueError, OSError, RuntimeError, TypeError, NameError):
                     print('ERROR: there are no fluorescence traces in this folder (F.npy/Fneu.npy)')
                     goodfolder = False
                 try:
                     self.Spks = np.load(basename + '/spks.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
+                except (ValueError, OSError, RuntimeError, TypeError, NameError):
                     print('there are no spike deconvolved traces in this folder (spks.npy)')
                 try:
                     self.iscell = np.load(basename + '/iscell.npy')
-                except (OSError, RuntimeError, TypeError, NameError):
+                except (ValueError, OSError, RuntimeError, TypeError, NameError):
                     print('no manual labels found (iscell.npy)')
                 try:
                     self.ops = np.load(basename + '/ops.npy')
                     self.ops = self.ops.item()
-                except (OSError, RuntimeError, TypeError, NameError):
+                except (ValueError, OSError, RuntimeError, TypeError, NameError):
                     print('ERROR: there is no ops file in this folder (ops.npy)')
                     goodfolder = False
                 if goodfolder:
@@ -369,21 +373,90 @@ class MainW(QtGui.QMainWindow):
         if tryagain == QtGui.QMessageBox.Yes:
             self.load_proc()
 
+    def load_classifier(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        if name:
+            self.model = classifier.Classifier(classfile=name[0],
+                                               trainfiles=None,
+                                               statclass=None)
+            if self.model.loaded:
+                # statistics from current dataset for Classifier
+                checkstat = [key for key in self.statclass if key in self.stat[0]]
+                if len(checkstat) == len(self.statclass):
+                    ncells = self.Fcell.shape[0]
+                    self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
+                    k=0
+                    for key in self.statclass:
+                        for n in range(0,ncells):
+                            self.statistics[n,k] = self.stat[n][key]
+                        k+=1
+                    self.trainfiles = self.model.trainfiles
+                    self.activate_classifier()
+                else:
+                    print('ERROR: classifier has fields that stat doesn''t have')
+
     def load_traindata(self):
         # will return
         self.traindata = np.zeros((0,len(self.statclass)+1),np.float32)
         LC = gui.ListChooser('classifier training files', self)
         result = LC.exec_()
         if result:
-            print('Repopulating classifier:')
+            print('Populating classifier:')
             self.model = classifier.Classifier(classfile=None,
                                                trainfiles=self.trainfiles,
                                                statclass=self.statclass)
             if self.trainfiles is not None:
+                ncells = self.Fcell.shape[0]
+                self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
+                k=0
+                for key in self.statclass:
+                    for n in range(0,ncells):
+                        self.statistics[n,k] = self.stat[n][key]
+                    k+=1
                 self.activate_classifier()
 
+    def apply_classifier(self):
+        classval = self.probedit.value()
+        self.iscell, self.probcell = self.model.apply(self.statistics, classval)
+
+    def save_classifier(self):
+        name = QtGui.QFileDialog.getSaveFileName(self,'Save classifier')
+        if name:
+            try:
+                self.model.save_classifier(name[0])
+            except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
+                print('ERROR: incorrect filename for saving')
+
+    def save_trainlist(self):
+        name = QtGui.QFileDialog.getSaveFileName(self,'Save list of iscell.npy')
+        if name:
+            try:
+                with open(name[0],'w') as fid:
+                    for f in self.trainfiles:
+                        fid.write(f)
+                        fid.write('\n')
+            except (ValueError, OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
+                print('ERROR: incorrect filename for saving')
+
     def activate_classifier(self):
+        iscell, self.probcell = self.model.apply(self.statistics, 0.5)
+        istat = self.probcell
+        if len(self.clabels) < self.ncolors:
+            self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
+        else:
+            self.clabels[-1] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
+        istat = istat - istat.min()
+        istat = istat / istat.max()
+        istat = istat / 1.3
+        istat = istat + 0.1
+        icols = 1 - istat
+        if self.ops_plot[3].shape[1] < self.ncolors:
+            self.ops_plot[3] = np.concatenate((self.ops_plot[3],
+                                                np.expand_dims(icols,axis=1)), axis=1)
+        else:
+            self.ops_plot[3][:,-1] = icols
         self.classbtn.setEnabled(True)
+        self.saveClass.setEnabled(True)
         self.saveTrain.setEnabled(True)
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
@@ -417,23 +490,12 @@ class MainW(QtGui.QMainWindow):
         if len(ftrue)==0:
             self.trainfiles.append(self.basename+'/iscell.npy')
         print('Repopulating classifier including current dataset:')
-        self.traindata, self.trainfiles = classifier.load_data(self.trainfiles, self.statclass)
-        self.hists = classifier.train(self.traindata)
+        self.model = classifier.Classifier(classfile=None,
+                                           trainfiles=self.trainfiles,
+                                           statclass=self.statclass)
 
-    def apply_classifier(self):
-        classval = self.probedit.value()
-        self.iscell = classifier.apply(self.hists, self.statistics, classval)
 
-    def save_trainlist(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Save list of iscell.npy')
-        if name:
-            try:
-                with open(name[0],'w') as fid:
-                    for f in self.trainfiles:
-                        fid.write(f)
-                        fid.write('\n')
-            except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
-                print('ERROR: incorrect filename for saving')
+
 
 def run():
     ## Always start by initializing Qt (only once per application)

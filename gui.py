@@ -5,7 +5,7 @@ import numpy as np
 import os
 import pickle
 import fig
-#import suite2p
+import suite2p
 
 def default_ops():
     ops = {
@@ -61,6 +61,32 @@ class OpsLabel(QtGui.QLabel):
     def mousePressEvent(self, event):
         print(event)
 
+class OutLog:
+    def __init__(self, edit, out=None, color=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        """
+        self.edit = edit
+        self.out = None
+        self.color = color
+
+    def write(self, m):
+        if self.color:
+            tc = self.edit.textColor()
+            self.edit.setTextColor(self.color)
+
+        self.edit.moveCursor(QtGui.QTextCursor.End)
+        self.edit.insertPlainText( m )
+
+        if self.color:
+            self.edit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(m)
+
 ### custom QDialog which allows user to fill in ops
 class OpsValues(QtGui.QDialog):
     def __init__(self, ops_file, parent=None):
@@ -72,7 +98,7 @@ class OpsValues(QtGui.QDialog):
         #layout = QtGui.QFormLayout()
         self.win.setLayout(self.layout)
         # initial ops values
-        self.ops = default_ops()
+        self.ops = suite2p.default_ops()
         self.data_path = []
         tifkeys = ['nplanes','nchannels','fs','num_workers']
         regkeys = ['nimg_init', 'batch_size', 'subpixel', 'maxregshift', 'align_by_chan']
@@ -112,23 +138,52 @@ class OpsValues(QtGui.QDialog):
         self.layout.addWidget(qlabel,1,0,1,1)
         runbtn = QtGui.QPushButton('RUN SUITE2P')
         runbtn.clicked.connect(self.run_suite2p)
-        self.layout.addWidget(runbtn,10,0,1,1)
+        self.layout.addWidget(runbtn,11,0,1,1)
+        self.textEdit = QtGui.QTextEdit()
+        self.layout.addWidget(self.textEdit, 12,0,25,l)
+        print('Connecting process')
+        self.process = QtCore.QProcess(self)
+        self.process.readyReadStandardOutput.connect(self.stdoutReady)
+        self.process.readyReadStandardError.connect(self.stderrReady)
+        self.process.started.connect(lambda: print('Started!'))
+        self.process.finished.connect(lambda: print('Finished!'))
+
+    def append(self, text):
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText(text)
+        #self.output.ensureCursorVisible()
+
+    def stdoutReady(self):
+        text = str(self.process.readAllStandardOutput())
+        print(text.strip())
+        self.append(text)
+
+    def stderrReady(self):
+        text = str(self.process.readAllStandardError())
+        print(text.strip())
+        self.append(text)
+
 
     def run_suite2p(self):
         k=0
         for key in self.keylist:
             if type(self.ops[key]) is float:
                 self.ops[key] = float(self.editlist[k].text())
-                #print(key,'\t\t', float(self.editlist[k].text()))
+                print(key,'\t\t', float(self.editlist[k].text()))
             elif type(self.ops[key]) is int:
                 self.ops[key] = int(self.editlist[k].text())
-                #print(key,'\t\t', int(self.editlist[k].text()))
+                print(key,'\t\t', int(self.editlist[k].text()))
             elif type(self.ops[key]) is bool:
                 self.ops[key] = bool(self.editlist[k].text())
-                #print(key,'\t\t', bool(self.editlist[k].text()))
+                print(key,'\t\t', bool(self.editlist[k].text()))
             k+=1
         self.ops['data_path'] = self.data_path
-        #suite2p.main(self.ops)
+        self.ops['subfolders'] = []
+        print('running suite2p')
+        print('Starting process')
+        np.save('ops.npy', self.ops)
+        self.process.start('python', ['main.py'])
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")

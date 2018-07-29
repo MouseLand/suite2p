@@ -5,35 +5,138 @@ import numpy as np
 import os
 import pickle
 import fig
+#import suite2p
+
+def default_ops():
+    ops = {
+        'diameter':12, # this is the main parameter for cell detection
+        'tau':  1., # this is the main parameter for deconvolution
+        'fs': 10.,  # sampling rate (total across planes)
+        'nplanes' : 1, # each tiff has these many planes in sequence
+        'nchannels' : 1, # each tiff has these many channels per plane
+        'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
+        'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
+        'look_one_level_down': False,
+        'baseline': 'maximin', # baselining mode
+        'win_baseline': 60., # window for maximin
+        'sig_baseline': 10., # smoothing constant for gaussian filter
+        'prctile_baseline': 8.,# smoothing constant for gaussian filter
+        'neucoeff': .7,  # neuropil coefficient
+        'neumax': 1.,  # maximum neuropil coefficient (not implemented)
+        'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
+        'maxregshift': 0.,
+        'subpixel' : 10,
+        'batch_size': 200, # number of frames per batch
+        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
+        'nimg_init': 200, # subsampled frames for finding reference image
+        'navg_frames_svd': 5000,
+        'nsvd_for_roi': 1000,
+        'ratio_neuropil': 5,
+        'tile_factor': 1,
+        'threshold_scaling': 1,
+        'Vcorr': [],
+        'allow_overlap': False,
+        'inner_neuropil_radius': 2,
+        'outer_neuropil_radius': np.inf,
+        'min_neuropil_pixels': 350,
+        'ratio_neuropil_to_cell': 3,
+        'nframes': 1,
+        'diameter': 12
+      }
+    return ops
+
+class OpsLabel(QtGui.QLabel):
+    def __init__(self, text, parent=None):
+        super(OpsLabel, self).__init__(parent)
+        self.setAutoFillBackground(True)
+        #p = self.palette()
+        #p.setColor(self.backgroundRole(), QtGui.QColor(223, 230, 248))
+        self.setPalette(p)
+        self.setMouseTracking(True)
+        self.setText(text)
+
+    def mouseMoveEvent(self, event):
+        print("On Hover") # event.pos().x(), event.pos().y()
+
+    def mousePressEvent(self, event):
+        print(event)
 
 ### custom QDialog which allows user to fill in ops
 class OpsValues(QtGui.QDialog):
     def __init__(self, ops_file, parent=None):
         super(OpsValues, self).__init__(parent)
-        self.setGeometry(100,100,600,500)
+        self.setGeometry(50,50,900,900)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
-        layout = QtGui.QGridLayout()
+        self.layout = QtGui.QGridLayout()
         #layout = QtGui.QFormLayout()
-        self.win.setLayout(layout)
+        self.win.setLayout(self.layout)
         # initial ops values
-        pkl_file = open(ops_file,'rb')
-        ops = pickle.load(pkl_file)
-        pkl_file.close()
-        k = 0
-        for key in ops:
-            lops = 1
-            try:
-                lops = len(ops[key])
-            except (TypeError):
+        self.ops = default_ops()
+        self.data_path = []
+        tifkeys = ['nplanes','nchannels','fs','num_workers']
+        regkeys = ['nimg_init', 'batch_size', 'subpixel', 'maxregshift', 'align_by_chan']
+        cellkeys = ['diameter','navg_frames_svd','nsvd_for_roi','threshold_scaling', 'allow_overlap']
+        neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
+        deconvkeys = ['tau','win_baseline','sig_baseline','prctile_baseline','neucoeff']
+        keys = [[],tifkeys, regkeys, cellkeys, neukeys, deconvkeys]
+        labels = ['Filepaths','Main settings','Registration','Cell detection','Neuropil','Deconvolution']
+        l=0
+        self.keylist = []
+        self.editlist = []
+        for lkey in keys:
+            k = 0
+            qlabel = QtGui.QLabel(labels[l])
+            bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+            qlabel.setFont(bigfont)
+            self.layout.addWidget(qlabel,0,l,1,1)
+            for key in lkey:
                 lops = 1
-            if lops==1:
-                qedit = QtGui.QLineEdit()
-                qedit.setInputMask('%5.2f'%float(ops[key]))
-                layout.addWidget(QtGui.QLabel(key),k%18,2*np.floor(float(k)/18),1,1)
-                layout.addWidget(qedit,k%18,2*np.floor(float(k)/18)+1,1,1)
-
+                if self.ops[key] or (self.ops[key] == 0):
+                    qedit = QtGui.QLineEdit()
+                    qlabel = QtGui.QLabel(key)
+                    qlabel.setToolTip('yo')
+                    qedit.setText(str(self.ops[key]))
+                    self.layout.addWidget(qlabel,k*2+1,l,1,1)
+                    self.layout.addWidget(qedit,k*2+2,l,1,1)
+                    self.keylist.append(key)
+                    self.editlist.append(qedit)
                 k+=1
+            l+=1
+        btiff = QtGui.QPushButton('Add directory to data_path')
+        #btiff.resize(btiff.minimumSizeHint())
+        btiff.clicked.connect(self.get_folders)
+        self.layout.addWidget(btiff,0,0,1,1)
+        qlabel = QtGui.QLabel('data_path')
+        qlabel.setFont(bigfont)
+        self.layout.addWidget(qlabel,1,0,1,1)
+        runbtn = QtGui.QPushButton('RUN SUITE2P')
+        runbtn.clicked.connect(self.run_suite2p)
+        self.layout.addWidget(runbtn,10,0,1,1)
+
+    def run_suite2p(self):
+        k=0
+        for key in self.keylist:
+            if type(self.ops[key]) is float:
+                self.ops[key] = float(self.editlist[k].text())
+                #print(key,'\t\t', float(self.editlist[k].text()))
+            elif type(self.ops[key]) is int:
+                self.ops[key] = int(self.editlist[k].text())
+                #print(key,'\t\t', int(self.editlist[k].text()))
+            elif type(self.ops[key]) is bool:
+                self.ops[key] = bool(self.editlist[k].text())
+                #print(key,'\t\t', bool(self.editlist[k].text()))
+            k+=1
+        self.ops['data_path'] = self.data_path
+        #suite2p.main(self.ops)
+
+    def get_folders(self):
+        name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
+        self.data_path.append(name)
+        self.layout.addWidget(QtGui.QLabel(name),
+                              len(self.data_path)+1,0,1,1)
+
+
 
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):
@@ -54,6 +157,7 @@ class ListChooser(QtGui.QDialog):
         layout.addWidget(QtGui.QLabel('INCLUDE'),1,0,1,1)
         layout.addWidget(QtGui.QLabel('EXCLUDE'),1,3,1,1)
         layout.addWidget(self.leftlist,2,0,5,1)
+        #self.leftlist.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         sright = QtGui.QPushButton('-->')
         sright.resize(sright.minimumSizeHint())
         sleft = QtGui.QPushButton('<--')

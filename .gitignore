@@ -18,7 +18,7 @@ $RECYCLE.BIN/
 
 # jupyter caches
 .ipynb_checkpoints/
-.__pycache__/
+__pycache__/
 
 # =========================
 # Operating System Files

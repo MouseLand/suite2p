@@ -5,7 +5,6 @@ import time, os
 import matplotlib.pyplot as plt
 from numpy import fft
 from numpy import random as rnd
-from joblib import Parallel, delayed
 import multiprocessing
 from multiprocessing import Pool
 
@@ -139,11 +138,6 @@ def phasecorr(data, refImg, ops, flag_zeroed):
         #nbatch = 50
         inputs = np.arange(0, nimg, nbatch)
         
-        #for i in inputs:
-         #   irange.append(ilist)            
-        #results = Parallel(n_jobs=num_cores)(delayed(phasecorr_worker)(data[irange[j],:, :], 
-        #                                                              refImg, ops, flag_zeroed) for j in range(0,len(irange)))
-        
         irange = []
         dsplit = []        
         for i in inputs:
@@ -190,9 +184,6 @@ def register_myshifts(ops, data, ymax, xmax):
         with Pool(num_cores) as p:
             results = p.map(shift_data, dsplit)
         
-        #results = Parallel(n_jobs=num_cores)(delayed(shift_data)(data[irange[j],:, :], 
-        #                                                         ymax[irange[j]], #xmax[irange[j]]) for j in range(0,len(irange)))   
-        
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]        
@@ -218,6 +209,7 @@ def register_binary(ops):
     xoff = []
     corrXY = []    
     meanImg = np.zeros((Ly, Lx))    
+    k = 0
     while True:
         buff = reg_file.read(nbytesread)    
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -231,7 +223,15 @@ def register_binary(ops):
         meanImg += dwrite.sum(axis=0)
         yoff = np.append(yoff, ymax)
         xoff = np.append(xoff, xmax)
-        corrXY = np.append(corrXY, cmax)        
+        corrXY = np.append(corrXY, cmax)
+        if ops['reg_tif']:
+            if k==0:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif')
+                if not os.path.isdir(tifroot):
+                    os.makedirs(tifroot)
+            fname = 'file_chan%0.3d.tif'%k
+            io.imsave(os.path.join(tifroot, fname), dwrite)            
+            k += 1
     ops['yoff'] = yoff
     ops['xoff'] = xoff
     ops['corrXY'] = corrXY
@@ -254,7 +254,7 @@ def register_binary(ops):
                 break            
             data = np.reshape(data, (-1, Ly, Lx))
             nframes = data.shape[0]
-            # register by pre-determined amount            
+            # register by pre-determined amount
             dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
             ix += nframes            
             dwrite = dwrite.astype('int16')
@@ -340,8 +340,8 @@ def tiff_to_binary(ops):
     reg_file = []
     if nchannels>1:
         reg_file_chan2 = []            
-    for j in range(0,nplanes):        
-        fpath = os.path.join(ops['data_path'], 'suite2p', 'plane%d'%j)
+    for j in range(0,nplanes):
+        fpath = os.path.join(ops['data_path'][0], 'suite2p', 'plane%d'%j)
         ops['save_path'] = fpath
         ops['ops_path'] = os.path.join(fpath,'ops.npy')        
         ops['reg_file'] = os.path.join(fpath, 'data.bin')        
@@ -380,13 +380,13 @@ def tiff_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
-def list_tifs(ops, froot):      
+def list_tifs(froot, look_one_level_down):      
     lpath = os.path.join(froot, "*.tif")
     fs  = sorted(glob.glob(lpath)) 
     lpath = os.path.join(froot, "*.tiff")
     fs2 = sorted(glob.glob(lpath))
     fs.extend(fs2)    
-    if ops['look_one_level_down']:
+    if look_one_level_down:
         fdir = glob.glob(os.path.join(froot, "*", ""))
         for folder_down in fdir:            
             lpath = os.path.join(froot, folder_down, "*.tif")
@@ -399,6 +399,30 @@ def list_tifs(ops, froot):
 
 def get_tif_list(ops):
     froot = ops['data_path']
+    
+    if len(froot)==1:            
+        if len(ops['subfolders'])==0:        
+            fold_list = ops['data_path'][0]
+        else:
+            fold_list = []
+            for folder_down in ops['subfolders']:
+                fold = os.path.join(froot[0], folder_down)
+                fold_list.append(fold)            
+    else:
+        fold_list = froot
+    fs = []
+    for fld in fold_list:        
+        fs.extend(list_tifs(fld, ops['look_one_level_down']))
+        
+    print(len(fs))
+    if len(fs)==0:
+        raise Exception('Could not find any tifs')
+    else:
+        print('Found %d tifs'(len(fs)))
+    return fs
+
+def get_tif_list_old(ops):
+    froot = ops['data_path']
     if len(ops['subfolders'])==0:        
         fs = list_tifs(ops, froot)
     else:
@@ -408,4 +432,4 @@ def get_tif_list(ops):
             fs.extend(list_tifs(ops, fold))            
     if fs is None:
         raise Exception('Could not find any tifs')
-    return fs
+    

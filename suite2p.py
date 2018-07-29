@@ -36,22 +36,43 @@ def default_ops():
         'min_neuropil_pixels': 350, 
         'ratio_neuropil_to_cell': 3,     
         'nframes': 1,
-        'diameter': 12
+        'diameter': 12,
+        'reg_tif': False,
+        'max_iterations': 10
       }
     return ops
 
 def main(ops):    
-    # get defaults options
-    ops0 = default_ops()
-
-    # combine with user options
-    ops = {**ops0, **ops} 
-
-    # copy tiff to a binary
-    ops1 = register.tiff_to_binary(ops)
-    # register tiff
-    ops1 = register.register_binary(ops1)
-
+    # check if there are files already registered
+    fpathops1 = os.path.join(ops['data_path'][0], 'suite2p', 'ops1.npy')
+    files_found_flag = True
+    if os.path.isfile(fpathops1): 
+        ops1 = np.load(fpathops1)
+        files_found_flag = True
+        for i,op in enumerate(ops1):
+            files_found_flag &= os.path.isfile(op['reg_file']) 
+            # use the new options
+            ops1[i] = {**op, **ops} 
+    else:
+        files_found_flag = False
+    
+    
+    if not files_found_flag:
+        # get default options
+        ops0 = default_ops()
+        # combine with user options
+        ops = {**ops0, **ops} 
+        # copy tiff to a binary
+        ops1 = register.tiff_to_binary(ops)
+        # register tiff
+        ops1 = register.register_binary(ops1)
+        # save ops1
+        np.save(fpathops1, ops1)
+    else:
+        print('found ops1 and pre-registered binaries')
+        print('overwriting ops1 with new ops')
+        print('skipping registration...')
+    
     for ops in ops1:
         # get SVD components
         U,sdmov      = celldetect.getSVDdata(ops)
@@ -70,5 +91,8 @@ def main(ops):
         np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
         np.save(os.path.join(fpath,'spks.npy'), spks)        
         np.save(os.path.join(fpath,'stat.npy'), stat)        
+    
+    # save final ops1 with all planes
+    np.save(fpathops1, ops1)
     
     return ops1

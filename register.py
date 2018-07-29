@@ -414,11 +414,10 @@ def get_tif_list(ops):
     for fld in fold_list:        
         fs.extend(list_tifs(fld, ops['look_one_level_down']))
         
-    print(len(fs))
     if len(fs)==0:
         raise Exception('Could not find any tifs')
     else:
-        print('Found %d tifs'(len(fs)))
+        print('Found %d tifs'%(len(fs)))
     return fs
 
 def get_tif_list_old(ops):

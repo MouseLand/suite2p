@@ -198,7 +198,8 @@ def register_binary(ops):
     Ly = ops['Ly']
     Lx = ops['Lx']    
     ops['nframes'] = get_nFrames(ops) 
-    refImg = pick_init(ops)    
+    refImg = pick_init(ops)   
+    print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch    
     if ops['nchannels']>1 and ops['align_by_chan']>1:
@@ -210,6 +211,7 @@ def register_binary(ops):
     corrXY = []    
     meanImg = np.zeros((Ly, Lx))    
     k = 0
+    nfr = 0
     while True:
         buff = reg_file.read(nbytesread)    
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -231,7 +233,10 @@ def register_binary(ops):
                     os.makedirs(tifroot)
             fname = 'file_chan%0.3d.tif'%k
             io.imsave(os.path.join(tifroot, fname), dwrite)            
-            k += 1
+        nfr += dwrite.shape[0]
+        if k%10==0:
+            print('registered %d/%d frames'%(nfr, ops['nframes']))
+        k += 1
     ops['yoff'] = yoff
     ops['xoff'] = xoff
     ops['corrXY'] = corrXY
@@ -335,7 +340,7 @@ def pick_init(ops):
 def tiff_to_binary(ops):    
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
-    ops1 = []
+    ops1 = []    
     # open all binary files for writing
     reg_file = []
     if nchannels>1:
@@ -402,7 +407,7 @@ def get_tif_list(ops):
     
     if len(froot)==1:            
         if len(ops['subfolders'])==0:        
-            fold_list = ops['data_path'][0]
+            fold_list = ops['data_path']
         else:
             fold_list = []
             for folder_down in ops['subfolders']:

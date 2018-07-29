@@ -637,7 +637,8 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
         # compute neuropil activity
         Fneu[:, inds] = (data @ neuropil_masks).transpose()
         ix += nimgd
-        print(ix)
+        if ix%(5*nimgd)==0:
+            print('extracted %d/%d frames'%(ix,ops['nframes']))
 
     reg_file.close()
     return F, Fneu    

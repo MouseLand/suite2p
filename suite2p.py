@@ -64,10 +64,12 @@ def main(ops):
         ops = {**ops0, **ops}
         # copy tiff to a binary
         ops1 = register.tiff_to_binary(ops)
+        print('wrote tifs to binaries for %d planes'%len(ops1))
         # register tiff
         ops1 = register.register_binary(ops1)
         # save ops1
         np.save(fpathops1, ops1)
+        print('registration complete')
     else:
         print('found ops1 and pre-registered binaries')
         print('overwriting ops1 with new ops')
@@ -76,23 +78,32 @@ def main(ops):
     for ops in ops1:
         # get SVD components
         U,sdmov      = celldetect.getSVDdata(ops)
+        print('SVD computed')
         # neuropil projections
         S, StU , StS = celldetect.getStU(ops, U)
         # get ROIs
         ops, stat, cell_masks, neuropil_masks, mPix, mLam = celldetect.sourcery(ops, U, S, StU, StS)
+        print('extracted %d ROIs'%len(stat))
         # extract fluorescence and neuropil
         F, Fneu = celldetect.extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam)
         # deconvolve fluorescence
         spks = dcnv.oasis(F - ops['neucoeff'] * Fneu, ops)
+        print('spike deconvolved %d ROIs'%len(stat))
+
         # save results
         np.save(ops['ops_path'], ops)
         fpath = ops['save_path']
         np.save(os.path.join(fpath,'F.npy'), F)
         np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+
         np.save(os.path.join(fpath,'spks.npy'), spks)
         np.save(os.path.join(fpath,'stat.npy'), stat)
 
+        print('results saved to %s'%ops['save_path'])
+
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
+
+    print('finished all tasks')
 
     return ops1

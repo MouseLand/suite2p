@@ -1,7 +1,9 @@
+import suite2p
 import numpy as np
 import time, os
-from suite2p import register, dcnv, celldetect
+import register, dcnv, celldetect
 from scipy import stats
+import argparse, json
 
 def tic():
     return time.time()
@@ -48,10 +50,10 @@ def default_ops():
       }
     return ops
 
-def run_s2p(ops={},db={}):
+def runSuite2p(ops, db=None):    
     i0 = tic()
-    
-    ops = {**ops, **db}
+    # combine default user options with experiment options
+    ops = {**ops, **db} 
     
     # check if there are files already registered
     fpathops1 = os.path.join(ops['data_path'][0], 'suite2p', 'ops1.npy')
@@ -62,7 +64,7 @@ def run_s2p(ops={},db={}):
         for i,op in enumerate(ops1):
             files_found_flag &= os.path.isfile(op['reg_file']) 
             # use the new options
-            ops1[i] = {**op, **ops} 
+            op = {**op, **ops} 
     else:
         files_found_flag = False
     
@@ -121,3 +123,15 @@ def run_s2p(ops={},db={}):
     print('finished all tasks')
     
     return ops1
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Suite2p parameters')
+    parser.add_argument('--ops', default=[], type=string, help='options')
+    parser.add_argument('--db', default=[], type=string, help='options')
+    args = parser.parse_args()    
+    ops,db = []
+    if len(ops)>0:
+        ops = np.load(args.ops)
+    if len(db)>0:
+        db = np.load(args.db)
+    runSuite2p(ops, db)

@@ -592,11 +592,9 @@ def sourcery(ops, U, S, StU, StS):
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
 
-    neuropil_masks = sparse.csc_matrix(np.resize(neuropil_masks,(-1,Ly*Lx)))
-    cell_masks     = sparse.csc_matrix(np.resize(cell_masks,(-1,Ly*Lx)))
-    neuropil_masks = neuropil_masks.transpose()
-    cell_masks = cell_masks.transpose()
-
+    neuropil_masks = sparse.csr_matrix(np.resize(neuropil_masks,(-1,Ly*Lx)))
+    cell_masks     = sparse.csr_matrix(np.resize(cell_masks,(-1,Ly*Lx)))
+ 
     return ops, stat, cell_masks, neuropil_masks, mPix, mLam
 
 def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
@@ -604,7 +602,7 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = cell_masks.shape[1]
+    ncells = cell_masks.shape[0]
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
 
@@ -614,6 +612,7 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
     ix = 0
     data = 1 
     
+    k0 = tic()
     while data is not None:
         buff = reg_file.read(block_size)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -623,17 +622,17 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)        
 
         # resize data to be Ly*Lx by nimgd
-        data = np.reshape(data, (nimgd,-1))
+        data = np.reshape(data, (nimgd,-1)).transpose()
         # compute cell activity
         inds = ix + np.arange(0,nimgd)
 
-        F[:, inds]    = (data @ cell_masks).transpose()
+        F[:, inds]    = cell_masks @ data
 
         # compute neuropil activity
-        Fneu[:, inds] = (data @ neuropil_masks).transpose()
+        Fneu[:, inds] = neuropil_masks @ data
+        if ix%(nimgd)==0:
+            print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
         ix += nimgd
-        if ix%(5*nimgd)==0:
-            print('extracted %d/%d frames'%(ix,ops['nframes']))
 
     reg_file.close()
     return F, Fneu    

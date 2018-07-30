@@ -1,6 +1,6 @@
 import numpy as np
 import time, os
-import register, dcnv, celldetect
+from suite2p import register, dcnv, celldetect
 from scipy import stats
 
 def tic():
@@ -48,9 +48,10 @@ def default_ops():
       }
     return ops
 
-def main(ops):    
-    
+def run(ops={},db={}):
     i0 = tic()
+    
+    ops = {**ops, **db}
     
     # check if there are files already registered
     fpathops1 = os.path.join(ops['data_path'][0], 'suite2p', 'ops1.npy')

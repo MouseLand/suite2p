@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-import utils
+from suite2p import utils
 import scipy.sparse as sparse
 import time
 

@@ -18,6 +18,17 @@ def boundary(ypix,xpix):
     return iext
 
 def init_masks(parent):
+    '''creates RGB masks using stat and puts them in M0 or M1 depending on
+    whether or not iscell is True for a given ROI
+    args:
+        ops: mean_image, Vcorr
+        stat: xpix,ypix,xext,yext
+        iscell: vector with True if ROI is cell
+        ops_plot: plotROI, view, color, randcols
+    outputs:
+        M0: ROIs that are True in iscell
+        M1: ROIs that are False in iscell
+    '''
     ops = parent.ops
     stat = parent.stat
     iscell = parent.iscell
@@ -105,14 +116,13 @@ def init_masks(parent):
     hsv = np.concatenate((H,S,V),axis=2)
     parent.RGB_Vcorr = hsv_to_rgb(hsv)
 
-def make_chosen(Ma, ypix, xpix):
-    Mout = Ma
-    v = Ma[ypix,xpix,:].max(axis=1)
-    Mout[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,len(ypix))).transpose()
-    return Mout
+def make_chosen(M, ypix, xpix):
+    v = M[ypix,xpix,:].max(axis=1)
+    M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,len(ypix))).transpose()
+    return M
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
-    '''creates RGB masks using stat and puts them in M1 or M2 depending on
+    '''creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
         ops: mean_image, Vcorr
@@ -120,8 +130,8 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         iscell: vector with True if ROI is cell
         ops_plot: plotROI, view, color, randcols
     outputs:
-        M1: ROIs that are True in iscell
-        M2: ROIs that are False in iscell
+        M0: ROIs that are True in iscell
+        M1: ROIs that are False in iscell
     '''
     ncells  = parent.iscell.shape[0]
     plotROI = parent.ops_plot[0]
@@ -129,18 +139,53 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     color   = parent.ops_plot[2]
     ichosen = parent.ichosen
     wplot   = int(1-parent.iscell[ichosen])
-    print(ichosen)
-    p0 = parent.RGB_all
+    M0 = np.array(parent.RGB_all[0,color,view,:,:,:])
+    M1 = np.array(parent.RGB_all[1,color,view,:,:,:])
+
     ypix    = parent.stat[ichosen]['ypix'].flatten()
     xpix    = parent.stat[ichosen]['xpix'].flatten()
     if wplot==0:
-        M0 = make_chosen(parent.RGB_all[0,color,view,:,:,:], ypix, xpix)
-        M1 = parent.RGB_all[1,color,view,:,:,:]
+        M0 = make_chosen(M0, ypix, xpix)
     else:
-        M0 = parent.RGB_all[0,color,view,:,:,:]
-        M1 = make_chosen(parent.RGB_all[1,color,view,:,:,:], ypix, xpix)
-
+        M1 = make_chosen(M1, ypix, xpix)
     return M0,M1
+
+def flip_cell(parent):
+    n = parent.ichosen
+    i = int(1-parent.iscell[n])
+    i0 = 1-i
+    # cell indic
+    nin = parent.iROI==n
+    parent.Lam[i,nin] = parent.Lam[i0,nin]
+    parent.Lam[i0,nin] = 0
+    parent.Sroi[i,nin] = 1
+    parent.Sroi[i0,nin] = 0
+    parent.Sext[i,nin] = 1
+    parent.Sext[i0,nin] = 0
+
+    for i in range(2):
+        for c in range(parent.H.shape[0]):
+            for k in range(3):
+                H = parent.H[c,nin]
+                if k<2:
+                    S = parent.Sroi[i,nin]
+                else:
+                    S = parent.Sext[i,nin]
+                V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
+                if k>0:
+                    V = parent.Vback[k-1,nin]
+                    if k==2:
+                        V = np.minimum(1, V + S)
+                H = np.expand_dims(H,axis=1)
+                S = np.expand_dims(S,axis=1)
+                V = np.expand_dims(V,axis=1)
+                hsv = np.concatenate((H,S,V),axis=1)
+                parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
+
+
+    # remake RGB masks with new HSV
+
+
 
 def ROI_index(ops, stat):
     '''matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)'''

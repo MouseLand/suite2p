@@ -17,8 +17,13 @@ $RECYCLE.BIN/
 *.lnk
 
 # jupyter caches
+jupyter/.ipynb_checkpoints/
+jupyter/__pycache__/
 .ipynb_checkpoints/
 __pycache__/
+dist/
+suite2p.egg-info/
+build/
 
 # =========================
 # Operating System Files

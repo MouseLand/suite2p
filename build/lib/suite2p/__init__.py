@@ -1,1 +1,0 @@
-name = "suite2p"

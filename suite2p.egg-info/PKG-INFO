@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: suite2p
+Version: 0.1.1
+Summary: Pipeline for calcium imaging
+Home-page: https://github.com/MouseLand/suite2p
+Author: Marius Pachitariu and Carsen Stringer
+Author-email: marius10p@gmail.com
+License: UNKNOWN
+Description: Suite2p processes 2p calcium imaging data from raw tifs to extracted fluorescence traces and spike times. 
+        Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

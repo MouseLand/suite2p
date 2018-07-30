@@ -1,5 +1,6 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
+from pyqtgraph import console
 import sys
 import numpy as np
 import os
@@ -7,91 +8,12 @@ import pickle
 import fig
 import suite2p
 
-def default_ops():
-    ops = {
-        'diameter':12, # this is the main parameter for cell detection
-        'tau':  1., # this is the main parameter for deconvolution
-        'fs': 10.,  # sampling rate (total across planes)
-        'nplanes' : 1, # each tiff has these many planes in sequence
-        'nchannels' : 1, # each tiff has these many channels per plane
-        'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
-        'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
-        'look_one_level_down': False,
-        'baseline': 'maximin', # baselining mode
-        'win_baseline': 60., # window for maximin
-        'sig_baseline': 10., # smoothing constant for gaussian filter
-        'prctile_baseline': 8.,# smoothing constant for gaussian filter
-        'neucoeff': .7,  # neuropil coefficient
-        'neumax': 1.,  # maximum neuropil coefficient (not implemented)
-        'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
-        'maxregshift': 0.,
-        'subpixel' : 10,
-        'batch_size': 200, # number of frames per batch
-        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
-        'nimg_init': 200, # subsampled frames for finding reference image
-        'navg_frames_svd': 5000,
-        'nsvd_for_roi': 1000,
-        'ratio_neuropil': 5,
-        'tile_factor': 1,
-        'threshold_scaling': 1,
-        'Vcorr': [],
-        'allow_overlap': False,
-        'inner_neuropil_radius': 2,
-        'outer_neuropil_radius': np.inf,
-        'min_neuropil_pixels': 350,
-        'ratio_neuropil_to_cell': 3,
-        'nframes': 1,
-        'diameter': 12
-      }
-    return ops
-
-class OpsLabel(QtGui.QLabel):
-    def __init__(self, text, parent=None):
-        super(OpsLabel, self).__init__(parent)
-        self.setAutoFillBackground(True)
-        #p = self.palette()
-        #p.setColor(self.backgroundRole(), QtGui.QColor(223, 230, 248))
-        self.setPalette(p)
-        self.setMouseTracking(True)
-        self.setText(text)
-
-    def mouseMoveEvent(self, event):
-        print("On Hover") # event.pos().x(), event.pos().y()
-
-    def mousePressEvent(self, event):
-        print(event)
-
-class OutLog:
-    def __init__(self, edit, out=None, color=None):
-        """(edit, out=None, color=None) -> can write stdout, stderr to a
-        QTextEdit.
-        edit = QTextEdit
-        out = alternate stream ( can be the original sys.stdout )
-        color = alternate color (i.e. color stderr a different color)
-        """
-        self.edit = edit
-        self.out = None
-        self.color = color
-
-    def write(self, m):
-        if self.color:
-            tc = self.edit.textColor()
-            self.edit.setTextColor(self.color)
-
-        self.edit.moveCursor(QtGui.QTextCursor.End)
-        self.edit.insertPlainText( m )
-
-        if self.color:
-            self.edit.setTextColor(tc)
-
-        if self.out:
-            self.out.write(m)
-
 ### custom QDialog which allows user to fill in ops
-class OpsValues(QtGui.QDialog):
-    def __init__(self, ops_file, parent=None):
-        super(OpsValues, self).__init__(parent)
-        self.setGeometry(50,50,900,900)
+# and run suite2p!
+class RunWindow(QtGui.QDialog):
+    def __init__(self, parent=None):
+        super(RunWindow, self).__init__(parent)
+        self.setGeometry(50,50,900,500)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -136,54 +58,50 @@ class OpsValues(QtGui.QDialog):
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,1,0,1,1)
-        runbtn = QtGui.QPushButton('RUN SUITE2P')
-        runbtn.clicked.connect(self.run_suite2p)
-        self.layout.addWidget(runbtn,11,0,1,1)
+        self.runButton = QtGui.QPushButton('RUN SUITE2P')
+        self.runButton.clicked.connect(self.run_S2P)
+        self.layout.addWidget(self.runButton,11,0,1,1)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 12,0,25,l)
-        print('Connecting process')
+        self.layout.addWidget(self.textEdit, 12,0,10,l)
         self.process = QtCore.QProcess(self)
-        self.process.readyReadStandardOutput.connect(self.stdoutReady)
-        self.process.readyReadStandardError.connect(self.stderrReady)
-        self.process.started.connect(lambda: print('Started!'))
-        self.process.finished.connect(lambda: print('Finished!'))
+        self.process.readyReadStandardOutput.connect(self.stdout_write)
+        self.process.readyReadStandardError.connect(self.stderr_write)
+        # disable the button when running the s2p process
+        self.process.started.connect(lambda: self.runButton.setEnabled(False))
+        self.process.finished.connect(lambda: self.runButton.setEnabled(True))
 
-    def append(self, text):
+    def stdout_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
-        cursor.insertText(text)
-        #self.output.ensureCursorVisible()
+        cursor.insertText(str(self.process.readAllStandardOutput(), 'utf-8'))
+        self.textEdit.ensureCursorVisible()
 
-    def stdoutReady(self):
-        text = str(self.process.readAllStandardOutput())
-        print(text.strip())
-        self.append(text)
+    def stderr_write(self):
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText('>>>ERROR<<<\n')
+        cursor.insertText(str(self.process.readAllStandardError(), 'utf-8'))
+        self.textEdit.ensureCursorVisible()
 
-    def stderrReady(self):
-        text = str(self.process.readAllStandardError())
-        print(text.strip())
-        self.append(text)
-
-
-    def run_suite2p(self):
+    def run_S2P(self):
         k=0
         for key in self.keylist:
             if type(self.ops[key]) is float:
                 self.ops[key] = float(self.editlist[k].text())
-                print(key,'\t\t', float(self.editlist[k].text()))
+                #print(key,'\t\t', float(self.editlist[k].text()))
             elif type(self.ops[key]) is int:
                 self.ops[key] = int(self.editlist[k].text())
-                print(key,'\t\t', int(self.editlist[k].text()))
+                #print(key,'\t\t', int(self.editlist[k].text()))
             elif type(self.ops[key]) is bool:
                 self.ops[key] = bool(self.editlist[k].text())
-                print(key,'\t\t', bool(self.editlist[k].text()))
+                #print(key,'\t\t', bool(self.editlist[k].text()))
             k+=1
         self.ops['data_path'] = self.data_path
         self.ops['subfolders'] = []
-        print('running suite2p')
-        print('Starting process')
+        print('Running suite2p!')
+        print('starting process')
         np.save('ops.npy', self.ops)
-        self.process.start('python', ['main.py'])
+        self.process.start('python -u main.py')
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")

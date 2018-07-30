@@ -323,13 +323,13 @@ class MainW(QtGui.QMainWindow):
                     print(time.time()-t0)
 
     def run_suite2p(self):
-        LC = gui.OpsValues('C:/Users/carse/github/data/ops.pkl', self)
-        LC.show()
+        RW = gui.RunWindow(self)
+        RW.show()
 
-    def load_proc(self, name):
+    def load_proc(self, name=None):
         if name is None:
             name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
-        if name:
+        else:
             print(name[0])
             try:
                 self.stat = np.load(name[0])

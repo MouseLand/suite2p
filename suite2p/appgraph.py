@@ -31,7 +31,7 @@ class MainW(QtGui.QMainWindow):
         # load processed data
         loadProc = QtGui.QAction('&Load processed data (choose stat.npy file)', self)
         loadProc.setShortcut('Ctrl+L')
-        loadProc.triggered.connect(self.load_proc)
+        loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
         # load masks
         #loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
@@ -120,7 +120,8 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #
         #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
-        self.load_proc(['C:/Users/carse/github/data/stat.npy','*'])
+        self.fname = 'C:/Users/carse/github/data/stat.npy'
+        self.load_proc()
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)
@@ -326,52 +327,55 @@ class MainW(QtGui.QMainWindow):
         RW = gui.RunWindow(self)
         RW.show()
 
-    def load_proc(self, name=None):
-        if name is None:
-            name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
-        else:
-            print(name[0])
+    def load_dialog(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        self.fname = name[0]
+        self.load_proc()
+
+    def load_proc(self):
+        name = self.fname
+        print(name)
+        try:
+            self.stat = np.load(name)
+            self.stat = self.stat.item()
+            ypix = self.stat[0]['ypix']
+        except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
+            print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
+            self.stat = None
+        if self.stat is not None:
+            basename, fname = os.path.split(name)
+            self.basename = basename
+            goodfolder = True
             try:
-                self.stat = np.load(name[0])
-                self.stat = self.stat.item()
-                ypix = self.stat[0]['ypix']
-            except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
-                print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
-                self.stat = None
-            if self.stat is not None:
-                basename, fname = os.path.split(name[0])
-                self.basename = basename
-                goodfolder = True
-                try:
-                    self.Fcell = np.load(basename + '/F.npy')
-                    self.Fneu = np.load(basename + '/Fneu.npy')
-                except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                    print('ERROR: there are no fluorescence traces in this folder (F.npy/Fneu.npy)')
-                    goodfolder = False
-                try:
-                    self.Spks = np.load(basename + '/spks.npy')
-                except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                    print('there are no spike deconvolved traces in this folder (spks.npy)')
-                try:
-                    self.iscell = np.load(basename + '/iscell.npy')
-                except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                    print('no manual labels found (iscell.npy)')
-                try:
-                    self.ops = np.load(basename + '/ops.npy')
-                    self.ops = self.ops.item()
-                except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                    print('ERROR: there is no ops file in this folder (ops.npy)')
-                    goodfolder = False
-                if goodfolder:
-                    self.make_masks_and_buttons(name[0])
-                    self.loaded = True
-                else:
-                    print('stat.npy found, but other files not in folder')
-                    Text = 'stat.npy found, but other files missing, choose another?'
-                    self.load_again(Text)
+                self.Fcell = np.load(basename + '/F.npy')
+                self.Fneu = np.load(basename + '/Fneu.npy')
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print('ERROR: there are no fluorescence traces in this folder (F.npy/Fneu.npy)')
+                goodfolder = False
+            try:
+                self.Spks = np.load(basename + '/spks.npy')
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print('there are no spike deconvolved traces in this folder (spks.npy)')
+            try:
+                self.iscell = np.load(basename + '/iscell.npy')
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print('no manual labels found (iscell.npy)')
+            try:
+                self.ops = np.load(basename + '/ops.npy')
+                self.ops = self.ops.item()
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print('ERROR: there is no ops file in this folder (ops.npy)')
+                goodfolder = False
+            if goodfolder:
+                self.make_masks_and_buttons(name[0])
+                self.loaded = True
             else:
-                Text = 'Incorrect file, not a stat.pkl, choose another?'
+                print('stat.npy found, but other files not in folder')
+                Text = 'stat.npy found, but other files missing, choose another?'
                 self.load_again(Text)
+        else:
+            Text = 'Incorrect file, not a stat.pkl, choose another?'
+            self.load_again(Text)
 
     def load_again(self,Text):
         tryagain = QtGui.QMessageBox.question(self, 'ERROR',
@@ -500,9 +504,6 @@ class MainW(QtGui.QMainWindow):
         self.model = classifier.Classifier(classfile=None,
                                            trainfiles=self.trainfiles,
                                            statclass=self.statclass)
-
-
-
 
 def run():
     ## Always start by initializing Qt (only once per application)

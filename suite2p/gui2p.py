@@ -120,8 +120,8 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #
         #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
-        self.fname = 'C:/Users/carse/github/data/stat.npy'
-        self.load_proc()
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
+        #self.load_proc()
 
     def make_masks_and_buttons(self, name):
         self.p0.setText(name)

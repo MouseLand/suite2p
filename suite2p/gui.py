@@ -6,7 +6,7 @@ import numpy as np
 import os
 import pickle
 import fig
-#import suite2p
+from suite2p import run_s2p
 
 ### custom QDialog which allows user to fill in ops
 # and run suite2p!

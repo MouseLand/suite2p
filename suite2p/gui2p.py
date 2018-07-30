@@ -516,4 +516,4 @@ def run():
     GUI = MainW()
     sys.exit(app.exec_())
 
-run()
+#run()

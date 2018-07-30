@@ -66,6 +66,8 @@ def init_masks(parent):
 
     LamMean = LamAll[LamAll>1e-10].mean()
     parent.H = H
+    parent.iROI = iROI
+    parent.iExt = iExt
     parent.Sroi = Sroi
     parent.Sext = Sext
     parent.Lam  = Lam
@@ -96,7 +98,7 @@ def init_masks(parent):
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
                     mimg = mimg - mimg.min()
                     mimg = mimg / mimg.max()
-                    parent.Vback[k-1,:,:] = V
+                    parent.Vback[k-1,:,:] = mimg
                     V = mimg
                     if k==2:
                         V = np.minimum(1, V + S)
@@ -156,31 +158,39 @@ def flip_cell(parent):
     i0 = 1-i
     # cell indic
     nin = parent.iROI==n
+    next = parent.iExt==n
     parent.Lam[i,nin] = parent.Lam[i0,nin]
     parent.Lam[i0,nin] = 0
     parent.Sroi[i,nin] = 1
     parent.Sroi[i0,nin] = 0
-    parent.Sext[i,nin] = 1
-    parent.Sext[i0,nin] = 0
+    parent.Sext[i,next] = 1
+    parent.Sext[i0,next] = 0
 
     for i in range(2):
         for c in range(parent.H.shape[0]):
             for k in range(3):
-                H = parent.H[c,nin]
                 if k<2:
+                    H = parent.H[c,nin]
                     S = parent.Sroi[i,nin]
                 else:
-                    S = parent.Sext[i,nin]
-                V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
-                if k>0:
+                    H = parent.H[c,next]
+                    S = parent.Sext[i,next]
+                if k==0:
+                    V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
+                elif k==1:
                     V = parent.Vback[k-1,nin]
-                    if k==2:
-                        V = np.minimum(1, V + S)
+                else:
+                    V = parent.Vback[k-1,next]
+                    V = np.minimum(1, V + S)
                 H = np.expand_dims(H,axis=1)
                 S = np.expand_dims(S,axis=1)
                 V = np.expand_dims(V,axis=1)
                 hsv = np.concatenate((H,S,V),axis=1)
-                parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
+                if k<2:
+                    parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
+                else:
+                    parent.RGB_all[i,c,k,next,:] = hsv_to_rgb(hsv)
+
 
 
     # remake RGB masks with new HSV

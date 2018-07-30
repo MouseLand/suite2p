@@ -17,8 +17,101 @@ def boundary(ypix,xpix):
     iext = (nneigh<4).flatten()
     return iext
 
+def init_masks(parent):
+    ops = parent.ops
+    stat = parent.stat
+    iscell = parent.iscell
+    cols = parent.ops_plot[3]
+    ncells = len(stat)-1
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    H      = np.zeros((cols.shape[1],Ly,Lx), np.float32)
+    Sroi  = np.zeros((2,Ly,Lx), np.float32)
+    Sext   = np.zeros((2,Ly,Lx), np.float32)
+    LamAll = np.zeros((Ly,Lx), np.float32)
+    Lam    = np.zeros((2,Ly,Lx), np.float32)
+    iROI   = -1 * np.ones((Ly,Lx), np.int32)
+    iExt   = -1 * np.ones((Ly,Lx), np.int32)
 
-def draw_masks(ops, stat, ops_plot, iscell, ichosen):
+    for n in range(ncells):
+        ypix = stat[n]['ypix']
+        if ypix is not None:
+            xpix = stat[n]['xpix']
+            yext = stat[n]['yext']
+            xext = stat[n]['xext']
+            lam = stat[n]['lam']
+            lam = lam / lam.sum()
+            i = int(1-iscell[n])
+            iROI[ypix,xpix] = n
+            iExt[yext,xext] = n
+            Sroi[i,ypix,xpix] = 1
+            Sext[i,yext,xext] = 1
+            Lam[i,ypix,xpix]  = lam
+            LamAll[ypix,xpix] = lam
+
+    # create H from cols and iROI
+    for c in range(cols.shape[1]):
+        H[c,iROI>=0] = cols[iROI[iROI>=0],c]
+
+    LamMean = LamAll[LamAll>1e-10].mean()
+    parent.H = H
+    parent.Sroi = Sroi
+    parent.Sext = Sext
+    parent.Lam  = Lam
+    parent.LamMean = LamMean
+
+    # create all mask options
+    parent.RGB_all = np.zeros((2,cols.shape[1],3,Ly,Lx,3), np.float32)
+    parent.Vback = np.zeros((2,Ly,Lx), np.float32)
+    parent.RGB_meanImg = np.zeros((Ly,Lx), np.float32)
+    parent.RGB_Vcorr   = np.zeros((Ly,Lx), np.float32)
+
+    for i in range(2):
+        for c in range(cols.shape[1]):
+            for k in range(3):
+                H = parent.H[c,:,:]
+                if k<2:
+                    S = parent.Sroi[i,:,:]
+                else:
+                    S = parent.Sext[i,:,:]
+                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,:,:]/parent.LamMean))
+                if k>0:
+                    if k==1:
+                        mimg = ops['meanImg']
+                    else:
+                        vcorr = ops['Vcorr']
+                        mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+                        mimg[ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]] = vcorr
+                    mimg = mimg - mimg.min()
+                    mimg = mimg / mimg.max()
+                    parent.Vback[k-1,:,:] = V
+                    V = mimg
+                    if k==2:
+                        V = np.minimum(1, V + S)
+                H = np.expand_dims(H,axis=2)
+                S = np.expand_dims(S,axis=2)
+                V = np.expand_dims(V,axis=2)
+                hsv = np.concatenate((H,S,V),axis=2)
+                parent.RGB_all[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+
+    H = np.zeros((Ly,Lx,1),np.float32)
+    S = np.zeros((Ly,Lx,1),np.float32)
+    V = np.expand_dims(parent.Vback[0,:,:],axis=2)
+    hsv = np.concatenate((H,S,V),axis=2)
+    parent.RGB_meanImg = hsv_to_rgb(hsv)
+
+    V = np.expand_dims(parent.Vback[1,:,:],axis=2)
+    hsv = np.concatenate((H,S,V),axis=2)
+    parent.RGB_Vcorr = hsv_to_rgb(hsv)
+
+def make_chosen(Ma, ypix, xpix):
+    Mout = Ma
+    v = Ma[ypix,xpix,:].max(axis=1)
+    Mout[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,len(ypix))).transpose()
+    return Mout
+
+def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''creates RGB masks using stat and puts them in M1 or M2 depending on
     whether or not iscell is True for a given ROI
     args:
@@ -30,61 +123,24 @@ def draw_masks(ops, stat, ops_plot, iscell, ichosen):
         M1: ROIs that are True in iscell
         M2: ROIs that are False in iscell
     '''
-    ncells = iscell.shape[0]
-    plotROI = ops_plot[0]
-    view    = ops_plot[1]
-    color   = ops_plot[2]
-    cols    = ops_plot[3][:,color]
+    ncells  = parent.iscell.shape[0]
+    plotROI = parent.ops_plot[0]
+    view    = parent.ops_plot[1]
+    color   = parent.ops_plot[2]
+    ichosen = parent.ichosen
+    wplot   = int(1-parent.iscell[ichosen])
+    print(ichosen)
+    p0 = parent.RGB_all
+    ypix    = parent.stat[ichosen]['ypix'].flatten()
+    xpix    = parent.stat[ichosen]['xpix'].flatten()
+    if wplot==0:
+        M0 = make_chosen(parent.RGB_all[0,color,view,:,:,:], ypix, xpix)
+        M1 = parent.RGB_all[1,color,view,:,:,:]
+    else:
+        M0 = parent.RGB_all[0,color,view,:,:,:]
+        M1 = make_chosen(parent.RGB_all[1,color,view,:,:,:], ypix, xpix)
 
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    Lam = np.zeros((2,Ly,Lx,1))
-    H = np.zeros((2,Ly,Lx,1))
-    S  = np.zeros((2,Ly,Lx,1))
-    for n in range(0,ncells):
-        lam     = stat[n]['lam']
-        ypix    = stat[n]['ypix'].astype(np.int32)
-        if view>0:
-            ypix = ypix[stat[n]['iext']]
-            lam = lam[stat[n]['iext']]
-            lam = lam / lam.max()
-        if ypix is not None:
-            xpix = stat[n]['xpix'].astype(np.int32)
-            if view>0:
-                xpix = xpix[stat[n]['iext']]
-            wmap = (1-int(iscell[n]))*np.ones(ypix.shape,dtype=np.int32)
-            Lam[wmap,ypix,xpix]    = np.expand_dims(lam, axis=2)
-            H[wmap,ypix,xpix]      = cols[n]*np.expand_dims(np.ones(ypix.shape), axis=2)
-            S[wmap,ypix,xpix]      = np.expand_dims(np.ones(ypix.shape), axis=2)
-            if n==ichosen:
-                S[wmap,ypix,xpix] = np.expand_dims(np.zeros(ypix.shape), axis=2)
-
-    V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
-    #V  = np.expand_dims(V,axis=2)
-    M = []
-    if view>=0:
-        if view == 0:
-            mimg = ops['meanImg']
-            #S = V
-        else:
-            vcorr = ops['Vcorr']
-            mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
-            mimg[ops['yrange'][0]:ops['yrange'][1],
-                ops['xrange'][0]:ops['xrange'][1]] = vcorr
-        mimg = mimg - mimg.min()
-        mimg = mimg / mimg.max()
-        V[0,:,:,:] = np.expand_dims(mimg,axis=2)
-        V[1,:,:,:] = np.expand_dims(mimg,axis=2)
-        if view==1 and plotROI:
-            V = np.minimum(1, V + S)
-
-        if not plotROI:
-            S = np.zeros((2,Ly,Lx,1))
-    for j in range(0,2):
-        hsv = np.concatenate((H[j,:,:],S[j,:,:],V[j,:,:]),axis=2)
-        rgb = hsv_to_rgb(hsv)
-        M.append(rgb)
-    return M
+    return M0,M1
 
 def ROI_index(ops, stat):
     '''matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)'''
@@ -93,9 +149,9 @@ def ROI_index(ops, stat):
     Lx = ops['Lx']
     iROI = -1 * np.ones((Ly,Lx), dtype=np.int32)
     for n in range(ncells):
-        ypix = stat[n]['ypix']
+        ypix = stat[n]['ypix'][~stat[n]['overlap']]
         if ypix is not None:
-            xpix = stat[n]['xpix']
+            xpix = stat[n]['xpix'][~stat[n]['overlap']]
             iROI[ypix,xpix] = n
     return iROI
 

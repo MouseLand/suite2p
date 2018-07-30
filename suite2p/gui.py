@@ -6,7 +6,7 @@ import numpy as np
 import os
 import pickle
 import fig
-import suite2p
+#import suite2p
 
 ### custom QDialog which allows user to fill in ops
 # and run suite2p!
@@ -104,7 +104,7 @@ class RunWindow(QtGui.QDialog):
         print('Running suite2p!')
         print('starting process')
         np.save('ops.npy', self.ops)
-        self.process.start('python -u main.py')
+        self.process.start('main')
         parent.load_proc('')
 
     def get_folders(self):
@@ -195,17 +195,15 @@ class ViewButton(QtGui.QPushButton):
             parent.btnstate[n] = False
         if ischecked==bid and not waschecked:
             parent.viewbtns.setExclusive(True)
-            parent.ops_plot[1] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
+            parent.ops_plot[1] = bid+1
+            M = fig.draw_masks(parent)
             parent.plot_masks(M)
             parent.btnstate[bid]=True
         elif ischecked==bid and waschecked:
             parent.viewbtns.setExclusive(False)
             parent.btnstate[bid]=False
-            parent.ops_plot[1] = -1
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
+            parent.ops_plot[1] = 0
+            M = fig.draw_masks(parent)
             parent.plot_masks(M)
         self.setChecked(parent.btnstate[bid])
 
@@ -223,7 +221,6 @@ class ColorButton(QtGui.QPushButton):
         ischecked  = self.isChecked()
         if ischecked:
             parent.ops_plot[2] = bid
-            M = fig.draw_masks(parent.ops, parent.stat, parent.ops_plot,
-                                parent.iscell, parent.ichosen)
+            M = fig.draw_masks(parent)
             parent.plot_masks(M)
             parent.plot_colorbar(bid)

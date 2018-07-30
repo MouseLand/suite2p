@@ -20,7 +20,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot = []
         # default plot options
         self.ops_plot.append(True)
-        self.ops_plot.append(-1)
+        self.ops_plot.append(0)
         self.ops_plot.append(0)
         ### menu bar options
         # run suite2p from scratch
@@ -129,8 +129,12 @@ class MainW(QtGui.QMainWindow):
         # add boundaries to stat for ROI overlays
         ncells = self.Fcell.shape[0]
         for n in range(0,ncells):
-            iext = fig.boundary(self.stat[n]['ypix'], self.stat[n]['xpix'])
-            self.stat[n]['iext'] = np.expand_dims(iext,axis=0)
+            ypix = self.stat[n]['ypix']
+            xpix = self.stat[n]['xpix']
+            iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
+            self.stat[n]['yext'] = ypix[iext]
+            self.stat[n]['xext'] = xpix[iext]
+
         if 'mean_image_red' in self.ops:
             views.append('red channel mean')
         colors = ['random', 'skew', 'compact','footprint',
@@ -195,8 +199,8 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-        M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
-                            self.iscell, self.ichosen)
+        fig.init_masks(self)
+        M = fig.draw_masks(self)
         self.plot_masks(M)
         self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
         self.colormat = fig.make_colorbar()
@@ -244,8 +248,7 @@ class MainW(QtGui.QMainWindow):
         else:
             self.ops_plot[0] = False
         if self.loaded:
-            M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
-                                self.iscell, self.ichosen)
+            M = fig.draw_masks(self)
             self.plot_masks(M)
 
     def plot_masks(self,M):
@@ -315,9 +318,8 @@ class MainW(QtGui.QMainWindow):
                 else:
                     flip = False
                 if choose or flip:
-                    M = fig.draw_masks(self.ops, self.stat, self.ops_plot,
-                                        self.iscell, self.ichosen)
                     t0=time.time()
+                    M = fig.draw_masks(self)
                     self.plot_masks(M)
                     self.plot_trace()
                     self.show()
@@ -374,7 +376,7 @@ class MainW(QtGui.QMainWindow):
                 Text = 'stat.npy found, but other files missing, choose another?'
                 self.load_again(Text)
         else:
-            Text = 'Incorrect file, not a stat.pkl, choose another?'
+            Text = 'Incorrect file, not a stat.npy, choose another?'
             self.load_again(Text)
 
     def load_again(self,Text):

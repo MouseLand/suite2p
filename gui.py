@@ -59,7 +59,7 @@ class RunWindow(QtGui.QDialog):
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,1,0,1,1)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
-        self.runButton.clicked.connect(self.run_S2P)
+        self.runButton.clicked.connect(lambda: self.run_S2P(parent))
         self.layout.addWidget(self.runButton,11,0,1,1)
         self.textEdit = QtGui.QTextEdit()
         self.layout.addWidget(self.textEdit, 12,0,10,l)
@@ -69,6 +69,9 @@ class RunWindow(QtGui.QDialog):
         # disable the button when running the s2p process
         self.process.started.connect(lambda: self.runButton.setEnabled(False))
         self.process.finished.connect(lambda: self.runButton.setEnabled(True))
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText('Opening in GUI!')
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -83,7 +86,7 @@ class RunWindow(QtGui.QDialog):
         cursor.insertText(str(self.process.readAllStandardError(), 'utf-8'))
         self.textEdit.ensureCursorVisible()
 
-    def run_S2P(self):
+    def run_S2P(self, parent):
         k=0
         for key in self.keylist:
             if type(self.ops[key]) is float:
@@ -102,6 +105,7 @@ class RunWindow(QtGui.QDialog):
         print('starting process')
         np.save('ops.npy', self.ops)
         self.process.start('python -u main.py')
+        parent.load_proc('')
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")

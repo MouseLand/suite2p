@@ -260,7 +260,7 @@ def pairwiseDistance(y,x):
     return dists
 
 
-def getStat(Ly, Lx, d0, mPix, mLam, codes, Ucell):
+def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     '''computes statistics of cells found using sourcery
     inputs:
         Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
@@ -270,9 +270,8 @@ def getStat(Ly, Lx, d0, mPix, mLam, codes, Ucell):
     '''
     stat = {}
     rs,dy,dx = circleMask(d0)
-    dists = pairwiseDistance(dy,dx)
     rsort = np.sort(rs.flatten())
-    dists_radius = pairwiseDistance(rs.flatten(), rs.transpose().flatten())
+    
     d0 = float(d0)
     rs    = rs[rs<=d0]
     frac = 0.5
@@ -281,13 +280,11 @@ def getStat(Ly, Lx, d0, mPix, mLam, codes, Ucell):
     for n in range(0,ncells):
         stat[n] = {}
         goodi   = np.array(((mPix[n,:]>=0) & (mLam[n,:]>1e-10)).nonzero()).astype(np.int32)
-        
         ipix    = mPix[n,goodi].astype(np.int32)
         ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
         # pixels of cell in cropped (Ly,Lx) region of recording
-        stat[n]['ipix'] = ipix
-        stat[n]['ypix'] = ypix
-        stat[n]['xpix'] = xpix
+        stat[n]['ypix'] = ypix + ops['yrange'][0]
+        stat[n]['xpix'] = xpix + ops['xrange'][0]
         stat[n]['med']  = [np.median(ypix), np.median(xpix)]
         stat[n]['npix'] = ipix.size
         stat[n]['lam']  = mLam[n, goodi]
@@ -301,11 +298,9 @@ def getStat(Ly, Lx, d0, mPix, mLam, codes, Ucell):
         footprints[n] = stat[n]['footprint']
         # compute compactness of ROI
         lam = mLam[n, :]
-        dd = dists[np.ix_(lam>1e-3, lam>1e-3)]
-        stat[n]['mrs'] = dd.mean() / d0
-        dd = dists_radius[np.ix_(lam>1e-3, lam>1e-3)]
-        stat[n]['mrs0'] = dd.mean() / d0
-        
+        r2 = (stat[n]['ypix']-stat[n]['med'][0])**2 + (stat[n]['xpix']-stat[n]['med'][1])**2        
+        stat[n]['mrs']  = np.median(r2**.5) / d0
+        stat[n]['mrs0'] = np.median(rsort) / d0
         stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
         
     mfoot = np.median(footprints)
@@ -355,20 +350,21 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
             overlap = np.zeros((stat[n]['npix'],), bool)
         else:
             overlap = stat[n]['overlap']
-        ipix = stat[n]['ipix'][~overlap]
         ypix = stat[n]['ypix'][~overlap]
         xpix = stat[n]['xpix'][~overlap]
         lam  = stat[n]['lam'][~overlap]
-        if ipix.size:
+        if xpix.size:
             # compute radius of neuron (used for neuropil scaling)
             radius = utils.fitMVGaus(ypix,xpix,lam,2)[2]
             stat[n]['radius'] = radius[0]
+            stat[n]['aspect_ratio'] = radius[0]/radius[1]
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
             # add pixels to cell masks
             cell_masks[n, ypix, xpix] = lam / lam.sum()
         else:
             stat[n]['radius'] = 0
+            stat[n]['aspect_ratio'] = 1
     cell_pix = np.minimum(1, cell_pix)
     
     return stat, cell_pix, cell_masks
@@ -412,7 +408,6 @@ def neuropilMasks(ops, stat, cell_pix):
                     npixels = neuropil_no_cells.astype(np.int32).sum()
                     outer_radius *= 1.25  
             else:
-                print('this branch')
                 neuropil_on       = ((y - cell_center[0])**2 + (x - cell_center[1])**2)**0.5 <= outer_radius
                 neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
             npixels = neuropil_no_cells.astype(np.int32).sum()    
@@ -582,21 +577,23 @@ def sourcery(ops, U, S, StU, StS):
     mLam = mLam / mLam.sum(axis=1).reshape(ncells,1)
     mPix = mPix[:ncells,:]   
 
-    # Ucell = U - np.resize(neu.transpose() @ S, U.shape)
+    Ucell = U - np.resize(neu.transpose() @ S, U.shape) 
     # ypix, xpix, goodi = celldetect.localRegion(i[n-ncells],j[n-ncells],dy,dx,Ly,Lx)
 
-    stat = getStat(Lyc,Lxc,d0,mPix,mLam,codes,Ucell)    
-    stat = getOverlaps(stat,Lyc,Lxc)
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)    
+    stat = getOverlaps(stat,Ly,Lx)
     
-    stat,cell_pix,cell_masks = cellMasks(stat,Lyc,Lxc,False)
+    stat,cell_pix,cell_masks = cellMasks(stat,Ly,Lx,False)
     neuropil_masks           = neuropilMasks(ops,stat,cell_pix)
     
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
 
-    neuropil_masks = sparse.csc_matrix(np.resize(neuropil_masks,(-1,Lyc*Lxc)))
-    cell_masks     = sparse.csc_matrix(np.resize(cell_masks,(-1,Lyc*Lxc)))
+    neuropil_masks = sparse.csc_matrix(np.resize(neuropil_masks,(-1,Ly*Lx)))
+    cell_masks     = sparse.csc_matrix(np.resize(cell_masks,(-1,Ly*Lx)))
     neuropil_masks = neuropil_masks.transpose()
     cell_masks = cell_masks.transpose()
 
@@ -625,8 +622,6 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
             break
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)        
 
-        # crop data to valid region
-        data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
         # resize data to be Ly*Lx by nimgd
         data = np.reshape(data, (nimgd,-1))
         # compute cell activity

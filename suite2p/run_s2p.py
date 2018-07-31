@@ -105,7 +105,7 @@ def run_s2p(ops={},db={}):
         # combine with user options
         ops = {**ops0, **ops} 
         # copy tiff to a binary
-        ops1 = register.tiff_to_binary(op)
+        ops1 = register.tiff_to_binary(ops)
         print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         # register tiff
         ops1 = register.register_binary(ops1)
@@ -123,8 +123,8 @@ def run_s2p(ops={},db={}):
         with Pool(ops['num_workers_roi']) as p:
             results = p.map(get_cells, ops1)
         for k in range(len(ops1)):
-        ops1[k] = results[k]
-    else
+            ops1[k] = results[k]
+    else:
         for k in range(len(ops1)):
             ops1[k] = get_cells(ops1[k])
     

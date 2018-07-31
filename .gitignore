@@ -16,7 +16,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# jupyter caches
+# python and jupyter
 jupyter/.ipynb_checkpoints/
 jupyter/__pycache__/
 .ipynb_checkpoints/
@@ -24,6 +24,7 @@ __pycache__/
 dist/
 suite2p.egg-info/
 build/
+*.npy
 
 # =========================
 # Operating System Files

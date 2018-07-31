@@ -212,6 +212,7 @@ def register_binary(ops):
     meanImg = np.zeros((Ly, Lx))    
     k = 0
     nfr = 0
+    k0 = tic()
     while True:
         buff = reg_file.read(nbytesread)    
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -234,9 +235,10 @@ def register_binary(ops):
             fname = 'file_chan%0.3d.tif'%k
             io.imsave(os.path.join(tifroot, fname), dwrite)            
         nfr += dwrite.shape[0]
-        if k%10==0:
-            print('registered %d/%d frames'%(nfr, ops['nframes']))
         k += 1
+        if k%20==0:
+            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+        
     ops['yoff'] = yoff
     ops['xoff'] = xoff
     ops['corrXY'] = corrXY

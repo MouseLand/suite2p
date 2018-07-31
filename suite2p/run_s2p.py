@@ -54,7 +54,7 @@ def run_s2p(ops={},db={}):
     
     ops = {**ops, **db}
     
-    if len(ops['save_path0'])==0:
+    if 'save_path0' not in ops or len(ops['save_path0'])==0:
         ops['save_path0'] = ops['data_path'][0]
 
     # check if there are files already registered
@@ -90,16 +90,11 @@ def run_s2p(ops={},db={}):
         print('skipping registration...')
     
     for ops in ops1:
-        # get SVD components
-        U,sdmov      = celldetect.getSVDdata(ops)
-        print('time %4.4f. SVD computed'%toc(i0))
-        # neuropil projections
-        S, StU , StS = celldetect.getStU(ops, U)
         # get ROIs
-        ops, stat, cell_masks, neuropil_masks, mPix, mLam = celldetect.sourcery(ops, U, S, StU, StS)
+        ops, stat = celldetect.sourcery(ops)
         print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
         # extract fluorescence and neuropil
-        F, Fneu = celldetect.extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam)
+        F, Fneu = celldetect.extractF(ops, stat)
         print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
         # subtract neuropil
         dF = F - ops['neucoeff'] * Fneu        

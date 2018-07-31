@@ -306,9 +306,9 @@ class MainW(QtGui.QMainWindow):
                     ichosen = int(self.iROI[posx,posy])
                     if self.ichosen == ichosen:
                         choose = False
-                    elif ichosen >= 0:
-                        self.ichosen = ichosen
+                    self.ichosen = ichosen
                 if flip and self.iflip != self.ichosen:
+                    self.ichosen = int(self.iROI[posx,posy])
                     flip = True
                     iscell = int(self.iscell[self.ichosen])
                     if 2-iscell == iplot:

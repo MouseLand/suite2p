@@ -77,7 +77,8 @@ class RunWindow(QtGui.QDialog):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         cursor.insertText('Opening in GUI (can close this window)')
-        parent.load_proc(self.save_path[0]+'/stat.npy')
+        parent.fname = self.save_path[0]+'/stat.npy'
+        parent.load_proc()
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()

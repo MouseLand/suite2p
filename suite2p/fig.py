@@ -158,13 +158,16 @@ def flip_cell(parent):
     # cell indic
     nin = parent.iROI==n
     next = parent.iExt==n
-    parent.Lam[i,nin] = parent.Lam[i0,nin]
+    l0 = np.array(parent.Lam[i0,nin])
+    print(l0)
+    parent.Lam[i,nin] = l0
     parent.Lam[i0,nin] = 0
     parent.Sroi[i,nin] = 1
     parent.Sroi[i0,nin] = 0
     parent.Sext[i,next] = 1
     parent.Sext[i0,next] = 0
 
+    print(parent.Lam[i,nin])
     for i in range(2):
         for c in range(parent.H.shape[0]):
             for k in range(3):
@@ -189,11 +192,6 @@ def flip_cell(parent):
                     parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
                 else:
                     parent.RGB_all[i,c,k,next,:] = hsv_to_rgb(hsv)
-
-
-
-    # remake RGB masks with new HSV
-
 
 
 def ROI_index(ops, stat):

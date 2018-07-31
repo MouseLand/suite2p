@@ -112,7 +112,7 @@ class RunWindow(QtGui.QDialog):
         if len(self.save_path)==0:
             fpath = os.path.join(self.db['data_path'][0], 'suite2p', 'plane0')
             self.save_path = fpath
-        self.db['save_path0'] = self.save_path
+        self.db['save_path0'] = self.save_path[0]
         print('Running suite2p!')
         print('starting process')
         np.save('ops.npy', self.ops)

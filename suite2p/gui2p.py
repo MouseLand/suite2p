@@ -86,6 +86,8 @@ class MainW(QtGui.QMainWindow):
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
         self.p0 = l.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
+        self.lcell0 = l.addLabel('n cells',row=1,col=0,colspan=1)
+        self.lcell1 = l.addLabel('n cells',row=1,col=1,colspan=1)
         # cells image
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
@@ -197,6 +199,9 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
+        self.lcell0.setText('%d cells'%self.iscell.sum())
+        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
@@ -319,6 +324,8 @@ class MainW(QtGui.QMainWindow):
                         np.save(self.basename+'/iscell.npy', self.iscell)
                         self.iflip = self.ichosen
                         fig.flip_cell(self)
+                        self.lcell0.setText('%d cells'%self.iscell.sum())
+                        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
                     else:
                         flip = False
 

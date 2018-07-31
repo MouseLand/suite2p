@@ -73,16 +73,15 @@ def init_masks(parent):
     parent.LamMean = LamMean
 
     # create all mask options
-    parent.RGB_all = np.zeros((2,cols.shape[1],3,Ly,Lx,3), np.float32)
-    parent.Vback = np.zeros((2,Ly,Lx), np.float32)
-    parent.RGB_meanImg = np.zeros((Ly,Lx), np.float32)
-    parent.RGB_Vcorr   = np.zeros((Ly,Lx), np.float32)
+    parent.RGB_all = np.zeros((2,cols.shape[1],4,Ly,Lx,3), np.float32)
+    parent.Vback = np.zeros((3,Ly,Lx), np.float32)
+    parent.RGBback = np.zeros((3,Ly,Lx,3), np.float32)
 
     for i in range(2):
         for c in range(cols.shape[1]):
-            for k in range(3):
+            for k in range(4):
                 H = parent.H[c,:,:]
-                if k<2:
+                if k<3:
                     S = parent.Sroi[i,:,:]
                 else:
                     S = parent.Sext[i,:,:]
@@ -92,6 +91,9 @@ def init_masks(parent):
                         mimg = ops['meanImg']
                         mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
                         mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
+                        S = np.minimum(1, V*1.5)
+                    elif k==2:
+                        mimg = ops['meanImg']
                         S = np.minimum(1, V*1.5)
                     else:
                         vcorr = ops['Vcorr']
@@ -105,7 +107,7 @@ def init_masks(parent):
                     mimg = mimg / mimg.max()
                     parent.Vback[k-1,:,:] = mimg
                     V = mimg
-                    if k==2:
+                    if k==3:
                         V = np.minimum(1, V + S)
                 H = np.expand_dims(H,axis=2)
                 S = np.expand_dims(S,axis=2)
@@ -113,15 +115,12 @@ def init_masks(parent):
                 hsv = np.concatenate((H,S,V),axis=2)
                 parent.RGB_all[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
-    H = np.zeros((Ly,Lx,1),np.float32)
-    S = np.zeros((Ly,Lx,1),np.float32)
-    V = np.expand_dims(parent.Vback[0,:,:],axis=2)
-    hsv = np.concatenate((H,S,V),axis=2)
-    parent.RGB_meanImg = hsv_to_rgb(hsv)
-
-    V = np.expand_dims(parent.Vback[1,:,:],axis=2)
-    hsv = np.concatenate((H,S,V),axis=2)
-    parent.RGB_Vcorr = hsv_to_rgb(hsv)
+    for k in range(3):
+        H = np.zeros((Ly,Lx,1),np.float32)
+        S = np.zeros((Ly,Lx,1),np.float32)
+        V = np.expand_dims(parent.Vback[k,:,:],axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        parent.RGBback[k,:,:,:] = hsv_to_rgb(hsv)
 
 def make_chosen(M, ypix, xpix):
     v = M[ypix,xpix,:].max(axis=1)
@@ -144,17 +143,21 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     plotROI = parent.ops_plot[0]
     view    = parent.ops_plot[1]
     color   = parent.ops_plot[2]
-    ichosen = parent.ichosen
-    wplot   = int(1-parent.iscell[ichosen])
-    M0 = np.array(parent.RGB_all[0,color,view,:,:,:])
-    M1 = np.array(parent.RGB_all[1,color,view,:,:,:])
-
-    ypix    = parent.stat[ichosen]['ypix'].flatten()
-    xpix    = parent.stat[ichosen]['xpix'].flatten()
-    if wplot==0:
-        M0 = make_chosen(M0, ypix, xpix)
+    if view>0 and plotROI==0:
+        M0 = parent.RGBback[view-1,:,:,:]
+        M1 = parent.RGBback[view-1,:,:,:]
     else:
-        M1 = make_chosen(M1, ypix, xpix)
+        ichosen = parent.ichosen
+        wplot   = int(1-parent.iscell[ichosen])
+        M0 = np.array(parent.RGB_all[0,color,view,:,:,:])
+        M1 = np.array(parent.RGB_all[1,color,view,:,:,:])
+
+        ypix    = parent.stat[ichosen]['ypix'].flatten()
+        xpix    = parent.stat[ichosen]['xpix'].flatten()
+        if wplot==0:
+            M0 = make_chosen(M0, ypix, xpix)
+        else:
+            M1 = make_chosen(M1, ypix, xpix)
     return M0,M1
 
 def flip_cell(parent):

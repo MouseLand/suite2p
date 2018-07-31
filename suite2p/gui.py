@@ -160,7 +160,7 @@ class ListChooser(QtGui.QDialog):
         layout.addWidget(done,7,0,1,2)
 
     def load_cell(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
         if name:
             try:
                 iscell = np.load(name[0])
@@ -171,15 +171,15 @@ class ListChooser(QtGui.QDialog):
                         self.list.addItem(name[0])
 
                 if badfile:
-                    QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+                    QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
             except (OSError, RuntimeError, TypeError, NameError):
-                QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+                QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
         else:
-            QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+            QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
 
 
     def load_text(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file', filter='text file (*.txt)')
         if name:
             try:
                 txtfile = open(name[0], 'r')
@@ -200,7 +200,7 @@ class ListChooser(QtGui.QDialog):
 
 ### custom QPushButton class that plots image when clicked
 # requires buttons to put into a QButtonGroup (parent.viewbtns)
-# allows up to 1 button to pressed at a time
+# allows only 1 button to pressed at a time
 class ViewButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ViewButton,self).__init__(parent)
@@ -210,23 +210,11 @@ class ViewButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        ischecked  = parent.viewbtns.checkedId()
-        waschecked = parent.btnstate[bid]
-        for n in range(len(parent.btnstate)):
-            parent.btnstate[n] = False
-        if ischecked==bid and not waschecked:
-            parent.viewbtns.setExclusive(True)
-            parent.ops_plot[1] = bid+1
+        ischecked  = self.isChecked()
+        if ischecked:
+            parent.ops_plot[1] = bid
             M = fig.draw_masks(parent)
             parent.plot_masks(M)
-            parent.btnstate[bid]=True
-        elif ischecked==bid and waschecked:
-            parent.viewbtns.setExclusive(False)
-            parent.btnstate[bid]=False
-            parent.ops_plot[1] = 0
-            M = fig.draw_masks(parent)
-            parent.plot_masks(M)
-        self.setChecked(parent.btnstate[bid])
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)

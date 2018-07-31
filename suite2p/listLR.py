@@ -1,4 +1,33 @@
-
+### custom QPushButton class that plots image when clicked
+# requires buttons to put into a QButtonGroup (parent.viewbtns)
+# allows up to 1 button to pressed at a time
+class ViewButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, parent=None):
+        super(ViewButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        self.resize(self.minimumSizeHint())
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        ischecked  = parent.viewbtns.checkedId()
+        waschecked = parent.btnstate[bid]
+        for n in range(len(parent.btnstate)):
+            parent.btnstate[n] = False
+        if ischecked==bid and not waschecked:
+            parent.viewbtns.setExclusive(True)
+            parent.ops_plot[1] = bid+1
+            M = fig.draw_masks(parent)
+            parent.plot_masks(M)
+            parent.btnstate[bid]=True
+        elif ischecked==bid and waschecked:
+            parent.viewbtns.setExclusive(False)
+            parent.btnstate[bid]=False
+            parent.ops_plot[1] = 0
+            M = fig.draw_masks(parent)
+            parent.plot_masks(M)
+        self.setChecked(parent.btnstate[bid])
+        
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):
     def __init__(self, Text, parent=None):

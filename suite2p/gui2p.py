@@ -82,7 +82,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsView()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,1,18,12)
+        self.l0.addWidget(self.win,0,1,24,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
         self.p0 = l.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
@@ -123,7 +123,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.p0.setText(self.fname)
-        views = ['mean img', 'correlation map']
+        views = ['ROIs', 'mean img (enhanced)', 'mean img', 'correlation map']
         # add boundaries to stat for ROI overlays
         ncells = self.Fcell.shape[0]
         for n in range(0,ncells):
@@ -143,13 +143,15 @@ class MainW(QtGui.QMainWindow):
         vlabel.setText('Background')
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
-        self.btnstate = []
         for names in views:
             btn  = gui.ViewButton(b,names,self)
             self.viewbtns.addButton(btn,b)
             self.l0.addWidget(btn,b+2,0,1,1)
-            self.btnstate.append(False)
+            if b==0:
+                btn.setChecked(True)
             b+=1
+        self.viewbtns.setExclusive(True)
+        # color buttons
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
@@ -181,7 +183,6 @@ class MainW(QtGui.QMainWindow):
                 btn  = gui.ColorButton(b,names,self)
                 self.colorbtns.addButton(btn,b)
                 self.l0.addWidget(btn,nv+b+1,0,1,1)
-                self.btnstate.append(False)
                 if b==0:
                     btn.setChecked(True)
                 b+=1
@@ -190,7 +191,6 @@ class MainW(QtGui.QMainWindow):
         self.ncolors = b+1
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
-        self.btnstate.append(False)
         self.ops_plot.append(allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
@@ -201,6 +201,8 @@ class MainW(QtGui.QMainWindow):
         M = fig.draw_masks(self)
         self.plot_masks(M)
         self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
+        self.bend = nv+b+3+1
         self.colormat = fig.make_colorbar()
         self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
@@ -331,7 +333,7 @@ class MainW(QtGui.QMainWindow):
         RW.show()
 
     def load_dialog(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open stat.npy', filter='stat.npy')
         self.fname = name[0]
         self.load_proc()
 
@@ -479,7 +481,7 @@ class MainW(QtGui.QMainWindow):
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(self.apply_classifier)
-        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),13,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend,0,1,1)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
         self.probedit.setMaximum(1.0)
@@ -491,16 +493,16 @@ class MainW(QtGui.QMainWindow):
         #self.probedit.setMaxLength(5)
         #qedit.move(10,600)
         self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit,13,0,1,1)
-        self.l0.addWidget(applyclass,14,0,1,1)
+        self.l0.addWidget(self.probedit,self.bend,0,1,1)
+        self.l0.addWidget(applyclass,self.bend+1,0,1,1)
         addtoclass = QtGui.QPushButton('add current data \n to classifier')
         addtoclass.resize(100,100)
         addtoclass.clicked.connect(self.add_to_classifier)
-        self.l0.addWidget(addtoclass,15,0,1,1)
+        self.l0.addWidget(addtoclass,self.bend+2,0,1,1)
         saveclass = QtGui.QPushButton('save classifier')
         saveclass.resize(100,50)
         saveclass.clicked.connect(self.save_trainlist)
-        self.l0.addWidget(saveclass,16,0,1,1)
+        self.l0.addWidget(saveclass,self.bend+3,0,1,1)
 
     def add_to_classifier(self):
         fname = self.basename+'/iscell.npy'

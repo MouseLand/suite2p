@@ -79,17 +79,17 @@ class MainW(QtGui.QMainWindow):
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
         # MAIN PLOTTING AREA
-        self.win = pg.GraphicsView()
+        self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
         self.l0.addWidget(self.win,0,1,24,12)
-        l = pg.GraphicsLayout(border=(100,100,100))
-        self.win.setCentralItem(l)
-        self.p0 = l.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
-        self.lcell0 = l.addLabel('n cells',row=1,col=0,colspan=1)
-        self.lcell1 = l.addLabel('n cells',row=1,col=1,colspan=1)
+        layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
+        #self.win.setCentralItem(l)
+        self.p0 = self.win.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
+        self.lcell0 = self.win.addLabel('n ROIs',row=1,col=0,colspan=1)
+        self.lcell1 = self.win.addLabel('n ROIs',row=1,col=1,colspan=1)
         # cells image
-        self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
+        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=2,col=0)
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
@@ -98,7 +98,7 @@ class MainW(QtGui.QMainWindow):
         #self.p1.setXRange(0,512,padding=0.25)
         #self.p1.setYRange(0,512,padding=0.25)
         # noncells image
-        self.p2 = l.addViewBox(lockAspect=True,name='plot2',row=1,col=1)
+        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',row=2,col=1)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
@@ -107,11 +107,8 @@ class MainW(QtGui.QMainWindow):
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
         # fluorescence trace plot
-        self.p3 = l.addPlot(row=2,col=0,colspan=2)
-        #x = np.arange(0,20000)
-        #y = np.zeros((20000,))
-        #self.p3.clear()
-        #self.p3.plot(x,y,pen='b')
+        self.p3 = self.win.addPlot(row=3,col=0,colspan=2)
+        layout.setRowStretchFactor(2,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -216,6 +213,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setYRange(0,self.ops['Lx'])
         self.p2.setXRange(0,self.ops['Ly'])
         self.p2.setYRange(0,self.ops['Lx'])
+        self.p1.setLimits(xMin=-100,xMax=self.ops['Ly']+100,
+                          yMin=-100,yMax=self.ops['Lx']+100)
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -324,8 +323,8 @@ class MainW(QtGui.QMainWindow):
                         np.save(self.basename+'/iscell.npy', self.iscell)
                         self.iflip = self.ichosen
                         fig.flip_cell(self)
-                        self.lcell0.setText('%d cells'%self.iscell.sum())
-                        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+                        self.lcell0.setText('%d ROIs'%self.iscell.sum())
+                        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
                     else:
                         flip = False
 

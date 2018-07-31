@@ -90,6 +90,7 @@ def init_masks(parent):
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
+                        S = V
                     else:
                         vcorr = ops['Vcorr']
                         mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
@@ -158,16 +159,14 @@ def flip_cell(parent):
     # cell indic
     nin = parent.iROI==n
     next = parent.iExt==n
-    l0 = np.array(parent.Lam[i0,nin])
-    print(l0)
-    parent.Lam[i,nin] = l0
+    lam0 = np.array(parent.Lam[i0,nin])
+    parent.Lam[i,nin] = lam0
     parent.Lam[i0,nin] = 0
     parent.Sroi[i,nin] = 1
     parent.Sroi[i0,nin] = 0
     parent.Sext[i,next] = 1
     parent.Sext[i0,next] = 0
 
-    print(parent.Lam[i,nin])
     for i in range(2):
         for c in range(parent.H.shape[0]):
             for k in range(3):
@@ -181,6 +180,7 @@ def flip_cell(parent):
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
                 elif k==1:
                     V = parent.Vback[k-1,nin]
+                    S = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
                 else:
                     V = parent.Vback[k-1,next]
                     V = np.minimum(1, V + S)

@@ -10,6 +10,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'save_path0': [],
         'diameter':12, # this is the main parameter for cell detection
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)                   
@@ -53,8 +54,11 @@ def run_s2p(ops={},db={}):
     
     ops = {**ops, **db}
     
+    if len(ops['save_path0'])==0:
+        ops['save_path0'] = ops['data_path'][0]
+
     # check if there are files already registered
-    fpathops1 = os.path.join(ops['data_path'][0], 'suite2p', 'ops1.npy')
+    fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
     files_found_flag = True
     if os.path.isfile(fpathops1): 
         ops1 = np.load(fpathops1)

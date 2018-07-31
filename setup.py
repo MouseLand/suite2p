@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
-	install_requires = ['pyqtgraph', 'PyQt5', 'numpy', 'scipy'],
+	install_requires = ['pyqtgraph', 'PyQt5', 'numpy', 'scipy', 'h5py'],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

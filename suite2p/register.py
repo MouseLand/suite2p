@@ -346,7 +346,7 @@ def tiff_to_binary(ops):
     if nchannels>1:
         reg_file_chan2 = []            
     for j in range(0,nplanes):
-        fpath = os.path.join(ops['data_path'][0], 'suite2p', 'plane%d'%j)
+        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         ops['save_path'] = fpath
         ops['ops_path'] = os.path.join(fpath,'ops.npy')        
         ops['reg_file'] = os.path.join(fpath, 'data.bin')        

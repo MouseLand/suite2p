@@ -77,7 +77,8 @@ class RunWindow(QtGui.QDialog):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         cursor.insertText('Opening in GUI (can close this window)')
-        parent.load_proc(self.save_path[0]+'/stat.npy')
+        parent.fname = self.save_path[0]+'/stat.npy'
+        parent.load_proc()
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -130,52 +131,55 @@ class RunWindow(QtGui.QDialog):
         self.save_path.append(name)
         self.layout.addWidget(QtGui.QLabel(name),10,0,1,1)
 
-
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):
     def __init__(self, Text, parent=None):
         super(ListChooser, self).__init__(parent)
-        self.setGeometry(300,300,650,320)
+        self.setGeometry(300,300,300,320)
         self.setWindowTitle(Text)
         self.win = QtGui.QWidget(self)
         layout = QtGui.QGridLayout()
         self.win.setLayout(layout)
         #self.setCentralWidget(self.win)
+        loadcell = QtGui.QPushButton('Load iscell.npy')
+        loadcell.resize(200,50)
+        loadcell.clicked.connect(self.load_cell)
+        layout.addWidget(loadcell,0,0,1,1)
         loadtext = QtGui.QPushButton('Load txt file')
-        loadtext.resize(loadtext.minimumSizeHint())
+        loadcell.resize(200,50)
+        #loadtext.resize(loadtext.minimumSizeHint())
         loadtext.clicked.connect(self.load_text)
-        layout.addWidget(loadtext,0,0,1,1)
-        self.leftlist = QtGui.QListWidget(parent)
-        self.rightlist = QtGui.QListWidget(parent)
-        layout.addWidget(QtGui.QLabel('INCLUDE'),1,0,1,1)
-        layout.addWidget(QtGui.QLabel('EXCLUDE'),1,3,1,1)
-        layout.addWidget(self.leftlist,2,0,5,1)
-        #self.leftlist.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        sright = QtGui.QPushButton('-->')
-        sright.resize(sright.minimumSizeHint())
-        sleft = QtGui.QPushButton('<--')
-        sleft.resize(sleft.minimumSizeHint())
-        sright.clicked.connect(self.move_right)
-        sleft.clicked.connect(self.move_left)
-        layout.addWidget(sright,3,1,1,1)
-        layout.addWidget(sleft,4,1,1,1)
-        layout.addWidget(self.rightlist,2,3,5,1)
+        layout.addWidget(loadtext,0,1,1,1)
+        self.list = QtGui.QListWidget(parent)
+        layout.addWidget(self.list,1,0,5,2)
+        #self.list.resize(450,250)
+        self.list.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         done = QtGui.QPushButton('OK')
         done.resize(done.minimumSizeHint())
         done.clicked.connect(lambda: self.exit_list(parent))
-        layout.addWidget(done,7,1,1,1)
-    def move_right(self):
-        currentRow = self.leftlist.currentRow()
-        if self.leftlist.item(currentRow) is not None:
-            self.rightlist.addItem(self.leftlist.item(currentRow).text())
-            self.leftlist.takeItem(currentRow)
-    def move_left(self):
-        currentRow = self.rightlist.currentRow()
-        if self.rightlist.item(currentRow) is not None:
-            self.leftlist.addItem(self.rightlist.item(currentRow).text())
-            self.rightlist.takeItem(currentRow)
+        layout.addWidget(done,7,0,1,2)
+
+    def load_cell(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file')
+        if name:
+            try:
+                iscell = np.load(name[0])
+                badfile = True
+                if iscell.shape[0] > 0:
+                    if iscell[0]==0 or iscell[0]==1:
+                        badfile = False
+                        self.list.addItem(name[0])
+
+                if badfile:
+                    QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+            except (OSError, RuntimeError, TypeError, NameError):
+                QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+        else:
+            QtGui.QMessageBox.information(self, 'not an iscell.npy file')
+
+
     def load_text(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file')
         if name:
             try:
                 txtfile = open(name[0], 'r')
@@ -183,14 +187,15 @@ class ListChooser(QtGui.QDialog):
                 txtfile.close()
                 files = files.splitlines()
                 for f in files:
-                    self.leftlist.addItem(f)
+                    self.list.addItem(f)
             except (OSError, RuntimeError, TypeError, NameError):
+                QtGui.QMessageBox.information(self, 'not a text file')
                 print('not a good list')
+
     def exit_list(self, parent):
         parent.trainfiles = []
-        for n in range(len(self.leftlist)):
-            if self.leftlist.item(n) is not None:
-                parent.trainfiles.append(self.leftlist.item(n).text())
+        for item in self.list.selectedItems():
+            parent.trainfiles.append(item.text())
         self.accept()
 
 ### custom QPushButton class that plots image when clicked

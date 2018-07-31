@@ -90,6 +90,7 @@ def init_masks(parent):
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
+                        S = V
                     else:
                         vcorr = ops['Vcorr']
                         mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
@@ -158,7 +159,8 @@ def flip_cell(parent):
     # cell indic
     nin = parent.iROI==n
     next = parent.iExt==n
-    parent.Lam[i,nin] = parent.Lam[i0,nin]
+    lam0 = np.array(parent.Lam[i0,nin])
+    parent.Lam[i,nin] = lam0
     parent.Lam[i0,nin] = 0
     parent.Sroi[i,nin] = 1
     parent.Sroi[i0,nin] = 0
@@ -178,6 +180,7 @@ def flip_cell(parent):
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
                 elif k==1:
                     V = parent.Vback[k-1,nin]
+                    S = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
                 else:
                     V = parent.Vback[k-1,next]
                     V = np.minimum(1, V + S)
@@ -189,11 +192,6 @@ def flip_cell(parent):
                     parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
                 else:
                     parent.RGB_all[i,c,k,next,:] = hsv_to_rgb(hsv)
-
-
-
-    # remake RGB masks with new HSV
-
 
 
 def ROI_index(ops, stat):

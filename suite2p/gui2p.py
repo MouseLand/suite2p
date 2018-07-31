@@ -44,7 +44,7 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        self.statclass = ['npix', 'compact', 'radius']
+        self.statclass = ['compact', 'footprint','aspect_ratio']
         self.loadClass = QtGui.QAction('&Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
@@ -121,8 +121,8 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
-    def make_masks_and_buttons(self, name):
-        self.p0.setText(name)
+    def make_masks_and_buttons(self):
+        self.p0.setText(self.fname)
         views = ['mean img', 'correlation map']
         # add boundaries to stat for ROI overlays
         ncells = self.Fcell.shape[0]
@@ -304,27 +304,27 @@ class MainW(QtGui.QMainWindow):
                     self.show()
                 if choose:
                     ichosen = int(self.iROI[posx,posy])
-                    if self.ichosen == ichosen:
+                    if ichosen<0 or self.ichosen==ichosen:
                         choose = False
-                    elif ichosen >= 0:
+                    if ichosen>=0:
                         self.ichosen = ichosen
-                if flip and self.iflip != self.ichosen:
+                if flip:
+                    self.ichosen = int(self.iROI[posx,posy])
                     flip = True
                     iscell = int(self.iscell[self.ichosen])
                     if 2-iscell == iplot:
                         self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
                         np.save(self.basename+'/iscell.npy', self.iscell)
-                    self.iflip = self.ichosen
-                    fig.flip_cell(self)
-                else:
-                    flip = False
+                        self.iflip = self.ichosen
+                        fig.flip_cell(self)
+                    else:
+                        flip = False
+
                 if choose or flip:
-                    t0=time.time()
                     M = fig.draw_masks(self)
                     self.plot_masks(M)
                     self.plot_trace()
                     self.show()
-                    print(time.time()-t0)
 
     def run_suite2p(self):
         RW = gui.RunWindow(self)
@@ -370,7 +370,7 @@ class MainW(QtGui.QMainWindow):
                 print('ERROR: there is no ops file in this folder (ops.npy)')
                 goodfolder = False
             if goodfolder:
-                self.make_masks_and_buttons(name[0])
+                self.make_masks_and_buttons()
                 self.loaded = True
             else:
                 print('stat.npy found, but other files not in folder')
@@ -385,7 +385,7 @@ class MainW(QtGui.QMainWindow):
                                         Text,
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if tryagain == QtGui.QMessageBox.Yes:
-            self.load_proc()
+            self.load_dialog()
 
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
@@ -432,6 +432,9 @@ class MainW(QtGui.QMainWindow):
     def apply_classifier(self):
         classval = self.probedit.value()
         self.iscell, self.probcell = self.model.apply(self.statistics, classval)
+        fig.init_masks(self)
+        M = fig.draw_masks(self)
+        self.plot_masks(M)
 
     def save_classifier(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Save classifier')
@@ -469,6 +472,7 @@ class MainW(QtGui.QMainWindow):
                                                 np.expand_dims(icols,axis=1)), axis=1)
         else:
             self.ops_plot[3][:,-1] = icols
+        fig.init_masks(self)
         self.classbtn.setEnabled(True)
         self.saveClass.setEnabled(True)
         self.saveTrain.setEnabled(True)

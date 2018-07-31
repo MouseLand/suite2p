@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import os
 import pickle
-import fig
+from suite2p import fig
 from suite2p import run_s2p
 
 ### custom QDialog which allows user to fill in ops
@@ -13,15 +13,16 @@ from suite2p import run_s2p
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,900,500)
+        self.setGeometry(50,50,900,600)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
         #layout = QtGui.QFormLayout()
         self.win.setLayout(self.layout)
         # initial ops values
-        self.ops = suite2p.default_ops()
+        self.ops = run_s2p.default_ops()
         self.data_path = []
+        self.save_path = []
         tifkeys = ['nplanes','nchannels','fs','num_workers']
         regkeys = ['nimg_init', 'batch_size', 'subpixel', 'maxregshift', 'align_by_chan']
         cellkeys = ['diameter','navg_frames_svd','nsvd_for_roi','threshold_scaling', 'allow_overlap']
@@ -52,26 +53,31 @@ class RunWindow(QtGui.QDialog):
                 k+=1
             l+=1
         btiff = QtGui.QPushButton('Add directory to data_path')
-        #btiff.resize(btiff.minimumSizeHint())
         btiff.clicked.connect(self.get_folders)
         self.layout.addWidget(btiff,0,0,1,1)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,1,0,1,1)
+        btiff = QtGui.QPushButton('Choose save_path\n(default is data_path)')
+        btiff.clicked.connect(self.save_folder)
+        self.layout.addWidget(btiff,9,0,1,1)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,11,0,1,1)
+        self.layout.addWidget(self.runButton,12,0,1,1)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 12,0,10,l)
+        self.layout.addWidget(self.textEdit, 13,0,15,l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
         # disable the button when running the s2p process
         self.process.started.connect(lambda: self.runButton.setEnabled(False))
-        self.process.finished.connect(lambda: self.runButton.setEnabled(True))
+        self.process.finished.connect(lambda: self.finished(parent))
+
+    def finished(self, parent):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
-        cursor.insertText('Opening in GUI!')
+        cursor.insertText('Opening in GUI (can close this window)')
+        parent.load_proc(self.save_path[0]+'/stat.npy')
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -99,13 +105,18 @@ class RunWindow(QtGui.QDialog):
                 self.ops[key] = bool(self.editlist[k].text())
                 #print(key,'\t\t', bool(self.editlist[k].text()))
             k+=1
-        self.ops['data_path'] = self.data_path
-        self.ops['subfolders'] = []
+        self.db = {}
+        self.db['data_path'] = self.data_path
+        self.db['subfolders'] = []
+        if len(self.save_path)==0:
+            fpath = os.path.join(self.db['data_path'][0], 'suite2p', 'plane0')
+            self.save_path = fpath
+        self.db['save_path'] = self.save_path
         print('Running suite2p!')
         print('starting process')
         np.save('ops.npy', self.ops)
-        self.process.start('main')
-        parent.load_proc('')
+        np.save('db.npy', self.db)
+        self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
@@ -113,6 +124,11 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(QtGui.QLabel(name),
                               len(self.data_path)+1,0,1,1)
 
+    def save_folder(self):
+        self.save_path = []
+        name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
+        self.save_path.append(name)
+        self.layout.addWidget(QtGui.QLabel(name),10,0,1,1)
 
 
 ### custom QDialog which makes a list of items you can include/exclude

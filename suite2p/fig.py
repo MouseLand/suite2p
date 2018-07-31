@@ -3,7 +3,6 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-import utils
 from matplotlib.colors import hsv_to_rgb
 
 def boundary(ypix,xpix):

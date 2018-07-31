@@ -4,7 +4,6 @@ from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
 from suite2p import utils
-import scipy.sparse as sparse
 import time
 
 def tic():
@@ -453,6 +452,7 @@ def sourcery(ops, U, S, StU, StS):
     nbasis = S.shape[0]
     LtU = np.zeros((0, nsvd), np.float32)
     LtS = np.zeros((0, nbasis), np.float32)
+    L   = np.zeros((0, Lyc*Lxc), np.float32)
 
     Ucell = U
 
@@ -493,12 +493,8 @@ def sourcery(ops, U, S, StU, StS):
         new_codes = new_codes / np.sum(new_codes**2, axis=0)**0.5
 
         newcells = new_codes.shape[1]
-        Lnew = sparse.lil_matrix((newcells,Lyc*Lxc),dtype=np.float32)   
-        if it==0:
-            L = sparse.lil_matrix((newcells,Lyc*Lxc),dtype=np.float32)   
-        else:
-            L = sparse.vstack([L, Lnew]).tolil()
-
+        
+        L = np.append(L, np.zeros((newcells,Lyc*Lxc), 'float32'), axis =0)
         LtU = np.append(LtU, np.zeros((newcells, nsvd), 'float32'), axis = 0)
         LtS = np.append(LtS, np.zeros((newcells, nbasis), 'float32'), axis = 0)
 
@@ -523,8 +519,7 @@ def sourcery(ops, U, S, StU, StS):
         ncells += new_codes.shape[1]
 
         # regression with neuropil
-        L = sparse.csr_matrix(L)
-        LtL = (L @ L.transpose()).toarray()
+        LtL = L @ L.transpose()
         cellcode = np.concatenate((LtL,LtS), axis=1)
         neucode  = np.concatenate((LtS.transpose(),StS), axis=1)
         codes = np.concatenate((cellcode, neucode), axis=0)
@@ -536,7 +531,7 @@ def sourcery(ops, U, S, StU, StS):
         Ucell = U - np.resize(neu.transpose() @ S, U.shape) - np.resize(codes.transpose() @ L, U.shape)
 
         # reestimate masks
-        L = sparse.lil_matrix((ncells,Lyc*Lxc),dtype=np.float32)    
+        L = np.zeros((ncells,Lyc*Lxc), 'float32')
         for n in range(0,ncells):
             goodi   = np.array((mPix[n, :]>=0).nonzero()).astype(np.int32)            
             npix = goodi.size
@@ -592,8 +587,8 @@ def sourcery(ops, U, S, StU, StS):
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
 
-    neuropil_masks = sparse.csr_matrix(np.resize(neuropil_masks,(-1,Ly*Lx)))
-    cell_masks     = sparse.csr_matrix(np.resize(cell_masks,(-1,Ly*Lx)))
+    neuropil_masks = np.resize(neuropil_masks,(-1,Ly*Lx))
+    cell_masks     = np.resize(cell_masks,(-1,Ly*Lx))
  
     return ops, stat, cell_masks, neuropil_masks, mPix, mLam
 
@@ -627,13 +622,13 @@ def extractF(ops, stat, cell_masks, neuropil_masks, mPix, mLam):
         inds = ix + np.arange(0,nimgd)
 
         F[:, inds]    = cell_masks @ data
-
-        # compute neuropil activity
         Fneu[:, inds] = neuropil_masks @ data
-        if ix%(nimgd)==0:
+        
+        if ix%(5*nimgd)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
         ix += nimgd
-
+    print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
+    
     reg_file.close()
     return F, Fneu    
 

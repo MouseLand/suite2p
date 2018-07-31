@@ -354,6 +354,7 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
             assigned to stat: radius (minimum of 3 pixels)
     '''    
     ncells = len(stat)
+    
     cell_pix = np.zeros((Ly,Lx))
     cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
     for n in range(ncells):
@@ -618,11 +619,13 @@ def extractF(ops, stat):
     
     stat,cell_pix,cell_masks = cellMasks(stat,Ly,Lx,False)
     neuropil_masks           = neuropilMasks(ops,stat,cell_pix)    
+    
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
-    neuropil_masks = np.resize(neuropil_masks,(-1,Ly*Lx))
-    cell_masks     = np.resize(cell_masks,(-1,Ly*Lx))
+    
+    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
+    cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
     
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
@@ -646,7 +649,7 @@ def extractF(ops, stat):
         data = np.reshape(data, (nimgd,-1)).transpose()
         # compute cell activity
         inds = ix + np.arange(0,nimgd)
-
+ 
         F[:, inds]    = cell_masks @ data
         Fneu[:, inds] = neuropil_masks @ data
         

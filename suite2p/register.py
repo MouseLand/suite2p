@@ -7,6 +7,11 @@ from numpy import fft
 from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
+import time
+def tic():
+    return time.time()
+def toc(i0):
+    return time.time() - i0
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...

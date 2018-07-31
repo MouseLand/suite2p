@@ -90,13 +90,18 @@ def init_masks(parent):
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
-                        S = V
+                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
+                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
+                        S = np.minimum(1, V*1.5)
                     else:
                         vcorr = ops['Vcorr']
                         mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
                         mimg[ops['yrange'][0]:ops['yrange'][1],
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
-                    mimg = mimg - mimg.min()
+
+                    mimg1 = np.percentile(mimg,2)
+                    mimg99 = np.percentile(mimg,98)
+                    mimg = (mimg - mimg1) / (mimg99 - mimg1)
                     mimg = mimg / mimg.max()
                     parent.Vback[k-1,:,:] = mimg
                     V = mimg
@@ -180,7 +185,7 @@ def flip_cell(parent):
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
                 elif k==1:
                     V = parent.Vback[k-1,nin]
-                    S = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
+                    S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,nin]/parent.LamMean))
                 else:
                     V = parent.Vback[k-1,next]
                     V = np.minimum(1, V + S)

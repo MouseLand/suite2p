@@ -6,9 +6,7 @@ import os
 import pickle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
-import fig
-import gui
-import classifier
+from suite2p import fig, gui, classifier
 import time
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -87,7 +85,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.win,0,1,18,12)
         l = pg.GraphicsLayout(border=(100,100,100))
         self.win.setCentralItem(l)
-        self.p0 = l.addLabel('load a stat.pkl file',row=0,col=0,colspan=2)
+        self.p0 = l.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
         # cells image
         self.p1 = l.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
@@ -516,4 +514,4 @@ def run():
     GUI = MainW()
     sys.exit(app.exec_())
 
-run()
+#run()

@@ -304,15 +304,15 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             y0,x0 = stat[n]['med']
             ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
             print(ypix)
-			if len(ypix)>0:
-				proj  = codes[k,:] @ Ucell[:,ypix,xpix]
-				rs0  = rs[goodi]
-				inds  = proj.flatten()>proj.max()*frac
-				stat[n]['footprint'] = np.mean(rs0[inds]) / d0
-				footprints[n] = stat[n]['footprint']
-			else:
-				stat[n]['footprint'] = 0
-				footprints[n]=0
+            if len(ypix)>0:
+                proj  = codes[k,:] @ Ucell[:,ypix,xpix]
+                rs0  = rs[goodi]
+                inds  = proj.flatten()>proj.max()*frac
+                stat[n]['footprint'] = np.mean(rs0[inds]) / d0
+                footprints[n] = stat[n]['footprint']
+            else:
+                stat[n]['footprint'] = 0
+                footprints[n]=0
             # compute compactness of ROI
             lam = mLam[n, :]
             r2 = (stat[n]['ypix']-stat[n]['med'][0])**2 + (stat[n]['xpix']-stat[n]['med'][1])**2

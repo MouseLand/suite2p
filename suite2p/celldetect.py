@@ -293,7 +293,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
         goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
         ipix    = mPix[k,goodi].astype(np.int32)
         ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
-        if len(ypix) > 0:
+        if len(ypix)>0 and len(ipix)>0:
             # pixels of cell in cropped (Ly,Lx) region of recording
             stat[n]['ypix'] = ypix + ops['yrange'][0]
             stat[n]['xpix'] = xpix + ops['xrange'][0]
@@ -303,7 +303,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             # compute footprint of ROI
             y0,x0 = stat[n]['med']
             ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
-            proj  = codes[n,:] @ Ucell[:,ypix,xpix]
+            proj  = codes[k,:] @ Ucell[:,ypix,xpix]
             rs0   = rs[goodi]
             inds  = proj.flatten()>proj.max()*frac
             stat[n]['footprint'] = np.mean(rs0[inds]) / d0

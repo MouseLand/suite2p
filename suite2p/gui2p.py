@@ -45,7 +45,7 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        self.statclass = ['skew','compact']
+        #self.statclass = ['skew','compact']
         self.loadClass = QtGui.QAction('&Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
@@ -449,19 +449,18 @@ class MainW(QtGui.QMainWindow):
                                                statclass=None)
             if self.model.loaded:
                 # statistics from current dataset for Classifier
-                checkstat = [key for key in self.statclass if key in self.stat[0]]
-                if len(checkstat) == len(self.statclass):
-                    ncells = self.Fcell.shape[0]
-                    self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
-                    k=0
-                    for key in self.statclass:
-                        for n in range(0,ncells):
-                            self.statistics[n,k] = self.stat[n][key]
-                        k+=1
-                    self.trainfiles = self.model.trainfiles
-                    self.activate_classifier()
-                else:
-                    print('ERROR: classifier has fields that stat doesn''t have')
+                ncells = self.Fcell.shape[0]
+                self.statistics = np.zeros((ncells, len(self.model.statclass)),np.float32)
+                k=0
+                for key in self.model.statclass:
+                    print(key)
+                    for n in range(0,ncells):
+                        self.statistics[n,k] = self.stat[n][key]
+                    k+=1
+                self.trainfiles = self.model.trainfiles
+                self.activate_classifier()
+                #else:
+                #    print('ERROR: classifier has fields that stat doesn''t have')
 
     def load_traindata(self):
         # will return

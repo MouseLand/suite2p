@@ -74,7 +74,6 @@ class Classifier:
 
         probcell = rs[:,0]
         iscell = probcell > classval
-        print(probcell)
         return iscell, probcell
 
 

@@ -63,12 +63,12 @@ Main GUI controls (works for all views):
 ## Other ways to run Suite2p
 
 1. From the command line:
-~~~~python
+~~~~
 python -m suite2p --ops 'path to ops.npy' --db 'path to db.npy'
 ~~~~
 	
 2. From Python/Jupyter
-~~~~
+~~~~python
 from suite2p.run_sp import run_s2p
 ops1 = run_s2p(ops, db)
 ~~~~

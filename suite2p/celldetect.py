@@ -334,8 +334,10 @@ def getOverlaps(stat,Ly,Lx):
         stat
         assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
     '''
+    stat2 = {}
     ncells = len(stat)
     mask = np.zeros((Ly,Lx))
+    k=0
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
@@ -344,6 +346,11 @@ def getOverlaps(stat,Ly,Lx):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         stat[n]['overlap'] = mask[ypix,xpix] > 1
+        ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        if len(ypix)>0
+            stat2[k] = stat[n]
+            k+=1
 
     return stat
 
@@ -610,7 +617,6 @@ def sourcery(ops):
     Lx = ops['Lx']
     stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
     stat = getOverlaps(stat,Ly,Lx)
-
     return ops, stat
 
 def extractF(ops, stat):

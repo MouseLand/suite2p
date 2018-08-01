@@ -46,7 +46,7 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        self.statclass = ['npix', 'compact', 'radius']
+        self.statclass = ['skew', 'compact', 'footprint']
         self.loadClass = QtGui.QAction('&Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)

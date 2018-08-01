@@ -20,6 +20,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(True)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
+        self.ops_plot.append(0)
         ### menu bar options
         # run suite2p from scratch
         runS2P =  QtGui.QAction('&Run suite2p ', self)
@@ -120,34 +121,19 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
-    def make_masks_and_buttons(self):
-        self.p0.setText(self.fname)
-        views = ['ROIs', 'mean img (enhanced)', 'mean img', 'correlation map']
-        # add boundaries to stat for ROI overlays
-        ncells = self.Fcell.shape[0]
-        for n in range(0,ncells):
-            ypix = self.stat[n]['ypix']
-            xpix = self.stat[n]['xpix']
-            iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
-            self.stat[n]['yext'] = ypix[iext]
-            self.stat[n]['xext'] = xpix[iext]
-
-        if 'mean_image_red' in self.ops:
-            views.append('red channel mean')
-        colors = ['random', 'skew', 'compact','footprint',
-                    'aspect_ratio']
+        self.views = ['ROIs', 'mean img (enhanced)', 'mean img', 'correlation map']
+        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
         vlabel.setText('Background')
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
-        for names in views:
+        for names in self.views:
             btn  = gui.ViewButton(b,names,self)
             self.viewbtns.addButton(btn,b)
             self.l0.addWidget(btn,b+2,0,1,1)
-            if b==0:
-                btn.setChecked(True)
+            btn.setEnabled(False)
             b+=1
         self.viewbtns.setExclusive(True)
         # color buttons
@@ -158,39 +144,99 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(clabel,b+2,0,1,1)
         nv = b+2
         b=0
-        allcols = np.random.random((ncells,1))
-        self.clabels = []
+
         # colorbars for different statistics
         self.colorfig = plt.figure(figsize=(1,0.05))
         self.canvas = FigureCanvas(self.colorfig)
         self.colorbar = self.colorfig.add_subplot(211)
-        for names in colors:
-            if names in self.stat[0] or b==0:
-                if b > 0:
-                    istat = np.zeros((ncells,1))
-                    for n in range(0,ncells):
-                        istat[n] = self.stat[n][names]
-                    self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
-                    istat = istat - istat.min()
-                    istat = istat / istat.max()
-                    istat = istat / 1.3
-                    istat = istat + 0.1
-                    icols = 1 - istat
-                    allcols = np.concatenate((allcols, icols), axis=1)
-                else:
-                    self.clabels.append([0,0.5,1])
-                btn  = gui.ColorButton(b,names,self)
-                self.colorbtns.addButton(btn,b)
-                self.l0.addWidget(btn,nv+b+1,0,1,1)
-                if b==0:
-                    btn.setChecked(True)
-                b+=1
+
+        for names in self.colors:
+            btn  = gui.ColorButton(b,names,self)
+            self.colorbtns.addButton(btn,b)
+            self.l0.addWidget(btn,nv+b+1,0,1,1)
+            btn.setEnabled(False)
+            #btn.setChecked(True)
+            b+=1
+        self.bend = nv+b+3+1
         self.classbtn  = gui.ColorButton(b,'classifier',self)
         self.colorbtns.addButton(self.classbtn,b)
         self.ncolors = b+1
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
-        self.ops_plot.append(allcols)
+
+        # classifier buttons
+        applyclass = QtGui.QPushButton('apply classifier')
+        applyclass.resize(100,50)
+        applyclass.clicked.connect(self.apply_classifier)
+        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend,0,1,1)
+        applyclass.setEnabled(False)
+        self.probedit = QtGui.QDoubleSpinBox(self)
+        self.probedit.setDecimals(3)
+        self.probedit.setMaximum(1.0)
+        self.probedit.setMinimum(0.0)
+        self.probedit.setSingleStep(0.01)
+        self.probedit.setValue(0.5)
+        self.probedit.setFixedWidth(55)
+        self.l0.addWidget(self.probedit,self.bend,0,1,1)
+        self.l0.addWidget(applyclass,self.bend+1,0,1,1)
+        addtoclass = QtGui.QPushButton('add current data \n to classifier')
+        addtoclass.resize(100,100)
+        addtoclass.clicked.connect(self.add_to_classifier)
+        addtoclass.setEnabled(False)
+        self.l0.addWidget(addtoclass,self.bend+2,0,1,1)
+        saveclass = QtGui.QPushButton('save classifier')
+        saveclass.resize(100,50)
+        saveclass.clicked.connect(self.save_classifier)
+        saveclass.setEnabled(False)
+        self.l0.addWidget(saveclass,self.bend+3,0,1,1)
+        self.classbtns = QtGui.QButtonGroup(self)
+        self.classbtns.addButton(applyclass,0)
+        self.classbtns.addButton(addtoclass,1)
+        self.classbtns.addButton(saveclass,2)
+
+    def make_masks_and_buttons(self):
+        self.disable_classifier()
+        self.ops_plot[1] = 0
+        self.ops_plot[2] = 0
+        self.p0.setText(self.fname)
+        # add boundaries to stat for ROI overlays
+        ncells = self.Fcell.shape[0]
+        for n in range(0,ncells):
+            ypix = self.stat[n]['ypix']
+            xpix = self.stat[n]['xpix']
+            iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
+            self.stat[n]['yext'] = ypix[iext]
+            self.stat[n]['xext'] = xpix[iext]
+
+        for b in range(len(self.views)):
+            self.viewbtns.button(b).setEnabled(True)
+            if b==0:
+                self.viewbtns.button(b).setChecked(True)
+        for b in range(len(self.colors)):
+            self.colorbtns.button(b).setEnabled(True)
+            if b==0:
+                self.colorbtns.button(b).setChecked(True)
+
+        allcols = np.random.random((ncells,1))
+        self.clabels = []
+        b=0
+        for names in self.colors:
+            if b > 0:
+                istat = np.zeros((ncells,1))
+                for n in range(0,ncells):
+                    istat[n] = self.stat[n][names]
+                self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
+                istat = istat - istat.min()
+                istat = istat / istat.max()
+                istat = istat / 1.3
+                istat = istat + 0.1
+                icols = 1 - istat
+                allcols = np.concatenate((allcols, icols), axis=1)
+            else:
+                self.clabels.append([0,0.5,1])
+            b+=1
+
+        self.ops_plot[3] = (allcols)
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
         self.iflip = int(0)
@@ -202,9 +248,9 @@ class MainW(QtGui.QMainWindow):
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
+        nv=6
         self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
         self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
-        self.bend = nv+b+3+1
         self.colormat = fig.make_colorbar()
         self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
@@ -213,8 +259,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setYRange(0,self.ops['Lx'])
         self.p2.setXRange(0,self.ops['Ly'])
         self.p2.setYRange(0,self.ops['Lx'])
-        self.p1.setLimits(xMin=0,xMax=self.ops['Ly'],
-                          yMin=0,yMax=self.ops['Lx'])
+        #self.p1.setLimits(xMin=0,xMax=self.ops['Ly'],
+        #                  yMin=0,yMax=self.ops['Lx'])
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -484,31 +530,16 @@ class MainW(QtGui.QMainWindow):
         self.classbtn.setEnabled(True)
         self.saveClass.setEnabled(True)
         self.saveTrain.setEnabled(True)
-        applyclass = QtGui.QPushButton('apply classifier')
-        applyclass.resize(100,50)
-        applyclass.clicked.connect(self.apply_classifier)
-        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend,0,1,1)
-        self.probedit = QtGui.QDoubleSpinBox(self)
-        self.probedit.setDecimals(3)
-        self.probedit.setMaximum(1.0)
-        self.probedit.setMinimum(0.0)
-        self.probedit.setSingleStep(0.01)
-        self.probedit.setValue(0.5)
-        #self.probedit.setValidator(QtGui.QDoubleValidator())
-        #self.probedit.setText('0.5')
-        #self.probedit.setMaxLength(5)
-        #qedit.move(10,600)
-        self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit,self.bend,0,1,1)
-        self.l0.addWidget(applyclass,self.bend+1,0,1,1)
-        addtoclass = QtGui.QPushButton('add current data \n to classifier')
-        addtoclass.resize(100,100)
-        addtoclass.clicked.connect(self.add_to_classifier)
-        self.l0.addWidget(addtoclass,self.bend+2,0,1,1)
-        saveclass = QtGui.QPushButton('save classifier')
-        saveclass.resize(100,50)
-        saveclass.clicked.connect(self.save_trainlist)
-        self.l0.addWidget(saveclass,self.bend+3,0,1,1)
+        for btns in self.classbtns.buttons():
+            btns.setEnabled(True)
+
+    def disable_classifier(self):
+        self.classbtn.setEnabled(False)
+        self.saveClass.setEnabled(False)
+        self.saveTrain.setEnabled(False)
+        for btns in self.classbtns.buttons():
+            btns.setEnabled(False)
+
 
     def add_to_classifier(self):
         fname = self.basename+'/iscell.npy'

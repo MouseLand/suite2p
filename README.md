@@ -13,7 +13,9 @@ This code was written by Carsen Stringer and Marius Pachitariu. The reference pa
 
 ## Installation
 
-	pip install suite2p
+~~~~
+pip install suite2p
+~~~~
 
 If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x 64-bit for your operating system. 
 
@@ -61,10 +63,12 @@ Main GUI controls (works for all views):
 ## Other ways to run Suite2p
 
 1. From the command line:
-
-	python -m suite2p --ops 'path to ops.npy' --db 'path to db.npy'
+~~~~
+python -m suite2p --ops 'path to ops.npy' --db 'path to db.npy'
+~~~~
 	
 2. From Python/Jupyter
-
-	from suite2p.run_sp import run_s2p
-	ops1 = run_s2p(ops, db)
+~~~~
+from suite2p.run_sp import run_s2p
+ops1 = run_s2p(ops, db)
+~~~~

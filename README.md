@@ -21,7 +21,9 @@ If you don't already have Python (and pip), you'll need to first install a distr
 
 The quickest way to start is to open the GUI:
 
-	python -m suite2p
+~~~~
+python -m suite2p
+~~~~
 
 From here you should:
 
@@ -30,9 +32,9 @@ From here you should:
     * Add folders with tiffs:  -> Add directory to data_path
     * Add a save path (otherwise the data directory is used as save path) -> Choose save_path
     * Set some parameters (see full list below). At the minimum: 
-	
+		~~~~
 		nplanes, nchannels, diameter, tau, fs
-		
+		~~~~
 2. Press run and wait. Messages should start appearing in the embedded command line. 
 3. When the run is finished, use the GUI to visualize and refine the results (see below).
 

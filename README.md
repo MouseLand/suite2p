@@ -22,33 +22,31 @@ If you don't already have Python (and pip), you'll need to first install a distr
 
 The quickest way to start is to fire up the GUI:
 
-	```bash
 	python -m suite2p
-	```
 
 From here you should:
 
 0. File -> Run suite2p
 1. Setup a configuration for your own data
-	** Add folders with tiffs:  -> Add directory to data_path
-	** Add a save path (otherwise the data directory is used as save path) -> Choose save_path
-	** Set some parameters. At the minimum: 
-		***nplanes, nchannels, diameter, tau, fs. See below for what these do. 
+  * Add folders with tiffs:  -> Add directory to data_path
+  * Add a save path (otherwise the data directory is used as save path) -> Choose save_path
+  * Set some parameters. At the minimum: 
+    **nplanes, nchannels, diameter, tau, fs. See below for what these do. 
 2. Hit run and wait. Messages should start appearing in the embedded command line. 
-3. After the run is complete, the GUI should automatically update with the results. See below for instructions on using the GUI.
+3. When the run is finished, use the GUI to visualize and refine the results (see below).
 
 ## How to use the GUI
 
-After running, suite2p outputs all results in a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it already loaded the saved files. Otherwise, load the results with File -> Load results. 
+Suite2p outputs all results in a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it already loaded the results. Otherwise, load the results with File -> Load results. 
 
 The GUI serves two main functions:
 
 1. Quickly check the quality of the data and results. 
 2. Classify ROIs into cell / not cell.
  
-Several views are available to serve the first goal, such as the enhanced mean image, the ROI view, the correlation map view, and the ROI+neuropil traces. We will later add more views to visualize all neurons together. 
+To serve the first goal, we provide several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces. We will later add more views population-level visualizations. 
 
-To serve the second goal, suite2p uses a classifier based on the statistics of each ROI. This classifier can learn from manual curation (right-click to swap an ROI from the "accepted" to the "rejected" pile), and in this way adapt to the statistics of your own data. Nonetheless, the default classifier included should work well in a wide variety of scenarios. 
+To serve the second goal, suite2p builds a classifier based on the statistics of each ROI. This classifier can learn from manual curation (right-click to swap an ROI from the "accepted" to the "rejected" pile), and in this way adapt to the statistics of your own data. Nonetheless, the default classifier included should work well in a wide variety of scenarios. 
  
 Main GUI controls (works for all views):
 
@@ -59,6 +57,8 @@ Main GUI controls (works for all views):
  
 ## Other ways to run Suite2p
 
-1. From the command line
-2. From Python
-3. From a Jupyter notebook
+1. From the command line:
+	python -m suite2p --ops 'path to ops.npy' --db 'path to db.npy'
+2. From Python/Jupyter
+	from suite2p.run_sp import run_s2p
+	ops1 = run_s2p(ops, db)

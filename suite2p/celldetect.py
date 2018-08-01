@@ -57,6 +57,7 @@ def get_mov(ops):
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
+
     # load and bin data
     while True:
         buff = reg_file.read(nbytesread)
@@ -377,7 +378,6 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
             stat[n]['radius'] = 0
             stat[n]['aspect_ratio'] = 1
     cell_pix = np.minimum(1, cell_pix)
-
     return stat, cell_pix, cell_masks
 
 
@@ -621,8 +621,8 @@ def extractF(ops, stat):
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
-    neuropil_masks = np.resize(neuropil_masks,(-1,Ly*Lx))
-    cell_masks     = np.resize(cell_masks,(-1,Ly*Lx))
+    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
+    cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
 
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
@@ -646,7 +646,6 @@ def extractF(ops, stat):
         data = np.reshape(data, (nimgd,-1)).transpose()
         # compute cell activity
         inds = ix + np.arange(0,nimgd)
-
         F[:, inds]    = cell_masks @ data
         Fneu[:, inds] = neuropil_masks @ data
 

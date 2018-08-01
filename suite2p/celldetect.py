@@ -308,9 +308,9 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
         footprints[n] = stat[n]['footprint']
         # compute compactness of ROI
         lam = mLam[n, :]
-        r2 = (stat[n]['ypix']-stat[n]['med'][0])**2 + (stat[n]['xpix']-stat[n]['med'][1])**2
+        r2 = (stat[n]['ypix']-np.round(stat[n]['med'][0]))**2 + (stat[n]['xpix']-np.round(stat[n]['med'][1]))**2
         stat[n]['mrs']  = np.median(r2**.5) / d0
-        stat[n]['mrs0'] = np.median(rsort[:ipix.size]) / d0
+        stat[n]['mrs0'] = np.median(rsort[:r2.size]) / d0
         stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
 
     mfoot = np.median(footprints)

@@ -28,7 +28,7 @@ def default_ops():
         'neumax': 1.,  # maximum neuropil coefficient (not implemented)
         'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
-		'reg_tif': False, # whether to save registered tiffs for manual inspection
+        'reg_tif': False, # whether to save registered tiffs for manual inspection
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
         'batch_size': 200, # number of frames per batch
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
@@ -36,7 +36,7 @@ def default_ops():
         'nimg_init': 200, # subsampled frames for finding reference image
         'navg_frames_svd': 5000, # max number of binned frames for the SVD
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
-		'max_iterations': 10, # maximum number of iterations to do cell detection
+        'max_iterations': 10, # maximum number of iterations to do cell detection
         'ratio_neuropil': 3., # minimum ratio between neuropil radius and cell radius
         'tile_factor': 1, # use finer (>1) or coarser (<1) tiles for neuropil estimation
         'threshold_scaling': 1, # adjust the automatically determined threshold by this scalar multiplier        
@@ -44,7 +44,7 @@ def default_ops():
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
-		'allow_overlap': False,                 
+        'allow_overlap': False,                 
       }
     return ops
 
@@ -111,9 +111,10 @@ def run_s2p(ops={},db={}):
         print('time %4.4f. Registration complete'%toc(i0))
     else:
         print('found ops1 and pre-registered binaries')
+        print(ops1[0]['reg_file'])
         print('overwriting ops1 with new ops')
         print('skipping registration...')
-        print(ops1[0]['reg_file'])
+        
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)

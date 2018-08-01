@@ -348,11 +348,11 @@ def getOverlaps(stat,Ly,Lx):
         stat[n]['overlap'] = mask[ypix,xpix] > 1
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        if len(ypix)>0
+        if len(ypix)>0:
             stat2[k] = stat[n]
             k+=1
 
-    return stat
+    return stat2
 
 
 def cellMasks(stat, Ly, Lx, allow_overlap):

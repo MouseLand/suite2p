@@ -123,7 +123,7 @@ class Classifier:
                         stat = np.load(basename+'/stat.npy')
                         stat = stat.item()
                         ypix = stat[0]['ypix']
-                        lstat = len(stat) - 1
+                        lstat = len(stat)
                     except (KeyError, OSError, RuntimeError, TypeError, NameError):
                         print('\t'+basename+': incorrect or missing stat.npy file :(')
                     if lstat != ncells:

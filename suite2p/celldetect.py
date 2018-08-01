@@ -305,6 +305,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
             proj  = codes[k,:] @ Ucell[:,ypix,xpix]
             rs0   = rs[goodi]
+            print(len(ypix),len(proj))
             inds  = proj.flatten()>proj.max()*frac
             stat[n]['footprint'] = np.mean(rs0[inds]) / d0
             footprints[n] = stat[n]['footprint']

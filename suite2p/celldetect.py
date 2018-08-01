@@ -265,12 +265,10 @@ def connectedRegion(mLam, rsmall, d0):
     mLam *= mask[rsmall<=d0]
     return mLam
 
-
 def pairwiseDistance(y,x):
     dists = ((np.expand_dims(y,axis=-1) - np.expand_dims(y,axis=0))**2
          + (np.expand_dims(x,axis=-1) - np.expand_dims(x,axis=0))**2)**0.5
     return dists
-
 
 def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     '''computes statistics of cells found using sourcery
@@ -297,7 +295,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
         # pixels of cell in cropped (Ly,Lx) region of recording
         stat[n]['ypix'] = ypix + ops['yrange'][0]
         stat[n]['xpix'] = xpix + ops['xrange'][0]
-        stat[n]['med']  = [np.median(ypix), np.median(xpix)]
+        stat[n]['med']  = [np.median(stat[n]['ypix']), np.median(stat[n]['xpix'])]
         stat[n]['npix'] = ipix.size
         stat[n]['lam']  = mLam[n, goodi]
         # compute footprint of ROI
@@ -545,7 +543,7 @@ def sourcery(ops):
             neu   = codes[ncells:,:]
             codes = codes[:ncells,:]
 
-        Ucell = U - np.resize(neu.transpose() @ S, U.shape) - np.resize(codes.transpose() @ L, U.shape)
+        Ucell = U - np.reshape(neu.transpose() @ S, U.shape) - np.reshape(codes.transpose() @ L, U.shape)
 
         # reestimate masks
         L = np.zeros((ncells,Lyc*Lxc), 'float32')
@@ -599,7 +597,7 @@ def sourcery(ops):
     mLam = mLam / mLam.sum(axis=1).reshape(ncells,1)
     mPix = mPix[:ncells,:]
 
-    Ucell = U - np.resize(neu.transpose() @ S, U.shape)
+    Ucell = U - np.reshape(neu.transpose() @ S, U.shape)
     # ypix, xpix, goodi = celldetect.localRegion(i[n-ncells],j[n-ncells],dy,dx,Ly,Lx)
 
     Ly = ops['Ly']

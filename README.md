@@ -27,9 +27,11 @@ From here you should:
 
 0. File -> Run suite2p
 1. Setup a configuration for your own data
+
     ** Add folders with tiffs:  -> Add directory to data_path
     ** Add a save path (otherwise the data directory is used as save path) -> Choose save_path
     ** Set some parameters. At the minimum: 
+	
         *** nplanes, nchannels, diameter, tau, fs. See below for what these do. 
 2. Press run and wait. Messages should start appearing in the embedded command line. 
 3. When the run is finished, use the GUI to visualize and refine the results (see below).

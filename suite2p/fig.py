@@ -92,19 +92,22 @@ def init_masks(parent):
                         mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
                         mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
                         S = np.minimum(1, V*1.5)
+                        mimg1 = np.percentile(mimg,1)
+                        mimg99 = np.percentile(mimg,99)
+                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
                     elif k==2:
                         mimg = ops['meanImg']
                         S = np.minimum(1, V*1.5)
+                        mimg1 = np.percentile(mimg,1)
+                        mimg99 = np.percentile(mimg,99)
+                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
                     else:
                         vcorr = ops['Vcorr']
                         mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
                         mimg[ops['yrange'][0]:ops['yrange'][1],
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
+                        mimg = (mimg - mimg.min()) / (mimg.max() - mimg.min())
 
-                    mimg1 = np.percentile(mimg,2)
-                    mimg99 = np.percentile(mimg,98)
-                    mimg = (mimg - mimg1) / (mimg99 - mimg1)
-                    mimg = mimg / mimg.max()
                     parent.Vback[k-1,:,:] = mimg
                     V = mimg
                     if k==3:

@@ -32,7 +32,7 @@ def init_masks(parent):
     stat = parent.stat
     iscell = parent.iscell
     cols = parent.ops_plot[3]
-    ncells = len(stat)-1
+    ncells = len(stat)
     Ly = ops['Ly']
     Lx = ops['Lx']
     H      = np.zeros((cols.shape[1],Ly,Lx), np.float32)

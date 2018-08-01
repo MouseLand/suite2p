@@ -89,16 +89,20 @@ class RunWindow(QtGui.QDialog):
     def finished(self, parent):
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
-        if self.finish:
+        if self.finish and not self.error:
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
             parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
             parent.load_proc()
-        else:
+        elif not self.error:
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText('Interrupted by user (not finished)\n')
+        else:
+            cursor = self.textEdit.textCursor()
+            cursor.movePosition(cursor.End)
+            cursor.insertText('Interrupted by error (not finished)\n')
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -112,9 +116,11 @@ class RunWindow(QtGui.QDialog):
         cursor.insertText('>>>ERROR<<<\n')
         cursor.insertText(str(self.process.readAllStandardError(), 'utf-8'))
         self.textEdit.ensureCursorVisible()
+        self.error = True
 
     def run_S2P(self, parent):
         self.finish = True
+        self.error = False
         k=0
         for key in self.keylist:
             if type(self.ops[key]) is float:

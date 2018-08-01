@@ -44,7 +44,7 @@ def default_ops():
         'outer_neuropil_radius': np.inf,
         'min_neuropil_pixels': 350,
         'ratio_neuropil_to_cell': 3,
-        'nframes': 1,
+        #'nframes': 1,
         'diameter': 12,
         'reg_tif': False,
         'max_iterations': 10

@@ -31,7 +31,8 @@ From here you should:
     * Add a save path (otherwise the data directory is used as save path) -> Choose save_path
     * Set some parameters (see full list below). At the minimum: 
 	
-        nplanes, nchannels, diameter, tau, fs. 
+		nplanes, nchannels, diameter, tau, fs
+		
 2. Press run and wait. Messages should start appearing in the embedded command line. 
 3. When the run is finished, use the GUI to visualize and refine the results (see below).
 

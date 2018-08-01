@@ -117,8 +117,7 @@ def phasecorr_worker(inputs):
     refImg = np.reshape(refImg, (1, Ly, Lx))    
     Lyhalf = int(np.floor(Ly/2))
     Lxhalf = int(np.floor(Lx/2))    
-	
-	maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
+    maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))        
     cc = correlation_map(data, refImg)
     ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)        

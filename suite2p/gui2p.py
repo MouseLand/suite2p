@@ -213,8 +213,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setYRange(0,self.ops['Lx'])
         self.p2.setXRange(0,self.ops['Ly'])
         self.p2.setYRange(0,self.ops['Lx'])
-        self.p1.setLimits(xMin=-100,xMax=self.ops['Ly']+100,
-                          yMin=-100,yMax=self.ops['Lx']+100)
+        self.p1.setLimits(xMin=0,xMax=self.ops['Ly'],
+                          yMin=0,yMax=self.ops['Lx'])
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()

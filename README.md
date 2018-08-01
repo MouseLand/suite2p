@@ -49,8 +49,8 @@ The GUI serves two main functions:
 Main GUI controls (works for all views):
 
 1. Pan  = Left-Click  + drag  
-2. Zoom = Right-Click + drag  
-3. Default view = Double left-click
+2. Zoom = (Scroll wheel) OR (Right-Click + drag)
+3. Full view = Double left-click
 4. Swap cell = Right-click on the cell
  
 ## Other ways to run Suite2p

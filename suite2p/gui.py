@@ -13,7 +13,7 @@ from suite2p import run_s2p
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,900,700)
+        self.setGeometry(50,50,1100,700)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -23,7 +23,7 @@ class RunWindow(QtGui.QDialog):
         self.ops = run_s2p.default_ops()
         self.data_path = []
         self.save_path = []
-        tifkeys = ['nplanes','nchannels','diameter','tau','fs']
+        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
         parkeys = ['num_workers','num_workers_roi']
         regkeys = ['nimg_init', 'batch_size', 'maxregshift', 'align_by_chan']
         cellkeys = ['navg_frames_svd','nsvd_for_roi','threshold_scaling']
@@ -31,9 +31,33 @@ class RunWindow(QtGui.QDialog):
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
         keys = [[],tifkeys, parkeys, regkeys, cellkeys, neukeys, deconvkeys]
         labels = ['Filepaths','Main settings','Parallel','Registration','Cell detection','Neuropil','Deconvolution']
+        tooltips = ['each tiff has this many planes in sequence',
+                    'each tiff has this many channels per plane',
+                    'this channel is used to extract functional ROIs (1-based)',
+                    'approximate size of the cells in FOV in pixels',
+                    'timescale of sensor in deconvolution (in seconds)',
+                    'sampling rate (total across planes)',
+                    '0 to select num_cores, -1 to disable parallelism, N to enforce value',
+                    '0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    '# of subsampled frames for finding reference image',
+                    'number of frames per batch',
+                    'max allowed registration shift, as a fraction of frame max(width and height)',
+                    'when multi-channel, you can align by non-functional channel (1-based)',
+                    'max number of binned frames for the SVD',
+                    'max number of SVD components to keep for ROI detection',
+                    'adjust the automatically determined threshold by this scalar multiplier',
+                    'minimum ratio between neuropil radius and cell radius',
+                    'number of pixels between ROI and neuropil donut',
+                    'maximum neuropil radius',
+                    'minimum number of pixels in the neuropil',
+                    'window for maximin',
+                    'smoothing constant for gaussian filter',
+                    'smoothing constant for gaussian filter',
+                    'neuropil coefficient']
         l=0
         self.keylist = []
         self.editlist = []
+        kk=0
         for lkey in keys:
             k = 0
             qlabel = QtGui.QLabel(labels[l])
@@ -45,13 +69,14 @@ class RunWindow(QtGui.QDialog):
                 if self.ops[key] or (self.ops[key] == 0):
                     qedit = QtGui.QLineEdit()
                     qlabel = QtGui.QLabel(key)
-                    qlabel.setToolTip('yo')
+                    qlabel.setToolTip(tooltips[kk])
                     qedit.setText(str(self.ops[key]))
                     self.layout.addWidget(qlabel,k*2+1,l,1,1)
                     self.layout.addWidget(qedit,k*2+2,l,1,1)
                     self.keylist.append(key)
                     self.editlist.append(qedit)
                 k+=1
+                kk+=1
             l+=1
         btiff = QtGui.QPushButton('Add directory to data_path')
         btiff.clicked.connect(self.get_folders)
@@ -61,12 +86,13 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(qlabel,1,0,1,1)
         btiff = QtGui.QPushButton('Choose save_path\n(default is data_path)')
         btiff.clicked.connect(self.save_folder)
-        self.layout.addWidget(btiff,9,0,1,1)
+        self.layout.addWidget(btiff,13,0,1,1)
+        self.layout.addWidget(QtGui.QLabel('-'),14,0,1,1)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,12,0,1,1)
+        self.layout.addWidget(self.runButton,16,0,1,1)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 13,0,15,l)
+        self.layout.addWidget(self.textEdit, 17,0,15,l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -76,7 +102,7 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 12,1,1,1)
+        self.layout.addWidget(self.stopButton, 16,1,1,1)
         self.stopButton.clicked.connect(self.stop)
 
     def stop(self):
@@ -156,7 +182,7 @@ class RunWindow(QtGui.QDialog):
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
         self.save_path = name
-        self.layout.addWidget(QtGui.QLabel(name),10,0,1,1)
+        self.layout.addWidget(QtGui.QLabel(name),14,0,1,1)
 
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):

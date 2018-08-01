@@ -21,7 +21,7 @@ The quickest way to start is to open the GUI:
 ~~~~
 python -m suite2p
 ~~~~
-From here you should: 
+Then: 
 1. File -> Run suite2p
 2. Setup a configuration for your own data
     * -> Add directory to data_path
@@ -39,12 +39,12 @@ Suite2p output goes to a folder called "suite2p" inside your save_path, which by
 
 The GUI serves two main functions:
 
-1. Quickly check the quality of the data and results. 
-* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces
-* we will later add more views population-level visualizations. 
+1. Checking the quality of the data and results. 
+	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces
+	* we will later add more views population-level visualizations. 
 2. Classify ROIs into cell / not cell. 
-* the default classifier included should work well in a wide variety of scenarios. 
-* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
+	* the default classifier included should work well in a wide variety of scenarios. 
+	* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
 
 Main GUI controls (works for all views):
 
@@ -102,5 +102,5 @@ ops1 = run_s2p(ops, db)
 'outer_neuropil_radius': np.inf, # maximum neuropil radius
 'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
 'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
-'allow_overlap': False,                 
+'allow_overlap': False, # not 100% sure this is being used         
 ~~~~

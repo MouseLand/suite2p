@@ -11,7 +11,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
-        'save_path0': [],
+        'save_path0': [], # default is the first item in data_path
         'diameter':12, # this is the main parameter for cell detection
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)
@@ -19,7 +19,7 @@ def default_ops():
         'nchannels' : 1, # each tiff has these many channels per plane
         'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
-        'look_one_level_down': False,
+        'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
@@ -27,27 +27,24 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
         'neumax': 1.,  # maximum neuropil coefficient (not implemented)
         'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
-        'maxregshift': 0.,
-        'subpixel' : 10,
+        'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
+		'reg_tif': False, # whether to save registered tiffs for manual inspection
+        'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
         'batch_size': 200, # number of frames per batch
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         'nimg_init': 200, # subsampled frames for finding reference image
-        'navg_frames_svd': 5000,
-        'nsvd_for_roi': 1000,
-        'ratio_neuropil': 5,
-        'tile_factor': 1,
-        'threshold_scaling': 1,
-        'Vcorr': [],
-        'allow_overlap': False,
-        'inner_neuropil_radius': 2,
-        'outer_neuropil_radius': np.inf,
-        'min_neuropil_pixels': 350,
-        'ratio_neuropil_to_cell': 3,
-        #'nframes': 1,
-        'diameter': 12,
-        'reg_tif': False,
-        'max_iterations': 10
+        'navg_frames_svd': 5000, # max number of binned frames for the SVD
+        'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
+		'max_iterations': 10, # maximum number of iterations to do cell detection
+        'ratio_neuropil': 3., # minimum ratio between neuropil radius and cell radius
+        'tile_factor': 1, # use finer (>1) or coarser (<1) tiles for neuropil estimation
+        'threshold_scaling': 1, # adjust the automatically determined threshold by this scalar multiplier        
+        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
+        'outer_neuropil_radius': np.inf, # maximum neuropil radius
+        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
+        'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
+		'allow_overlap': False,                 
       }
     return ops
 

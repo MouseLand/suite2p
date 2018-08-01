@@ -621,8 +621,8 @@ def extractF(ops, stat):
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
-    neuropil_masks = np.resize(neuropil_masks,(ncells,Ly*Lx))
-    cell_masks     = np.resize(cell_masks,(ncells,Ly*Lx))
+    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
+    cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
 
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)

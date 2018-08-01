@@ -70,15 +70,35 @@ class RunWindow(QtGui.QDialog):
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
         # disable the button when running the s2p process
-        self.process.started.connect(lambda: self.runButton.setEnabled(False))
+        self.process.started.connect(self.started)
         self.process.finished.connect(lambda: self.finished(parent))
+        # stop process
+        self.stopButton = QtGui.QPushButton('STOP')
+        self.stopButton.setEnabled(False)
+        self.layout.addWidget(self.stopButton, 12,1,1,1)
+        self.stopButton.clicked.connect(self.stop)
+
+    def stop(self):
+        self.finish = False
+        self.process.kill()
+
+    def started(self):
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
 
     def finished(self, parent):
-        cursor = self.textEdit.textCursor()
-        cursor.movePosition(cursor.End)
-        cursor.insertText('Opening in GUI (can close this window)')
-        parent.fname = self.save_path[0]+'/stat.npy'
-        parent.load_proc()
+        self.runButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
+        if self.finish:
+            cursor = self.textEdit.textCursor()
+            cursor.movePosition(cursor.End)
+            cursor.insertText('Opening in GUI (can close this window)\n')
+            parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
+            parent.load_proc()
+        else:
+            cursor = self.textEdit.textCursor()
+            cursor.movePosition(cursor.End)
+            cursor.insertText('Interrupted by user (not finished)\n')
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -94,6 +114,7 @@ class RunWindow(QtGui.QDialog):
         self.textEdit.ensureCursorVisible()
 
     def run_S2P(self, parent):
+        self.finish = True
         k=0
         for key in self.keylist:
             if type(self.ops[key]) is float:
@@ -110,9 +131,9 @@ class RunWindow(QtGui.QDialog):
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
         if len(self.save_path)==0:
-            fpath = os.path.join(self.db['data_path'][0], 'suite2p', 'plane0')
+            fpath = self.db['data_path'][0]
             self.save_path = fpath
-        self.db['save_path0'] = self.save_path[0]
+        self.db['save_path0'] = self.save_path
         print('Running suite2p!')
         print('starting process')
         np.save('ops.npy', self.ops)
@@ -126,9 +147,8 @@ class RunWindow(QtGui.QDialog):
                               len(self.data_path)+1,0,1,1)
 
     def save_folder(self):
-        self.save_path = []
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
-        self.save_path.append(name)
+        self.save_path = name
         self.layout.addWidget(QtGui.QLabel(name),10,0,1,1)
 
 ### custom QDialog which makes a list of items you can include/exclude

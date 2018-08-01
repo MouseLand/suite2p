@@ -287,32 +287,39 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     frac = 0.5
     ncells = mPix.shape[0]
     footprints = np.zeros((ncells,))
-    for n in range(0,ncells):
+    n=0
+    for k in range(0,ncells):
         stat[n] = {}
-        goodi   = np.array(((mPix[n,:]>=0) & (mLam[n,:]>1e-10)).nonzero()).astype(np.int32)
-        ipix    = mPix[n,goodi].astype(np.int32)
+        goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
+        ipix    = mPix[k,goodi].astype(np.int32)
         ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
-        # pixels of cell in cropped (Ly,Lx) region of recording
-        stat[n]['ypix'] = ypix + ops['yrange'][0]
-        stat[n]['xpix'] = xpix + ops['xrange'][0]
-        stat[n]['med']  = [np.median(stat[n]['ypix']), np.median(stat[n]['xpix'])]
-        stat[n]['npix'] = ipix.size
-        stat[n]['lam']  = mLam[n, goodi]
-        # compute footprint of ROI
-        y0,x0 = stat[n]['med']
-        ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
-        proj  = codes[n,:] @ Ucell[:,ypix,xpix]
-        rs0   = rs[goodi]
-        inds  = proj.flatten()>proj.max()*frac
-        stat[n]['footprint'] = np.mean(rs0[inds]) / d0
-        footprints[n] = stat[n]['footprint']
-        # compute compactness of ROI
-        lam = mLam[n, :]
-        r2 = (stat[n]['ypix']-np.round(stat[n]['med'][0]))**2 + (stat[n]['xpix']-np.round(stat[n]['med'][1]))**2
-        stat[n]['mrs']  = np.median(r2**.5) / d0
-        stat[n]['mrs0'] = np.median(rsort[:r2.size]) / d0
-        stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
 
+        if len(ypix)>0 and len(ipix)>0:
+            # pixels of cell in cropped (Ly,Lx) region of recording
+            stat[n]['ypix'] = ypix + ops['yrange'][0]
+            stat[n]['xpix'] = xpix + ops['xrange'][0]
+            stat[n]['med']  = [np.median(stat[k]['ypix']), np.median(stat[k]['xpix'])]
+            stat[n]['npix'] = ipix.size
+            stat[n]['lam']  = mLam[k, goodi]
+            # compute footprint of ROI
+            y0,x0 = stat[n]['med']
+            ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
+            if len(ypix)>0:
+                proj  = codes[k,:] @ Ucell[:,ypix,xpix]
+                rs0  = rs[goodi]
+                inds  = proj.flatten()>proj.max()*frac
+                stat[n]['footprint'] = np.mean(rs0[inds]) / d0
+                footprints[n] = stat[n]['footprint']
+            else:
+                stat[n]['footprint'] = 0
+                footprints[n]=0
+            # compute compactness of ROI
+            lam = mLam[n, :]
+            r2 = (stat[n]['ypix']-np.round(stat[n]['med'][0]))**2 + (stat[n]['xpix']-np.round(stat[n]['med'][1]))**2
+            stat[n]['mrs']  = np.median(r2**.5) / d0
+            stat[n]['mrs0'] = np.median(rsort[:r2.size]) / d0
+            stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
+            n+=1
     mfoot = np.median(footprints)
     for n in range(ncells):
         stat[n]['footprint'] = stat[n]['footprint'] / mfoot
@@ -328,8 +335,10 @@ def getOverlaps(stat,Ly,Lx):
         stat
         assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
     '''
+    stat2 = {}
     ncells = len(stat)
     mask = np.zeros((Ly,Lx))
+    k=0
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
@@ -338,8 +347,13 @@ def getOverlaps(stat,Ly,Lx):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         stat[n]['overlap'] = mask[ypix,xpix] > 1
+        ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        if len(ypix)>0:
+            stat2[k] = stat[n]
+            k+=1
 
-    return stat
+    return stat2
 
 
 def cellMasks(stat, Ly, Lx, allow_overlap):
@@ -367,7 +381,7 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
             # compute radius of neuron (used for neuropil scaling)
             radius = utils.fitMVGaus(ypix,xpix,lam,2)[2]
             stat[n]['radius'] = radius[0]
-            stat[n]['aspect_ratio'] = radius[0]/radius[1]
+            stat[n]['aspect_ratio'] = radius[0]/(radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
             # add pixels to cell masks
@@ -604,7 +618,6 @@ def sourcery(ops):
     Lx = ops['Lx']
     stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
     stat = getOverlaps(stat,Ly,Lx)
-
     return ops, stat
 
 def extractF(ops, stat):

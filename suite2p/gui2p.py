@@ -225,7 +225,9 @@ class MainW(QtGui.QMainWindow):
                 istat = np.zeros((ncells,1))
                 for n in range(0,ncells):
                     istat[n] = self.stat[n][names]
-                self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
+                self.clabels.append([istat.min(),
+                                     (istat.max()-istat.min())/2 + istat.min(), 
+                                     istat.max()])
                 istat = istat - istat.min()
                 istat = istat / istat.max()
                 istat = istat / 1.3

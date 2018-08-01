@@ -303,15 +303,23 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
         ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
         proj  = codes[n,:] @ Ucell[:,ypix,xpix]
         rs0   = rs[goodi]
-        inds  = proj.flatten()>proj.max()*frac
-        stat[n]['footprint'] = np.mean(rs0[inds]) / d0
-        footprints[n] = stat[n]['footprint']
-        # compute compactness of ROI
-        lam = mLam[n, :]
-        r2 = (stat[n]['ypix']-stat[n]['med'][0])**2 + (stat[n]['xpix']-stat[n]['med'][1])**2
-        stat[n]['mrs']  = np.median(r2**.5) / d0
-        stat[n]['mrs0'] = np.median(rsort[:ipix.size]) / d0
-        stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
+        if proj is not None:
+            inds  = proj.flatten()>proj.max()*frac
+            stat[n]['footprint'] = np.mean(rs0[inds]) / d0
+            footprints[n] = stat[n]['footprint']
+
+            # compute compactness of ROI
+            lam = mLam[n, :]
+            r2 = (stat[n]['ypix']-stat[n]['med'][0])**2 + (stat[n]['xpix']-stat[n]['med'][1])**2
+            stat[n]['mrs']  = np.median(r2**.5) / d0
+            stat[n]['mrs0'] = np.median(rsort[:ipix.size]) / d0
+            stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
+        else:
+            footprints[n] = 1
+            stat[n]['footprint'] = 0
+            stat[n]['mrs'] = 0
+            stat[n]['mrs0'] = 0
+            stat[n]['compact'] = 1
 
     mfoot = np.median(footprints)
     for n in range(ncells):

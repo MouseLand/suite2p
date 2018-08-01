@@ -25,6 +25,7 @@ dist/
 suite2p.egg-info/
 build/
 *.npy
+*.ipynb
 
 # =========================
 # Operating System Files

@@ -87,10 +87,10 @@ class MainW(QtGui.QMainWindow):
         layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
         #self.win.setCentralItem(l)
         self.p0 = self.win.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
-        self.lcell0 = self.win.addLabel('n ROIs',row=1,col=0,colspan=1)
-        self.lcell1 = self.win.addLabel('n ROIs',row=1,col=1,colspan=1)
+        #self.lcell0 = self.win.addLabel('n ROIs',row=1,col=0,colspan=1)
+        #self.lcell1 = self.win.addLabel('n ROIs',row=1,col=1,colspan=1)
         # cells image
-        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=2,col=0)
+        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
@@ -99,7 +99,7 @@ class MainW(QtGui.QMainWindow):
         #self.p1.setXRange(0,512,padding=0.25)
         #self.p1.setYRange(0,512,padding=0.25)
         # noncells image
-        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',row=2,col=1)
+        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',row=1,col=1)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
@@ -108,8 +108,8 @@ class MainW(QtGui.QMainWindow):
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
         # fluorescence trace plot
-        self.p3 = self.win.addPlot(row=3,col=0,colspan=2)
-        layout.setRowStretchFactor(2,2)
+        self.p3 = self.win.addPlot(row=2,col=0,colspan=2)
+        layout.setRowStretchFactor(1,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -226,7 +226,7 @@ class MainW(QtGui.QMainWindow):
                 for n in range(0,ncells):
                     istat[n] = self.stat[n][names]
                 self.clabels.append([istat.min(),
-                                     (istat.max()-istat.min())/2 + istat.min(), 
+                                     (istat.max()-istat.min())/2 + istat.min(),
                                      istat.max()])
                 istat = istat - istat.min()
                 istat = istat / istat.max()
@@ -244,8 +244,8 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-        self.lcell0.setText('%d cells'%self.iscell.sum())
-        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+        #self.lcell0.setText('%d cells'%self.iscell.sum())
+        #self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
 
         fig.init_masks(self)
         M = fig.draw_masks(self)
@@ -371,8 +371,8 @@ class MainW(QtGui.QMainWindow):
                         np.save(self.basename+'/iscell.npy', self.iscell)
                         self.iflip = self.ichosen
                         fig.flip_cell(self)
-                        self.lcell0.setText('%d ROIs'%self.iscell.sum())
-                        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+                        #self.lcell0.setText('%d ROIs'%self.iscell.sum())
+                        #self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
                     else:
                         flip = False
 

@@ -68,11 +68,13 @@ ops1 = run_s2p(ops, db)
 
 ## Outputs
 
+~~~~python
 F.npy: array of fluorescence traces (ROIs by timepoints)  
 Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)  
 spks.npy: array of deconvolved traces (ROIs by timepoints)  
 stat.npy: array of statistics computed for each cell (ROIs by 1)  
 ops.npy: options that Suite2p was run with as well as extra information acumulated during processing, like the mean image and the reference image  
+~~~~
 
 ## Option defaults
 

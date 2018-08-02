@@ -68,7 +68,7 @@ ops1 = run_s2p(ops, db)
 
 ## Outputs
 
-~~~~python
+~~~~
 F.npy: array of fluorescence traces (ROIs by timepoints)  
 Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)  
 spks.npy: array of deconvolved traces (ROIs by timepoints)  

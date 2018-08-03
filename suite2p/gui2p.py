@@ -91,6 +91,7 @@ class MainW(QtGui.QMainWindow):
         self.lcell1 = self.win.addLabel('n ROIs',row=0,col=1,colspan=1)
         # cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
+        #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))

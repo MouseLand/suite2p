@@ -41,6 +41,7 @@ def get_mov(ops):
 
     nframes = ops['nframes']
     bin_min = np.round(nframes / ops['navg_frames_svd']).astype('int32');
+    bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)
     ops['navg_frames_svd'] = np.floor(nframes/nt0).astype('int32')
@@ -52,24 +53,27 @@ def get_mov(ops):
     reg_file = open(ops['reg_file'], 'rb')
 
     nimgbatch = max(500, np.ceil(750 * ops['fs']))
-    nimgbatch = nt0 * np.ceil(nimgbatch/nt0)
+    nimgbatch = min(nframes, nimgbatch)
+    nimgbatch = nt0 * np.floor(nimgbatch/nt0)
 
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
 
+    print('nbytesread is %d'%nbytesread)
     # load and bin data
     while True:
         buff = reg_file.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
         nimgd = int(np.floor(data.size / (Ly*Lx)))
-        if nimgd == 0:
+        if nimgd < nt0:
             break
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
         # bin data
         if nimgd < nimgbatch:
             nmax = int(np.floor(nimgd / nt0) * nt0)
             data = data[:nmax,:,:]
+
         dbin = np.reshape(data, (-1,nt0,Ly,Lx))
         dbin = np.squeeze(dbin.mean(axis=1))
         dbin -= dbin.mean(axis=0)
@@ -85,7 +89,7 @@ def getSVDdata(ops):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
 
-    sig = .5
+    sig = 1.
     for j in range(nbins):
         mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
 
@@ -303,6 +307,9 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             stat[n]['lam']  = mLam[k, goodi]
             # compute footprint of ROI
             y0,x0 = stat[n]['med']
+            y0 = y0 - ops['yrange'][0]
+            x0 = x0 - ops['xrange'][0]
+
             ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
             if len(ypix)>0:
                 proj  = codes[k,:] @ Ucell[:,ypix,xpix]
@@ -316,8 +323,8 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             # compute compactness of ROI
             lam = mLam[n, :]
             r2 = (stat[n]['ypix']-np.round(stat[n]['med'][0]))**2 + (stat[n]['xpix']-np.round(stat[n]['med'][1]))**2
-            stat[n]['mrs']  = np.median(r2**.5) / d0
-            stat[n]['mrs0'] = np.median(rsort[:r2.size]) / d0
+            stat[n]['mrs']  = np.mean(r2**.5) / d0
+            stat[n]['mrs0'] = np.mean(rsort[:r2.size]) / d0
             stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
             n+=1
     mfoot = np.median(footprints)
@@ -508,7 +515,7 @@ def sourcery(ops):
                 peaks  = V[imax]
                 # use the median of these peaks to decide if ROI is accepted
                 thres  = ops['threshold_scaling'] * np.median(peaks[peaks>1e-4])
-                ops['Vcorr'] = V
+                ops['Vcorr'] = V + vrem
 
             V = np.minimum(V, ops['Vcorr'])
 
@@ -600,9 +607,10 @@ def sourcery(ops):
             Ucell = Ucell + np.resize(neu.transpose() @ S, U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
+            break
             U = getSVDproj(ops, u)
             Ucell = U
-        if refine>0:
+        if refine>=0:
             StU = S @ np.transpose(np.reshape(Ucell, (nsvd, Lyc*Lxc)))
             neu = np.linalg.solve(StS, StU).astype('float32')
         refine -= 1

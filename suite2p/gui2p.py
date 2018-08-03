@@ -244,8 +244,8 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-        #self.lcell0.setText('%d cells'%self.iscell.sum())
-        #self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+        self.lcell0.setText('%d cells'%self.iscell.sum())
+        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
 
         fig.init_masks(self)
         M = fig.draw_masks(self)
@@ -371,8 +371,8 @@ class MainW(QtGui.QMainWindow):
                         np.save(self.basename+'/iscell.npy', self.iscell)
                         self.iflip = self.ichosen
                         fig.flip_cell(self)
-                        #self.lcell0.setText('%d ROIs'%self.iscell.sum())
-                        #self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+                        self.lcell0.setText('%d ROIs'%self.iscell.sum())
+                        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
                     else:
                         flip = False
 
@@ -490,6 +490,8 @@ class MainW(QtGui.QMainWindow):
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
+        self.lcell0.setText('%d ROIs'%self.iscell.sum())
+        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
 
     def save_classifier(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Save classifier')

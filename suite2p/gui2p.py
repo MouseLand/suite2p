@@ -12,7 +12,8 @@ class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
         self.setGeometry(25,25,1600,1000)
-        self.setWindowTitle('suite2p')
+        self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
+        self.setWindowIcon(QtGui.QIcon('logo.png'))
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
@@ -86,9 +87,8 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.win,0,1,24,12)
         layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
         #self.win.setCentralItem(l)
-        self.p0 = self.win.addLabel('run suite2p or load a stat.npy file',row=0,col=0,colspan=2)
-        #self.lcell0 = self.win.addLabel('n ROIs',row=1,col=0,colspan=1)
-        #self.lcell1 = self.win.addLabel('n ROIs',row=1,col=1,colspan=1)
+        self.lcell0 = self.win.addLabel('n ROIs',row=0,col=0,colspan=1)
+        self.lcell1 = self.win.addLabel('n ROIs',row=0,col=1,colspan=1)
         # cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
         self.img1 = pg.ImageItem()
@@ -198,7 +198,7 @@ class MainW(QtGui.QMainWindow):
         self.disable_classifier()
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
-        self.p0.setText(self.fname)
+        self.setWindowTitle(self.fname)
         # add boundaries to stat for ROI overlays
         ncells = self.Fcell.shape[0]
         for n in range(0,ncells):

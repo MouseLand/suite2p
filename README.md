@@ -11,7 +11,8 @@ Suite2p includes the following modules:
 * Visualization GUI
 
 This code was written by Carsen Stringer and Marius Pachitariu.  
-The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). 
 
 
 

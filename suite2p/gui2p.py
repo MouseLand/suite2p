@@ -4,8 +4,6 @@ import sys
 import numpy as np
 import os
 import pickle
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
 from suite2p import fig, gui, classifier
 import time
 class MainW(QtGui.QMainWindow):
@@ -153,16 +151,11 @@ class MainW(QtGui.QMainWindow):
         b=0
 
         # colorbars for different statistics
-        self.colorfig = plt.figure(figsize=(1,0.05))
-        self.canvas = FigureCanvas(self.colorfig)
-        self.colorbar = self.colorfig.add_subplot(211)
-
         for names in self.colors:
             btn  = gui.ColorButton(b,names,self)
             self.colorbtns.addButton(btn,b)
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
-            #btn.setChecked(True)
             b+=1
         self.bend = nv+b+3+1
         self.classbtn  = gui.ColorButton(b,'classifier',self)
@@ -170,6 +163,18 @@ class MainW(QtGui.QMainWindow):
         self.ncolors = b+1
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
+        colorbarW = pg.GraphicsLayoutWidget()
+        colorbarW.setMaximumHeight(80)
+        colorbarW.setMaximumWidth(140)
+        colorbarW.ci.layout.setRowStretchFactor(0,2)
+        self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
+        self.colorbar = pg.ImageItem()
+        cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
+        cbar.setMenuEnabled(False)
+        cbar.addItem(self.colorbar)
+        self.clabel = [colorbarW.addLabel('0.0',row=1,col=0),
+                        colorbarW.addLabel('0.5',row=1,col=1),
+                        colorbarW.addLabel('1.0',row=1,col=2)]
 
         # classifier buttons
         applyclass = QtGui.QPushButton('apply classifier')
@@ -224,7 +229,6 @@ class MainW(QtGui.QMainWindow):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
-
         allcols = np.random.random((ncells,1))
         self.clabels = []
         b=0
@@ -252,14 +256,10 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-
         nv=6
-        self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
         self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
         self.colormat = fig.make_colorbar()
         self.plot_colorbar(0)
-        #gl = pg.GradientLegend((10,300),(10,30))
-        #gl.setParentItem(self.p1)
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
@@ -267,13 +267,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setYRange(0,self.ops['Ly'])
         self.p2.setXRange(0,self.ops['Lx'])
         self.p2.setYRange(0,self.ops['Ly'])
-
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
         self.lcell0.setText('%d cells'%(self.iscell.sum()))
-
-
-        #self.p1.setLimits(minXRange=-self.ops['Lx'],maxXRange=self.ops['Lx']*2,
-        #                  minYRange=-self.ops['Ly'],maxYRange=self.ops['Ly']*2)
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -282,19 +277,12 @@ class MainW(QtGui.QMainWindow):
         self.show()
 
     def plot_colorbar(self, bid):
-        self.colorbar.clear()
         if bid==0:
-            self.colorbar.imshow(np.zeros((20,100,3)))
+            self.colorbar.setImage(np.zeros((20,100,3)))
         else:
-            self.colorbar.imshow(self.colormat)
-        self.colorbar.tick_params(axis='y',which='both',left=False,right=False,
-                                labelleft=False,labelright=False)
-        self.colorbar.set_xticks([0,50,100])
-        self.colorbar.set_xticklabels(['%1.2f'%self.clabels[bid][0],
-                                        '%1.2f'%self.clabels[bid][1],
-                                        '%1.2f'%self.clabels[bid][2]],
-                                        fontsize=6)
-        self.canvas.draw()
+            self.colorbar.setImage(self.colormat)
+        for k in range(3):
+            self.clabel[k].setText('%1.2f'%self.clabels[bid][k])
 
     def plot_trace(self):
         self.p3.clear()
@@ -347,7 +335,6 @@ class MainW(QtGui.QMainWindow):
                     iplot = 4
                     if event.double():
                         zoom = True
-
                 if iplot==1 or iplot==2:
                     if event.button()==2:
                         flip = True
@@ -362,42 +349,46 @@ class MainW(QtGui.QMainWindow):
                 posy = int(posy)
                 posx = int(posx)
                 if zoom:
-                    if iplot==1 or iplot==2 or iplot==4:
-                        self.p1.setXRange(0,self.ops['Lx'])
-                        self.p1.setYRange(0,self.ops['Ly'])
-                    else:
-                        self.p3.setXRange(0,self.Fcell.shape[1])
-                        self.p3.setYRange(self.fmin,self.fmax)
-                    self.show()
-                if choose:
-                    ichosen = int(self.iROI[posx,posy])
-                    if ichosen<0 or self.ichosen==ichosen:
-                        choose = False
-                    if ichosen>=0:
-                        self.ichosen = ichosen
-                if flip:
-                    ichosen = int(self.iROI[posx,posy])
-                    if ichosen >= 0:
-                        self.ichosen = ichosen
-                        flip = True
-                        iscell = int(self.iscell[self.ichosen])
-                        if 2-iscell == iplot:
-                            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-                            np.save(self.basename+'/iscell.npy', self.iscell)
-                            self.iflip = self.ichosen
-                            fig.flip_cell(self)
-                            self.lcell0.setText('%d ROIs'%self.iscell.sum())
-                            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
-                        else:
-                            flip = False
-                    else:
-                        flip = False
-
+                    self.zoom_plot(iplot)
                 if choose or flip:
-                    M = fig.draw_masks(self)
-                    self.plot_masks(M)
-                    self.plot_trace()
-                    self.show()
+                    ichosen = int(self.iROI[posx,posy])
+                    if ichosen<0:
+                        choose = False
+                        flip = False
+                    else:
+                        if self.ichosen==ichosen:
+                            choose = False
+                        self.ichosen = ichosen
+                    if flip:
+                        flip = self.flip_plot(iplot)
+                    if choose or flip:
+                        M = fig.draw_masks(self)
+                        self.plot_masks(M)
+                        self.plot_trace()
+                        self.show()
+
+
+    def flip_plot(self,iplot):
+        iscell = int(self.iscell[self.ichosen])
+        if 2-iscell == iplot:
+            flip = True
+            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
+            np.save(self.basename+'/iscell.npy', self.iscell)
+            fig.flip_cell(self)
+            self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
+            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+        else:
+            flip = False
+        return flip
+
+    def zoom_plot(self,iplot):
+        if iplot==1 or iplot==2 or iplot==4:
+            self.p1.setXRange(0,self.ops['Lx'])
+            self.p1.setYRange(0,self.ops['Ly'])
+        else:
+            self.p3.setXRange(0,self.Fcell.shape[1])
+            self.p3.setYRange(self.fmin,self.fmax)
+        self.show()
 
     def run_suite2p(self):
         RW = gui.RunWindow(self)

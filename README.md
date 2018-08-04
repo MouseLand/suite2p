@@ -1,7 +1,6 @@
 <img src="logo_unshaded.png" width="200" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 Suite2p processes two-photon calcium imaging data from raw tifs to extracted fluorescence traces and spike times.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus
-<br>
 
 Suite2p includes the following modules: 
 * Registration

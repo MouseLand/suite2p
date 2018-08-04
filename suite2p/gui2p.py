@@ -342,7 +342,12 @@ class MainW(QtGui.QMainWindow):
                     iplot = 2
                 elif x==self.p3:
                     iplot = 3
-                if iplot > 0 and iplot < 3:
+                elif (x==self.p1 or x==self.p2) and x!=self.img1 and x!=self.img2:
+                    iplot = 4
+                    if event.double():
+                        zoom = True
+
+                if iplot==1 or iplot==2:
                     if event.button()==2:
                         flip = True
                         choose = True
@@ -356,12 +361,9 @@ class MainW(QtGui.QMainWindow):
                 posy = int(posy)
                 posx = int(posx)
                 if zoom:
-                    if iplot==1:
+                    if iplot==1 or iplot==2 or iplot==4:
                         self.p1.setXRange(0,self.ops['Lx'])
                         self.p1.setYRange(0,self.ops['Ly'])
-                    elif iplot==2:
-                        self.p2.setXRange(0,self.ops['Lx'])
-                        self.p2.setYRange(0,self.ops['Ly'])
                     else:
                         self.p3.setXRange(0,self.Fcell.shape[1])
                         self.p3.setYRange(self.fmin,self.fmax)

@@ -1,4 +1,4 @@
-# Suite2p <img src="logo_unshaded.png" width="200" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
+# Suite2p <img src="logo_unshaded.png" width="300" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
@@ -10,8 +10,8 @@ Suite2p includes the following modules:
 * Spike detection 
 * Visualization GUI
 
-This code was written by Carsen Stringer and Marius Pachitariu. The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  
-For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+This code was written by Carsen Stringer and Marius Pachitariu.  
+The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
 
 
 

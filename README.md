@@ -21,11 +21,11 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. Either add Anaconda to the path during install, or open up an Anaconda prompt insted of the standard command line terminal. 
+If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. 
 
 ## Getting started
 
-The quickest way to start is to open the GUI from a command line terminal:
+The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. 
 ~~~~
 python -m suite2p
 ~~~~

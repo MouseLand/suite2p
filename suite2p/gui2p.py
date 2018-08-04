@@ -4,8 +4,6 @@ import sys
 import numpy as np
 import os
 import pickle
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
 from suite2p import fig, gui, classifier
 import time
 class MainW(QtGui.QMainWindow):
@@ -25,7 +23,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
-        ### menu bar options
+        #### ------ MENU BAR ----------------- ####
         # run suite2p from scratch
         runS2P =  QtGui.QAction('&Run suite2p ', self)
         runS2P.setShortcut('Ctrl+R')
@@ -37,7 +35,7 @@ class MainW(QtGui.QMainWindow):
         loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
         # load masks
-        #loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
+        #loadMask = QtGui.QAction('&Load masks (stat.npy) and extract traces', self)
         #loadMask.setShortcut('Ctrl+M')
         #self.addAction(loadMask)
         # make mainmenu!
@@ -45,11 +43,10 @@ class MainW(QtGui.QMainWindow):
         file_menu = main_menu.addMenu('&File')
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
-        #file_menu.addAction(loadMask)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        #self.statclass = ['skew','compact']
+        self.statclass = ['skew','compact','aspect_ratio','footprint']
         self.loadClass = QtGui.QAction('&Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
@@ -63,7 +60,6 @@ class MainW(QtGui.QMainWindow):
         self.saveClass.triggered.connect(self.save_classifier)
         self.saveClass.setEnabled(False)
         self.saveTrain = QtGui.QAction('&Save training list', self)
-        #self.saveTrain.setShortcut('Ctrl+S')
         self.saveTrain.triggered.connect(self.save_trainlist)
         self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
@@ -72,63 +68,55 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveClass)
         class_menu.addAction(self.saveTrain)
 
-        # main widget
+        #### --------- MAIN WIDGET LAYOUT --------- ####
         cwidget = QtGui.QWidget(self)
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        checkBox = QtGui.QCheckBox('ROIs on')
+        checkBox = QtGui.QCheckBox('ROIs &On')
         checkBox.move(30,100)
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
+        # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('n ROIs')
         self.l0.addWidget(self.lcell0, 0,2,1,1)
         self.lcell1 = QtGui.QLabel('n ROIs')
         self.l0.addWidget(self.lcell1, 0,8,1,1)
-        # MAIN PLOTTING AREA
+        #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,24,12)
-        layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
-        #self.win.setCentralItem(l)
-        # cells image
+        self.l0.addWidget(self.win,1,1,30,12)
+        layout = self.win.ci.layout
+        # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
                                       row=0,col=0, invertY=True)
-        #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
-        # noncells image
-        #self.borderRect.setPen(self.border)
+        # --- noncells image
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
                                       row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
-        #self.p2.autoRange()
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
-        # fluorescence trace plot
+        # --- fluorescence trace plot
         self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
         layout.setRowStretchFactor(0,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
-
         self.show()
         self.win.show()
-        #
-        #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
-
-        self.views = ['ROIs', 'mean img (enhanced)', 'mean img', 'correlation map']
+        #### --------- VIEW AND COLOR BUTTONS ---------- ####
+        self.views = ['Q: ROIs', 'W: mean img (norm)', 'E: mean img', 'R: correlation map']
         self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -137,7 +125,7 @@ class MainW(QtGui.QMainWindow):
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
         for names in self.views:
-            btn  = gui.ViewButton(b,names,self)
+            btn  = gui.ViewButton(b,'&'+names,self)
             self.viewbtns.addButton(btn,b)
             self.l0.addWidget(btn,b+2,0,1,1)
             btn.setEnabled(False)
@@ -147,35 +135,44 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
-        clabel.resize(clabel.minimumSizeHint())
-        self.l0.addWidget(clabel,b+2,0,1,1)
-        nv = b+2
+        self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
+        self.l0.setRowStretch(b+2,1)
+        self.l0.addWidget(clabel,b+3,0,1,1)
+        nv = b+3
         b=0
-
         # colorbars for different statistics
-        self.colorfig = plt.figure(figsize=(1,0.05))
-        self.canvas = FigureCanvas(self.colorfig)
-        self.colorbar = self.colorfig.add_subplot(211)
-
         for names in self.colors:
             btn  = gui.ColorButton(b,names,self)
             self.colorbtns.addButton(btn,b)
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
-            #btn.setChecked(True)
             b+=1
-        self.bend = nv+b+3+1
+        self.bend = nv+b+3+2
         self.classbtn  = gui.ColorButton(b,'classifier',self)
         self.colorbtns.addButton(self.classbtn,b)
         self.ncolors = b+1
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
-
-        # classifier buttons
+        colorbarW = pg.GraphicsLayoutWidget()
+        colorbarW.setMaximumHeight(80)
+        colorbarW.setMaximumWidth(140)
+        colorbarW.ci.layout.setRowStretchFactor(0,2)
+        self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
+        self.l0.setRowStretch(nv+b+3, 1)
+        self.colorbar = pg.ImageItem()
+        cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
+        cbar.setMenuEnabled(False)
+        cbar.addItem(self.colorbar)
+        self.clabel = [colorbarW.addLabel('0.0',row=1,col=0),
+                        colorbarW.addLabel('0.5',row=1,col=1),
+                        colorbarW.addLabel('1.0',row=1,col=2)]
+        #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(self.apply_classifier)
-        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('Classifer'),self.bend,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend+1,0,1,1)
         applyclass.setEnabled(False)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
@@ -184,22 +181,43 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setSingleStep(0.01)
         self.probedit.setValue(0.5)
         self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit,self.bend,0,1,1)
-        self.l0.addWidget(applyclass,self.bend+1,0,1,1)
+        self.l0.addWidget(self.probedit,self.bend+1,0,1,1)
+        self.l0.addWidget(applyclass,self.bend+2,0,1,1)
         addtoclass = QtGui.QPushButton('add current data \n to classifier')
         addtoclass.resize(100,100)
         addtoclass.clicked.connect(self.add_to_classifier)
         addtoclass.setEnabled(False)
-        self.l0.addWidget(addtoclass,self.bend+2,0,1,1)
+        self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
         saveclass = QtGui.QPushButton('save classifier')
         saveclass.resize(100,50)
         saveclass.clicked.connect(self.save_classifier)
         saveclass.setEnabled(False)
-        self.l0.addWidget(saveclass,self.bend+3,0,1,1)
+        self.l0.addWidget(saveclass,self.bend+4,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)
         self.classbtns.addButton(applyclass,0)
         self.classbtns.addButton(addtoclass,1)
         self.classbtns.addButton(saveclass,2)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+5,0,1,1)
+        self.l0.setRowStretch(self.bend+5, 1)
+        #### ------ CELL STATS -------- ####
+        #self.l0.setRowStretch(1, 1)
+        #self.l0.setRowStretch(6, 1)
+        # which stats
+        self.stats_to_show = ['med','npix','skew','compact','footprint',
+                              'aspect_ratio']
+        self.l0.addWidget(QtGui.QLabel('Selected ROI stats'),self.bend+6,0,1,1)
+        lilfont = QtGui.QFont("Arial", 8)
+        qlabel = QtGui.QLabel('ROI')
+        qlabel.setFont(lilfont)
+        self.l0.addWidget(qlabel,self.bend+7,0,1,1)
+        self.ROIstats = []
+        self.ROIstats.append(qlabel)
+        for k in range(1,len(self.stats_to_show)):
+            self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
+            self.ROIstats[k].setFont(lilfont)
+            self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
+            self.l0.setRowStretch(self.bend+8+k, 0)
+            self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
 
     def make_masks_and_buttons(self):
         self.disable_classifier()
@@ -217,13 +235,13 @@ class MainW(QtGui.QMainWindow):
 
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
+            #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
-
         allcols = np.random.random((ncells,1))
         self.clabels = []
         b=0
@@ -251,14 +269,10 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-
         nv=6
-        self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
         self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
         self.colormat = fig.make_colorbar()
         self.plot_colorbar(0)
-        #gl = pg.GradientLegend((10,300),(10,30))
-        #gl.setParentItem(self.p1)
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
@@ -266,13 +280,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setYRange(0,self.ops['Ly'])
         self.p2.setXRange(0,self.ops['Lx'])
         self.p2.setYRange(0,self.ops['Ly'])
-
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
         self.lcell0.setText('%d cells'%(self.iscell.sum()))
-
-
-        #self.p1.setLimits(minXRange=-self.ops['Lx'],maxXRange=self.ops['Lx']*2,
-        #                  minYRange=-self.ops['Ly'],maxYRange=self.ops['Ly']*2)
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -281,19 +290,12 @@ class MainW(QtGui.QMainWindow):
         self.show()
 
     def plot_colorbar(self, bid):
-        self.colorbar.clear()
         if bid==0:
-            self.colorbar.imshow(np.zeros((20,100,3)))
+            self.colorbar.setImage(np.zeros((20,100,3)))
         else:
-            self.colorbar.imshow(self.colormat)
-        self.colorbar.tick_params(axis='y',which='both',left=False,right=False,
-                                labelleft=False,labelright=False)
-        self.colorbar.set_xticks([0,50,100])
-        self.colorbar.set_xticklabels(['%1.2f'%self.clabels[bid][0],
-                                        '%1.2f'%self.clabels[bid][1],
-                                        '%1.2f'%self.clabels[bid][2]],
-                                        fontsize=6)
-        self.canvas.draw()
+            self.colorbar.setImage(self.colormat)
+        for k in range(3):
+            self.clabel[k].setText('%1.2f'%self.clabels[bid][k])
 
     def plot_trace(self):
         self.p3.clear()
@@ -346,7 +348,6 @@ class MainW(QtGui.QMainWindow):
                     iplot = 4
                     if event.double():
                         zoom = True
-
                 if iplot==1 or iplot==2:
                     if event.button()==2:
                         flip = True
@@ -361,42 +362,57 @@ class MainW(QtGui.QMainWindow):
                 posy = int(posy)
                 posx = int(posx)
                 if zoom:
-                    if iplot==1 or iplot==2 or iplot==4:
-                        self.p1.setXRange(0,self.ops['Lx'])
-                        self.p1.setYRange(0,self.ops['Ly'])
-                    else:
-                        self.p3.setXRange(0,self.Fcell.shape[1])
-                        self.p3.setYRange(self.fmin,self.fmax)
-                    self.show()
-                if choose:
-                    ichosen = int(self.iROI[posx,posy])
-                    if ichosen<0 or self.ichosen==ichosen:
-                        choose = False
-                    if ichosen>=0:
-                        self.ichosen = ichosen
-                if flip:
-                    ichosen = int(self.iROI[posx,posy])
-                    if ichosen >= 0:
-                        self.ichosen = ichosen
-                        flip = True
-                        iscell = int(self.iscell[self.ichosen])
-                        if 2-iscell == iplot:
-                            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-                            np.save(self.basename+'/iscell.npy', self.iscell)
-                            self.iflip = self.ichosen
-                            fig.flip_cell(self)
-                            self.lcell0.setText('%d ROIs'%self.iscell.sum())
-                            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
-                        else:
-                            flip = False
-                    else:
-                        flip = False
-
+                    self.zoom_plot(iplot)
                 if choose or flip:
-                    M = fig.draw_masks(self)
-                    self.plot_masks(M)
-                    self.plot_trace()
-                    self.show()
+                    ichosen = int(self.iROI[posx,posy])
+                    if ichosen<0:
+                        choose = False
+                        flip = False
+                    else:
+                        if self.ichosen==ichosen:
+                            choose = False
+                        self.ichosen = ichosen
+                    if flip:
+                        flip = self.flip_plot(iplot)
+                    if choose or flip:
+                        self.ichosen_stats()
+                        M = fig.draw_masks(self)
+                        self.plot_masks(M)
+                        self.plot_trace()
+                        self.show()
+
+
+    def ichosen_stats(self):
+        n = self.ichosen
+        for k in range(1,len(self.stats_to_show)+1):
+            key = self.stats_to_show[k-1]
+            ival = self.stat[n][key]
+            if k==1:
+                self.ROIstats[k].setText(key+str(ival[0])+str(ival[1]))
+            else:
+                self.ROIstats[k].setText(key+str(ival))
+
+    def flip_plot(self,iplot):
+        iscell = int(self.iscell[self.ichosen])
+        if 2-iscell == iplot:
+            flip = True
+            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
+            np.save(self.basename+'/iscell.npy', self.iscell)
+            fig.flip_cell(self)
+            self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
+            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+        else:
+            flip = False
+        return flip
+
+    def zoom_plot(self,iplot):
+        if iplot==1 or iplot==2 or iplot==4:
+            self.p1.setXRange(0,self.ops['Lx'])
+            self.p1.setYRange(0,self.ops['Ly'])
+        else:
+            self.p3.setXRange(0,self.Fcell.shape[1])
+            self.p3.setYRange(self.fmin,self.fmax)
+        self.show()
 
     def run_suite2p(self):
         RW = gui.RunWindow(self)
@@ -467,22 +483,25 @@ class MainW(QtGui.QMainWindow):
                                                statclass=None)
             if self.model.loaded:
                 # statistics from current dataset for Classifier
-                ncells = self.Fcell.shape[0]
-                self.statistics = np.zeros((ncells, len(self.model.statclass)),np.float32)
-                k=0
-                for key in self.model.statclass:
-                    print(key)
-                    for n in range(0,ncells):
-                        self.statistics[n,k] = self.stat[n][key]
-                    k+=1
+                self.statclass = self.model.statclass
+                # fill up with current dataset stats
+                self.get_stats()
                 self.trainfiles = self.model.trainfiles
                 self.activate_classifier()
                 #else:
                 #    print('ERROR: classifier has fields that stat doesn''t have')
 
+    def get_stats(self):
+        ncells = self.Fcell.shape[0]
+        self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
+        k=0
+        for key in self.statclass:
+            for n in range(0,ncells):
+                self.statistics[n,k] = self.stat[n][key]
+            k+=1
+
     def load_traindata(self):
         # will return
-        self.traindata = np.zeros((0,len(self.statclass)+1),np.float32)
         LC = gui.ListChooser('classifier training files', self)
         result = LC.exec_()
         if result:
@@ -491,13 +510,7 @@ class MainW(QtGui.QMainWindow):
                                                trainfiles=self.trainfiles,
                                                statclass=self.statclass)
             if self.trainfiles is not None:
-                ncells = self.Fcell.shape[0]
-                self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
-                k=0
-                for key in self.statclass:
-                    for n in range(0,ncells):
-                        self.statistics[n,k] = self.stat[n][key]
-                    k+=1
+                self.get_stats()
                 self.activate_classifier()
 
     def apply_classifier(self):

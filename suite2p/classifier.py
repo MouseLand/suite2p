@@ -31,7 +31,6 @@ class Classifier:
         # make grid of statistics values
         ncells,nstats = stats.shape
         grid = np.zeros((100, stats.shape[1]), np.float32)
-
         for n in range(nstats):
             grid[:,n] = np.linspace(np.percentile(stats[:,n], 2),
                                     np.percentile(stats[:,n], 98),
@@ -44,7 +43,6 @@ class Classifier:
                 ix = notcell
             for n in range(nstats):
                 hists[:,n,k] = smooth_distribution(stats[ix,n], grid[:,n])
-
         self.hists = hists
         self.grid = grid
 
@@ -71,11 +69,9 @@ class Classifier:
             rs = np.exp(L) + 1e-5
             rs = rs / np.expand_dims(rs.sum(axis=1), axis=1)
             p = rs.mean(axis=0)
-
         probcell = rs[:,0]
         iscell = probcell > classval
         return iscell, probcell
-
 
     def load_classifier(self):
         try:
@@ -150,7 +146,6 @@ def smooth_distribution(x, grid):
     xbin[xbin>grid[-1]] = grid[-1]#*np.ones(((xbin>grid[-1]).sum(),))
     hist0 = np.histogram(xbin, grid)
     hist0 = hist0[0]
-    hist = hist0#%gaussian_filter(hist0, sig)
-    print(hist)
+    hist = gaussian_filter(hist0, sig)
     hist = hist / hist.sum()
     return hist0

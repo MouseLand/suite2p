@@ -1,4 +1,4 @@
-# Suite2p <img src="logo_unshaded.png" width="300" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
+# Suite2p <img src="logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  

@@ -83,18 +83,20 @@ class MainW(QtGui.QMainWindow):
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
+        self.lcell0 = QtGui.QLabel('n ROIs')
+        self.l0.addWidget(self.lcell0, 0,2,1,1)
+        self.lcell1 = QtGui.QLabel('n ROIs')
+        self.l0.addWidget(self.lcell1, 0,8,1,1)
         # MAIN PLOTTING AREA
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,1,24,12)
+        self.l0.addWidget(self.win,1,1,24,12)
         layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
         #self.win.setCentralItem(l)
-        self.lcell0 = self.win.addLabel('n ROIs',row=0,col=0,colspan=1)
-        self.lcell1 = self.win.addLabel('n ROIs',row=0,col=1,colspan=1)
         # cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
-                                      row=1,col=0, invertY=True)
+                                      row=0,col=0, invertY=True)
         #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
@@ -104,7 +106,7 @@ class MainW(QtGui.QMainWindow):
         # noncells image
         #self.borderRect.setPen(self.border)
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
-                                      row=1,col=1, invertY=True)
+                                      row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
@@ -113,8 +115,8 @@ class MainW(QtGui.QMainWindow):
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
         # fluorescence trace plot
-        self.p3 = self.win.addPlot(row=2,col=0,colspan=2)
-        layout.setRowStretchFactor(1,2)
+        self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
+        layout.setRowStretchFactor(0,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -249,8 +251,6 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
-        self.lcell0.setText('%d cells'%self.iscell.sum())
-        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
 
         nv=6
         self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
@@ -259,13 +259,17 @@ class MainW(QtGui.QMainWindow):
         self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
         #gl.setParentItem(self.p1)
-        self.p2.setXRange(0,self.ops['Ly'])
-        self.p2.setYRange(0,self.ops['Lx'])
-        self.p1.setXRange(0,self.ops['Ly'])
-        self.p1.setYRange(0,self.ops['Lx'])
         fig.init_masks(self)
         M = fig.draw_masks(self)
         self.plot_masks(M)
+        self.p1.setXRange(0,self.ops['Lx'])
+        self.p1.setYRange(0,self.ops['Ly'])
+        self.p2.setXRange(0,self.ops['Lx'])
+        self.p2.setYRange(0,self.ops['Ly'])
+
+        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+        self.lcell0.setText('%d cells'%(self.iscell.sum()))
+
 
         #self.p1.setLimits(minXRange=-self.ops['Lx'],maxXRange=self.ops['Lx']*2,
         #                  minYRange=-self.ops['Ly'],maxYRange=self.ops['Ly']*2)
@@ -353,11 +357,11 @@ class MainW(QtGui.QMainWindow):
                 posx = int(posx)
                 if zoom:
                     if iplot==1:
-                        self.p1.setXRange(0,self.ops['Ly'])
-                        self.p1.setYRange(0,self.ops['Lx'])
+                        self.p1.setXRange(0,self.ops['Lx'])
+                        self.p1.setYRange(0,self.ops['Ly'])
                     elif iplot==2:
-                        self.p2.setXRange(0,self.ops['Ly'])
-                        self.p2.setYRange(0,self.ops['Lx'])
+                        self.p2.setXRange(0,self.ops['Lx'])
+                        self.p2.setYRange(0,self.ops['Ly'])
                     else:
                         self.p3.setXRange(0,self.Fcell.shape[1])
                         self.p3.setYRange(self.fmin,self.fmax)

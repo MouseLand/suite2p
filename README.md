@@ -15,14 +15,15 @@ This code was written by Carsen Stringer and Marius Pachitariu. The reference pa
 
 
 ## Installation
+From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. 
+If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. Either add Anaconda to the path during install, or open up an Anaconda prompt insted of the standard command line terminal. 
 
 ## Getting started
 
-The quickest way to start is to open the GUI:
+The quickest way to start is to open the GUI from a command line terminal:
 ~~~~
 python -m suite2p
 ~~~~
@@ -58,7 +59,7 @@ Main GUI controls (works for all views):
 3. Full view = Double left-click
 4. Swap cell = Right-click on the cell
  
-## Other ways to run Suite2p
+## Other ways to call Suite2p
 
 1. From the command line:
 ~~~~

@@ -106,7 +106,9 @@ def init_masks(parent):
                         mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
                         mimg[ops['yrange'][0]:ops['yrange'][1],
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
-                        mimg = (mimg - mimg.min()) / (mimg.max() - mimg.min())
+                        mimg1 = np.percentile(mimg,1)
+                        mimg99 = np.percentile(mimg,99)
+                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
 
                     parent.Vback[k-1,:,:] = mimg
                     V = mimg
@@ -180,8 +182,8 @@ def flip_cell(parent):
 
     for i in range(2):
         for c in range(parent.H.shape[0]):
-            for k in range(3):
-                if k<2:
+            for k in range(4):
+                if k<3:
                     H = parent.H[c,nin]
                     S = parent.Sroi[i,nin]
                 else:
@@ -189,17 +191,17 @@ def flip_cell(parent):
                     S = parent.Sext[i,next]
                 if k==0:
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
-                elif k==1:
+                elif k==1 or k==2:
                     V = parent.Vback[k-1,nin]
                     S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,nin]/parent.LamMean))
-                else:
+                elif k==3:
                     V = parent.Vback[k-1,next]
                     V = np.minimum(1, V + S)
                 H = np.expand_dims(H,axis=1)
                 S = np.expand_dims(S,axis=1)
                 V = np.expand_dims(V,axis=1)
                 hsv = np.concatenate((H,S,V),axis=1)
-                if k<2:
+                if k<3:
                     parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
                 else:
                     parent.RGB_all[i,c,k,next,:] = hsv_to_rgb(hsv)

@@ -1,4 +1,4 @@
-# Suite2p <img src="logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
+# suite2p <img src="logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
@@ -21,7 +21,15 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. 
+If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+
+suite2p is made possible by the following Python packages (which are installed with the pip):
+- pyqtgraph 
+- PyQt5
+- numpy
+- scipy
+- h5py
+- scikit-image
 
 ## Getting started
 

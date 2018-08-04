@@ -88,7 +88,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,30,12)
+        self.l0.addWidget(self.win,1,1,34,12)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -212,7 +212,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(qlabel,self.bend+7,0,1,1)
         self.ROIstats = []
         self.ROIstats.append(qlabel)
-        for k in range(1,len(self.stats_to_show)):
+        for k in range(1,len(self.stats_to_show)+1):
             self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
@@ -371,6 +371,8 @@ class MainW(QtGui.QMainWindow):
                     else:
                         if self.ichosen==ichosen:
                             choose = False
+                        #if self.iflip==ichosen:
+                        #    flip = False
                         self.ichosen = ichosen
                     if flip:
                         flip = self.flip_plot(iplot)
@@ -384,15 +386,19 @@ class MainW(QtGui.QMainWindow):
 
     def ichosen_stats(self):
         n = self.ichosen
+        self.ROIstats[0].setText('ROI: '+str(n))
         for k in range(1,len(self.stats_to_show)+1):
             key = self.stats_to_show[k-1]
             ival = self.stat[n][key]
             if k==1:
-                self.ROIstats[k].setText(key+str(ival[0])+str(ival[1]))
+                self.ROIstats[k].setText(key+': [%d, %d]'%(ival[0],ival[1]))
+            elif k==2:
+                self.ROIstats[k].setText(key+': %d'%(ival))
             else:
-                self.ROIstats[k].setText(key+str(ival))
+                self.ROIstats[k].setText(key+': %2.3f'%(ival))
 
     def flip_plot(self,iplot):
+        self.iflip = self.ichosen
         iscell = int(self.iscell[self.ichosen])
         if 2-iscell == iplot:
             flip = True

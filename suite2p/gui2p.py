@@ -23,7 +23,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
-        ### menu bar options
+        #### ------ MENU BAR ----------------- ####
         # run suite2p from scratch
         runS2P =  QtGui.QAction('&Run suite2p ', self)
         runS2P.setShortcut('Ctrl+R')
@@ -35,7 +35,7 @@ class MainW(QtGui.QMainWindow):
         loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
         # load masks
-        #loadMask = QtGui.QAction('&Load masks (stat.pkl) and extract traces', self)
+        #loadMask = QtGui.QAction('&Load masks (stat.npy) and extract traces', self)
         #loadMask.setShortcut('Ctrl+M')
         #self.addAction(loadMask)
         # make mainmenu!
@@ -43,7 +43,6 @@ class MainW(QtGui.QMainWindow):
         file_menu = main_menu.addMenu('&File')
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
-        #file_menu.addAction(loadMask)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
@@ -61,7 +60,6 @@ class MainW(QtGui.QMainWindow):
         self.saveClass.triggered.connect(self.save_classifier)
         self.saveClass.setEnabled(False)
         self.saveTrain = QtGui.QAction('&Save training list', self)
-        #self.saveTrain.setShortcut('Ctrl+S')
         self.saveTrain.triggered.connect(self.save_trainlist)
         self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
@@ -70,7 +68,7 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveClass)
         class_menu.addAction(self.saveTrain)
 
-        # main widget
+        #### --------- MAIN WIDGET LAYOUT --------- ####
         cwidget = QtGui.QWidget(self)
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
@@ -81,51 +79,43 @@ class MainW(QtGui.QMainWindow):
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
+        # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('n ROIs')
         self.l0.addWidget(self.lcell0, 0,2,1,1)
         self.lcell1 = QtGui.QLabel('n ROIs')
         self.l0.addWidget(self.lcell1, 0,8,1,1)
-        # MAIN PLOTTING AREA
+        #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,24,12)
-        layout = self.win.ci.layout #pg.GraphicsLayout(border=(100,100,100))
-        #self.win.setCentralItem(l)
-        # cells image
+        self.l0.addWidget(self.win,1,1,30,12)
+        layout = self.win.ci.layout
+        # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
                                       row=0,col=0, invertY=True)
-        #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
-        # noncells image
-        #self.borderRect.setPen(self.border)
+        # --- noncells image
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
                                       row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
-        #self.p2.autoRange()
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
-        # fluorescence trace plot
+        # --- fluorescence trace plot
         self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
         layout.setRowStretchFactor(0,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
-
         self.show()
         self.win.show()
-        #
-        #self.load_proc(['/media/carsen/DATA2/Github/data/stat.pkl','*'])
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
-
+        #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (norm)', 'E: mean img', 'R: correlation map']
         self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
         b = 0
@@ -145,11 +135,11 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
-        clabel.resize(clabel.minimumSizeHint())
-        self.l0.addWidget(clabel,b+2,0,1,1)
-        nv = b+2
+        self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
+        self.l0.setRowStretch(b+2,1)
+        self.l0.addWidget(clabel,b+3,0,1,1)
+        nv = b+3
         b=0
-
         # colorbars for different statistics
         for names in self.colors:
             btn  = gui.ColorButton(b,names,self)
@@ -157,7 +147,7 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
             b+=1
-        self.bend = nv+b+3+1
+        self.bend = nv+b+3+2
         self.classbtn  = gui.ColorButton(b,'classifier',self)
         self.colorbtns.addButton(self.classbtn,b)
         self.ncolors = b+1
@@ -168,6 +158,8 @@ class MainW(QtGui.QMainWindow):
         colorbarW.setMaximumWidth(140)
         colorbarW.ci.layout.setRowStretchFactor(0,2)
         self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
+        self.l0.setRowStretch(nv+b+3, 1)
         self.colorbar = pg.ImageItem()
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
@@ -175,12 +167,12 @@ class MainW(QtGui.QMainWindow):
         self.clabel = [colorbarW.addLabel('0.0',row=1,col=0),
                         colorbarW.addLabel('0.5',row=1,col=1),
                         colorbarW.addLabel('1.0',row=1,col=2)]
-
-        # classifier buttons
+        #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(self.apply_classifier)
-        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('Classifer'),self.bend,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend+1,0,1,1)
         applyclass.setEnabled(False)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
@@ -189,22 +181,42 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setSingleStep(0.01)
         self.probedit.setValue(0.5)
         self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit,self.bend,0,1,1)
-        self.l0.addWidget(applyclass,self.bend+1,0,1,1)
+        self.l0.addWidget(self.probedit,self.bend+1,0,1,1)
+        self.l0.addWidget(applyclass,self.bend+2,0,1,1)
         addtoclass = QtGui.QPushButton('add current data \n to classifier')
         addtoclass.resize(100,100)
         addtoclass.clicked.connect(self.add_to_classifier)
         addtoclass.setEnabled(False)
-        self.l0.addWidget(addtoclass,self.bend+2,0,1,1)
+        self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
         saveclass = QtGui.QPushButton('save classifier')
         saveclass.resize(100,50)
         saveclass.clicked.connect(self.save_classifier)
         saveclass.setEnabled(False)
-        self.l0.addWidget(saveclass,self.bend+3,0,1,1)
+        self.l0.addWidget(saveclass,self.bend+4,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)
         self.classbtns.addButton(applyclass,0)
         self.classbtns.addButton(addtoclass,1)
         self.classbtns.addButton(saveclass,2)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+5,0,1,1)
+        self.l0.setRowStretch(self.bend+5, 1)
+        #### ------ CELL STATS -------- ####
+        #self.l0.setRowStretch(1, 1)
+        #self.l0.setRowStretch(6, 1)
+        # which stats
+        self.stats_to_show = ['med','npix','skew','compact','footprint',
+                              'aspect_ratio']
+        self.l0.addWidget(QtGui.QLabel('Selected ROI stats'),self.bend+6,0,1,1)
+        lilfont = QtGui.QFont("Arial", 8)
+        qlabel = QtGui.QLabel('ROI')
+        qlabel.setFont(lilfont)
+        self.l0.addWidget(qlabel,self.bend+7,0,1,1)
+        self.ROIstats = []
+        for k in range(len(self.stats_to_show)):
+            self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k]))
+            self.ROIstats[k].setFont(lilfont)
+            self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
+            self.l0.setRowStretch(self.bend+8+k, 0)
+            self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
 
     def make_masks_and_buttons(self):
         self.disable_classifier()

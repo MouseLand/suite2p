@@ -89,7 +89,7 @@ def getSVDdata(ops):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
 
-    sig = 1.
+    sig = 0.5
     for j in range(nbins):
         mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
 
@@ -515,7 +515,7 @@ def sourcery(ops):
                 peaks  = V[imax]
                 # use the median of these peaks to decide if ROI is accepted
                 thres  = ops['threshold_scaling'] * np.median(peaks[peaks>1e-4])
-                ops['Vcorr'] = V + vrem
+                ops['Vcorr'] = V
 
             V = np.minimum(V, ops['Vcorr'])
 
@@ -606,8 +606,7 @@ def sourcery(ops):
         if refine>0:
             Ucell = Ucell + np.resize(neu.transpose() @ S, U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
-            refine = 3
-            break
+            refine = 3            
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:

@@ -78,7 +78,7 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        checkBox = QtGui.QCheckBox('ROIs on')
+        checkBox = QtGui.QCheckBox('ROIs &On')
         checkBox.move(30,100)
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()

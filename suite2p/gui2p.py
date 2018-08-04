@@ -93,7 +93,8 @@ class MainW(QtGui.QMainWindow):
         self.lcell0 = self.win.addLabel('n ROIs',row=0,col=0,colspan=1)
         self.lcell1 = self.win.addLabel('n ROIs',row=0,col=1,colspan=1)
         # cells image
-        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],row=1,col=0)
+        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
+                                      row=1,col=0, invertY=True)
         #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
@@ -102,7 +103,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.addItem(self.img1)
         # noncells image
         #self.borderRect.setPen(self.border)
-        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],row=1,col=1)
+        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
+                                      row=1,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)

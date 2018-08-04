@@ -314,8 +314,8 @@ class MainW(QtGui.QMainWindow):
             self.plot_masks(M)
 
     def plot_masks(self,M):
-        self.img1.setImage(M[0])
-        self.img2.setImage(M[1])
+        self.img1.setImage(M[0],levels=(0.0,1.0))
+        self.img2.setImage(M[1],levels=(0.0,1.0))
         self.img1.show()
         self.img2.show()
 

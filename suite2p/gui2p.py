@@ -47,7 +47,7 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        #self.statclass = ['skew','compact']
+        self.statclass = ['skew','compact','aspect_ratio','footprint']
         self.loadClass = QtGui.QAction('&Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
@@ -459,22 +459,25 @@ class MainW(QtGui.QMainWindow):
                                                statclass=None)
             if self.model.loaded:
                 # statistics from current dataset for Classifier
-                ncells = self.Fcell.shape[0]
-                self.statistics = np.zeros((ncells, len(self.model.statclass)),np.float32)
-                k=0
-                for key in self.model.statclass:
-                    print(key)
-                    for n in range(0,ncells):
-                        self.statistics[n,k] = self.stat[n][key]
-                    k+=1
+                self.statclass = self.model.statclass
+                # fill up with current dataset stats
+                self.get_stats()
                 self.trainfiles = self.model.trainfiles
                 self.activate_classifier()
                 #else:
                 #    print('ERROR: classifier has fields that stat doesn''t have')
 
+    def get_stats(self):
+        ncells = self.Fcell.shape[0]
+        self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
+        k=0
+        for key in self.statclass:
+            for n in range(0,ncells):
+                self.statistics[n,k] = self.stat[n][key]
+            k+=1
+
     def load_traindata(self):
         # will return
-        self.traindata = np.zeros((0,len(self.statclass)+1),np.float32)
         LC = gui.ListChooser('classifier training files', self)
         result = LC.exec_()
         if result:
@@ -483,13 +486,7 @@ class MainW(QtGui.QMainWindow):
                                                trainfiles=self.trainfiles,
                                                statclass=self.statclass)
             if self.trainfiles is not None:
-                ncells = self.Fcell.shape[0]
-                self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
-                k=0
-                for key in self.statclass:
-                    for n in range(0,ncells):
-                        self.statistics[n,k] = self.stat[n][key]
-                    k+=1
+                self.get_stats()
                 self.activate_classifier()
 
     def apply_classifier(self):

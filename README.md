@@ -1,14 +1,19 @@
-<img src="logo_unshaded.png" width="200" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
-Suite2p processes two-photon calcium imaging data from raw tifs to extracted fluorescence traces and spike times.  
+# Suite2p <img src="logo_unshaded.png" width="200" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
+
+
+Pipeline for processing two-photon calcium imaging data from raw tifs to extracted fluorescence traces and spike times.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
 
 Suite2p includes the following modules: 
+
 * Registration
 * Cell detection
 * Spike detection 
 * Visualization GUI
 
 This code was written by Carsen Stringer and Marius Pachitariu. The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+
+
 
 ## Installation
 From a command line terminal, type:

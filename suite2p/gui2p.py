@@ -211,8 +211,9 @@ class MainW(QtGui.QMainWindow):
         qlabel.setFont(lilfont)
         self.l0.addWidget(qlabel,self.bend+7,0,1,1)
         self.ROIstats = []
-        for k in range(len(self.stats_to_show)):
-            self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k]))
+        self.ROIstats.append(qlabel)
+        for k in range(1,len(self.stats_to_show)):
+            self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
             self.l0.setRowStretch(self.bend+8+k, 0)
@@ -374,11 +375,22 @@ class MainW(QtGui.QMainWindow):
                     if flip:
                         flip = self.flip_plot(iplot)
                     if choose or flip:
+                        self.ichosen_stats()
                         M = fig.draw_masks(self)
                         self.plot_masks(M)
                         self.plot_trace()
                         self.show()
 
+
+    def ichosen_stats(self):
+        n = self.ichosen
+        for k in range(1,len(self.stats_to_show)+1):
+            key = self.stats_to_show[k-1]
+            ival = self.stat[n][key]
+            if k==1:
+                self.ROIstats[k].setText(key+str(ival[0])+str(ival[1]))
+            else:
+                self.ROIstats[k].setText(key+str(ival))
 
     def flip_plot(self,iplot):
         iscell = int(self.iscell[self.ichosen])

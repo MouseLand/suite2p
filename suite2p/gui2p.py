@@ -128,7 +128,7 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
-        self.views = ['ROIs', 'mean img (enhanced)', 'mean img', 'correlation map']
+        self.views = ['Q: ROIs', 'W: mean img (norm)', 'E: mean img', 'R: correlation map']
         self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -137,7 +137,7 @@ class MainW(QtGui.QMainWindow):
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
         for names in self.views:
-            btn  = gui.ViewButton(b,names,self)
+            btn  = gui.ViewButton(b,'&'+names,self)
             self.viewbtns.addButton(btn,b)
             self.l0.addWidget(btn,b+2,0,1,1)
             btn.setEnabled(False)
@@ -217,6 +217,7 @@ class MainW(QtGui.QMainWindow):
 
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
+            #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
         for b in range(len(self.colors)):

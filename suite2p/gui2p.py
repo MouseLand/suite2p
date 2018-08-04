@@ -11,6 +11,9 @@ import time
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
+
+        pg.setConfigOptions(imageAxisOrder='row-major')
+
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         self.setWindowIcon(QtGui.QIcon('logo.png'))
@@ -90,17 +93,16 @@ class MainW(QtGui.QMainWindow):
         self.lcell0 = self.win.addLabel('n ROIs',row=0,col=0,colspan=1)
         self.lcell1 = self.win.addLabel('n ROIs',row=0,col=1,colspan=1)
         # cells image
-        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',row=1,col=0)
+        self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],row=1,col=0)
         #self.p1.setAutoPan()
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
-        #self.p1.setXRange(0,512,padding=0.25)
-        #self.p1.setYRange(0,512,padding=0.25)
         # noncells image
-        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',row=1,col=1)
+        #self.borderRect.setPen(self.border)
+        self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],row=1,col=1)
         self.p2.setMenuEnabled(False)
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
@@ -248,9 +250,6 @@ class MainW(QtGui.QMainWindow):
         self.lcell0.setText('%d cells'%self.iscell.sum())
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
 
-        fig.init_masks(self)
-        M = fig.draw_masks(self)
-        self.plot_masks(M)
         nv=6
         self.l0.addWidget(self.canvas,nv+b+2,0,1,1)
         self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
@@ -258,12 +257,16 @@ class MainW(QtGui.QMainWindow):
         self.plot_colorbar(0)
         #gl = pg.GradientLegend((10,300),(10,30))
         #gl.setParentItem(self.p1)
-        self.p1.setXRange(0,self.ops['Ly'])
-        self.p1.setYRange(0,self.ops['Lx'])
         self.p2.setXRange(0,self.ops['Ly'])
         self.p2.setYRange(0,self.ops['Lx'])
-        #self.p1.setLimits(xMin=0,xMax=self.ops['Ly'],
-        #                  yMin=0,yMax=self.ops['Lx'])
+        self.p1.setXRange(0,self.ops['Ly'])
+        self.p1.setYRange(0,self.ops['Lx'])
+        fig.init_masks(self)
+        M = fig.draw_masks(self)
+        self.plot_masks(M)
+
+        #self.p1.setLimits(minXRange=-self.ops['Lx'],maxXRange=self.ops['Lx']*2,
+        #                  minYRange=-self.ops['Ly'],maxYRange=self.ops['Ly']*2)
         self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
         self.trange = np.arange(0, self.Fcell.shape[1])
         self.plot_trace()
@@ -323,13 +326,13 @@ class MainW(QtGui.QMainWindow):
             for x in items:
                 if x==self.img1:
                     pos = self.p1.mapSceneToView(event.scenePos())
-                    posx = pos.x()
-                    posy = pos.y()
+                    posy = pos.x()
+                    posx = pos.y()
                     iplot = 1
                 elif x==self.img2:
                     pos = self.p2.mapSceneToView(event.scenePos())
-                    posx = pos.x()
-                    posy = pos.y()
+                    posy = pos.x()
+                    posx = pos.y()
                     iplot = 2
                 elif x==self.p3:
                     iplot = 3
@@ -364,16 +367,20 @@ class MainW(QtGui.QMainWindow):
                     if ichosen>=0:
                         self.ichosen = ichosen
                 if flip:
-                    self.ichosen = int(self.iROI[posx,posy])
-                    flip = True
-                    iscell = int(self.iscell[self.ichosen])
-                    if 2-iscell == iplot:
-                        self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-                        np.save(self.basename+'/iscell.npy', self.iscell)
-                        self.iflip = self.ichosen
-                        fig.flip_cell(self)
-                        self.lcell0.setText('%d ROIs'%self.iscell.sum())
-                        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+                    ichosen = int(self.iROI[posx,posy])
+                    if ichosen >= 0:
+                        self.ichosen = ichosen
+                        flip = True
+                        iscell = int(self.iscell[self.ichosen])
+                        if 2-iscell == iplot:
+                            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
+                            np.save(self.basename+'/iscell.npy', self.iscell)
+                            self.iflip = self.ichosen
+                            fig.flip_cell(self)
+                            self.lcell0.setText('%d ROIs'%self.iscell.sum())
+                            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+                        else:
+                            flip = False
                     else:
                         flip = False
 

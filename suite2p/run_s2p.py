@@ -55,24 +55,22 @@ def get_cells(ops):
     # extract fluorescence and neuropil
     F, Fneu = celldetect.extractF(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
+    
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
-    # deconvolve fluorescence
-    spks = dcnv.oasis(dF, ops)
-    print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), len(stat)))
     # compute activity statistics for classifier
     sk = stats.skew(dF, axis=1)
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
+    
     # save results
     np.save(ops['ops_path'], ops)
     fpath = ops['save_path']
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
-    np.save(os.path.join(fpath,'spks.npy'), spks)
     np.save(os.path.join(fpath,'stat.npy'), stat)
+    
     print('results saved to %s'%ops['save_path'])
-
     return ops
 
 def run_s2p(ops={},db={}):
@@ -96,6 +94,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
 
+    ######### REGISTRATION #########
     if not files_found_flag:
         # get default options
         ops0 = default_ops()
@@ -114,21 +113,29 @@ def run_s2p(ops={},db={}):
         print(ops1[0]['reg_file'])
         print('overwriting ops1 with new ops')
         print('skipping registration...')
-        
+    
+    ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)
         with Pool(ops['num_workers_roi']) as p:
-            results = p.map(get_cells, ops1)
-        for k in range(len(ops1)):
-            ops1[k] = results[k]
+            ops1 = p.map(get_cells, ops1)        
     else:
         for k in range(len(ops1)):
             ops1[k] = get_cells(ops1[k])
-
+    
+    ######### SPIKE DECONVOLUTION #########
+    for ops in ops1:
+        fpath = ops['save_path']
+        F = np.load(os.path.join(fpath,'F.npy'))
+        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
+        dF = F - ops['neucoeff']*Fneu
+        spks = dcnv.oasis(dF, ops)
+        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))    
+        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)    
+            
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
-
+    
     print('finished all tasks in %4.4f sec'%toc(i0))
-
     return ops1

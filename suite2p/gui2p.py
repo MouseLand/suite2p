@@ -412,7 +412,7 @@ class MainW(QtGui.QMainWindow):
         print(name)
         try:
             self.stat = np.load(name)
-            self.stat = self.stat.item()
+            #self.stat = self.stat.item()
             ypix = self.stat[0]['ypix']
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')

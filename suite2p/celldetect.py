@@ -60,7 +60,6 @@ def get_mov(ops):
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
 
-    print('nbytesread is %d'%nbytesread)
     # load and bin data
     while True:
         buff = reg_file.read(nbytesread)
@@ -89,7 +88,7 @@ def getSVDdata(ops):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
 
-    sig = 0.5
+    sig = ops['diameter']/10.
     for j in range(nbins):
         mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
 
@@ -282,7 +281,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
         stat
         assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
     '''
-    stat = {}
+    stat = []
     rs,dy,dx = circleMask(d0)
     rsort = np.sort(rs.flatten())
 
@@ -293,20 +292,20 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     footprints = np.zeros((ncells,))
     n=0
     for k in range(0,ncells):
-        stat[n] = {}
+        stat0 = {}
         goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
         ipix    = mPix[k,goodi].astype(np.int32)
         ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
 
         if len(ypix)>0 and len(ipix)>0:
             # pixels of cell in cropped (Ly,Lx) region of recording
-            stat[n]['ypix'] = ypix + ops['yrange'][0]
-            stat[n]['xpix'] = xpix + ops['xrange'][0]
-            stat[n]['med']  = [np.median(stat[k]['ypix']), np.median(stat[k]['xpix'])]
-            stat[n]['npix'] = ipix.size
-            stat[n]['lam']  = mLam[k, goodi]
+            stat0['ypix'] = ypix + ops['yrange'][0]
+            stat0['xpix'] = xpix + ops['xrange'][0]
+            stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
+            stat0['npix'] = ipix.size
+            stat0['lam']  = mLam[k, goodi]
             # compute footprint of ROI
-            y0,x0 = stat[n]['med']
+            y0,x0 = stat0['med']
             y0 = y0 - ops['yrange'][0]
             x0 = x0 - ops['xrange'][0]
 
@@ -315,20 +314,23 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
                 proj  = codes[k,:] @ Ucell[:,ypix,xpix]
                 rs0  = rs[goodi]
                 inds  = proj.flatten()>proj.max()*frac
-                stat[n]['footprint'] = np.mean(rs0[inds]) / d0
-                footprints[n] = stat[n]['footprint']
+                stat0['footprint'] = np.mean(rs0[inds]) / d0
+                footprints[n] = stat0['footprint']
             else:
-                stat[n]['footprint'] = 0
+                stat0['footprint'] = 0
                 footprints[n]=0
             # compute compactness of ROI
-            lam = mLam[n, :]
-            r2 = (stat[n]['ypix']-np.round(stat[n]['med'][0]))**2 + (stat[n]['xpix']-np.round(stat[n]['med'][1]))**2
-            stat[n]['mrs']  = np.mean(r2**.5) / d0
-            stat[n]['mrs0'] = np.mean(rsort[:r2.size]) / d0
-            stat[n]['compact'] = stat[n]['mrs'] / stat[n]['mrs0']
-            n+=1
+            lam = mLam[k, :]
+            r2 = (stat0['ypix']-np.round(stat0['med'][0]))**2 + (stat0['xpix']-np.round(stat0['med'][1]))**2
+            stat0['mrs']  = np.mean(r2**.5) / d0
+            stat0['mrs0'] = np.mean(rsort[:r2.size]) / d0
+            stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
+            n+=1            
+            stat.append(stat0.copy())    
+    
+    print(len(stat))
     mfoot = np.median(footprints)
-    for n in range(ncells):
+    for n in range(len(stat)):
         stat[n]['footprint'] = stat[n]['footprint'] / mfoot
 
     return stat
@@ -342,7 +344,7 @@ def getOverlaps(stat,Ly,Lx):
         stat
         assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
     '''
-    stat2 = {}
+    stat2 = []
     ncells = len(stat)
     mask = np.zeros((Ly,Lx))
     k=0
@@ -357,7 +359,7 @@ def getOverlaps(stat,Ly,Lx):
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
         if len(ypix)>0:
-            stat2[k] = stat[n]
+            stat2.append(stat[n])
             k+=1
 
     return stat2
@@ -388,7 +390,7 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
             # compute radius of neuron (used for neuropil scaling)
             radius = utils.fitMVGaus(ypix,xpix,lam,2)[2]
             stat[n]['radius'] = radius[0]
-            stat[n]['aspect_ratio'] = radius[0]/(radius[0] + radius[1])
+            stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
             # add pixels to cell masks
@@ -571,7 +573,7 @@ def sourcery(ops):
         for n in range(0,ncells):
             goodi   = np.array((mPix[n, :]>=0).nonzero()).astype(np.int32)
             npix = goodi.size
-
+                
             ipix    = mPix[n, goodi].astype(np.int32)
             ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Lyc,Lxc))
 
@@ -582,7 +584,7 @@ def sourcery(ops):
 
             mLam[n,goodi] = lam
             mLam[n,:]  = connectedRegion(mLam[n,:], rs, d0)
-            mLam[n,:]  = mLam[n,:] / np.sum(mLam[n,:]**2)**0.5
+            mLam[n,:]  = mLam[n,:] / (1e-10 + np.sum(mLam[n,:]**2)**0.5)
             # save lam in L, LtU, and LtS
             lam = mLam[n, goodi]
 

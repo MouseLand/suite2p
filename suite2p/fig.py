@@ -103,12 +103,12 @@ def init_masks(parent):
                         mimg = (mimg - mimg1) / (mimg99 - mimg1)
                     else:
                         vcorr = ops['Vcorr']
-                        mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+                        mimg1 = np.percentile(vcorr,1)
+                        mimg99 = np.percentile(vcorr,99)
+                        vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
+                        mimg = mimg1 * np.ones((ops['Ly'],ops['Lx']),np.float32)
                         mimg[ops['yrange'][0]:ops['yrange'][1],
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
-                        mimg1 = np.percentile(mimg,1)
-                        mimg99 = np.percentile(mimg,99)
-                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
 
                     parent.Vback[k-1,:,:] = mimg
                     V = mimg

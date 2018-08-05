@@ -69,6 +69,7 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveTrain)
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
+        #pg.setConfigOption('background', 'w')
         cwidget = QtGui.QWidget(self)
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
@@ -116,7 +117,7 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
-        self.views = ['Q: ROIs', 'W: mean img (norm)', 'E: mean img', 'R: correlation map']
+        self.views = ['Q: ROIs', 'W: mean img\n    (enhanced)', 'E: mean img', 'R: correlation map']
         self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -135,8 +136,8 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
-        self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
-        self.l0.setRowStretch(b+2,1)
+        #self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
+        #self.l0.setRowStretch(b+2,1)
         self.l0.addWidget(clabel,b+3,0,1,1)
         nv = b+3
         b=0
@@ -154,12 +155,13 @@ class MainW(QtGui.QMainWindow):
         self.classbtn.setEnabled(False)
         self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
         colorbarW = pg.GraphicsLayoutWidget()
-        colorbarW.setMaximumHeight(80)
-        colorbarW.setMaximumWidth(140)
+        colorbarW.setBackground(background=[255,255,255])
+        colorbarW.setMaximumHeight(60)
+        colorbarW.setMaximumWidth(150)
         colorbarW.ci.layout.setRowStretchFactor(0,2)
         self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
-        self.l0.setRowStretch(nv+b+3, 1)
+        #self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
+        #self.l0.setRowStretch(nv+b+3, 1)
         self.colorbar = pg.ImageItem()
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
@@ -267,10 +269,10 @@ class MainW(QtGui.QMainWindow):
         self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
         self.iflip = int(0)
+        self.ichosen_stats()
         if not hasattr(self, 'iscell'):
             self.iscell = np.ones((ncells,), dtype=bool)
         nv=6
-        self.l0.addWidget(QtGui.QLabel('Classifier'),nv+b+3,0,1,1)
         self.colormat = fig.make_colorbar()
         self.plot_colorbar(0)
         fig.init_masks(self)

@@ -395,7 +395,7 @@ class MainW(QtGui.QMainWindow):
             elif k==2:
                 self.ROIstats[k].setText(key+': %d'%(ival))
             else:
-                self.ROIstats[k].setText(key+': %2.3f'%(ival))
+                self.ROIstats[k].setText(key+': %2.2f'%(ival))
 
     def flip_plot(self,iplot):
         self.iflip = self.ichosen

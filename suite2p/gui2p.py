@@ -221,6 +221,8 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
+        self.fname = 'C:/Users/carse/github/data/stat.npy'
+        self.load_proc()
 
 
     def make_masks_and_buttons(self):
@@ -375,17 +377,21 @@ class MainW(QtGui.QMainWindow):
                     else:
                         if self.ichosen==ichosen:
                             choose = False
-                        #if self.iflip==ichosen:
-                        #    flip = False
-                        self.ichosen = ichosen
+                        elif int(self.iscell[ichosen])+1==iplot:
+                            choose = False
+                            flip = False
+                        if choose:
+                            self.ichosen = ichosen
                     if flip:
                         flip = self.flip_plot(iplot)
                     if choose or flip:
+                        tic=time.time()
                         self.ichosen_stats()
                         M = fig.draw_masks(self)
                         self.plot_masks(M)
                         self.plot_trace()
                         self.show()
+                        print(time.time()-tic)
 
 
     def ichosen_stats(self):

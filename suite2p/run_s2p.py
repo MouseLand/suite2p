@@ -44,7 +44,8 @@ def default_ops():
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
-        'allow_overlap': False,                 
+        'allow_overlap': False,        
+        'combined': True, # combine multiple planes into a single result /single canvas for GUI
       }
     return ops
 
@@ -73,6 +74,73 @@ def get_cells(ops):
     print('results saved to %s'%ops['save_path'])
     return ops
 
+def combined(ops1):    
+    '''
+    Combines all the entries in ops1 into a single result file. Multi-plane recordings are arranged to best tile a square. 
+    
+    Multi-roi recordings will be arranged by their physical localization.    
+    
+    '''
+    ops = ops1[0]
+    Lx = ops['Lx']
+    Ly = ops['Ly']
+
+    nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
+    nX = int(nX)
+    nY = int(np.ceil(len(ops1)/nX))
+
+    dx = np.zeros((len(ops1),), 'int64')
+    dy = np.zeros((len(ops1),),'int64')
+    for j in range(len(ops1)):
+        dx[j] = (j%nX) * Lx
+        dy[j] = int(j/nX) * Ly
+
+    meanImg = np.zeros((Ly*nX, Lx*nY))
+    Vcorr = np.zeros((Ly*nX, Lx*nY))
+    for k,ops in enumerate(ops1):
+        fpath = ops['save_path']
+        stat0 = np.load(os.path.join(fpath,'stat.npy'))
+        meanImg[dy[k]:dy[k]+Ly, dx[k]:dx[k]+Lx] = ops['meanImg']    
+        Vcorr[dy[k] +ops['yrange'][0]:dy[k] +ops['yrange'][-1], dx[k] + ops['xrange'][0]:dx[k] + ops['xrange'][-1]] = ops['Vcorr']    
+
+        for j in range(len(stat0)):
+            stat0[j]['xpix'] += dx[k]
+            stat0[j]['ypix'] += dy[k]
+            stat0[j]['med'][0] += dx[k]
+            stat0[j]['med'][1] += dy[k]
+
+        F0    = np.load(os.path.join(fpath,'F.npy'))    
+        Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
+        spks0 = np.load(os.path.join(fpath,'spks.npy'))
+
+        if k==0:
+            F, Fneu, spks,stat = F0, Fneu0, spks0,stat0
+        else:
+            F    = np.concatenate((F, F0))
+            Fneu = np.concatenate((Fneu, Fneu0))
+            spks = np.concatenate((spks, spks0))
+            stat = np.concatenate((stat,stat0))
+
+    ops['meanImg'] = meanImg
+    ops['Vcorr'] = Vcorr
+    ops['Ly'] = Ly * nY
+    ops['Lx'] = Lx * nX
+    ops['xrange'] = [0, ops['Lx']]
+    ops['yrange'] = [0, ops['Ly']]
+
+    fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')
+    if not os.path.isdir(fpath):
+        os.makedirs(fpath)
+
+    ops['save_path'] = fpath
+    np.save(os.path.join(fpath, 'F.npy'), F)
+    np.save(os.path.join(fpath, 'Fneu.npy'), Fneu)
+    np.save(os.path.join(fpath, 'spks.npy'), spks)
+    np.save(os.path.join(fpath, 'ops.npy'), ops)
+    np.save(os.path.join(fpath, 'stat.npy'), stat)
+    
+    return ops
+    
 def run_s2p(ops={},db={}):
     i0 = tic()
 
@@ -136,6 +204,10 @@ def run_s2p(ops={},db={}):
             
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
+    
+    #### COMBINE PLANES or FIELDS OF VIEW ####
+    if ops['combined']:
+        combine_planes(ops1)
     
     print('finished all tasks in %4.4f sec'%toc(i0))
     return ops1

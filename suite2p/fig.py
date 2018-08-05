@@ -141,9 +141,9 @@ def init_masks(parent):
     parent.LamMean = LamMean
 
 
-def make_chosen(M, ipix):
-    v = (M[ipix[0,:],ipix[1,:],:]).max(axis=1)
-    M[ipix[0,:],ipix[1,:],:] = np.resize(np.tile(v, 3), (3,ipix.shape[1])).transpose()
+def make_chosen(M, ypix, xpix, lam):
+    v = lam
+    M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
     return M
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
@@ -170,11 +170,14 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         wplot   = int(1-parent.iscell[ichosen])
         M0 = np.array(parent.RGBall[0,color,view,:,:,:])
         M1 = np.array(parent.RGBall[1,color,view,:,:,:])
-        ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
+        #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
+        ypix = parent.stat[ichosen]['ypix']
+        xpix = parent.stat[ichosen]['xpix']
+        lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[ichosen]['lam'] / parent.LamMean))
         if wplot==0:
-            M0 = make_chosen(M0, ipix)
+            M0 = make_chosen(M0, ypix, xpix, lam)
         else:
-            M1 = make_chosen(M1, ipix)
+            M1 = make_chosen(M1, ypix, xpix, lam)
     return M0,M1
 
 def flip_cell(parent):

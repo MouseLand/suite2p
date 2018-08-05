@@ -325,9 +325,9 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
             stat0['mrs']  = np.mean(r2**.5) / d0
             stat0['mrs0'] = np.mean(rsort[:r2.size]) / d0
             stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
-            n+=1            
-            stat.append(stat0.copy())    
-    
+            n+=1
+            stat.append(stat0.copy())
+
     print(len(stat))
     mfoot = np.median(footprints)
     for n in range(len(stat)):
@@ -358,7 +358,7 @@ def getOverlaps(stat,Ly,Lx):
         stat[n]['overlap'] = mask[ypix,xpix] > 1
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        if np.mean(stat[n]['overlap'])<ops['max_overlap']
+        if np.mean(stat[n]['overlap'])<ops['max_overlap']:
             stat2.append(stat[n])
             k+=1
 
@@ -573,7 +573,7 @@ def sourcery(ops):
         for n in range(0,ncells):
             goodi   = np.array((mPix[n, :]>=0).nonzero()).astype(np.int32)
             npix = goodi.size
-                
+
             ipix    = mPix[n, goodi].astype(np.int32)
             ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Lyc,Lxc))
 
@@ -608,7 +608,7 @@ def sourcery(ops):
         if refine>0:
             Ucell = Ucell + np.resize(neu.transpose() @ S, U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
-            refine = 3            
+            refine = 3
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:

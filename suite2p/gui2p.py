@@ -221,7 +221,7 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
-        self.fname = 'C:/Users/carse/github/data/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         self.load_proc()
 
 
@@ -238,6 +238,8 @@ class MainW(QtGui.QMainWindow):
             iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
+            self.stat[n]['yext_overlap'] = np.zeros((0,),np.int32)
+            self.stat[n]['xext_overlap'] = np.zeros((0,),np.int32)
 
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
@@ -270,7 +272,7 @@ class MainW(QtGui.QMainWindow):
             b+=1
 
         self.ops_plot[3] = (allcols)
-        self.iROI = fig.ROI_index(self.ops, self.stat)
+        #self.iROI = fig.ROI_index(self.ops, self.stat)
         self.ichosen = int(0)
         self.iflip = int(0)
         self.ichosen_stats()
@@ -369,29 +371,26 @@ class MainW(QtGui.QMainWindow):
                 posx = int(posx)
                 if zoom:
                     self.zoom_plot(iplot)
-                if choose or flip:
-                    ichosen = int(self.iROI[posx,posy])
+                if (choose or flip) and (iplot==1 or iplot==2):
+                    ichosen = int(self.iROI[iplot-1,0,posx,posy])
                     if ichosen<0:
                         choose = False
                         flip = False
                     else:
                         if self.ichosen==ichosen:
                             choose = False
-                        elif int(self.iscell[ichosen])+1==iplot:
-                            choose = False
-                            flip = False
                         if choose:
                             self.ichosen = ichosen
                     if flip:
                         flip = self.flip_plot(iplot)
                     if choose or flip:
-                        tic=time.time()
+                        #tic=time.time()
                         self.ichosen_stats()
                         M = fig.draw_masks(self)
                         self.plot_masks(M)
                         self.plot_trace()
                         self.show()
-                        print(time.time()-tic)
+                        #print(time.time()-tic)
 
 
     def ichosen_stats(self):

@@ -35,15 +35,14 @@ def init_masks(parent):
     ncells = len(stat)
     Ly = ops['Ly']
     Lx = ops['Lx']
-    H      = np.zeros((cols.shape[1],Ly,Lx), np.float32)
     Sroi  = np.zeros((2,Ly,Lx), np.float32)
     Sext   = np.zeros((2,Ly,Lx), np.float32)
     LamAll = np.zeros((Ly,Lx), np.float32)
-    Lam    = np.zeros((2,Ly,Lx), np.float32)
-    iROI   = -1 * np.ones((Ly,Lx), np.int32)
-    iExt   = -1 * np.ones((Ly,Lx), np.int32)
+    Lam    = np.zeros((2,3,Ly,Lx), np.float32)
+    iExt   = -1 * np.ones((2,3,Ly,Lx), np.int32)
+    iROI   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
-    for n in range(ncells):
+    for n in range(ncells-1,-1,-1):
         ypix = stat[n]['ypix']
         if ypix is not None:
             xpix = stat[n]['xpix']
@@ -52,55 +51,59 @@ def init_masks(parent):
             lam = stat[n]['lam']
             lam = lam / lam.sum()
             i = int(1-iscell[n])
-            iROI[ypix,xpix] = n
-            iExt[yext,xext] = n
+            # add cell on top
+            iROI[i,2,ypix,xpix] = iROI[i,1,ypix,xpix]
+            iROI[i,1,ypix,xpix] = iROI[i,0,ypix,xpix]
+            iROI[i,0,ypix,xpix] = n
+            # add outline to all layers
+            iExt[i,2,yext,xext] = iExt[i,1,yext,xext]
+            iExt[i,1,yext,xext] = iExt[i,0,yext,xext]
+            iunder = iExt[i,1,yext,xext]
+            iExt[i,0,yext,xext] = n
+            #stat[n]['yext_overlap'] = np.append(stat[n]['yext_overlap'], yext[iunder>=0], axis=0)
+            #stat[n]['xext_overlap'] = np.append(stat[n]['xext_overlap'], xext[iunder>=0], axis=0)
+            #for k in np.unique(iunder[iunder>=0]):
+            #    stat[k]['yext_overlap'] = np.append(stat[k]['yext_overlap'], yext[iunder==k], axis=0)
+            #    stat[k]['xext_overlap'] = np.append(stat[k]['xext_overlap'], xext[iunder==k], axis=0)
+            # add weighting to all layers
+            Lam[i,2,ypix,xpix] = Lam[i,1,ypix,xpix]
+            Lam[i,1,ypix,xpix] = Lam[i,0,ypix,xpix]
+            Lam[i,0,ypix,xpix] = lam
             Sroi[i,ypix,xpix] = 1
             Sext[i,yext,xext] = 1
-            Lam[i,ypix,xpix]  = lam
             LamAll[ypix,xpix] = lam
 
-    # create H from cols and iROI
-    for c in range(cols.shape[1]):
-        H[c,iROI>=0] = cols[iROI[iROI>=0],c]
-
     LamMean = LamAll[LamAll>1e-10].mean()
-    parent.H = H
-    parent.iROI = iROI
-    parent.iExt = iExt
-    parent.Sroi = Sroi
-    parent.Sext = Sext
-    parent.Lam  = Lam
-    parent.LamMean = LamMean
-
-    # create all mask options
-    parent.RGB_all = np.zeros((2,cols.shape[1],4,Ly,Lx,3), np.float32)
-    parent.Vback = np.zeros((3,Ly,Lx), np.float32)
-    parent.RGBback = np.zeros((3,Ly,Lx,3), np.float32)
+    RGBall = np.zeros((2,cols.shape[1],4,Ly,Lx,3), np.float32)
+    Vback   = np.zeros((4,Ly,Lx), np.float32)
+    RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
     for i in range(2):
-        for c in range(cols.shape[1]):
+        for c in range(0,cols.shape[1]):
             for k in range(4):
-                H = parent.H[c,:,:]
+                H = cols[iROI[i,0,:,:],c]
                 if k<3:
-                    S = parent.Sroi[i,:,:]
+                    S = Sroi[i,:,:]
                 else:
-                    S = parent.Sext[i,:,:]
-                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,:,:]/parent.LamMean))
+                    S = Sext[i,:,:]
+                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
                         mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
                         mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
-                        S = np.minimum(1, V*1.5)
+                        S =     np.maximum(0,np.minimum(1, V*1.5))
                         mimg1 = np.percentile(mimg,1)
                         mimg99 = np.percentile(mimg,99)
                         mimg = (mimg - mimg1) / (mimg99 - mimg1)
+                        mimg = np.maximum(0,np.minimum(1,mimg))
                     elif k==2:
                         mimg = ops['meanImg']
-                        S = np.minimum(1, V*1.5)
+                        S = np.maximum(0,np.minimum(1, V*1.5))
                         mimg1 = np.percentile(mimg,1)
                         mimg99 = np.percentile(mimg,99)
-                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
+                        mimg     = (mimg - mimg1) / (mimg99 - mimg1)
+                        mimg = np.maximum(0,np.minimum(1,mimg))
                     else:
                         vcorr = ops['Vcorr']
                         mimg1 = np.percentile(vcorr,1)
@@ -109,27 +112,38 @@ def init_masks(parent):
                         mimg = mimg1 * np.ones((ops['Ly'],ops['Lx']),np.float32)
                         mimg[ops['yrange'][0]:ops['yrange'][1],
                             ops['xrange'][0]:ops['xrange'][1]] = vcorr
-
-                    parent.Vback[k-1,:,:] = mimg
+                        mimg = np.maximum(0,np.minimum(1,mimg))
+                    Vback[k-1,:,:] = mimg
                     V = mimg
                     if k==3:
-                        V = np.minimum(1, V + S)
+                        V = np.maximum(0,np.minimum(1, V + S))
                 H = np.expand_dims(H,axis=2)
                 S = np.expand_dims(S,axis=2)
                 V = np.expand_dims(V,axis=2)
                 hsv = np.concatenate((H,S,V),axis=2)
-                parent.RGB_all[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+                RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
     for k in range(3):
         H = np.zeros((Ly,Lx,1),np.float32)
         S = np.zeros((Ly,Lx,1),np.float32)
-        V = np.expand_dims(parent.Vback[k,:,:],axis=2)
+        V = np.expand_dims(Vback[k,:,:],axis=2)
         hsv = np.concatenate((H,S,V),axis=2)
-        parent.RGBback[k,:,:,:] = hsv_to_rgb(hsv)
+        RGBback[k,:,:,:] = hsv_to_rgb(hsv)
 
-def make_chosen(M, ypix, xpix):
-    v = M[ypix,xpix,:].max(axis=1)
-    M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,len(ypix))).transpose()
+    parent.RGBall = RGBall
+    parent.RGBback = RGBback
+    parent.Vback = Vback
+    parent.iROI = iROI
+    parent.iExt = iExt
+    parent.Sroi = Sroi
+    parent.Sext = Sext
+    parent.Lam  = Lam
+    parent.LamMean = LamMean
+
+
+def make_chosen(M, ipix):
+    v = (M[ipix[0,:],ipix[1,:],:]).max(axis=1)
+    M[ipix[0,:],ipix[1,:],:] = np.resize(np.tile(v, 3), (3,ipix.shape[1])).transpose()
     return M
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
@@ -154,57 +168,94 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     else:
         ichosen = parent.ichosen
         wplot   = int(1-parent.iscell[ichosen])
-        M0 = np.array(parent.RGB_all[0,color,view,:,:,:])
-        M1 = np.array(parent.RGB_all[1,color,view,:,:,:])
-
-        ypix    = parent.stat[ichosen]['ypix'].flatten()
-        xpix    = parent.stat[ichosen]['xpix'].flatten()
+        M0 = np.array(parent.RGBall[0,color,view,:,:,:])
+        M1 = np.array(parent.RGBall[1,color,view,:,:,:])
+        ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
         if wplot==0:
-            M0 = make_chosen(M0, ypix, xpix)
+            M0 = make_chosen(M0, ipix)
         else:
-            M1 = make_chosen(M1, ypix, xpix)
+            M1 = make_chosen(M1, ipix)
     return M0,M1
 
 def flip_cell(parent):
+    cols = parent.ops_plot[3]
     n = parent.ichosen
     i = int(1-parent.iscell[n])
     i0 = 1-i
-    # cell indic
-    nin = parent.iROI==n
-    next = parent.iExt==n
-    lam0 = np.array(parent.Lam[i0,nin])
-    parent.Lam[i,nin] = lam0
-    parent.Lam[i0,nin] = 0
-    parent.Sroi[i,nin] = 1
-    parent.Sroi[i0,nin] = 0
-    parent.Sext[i,next] = 1
-    parent.Sext[i0,next] = 0
+    # ROI stats
+    lam  = parent.stat[n]['lam']
+    ypix = parent.stat[n]['ypix']
+    xpix = parent.stat[n]['xpix']
+    yext = parent.stat[n]['yext']
+    xext = parent.stat[n]['xext']
+    # cell indices
+    ipix = np.array((parent.iROI[i0,0,:,:]==n).nonzero()).astype(np.int32)
+    ipix1 = np.array((parent.iROI[i0,1,:,:]==n).nonzero()).astype(np.int32)
+    ipix2 = np.array((parent.iROI[i0,2,:,:]==n).nonzero()).astype(np.int32)
+    # get rid of cell and push up overlaps
+    parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
+    parent.iROI[i0,0,ipix1[0,:],ipix1[1,:]] = -1
+    parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = parent.iROI[i0,2,ipix[0,:],ipix[1,:]]
+    parent.iROI[i0,1,ipix2[0,:],ipix2[1,:]] = -1
+    parent.iROI[i0,2,ipix[0,:],ipix[1,:]] = -1
+    parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
+    parent.Lam[i0,0,ipix1[0,:],ipix1[1,:]] = 0
+    parent.Lam[i0,1,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,2,ipix[0,:],ipix[1,:]]
+    parent.Lam[i0,1,ipix2[0,:],ipix2[1,:]] = 0
+    parent.Lam[i0,2,ipix[0,:],ipix[1,:]]  = 0
+    ipix = np.array((parent.iExt[i0,0,:,:]==n).nonzero()).astype(np.int32)
+    ipix1 = np.array((parent.iExt[i0,1,:,:]==n).nonzero()).astype(np.int32)
+    ipix2 = np.array((parent.iExt[i0,2,:,:]==n).nonzero()).astype(np.int32)
+    parent.iExt[i0,0,ipix[0,:],ipix[1,:]] = parent.iExt[i0,1,ipix[0,:],ipix[1,:]]
+    goodi = parent.iExt[i0,0,yext,xext]<0
+    parent.iExt[i0,0,ipix1[0,:],ipix1[1,:]] = -1
+    parent.iExt[i0,1,ipix[0,:],ipix[1,:]] = parent.iExt[i0,2,ipix[0,:],ipix[1,:]]
+    parent.iExt[i0,1,ipix2[0,:],ipix2[1,:]] = -1
+    parent.iExt[i0,2,ipix[0,:],ipix[1,:]] = -1
+    # add cell to other side (on top) and push down overlaps
+    parent.iROI[i,2,ypix,xpix] = parent.iROI[i,1,ypix,xpix]
+    parent.iROI[i,1,ypix,xpix] = parent.iROI[i,0,ypix,xpix]
+    parent.iROI[i,0,ypix,xpix] = n
+    parent.iExt[i,2,yext,xext] = parent.iExt[i,1,yext,xext]
+    parent.iExt[i,1,yext,xext] = parent.iExt[i,0,yext,xext]
+    parent.iExt[i,0,yext,xext] = n
+    parent.Lam[i,2,ypix,xpix]  = parent.Lam[i,1,ypix,xpix]
+    parent.Lam[i,1,ypix,xpix]  = parent.Lam[i,0,ypix,xpix]
+    parent.Lam[i,0,ypix,xpix]  = lam
+    yonly = ypix[~parent.stat[n]['overlap']]
+    xonly = xpix[~parent.stat[n]['overlap']]
+    parent.Sroi[i,ypix,xpix] = 1
+    parent.Sroi[i0,yonly,xonly] = 0
+    parent.Sext[i,yext,xext] = 1
+    yonly = yext[goodi]
+    xonly = xext[goodi]
+    parent.Sext[i0,yonly,xonly] = 0
 
     for i in range(2):
-        for c in range(parent.H.shape[0]):
+        for c in range(cols.shape[1]):
             for k in range(4):
                 if k<3:
-                    H = parent.H[c,nin]
-                    S = parent.Sroi[i,nin]
+                    H = cols[parent.iROI[i,0,ypix,xpix],c]
+                    S = parent.Sroi[i,ypix,xpix]
                 else:
-                    H = parent.H[c,next]
-                    S = parent.Sext[i,next]
+                    H = cols[parent.iExt[i,0,ypix,xpix],c]
+                    S = parent.Sext[i,ypix,xpix]
                 if k==0:
-                    V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,nin]/parent.LamMean))
+                    V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
                 elif k==1 or k==2:
-                    V = parent.Vback[k-1,nin]
-                    S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,nin]/parent.LamMean))
+                    V = parent.Vback[k-1,ypix,xpix]
+                    S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
                 elif k==3:
-                    V = parent.Vback[k-1,next]
+                    V = parent.Vback[k-1,ypix,xpix]
                     V = np.minimum(1, V + S)
-                H = np.expand_dims(H,axis=1)
-                S = np.expand_dims(S,axis=1)
-                V = np.expand_dims(V,axis=1)
+                H = np.expand_dims(H.flatten(),axis=1)
+                S = np.expand_dims(S.flatten(),axis=1)
+                V = np.expand_dims(V.flatten(),axis=1)
                 hsv = np.concatenate((H,S,V),axis=1)
                 if k<3:
-                    parent.RGB_all[i,c,k,nin,:] = hsv_to_rgb(hsv)
+                    parent.RGBall[i,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
                 else:
-                    parent.RGB_all[i,c,k,next,:] = hsv_to_rgb(hsv)
+                    parent.RGBall[i,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
 
 
 def ROI_index(ops, stat):

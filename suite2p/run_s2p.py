@@ -46,7 +46,7 @@ def default_ops():
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
         'allow_overlap': False,        
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
-        'max_overlap': 0.3
+        'max_overlap': 0.3,
       }
     return ops
 

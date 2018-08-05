@@ -3,7 +3,7 @@
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
 
-Suite2p includes the following modules: 
+suite2p includes the following modules: 
 
 * Registration
 * Cell detection
@@ -41,7 +41,7 @@ Then:
 
 ## How to use the GUI
 
-Suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results. 
+suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results. 
 
 The GUI serves two main functions:
 
@@ -122,7 +122,7 @@ ops.npy: options and intermediate outputs
 ~~~~
 
 ## Dependencies
-Suite2p relies on the following packages (which are automatically installed if missing):
+suite2p relies on the following packages (which are automatically installed if missing):
 - pyqtgraph 
 - PyQt5
 - numpy

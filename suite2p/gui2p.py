@@ -159,6 +159,7 @@ class MainW(QtGui.QMainWindow):
         colorbarW.setMaximumHeight(60)
         colorbarW.setMaximumWidth(150)
         colorbarW.ci.layout.setRowStretchFactor(0,2)
+        colorbarW.ci.layout.setContentsMargins(0,0,0,0)
         self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
         #self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
         #self.l0.setRowStretch(nv+b+3, 1)
@@ -166,9 +167,9 @@ class MainW(QtGui.QMainWindow):
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
         cbar.addItem(self.colorbar)
-        self.clabel = [colorbarW.addLabel('0.0',row=1,col=0),
-                        colorbarW.addLabel('0.5',row=1,col=1),
-                        colorbarW.addLabel('1.0',row=1,col=2)]
+        self.clabel = [colorbarW.addLabel('0.0',color=[0,0,0],row=1,col=0),
+                        colorbarW.addLabel('0.5',color=[0,0,0],row=1,col=1),
+                        colorbarW.addLabel('1.0',color=[0,0,0],row=1,col=2)]
         #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
@@ -199,8 +200,6 @@ class MainW(QtGui.QMainWindow):
         self.classbtns.addButton(applyclass,0)
         self.classbtns.addButton(addtoclass,1)
         self.classbtns.addButton(saveclass,2)
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+5,0,1,1)
-        self.l0.setRowStretch(self.bend+5, 1)
         #### ------ CELL STATS -------- ####
         #self.l0.setRowStretch(1, 1)
         #self.l0.setRowStretch(6, 1)
@@ -220,6 +219,9 @@ class MainW(QtGui.QMainWindow):
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
             self.l0.setRowStretch(self.bend+8+k, 0)
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
+        self.l0.setRowStretch(self.bend+9+k, 1)
+
 
     def make_masks_and_buttons(self):
         self.disable_classifier()

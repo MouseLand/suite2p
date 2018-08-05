@@ -14,22 +14,12 @@ This code was written by Carsen Stringer and Marius Pachitariu.
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). 
 
-
-
 ## Installation
 From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
 If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
-
-suite2p is made possible by the following Python packages (which are installed with the pip):
-- pyqtgraph 
-- PyQt5
-- numpy
-- scipy
-- h5py
-- scikit-image
 
 ## Getting started
 
@@ -130,3 +120,13 @@ ops.npy: options and intermediate outputs
 'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
 'allow_overlap': False, # not 100% sure this is being used         
 ~~~~
+
+## Dependencies
+Suite2p requires the following packages (which are automatically installed if missing):
+- pyqtgraph 
+- PyQt5
+- numpy
+- scipy
+- h5py
+- scikit-image
+

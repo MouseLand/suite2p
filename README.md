@@ -122,11 +122,13 @@ ops.npy: options and intermediate outputs
 ~~~~
 
 ## Dependencies
-Suite2p requires the following packages (which are automatically installed if missing):
+Suite2p relies on the following packages (which are automatically installed if missing):
 - pyqtgraph 
 - PyQt5
 - numpy
 - scipy
 - h5py
 - scikit-image
+- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
+PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.

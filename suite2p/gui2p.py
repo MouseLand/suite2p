@@ -426,6 +426,13 @@ class MainW(QtGui.QMainWindow):
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('no manual labels found (iscell.npy)')
             try:
+                gui_data = np.load(basename + '/gui_data.npy')
+                gui_data = gui_data.item()
+                self.initialized = True
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                self.initialized = False
+                print('no gui data found (gui_data.npy)')
+            try:
                 self.ops = np.load(basename + '/ops.npy')
                 self.ops = self.ops.item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):

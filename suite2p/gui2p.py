@@ -47,11 +47,11 @@ class MainW(QtGui.QMainWindow):
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['skew','compact','aspect_ratio','footprint']
-        self.loadClass = QtGui.QAction('&Load classifier', self)
+        self.loadClass = QtGui.QAction('Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
         self.loadClass.setEnabled(False)
-        self.loadTrain = QtGui.QAction('&Train classifier (choose iscell.npy files)', self)
+        self.loadTrain = QtGui.QAction('Train classifier (choose iscell.npy files)', self)
         self.loadTrain.setShortcut('Ctrl+T')
         self.loadTrain.triggered.connect(lambda: classifier.load_data(self))
         self.loadTrain.setEnabled(False)
@@ -59,13 +59,18 @@ class MainW(QtGui.QMainWindow):
         self.saveClass.setShortcut('Ctrl+S')
         self.saveClass.triggered.connect(lambda: classifier.save(self))
         self.saveClass.setEnabled(False)
-        self.saveTrain = QtGui.QAction('&Save training list', self)
+        self.saveDefault = QtGui.QAction('Save classifier as default', self)
+        #self.saveDefault.setShortcut('Ctrl+S')
+        self.saveDefault.triggered.connect(self.class_default)
+        self.saveDefault.setEnabled(False)
+        self.saveTrain = QtGui.QAction('Save training list', self)
         self.saveTrain.triggered.connect(lambda: classifier.save_list(self))
         self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
         class_menu.addAction(self.loadClass)
         class_menu.addAction(self.loadTrain)
         class_menu.addAction(self.saveClass)
+        class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.saveTrain)
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
@@ -221,11 +226,11 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
+        self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
         #self.load_proc()
 
     def make_masks_and_buttons(self):
-        classifier.disable(self)
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
         self.setWindowTitle(self.fname)
@@ -260,6 +265,7 @@ class MainW(QtGui.QMainWindow):
         # allow classifier to be loaded
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
+        classifier.load(self, self.classfile)
 
     def enable_views(self):
         for b in range(len(self.views)):
@@ -447,6 +453,10 @@ class MainW(QtGui.QMainWindow):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
             classifier.load(self, name[0])
+
+    def class_default(self):
+        classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+        np.save(classfile, self.model)
 
 def run():
     ## Always start by initializing Qt (only once per application)

@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+include suite2p/classifier.npy
+include suite2p/classifer_user.npy

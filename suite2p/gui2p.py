@@ -221,8 +221,8 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
-        self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
-        self.load_proc()
+        #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
+        #self.load_proc()
 
     def make_masks_and_buttons(self):
         classifier.disable(self)
@@ -291,7 +291,7 @@ class MainW(QtGui.QMainWindow):
         posy  = 0
         iplot = 0
         if self.loaded:
-            print(event.modifiers() == QtCore.Qt.ControlModifier)
+            #print(event.modifiers() == QtCore.Qt.ControlModifier)
             for x in items:
                 if x==self.img1:
                     pos = self.p1.mapSceneToView(event.scenePos())

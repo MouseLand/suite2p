@@ -5,6 +5,62 @@ from scipy import ndimage
 import math
 from matplotlib.colors import hsv_to_rgb
 
+def plot_colorbar(parent, bid):
+    if bid==0:
+        parent.colorbar.setImage(np.zeros((20,100,3)))
+    else:
+        parent.colorbar.setImage(parent.colormat)
+    for k in range(3):
+        parent.clabel[k].setText('%1.2f'%parent.clabels[bid][k])
+
+def plot_trace(parent):
+    parent.p3.clear()
+    parent.p3.plot(parent.trange,parent.Fcell[parent.ichosen,:],pen='b')
+    parent.p3.plot(parent.trange,parent.Fneu[parent.ichosen,:],pen='r')
+    parent.fmax = np.maximum(parent.Fcell[parent.ichosen,:].max(), parent.Fneu[parent.ichosen,:].max())
+    parent.fmin = np.minimum(parent.Fcell[parent.ichosen,:].min(), parent.Fneu[parent.ichosen,:].min())
+    parent.p3.setXRange(0,parent.Fcell.shape[1])
+    parent.p3.setYRange(parent.fmin,parent.fmax)
+
+def plot_masks(parent,M):
+    parent.img1.setImage(M[0],levels=(0.0,1.0))
+    parent.img2.setImage(M[1],levels=(0.0,1.0))
+    parent.img1.show()
+    parent.img2.show()
+
+def init_range(parent):
+    parent.p1.setXRange(0,parent.ops['Lx'])
+    parent.p1.setYRange(0,parent.ops['Ly'])
+    parent.p2.setXRange(0,parent.ops['Lx'])
+    parent.p2.setYRange(0,parent.ops['Ly'])
+    parent.p3.setLimits(xMin=0,xMax=parent.Fcell.shape[1])
+    parent.trange = np.arange(0, parent.Fcell.shape[1])
+
+def make_colors(parent):
+    parent.clabels = []
+    ncells = len(parent.stat)
+    allcols = np.random.random((ncells,1))
+    b=0
+    for names in parent.colors:
+        if b > 0:
+            istat = np.zeros((ncells,1))
+            for n in range(0,ncells):
+                istat[n] = parent.stat[n][names]
+            parent.clabels.append([istat.min(),
+                                 (istat.max()-istat.min())/2 + istat.min(),
+                                 istat.max()])
+            istat = istat - istat.min()
+            istat = istat / istat.max()
+            istat = istat / 1.3
+            istat = istat + 0.1
+            icols = 1 - istat
+            allcols = np.concatenate((allcols, icols), axis=1)
+        else:
+            parent.clabels.append([0,0.5,1])
+        b+=1
+    parent.ops_plot[3] = allcols
+
+
 def boundary(ypix,xpix):
     ''' returns pixels of mask that are on the exterior of the mask '''
     ypix = np.expand_dims(ypix.flatten(),axis=1)

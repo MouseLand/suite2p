@@ -1,4 +1,5 @@
 from skimage import io
+import h5py
 import glob 
 import numpy as np
 import time, os
@@ -165,6 +166,11 @@ def get_nFrames(ops):
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
 
+def get_dims(ops):
+    with h5py.File(ops['reg_file'], 'r') as f:
+        nframes, Ly, Lx = f['data'].shape        
+    return nframes, Ly, Lx
+
 def register_myshifts(ops, data, ymax, xmax):    
     if ops['num_workers']<0:
         dreg = shift_data((data, ymax, xmax))
@@ -196,18 +202,22 @@ def register_binary(ops):
     if type(ops) is list:
         for op in ops:
             op = register_binary(op)
-        return ops    
-    Ly = ops['Ly']
-    Lx = ops['Lx']    
-    ops['nframes'] = get_nFrames(ops) 
+        return ops        
+    with h5py.File(ops['reg_file'], 'r') as f:
+        nframes, Ly, Lx = f['data'].shape 
+    ops['nframes'] = nframes    
+    ops['Ly'] = Ly
+    ops['Lx'] = Lx
+
     refImg = pick_init(ops)   
     print('computed reference frame for registration')
     nbatch = ops['batch_size']
-    nbytesread = 2 * Ly * Lx * nbatch    
+    #nbytesread = 2 * Ly * Lx * nbatch    
     if ops['nchannels']>1 and ops['align_by_chan']>1:
-        reg_file = open(ops['reg_file_chan2'], 'r+b')    
+        reg_file = h5py.File(ops['reg_file_chan2'])    
     else: 
-        reg_file = open(ops['reg_file'], 'r+b')    
+        reg_file = h5py.File(ops['reg_file'])
+        
     yoff = []
     xoff = []
     corrXY = []    
@@ -287,22 +297,6 @@ def register_binary(ops):
     np.save(ops['ops_path'], ops)
     
     return ops
-
-def subsample_frames(ops, nsamps):    
-    nFrames = get_nFrames(ops) 
-    Ly = ops['Ly']
-    Lx = ops['Lx']    
-    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')    
-    nbytesread = 2 * Ly * Lx    
-    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')    
-    reg_file = open(ops['reg_file'], 'rb')        
-    for j in range(0,nsamps):        
-        reg_file.seek(nbytesread * istart[j], 0)  
-        buff = reg_file.read(nbytesread)        
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        frames[j,:,:] = np.reshape(data, (Ly, Lx))    
-    reg_file.close()    
-    return frames
     
 def pick_init_init(ops, frames):
     nimg = frames.shape[0]
@@ -330,13 +324,11 @@ def refine_init_init(ops, frames, refImg):
         refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)    
     return refImg
 
-def pick_init(ops):
-    nbytes = os.path.getsize(ops['reg_file'])
-    Ly = ops['Ly']
-    Lx = ops['Lx']    
-    nFrames = int(nbytes/(2*Ly*Lx))    
-    nFramesInit = np.minimum(ops['nimg_init'], nFrames)    
-    frames = subsample_frames(ops, nFramesInit)
+def pick_init(ops):    
+    nsamps = np.minimum(ops['nimg_init'], ops['nframes'])        
+    istart = np.linspace(0, ops['nframes'], 1+nsamps).astype('int64')        
+    with h5py.File(ops['reg_file'], 'r') as f:
+        frames = f['data'][istart,:,:]            
     refImg = pick_init_init(ops, frames)       
     refImg = refine_init_init(ops, frames, refImg)    
     return refImg
@@ -347,7 +339,11 @@ def tiff_to_binary(ops):
     ops1 = []    
     
     fs = get_tif_list(ops) # look for tiffs in all requested folders
-        
+    # determine Ly, L
+    im = io.imread(fs[0], key=0)    
+    Ly = im.shape[0]
+    Lx = im.shape[1]            
+    
     # open all binary files for writing
     reg_file = []
     if nchannels>1:
@@ -364,21 +360,16 @@ def tiff_to_binary(ops):
         ops1.append(ops.copy())                   
 
         # reg_file.append(open(ops['reg_file'], 'wb'))
-        reg_file.append(h5py.File(ops['reg_file']))
-        reg_file[j].create_dataset('data', (0,Ly,Lx), maxshape=(1000000,Ly,Lx))
+        reg_file.append(h5py.File(ops['reg_file'], 'w'))
+        reg_file[j].create_dataset('data', (0,Ly,Lx), maxshape=(1000000,Ly,Lx), dtype='int16', chunks=(1, Ly, Lx))
         if nchannels>1:
             #reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-            reg_file_chan2.append(h5py.File(ops['reg_file_chan2']))
-            reg_file_chan2[j].create_dataset('data', (0,Ly,Lx), maxshape=(1000000,Ly, Lx))
-    
-    # write ops files
-    im = io.imread(fs[0], key=0)    
-    Ly = im.shape[0]
-    Lx = im.shape[1]            
+            reg_file_chan2.append(h5py.File(ops['reg_file_chan2'], 'w'))
+            reg_file_chan2[j].create_dataset('data', (0,Ly,Lx), maxshape=(1000000,Ly, Lx), dtype='int16',chunks=(1, Ly, Lx))
     
     # keep track of the plane identity of the first frame (channel identity is assumed always 0)
     iplane = 0
-    nk = np.zeros((nplanes,1), 'int32')
+    nk = [0 for i in range(0,nplanes)]
     # loop over all tiffs
     for file in fs:
         im = io.imread(file)
@@ -388,11 +379,11 @@ def tiff_to_binary(ops):
             im2write = im[np.arange(int(i0), nframes, nplanes*nchannels),:,:]
             newn = im2write.shape[0]
             reg_file[j]['data'].resize(nk[j]+newn,axis=0)
-            reg_file[j]['data'][nk[j]:nk[j]+newn] = im2write            
+            reg_file[j]['data'][nk[j]:(nk[j]+newn)] = im2write            
             if nchannels>1:
                 im2write = im[np.arange(i0+1, nframes, nplanes*nchannels),:,:]                
                 reg_file_chan2[j]['data'].resize(nk[j]+newn,axis=0)
-                reg_file_chan2[j]['data'][nk[j]:nk[j]+newn] = im2write
+                reg_file_chan2[j]['data'][nk[j]:(nk[j]+newn)] = im2write
             nk[j] += newn                
         iplane = (iplane+nframes/nchannels)%nplanes 
       

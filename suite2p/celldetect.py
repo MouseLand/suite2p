@@ -336,7 +336,7 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     return stat
 
 
-def getOverlaps(stat,Ly,Lx):
+def getOverlaps(stat,Ly,Lx, ops):
     '''computes overlapping pixels from ROIs in stat
     inputs:
         stat, Ly, Lx
@@ -599,7 +599,7 @@ def sourcery(ops):
 
         err = (Ucell**2).mean()
 
-        print('cells: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
+        print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
         if it==0:
             Nfirst = i.size
         it += 1
@@ -626,7 +626,7 @@ def sourcery(ops):
     Ly = ops['Ly']
     Lx = ops['Lx']
     stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
-    stat = getOverlaps(stat,Ly,Lx)
+    stat = getOverlaps(stat,Ly,Lx, ops)
     return ops, stat
 
 def extractF(ops, stat):

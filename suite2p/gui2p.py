@@ -47,25 +47,30 @@ class MainW(QtGui.QMainWindow):
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['skew','compact','aspect_ratio','footprint']
-        self.loadClass = QtGui.QAction('&Load classifier', self)
+        self.loadClass = QtGui.QAction('Load classifier', self)
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
         self.loadClass.setEnabled(False)
-        self.loadTrain = QtGui.QAction('&Train classifier (choose iscell.npy files)', self)
+        self.loadTrain = QtGui.QAction('Train classifier (choose iscell.npy files)', self)
         self.loadTrain.setShortcut('Ctrl+T')
-        self.loadTrain.triggered.connect(self.load_traindata)
+        self.loadTrain.triggered.connect(lambda: classifier.load_data(self))
         self.loadTrain.setEnabled(False)
         self.saveClass = QtGui.QAction('&Save classifier', self)
         self.saveClass.setShortcut('Ctrl+S')
-        self.saveClass.triggered.connect(self.save_classifier)
+        self.saveClass.triggered.connect(lambda: classifier.save(self))
         self.saveClass.setEnabled(False)
-        self.saveTrain = QtGui.QAction('&Save training list', self)
-        self.saveTrain.triggered.connect(self.save_trainlist)
+        self.saveDefault = QtGui.QAction('Save classifier as default', self)
+        #self.saveDefault.setShortcut('Ctrl+S')
+        self.saveDefault.triggered.connect(self.class_default)
+        self.saveDefault.setEnabled(False)
+        self.saveTrain = QtGui.QAction('Save training list', self)
+        self.saveTrain.triggered.connect(lambda: classifier.save_list(self))
         self.saveTrain.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
         class_menu.addAction(self.loadClass)
         class_menu.addAction(self.loadTrain)
         class_menu.addAction(self.saveClass)
+        class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.saveTrain)
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
@@ -173,7 +178,7 @@ class MainW(QtGui.QMainWindow):
         #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
-        applyclass.clicked.connect(self.apply_classifier)
+        applyclass.clicked.connect(lambda: classifier.apply(self))
         self.l0.addWidget(QtGui.QLabel('Classifer'),self.bend,0,1,1)
         self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend+1,0,1,1)
         applyclass.setEnabled(False)
@@ -188,12 +193,12 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(applyclass,self.bend+2,0,1,1)
         addtoclass = QtGui.QPushButton('add current data \n to classifier')
         addtoclass.resize(100,100)
-        addtoclass.clicked.connect(self.add_to_classifier)
+        addtoclass.clicked.connect(lambda: classifier.add_to(self))
         addtoclass.setEnabled(False)
         self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
         saveclass = QtGui.QPushButton('save classifier')
         saveclass.resize(100,50)
-        saveclass.clicked.connect(self.save_classifier)
+        saveclass.clicked.connect(lambda: classfier.save(self))
         saveclass.setEnabled(False)
         self.l0.addWidget(saveclass,self.bend+4,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)
@@ -221,26 +226,48 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
-        self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
-        self.load_proc()
-
+        self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+        #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
+        #self.load_proc()
 
     def make_masks_and_buttons(self):
-        self.disable_classifier()
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
         self.setWindowTitle(self.fname)
         # add boundaries to stat for ROI overlays
-        ncells = self.Fcell.shape[0]
+        ncells = len(self.stat)
         for n in range(0,ncells):
             ypix = self.stat[n]['ypix']
             xpix = self.stat[n]['xpix']
             iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
-            self.stat[n]['yext_overlap'] = np.zeros((0,),np.int32)
-            self.stat[n]['xext_overlap'] = np.zeros((0,),np.int32)
+        # enable buttons
+        self.enable_views()
+        # make color arrays for various views
+        fig.make_colors(self)
+        self.ichosen = int(0)
+        self.iflip = int(0)
+        self.ichosen_stats()
+        if not hasattr(self, 'iscell'):
+            self.iscell = np.ones((ncells,), dtype=bool)
+        # colorbar
+        self.colormat = fig.make_colorbar()
+        fig.plot_colorbar(self, self.ops_plot[2])
+        fig.init_masks(self)
+        M = fig.draw_masks(self)
+        fig.plot_masks(self,M)
+        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
+        self.lcell0.setText('%d cells'%(self.iscell.sum()))
+        fig.init_range(self)
+        fig.plot_trace(self)
+        self.show()
+        # allow classifier to be loaded
+        self.loadClass.setEnabled(True)
+        self.loadTrain.setEnabled(True)
+        classifier.load(self, self.classfile)
 
+    def enable_views(self):
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
@@ -250,69 +277,6 @@ class MainW(QtGui.QMainWindow):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
-        allcols = np.random.random((ncells,1))
-        self.clabels = []
-        b=0
-        for names in self.colors:
-            if b > 0:
-                istat = np.zeros((ncells,1))
-                for n in range(0,ncells):
-                    istat[n] = self.stat[n][names]
-                self.clabels.append([istat.min(),
-                                     (istat.max()-istat.min())/2 + istat.min(),
-                                     istat.max()])
-                istat = istat - istat.min()
-                istat = istat / istat.max()
-                istat = istat / 1.3
-                istat = istat + 0.1
-                icols = 1 - istat
-                allcols = np.concatenate((allcols, icols), axis=1)
-            else:
-                self.clabels.append([0,0.5,1])
-            b+=1
-
-        self.ops_plot[3] = (allcols)
-        #self.iROI = fig.ROI_index(self.ops, self.stat)
-        self.ichosen = int(0)
-        self.iflip = int(0)
-        self.ichosen_stats()
-        if not hasattr(self, 'iscell'):
-            self.iscell = np.ones((ncells,), dtype=bool)
-        nv=6
-        self.colormat = fig.make_colorbar()
-        self.plot_colorbar(0)
-        fig.init_masks(self)
-        M = fig.draw_masks(self)
-        self.plot_masks(M)
-        self.p1.setXRange(0,self.ops['Lx'])
-        self.p1.setYRange(0,self.ops['Ly'])
-        self.p2.setXRange(0,self.ops['Lx'])
-        self.p2.setYRange(0,self.ops['Ly'])
-        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
-        self.lcell0.setText('%d cells'%(self.iscell.sum()))
-        self.p3.setLimits(xMin=0,xMax=self.Fcell.shape[1])
-        self.trange = np.arange(0, self.Fcell.shape[1])
-        self.plot_trace()
-        self.loadClass.setEnabled(True)
-        self.loadTrain.setEnabled(True)
-        self.show()
-
-    def plot_colorbar(self, bid):
-        if bid==0:
-            self.colorbar.setImage(np.zeros((20,100,3)))
-        else:
-            self.colorbar.setImage(self.colormat)
-        for k in range(3):
-            self.clabel[k].setText('%1.2f'%self.clabels[bid][k])
-
-    def plot_trace(self):
-        self.p3.clear()
-        self.p3.plot(self.trange,self.Fcell[self.ichosen,:],pen='b')
-        self.p3.plot(self.trange,self.Fneu[self.ichosen,:],pen='r')
-        self.fmax = np.maximum(self.Fcell[self.ichosen,:].max(), self.Fneu[self.ichosen,:].max())
-        self.fmin = np.minimum(self.Fcell[self.ichosen,:].min(), self.Fneu[self.ichosen,:].min())
-        self.p3.setXRange(0,self.Fcell.shape[1])
-        self.p3.setYRange(self.fmin,self.fmax)
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -321,13 +285,7 @@ class MainW(QtGui.QMainWindow):
             self.ops_plot[0] = False
         if self.loaded:
             M = fig.draw_masks(self)
-            self.plot_masks(M)
-
-    def plot_masks(self,M):
-        self.img1.setImage(M[0],levels=(0.0,1.0))
-        self.img2.setImage(M[1],levels=(0.0,1.0))
-        self.img1.show()
-        self.img2.show()
+            fig.plot_masks(self,M)
 
     def plot_clicked(self,event):
         '''left-click chooses a cell, right-click flips cell to other view'''
@@ -339,7 +297,7 @@ class MainW(QtGui.QMainWindow):
         posy  = 0
         iplot = 0
         if self.loaded:
-            print(event.modifiers() == QtCore.Qt.ControlModifier)
+            #print(event.modifiers() == QtCore.Qt.ControlModifier)
             for x in items:
                 if x==self.img1:
                     pos = self.p1.mapSceneToView(event.scenePos())
@@ -388,8 +346,8 @@ class MainW(QtGui.QMainWindow):
                         #tic=time.time()
                         self.ichosen_stats()
                         M = fig.draw_masks(self)
-                        self.plot_masks(M)
-                        self.plot_trace()
+                        fig.plot_masks(self,M)
+                        fig.plot_trace(self)
                         self.show()
                         #print(time.time()-tic)
 
@@ -494,110 +452,11 @@ class MainW(QtGui.QMainWindow):
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
-            self.model = classifier.Classifier(classfile=name[0],
-                                               trainfiles=None,
-                                               statclass=None)
-            if self.model.loaded:
-                # statistics from current dataset for Classifier
-                self.statclass = self.model.statclass
-                # fill up with current dataset stats
-                self.get_stats()
-                self.trainfiles = self.model.trainfiles
-                self.activate_classifier()
-                #else:
-                #    print('ERROR: classifier has fields that stat doesn''t have')
+            classifier.load(self, name[0])
 
-    def get_stats(self):
-        ncells = self.Fcell.shape[0]
-        self.statistics = np.zeros((ncells, len(self.statclass)),np.float32)
-        k=0
-        for key in self.statclass:
-            for n in range(0,ncells):
-                self.statistics[n,k] = self.stat[n][key]
-            k+=1
-
-    def load_traindata(self):
-        # will return
-        LC = gui.ListChooser('classifier training files', self)
-        result = LC.exec_()
-        if result:
-            print('Populating classifier:')
-            self.model = classifier.Classifier(classfile=None,
-                                               trainfiles=self.trainfiles,
-                                               statclass=self.statclass)
-            if self.trainfiles is not None:
-                self.get_stats()
-                self.activate_classifier()
-
-    def apply_classifier(self):
-        classval = self.probedit.value()
-        self.iscell, self.probcell = self.model.apply(self.statistics, classval)
-        fig.init_masks(self)
-        M = fig.draw_masks(self)
-        self.plot_masks(M)
-        self.lcell0.setText('%d ROIs'%self.iscell.sum())
-        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
-
-    def save_classifier(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Save classifier')
-        if name:
-            try:
-                self.model.save_classifier(name[0])
-            except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
-                print('ERROR: incorrect filename for saving')
-
-    def save_trainlist(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Save list of iscell.npy')
-        if name:
-            try:
-                with open(name[0],'w') as fid:
-                    for f in self.trainfiles:
-                        fid.write(f)
-                        fid.write('\n')
-            except (ValueError, OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
-                print('ERROR: incorrect filename for saving')
-
-    def activate_classifier(self):
-        iscell, self.probcell = self.model.apply(self.statistics, 0.5)
-        istat = self.probcell
-        if len(self.clabels) < self.ncolors:
-            self.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
-        else:
-            self.clabels[-1] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
-        istat = istat - istat.min()
-        istat = istat / istat.max()
-        istat = istat / 1.3
-        istat = istat + 0.1
-        icols = 1 - istat
-        if self.ops_plot[3].shape[1] < self.ncolors:
-            self.ops_plot[3] = np.concatenate((self.ops_plot[3],
-                                                np.expand_dims(icols,axis=1)), axis=1)
-        else:
-            self.ops_plot[3][:,-1] = icols
-        fig.init_masks(self)
-        self.classbtn.setEnabled(True)
-        self.saveClass.setEnabled(True)
-        self.saveTrain.setEnabled(True)
-        for btns in self.classbtns.buttons():
-            btns.setEnabled(True)
-
-    def disable_classifier(self):
-        self.classbtn.setEnabled(False)
-        self.saveClass.setEnabled(False)
-        self.saveTrain.setEnabled(False)
-        for btns in self.classbtns.buttons():
-            btns.setEnabled(False)
-
-
-    def add_to_classifier(self):
-        fname = self.basename+'/iscell.npy'
-        ftrue =  [f for f in self.trainfiles if fname in f]
-        if len(ftrue)==0:
-            self.trainfiles.append(self.basename+'/iscell.npy')
-        print('Repopulating classifier including current dataset:')
-        self.model = classifier.Classifier(classfile=None,
-                                           trainfiles=self.trainfiles,
-                                           statclass=self.statclass)
+    def class_default(self):
+        classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+        np.save(classfile, self.model)
 
 def run():
     ## Always start by initializing Qt (only once per application)

@@ -269,7 +269,7 @@ class ViewButton(QtGui.QPushButton):
         if ischecked:
             parent.ops_plot[1] = bid
             M = fig.draw_masks(parent)
-            parent.plot_masks(M)
+            fig.plot_masks(parent,M)
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
@@ -286,5 +286,5 @@ class ColorButton(QtGui.QPushButton):
         if ischecked:
             parent.ops_plot[2] = bid
             M = fig.draw_masks(parent)
-            parent.plot_masks(M)
-            parent.plot_colorbar(bid)
+            fig.plot_masks(parent,M)
+            fig.plot_colorbar(parent,bid)

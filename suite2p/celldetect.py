@@ -599,7 +599,7 @@ def sourcery(ops):
 
         err = (Ucell**2).mean()
 
-        print('cells: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
+        print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
         if it==0:
             Nfirst = i.size
         it += 1

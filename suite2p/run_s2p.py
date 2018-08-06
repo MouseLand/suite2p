@@ -38,8 +38,8 @@ def default_ops():
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
         'max_iterations': 10, # maximum number of iterations to do cell detection
         'ratio_neuropil': 3., # minimum ratio between neuropil radius and cell radius
-        'tile_factor': 1, # use finer (>1) or coarser (<1) tiles for neuropil estimation
-        'threshold_scaling': 1, # adjust the automatically determined threshold by this scalar multiplier
+        'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation
+        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
@@ -50,7 +50,8 @@ def default_ops():
         'h5py': [],
         'h5py_key': 'data',
         'delete_bin': False,
-
+        'xrange': np.array([0, 0]),
+        'yrange': np.array([0, 0]),
       }
     return ops
 
@@ -155,6 +156,8 @@ def run_s2p(ops={},db={}):
             files_found_flag &= os.path.isfile(op['reg_file'])
             # use the new options
             ops1[i] = {**op, **ops}
+            ops1[i]['xrange'] = op['xrange']
+            ops1[i]['yrange'] = op['yrange']
     else:
         files_found_flag = False
 
@@ -167,9 +170,10 @@ def run_s2p(ops={},db={}):
         # copy tiff to a binary
         if len(ops['h5py']):
             ops1 = register.h5py_to_binary(ops)
+            print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
             ops1 = register.tiff_to_binary(ops)
-        print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+            print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         # register tiff
         ops1 = register.register_binary(ops1)
         # save ops1
@@ -214,5 +218,5 @@ def run_s2p(ops={},db={}):
     if len(ops1)>1 and ops1[0]['combined']:
         combined(ops1)
 
-    print('finished all tasks in %4.4f sec'%toc(i0))
+    print('finished all tasks in total time %4.4f sec'%toc(i0))
     return ops1

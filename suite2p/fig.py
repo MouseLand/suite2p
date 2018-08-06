@@ -5,6 +5,7 @@ from scipy import ndimage
 import math
 from matplotlib.colors import hsv_to_rgb
 
+
 def plot_colorbar(parent, bid):
     if bid==0:
         parent.colorbar.setImage(np.zeros((20,100,3)))
@@ -196,6 +197,13 @@ def init_masks(parent):
     parent.Lam  = Lam
     parent.LamMean = LamMean
 
+def flip_for_class(parent, iscell):
+    ncells = iscell.size
+    for n in range(ncells):
+        if iscell[n] != parent.iscell[n]:
+            parent.iscell[n] = iscell[n]
+            parent.ichosen = n
+            flip_cell(parent)
 
 def make_chosen(M, ypix, xpix, lam):
     v = lam

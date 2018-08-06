@@ -4,32 +4,33 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 import os
 from suite2p import fig, gui
+import time
 
 class Classifier:
-    def __init__(parent, classfile=None, trainfiles=None, statclass=None):
+    def __init__(self, classfile=None, trainfiles=None, statclass=None):
         # load previously trained classifier
         if classfile is not None:
-            parent.classfile = classfile
-            parent.load_classifier()
+            self.classfile = classfile
+            self.load()
 
         elif trainfiles is not None and statclass is not None:
-            parent.trainfiles = trainfiles
-            parent.statclass = statclass
-            parent.load_data()
-            if parent.traindata.shape[0]==0:
-                parent.loaded = False
+            self.trainfiles = trainfiles
+            self.statclass = statclass
+            self.load_data()
+            if self.traindata.shape[0]==0:
+                self.loaded = False
             else:
-                parent.loaded = True
-                parent.train()
+                self.loaded = True
+                self.train()
 
-    def train(parent):
+    def train(self):
         '''input: matrix ncells x cols, where first column are labels, and the other
                     columns are the statistics to use for classification
             output: distribution of cell likelihood for each statistic
         '''
-        iscell = parent.traindata[:,0].astype(bool)
+        iscell = self.traindata[:,0].astype(bool)
         notcell = ~iscell
-        stats = parent.traindata[:,1:]
+        stats = self.traindata[:,1:]
         # make grid of statistics values
         ncells,nstats = stats.shape
         grid = np.zeros((100, stats.shape[1]), np.float32)
@@ -45,17 +46,17 @@ class Classifier:
                 ix = notcell
             for n in range(nstats):
                 hists[:,n,k] = smooth_distribution(stats[ix,n], grid[:,n])
-        parent.hists = hists
-        parent.grid = grid
+        self.hists = hists
+        self.grid = grid
 
-    def apply(parent, stats, classval):
+    def apply(self, stats, classval):
         '''inputs: model (from train), statistics of cells to classify, and
                     classval (probability of cell cutoff)
             output: iscell labels
         '''
         ncells, nstats = stats.shape
-        grid = parent.grid
-        hists = parent.hists
+        grid = self.grid
+        hists = self.hists
         logp = np.zeros((ncells,2), np.float32)
         for n in range(nstats):
             x = stats[:,n]
@@ -75,32 +76,32 @@ class Classifier:
         iscell = probcell > classval
         return iscell, probcell
 
-    def load(parent):
+    def load(self):
         try:
-            model = np.load(parent.classfile)
+            model = np.load(self.classfile)
             model = model.item()
-            parent.grid = model['grid']
-            parent.hists = model['hists']
-            parent.trainfiles = model['trainfiles']
-            parent.statclass = model['statclass']
-            parent.loaded = True
+            self.grid = model['grid']
+            self.hists = model['hists']
+            self.trainfiles = model['trainfiles']
+            self.statclass = model['statclass']
+            self.loaded = True
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: incorrect classifier file')
-            parent.loaded = False
+            self.loaded = False
 
 
-    def save(parent, fname):
+    def save(self, fname):
         model = {}
-        model['grid'] = parent.grid
-        model['hists'] = parent.hists
-        model['trainfiles'] = parent.trainfiles
-        model['statclass'] = parent.statclass
+        model['grid'] = self.grid
+        model['hists'] = self.hists
+        model['trainfiles'] = self.trainfiles
+        model['statclass'] = self.statclass
         print('saving classifier in ' + fname)
         np.save(fname, model)
 
-    def load_data(parent):
-        statclass = parent.statclass
-        trainfiles = parent.trainfiles
+    def load_data(self):
+        statclass = self.statclass
+        trainfiles = self.trainfiles
         traindata = np.zeros((0,len(statclass)+1),np.float32)
         trainfiles_good = []
         if trainfiles is not None:
@@ -137,8 +138,8 @@ class Classifier:
                                 nall[n,k] = stat[n][key]
                         traindata = np.concatenate((traindata,nall),axis=0)
                         trainfiles_good.append(fname)
-        parent.traindata = traindata
-        parent.trainfiles = trainfiles
+        self.traindata = traindata
+        self.trainfiles = trainfiles
 
 def smooth_distribution(x, grid):
     xbin = x
@@ -187,8 +188,8 @@ def load_data(parent):
 
 def apply(parent):
     classval = parent.probedit.value()
-    parent.iscell, parent.probcell = parent.model.apply(parent.statistics, classval)
-    fig.init_masks(parent)
+    iscell, parent.probcell = parent.model.apply(parent.statistics, classval)
+    fig.flip_for_class(parent, iscell)
     M = fig.draw_masks(parent)
     fig.plot_masks(parent,M)
     parent.lcell0.setText('%d ROIs'%parent.iscell.sum())

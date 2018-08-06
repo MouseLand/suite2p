@@ -1,13 +1,12 @@
 from skimage import io
-import glob 
+import glob, h5py, time, os
 import numpy as np
-import time, os
-import matplotlib.pyplot as plt
 from numpy import fft
 from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
-import time
+import math
+
 def tic():
     return time.time()
 def toc(i0):
@@ -340,6 +339,62 @@ def pick_init(ops):
     refImg = pick_init_init(ops, frames)       
     refImg = refine_init_init(ops, frames, refImg)    
     return refImg
+
+def h5py_to_binary(ops):
+    nplanes = ops['nplanes']
+    nchannels = ops['nchannels']
+    ops1 = []    
+    # open all binary files for writing
+    reg_file = []
+    if nchannels>1:
+        reg_file_chan2 = []            
+    for j in range(0,nplanes):
+        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
+        ops['save_path'] = fpath
+        ops['ops_path'] = os.path.join(fpath,'ops.npy')        
+        ops['reg_file'] = os.path.join(fpath, 'data.bin')        
+        if nchannels>1:
+            ops['reg_file_chan2'] = os.path.join(fpath, 'data_chan2.bin')
+        if not os.path.isdir(fpath):
+            os.makedirs(fpath)
+        ops1.append(ops.copy())                   
+        reg_file.append(open(ops['reg_file'], 'wb'))
+        if nchannels>1:
+            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
+    
+    # open h5py file for reading     
+    key = ops['h5py_key']
+    
+    with h5py.File(ops['h5py'], 'r') as f: 
+        # keep track of the plane identity of the first frame (channel identity is assumed always 0)
+        nbatch = nplanes*nchannels*math.ceil(ops['batch_size']/(nplanes*nchannels))
+        nframes_all = f[key].shape[0]
+        # loop over all tiffs
+        i0 = 0
+        while 1:        
+            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
+            if irange.size==0:
+                break            
+            im = f[key][irange, :, :]                
+            nframes = im.shape[0]        
+            for j in range(0,nplanes):                
+                im2write = im[np.arange(j, nframes, nplanes*nchannels),:,:]
+                reg_file[j].write(bytearray(im2write))
+                if nchannels>1:
+                    im2write = im[np.arange(j+1, nframes, nplanes*nchannels),:,:]
+                    reg_file_chan2[j].write(bytearray(im2write))            
+            i0 += nframes
+    # write ops files
+    for ops in ops1:        
+        ops['Ly'] = im2write.shape[1]
+        ops['Lx'] = im2write.shape[2]        
+        np.save(ops['ops_path'], ops)    
+    # close all binary files and write ops files
+    for j in range(0,nplanes):
+        reg_file[j].close()        
+        if nchannels>1:
+            reg_file_chan2[j].close()
+    return ops1
 
 def tiff_to_binary(ops):    
     nplanes = ops['nplanes']

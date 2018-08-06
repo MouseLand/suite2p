@@ -39,14 +39,18 @@ def default_ops():
         'max_iterations': 10, # maximum number of iterations to do cell detection
         'ratio_neuropil': 3., # minimum ratio between neuropil radius and cell radius
         'tile_factor': 1, # use finer (>1) or coarser (<1) tiles for neuropil estimation
-        'threshold_scaling': 1, # adjust the automatically determined threshold by this scalar multiplier        
+        'threshold_scaling': 1, # adjust the automatically determined threshold by this scalar multiplier
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
-        'allow_overlap': False,        
+        'allow_overlap': False,
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
         'max_overlap': 0.3,
+        'h5py': [],
+        'h5py_key': 'data',
+        'delete_bin': False,
+
       }
     return ops
 
@@ -57,30 +61,30 @@ def get_cells(ops):
     # extract fluorescence and neuropil
     F, Fneu = celldetect.extractF(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
-    
+
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
     # compute activity statistics for classifier
     sk = stats.skew(dF, axis=1)
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
-    
+
     # save results
     np.save(ops['ops_path'], ops)
     fpath = ops['save_path']
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
     np.save(os.path.join(fpath,'stat.npy'), stat)
-    
+
     print('results saved to %s'%ops['save_path'])
     return ops
 
-def combined(ops1):    
+def combined(ops1):
     '''
-    Combines all the entries in ops1 into a single result file. Multi-plane recordings are arranged to best tile a square. 
-    
-    Multi-roi recordings will be arranged by their physical localization.    
-    
+    Combines all the entries in ops1 into a single result file. Multi-plane recordings are arranged to best tile a square.
+
+    Multi-roi recordings will be arranged by their physical localization.
+
     '''
     ops = ops1[0]
     Lx = ops['Lx']
@@ -98,14 +102,14 @@ def combined(ops1):
     for k,ops in enumerate(ops1):
         fpath = ops['save_path']
         stat0 = np.load(os.path.join(fpath,'stat.npy'))
-        meanImg[dy[k]:dy[k]+Ly, dx[k]:dx[k]+Lx] = ops['meanImg']    
-        Vcorr[dy[k] +ops['yrange'][0]:dy[k] +ops['yrange'][-1], dx[k] + ops['xrange'][0]:dx[k] + ops['xrange'][-1]] = ops['Vcorr']    
+        meanImg[dy[k]:dy[k]+Ly, dx[k]:dx[k]+Lx] = ops['meanImg']
+        Vcorr[dy[k] +ops['yrange'][0]:dy[k] +ops['yrange'][-1], dx[k] + ops['xrange'][0]:dx[k] + ops['xrange'][-1]] = ops['Vcorr']
         for j in range(len(stat0)):
             stat0[j]['xpix'] += dx[k]
             stat0[j]['ypix'] += dy[k]
             stat0[j]['med'][0] += dx[k]
             stat0[j]['med'][1] += dy[k]
-        F0    = np.load(os.path.join(fpath,'F.npy'))    
+        F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))
         if k==0:
@@ -114,7 +118,7 @@ def combined(ops1):
             F    = np.concatenate((F, F0))
             Fneu = np.concatenate((Fneu, Fneu0))
             spks = np.concatenate((spks, spks0))
-            stat = np.concatenate((stat,stat0))            
+            stat = np.concatenate((stat,stat0))
     ops['meanImg'] = meanImg
     ops['Vcorr'] = Vcorr
     ops['Ly'] = Ly * nY
@@ -130,9 +134,9 @@ def combined(ops1):
     np.save(os.path.join(fpath, 'spks.npy'), spks)
     np.save(os.path.join(fpath, 'ops.npy'), ops)
     np.save(os.path.join(fpath, 'stat.npy'), stat)
-    
+
     return ops
-    
+
 def run_s2p(ops={},db={}):
     i0 = tic()
 
@@ -161,7 +165,10 @@ def run_s2p(ops={},db={}):
         # combine with user options
         ops = {**ops0, **ops}
         # copy tiff to a binary
-        ops1 = register.tiff_to_binary(ops)
+        if len(ops['h5py']):
+            ops1 = register.h5py_to_binary(ops)
+        else:
+            ops1 = register.tiff_to_binary(ops)
         print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         # register tiff
         ops1 = register.register_binary(ops1)
@@ -173,17 +180,17 @@ def run_s2p(ops={},db={}):
         print(ops1[0]['reg_file'])
         print('overwriting ops1 with new ops')
         print('skipping registration...')
-    
+
     ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)
         with Pool(ops['num_workers_roi']) as p:
-            ops1 = p.map(get_cells, ops1)        
+            ops1 = p.map(get_cells, ops1)
     else:
         for k in range(len(ops1)):
             ops1[k] = get_cells(ops1[k])
-    
+
     ######### SPIKE DECONVOLUTION #########
     for ops in ops1:
         fpath = ops['save_path']
@@ -191,15 +198,21 @@ def run_s2p(ops={},db={}):
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         dF = F - ops['neucoeff']*Fneu
         spks = dcnv.oasis(dF, ops)
-        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))    
-        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)    
-            
+        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
-    
+
+    for ops in ops1:
+        if ops['delete_bin']:
+            os.remove(ops['reg_file'])
+            if ops['nchannels']>1:
+                os.remove(ops['reg_file_chan2'])
+
     #### COMBINE PLANES or FIELDS OF VIEW ####
-    if ops['combined']:
-        combine_planes(ops1)
-    
+    if len(ops1)>1 and ops1[0]['combined']:
+        combined(ops1)
+
     print('finished all tasks in %4.4f sec'%toc(i0))
     return ops1

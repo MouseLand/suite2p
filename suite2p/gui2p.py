@@ -254,7 +254,9 @@ class MainW(QtGui.QMainWindow):
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
-        fig.init_masks(self)
+        if ~self.initialized:
+            fig.init_masks(self)
+            self.wasloaded = False
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
@@ -428,6 +430,16 @@ class MainW(QtGui.QMainWindow):
             try:
                 gui_data = np.load(basename + '/gui_data.npy')
                 gui_data = gui_data.item()
+                self.RGBall = gui_data['RGBall']
+                self.RGBback = gui_data['RGBback']
+                self.Vback = gui_data['Vback']
+                self.iROI = gui_data['iROI']
+                self.iExt = gui_data['iExt']
+                self.Sroi = gui_data['Sroi']
+                self.Sext = gui_data['Sext']
+                self.Lam  = gui_data['Lam']
+                self.LamMean = gui_data['LamMean']
+                self.wasloaded = gui_data['wasloaded']
                 self.initialized = True
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 self.initialized = False
@@ -465,10 +477,27 @@ class MainW(QtGui.QMainWindow):
         classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         np.save(classfile, self.model)
 
+    def save_gui_data(self):
+        gui_data = {
+                    'RGBall': self.RGBall,
+                    'RGBback': self.RGBback,
+                    'Vback': self.Vback,
+                    'iROI': self.iROI,
+                    'iExt': self.iExt,
+                    'Sroi': self.Sroi,
+                    'Sext': self.Sext,
+                    'Lam': self.Lam,
+                    'LamMean': self.LamMean,
+                    'wasloaded': True
+                   }
+        np.save(self.basename+'/gui_data.npy', gui_data)
+
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     GUI = MainW()
-    sys.exit(app.exec_())
+    ret = app.exec_()
+    GUI.save_gui_data()
+    sys.exit(ret)
 
 #run()

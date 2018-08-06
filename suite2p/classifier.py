@@ -192,6 +192,7 @@ def apply(parent):
     fig.flip_for_class(parent, iscell)
     M = fig.draw_masks(parent)
     fig.plot_masks(parent,M)
+    np.save(parent.basename+'/iscell.npy', parent.iscell)
     parent.lcell0.setText('%d ROIs'%parent.iscell.sum())
     parent.lcell1.setText('%d ROIs'%(parent.iscell.size-parent.iscell.sum()))
 
@@ -232,8 +233,11 @@ def activate(parent):
     else:
         parent.ops_plot[3][:,-1] = icols
     fig.init_masks(parent)
+    if ~parent.wasloaded:
+        apply(parent)
     parent.classbtn.setEnabled(True)
     parent.saveClass.setEnabled(True)
+    parent.saveDefault.setEnabled(True)
     parent.saveTrain.setEnabled(True)
     for btns in parent.classbtns.buttons():
         btns.setEnabled(True)

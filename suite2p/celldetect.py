@@ -273,6 +273,23 @@ def pairwiseDistance(y,x):
          + (np.expand_dims(x,axis=-1) - np.expand_dims(x,axis=0))**2)**0.5
     return dists
 
+def convert_to_pix(mPix, mLam):
+    stat = []
+    ncells = mPix.shape[0]
+    for k in range(0,ncells):
+        stat0 = {}
+        goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
+        ipix    = mPix[k,goodi].astype(np.int32)
+        ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
+        stat0['ypix'] = ypix
+        stat0['xpix'] = xpix
+        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
+        stat0['npix'] = ipix.size
+        stat0['lam']  = mLam[k, goodi]
+        stat.append(stat0.copy())
+    return stat
+
+# this function needs to be updated with the new stat
 def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
     '''computes statistics of cells found using sourcery
     inputs:
@@ -320,7 +337,6 @@ def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
                 stat0['footprint'] = 0
                 footprints[n]=0
             # compute compactness of ROI
-            lam = mLam[k, :]
             r2 = (stat0['ypix']-np.round(stat0['med'][0]))**2 + (stat0['xpix']-np.round(stat0['med'][1]))**2
             stat0['mrs']  = np.mean(r2**.5) / d0
             stat0['mrs0'] = np.mean(rsort[:r2.size]) / d0
@@ -461,6 +477,64 @@ def sub2ind(array_shape, rows, cols):
     inds = rows * array_shape[1] + cols
     return inds
 
+
+def minDistance(inputs):
+    y1, x1, y2, x2 = inputs
+
+    y1m = np.median(y1)
+    y2m = np.median(y2)
+    x1m = np.median(x1)
+    x2m = np.median(x2)
+
+    for k in range(3):
+        ds = ((y1m - y2)**2 + (x1m - x2)**2)**.5
+        ix = np.argmin(ds)
+        y2m, x2m = y2[ix], x2[ix]
+        ds = ((y2m - y1)**2 + (x2m - x1)**2)**.5
+        ix = np.argmin(ds)
+        y1m, x1m = y1[ix], x1[ix]
+    return np.amin(ds)
+
+def mergeROIs(ops, Lyc,Lxc,d0,stat,codes,Ucell):
+    # ROIs should be input as lists of pixel x and y coordinates + lam
+    # how to compute pairwise shortest distance:
+    # make a mask of all pixels in ROIs and their x,y coordinates and ROI index
+    Lxc = ops['Lxc']
+    Lyc = ops['Lyc']
+    npix = 0
+    for k in range(len(stat)):
+        ipix = stat[k]['lam']>np.amax(stat[k]['lam'])/5
+        npix += sum(ipix)
+    ypix = np.zeros((npix,1), 'float32')
+    xpix = np.zeros((npix,1), 'float32')
+    cpix = np.zeros((npix,1), 'int32')
+
+    k0 = 0
+    for k in range(len(stat)):
+        ipix = stat[k]['lam']>np.amax(stat[k]['lam'])/5
+        npix = sum(ipix)
+        ypix[k0 + np.arange(0,npix)] = stat[k]['ypix'][ipix]
+        xpix[k0 + np.arange(0,npix)] = stat[k]['xpix'][ipix]
+        cpix[k0 + np.arange(0,npix)] = k
+        stat[k]['ix'] = k0 + np.arange(0,npix)
+        y0[k], x0[k] = stat[k]['med']
+        k0+=npix
+    # iterate between finding nearest pixels and computing distances to them
+    ds = (x0- xpix.expand_dims(axis=1))**2
+    ds += (y0- ypix.expand_dims(axis=1))**2
+    ds = ds**.5
+    #for k in range(len(stat)):
+#        for j in range(k+1,len(stat)):
+#        imin = np.argmin(ds[:, stat[k]['ix']], axis=1)
+#        x0[k] = 0
+
+    # take minimum of the two distances (not necessarily commutative)
+    # compute functional similarity
+    # if anatomical distance < N pixels and similarity > 0.5, merge
+
+    # merging combines all pixels, adding weights for duplicated pixels
+
+    return mPix, mLam, codes
 def sourcery(ops):
     # get SVD components
     i0 = tic()
@@ -621,7 +695,8 @@ def sourcery(ops):
     mPix = mPix[:ncells,:]
 
     Ucell = U - np.reshape(neu.transpose() @ S, U.shape)
-    # ypix, xpix, goodi = celldetect.localRegion(i[n-ncells],j[n-ncells],dy,dx,Ly,Lx)
+    # this is a good place to merge ROIs
+    mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
 
     Ly = ops['Ly']
     Lx = ops['Lx']

@@ -156,6 +156,7 @@ def run_s2p(ops={},db={}):
             files_found_flag &= os.path.isfile(op['reg_file'])
             # use the new options
             ops1[i] = {**op, **ops}
+            # except for registration results
             ops1[i]['xrange'] = op['xrange']
             ops1[i]['yrange'] = op['yrange']
     else:

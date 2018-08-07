@@ -62,9 +62,14 @@ def make_colors(parent):
         else:
             parent.clabels.append([0,0.5,1])
         b+=1
+    parent.clabels.append([0,0.5,1])
     parent.ops_plot[3] = allcols
     # make colors for pairwise correlations
-    cc = np.corrcoef(parent.Spks)
+    bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
+    nb   = int(np.floor(parent.Spks.shape[1] / bin))
+    Sbin = parent.Spks[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
+    cc = np.corrcoef(Sbin)
+    np.fill_diagonal(cc, 0)
     corrcols = np.zeros((ncells,ncells))
     for n in range(0,ncells):
         istat = cc[:,n]
@@ -75,7 +80,7 @@ def make_colors(parent):
         icols = 1 - istat
         corrcols[:,n] = icols
     parent.ops_plot.append(corrcols)
-
+    parent.cc = cc
 
 def boundary(ypix,xpix):
     ''' returns pixels of mask that are on the exterior of the mask '''
@@ -146,7 +151,7 @@ def init_masks(parent):
             LamAll[ypix,xpix] = lam
 
     LamMean = LamAll[LamAll>1e-10].mean()
-    RGBall = np.zeros((2,cols.shape[1],4,Ly,Lx,3), np.float32)
+    RGBall = np.zeros((2,cols.shape[1]+1,4,Ly,Lx,3), np.float32)
     Vback   = np.zeros((4,Ly,Lx), np.float32)
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
@@ -211,6 +216,32 @@ def init_masks(parent):
     parent.Sext = Sext
     parent.Lam  = Lam
     parent.LamMean = LamMean
+
+def corr_masks(parent):
+    c = parent.ops_plot[3].shape[1]
+    cols = parent.ops_plot[4]
+    n = parent.ichosen
+    for i in range(2):
+        for k in range(4):
+            H = cols[parent.iROI[i,0,:,:],n]
+            if k<3:
+                S = parent.Sroi[i,:,:]
+            else:
+                S = parent.Sext[i,:,:]
+            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+            if k>0:
+                V = parent.Vback[k-1,:,:]
+                if k==3:
+                    V = np.maximum(0,np.minimum(1, V + S))
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    istat = parent.cc[:,n]
+    parent.clabels[-1] = [istat.min(),
+                         (istat.max()-istat.min())/2 + istat.min(),
+                         istat.max()]
 
 def class_masks(parent):
     cols = parent.ops_plot[3]

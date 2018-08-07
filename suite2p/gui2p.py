@@ -123,7 +123,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img\n    (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','pairwise corr']
+        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
@@ -206,10 +206,11 @@ class MainW(QtGui.QMainWindow):
         # which stats
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
-        self.l0.addWidget(QtGui.QLabel('Selected ROI stats'),self.bend+6,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('.'),self.bend+6,0,1,1)
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel('ROI')
-        qlabel.setFont(lilfont)
+        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+        qlabel.setFont(bigfont)
         self.l0.addWidget(qlabel,self.bend+7,0,1,1)
         self.ROIstats = []
         self.ROIstats.append(qlabel)
@@ -223,6 +224,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.setRowStretch(self.bend+9+k, 1)
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
     def make_masks_and_buttons(self):
@@ -248,6 +250,7 @@ class MainW(QtGui.QMainWindow):
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
         fig.init_masks(self)
+        fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
@@ -338,6 +341,9 @@ class MainW(QtGui.QMainWindow):
                             choose = False
                         if choose:
                             self.ichosen = ichosen
+                            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                                fig.corr_masks(self)
+                                fig.plot_colorbar(self, self.ops_plot[2])
                     if flip:
                         flip = self.flip_plot(iplot)
                     if choose or flip:

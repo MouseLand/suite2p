@@ -268,6 +268,8 @@ class ViewButton(QtGui.QPushButton):
         ischecked  = self.isChecked()
         if ischecked:
             parent.ops_plot[1] = bid
+            if bid==6:
+                fig.corr_masks(parent)
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
 

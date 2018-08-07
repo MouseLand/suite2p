@@ -194,8 +194,10 @@ def init_masks(parent):
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
-                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
-                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
+                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50,mode='mirror'),
+                                                      10,mode='mirror')
+                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50,mode='mirror'),
+                                                      10,mode='mirror')
                         S =     np.maximum(0,np.minimum(1, V*1.5))
                         mimg1 = np.percentile(mimg,1)
                         mimg99 = np.percentile(mimg,99)

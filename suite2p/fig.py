@@ -26,7 +26,7 @@ def plot_trace(parent):
     sp += parent.fmin
     parent.p3.plot(parent.trange,f,pen='b')
     parent.p3.plot(parent.trange,fneu,pen='r')
-    parent.p3.plot(parent.trange,sp,pen=[100,100,100])
+    parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
@@ -304,18 +304,18 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         M0 = parent.RGBback[view-1,:,:,:]
         M1 = parent.RGBback[view-1,:,:,:]
     else:
-        ichosen = parent.ichosen
-        wplot   = int(1-parent.iscell[ichosen])
+        wplot   = int(1-parent.iscell[parent.ichosen])
         M0 = np.array(parent.RGBall[0,color,view,:,:,:])
         M1 = np.array(parent.RGBall[1,color,view,:,:,:])
-        #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
-        ypix = parent.stat[ichosen]['ypix']
-        xpix = parent.stat[ichosen]['xpix']
-        lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[ichosen]['lam'] / parent.LamMean))
-        if wplot==0:
-            M0 = make_chosen(M0, ypix, xpix, lam)
-        else:
-            M1 = make_chosen(M1, ypix, xpix, lam)
+        for n in parent.imerge:
+            #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
+            ypix = parent.stat[n]['ypix']
+            xpix = parent.stat[n]['xpix']
+            lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
+            if wplot==0:
+                M0 = make_chosen(M0, ypix, xpix, lam)
+            else:
+                M1 = make_chosen(M1, ypix, xpix, lam)
     return M0,M1
 
 def flip_cell(parent):

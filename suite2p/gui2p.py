@@ -224,8 +224,8 @@ class MainW(QtGui.QMainWindow):
         self.l0.setRowStretch(self.bend+9+k, 1)
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
+        self.fname = 'C:/Users/carse/github/data/stat.npy'
+        self.load_proc()
 
     def make_masks_and_buttons(self):
         self.ops_plot[1] = 0
@@ -244,6 +244,7 @@ class MainW(QtGui.QMainWindow):
         # make color arrays for various views
         fig.make_colors(self)
         self.ichosen = int(0)
+        self.imerge = [int(0)]
         self.iflip = int(0)
         self.ichosen_stats()
         # colorbar
@@ -340,6 +341,15 @@ class MainW(QtGui.QMainWindow):
                         if self.ichosen==ichosen:
                             choose = False
                         if choose:
+                            merged = False
+                            if event.modifiers() == QtCore.Qt.ControlModifier:
+                                if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
+                                    if ichosen not in self.imerge:
+                                        self.imerge.append(ichosen)
+                                    merged = True
+                            if not merged:
+                                self.imerge = [ichosen]
+                            print(self.imerge)
                             self.ichosen = ichosen
                             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                                 fig.corr_masks(self)

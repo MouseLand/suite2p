@@ -43,10 +43,10 @@ def plot_trace(parent):
             fneu = (fneu - fmin) / (fmax - fmin)
             sp = (sp - sp.min()) / (sp.max() - sp.min())
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
-            parent.p3.plot(parent.trange,f-k*0.5,pen=rgb)
+            parent.p3.plot(parent.trange,f+k*0.5,pen=rgb)
             k+=1
-        parent.fmin=-(k-1)*0.5
-        parent.fmax=1
+        parent.fmin=0#-(k-1)*0.5
+        parent.fmax=(k+1)*0.5
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 

@@ -223,9 +223,9 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
-        self.fname = 'C:/Users/carse/github/data/stat.npy'
-        self.load_proc()
+        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
+        #self.load_proc()
 
     def make_masks_and_buttons(self):
         self.ops_plot[1] = 0
@@ -355,11 +355,16 @@ class MainW(QtGui.QMainWindow):
                                     elif ichosen in self.imerge and len(self.imerge)>1:
                                         self.imerge.remove(ichosen)
                                     merged = True
-                                if len(self.imerge)>5:
-                                    self.win.ci.layout.setRowStretchFactor(1,2)
                             if not merged:
                                 self.imerge = [ichosen]
-                            print(self.imerge)
+                            if len(self.imerge)>10 and len(self.imerge)<21:
+                                self.win.ci.layout.setRowStretchFactor(1,2)
+                            elif len(self.imerge)<=10:
+                                self.win.ci.layout.setRowStretchFactor(1,1)
+                            else:
+                                self.win.ci.layout.setRowStretchFactor(1,3)
+
+                            #print(self.imerge)
                             self.ichosen = ichosen
                             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                                 fig.corr_masks(self)

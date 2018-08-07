@@ -115,7 +115,7 @@ class MainW(QtGui.QMainWindow):
         self.p2.setYLink('plot1')
         # --- fluorescence trace plot
         self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
-        layout.setRowStretchFactor(0,2)
+        self.win.ci.layout.setRowStretchFactor(0,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -294,6 +294,7 @@ class MainW(QtGui.QMainWindow):
         flip = False
         choose = False
         zoom = False
+        replot = False
         items = self.win.scene().items(event.scenePos())
         posx  = 0
         posy  = 0
@@ -340,13 +341,22 @@ class MainW(QtGui.QMainWindow):
                     else:
                         if self.ichosen==ichosen:
                             choose = False
+                            if event.modifiers() == QtCore.Qt.ControlModifier:
+                                if len(self.imerge)>1:
+                                    self.imerge.remove(ichosen)
+                                    self.ichosen = self.imerge[0]
+                                    replot = True
                         if choose:
                             merged = False
                             if event.modifiers() == QtCore.Qt.ControlModifier:
                                 if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
                                     if ichosen not in self.imerge:
                                         self.imerge.append(ichosen)
+                                    elif ichosen in self.imerge and len(self.imerge)>1:
+                                        self.imerge.remove(ichosen)
                                     merged = True
+                                if len(self.imerge)>5:
+                                    self.win.ci.layout.setRowStretchFactor(1,2)
                             if not merged:
                                 self.imerge = [ichosen]
                             print(self.imerge)
@@ -356,7 +366,7 @@ class MainW(QtGui.QMainWindow):
                                 fig.plot_colorbar(self, self.ops_plot[2])
                     if flip:
                         flip = self.flip_plot(iplot)
-                    if choose or flip:
+                    if choose or flip or replot:
                         #tic=time.time()
                         self.ichosen_stats()
                         M = fig.draw_masks(self)

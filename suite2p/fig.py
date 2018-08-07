@@ -16,17 +16,37 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
-    f = parent.Fcell[parent.ichosen,:]
-    fneu = parent.Fneu[parent.ichosen,:]
-    sp = parent.Spks[parent.ichosen,:]
-    parent.fmax = np.maximum(f.max(), fneu.max())
-    parent.fmin = np.minimum(f.min(), fneu.min())
-    sp /= sp.max()
-    sp *= parent.fmax - parent.fmin
-    sp += parent.fmin
-    parent.p3.plot(parent.trange,f,pen='b')
-    parent.p3.plot(parent.trange,fneu,pen='r')
-    parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+    if len(parent.imerge)==1:
+        n = parent.imerge[0]
+        f = parent.Fcell[n,:]
+        fneu = parent.Fneu[n,:]
+        sp = parent.Spks[n,:]
+        fmax = np.maximum(f.max(), fneu.max())
+        fmin = np.minimum(f.min(), fneu.min())
+        sp /= sp.max()
+        sp *= fmax - fmin
+        sp += fmin
+        parent.p3.plot(parent.trange,f,pen='b')
+        parent.p3.plot(parent.trange,fneu,pen='r')
+        parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+        parent.fmin=fmin
+        parent.fmax=fmax
+    else:
+        k=0
+        for n in parent.imerge:
+            f = parent.Fcell[n,:]
+            fneu = parent.Fneu[n,:]
+            sp = parent.Spks[n,:]
+            fmax = np.maximum(f.max(), fneu.max())
+            fmin = np.minimum(f.min(), fneu.min())
+            f = (f - fmin) / (fmax - fmin)
+            fneu = (fneu - fmin) / (fmax - fmin)
+            sp = (sp - sp.min()) / (sp.max() - sp.min())
+            rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
+            parent.p3.plot(parent.trange,f-k*0.5,pen=rgb)
+            k+=1
+        parent.fmin=-(k-1)*0.5
+        parent.fmax=1
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 

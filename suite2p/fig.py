@@ -16,10 +16,17 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
-    parent.p3.plot(parent.trange,parent.Fcell[parent.ichosen,:],pen='b')
-    parent.p3.plot(parent.trange,parent.Fneu[parent.ichosen,:],pen='r')
-    parent.fmax = np.maximum(parent.Fcell[parent.ichosen,:].max(), parent.Fneu[parent.ichosen,:].max())
-    parent.fmin = np.minimum(parent.Fcell[parent.ichosen,:].min(), parent.Fneu[parent.ichosen,:].min())
+    f = parent.Fcell[parent.ichosen,:]
+    fneu = parent.Fneu[parent.ichosen,:]
+    sp = parent.Spks[parent.ichosen,:]
+    parent.fmax = np.maximum(f.max(), fneu.max())
+    parent.fmin = np.minimum(f.min(), fneu.min())
+    sp /= sp.max()
+    sp *= parent.fmax - parent.fmin
+    sp += parent.fmin
+    parent.p3.plot(parent.trange,f,pen='b')
+    parent.p3.plot(parent.trange,fneu,pen='r')
+    parent.p3.plot(parent.trange,sp,pen=[100,100,100])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 

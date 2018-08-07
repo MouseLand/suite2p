@@ -123,7 +123,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img\n    (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
+        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','pairwise corr']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
@@ -153,12 +153,7 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
             b+=1
-        self.bend = nv+b+3+2
-        self.classbtn  = gui.ColorButton(b,'classifier',self)
-        self.colorbtns.addButton(self.classbtn,b)
-        self.ncolors = b+1
-        self.classbtn.setEnabled(False)
-        self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
+        self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
         colorbarW.setBackground(background=[255,255,255])
         colorbarW.setMaximumHeight(60)
@@ -243,20 +238,16 @@ class MainW(QtGui.QMainWindow):
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
         # enable buttons
-        self.enable_views()
+        self.enable_views_and_classifier()
         # make color arrays for various views
         fig.make_colors(self)
         self.ichosen = int(0)
         self.iflip = int(0)
         self.ichosen_stats()
-        if not hasattr(self, 'iscell'):
-            self.iscell = np.ones((ncells,), dtype=bool)
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
-        if ~self.initialized:
-            fig.init_masks(self)
-            self.wasloaded = False
+        fig.init_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
@@ -264,12 +255,10 @@ class MainW(QtGui.QMainWindow):
         fig.init_range(self)
         fig.plot_trace(self)
         self.show()
-        # allow classifier to be loaded
-        self.loadClass.setEnabled(True)
-        self.loadTrain.setEnabled(True)
-        classifier.load(self, self.classfile)
+        # default classifier always loaded
+        classifier.load(self, self.classfile, False)
 
-    def enable_views(self):
+    def enable_views_and_classifier(self):
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
@@ -279,6 +268,13 @@ class MainW(QtGui.QMainWindow):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
+        for btns in self.classbtns.buttons():
+            btns.setEnabled(True)
+        self.loadClass.setEnabled(True)
+        self.loadTrain.setEnabled(True)
+        self.saveClass.setEnabled(True)
+        self.saveDefault.setEnabled(True)
+        self.saveTrain.setEnabled(True)
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -353,7 +349,6 @@ class MainW(QtGui.QMainWindow):
                         self.show()
                         #print(time.time()-tic)
 
-
     def ichosen_stats(self):
         n = self.ichosen
         self.ROIstats[0].setText('ROI: '+str(n))
@@ -373,7 +368,9 @@ class MainW(QtGui.QMainWindow):
         if 2-iscell == iplot:
             flip = True
             self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-            np.save(self.basename+'/iscell.npy', self.iscell)
+            np.save(self.basename+'/iscell.npy',
+                    np.concatenate((np.expand_dims(self.iscell,axis=1),
+                    np.expand_dims(self.probcell,axis=1)), axis=1))
             fig.flip_cell(self)
             self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
             self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
@@ -424,26 +421,28 @@ class MainW(QtGui.QMainWindow):
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('there are no spike deconvolved traces in this folder (spks.npy)')
             try:
-                self.iscell = np.load(basename + '/iscell.npy')
+                iscell = np.load(basename + '/iscell.npy')
+                self.iscell = iscell[:,0].astype(np.bool)
+                self.probcell = iscell[:,1]
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('no manual labels found (iscell.npy)')
-            try:
-                gui_data = np.load(basename + '/gui_data.npy')
-                gui_data = gui_data.item()
-                self.RGBall = gui_data['RGBall']
-                self.RGBback = gui_data['RGBback']
-                self.Vback = gui_data['Vback']
-                self.iROI = gui_data['iROI']
-                self.iExt = gui_data['iExt']
-                self.Sroi = gui_data['Sroi']
-                self.Sext = gui_data['Sext']
-                self.Lam  = gui_data['Lam']
-                self.LamMean = gui_data['LamMean']
-                self.wasloaded = gui_data['wasloaded']
-                self.initialized = True
-            except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                self.initialized = False
-                print('no gui data found (gui_data.npy)')
+            # try:
+            #     gui_data = np.load(basename + '/gui_data.npy')
+            #     gui_data = gui_data.item()
+            #     self.RGBall = gui_data['RGBall']
+            #     self.RGBback = gui_data['RGBback']
+            #     self.Vback = gui_data['Vback']
+            #     self.iROI = gui_data['iROI']
+            #     self.iExt = gui_data['iExt']
+            #     self.Sroi = gui_data['Sroi']
+            #     self.Sext = gui_data['Sext']
+            #     self.Lam  = gui_data['Lam']
+            #     self.LamMean = gui_data['LamMean']
+            #     self.wasloaded = gui_data['wasloaded']
+            #     self.initialized = True
+            # except (ValueError, OSError, RuntimeError, TypeError, NameError):
+            #     self.initialized = False
+            #     print('no gui data found (gui_data.npy)')
             try:
                 self.ops = np.load(basename + '/ops.npy')
                 self.ops = self.ops.item()
@@ -471,33 +470,33 @@ class MainW(QtGui.QMainWindow):
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
-            classifier.load(self, name[0])
+            classifier.load(self, name[0], True)
 
     def class_default(self):
         classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         np.save(classfile, self.model)
 
-    def save_gui_data(self):
-        gui_data = {
-                    'RGBall': self.RGBall,
-                    'RGBback': self.RGBback,
-                    'Vback': self.Vback,
-                    'iROI': self.iROI,
-                    'iExt': self.iExt,
-                    'Sroi': self.Sroi,
-                    'Sext': self.Sext,
-                    'Lam': self.Lam,
-                    'LamMean': self.LamMean,
-                    'wasloaded': True
-                   }
-        np.save(self.basename+'/gui_data.npy', gui_data)
+    #def save_gui_data(self):
+    #    gui_data = {
+    #                'RGBall': self.RGBall,
+    #                'RGBback': self.RGBback,
+    #                'Vback': self.Vback,
+    #                'iROI': self.iROI,
+    #                'iExt': self.iExt,
+    #                'Sroi': self.Sroi,
+    #                'Sext': self.Sext,
+    #                'Lam': self.Lam,
+    #                'LamMean': self.LamMean,
+    #                'wasloaded': True
+    #               }
+    #    np.save(self.basename+'/gui_data.npy', gui_data)
 
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     GUI = MainW()
     ret = app.exec_()
-    GUI.save_gui_data()
+    #GUI.save_gui_data()
     sys.exit(ret)
 
 #run()

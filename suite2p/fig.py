@@ -42,11 +42,14 @@ def make_colors(parent):
     ncells = len(parent.stat)
     allcols = np.random.random((ncells,1))
     b=0
-    for names in parent.colors:
+    for names in parent.colors[:-1]:
         if b > 0:
             istat = np.zeros((ncells,1))
-            for n in range(0,ncells):
-                istat[n] = parent.stat[n][names]
+            if b<len(parent.colors)-2:
+                for n in range(0,ncells):
+                    istat[n] = parent.stat[n][names]
+            else:
+                istat = np.expand_dims(parent.probcell, axis=1)
             parent.clabels.append([istat.min(),
                                  (istat.max()-istat.min())/2 + istat.min(),
                                  istat.max()])
@@ -60,6 +63,18 @@ def make_colors(parent):
             parent.clabels.append([0,0.5,1])
         b+=1
     parent.ops_plot[3] = allcols
+    # make colors for pairwise correlations
+    cc = np.corrcoef(parent.Spks)
+    corrcols = np.zeros((ncells,ncells))
+    for n in range(0,ncells):
+        istat = cc[:,n]
+        istat = istat - istat.min()
+        istat = istat / istat.max()
+        istat = istat / 1.3
+        istat = istat + 0.1
+        icols = 1 - istat
+        corrcols[:,n] = icols
+    parent.ops_plot.append(corrcols)
 
 
 def boundary(ypix,xpix):
@@ -196,6 +211,27 @@ def init_masks(parent):
     parent.Sext = Sext
     parent.Lam  = Lam
     parent.LamMean = LamMean
+
+def class_masks(parent):
+    cols = parent.ops_plot[3]
+    c = cols.shape[1] - 1
+    for i in range(2):
+        for k in range(4):
+            H = cols[parent.iROI[i,0,:,:],c]
+            if k<3:
+                S = parent.Sroi[i,:,:]
+            else:
+                S = parent.Sext[i,:,:]
+            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+            if k>0:
+                V = parent.Vback[k-1,:,:]
+                if k==3:
+                    V = np.maximum(0,np.minimum(1, V + S))
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
 def flip_for_class(parent, iscell):
     ncells = iscell.size

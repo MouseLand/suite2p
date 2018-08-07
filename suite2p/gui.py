@@ -220,7 +220,7 @@ class ListChooser(QtGui.QDialog):
                 iscell = np.load(name[0])
                 badfile = True
                 if iscell.shape[0] > 0:
-                    if iscell[0]==0 or iscell[0]==1:
+                    if iscell[0,0]==0 or iscell[0,0]==1:
                         badfile = False
                         self.list.addItem(name[0])
 

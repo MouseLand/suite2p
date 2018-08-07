@@ -37,7 +37,7 @@ def default_ops():
         'navg_frames_svd': 5000, # max number of binned frames for the SVD
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
         'max_iterations': 10, # maximum number of iterations to do cell detection
-        'ratio_neuropil': 3., # minimum ratio between neuropil radius and cell radius
+        'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
         'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation
         'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut

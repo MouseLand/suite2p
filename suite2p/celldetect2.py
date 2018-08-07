@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib.colors import hsv_to_rgb
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
@@ -32,8 +33,8 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     mov = np.reshape(mov, (-1,Lyc*Lxc))
-    U = np.dot(u.transpose() , mov)
-    U = np.reshape(U, (-1,Lyc,Lxc))
+    U = u.transpose() @ mov
+    U = U.transpose().copy().reshape((Lyc,Lxc,-1))
     return U
 
 def get_mov(ops):
@@ -108,41 +109,36 @@ def getSVDdata(ops):
     u, s, v = np.linalg.svd(cov)
 
     u = u[:, :nsvd_for_roi]
-    U = np.dot(u.transpose() , mov)
+    U = u.transpose() @ mov
     U = np.reshape(U, (-1,Lyc,Lxc))
-
+    U = np.transpose(U, (1, 2, 0)).copy()
     return U, sdmov, u
 
 def getStU(ops, U):
-    nbins, Lyc, Lxc = np.shape(U)
+    Lyc, Lxc, nbins = np.shape(U)
     S = getNeuropilBasis(ops, Lyc, Lxc)
     # compute covariance of neuropil masks with spatial masks
-    U = np.reshape(U, (-1,Lyc*Lxc))
-    StU = S @ U.transpose()
-    StS = S @ S.transpose()
+    StU = S.reshape((Lyc*Lxc,-1)).transpose() @ U.reshape((Lyc*Lxc,-1))
+    StS = S.reshape((Lyc*Lxc,-1)).transpose() @ S.reshape((Lyc*Lxc,-1))
     U = np.reshape(U, (-1,Lyc,Lxc))
     return S, StU , StS
 
-def drawClusters(r,mPix,mLam,Ly,Lx):
-    ncells = mPix.shape[1]
+def drawClusters(stat, ops):
+    Ly = ops['Lyc']
+    Lx = ops['Lxc']
+
+    ncells = len(stat)
     r=np.random.random((ncells,))
     iclust = -1*np.ones((Ly,Lx),np.int32)
     Lam = np.zeros((Ly,Lx))
     H = np.zeros((Ly,Lx,1))
     for n in range(ncells):
-        goodi   = np.array((mPix[:,n]>=0).nonzero()).astype(np.int32)
-        goodi   = goodi.flatten()
-        n0      = n*np.ones(goodi.shape,np.int32)
-        lam     = mLam[goodi,n0]
-        ipix    = mPix[mPix[:,n]>=0,n].astype(np.int32)
-        if ipix is not None:
-            ypix,xpix = np.unravel_index(ipix, (Ly,Lx))
-            isingle = Lam[ypix,xpix]+1e-4 < lam
-            ypix = ypix[isingle]
-            xpix = xpix[isingle]
-            Lam[ypix,xpix] = lam[isingle]
-            iclust[ypix,xpix] = n*np.ones(ypix.shape)
-            H[ypix,xpix,0] = r[n]*np.ones(ypix.shape)
+        isingle = Lam[stat[n]['ypix'],stat[n]['xpix']]+1e-4 < stat[n]['lam']
+        y = stat[n]['ypix'][isingle]
+        x = stat[n]['xpix'][isingle]
+        Lam[y,x] = stat[n]['lam'][isingle]
+        #iclust[ypix,xpix] = n*np.ones(ypix.shape)
+        H[y,x,0] = r[n]*np.ones(y.shape)
 
     S  = np.ones((Ly,Lx,1))
     V  = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam>1e-10].mean()))
@@ -183,19 +179,10 @@ def getNeuropilBasis(ops, Ly, Lx):
         for ky in range(ntiles):
             S[ky,kx,:,:] = np.outer(Ky[:,ky], Kx[:,kx])
 
-    #sigy = 4*(Ly - 1)/ntiles
-    #sigx = 4*(Lx - 1)/ntiles
-
-    #for kx in range(ntiles):
-    #    for ky in range(ntiles):
-    #        cosy = 1 + np.cos(2*math.pi*(ys - yc[ky])/sigy)
-    #        cosx = 1 + np.cos(2*math.pi*(xs - xc[kx])/sigx)
-    #        cosy[abs(ys-yc[ky]) > sigy/2] = 0
-    #        cosx[abs(xs-xc[kx]) > sigx/2] = 0
-    #        S[ky,kx,:,:] = np.outer(cosy, cosx)
-
     S = np.reshape(S,(ntiles*ntiles, Ly*Lx))
     S = S / np.reshape(np.sum(S**2,axis=-1)**0.5, (-1,1))
+    S = np.transpose(S, (1, 0)).copy()
+    S = np.reshape(S, (Ly, Lx, -1))
     return S
 
 
@@ -290,7 +277,7 @@ def convert_to_pix(mPix, mLam):
     return stat
 
 # this function needs to be updated with the new stat
-def getStat(ops, Ly, Lx, d0, mPix, mLam, codes, Ucell):
+def getStat(ops, Ly, Lx, d0, ypix,xpix,lam, codes, Ucell):
     '''computes statistics of cells found using sourcery
     inputs:
         Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
@@ -463,11 +450,11 @@ def neuropilMasks(ops, stat, cell_pix):
     return neuropil_masks
 
 def getVmap(Ucell, sig):
-    us = gaussian_filter(Ucell, [0., sig, sig],  mode='wrap')
+    us = gaussian_filter(Ucell, [sig, sig, 0.],  mode='wrap')
 
     # compute log variance at each location
-    V  = (us**2).mean(axis=0)
-    um = (Ucell**2).mean(axis=0)
+    V  = (us**2).mean(axis=-1)
+    um = (Ucell**2).mean(axis=-1)
     um = gaussian_filter(um, sig,  mode='wrap')
     V  = V / um
     V  = V.astype('float64')
@@ -483,19 +470,6 @@ def minDistance(inputs):
 
     ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 - np.expand_dims(x2, axis=1))**2
 
-    #y1m = np.median(y1)
-    #y2m = np.median(y2)
-    #x1m = np.median(x1)
-    #x2m = np.median(x2)
-
-
-#    for k in range(3):
-#        ds = (y1m - y2)**2 + (x1m - x2)**2
-#        ix = np.argmin(ds)
-#        y2m, x2m = y2[ix], x2[ix]
-#        ds = ((y2m - y1)**2 + (x2m - x1)**2)**.5
-#        ix = np.argmin(ds)
-#        y1m, x1m = y1[ix], x1[ix]
     return np.amin(ds)**.5
 
 def mergeROIs(ops, Lyc,Lxc,d0,stat,codes,Ucell):
@@ -538,55 +512,71 @@ def mergeROIs(ops, Lyc,Lxc,d0,stat,codes,Ucell):
     # merging combines all pixels, adding weights for duplicated pixels
 
     return mPix, mLam, codes
+
+def extendROI(ypix, xpix, Ly, Lx,niter=1):
+    for k in range(niter):
+        yx = ((ypix, ypix, ypix, ypix-1, ypix+1), (xpix, xpix+1,xpix-1,xpix,xpix))
+        yx = np.array(yx)
+        yx = yx.reshape((2,-1))
+        yu = np.unique(yx, axis=1)
+        ix = np.all((yu[0]>=0, yu[0]<Ly, yu[1]>=0 , yu[1]<Lx), axis = 0)
+        ypix,xpix = yu[:, ix]
+    return ypix,xpix
+
+def iter_extend(ypix, xpix, Ucell, code):
+    Lyc, Lxc, nsvd = Ucell.shape
+    npix = ypix.size
+    while 1:
+        ypix, xpix = extendROI(ypix,xpix,Lyc,Lxc, 1)
+        usub = Ucell[ypix, xpix, :]
+        lam = usub @ np.expand_dims(code, axis=1)
+        lam = np.squeeze(lam, axis=1)
+        #ix = lam>max(0, lam.max()/5)
+        ix = lam>max(0, np.mean(lam)/3)
+        if ix.sum()==0 or ix.sum()>10000:
+            break;
+        ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
+        lam = lam/np.sum(lam**2+1e-10)**.5
+        code = lam @ usub[ix, :]
+        if npix>=ix.sum():
+            break
+        else:
+            npix = ypix.size
+    return ypix, xpix, lam, ix, code
+
 def sourcery(ops):
-    # get SVD components
     i0 = tic()
-    U,sdmov, u      = getSVDdata(ops)
-    print('SVD computed in %2.2f sec'%toc(i0))
-    # neuropil projections
+    U,sdmov, u      = getSVDdata(ops) # get SVD components
     S, StU , StS = getStU(ops, U)
-
-    nsvd, Lyc, Lxc = U.shape
-
+    Lyc, Lxc,nsvd = U.shape
     ops['Lyc'] = Lyc
     ops['Lxc'] = Lxc
-
     d0 = ops['diameter']
-
     sig = np.ceil(d0 / 4) # smoothing constant
-
     # make array of radii values of size (2*d0+1,2*d0+1)
-
     rs,dy,dx     = circleMask(d0)
-
-    ncell = int(1e4)
-    mPix = -1*np.ones((ncell,  dx.size), np.int32)
-    mLam = np.zeros((ncell, dx.size), np.float32)
-
-    ncells = 0
-
-    nsvd = U.shape[0]
-    nbasis = S.shape[0]
+    nsvd = U.shape[-1]
+    nbasis = S.shape[-1]
+    codes = np.zeros((0, nsvd), np.float32)
     LtU = np.zeros((0, nsvd), np.float32)
     LtS = np.zeros((0, nbasis), np.float32)
-    L   = np.zeros((0, Lyc*Lxc), np.float32)
-
+    L   = np.zeros((Lyc, Lxc, 0), np.float32)
     # regress maps onto basis functions and subtract neuropil contribution
     neu   = np.linalg.solve(StS, StU).astype('float32')
-    Ucell = U -  np.reshape(neu.transpose() @ S, U.shape)
+    Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
 
-    err = (Ucell**2).mean()
-
-    it = 0;
+    it = 0
+    ncells = 0
     refine = -1
+
+    ypix,xpix,lam = [], [], []
+
     while 1:
         if refine<0:
             V, us = getVmap(Ucell, sig)
-            # perform morphological opening on V to normalize brightness
             if it==0:
                 vrem   = morphOpen(V, rs<=d0)
-            V      = V - vrem
-
+            V      = V - vrem # make V more uniform
             if it==0:
                 # find indices of all maxima in +/- 1 range
                 maxV   = filters.maximum_filter(V, footprint= (rs<=1.5))
@@ -595,46 +585,40 @@ def sourcery(ops):
                 # use the median of these peaks to decide if ROI is accepted
                 thres  = ops['threshold_scaling'] * np.median(peaks[peaks>1e-4])
                 ops['Vcorr'] = V
-
             V = np.minimum(V, ops['Vcorr'])
-
-            # find local maxima in a +/- d0 neighborhood
-            i,j  = localMax(V, rs<np.inf, thres)
+            i,j  = localMax(V, rs<np.inf, thres) # find local maxima in a +/- d0 neighborhood
             if i.size==0:
                 break
+            ypix.extend([np.array(i[k]) for k in range(len(i))])
+            xpix.extend([np.array(j[k]) for k in range(len(i))])
+            lam.extend([np.array((0,)) for k in range(len(i))])
 
-            # svd values of cell peaks
-            new_codes = us[:,i,j]
-            new_codes = new_codes / np.sum(new_codes**2, axis=0)**0.5
+            #new_codes = new_codes / np.sum(new_codes**2, axis=0)**0.5
+            newcells = i.size
+            codes = np.append(codes, us[i,j,:], axis=0)
 
-            newcells = new_codes.shape[1]
-
-            L = np.append(L, np.zeros((newcells,Lyc*Lxc), 'float32'), axis =0)
+            n, k = ncells, ncells
+            while n < len(ypix):
+                ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], lam[n], Ucell, codes[k,:])
+                k+=1
+                if ix.sum()==0:
+                    print('dropped ROI with no pixels')
+                    del ypix[n], xpix[n], lam[n]
+                    continue;
+                Ucell[ypix[n], xpix[n], :] -= np.outer(lam[n], codes[n,:])
+                n+=1
+            newcells = len(ypix) - ncells
+            L   = np.append(L, np.zeros((Lyc, Lxc, newcells), 'float32'), axis =-1)
             LtU = np.append(LtU, np.zeros((newcells, nsvd), 'float32'), axis = 0)
             LtS = np.append(LtS, np.zeros((newcells, nbasis), 'float32'), axis = 0)
-
-            for n in range(ncells, ncells+newcells):
-                ypix, xpix, goodi = localRegion(i[n-ncells],j[n-ncells],dy,dx,Lyc,Lxc)
-                usub = Ucell[:, ypix, xpix]
-                lam = new_codes[:,n-ncells].transpose() @ usub
-                lam[lam<lam.max()/5] = 0
-                ipix = sub2ind((Lyc,Lxc), ypix, xpix)
-
-                mPix[n, goodi] = ipix
-                mLam[n, goodi] = lam
-                mLam[n,:] = connectedRegion(mLam[n,:], rs, d0)
-                mLam[n,:] = mLam[n,:] / np.sum(mLam[n,:]**2)**0.5
-
-                # save lam in L, LtU, and LtS
-                lam  = mLam[n, goodi]
-                L[n,ipix] = lam
-                LtU[n,:] = U[:,ypix,xpix] @ lam
-                LtS[n,:] = S[:,ipix] @ lam
-
-            ncells += new_codes.shape[1]
+            for n in range(ncells, len(ypix)):
+                L[ypix[n],xpix[n], n] = lam[n]
+                LtU[n,:] = lam[n] @ U[ypix[n],xpix[n],:]
+                LtS[n,:] = lam[n] @ S[ypix[n],xpix[n], :]
+            ncells +=newcells
 
             # regression with neuropil
-            LtL = L @ L.transpose()
+            LtL = L.reshape((-1, ncells)).transpose() @ L.reshape((-1, ncells))
             cellcode = np.concatenate((LtL,LtS), axis=1)
             neucode  = np.concatenate((LtS.transpose(),StS), axis=1)
             codes = np.concatenate((cellcode, neucode), axis=0)
@@ -642,40 +626,31 @@ def sourcery(ops):
             codes = np.linalg.solve(codes + 1e-3*np.eye((codes.shape[0])), Ucode).astype('float32')
             neu   = codes[ncells:,:]
             codes = codes[:ncells,:]
-
-        Ucell = U - np.reshape(neu.transpose() @ S, U.shape) - np.reshape(codes.transpose() @ L, U.shape)
+        Ucell = U - (S.reshape((-1,nbasis))@neu + L.reshape((-1,ncells))@codes).reshape(U.shape)
 
         # reestimate masks
-        L = np.zeros((ncells,Lyc*Lxc), 'float32')
-        for n in range(0,ncells):
-            goodi   = np.array((mPix[n, :]>=0).nonzero()).astype(np.int32)
-            npix = goodi.size
-
-            ipix    = mPix[n, goodi].astype(np.int32)
-            ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Lyc,Lxc))
-
-            usub    = np.squeeze(Ucell[:,ypix,xpix]) + np.outer(codes[n,:], mLam[n, goodi])
-
-            lam = codes[n,:] @ usub
-            lam[lam<lam.max()/5] = 0
-
-            mLam[n,goodi] = lam
-            mLam[n,:]  = connectedRegion(mLam[n,:], rs, d0)
-            mLam[n,:]  = mLam[n,:] / (1e-10 + np.sum(mLam[n,:]**2)**0.5)
-            # save lam in L, LtU, and LtS
-            lam = mLam[n, goodi]
-
-            L[n,ipix] = lam
+        n,k = 0,0
+        while n < len(ypix):
+            Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[n,:])
+            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], lam[n], Ucell, codes[k,:])
+            k+=1
+            if ix.sum()==0:
+                print('dropped ROI with no pixels')
+                del ypix[n], xpix[n], lam[n]
+                continue;
+            Ucell[ypix[n], xpix[n], :] -= np.outer(lam[n], codes[n,:])
+            n+=1
+        codes = codes[:n, :]
+        ncells = len(ypix)
+        L   = np.zeros((Lyc,Lxc, ncells), 'float32')
+        LtU = np.zeros((ncells, nsvd),   'float32')
+        LtS = np.zeros((ncells, nbasis), 'float32')
+        for n in range(ncells):
+            L[ypix[n],xpix[n],n] = lam[n]
             if refine<0:
-                LtU[n,:]  = np.sum(U[:,ypix,xpix] * lam, axis = -1).squeeze()
-                LtS[n,:]  = np.sum(S[:,ipix] * lam, axis = -1).squeeze()
-
-            lam0 = np.sum(usub * lam, axis = 1)
-            A = usub - np.outer(lam0 , lam)
-            Ucell[:,ypix,xpix] = np.reshape(A, (nsvd, -1, npix))
-
+                LtU[n,:] = lam[n] @ U[ypix[n],xpix[n],:]
+                LtS[n,:] = lam[n] @ S[ypix[n],xpix[n],:]
         err = (Ucell**2).mean()
-
         print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
         if it==0:
             Nfirst = i.size
@@ -683,29 +658,32 @@ def sourcery(ops):
         if refine ==0:
             break
         if refine>0:
-            Ucell = Ucell + np.resize(neu.transpose() @ S, U.shape)
+            Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
+            stat0 = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:
-            StU = S @ np.transpose(np.reshape(Ucell, (nsvd, Lyc*Lxc)))
+            StU = S.reshape((Lyc*Lxc,-1)).transpose() @ Ucell.reshape((Lyc*Lxc,-1))
+            #StU = np.reshape(S, (Lyc*Lxc,-1)).transpose() @ np.reshape(Ucell, (Lyc*Lxc, -1))
             neu = np.linalg.solve(StS, StU).astype('float32')
         refine -= 1
 
-    mLam = mLam[:ncells,:]
-    mLam = mLam / mLam.sum(axis=1).reshape(ncells,1)
-    mPix = mPix[:ncells,:]
+    Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
+    stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
 
-    Ucell = U - np.reshape(neu.transpose() @ S, U.shape)
+    return ops, stat, Ucell, codes, stat0
+
+def postprocess(ops, stat, Ucell, codes):
     # this is a good place to merge ROIs
-    # mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
+    #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
+    stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
 
     Ly = ops['Ly']
     Lx = ops['Lx']
-    stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
     stat = getOverlaps(stat,Ly,Lx, ops)
-    return ops, stat
+    return stat
 
 def extractF(ops, stat):
     nimgbatch = 1000

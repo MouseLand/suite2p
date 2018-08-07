@@ -43,7 +43,7 @@ class RunWindow(QtGui.QDialog):
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
-                    'if True, registered tiffs are saved',
+                    'if 1, registered tiffs are saved',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
                     'adjust the automatically determined threshold by this scalar multiplier',
@@ -71,7 +71,10 @@ class RunWindow(QtGui.QDialog):
                     qedit = QtGui.QLineEdit()
                     qlabel = QtGui.QLabel(key)
                     qlabel.setToolTip(tooltips[kk])
-                    qedit.setText(str(self.ops[key]))
+                    if type(self.ops[key]) is not bool:
+                        qedit.setText(str(self.ops[key]))
+                    else:
+                        qedit.setText(str(int(self.ops[key])))
                     self.layout.addWidget(qlabel,k*2+1,l,1,1)
                     self.layout.addWidget(qedit,k*2+2,l,1,1)
                     self.keylist.append(key)
@@ -154,12 +157,9 @@ class RunWindow(QtGui.QDialog):
             if type(self.ops[key]) is float:
                 self.ops[key] = float(self.editlist[k].text())
                 #print(key,'\t\t', float(self.editlist[k].text()))
-            elif type(self.ops[key]) is int:
+            elif type(self.ops[key]) is int or bool:
                 self.ops[key] = int(self.editlist[k].text())
                 #print(key,'\t\t', int(self.editlist[k].text()))
-            elif type(self.ops[key]) is bool:
-                self.ops[key] = bool(self.editlist[k].text())
-                #print(key,'\t\t', bool(self.editlist[k].text()))
             k+=1
         self.db = {}
         self.db['data_path'] = self.data_path
@@ -220,7 +220,7 @@ class ListChooser(QtGui.QDialog):
                 iscell = np.load(name[0])
                 badfile = True
                 if iscell.shape[0] > 0:
-                    if iscell[0]==0 or iscell[0]==1:
+                    if iscell[0,0]==0 or iscell[0,0]==1:
                         badfile = False
                         self.list.addItem(name[0])
 
@@ -285,6 +285,8 @@ class ColorButton(QtGui.QPushButton):
         ischecked  = self.isChecked()
         if ischecked:
             parent.ops_plot[2] = bid
+            if bid==6:
+                fig.corr_masks(parent)
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
             fig.plot_colorbar(parent,bid)

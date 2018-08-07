@@ -6,6 +6,12 @@ import os
 import pickle
 from suite2p import fig, gui, classifier
 import time
+
+#class EventWidget(QtGui.QWidget):
+#    def __init__(self,parent=None):
+#        super(EventWidget, self, parent).__init__()
+#    def
+
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
@@ -20,6 +26,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot = []
         # default plot options
         self.ops_plot.append(True)
+        self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
@@ -75,7 +82,8 @@ class MainW(QtGui.QMainWindow):
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
-        cwidget = QtGui.QWidget(self)
+        #cwidget = EventWidget(self)
+        cwidget = QtGui.QWidget()
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
@@ -87,9 +95,20 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(checkBox,0,0,1,1)
         # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('n ROIs')
-        self.l0.addWidget(self.lcell0, 0,2,1,1)
+        self.l0.addWidget(self.lcell0, 0,1,1,1)
         self.lcell1 = QtGui.QLabel('n ROIs')
-        self.l0.addWidget(self.lcell1, 0,8,1,1)
+        self.l0.addWidget(self.lcell1, 0,7,1,1)
+        self.selectbtn = [QtGui.QPushButton('draw selection'),
+                          QtGui.QPushButton('draw selection')]
+        for b in self.selectbtn: b.setCheckable(True)
+        self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
+        self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
+        self.selectbtn[0].setEnabled(False)
+        self.selectbtn[1].setEnabled(False)
+        self.isROI=False
+        self.ROIplot = 0
+        self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
+        self.l0.addWidget(self.selectbtn[1], 0,8,1,1)
         #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
@@ -115,15 +134,16 @@ class MainW(QtGui.QMainWindow):
         self.p2.setYLink('plot1')
         # --- fluorescence trace plot
         self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
-        layout.setRowStretchFactor(0,2)
+        self.win.ci.layout.setRowStretchFactor(0,2)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
+        #self.key_on(self.win.scene().keyPressEvent)
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img\n    (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio']
+        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
@@ -141,8 +161,6 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
-        #self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
-        #self.l0.setRowStretch(b+2,1)
         self.l0.addWidget(clabel,b+3,0,1,1)
         nv = b+3
         b=0
@@ -153,12 +171,7 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
             b+=1
-        self.bend = nv+b+3+2
-        self.classbtn  = gui.ColorButton(b,'classifier',self)
-        self.colorbtns.addButton(self.classbtn,b)
-        self.ncolors = b+1
-        self.classbtn.setEnabled(False)
-        self.l0.addWidget(self.classbtn,nv+b+1,0,1,1)
+        self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
         colorbarW.setBackground(background=[255,255,255])
         colorbarW.setMaximumHeight(60)
@@ -166,8 +179,6 @@ class MainW(QtGui.QMainWindow):
         colorbarW.ci.layout.setRowStretchFactor(0,2)
         colorbarW.ci.layout.setContentsMargins(0,0,0,0)
         self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
-        #self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
-        #self.l0.setRowStretch(nv+b+3, 1)
         self.colorbar = pg.ImageItem()
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
@@ -206,15 +217,14 @@ class MainW(QtGui.QMainWindow):
         self.classbtns.addButton(addtoclass,1)
         self.classbtns.addButton(saveclass,2)
         #### ------ CELL STATS -------- ####
-        #self.l0.setRowStretch(1, 1)
-        #self.l0.setRowStretch(6, 1)
         # which stats
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
-        self.l0.addWidget(QtGui.QLabel('Selected ROI stats'),self.bend+6,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('.'),self.bend+6,0,1,1)
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel('ROI')
-        qlabel.setFont(lilfont)
+        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+        qlabel.setFont(bigfont)
         self.l0.addWidget(qlabel,self.bend+7,0,1,1)
         self.ROIstats = []
         self.ROIstats.append(qlabel)
@@ -227,12 +237,103 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
         self.l0.setRowStretch(self.bend+9+k, 1)
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        #self.fname = '/media/carsen/DATA2/Github/data2/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Return:
+            print('will allow merging')
+        elif event.key() == QtCore.Qt.Key_Escape:
+            self.zoom_plot(1)
+            self.show()
+        elif event.key() == QtCore.Qt.Key_Delete:
+            self.ROI_remove()
+        elif event.key() == QtCore.Qt.Key_Shift:
+            print('will allow splitting')
+
+    def ROI_selection(self, wplot):
+        view = self.p1.viewRange()
+        self.ROIplot = wplot
+        if self.selectbtn[wplot].isChecked():
+            self.selectbtn[1-wplot].setEnabled(False)
+            imx = (view[0][1] + view[0][0]) / 2
+            imy = (view[1][1] + view[1][0]) / 2
+            dx  = (view[0][1] - view[0][0]) / 4
+            dy  = (view[1][1] - view[1][0]) / 4
+            imx = imx - dx/2
+            imy = imy - dy/2
+            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
+            if wplot==0:
+                self.p1.addItem(self.ROI)
+            else:
+                self.p2.addItem(self.ROI)
+            self.ROI_position()
+            self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+            self.isROI = True
+        else:
+            self.ROI_remove()
+
+    def ROI_remove(self):
+        if self.isROI:
+            if self.ROIplot==0:
+                self.p1.removeItem(self.ROI)
+            else:
+                self.p2.removeItem(self.ROI)
+            self.isROI=False
+            self.selectbtn[1-self.ROIplot].setEnabled(True)
+            self.selectbtn[self.ROIplot].setChecked(False)
+
+    def ROI_position(self):
+        pos0 = self.ROI.getSceneHandlePositions()
+        if self.ROIplot==0:
+            pos = self.p1.mapSceneToView(pos0[0][1])
+        else:
+            pos = self.p2.mapSceneToView(pos0[0][1])
+        posy = pos.y()
+        posx = pos.x()
+        sizex,sizey = self.ROI.size()
+        xrange = (np.arange(-1*int(sizex),1) + int(posx)).astype(np.int32)
+        yrange = (np.arange(-1*int(sizey),1) + int(posy)).astype(np.int32)
+        xrange = xrange[xrange>=0]
+        xrange = xrange[xrange<self.ops['Lx']]
+        yrange = yrange[yrange>=0]
+        yrange = yrange[yrange<self.ops['Ly']]
+        ypix,xpix = np.meshgrid(yrange,xrange)
+        self.select_cells(ypix,xpix)
+
+    def select_cells(self,ypix,xpix):
+        i = self.ROIplot
+        iROI0 = self.iROI[i,0,ypix,xpix]
+        icells = np.unique(iROI0[iROI0>=0])
+        self.imerge = []
+        for n in icells:
+            if (self.iROI[i,:,ypix,xpix]==n).sum()>0.6*self.stat[n]['npix']:
+                self.imerge.append(n)
+        if len(self.imerge)>0:
+            if len(self.imerge)>10 and len(self.imerge)<21:
+                self.win.ci.layout.setRowStretchFactor(1,2)
+            elif len(self.imerge)<=10:
+                self.win.ci.layout.setRowStretchFactor(1,1)
+            else:
+                self.win.ci.layout.setRowStretchFactor(1,3)
+            #print(self.imerge)
+            self.ichosen = self.imerge[0]
+            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                fig.corr_masks(self)
+                fig.plot_colorbar(self, self.ops_plot[2])
+            self.ichosen_stats()
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+            fig.plot_trace(self)
+            self.show()
+
     def make_masks_and_buttons(self):
+        self.ROI_remove()
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
+        self.ops_plot[3] = []
+        self.ops_plot[4] = []
         self.setWindowTitle(self.fname)
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)
@@ -243,18 +344,18 @@ class MainW(QtGui.QMainWindow):
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
         # enable buttons
-        self.enable_views()
+        self.enable_views_and_classifier()
         # make color arrays for various views
         fig.make_colors(self)
         self.ichosen = int(0)
+        self.imerge = [int(0)]
         self.iflip = int(0)
         self.ichosen_stats()
-        if not hasattr(self, 'iscell'):
-            self.iscell = np.ones((ncells,), dtype=bool)
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
         fig.init_masks(self)
+        fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
         self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
@@ -262,12 +363,10 @@ class MainW(QtGui.QMainWindow):
         fig.init_range(self)
         fig.plot_trace(self)
         self.show()
-        # allow classifier to be loaded
-        self.loadClass.setEnabled(True)
-        self.loadTrain.setEnabled(True)
-        classifier.load(self, self.classfile)
+        # default classifier always loaded
+        classifier.load(self, self.classfile, False)
 
-    def enable_views(self):
+    def enable_views_and_classifier(self):
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
@@ -277,6 +376,15 @@ class MainW(QtGui.QMainWindow):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
+        for btns in self.classbtns.buttons():
+            btns.setEnabled(True)
+        self.selectbtn[0].setEnabled(True)
+        self.selectbtn[1].setEnabled(True)
+        self.loadClass.setEnabled(True)
+        self.loadTrain.setEnabled(True)
+        self.saveClass.setEnabled(True)
+        self.saveDefault.setEnabled(True)
+        self.saveTrain.setEnabled(True)
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -292,6 +400,7 @@ class MainW(QtGui.QMainWindow):
         flip = False
         choose = False
         zoom = False
+        replot = False
         items = self.win.scene().items(event.scenePos())
         posx  = 0
         posy  = 0
@@ -338,11 +447,48 @@ class MainW(QtGui.QMainWindow):
                     else:
                         if self.ichosen==ichosen:
                             choose = False
+                            if event.modifiers() == QtCore.Qt.ControlModifier:
+                                if len(self.imerge)>1:
+                                    self.imerge.remove(ichosen)
+                                    self.ichosen = self.imerge[0]
+                                    replot = True
                         if choose:
+                            addto = True
+                            if self.isROI:
+                                if ichosen not in self.imerge:
+                                    self.ROI_remove()
+                                else:
+                                    addto = False
+                            if flip:
+                                addto = False
+                            merged = False
+                            if addto:
+                                if event.modifiers() == QtCore.Qt.ControlModifier:
+                                    if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
+                                        if ichosen not in self.imerge:
+                                            self.imerge.append(ichosen)
+                                        elif ichosen in self.imerge and len(self.imerge)>1:
+                                            self.imerge.remove(ichosen)
+                                        merged = True
+                                if not merged:
+                                    self.imerge = [ichosen]
+                            if len(self.imerge)>10 and len(self.imerge)<21:
+                                self.win.ci.layout.setRowStretchFactor(1,2)
+                            elif len(self.imerge)<=10:
+                                self.win.ci.layout.setRowStretchFactor(1,1)
+                            else:
+                                self.win.ci.layout.setRowStretchFactor(1,3)
                             self.ichosen = ichosen
+                            if ichosen not in self.imerge:
+                                self.imerge = [ichosen]
+                            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                                fig.corr_masks(self)
+                                fig.plot_colorbar(self, self.ops_plot[2])
                     if flip:
-                        flip = self.flip_plot(iplot)
-                    if choose or flip:
+                        self.flip_plot(iplot)
+                        if self.isROI:
+                            self.ROI_remove()
+                    if choose or flip or replot:
                         #tic=time.time()
                         self.ichosen_stats()
                         M = fig.draw_masks(self)
@@ -350,7 +496,6 @@ class MainW(QtGui.QMainWindow):
                         fig.plot_trace(self)
                         self.show()
                         #print(time.time()-tic)
-
 
     def ichosen_stats(self):
         n = self.ichosen
@@ -367,17 +512,16 @@ class MainW(QtGui.QMainWindow):
 
     def flip_plot(self,iplot):
         self.iflip = self.ichosen
-        iscell = int(self.iscell[self.ichosen])
-        if 2-iscell == iplot:
-            flip = True
-            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-            np.save(self.basename+'/iscell.npy', self.iscell)
+        for n in self.imerge:
+            iscell = int(self.iscell[n])
+            self.iscell[n] = ~self.iscell[n]
+            self.ichosen = n
             fig.flip_cell(self)
-            self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
-            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
-        else:
-            flip = False
-        return flip
+        np.save(self.basename+'/iscell.npy',
+                np.concatenate((np.expand_dims(self.iscell,axis=1),
+                np.expand_dims(self.probcell,axis=1)), axis=1))
+        self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
+        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
 
     def zoom_plot(self,iplot):
         if iplot==1 or iplot==2 or iplot==4:
@@ -422,9 +566,28 @@ class MainW(QtGui.QMainWindow):
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('there are no spike deconvolved traces in this folder (spks.npy)')
             try:
-                self.iscell = np.load(basename + '/iscell.npy')
+                iscell = np.load(basename + '/iscell.npy')
+                self.iscell = iscell[:,0].astype(np.bool)
+                self.probcell = iscell[:,1]
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('no manual labels found (iscell.npy)')
+            # try:
+            #     gui_data = np.load(basename + '/gui_data.npy')
+            #     gui_data = gui_data.item()
+            #     self.RGBall = gui_data['RGBall']
+            #     self.RGBback = gui_data['RGBback']
+            #     self.Vback = gui_data['Vback']
+            #     self.iROI = gui_data['iROI']
+            #     self.iExt = gui_data['iExt']
+            #     self.Sroi = gui_data['Sroi']
+            #     self.Sext = gui_data['Sext']
+            #     self.Lam  = gui_data['Lam']
+            #     self.LamMean = gui_data['LamMean']
+            #     self.wasloaded = gui_data['wasloaded']
+            #     self.initialized = True
+            # except (ValueError, OSError, RuntimeError, TypeError, NameError):
+            #     self.initialized = False
+            #     print('no gui data found (gui_data.npy)')
             try:
                 self.ops = np.load(basename + '/ops.npy')
                 self.ops = self.ops.item()
@@ -452,16 +615,33 @@ class MainW(QtGui.QMainWindow):
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
-            classifier.load(self, name[0])
+            classifier.load(self, name[0], True)
 
     def class_default(self):
         classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         np.save(classfile, self.model)
 
+    #def save_gui_data(self):
+    #    gui_data = {
+    #                'RGBall': self.RGBall,
+    #                'RGBback': self.RGBback,
+    #                'Vback': self.Vback,
+    #                'iROI': self.iROI,
+    #                'iExt': self.iExt,
+    #                'Sroi': self.Sroi,
+    #                'Sext': self.Sext,
+    #                'Lam': self.Lam,
+    #                'LamMean': self.LamMean,
+    #                'wasloaded': True
+    #               }
+    #    np.save(self.basename+'/gui_data.npy', gui_data)
+
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     GUI = MainW()
-    sys.exit(app.exec_())
+    ret = app.exec_()
+    #GUI.save_gui_data()
+    sys.exit(ret)
 
 #run()

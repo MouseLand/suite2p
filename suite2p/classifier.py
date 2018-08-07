@@ -49,7 +49,7 @@ class Classifier:
         self.hists = hists
         self.grid = grid
 
-    def apply(self, stats, classval):
+    def apply(self, stats):
         '''inputs: model (from train), statistics of cells to classify, and
                     classval (probability of cell cutoff)
             output: iscell labels
@@ -73,8 +73,7 @@ class Classifier:
             rs = rs / np.expand_dims(rs.sum(axis=1), axis=1)
             p = rs.mean(axis=0)
         probcell = rs[:,0]
-        iscell = probcell > classval
-        return iscell, probcell
+        return probcell
 
     def load(self):
         try:
@@ -109,8 +108,8 @@ class Classifier:
                 badfile = False
                 basename, bname = os.path.split(fname)
                 try:
-                    iscell = np.load(fname)
-                    ncells = iscell.shape[0]
+                    iscells = np.load(fname)
+                    ncells = iscells.shape[0]
                 except (ValueError, OSError, RuntimeError, TypeError, NameError):
                     print('\t'+fname+': not a numpy array of booleans')
                     badfile = True
@@ -128,7 +127,7 @@ class Classifier:
                     else:
                         # add iscell and stat to classifier
                         print('\t'+fname+' was added to classifier')
-                        iscell = iscell.astype(np.float32)
+                        iscell = iscells[:,0].astype(np.float32)
                         nall = np.zeros((ncells, len(statclass)+1),np.float32)
                         nall[:,0] = iscell
                         k=0
@@ -152,7 +151,7 @@ def smooth_distribution(x, grid):
     hist = hist / hist.sum()
     return hist0
 
-def load(parent, name):
+def load(parent, name, inactive):
     parent.model = Classifier(classfile=name,
                                trainfiles=None,
                                statclass=None)
@@ -162,7 +161,8 @@ def load(parent, name):
         # fill up with current dataset stats
         get_stats(parent)
         parent.trainfiles = parent.model.trainfiles
-        activate(parent)
+        if inactive:
+            activate(parent)
 
 def get_stats(parent):
     ncells = parent.Fcell.shape[0]
@@ -188,10 +188,13 @@ def load_data(parent):
 
 def apply(parent):
     classval = parent.probedit.value()
-    iscell, parent.probcell = parent.model.apply(parent.statistics, classval)
+    iscell = parent.probcell > classval
     fig.flip_for_class(parent, iscell)
     M = fig.draw_masks(parent)
     fig.plot_masks(parent,M)
+    np.save(parent.basename+'/iscell.npy',
+            np.concatenate((np.expand_dims(parent.iscell,axis=1),
+            np.expand_dims(parent.probcell,axis=1)), axis=1))
     parent.lcell0.setText('%d ROIs'%parent.iscell.sum())
     parent.lcell1.setText('%d ROIs'%(parent.iscell.size-parent.iscell.sum()))
 
@@ -215,28 +218,16 @@ def save_list(parent):
             print('ERROR: incorrect filename for saving')
 
 def activate(parent):
-    iscell, parent.probcell = parent.model.apply(parent.statistics, 0.5)
+    parent.probcell = parent.model.apply(parent.statistics)
     istat = parent.probcell
-    if len(parent.clabels) < parent.ncolors:
-        parent.clabels.append([istat.min(), (istat.max()-istat.min())/2, istat.max()])
-    else:
-        parent.clabels[-1] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
+    parent.clabels[-1] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
     istat = istat / 1.3
     istat = istat + 0.1
     icols = 1 - istat
-    if parent.ops_plot[3].shape[1] < parent.ncolors:
-        parent.ops_plot[3] = np.concatenate((parent.ops_plot[3],
-                                            np.expand_dims(icols,axis=1)), axis=1)
-    else:
-        parent.ops_plot[3][:,-1] = icols
-    fig.init_masks(parent)
-    parent.classbtn.setEnabled(True)
-    parent.saveClass.setEnabled(True)
-    parent.saveTrain.setEnabled(True)
-    for btns in parent.classbtns.buttons():
-        btns.setEnabled(True)
+    parent.ops_plot[3][:,-1] = icols
+    fig.class_masks(parent)
 
 def disable(parent):
     parent.classbtn.setEnabled(False)

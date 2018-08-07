@@ -16,10 +16,37 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
-    parent.p3.plot(parent.trange,parent.Fcell[parent.ichosen,:],pen='b')
-    parent.p3.plot(parent.trange,parent.Fneu[parent.ichosen,:],pen='r')
-    parent.fmax = np.maximum(parent.Fcell[parent.ichosen,:].max(), parent.Fneu[parent.ichosen,:].max())
-    parent.fmin = np.minimum(parent.Fcell[parent.ichosen,:].min(), parent.Fneu[parent.ichosen,:].min())
+    if len(parent.imerge)==1:
+        n = parent.imerge[0]
+        f = parent.Fcell[n,:]
+        fneu = parent.Fneu[n,:]
+        sp = parent.Spks[n,:]
+        fmax = np.maximum(f.max(), fneu.max())
+        fmin = np.minimum(f.min(), fneu.min())
+        sp /= sp.max()
+        sp *= fmax - fmin
+        sp += fmin
+        parent.p3.plot(parent.trange,f,pen='b')
+        parent.p3.plot(parent.trange,fneu,pen='r')
+        parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+        parent.fmin=fmin
+        parent.fmax=fmax
+    else:
+        k=0
+        for n in parent.imerge:
+            f = parent.Fcell[n,:]
+            fneu = parent.Fneu[n,:]
+            sp = parent.Spks[n,:]
+            fmax = np.maximum(f.max(), fneu.max())
+            fmin = np.minimum(f.min(), fneu.min())
+            f = (f - fmin) / (fmax - fmin)
+            fneu = (fneu - fmin) / (fmax - fmin)
+            sp = (sp - sp.min()) / (sp.max() - sp.min())
+            rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
+            parent.p3.plot(parent.trange,f+k*0.5,pen=rgb)
+            k+=1
+        parent.fmin=0#-(k-1)*0.5
+        parent.fmax=(k+1)*0.5
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
@@ -42,11 +69,14 @@ def make_colors(parent):
     ncells = len(parent.stat)
     allcols = np.random.random((ncells,1))
     b=0
-    for names in parent.colors:
+    for names in parent.colors[:-1]:
         if b > 0:
             istat = np.zeros((ncells,1))
-            for n in range(0,ncells):
-                istat[n] = parent.stat[n][names]
+            if b<len(parent.colors)-2:
+                for n in range(0,ncells):
+                    istat[n] = parent.stat[n][names]
+            else:
+                istat = np.expand_dims(parent.probcell, axis=1)
             parent.clabels.append([istat.min(),
                                  (istat.max()-istat.min())/2 + istat.min(),
                                  istat.max()])
@@ -59,8 +89,25 @@ def make_colors(parent):
         else:
             parent.clabels.append([0,0.5,1])
         b+=1
+    parent.clabels.append([0,0.5,1])
     parent.ops_plot[3] = allcols
-
+    # make colors for pairwise correlations
+    bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
+    nb   = int(np.floor(parent.Spks.shape[1] / bin))
+    Sbin = parent.Spks[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
+    cc = np.corrcoef(Sbin)
+    np.fill_diagonal(cc, 0)
+    corrcols = np.zeros((ncells,ncells))
+    for n in range(0,ncells):
+        istat = cc[:,n]
+        istat = istat - istat.min()
+        istat = istat / istat.max()
+        istat = istat / 1.3
+        istat = istat + 0.1
+        icols = 1 - istat
+        corrcols[:,n] = icols
+    parent.ops_plot[4] = corrcols
+    parent.cc = cc
 
 def boundary(ypix,xpix):
     ''' returns pixels of mask that are on the exterior of the mask '''
@@ -131,7 +178,7 @@ def init_masks(parent):
             LamAll[ypix,xpix] = lam
 
     LamMean = LamAll[LamAll>1e-10].mean()
-    RGBall = np.zeros((2,cols.shape[1],4,Ly,Lx,3), np.float32)
+    RGBall = np.zeros((2,cols.shape[1]+1,4,Ly,Lx,3), np.float32)
     Vback   = np.zeros((4,Ly,Lx), np.float32)
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
@@ -147,8 +194,10 @@ def init_masks(parent):
                 if k>0:
                     if k==1:
                         mimg = ops['meanImg']
-                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50),10)
-                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50),10)
+                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50,mode='mirror'),
+                                                      10,mode='mirror')
+                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50,mode='mirror'),
+                                                      10,mode='mirror')
                         S =     np.maximum(0,np.minimum(1, V*1.5))
                         mimg1 = np.percentile(mimg,1)
                         mimg99 = np.percentile(mimg,99)
@@ -197,6 +246,53 @@ def init_masks(parent):
     parent.Lam  = Lam
     parent.LamMean = LamMean
 
+def corr_masks(parent):
+    c = parent.ops_plot[3].shape[1]
+    cols = parent.ops_plot[4]
+    n = parent.ichosen
+    for i in range(2):
+        for k in range(4):
+            H = cols[parent.iROI[i,0,:,:],n]
+            if k<3:
+                S = parent.Sroi[i,:,:]
+            else:
+                S = parent.Sext[i,:,:]
+            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+            if k>0:
+                V = parent.Vback[k-1,:,:]
+                if k==3:
+                    V = np.maximum(0,np.minimum(1, V + S))
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    istat = parent.cc[:,n]
+    parent.clabels[-1] = [istat.min(),
+                         (istat.max()-istat.min())/2 + istat.min(),
+                         istat.max()]
+
+def class_masks(parent):
+    cols = parent.ops_plot[3]
+    c = cols.shape[1] - 1
+    for i in range(2):
+        for k in range(4):
+            H = cols[parent.iROI[i,0,:,:],c]
+            if k<3:
+                S = parent.Sroi[i,:,:]
+            else:
+                S = parent.Sext[i,:,:]
+            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+            if k>0:
+                V = parent.Vback[k-1,:,:]
+                if k==3:
+                    V = np.maximum(0,np.minimum(1, V + S))
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+
 def flip_for_class(parent, iscell):
     ncells = iscell.size
     for n in range(ncells):
@@ -230,18 +326,18 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         M0 = parent.RGBback[view-1,:,:,:]
         M1 = parent.RGBback[view-1,:,:,:]
     else:
-        ichosen = parent.ichosen
-        wplot   = int(1-parent.iscell[ichosen])
+        wplot   = int(1-parent.iscell[parent.ichosen])
         M0 = np.array(parent.RGBall[0,color,view,:,:,:])
         M1 = np.array(parent.RGBall[1,color,view,:,:,:])
-        #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
-        ypix = parent.stat[ichosen]['ypix']
-        xpix = parent.stat[ichosen]['xpix']
-        lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[ichosen]['lam'] / parent.LamMean))
-        if wplot==0:
-            M0 = make_chosen(M0, ypix, xpix, lam)
-        else:
-            M1 = make_chosen(M1, ypix, xpix, lam)
+        for n in parent.imerge:
+            #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
+            ypix = parent.stat[n]['ypix']
+            xpix = parent.stat[n]['xpix']
+            lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
+            if wplot==0:
+                M0 = make_chosen(M0, ypix, xpix, lam)
+            else:
+                M1 = make_chosen(M1, ypix, xpix, lam)
     return M0,M1
 
 def flip_cell(parent):

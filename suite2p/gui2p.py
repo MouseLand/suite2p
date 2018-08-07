@@ -6,6 +6,12 @@ import os
 import pickle
 from suite2p import fig, gui, classifier
 import time
+
+#class EventWidget(QtGui.QWidget):
+#    def __init__(self,parent=None):
+#        super(EventWidget, self, parent).__init__()
+#    def
+
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
@@ -75,7 +81,8 @@ class MainW(QtGui.QMainWindow):
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
-        cwidget = QtGui.QWidget(self)
+        #cwidget = EventWidget(self)
+        cwidget = QtGui.QWidget()
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
@@ -87,9 +94,20 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(checkBox,0,0,1,1)
         # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('n ROIs')
-        self.l0.addWidget(self.lcell0, 0,2,1,1)
+        self.l0.addWidget(self.lcell0, 0,1,1,1)
         self.lcell1 = QtGui.QLabel('n ROIs')
-        self.l0.addWidget(self.lcell1, 0,8,1,1)
+        self.l0.addWidget(self.lcell1, 0,7,1,1)
+        self.selectbtn = [QtGui.QPushButton('draw selection'),
+                          QtGui.QPushButton('draw selection')]
+        for b in self.selectbtn: b.setCheckable(True)
+        self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
+        self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
+        self.selectbtn[0].setEnabled(False)
+        self.selectbtn[1].setEnabled(False)
+        self.isROI=False
+        self.ROIplot = 0
+        self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
+        self.l0.addWidget(self.selectbtn[1], 0,8,1,1)
         #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
@@ -119,6 +137,7 @@ class MainW(QtGui.QMainWindow):
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
+        #self.key_on(self.win.scene().keyPressEvent)
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
@@ -227,6 +246,94 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Return:
+            print('will allow merging')
+        elif event.key() == QtCore.Qt.Key_Escape:
+            self.zoom_plot(1)
+            self.show()
+        elif event.key() == QtCore.Qt.Key_Delete:
+            self.ROI_remove()
+        elif event.key() == QtCore.Qt.Key_Shift:
+            print('will allow splitting')
+
+    def ROI_selection(self, wplot):
+        view = self.p1.viewRange()
+        self.ROIplot = wplot
+        if self.selectbtn[wplot].isChecked():
+            self.selectbtn[1-wplot].setEnabled(False)
+            imx = (view[0][1] + view[0][0]) / 2
+            imy = (view[1][1] + view[1][0]) / 2
+            dx  = (view[0][1] - view[0][0]) / 4
+            dy  = (view[1][1] - view[1][0]) / 4
+            imx = imx - dx/2
+            imy = imy - dy/2
+            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True,
+                                  removable=True)
+            if wplot==0:
+                self.p1.addItem(self.ROI)
+            else:
+                self.p2.addItem(self.ROI)
+            self.ROI_position()
+            self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+            self.isROI = True
+        else:
+            self.ROI_remove()
+
+    def ROI_remove(self):
+        if self.isROI:
+            if self.ROIplot==0:
+                self.p1.removeItem(self.ROI)
+            else:
+                self.p2.removeItem(self.ROI)
+            self.isROI=False
+            self.selectbtn[1-self.ROIplot].setEnabled(True)
+            self.selectbtn[self.ROIplot].setChecked(False)
+
+    def ROI_position(self):
+        pos0 = self.ROI.getSceneHandlePositions()
+        if self.ROIplot==0:
+            pos = self.p1.mapSceneToView(pos0[0][1])
+        else:
+            pos = self.p2.mapSceneToView(pos0[0][1])
+        posy = pos.y()
+        posx = pos.x()
+        sizex,sizey = self.ROI.size()
+        xrange = (np.arange(-1*int(sizex),1) + int(posx)).astype(np.int32)
+        yrange = (np.arange(-1*int(sizey),1) + int(posy)).astype(np.int32)
+        xrange = xrange[xrange>=0]
+        xrange = xrange[xrange<self.ops['Lx']]
+        yrange = yrange[yrange>=0]
+        yrange = yrange[yrange<self.ops['Ly']]
+        ypix,xpix = np.meshgrid(yrange,xrange)
+        self.select_cells(ypix,xpix)
+
+    def select_cells(self,ypix,xpix):
+        i = self.ROIplot
+        iROI0 = self.iROI[i,0,ypix,xpix]
+        icells = np.unique(iROI0[iROI0>=0])
+        self.imerge = []
+        for n in icells:
+            if (self.iROI[i,:,ypix,xpix]==n).sum()>0.6*self.stat[n]['npix']:
+                self.imerge.append(n)
+        if len(self.imerge)>0:
+            if len(self.imerge)>10 and len(self.imerge)<21:
+                self.win.ci.layout.setRowStretchFactor(1,2)
+            elif len(self.imerge)<=10:
+                self.win.ci.layout.setRowStretchFactor(1,1)
+            else:
+                self.win.ci.layout.setRowStretchFactor(1,3)
+            #print(self.imerge)
+            self.ichosen = self.imerge[0]
+            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                fig.corr_masks(self)
+                fig.plot_colorbar(self, self.ops_plot[2])
+            self.ichosen_stats()
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+            fig.plot_trace(self)
+            self.show()
+
     def make_masks_and_buttons(self):
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
@@ -274,6 +381,8 @@ class MainW(QtGui.QMainWindow):
                 self.colorbtns.button(b).setChecked(True)
         for btns in self.classbtns.buttons():
             btns.setEnabled(True)
+        self.selectbtn[0].setEnabled(True)
+        self.selectbtn[1].setEnabled(True)
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
         self.saveClass.setEnabled(True)

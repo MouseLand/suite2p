@@ -106,7 +106,7 @@ def make_colors(parent):
         istat = istat + 0.1
         icols = 1 - istat
         corrcols[:,n] = icols
-    parent.ops_plot.append(corrcols)
+    parent.ops_plot[4] = corrcols
     parent.cc = cc
 
 def boundary(ypix,xpix):

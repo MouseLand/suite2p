@@ -29,6 +29,7 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
+        self.ops_plot.append(0)
         #### ------ MENU BAR ----------------- ####
         # run suite2p from scratch
         runS2P =  QtGui.QAction('&Run suite2p ', self)
@@ -160,8 +161,6 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
-        #self.l0.addWidget(QtGui.QLabel(''),b+2,0,1,1)
-        #self.l0.setRowStretch(b+2,1)
         self.l0.addWidget(clabel,b+3,0,1,1)
         nv = b+3
         b=0
@@ -180,8 +179,6 @@ class MainW(QtGui.QMainWindow):
         colorbarW.ci.layout.setRowStretchFactor(0,2)
         colorbarW.ci.layout.setContentsMargins(0,0,0,0)
         self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
-        #self.l0.addWidget(QtGui.QLabel(''),nv+b+3,0,1,1)
-        #self.l0.setRowStretch(nv+b+3, 1)
         self.colorbar = pg.ImageItem()
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
@@ -220,8 +217,6 @@ class MainW(QtGui.QMainWindow):
         self.classbtns.addButton(addtoclass,1)
         self.classbtns.addButton(saveclass,2)
         #### ------ CELL STATS -------- ####
-        #self.l0.setRowStretch(1, 1)
-        #self.l0.setRowStretch(6, 1)
         # which stats
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
@@ -334,8 +329,11 @@ class MainW(QtGui.QMainWindow):
             self.show()
 
     def make_masks_and_buttons(self):
+        self.ROI_remove()
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
+        self.ops_plot[3] = []
+        self.ops_plot[4] = []
         self.setWindowTitle(self.fname)
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)

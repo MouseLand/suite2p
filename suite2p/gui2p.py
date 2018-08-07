@@ -268,8 +268,7 @@ class MainW(QtGui.QMainWindow):
             dy  = (view[1][1] - view[1][0]) / 4
             imx = imx - dx/2
             imy = imy - dy/2
-            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True,
-                                  removable=True)
+            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
             if wplot==0:
                 self.p1.addItem(self.ROI)
             else:
@@ -456,30 +455,41 @@ class MainW(QtGui.QMainWindow):
                                     self.ichosen = self.imerge[0]
                                     replot = True
                         if choose:
+                            addto = True
+                            if self.isROI:
+                                if ichosen not in self.imerge:
+                                    self.ROI_remove()
+                                else:
+                                    addto = False
+                            if flip:
+                                addto = False
                             merged = False
-                            if event.modifiers() == QtCore.Qt.ControlModifier:
-                                if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
-                                    if ichosen not in self.imerge:
-                                        self.imerge.append(ichosen)
-                                    elif ichosen in self.imerge and len(self.imerge)>1:
-                                        self.imerge.remove(ichosen)
-                                    merged = True
-                            if not merged:
-                                self.imerge = [ichosen]
+                            if addto:
+                                if event.modifiers() == QtCore.Qt.ControlModifier:
+                                    if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
+                                        if ichosen not in self.imerge:
+                                            self.imerge.append(ichosen)
+                                        elif ichosen in self.imerge and len(self.imerge)>1:
+                                            self.imerge.remove(ichosen)
+                                        merged = True
+                                if not merged:
+                                    self.imerge = [ichosen]
                             if len(self.imerge)>10 and len(self.imerge)<21:
                                 self.win.ci.layout.setRowStretchFactor(1,2)
                             elif len(self.imerge)<=10:
                                 self.win.ci.layout.setRowStretchFactor(1,1)
                             else:
                                 self.win.ci.layout.setRowStretchFactor(1,3)
-
-                            #print(self.imerge)
                             self.ichosen = ichosen
+                            if ichosen not in self.imerge:
+                                self.imerge = [ichosen]
                             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                                 fig.corr_masks(self)
                                 fig.plot_colorbar(self, self.ops_plot[2])
                     if flip:
-                        flip = self.flip_plot(iplot)
+                        self.flip_plot(iplot)
+                        if self.isROI:
+                            self.ROI_remove()
                     if choose or flip or replot:
                         #tic=time.time()
                         self.ichosen_stats()
@@ -504,19 +514,16 @@ class MainW(QtGui.QMainWindow):
 
     def flip_plot(self,iplot):
         self.iflip = self.ichosen
-        iscell = int(self.iscell[self.ichosen])
-        if 2-iscell == iplot:
-            flip = True
-            self.iscell[self.ichosen] = ~self.iscell[self.ichosen]
-            np.save(self.basename+'/iscell.npy',
-                    np.concatenate((np.expand_dims(self.iscell,axis=1),
-                    np.expand_dims(self.probcell,axis=1)), axis=1))
+        for n in self.imerge:
+            iscell = int(self.iscell[n])
+            self.iscell[n] = ~self.iscell[n]
+            self.ichosen = n
             fig.flip_cell(self)
-            self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
-            self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
-        else:
-            flip = False
-        return flip
+        np.save(self.basename+'/iscell.npy',
+                np.concatenate((np.expand_dims(self.iscell,axis=1),
+                np.expand_dims(self.probcell,axis=1)), axis=1))
+        self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
+        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
 
     def zoom_plot(self,iplot):
         if iplot==1 or iplot==2 or iplot==4:

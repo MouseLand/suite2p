@@ -277,7 +277,7 @@ def convert_to_pix(mPix, mLam):
     return stat
 
 # this function needs to be updated with the new stat
-def getStat(ops, Ly, Lx, d0, ypix,xpix,lam, codes, Ucell):
+def getStat(ops, stat, Ucell, codes):
     '''computes statistics of cells found using sourcery
     inputs:
         Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
@@ -285,61 +285,47 @@ def getStat(ops, Ly, Lx, d0, ypix,xpix,lam, codes, Ucell):
         stat
         assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
     '''
-    stat = []
+    d0 = ops['diameter']
+    Ly = ops['Lyc']
+    Lx = ops['Lxc']
     rs,dy,dx = circleMask(d0)
     rsort = np.sort(rs.flatten())
 
     d0 = float(d0)
     rs    = rs[rs<=d0]
     frac = 0.5
-    ncells = mPix.shape[0]
+    ncells = len(stat)
     footprints = np.zeros((ncells,))
-    n=0
     for k in range(0,ncells):
-        stat0 = {}
-        goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
-        ipix    = mPix[k,goodi].astype(np.int32)
-        ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
+        stat0 = stat[k]
+        ypix = stat0['ypix']
+        xpix = stat0['xpix']
+        lam = stat0['lam']
+        # compute footprint of ROI
+        y0 = np.median(ypix)
+        x0 = np.median(xpix)
+        yp, xp = extendROI(ypix,xpix,Ly,Lx, int(d0))
+        rs0 = ((yp-y0)**2 + (xp-x0)**2)**.5
 
-        if len(ypix)>0 and len(ipix)>0:
-            # pixels of cell in cropped (Ly,Lx) region of recording
-            stat0['ypix'] = ypix + ops['yrange'][0]
-            stat0['xpix'] = xpix + ops['xrange'][0]
-            stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
-            stat0['npix'] = ipix.size
-            stat0['lam']  = mLam[k, goodi]
-            # compute footprint of ROI
-            y0,x0 = stat0['med']
-            y0 = y0 - ops['yrange'][0]
-            x0 = x0 - ops['xrange'][0]
+        proj  = Ucell[yp, xp, :] @ np.expand_dims(codes[k,:], axis=1)
+        inds  = proj.flatten() > proj.max()*frac
+        footprints[k] = np.mean(rs0[inds]) / d0
 
-            ypix, xpix, goodi = localRegion(y0,x0,dy,dx,Ly,Lx)
-            if len(ypix)>0:
-                proj  = codes[k,:] @ Ucell[:,ypix,xpix]
-                rs0  = rs[goodi]
-                inds  = proj.flatten()>proj.max()*frac
-                stat0['footprint'] = np.mean(rs0[inds]) / d0
-                footprints[n] = stat0['footprint']
-            else:
-                stat0['footprint'] = 0
-                footprints[n]=0
-            # compute compactness of ROI
-            r2 = (stat0['ypix']-np.round(stat0['med'][0]))**2 + (stat0['xpix']-np.round(stat0['med'][1]))**2
-            stat0['mrs']  = np.mean(r2**.5) / d0
-            stat0['mrs0'] = np.mean(rsort[:r2.size]) / d0
-            stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
-            n+=1
-            stat.append(stat0.copy())
-
-    print(len(stat))
+        # compute compactness of ROI
+        r2 = ((ypix-y0)**2 + (xpix-x0)**2)**.5
+        stat0['mrs']  = np.mean(r2) / d0
+        stat0['mrs0'] = np.mean(rsort[:r2.size]) / d0
+        stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
+        stat0['ypix'] += ops['yrange'][0]
+        stat0['xpix'] += ops['xrange'][0]
+        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
+        stat0['npix'] = xpix.size
     mfoot = np.median(footprints)
     for n in range(len(stat)):
-        stat[n]['footprint'] = stat[n]['footprint'] / mfoot
-
+        stat[n]['footprint'] = footprints[n] / mfoot
     return stat
 
-
-def getOverlaps(stat,Ly,Lx, ops):
+def getOverlaps(stat, ops):
     '''computes overlapping pixels from ROIs in stat
     inputs:
         stat, Ly, Lx
@@ -347,6 +333,9 @@ def getOverlaps(stat,Ly,Lx, ops):
         stat
         assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
     '''
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+
     stat2 = []
     ncells = len(stat)
     mask = np.zeros((Ly,Lx))
@@ -361,12 +350,10 @@ def getOverlaps(stat,Ly,Lx, ops):
         stat[n]['overlap'] = mask[ypix,xpix] > 1
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        if np.mean(stat[n]['overlap'])<ops['max_overlap']:
+        if np.mean(stat[n]['overlap'])<1.: #ops['max_overlap']:
             stat2.append(stat[n])
             k+=1
-
     return stat2
-
 
 def cellMasks(stat, Ly, Lx, allow_overlap):
     '''creates cell masks for ROIs in stat and computes radii
@@ -523,17 +510,22 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
         ypix,xpix = yu[:, ix]
     return ypix,xpix
 
-def iter_extend(ypix, xpix, Ucell, code):
+
+def iter_extend(ypix, xpix, Ucell, code, flag=False):
     Lyc, Lxc, nsvd = Ucell.shape
-    npix = ypix.size
-    while 1:
+    npix = 0
+    while npix<10000:
+        npix = ypix.size
         ypix, xpix = extendROI(ypix,xpix,Lyc,Lxc, 1)
         usub = Ucell[ypix, xpix, :]
         lam = usub @ np.expand_dims(code, axis=1)
         lam = np.squeeze(lam, axis=1)
-        #ix = lam>max(0, lam.max()/5)
-        ix = lam>max(0, np.mean(lam)/3)
-        if ix.sum()==0 or ix.sum()>10000:
+        if flag:
+            ix = lam>max(0, np.mean(lam)/3)
+        else:
+            ix = lam>max(0, lam.max()/5)
+
+        if ix.sum()==0:
             break;
         ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
         lam = lam/np.sum(lam**2+1e-10)**.5
@@ -578,6 +570,7 @@ def sourcery(ops):
                 vrem   = morphOpen(V, rs<=d0)
             V      = V - vrem # make V more uniform
             if it==0:
+                V = V.astype('float64')
                 # find indices of all maxima in +/- 1 range
                 maxV   = filters.maximum_filter(V, footprint= (rs<=1.5))
                 imax   = V > (maxV - 1e-10)
@@ -586,28 +579,27 @@ def sourcery(ops):
                 thres  = ops['threshold_scaling'] * np.median(peaks[peaks>1e-4])
                 ops['Vcorr'] = V
             V = np.minimum(V, ops['Vcorr'])
-            i,j  = localMax(V, rs<np.inf, thres) # find local maxima in a +/- d0 neighborhood
-            if i.size==0:
-                break
-            ypix.extend([np.array(i[k]) for k in range(len(i))])
-            xpix.extend([np.array(j[k]) for k in range(len(i))])
-            lam.extend([np.array((0,)) for k in range(len(i))])
 
-            #new_codes = new_codes / np.sum(new_codes**2, axis=0)**0.5
-            newcells = i.size
-            codes = np.append(codes, us[i,j,:], axis=0)
-
-            n, k = ncells, ncells
-            while n < len(ypix):
-                ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], lam[n], Ucell, codes[k,:])
-                k+=1
-                if ix.sum()==0:
-                    print('dropped ROI with no pixels')
-                    del ypix[n], xpix[n], lam[n]
-                    continue;
+            # add extra ROIs here
+            n = ncells
+            while n<ncells+100:
+                ind = np.argmax(V)
+                i,j = np.unravel_index(ind, V.shape)
+                if V[i,j] < thres:
+                    break;
+                yp, xp, la, ix, code = iter_extend(i, j, Ucell, us[i,j,:])
+                codes = np.append(codes, np.expand_dims(code,axis=0), axis=0)
+                ypix.append(yp)
+                xpix.append(xp)
+                lam.append(la)
                 Ucell[ypix[n], xpix[n], :] -= np.outer(lam[n], codes[n,:])
-                n+=1
+
+                yp, xp = extendROI(yp,xp,Lyc,Lxc, int(d0))
+                V[yp, xp] = 0
+                n += 1
             newcells = len(ypix) - ncells
+            if it==0:
+                Nfirst = newcells
             L   = np.append(L, np.zeros((Lyc, Lxc, newcells), 'float32'), axis =-1)
             LtU = np.append(LtU, np.zeros((newcells, nsvd), 'float32'), axis = 0)
             LtS = np.append(LtS, np.zeros((newcells, nbasis), 'float32'), axis = 0)
@@ -632,7 +624,7 @@ def sourcery(ops):
         n,k = 0,0
         while n < len(ypix):
             Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[n,:])
-            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], lam[n], Ucell, codes[k,:])
+            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:])
             k+=1
             if ix.sum()==0:
                 print('dropped ROI with no pixels')
@@ -652,8 +644,7 @@ def sourcery(ops):
                 LtS[n,:] = lam[n] @ S[ypix[n],xpix[n],:]
         err = (Ucell**2).mean()
         print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
-        if it==0:
-            Nfirst = i.size
+
         it += 1
         if refine ==0:
             break
@@ -673,16 +664,14 @@ def sourcery(ops):
     Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
     stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
 
-    return ops, stat, Ucell, codes, stat0
+    stat = postprocess(ops, stat, Ucell, codes)
+    return ops, stat
 
 def postprocess(ops, stat, Ucell, codes):
     # this is a good place to merge ROIs
     #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
-    stat = getStat(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
-
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    stat = getOverlaps(stat,Ly,Lx, ops)
+    stat = getStat(ops, stat, Ucell, codes)
+    stat = getOverlaps(stat,ops)
     return stat
 
 def extractF(ops, stat):

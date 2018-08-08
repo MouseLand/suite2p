@@ -338,11 +338,15 @@ class MainW(QtGui.QMainWindow):
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)
         for n in range(0,ncells):
-            ypix = self.stat[n]['ypix']
-            xpix = self.stat[n]['xpix']
-            iext = np.expand_dims(fig.boundary(ypix,xpix),axis=0)
-            self.stat[n]['yext'] = ypix[iext]
-            self.stat[n]['xext'] = xpix[iext]
+            ypix = self.stat[n]['ypix'].flatten()
+            xpix = self.stat[n]['xpix'].flatten()
+            iext = fig.boundary(ypix,xpix)
+            if ypix.size==0:
+                self.stat[n]['yext'] = []
+                self.stat[n]['xext'] = []
+            else:
+                self.stat[n]['yext'] = ypix[iext]
+                self.stat[n]['xext'] = xpix[iext]
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views

@@ -1,6 +1,7 @@
 import numpy as np
 import time, os
-from suite2p import register, dcnv, celldetect
+from suite2p import register, dcnv
+from suite2p import celldetect2 as celldetect2
 from scipy import stats
 from multiprocessing import Pool
 
@@ -57,10 +58,10 @@ def default_ops():
 
 def get_cells(ops):
     i0 = tic()
-    ops, stat = celldetect.sourcery(ops)
+    ops, stat = celldetect2.sourcery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil
-    F, Fneu = celldetect.extractF(ops, stat)
+    F, Fneu = celldetect2.extractF(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
 
     # subtract neuropil
@@ -135,7 +136,8 @@ def combined(ops1):
     np.save(os.path.join(fpath, 'spks.npy'), spks)
     np.save(os.path.join(fpath, 'ops.npy'), ops)
     np.save(os.path.join(fpath, 'stat.npy'), stat)
-
+    iscell = np.ones((len(stat),2))
+    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
     return ops
 
 def run_s2p(ops={},db={}):
@@ -209,15 +211,15 @@ def run_s2p(ops={},db={}):
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
 
-    for ops in ops1:
-        if ops['delete_bin']:
-            os.remove(ops['reg_file'])
-            if ops['nchannels']>1:
-                os.remove(ops['reg_file_chan2'])
-
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined']:
         combined(ops1)
+
+#    for ops in ops1:
+#        if ops['delete_bin']:
+#            os.remove(ops['reg_file'])
+#            if ops['nchannels']>1:
+#                os.remove(ops['reg_file_chan2'])
 
     print('finished all tasks in total time %4.4f sec'%toc(i0))
     return ops1

@@ -374,7 +374,7 @@ def getOverlaps(stat,Ly,Lx, ops):
         stat[n]['overlap'] = mask[ypix,xpix] > 1
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        if np.mean(stat[n]['overlap'])<ops['max_overlap']:
+        if np.mean(stat[n]['overlap'])<1.: #ops['max_overlap']:
             stat2.append(stat[n])
             k+=1
 

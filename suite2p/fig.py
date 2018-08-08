@@ -1,4 +1,5 @@
 import numpy as np
+import pyqtgraph as pg
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
@@ -32,8 +33,11 @@ def plot_trace(parent):
         parent.fmin=fmin
         parent.fmax=fmax
     else:
-        k=0
-        for n in parent.imerge:
+        ax = parent.p3.getAxis('left')
+        k=len(parent.imerge)-1
+        kspace = 0.5
+        ttick = list()
+        for n in parent.imerge[::-1]:
             f = parent.Fcell[n,:]
             fneu = parent.Fneu[n,:]
             sp = parent.Spks[n,:]
@@ -43,10 +47,16 @@ def plot_trace(parent):
             fneu = (fneu - fmin) / (fmax - fmin)
             sp = (sp - sp.min()) / (sp.max() - sp.min())
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
-            parent.p3.plot(parent.trange,f+k*0.5,pen=rgb)
-            k+=1
+            parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
+            ttick.append((k*kspace+f.mean(), str(n)))
+            parent.p3.plot([0,parent.trange[-1]*.005],
+                           [k*kspace+f.mean(),k*kspace+f.mean()],
+                           pen=pg.mkPen(rgb,width=4))
+            #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
+            k-=1
         parent.fmin=0#-(k-1)*0.5
-        parent.fmax=(k+1)*0.5
+        parent.fmax=(len(parent.imerge)+1)*kspace
+        ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
@@ -193,16 +203,20 @@ def init_masks(parent):
                 V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
                 if k>0:
                     if k==1:
-                        mimg = ops['meanImg']
-                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50,mode='mirror'),
+                        mimg0 = ops['meanImg'][ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]]
+                        mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
                                                       10,mode='mirror')
-                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50,mode='mirror'),
+                        mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
                                                       10,mode='mirror')
-                        S =     np.maximum(0,np.minimum(1, V*1.5))
-                        mimg1 = np.percentile(mimg,1)
-                        mimg99 = np.percentile(mimg,99)
-                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
-                        mimg = np.maximum(0,np.minimum(1,mimg))
+                        S     = np.maximum(0,np.minimum(1, V*1.5))
+                        mimg1 = np.percentile(mimg0,1)
+                        mimg99 = np.percentile(mimg0,99)
+                        mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+                        mimg0 = np.maximum(0,np.minimum(1,mimg0))
+                        mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+                        mimg[ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]] = mimg0
                     elif k==2:
                         mimg = ops['meanImg']
                         S = np.maximum(0,np.minimum(1, V*1.5))

@@ -218,37 +218,35 @@ class MainW(QtGui.QMainWindow):
         self.classbtns.addButton(saveclass,2)
         #### ------ CELL STATS -------- ####
         # which stats
-        self.bend = self.bend+7
+        self.bend = self.bend+6
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
-        self.l0.addWidget(QtGui.QLabel('.'),self.bend+6,0,1,1)
         lilfont = QtGui.QFont("Arial", 8)
-        qlabel = QtGui.QLabel('ROI')
+        qlabel = QtGui.QLabel('ROI:')
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel.setFont(bigfont)
         self.l0.addWidget(qlabel,self.bend,0,1,1)
         self.ROIedit = QtGui.QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
         self.ROIedit.setText('0')
-        self.ROIedit.setFixedWidth(35)
+        self.ROIedit.setFixedWidth(45)
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
-        self.l0.addWidget(self.ROIedit, self.bend,0,1,1)
+        self.l0.addWidget(self.ROIedit, self.bend+1,0,1,1)
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1,len(self.stats_to_show)+1):
             self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
-            self.l0.setRowStretch(self.bend+1+k, 0)
-            self.l0.addWidget(self.ROIstats[k], self.bend+1+k,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+2+k,0,1,1)
-        self.l0.setRowStretch(self.bend+2+k, 1)
+            self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
+        self.l0.setRowStretch(self.bend+3+k, 1)
         # classifier file to load
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
+        self.load_proc()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
@@ -314,6 +312,8 @@ class MainW(QtGui.QMainWindow):
     def number_chosen(self):
         if self.loaded:
             self.ichosen = int(self.ROIedit.text())
+            if self.ichosen >= len(self.stat):
+                self.ichosen = len(self.stat) - 1
             self.imerge = [self.ichosen]
             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                 fig.corr_masks(self)
@@ -359,7 +359,6 @@ class MainW(QtGui.QMainWindow):
         self.setWindowTitle(self.fname)
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)
-        self.ROIedit.setMaximum(ncells)
         for n in range(0,ncells):
             ypix = self.stat[n]['ypix'].flatten()
             xpix = self.stat[n]['xpix'].flatten()
@@ -523,11 +522,11 @@ class MainW(QtGui.QMainWindow):
                         fig.plot_trace(self)
                         self.show()
                         #print(time.time()-tic)
-            self.ROIedit.setText(str(self.ichosen))
+
 
     def ichosen_stats(self):
         n = self.ichosen
-        self.ROIstats[0].setText('ROI: '+str(n))
+        self.ROIedit.setText(str(self.ichosen))
         for k in range(1,len(self.stats_to_show)+1):
             key = self.stats_to_show[k-1]
             ival = self.stat[n][key]

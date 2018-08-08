@@ -218,24 +218,31 @@ class MainW(QtGui.QMainWindow):
         self.classbtns.addButton(saveclass,2)
         #### ------ CELL STATS -------- ####
         # which stats
+        self.bend = self.bend+6
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
-        self.l0.addWidget(QtGui.QLabel('.'),self.bend+6,0,1,1)
         lilfont = QtGui.QFont("Arial", 8)
-        qlabel = QtGui.QLabel('ROI')
+        qlabel = QtGui.QLabel('ROI:')
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel.setFont(bigfont)
-        self.l0.addWidget(qlabel,self.bend+7,0,1,1)
+        self.l0.addWidget(qlabel,self.bend,0,1,1)
+        self.ROIedit = QtGui.QLineEdit(self)
+        self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
+        self.ROIedit.setText('0')
+        self.ROIedit.setFixedWidth(45)
+        self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
+        self.ROIedit.returnPressed.connect(self.number_chosen)
+        self.l0.addWidget(self.ROIedit, self.bend+1,0,1,1)
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1,len(self.stats_to_show)+1):
             self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
-            self.l0.setRowStretch(self.bend+8+k, 0)
-            self.l0.addWidget(self.ROIstats[k], self.bend+8+k,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+9+k,0,1,1)
-        self.l0.setRowStretch(self.bend+9+k, 1)
+            self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
+        self.l0.setRowStretch(self.bend+3+k, 1)
+        # classifier file to load
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
         #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
@@ -243,14 +250,14 @@ class MainW(QtGui.QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
-            print('will allow merging')
+            print('enter pressed')
         elif event.key() == QtCore.Qt.Key_Escape:
             self.zoom_plot(1)
             self.show()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.ROI_remove()
         elif event.key() == QtCore.Qt.Key_Shift:
-            print('will allow splitting')
+            print('shift pressed')
 
     def ROI_selection(self, wplot):
         view = self.p1.viewRange()
@@ -302,6 +309,21 @@ class MainW(QtGui.QMainWindow):
         ypix,xpix = np.meshgrid(yrange,xrange)
         self.select_cells(ypix,xpix)
 
+    def number_chosen(self):
+        if self.loaded:
+            self.ichosen = int(self.ROIedit.text())
+            if self.ichosen >= len(self.stat):
+                self.ichosen = len(self.stat) - 1
+            self.imerge = [self.ichosen]
+            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                fig.corr_masks(self)
+                fig.plot_colorbar(self, self.ops_plot[2])
+            self.ichosen_stats()
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+            fig.plot_trace(self)
+            self.show()
+
     def select_cells(self,ypix,xpix):
         i = self.ROIplot
         iROI0 = self.iROI[i,0,ypix,xpix]
@@ -341,12 +363,11 @@ class MainW(QtGui.QMainWindow):
             ypix = self.stat[n]['ypix'].flatten()
             xpix = self.stat[n]['xpix'].flatten()
             iext = fig.boundary(ypix,xpix)
-            if ypix.size==0:
-                self.stat[n]['yext'] = []
-                self.stat[n]['xext'] = []
-            else:
-                self.stat[n]['yext'] = ypix[iext]
-                self.stat[n]['xext'] = xpix[iext]
+            self.stat[n]['yext'] = ypix[iext]
+            self.stat[n]['xext'] = xpix[iext]
+            ycirc,xcirc = fig.circle(self.stat[n]['med'],self.stat[n]['radius'])
+            self.stat[n]['ycirc'] = ycirc
+            self.stat[n]['xcirc'] = xcirc
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views
@@ -501,9 +522,10 @@ class MainW(QtGui.QMainWindow):
                         self.show()
                         #print(time.time()-tic)
 
+
     def ichosen_stats(self):
         n = self.ichosen
-        self.ROIstats[0].setText('ROI: '+str(n))
+        self.ROIedit.setText(str(self.ichosen))
         for k in range(1,len(self.stats_to_show)+1):
             key = self.stats_to_show[k-1]
             ival = self.stat[n][key]

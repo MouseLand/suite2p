@@ -1,4 +1,5 @@
 import numpy as np
+import pyqtgraph as pg
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
@@ -32,8 +33,11 @@ def plot_trace(parent):
         parent.fmin=fmin
         parent.fmax=fmax
     else:
-        k=0
-        for n in parent.imerge:
+        ax = parent.p3.getAxis('left')
+        k=len(parent.imerge)-1
+        kspace = 0.5
+        ttick = list()
+        for n in parent.imerge[::-1]:
             f = parent.Fcell[n,:]
             fneu = parent.Fneu[n,:]
             sp = parent.Spks[n,:]
@@ -43,10 +47,16 @@ def plot_trace(parent):
             fneu = (fneu - fmin) / (fmax - fmin)
             sp = (sp - sp.min()) / (sp.max() - sp.min())
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
-            parent.p3.plot(parent.trange,f+k*0.5,pen=rgb)
-            k+=1
+            parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
+            ttick.append((k*kspace+f.mean(), str(n)))
+            parent.p3.plot([0,parent.trange[-1]*.005],
+                           [k*kspace+f.mean(),k*kspace+f.mean()],
+                           pen=pg.mkPen(rgb,width=4))
+            #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
+            k-=1
         parent.fmin=0#-(k-1)*0.5
-        parent.fmax=(k+1)*0.5
+        parent.fmax=(len(parent.imerge)+1)*kspace
+        ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
@@ -119,6 +129,15 @@ def boundary(ypix,xpix):
     nneigh = (idist==1).sum(axis=1) # number of neighbors of each point
     iext = (nneigh<4).flatten()
     return iext
+
+def circle(med, r):
+    ''' returns pixels of circle with radius 1.25x radius of cell (r)'''
+    theta = np.linspace(0.0,2*np.pi,100)
+    x = r*1.25 * np.cos(theta) + med[0]
+    y = r*1.25 * np.sin(theta) + med[1]
+    x = x.astype(np.int32)
+    y = y.astype(np.int32)
+    return x,y
 
 def init_masks(parent):
     '''creates RGB masks using stat and puts them in M0 or M1 depending on
@@ -193,16 +212,20 @@ def init_masks(parent):
                 V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
                 if k>0:
                     if k==1:
-                        mimg = ops['meanImg']
-                        mimg = mimg - gaussian_filter(filters.minimum_filter(mimg,50,mode='mirror'),
+                        mimg0 = ops['meanImg'][ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]]
+                        mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
                                                       10,mode='mirror')
-                        mimg = mimg / gaussian_filter(filters.maximum_filter(mimg,50,mode='mirror'),
+                        mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
                                                       10,mode='mirror')
-                        S =     np.maximum(0,np.minimum(1, V*1.5))
-                        mimg1 = np.percentile(mimg,1)
-                        mimg99 = np.percentile(mimg,99)
-                        mimg = (mimg - mimg1) / (mimg99 - mimg1)
-                        mimg = np.maximum(0,np.minimum(1,mimg))
+                        S     = np.maximum(0,np.minimum(1, V*1.5))
+                        mimg1 = np.percentile(mimg0,1)
+                        mimg99 = np.percentile(mimg0,99)
+                        mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+                        mimg0 = np.maximum(0,np.minimum(1,mimg0))
+                        mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+                        mimg[ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]] = mimg0
                     elif k==2:
                         mimg = ops['meanImg']
                         S = np.maximum(0,np.minimum(1, V*1.5))
@@ -301,9 +324,14 @@ def flip_for_class(parent, iscell):
             parent.ichosen = n
             flip_cell(parent)
 
-def make_chosen(M, ypix, xpix, lam):
+def make_chosen_ROI(M, ypix, xpix, lam):
     v = lam
     M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
+    return M
+
+def make_chosen_circle(M, ycirc, xcirc):
+    ncirc = ycirc.size
+    M[ycirc,xcirc,:] = np.ones((ncirc,3), np.float32)
     return M
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
@@ -323,22 +351,31 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     view    = parent.ops_plot[1]
     color   = parent.ops_plot[2]
     if view>0 and plotROI==0:
-        M0 = parent.RGBback[view-1,:,:,:]
-        M1 = parent.RGBback[view-1,:,:,:]
+        M = [parent.RGBback[view-1,:,:,:],
+             parent.RGBback[view-1,:,:,:]]
     else:
         wplot   = int(1-parent.iscell[parent.ichosen])
-        M0 = np.array(parent.RGBall[0,color,view,:,:,:])
-        M1 = np.array(parent.RGBall[1,color,view,:,:,:])
+        M = [np.array(parent.RGBall[0,color,view,:,:,:]), np.array(parent.RGBall[1,color,view,:,:,:])]
+        ypixA = np.zeros((0,),np.int32)
+        xpixA = np.zeros((0,),np.int32)
+        vbackA = np.zeros((0,3),np.float32)
         for n in parent.imerge:
-            #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
-            ypix = parent.stat[n]['ypix']
-            xpix = parent.stat[n]['xpix']
-            lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
-            if wplot==0:
-                M0 = make_chosen(M0, ypix, xpix, lam)
+            ypix = parent.stat[n]['ypix'].flatten()
+            xpix = parent.stat[n]['xpix'].flatten()
+            if view==0:
+                lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
+                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
             else:
-                M1 = make_chosen(M1, ypix, xpix, lam)
-    return M0,M1
+                ypixA = np.concatenate((ypixA,ypix),axis=0)
+                xpixA = np.concatenate((xpixA,xpix),axis=0)
+                vbackA = np.concatenate((vbackA, parent.RGBback[view-1,ypix,xpix,:]),axis=0)
+        if view>0:
+            M[wplot][ypixA,xpixA,:] = vbackA
+            for n in parent.imerge:
+                ycirc = parent.stat[n]['ycirc']
+                xcirc = parent.stat[n]['xcirc']
+                M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc)
+    return M[0],M[1]
 
 def flip_cell(parent):
     cols = parent.ops_plot[3]

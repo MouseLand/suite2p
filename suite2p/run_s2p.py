@@ -47,7 +47,7 @@ def default_ops():
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
         'allow_overlap': False,
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
-        'max_overlap': 0.3,
+        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'h5py': [],
         'h5py_key': 'data',
         'delete_bin': False,

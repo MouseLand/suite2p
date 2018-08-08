@@ -268,14 +268,14 @@ class MainW(QtGui.QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
-            print('enter pressed')
+            merge=1
         elif event.key() == QtCore.Qt.Key_Escape:
             self.zoom_plot(1)
             self.show()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.ROI_remove()
         elif event.key() == QtCore.Qt.Key_Shift:
-            print('shift pressed')
+            split=1
 
     def ROI_selection(self, wplot):
         view = self.p1.viewRange()

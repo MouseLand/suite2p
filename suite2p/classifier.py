@@ -151,6 +151,21 @@ def smooth_distribution(x, grid):
     hist = hist / hist.sum()
     return hist0
 
+def run(classfile,stat):
+    model = Classifier(classfile=classfile)
+    # put stats into matrix
+    ncells = len(stat)
+    statistics = np.zeros((ncells, len(model.statclass)),np.float32)
+    k=0
+    for key in model.statclass:
+        for n in range(0,ncells):
+            statistics[n,k] = stat[n][key]
+        k+=1
+    probcell = model.apply(statistics)
+    iscell = probcell > 0.5
+    iscell = np.concatenate((np.expand_dims(iscell,axis=1),np.expand_dims(probcell,axis=1)),axis=1)
+    return iscell
+
 def load(parent, name, inactive):
     parent.model = Classifier(classfile=name,
                                trainfiles=None,

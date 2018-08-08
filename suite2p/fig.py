@@ -130,6 +130,15 @@ def boundary(ypix,xpix):
     iext = (nneigh<4).flatten()
     return iext
 
+def circle(med, r):
+    ''' returns pixels of circle with radius 1.25x radius of cell (r)'''
+    theta = np.linspace(0.0,2*np.pi,100)
+    x = r*1.25 * np.cos(theta) + med[0]
+    y = r*1.25 * np.sin(theta) + med[1]
+    x = x.astype(np.int32)
+    y = y.astype(np.int32)
+    return x,y
+
 def init_masks(parent):
     '''creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
@@ -315,9 +324,14 @@ def flip_for_class(parent, iscell):
             parent.ichosen = n
             flip_cell(parent)
 
-def make_chosen(M, ypix, xpix, lam):
+def make_chosen_ROI(M, ypix, xpix, lam):
     v = lam
     M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
+    return M
+
+def make_chosen_circle(M, ycirc, xcirc):
+    ncirc = ycirc.size
+    M[ycirc,xcirc,:] = np.ones((ncirc,3), np.float32)
     return M
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
@@ -337,22 +351,31 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     view    = parent.ops_plot[1]
     color   = parent.ops_plot[2]
     if view>0 and plotROI==0:
-        M0 = parent.RGBback[view-1,:,:,:]
-        M1 = parent.RGBback[view-1,:,:,:]
+        M = [parent.RGBback[view-1,:,:,:],
+             parent.RGBback[view-1,:,:,:]]
     else:
         wplot   = int(1-parent.iscell[parent.ichosen])
-        M0 = np.array(parent.RGBall[0,color,view,:,:,:])
-        M1 = np.array(parent.RGBall[1,color,view,:,:,:])
+        M = [np.array(parent.RGBall[0,color,view,:,:,:]), np.array(parent.RGBall[1,color,view,:,:,:])]
+        ypixA = np.zeros((0,),np.int32)
+        xpixA = np.zeros((0,),np.int32)
+        vbackA = np.zeros((0,3),np.float32)
         for n in parent.imerge:
-            #ipix = np.array((parent.iROI[wplot,0,:,:]==ichosen).nonzero()).astype(np.int32)
-            ypix = parent.stat[n]['ypix']
-            xpix = parent.stat[n]['xpix']
-            lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
-            if wplot==0:
-                M0 = make_chosen(M0, ypix, xpix, lam)
+            ypix = parent.stat[n]['ypix'].flatten()
+            xpix = parent.stat[n]['xpix'].flatten()
+            if view==0:
+                lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
+                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
             else:
-                M1 = make_chosen(M1, ypix, xpix, lam)
-    return M0,M1
+                ypixA = np.concatenate((ypixA,ypix),axis=0)
+                xpixA = np.concatenate((xpixA,xpix),axis=0)
+                vbackA = np.concatenate((vbackA, parent.RGBback[view-1,ypix,xpix,:]),axis=0)
+        if view>0:
+            M[wplot][ypixA,xpixA,:] = vbackA
+            for n in parent.imerge:
+                ycirc = parent.stat[n]['ycirc']
+                xcirc = parent.stat[n]['xcirc']
+                M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc)
+    return M[0],M[1]
 
 def flip_cell(parent):
     cols = parent.ops_plot[3]

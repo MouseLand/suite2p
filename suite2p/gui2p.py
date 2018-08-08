@@ -244,9 +244,9 @@ class MainW(QtGui.QMainWindow):
         self.l0.setRowStretch(self.bend+3+k, 1)
         # classifier file to load
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        self.load_proc()
+        #self.load_proc()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
@@ -363,12 +363,11 @@ class MainW(QtGui.QMainWindow):
             ypix = self.stat[n]['ypix'].flatten()
             xpix = self.stat[n]['xpix'].flatten()
             iext = fig.boundary(ypix,xpix)
-            if ypix.size==0:
-                self.stat[n]['yext'] = []
-                self.stat[n]['xext'] = []
-            else:
-                self.stat[n]['yext'] = ypix[iext]
-                self.stat[n]['xext'] = xpix[iext]
+            self.stat[n]['yext'] = ypix[iext]
+            self.stat[n]['xext'] = xpix[iext]
+            ycirc,xcirc = fig.circle(self.stat[n]['med'],self.stat[n]['radius'])
+            self.stat[n]['ycirc'] = ycirc
+            self.stat[n]['xcirc'] = xcirc
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views

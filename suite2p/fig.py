@@ -49,9 +49,9 @@ def plot_trace(parent):
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
-            parent.p3.plot([0,parent.trange[-1]*.005],
-                           [k*kspace+f.mean(),k*kspace+f.mean()],
-                           pen=pg.mkPen(rgb,width=4))
+            #parent.p3.plot([0,parent.trange[-1]*.001],
+            #               [k*kspace+f.mean(),k*kspace+f.mean()],
+            #               pen=pg.mkPen(rgb,width=4))
             #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
             k-=1
         parent.fmin=0#-(k-1)*0.5

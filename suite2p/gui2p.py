@@ -250,9 +250,9 @@ class MainW(QtGui.QMainWindow):
         self.l0.setRowStretch(self.bend+3+k, 1)
         # classifier file to load
         self.classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
+        self.load_proc()
 
     def minimize_p2(self):
         if self.minview.isChecked():

@@ -343,7 +343,7 @@ def getOverlaps(stat, ops):
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
-        mask[ypix,xpix] = mask[ypix,xpix] + 1
+        mask[ypix,xpix] += + 1
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
@@ -354,6 +354,34 @@ def getOverlaps(stat, ops):
             stat2.append(stat[n])
             k+=1
     return stat2
+
+def removeOverlaps(stat, ops, Ly, Lx):
+    '''removes overlaps iteratively
+    '''
+    ncells = len(stat)
+    mask = np.zeros((Ly,Lx))
+    ix = [k for k in range(ncells)]
+    for n in range(ncells):
+        ypix = stat[n]['ypix']
+        xpix = stat[n]['xpix']
+        mask[ypix,xpix] += 1
+
+    while 1:
+        O = np.zeros((ncells,1))
+        for n in range(ncells):
+            ypix = stat[n]['ypix']
+            xpix = stat[n]['xpix']
+            O[n] = np.mean(mask[ypix,xpix] > 1)
+        i = np.argmax(O)
+        if O[i]>ops['max_overlap']:
+            ypix = stat[n]['ypix']
+            xpix = stat[n]['xpix']
+            mask[ypix,xpix] -= 1
+            ncells -= 1
+            del stat[i], ix[i]
+        else:
+            break
+    return stat, ix
 
 def cellMasks(stat, Ly, Lx, allow_overlap):
     '''creates cell masks for ROIs in stat and computes radii
@@ -623,7 +651,7 @@ def sourcery(ops):
         # reestimate masks
         n,k = 0,0
         while n < len(ypix):
-            Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[n,:])
+            Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[k,:])
             ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:])
             k+=1
             if ix.sum()==0:
@@ -652,7 +680,16 @@ def sourcery(ops):
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
-            stat0 = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
+            stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
+            # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
+            stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
+            print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
+            ypix = [stat[n]['ypix'] for n in range(len(stat))]
+            xpix = [stat[n]['xpix'] for n in range(len(stat))]
+            lam = [stat[n]['lam'] for n in range(len(stat))]
+            codes = codes[ix, :]
+            L = L[:,:,ix]
+            ncells = len(ypix)
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:

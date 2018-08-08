@@ -94,10 +94,10 @@ class MainW(QtGui.QMainWindow):
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
         # number of ROIs in each image
-        self.lcell0 = QtGui.QLabel('n ROIs')
+        self.lcell0 = QtGui.QLabel('cells')
         self.l0.addWidget(self.lcell0, 0,1,1,1)
-        self.lcell1 = QtGui.QLabel('n ROIs')
-        self.l0.addWidget(self.lcell1, 0,7,1,1)
+        self.lcell1 = QtGui.QLabel('NOT cells')
+        self.l0.addWidget(self.lcell1, 0,12,1,1)
         self.selectbtn = [QtGui.QPushButton('draw selection'),
                           QtGui.QPushButton('draw selection')]
         for b in self.selectbtn: b.setCheckable(True)
@@ -108,12 +108,18 @@ class MainW(QtGui.QMainWindow):
         self.isROI=False
         self.ROIplot = 0
         self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
-        self.l0.addWidget(self.selectbtn[1], 0,8,1,1)
+        self.l0.addWidget(self.selectbtn[1], 0,13,1,1)
+        # minimize view
+        self.minview = QtGui.QPushButton('minimize')
+        self.minview.setCheckable(True)
+        self.minview.clicked.connect(self.minimize_p2)
+        self.minview.setEnabled(False)
+        self.l0.addWidget(self.minview,0,14,1,1)
         #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,34,12)
+        self.l0.addWidget(self.win,1,1,34,14)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -247,6 +253,18 @@ class MainW(QtGui.QMainWindow):
         #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
+
+    def minimize_p2(self):
+        if self.minview.isChecked():
+            self.p2.linkView(self.p2.XAxis,view=None)
+            self.p2.linkView(self.p2.YAxis,view=None)
+            self.p2.setYRange(-10,-9)
+            self.p2.setXRange(-10,-9)
+            self.win.ci.layout.setColumnStretchFactor(0,10)
+        else:
+            self.win.ci.layout.setColumnStretchFactor(0,1)
+            self.p2.setXLink('plot1')
+            self.p2.setYLink('plot1')
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
@@ -383,8 +401,8 @@ class MainW(QtGui.QMainWindow):
         fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
-        self.lcell1.setText('%d cells'%(ncells-self.iscell.sum()))
-        self.lcell0.setText('%d cells'%(self.iscell.sum()))
+        self.lcell1.setText('NOT cells: %d'%(ncells-self.iscell.sum()))
+        self.lcell0.setText('cells: %d'%(self.iscell.sum()))
         fig.init_range(self)
         fig.plot_trace(self)
         self.show()
@@ -405,6 +423,7 @@ class MainW(QtGui.QMainWindow):
             btns.setEnabled(True)
         self.selectbtn[0].setEnabled(True)
         self.selectbtn[1].setEnabled(True)
+        self.minview.setEnabled(True)
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
         self.saveClass.setEnabled(True)
@@ -546,8 +565,8 @@ class MainW(QtGui.QMainWindow):
         np.save(self.basename+'/iscell.npy',
                 np.concatenate((np.expand_dims(self.iscell,axis=1),
                 np.expand_dims(self.probcell,axis=1)), axis=1))
-        self.lcell0.setText('%d ROIs'%(self.iscell.sum()))
-        self.lcell1.setText('%d ROIs'%(self.iscell.size-self.iscell.sum()))
+        self.lcell0.setText('cells: %d'%(self.iscell.sum()))
+        self.lcell1.setText('NOT cells: %d'%(self.iscell.size-self.iscell.sum()))
 
     def zoom_plot(self,iplot):
         if iplot==1 or iplot==2 or iplot==4:

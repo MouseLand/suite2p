@@ -49,9 +49,9 @@ def plot_trace(parent):
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
-            parent.p3.plot([0,parent.trange[-1]*.005],
-                           [k*kspace+f.mean(),k*kspace+f.mean()],
-                           pen=pg.mkPen(rgb,width=4))
+            #parent.p3.plot([0,parent.trange[-1]*.001],
+            #               [k*kspace+f.mean(),k*kspace+f.mean()],
+            #               pen=pg.mkPen(rgb,width=4))
             #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
             k-=1
         parent.fmin=0#-(k-1)*0.5
@@ -133,8 +133,8 @@ def boundary(ypix,xpix):
 def circle(med, r):
     ''' returns pixels of circle with radius 1.25x radius of cell (r)'''
     theta = np.linspace(0.0,2*np.pi,100)
-    x = r*1.25 * np.cos(theta) + med[0]
-    y = r*1.25 * np.sin(theta) + med[1]
+    x = r*1.35 * np.cos(theta) + med[0]
+    y = r*1.35 * np.sin(theta) + med[1]
     x = x.astype(np.int32)
     y = y.astype(np.int32)
     return x,y
@@ -324,15 +324,16 @@ def flip_for_class(parent, iscell):
             parent.ichosen = n
             flip_cell(parent)
 
-def make_chosen_ROI(M, ypix, xpix, lam):
+def make_chosen_ROI(M0, ypix, xpix, lam):
     v = lam
-    M[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
-    return M
+    M0[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
+    return M0
 
-def make_chosen_circle(M, ycirc, xcirc):
+def make_chosen_circle(M0, ycirc, xcirc, col):
     ncirc = ycirc.size
-    M[ycirc,xcirc,:] = np.ones((ncirc,3), np.float32)
-    return M
+    pix = np.concatenate((col*np.ones((ncirc,1),np.float32), np.ones((ncirc,2), np.float32)),axis=1)
+    M0[ycirc,xcirc,:] = hsv_to_rgb(pix)
+    return M0
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''creates RGB masks using stat and puts them in M0 or M1 depending on
@@ -350,6 +351,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     plotROI = parent.ops_plot[0]
     view    = parent.ops_plot[1]
     color   = parent.ops_plot[2]
+    cols    = parent.ops_plot[3]
     if view>0 and plotROI==0:
         M = [parent.RGBback[view-1,:,:,:],
              parent.RGBback[view-1,:,:,:]]
@@ -374,7 +376,8 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             for n in parent.imerge:
                 ycirc = parent.stat[n]['ycirc']
                 xcirc = parent.stat[n]['xcirc']
-                M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc)
+                col   = cols[n,color]
+                M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col)
     return M[0],M[1]
 
 def flip_cell(parent):

@@ -195,8 +195,8 @@ def apply(parent):
     np.save(parent.basename+'/iscell.npy',
             np.concatenate((np.expand_dims(parent.iscell,axis=1),
             np.expand_dims(parent.probcell,axis=1)), axis=1))
-    parent.lcell0.setText('%d ROIs'%parent.iscell.sum())
-    parent.lcell1.setText('%d ROIs'%(parent.iscell.size-parent.iscell.sum()))
+    parent.lcell0.setText('cells: %d'%parent.iscell.sum())
+    parent.lcell1.setText('NOT cells: %d'%(parent.iscell.size-parent.iscell.sum()))
 
 def save(parent):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier')

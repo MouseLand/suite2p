@@ -1,2 +1,0 @@
-C:/Users/carse/github/data/iscell.npy
-C:/Users/carse/github/data2/iscell.npy

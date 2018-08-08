@@ -1,4 +1,7 @@
 include README.md
 include LICENSE
-include suite2p/classifier.npy
-include suite2p/classifer_user.npy
+include classifiers/classifier.npy
+include classifiers/classifer_user.npy
+include gui_data.txt
+include logo/logo.png
+include logo/logo_unshaded.png

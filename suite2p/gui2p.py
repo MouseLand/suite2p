@@ -12,13 +12,6 @@ import time
 #        super(EventWidget, self, parent).__init__()
 #    def
 
-class SystemTrayIcon(QtGui.QSystemTrayIcon):
-    def __init__(self, icon, parent=None):
-        QtGui.QSystemTrayIcon.__init__(self, icon, parent)
-        menu = QtGui.QMenu(parent)
-        exitAction = menu.addAction("Exit")
-        self.setContextMenu(menu)
-
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
@@ -27,22 +20,16 @@ class MainW(QtGui.QMainWindow):
 
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
-        app_icon = QtGui.QIcon()
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                          '..','logo/logo.png')
+        #app_icon = QtGui.QIcon()
         #app_icon.addFile(icon_path, QtCore.QSize(16,16))
         #app_icon.addFile(icon_path, QtCore.QSize(24,24))
         #app_icon.addFile(icon_path, QtCore.QSize(32,32))
         #app_icon.addFile(icon_path, QtCore.QSize(48,48))
-        app_icon.addFile(icon_path, QtCore.QSize(96,96))
+        #app_icon.addFile(icon_path, QtCore.QSize(96,96))
         #app_icon.addFile(icon_path, QtCore.QSize(256,256))
-        self.setWindowIcon(app_icon)
-        trayIcon = QtGui.QSystemTrayIcon(QtGui.QIcon(icon_path), self)
-        menu = QtGui.QMenu()
-        exitAction = menu.addAction("Exit")
-        trayIcon.setContextMenu(menu)
-        trayIcon.show()
-        #self.trayIcon.setIcon(app_icon)
+        self.setWindowIcon(QtGui.QIcon(icon_path))
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
@@ -715,6 +702,9 @@ class MainW(QtGui.QMainWindow):
 def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
+    icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                     '..','logo/logo.png')
+    app.setWindowIcon(QtGui.QIcon(icon_path))
     GUI = MainW()
     ret = app.exec_()
     #GUI.save_gui_data()

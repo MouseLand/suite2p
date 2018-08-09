@@ -30,7 +30,9 @@ class MainW(QtGui.QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(96,96))
         app_icon.addFile(icon_path, QtCore.QSize(256,256))
         self.setWindowIcon(app_icon)
-        self.trayIcon.setIcon(app_icon)
+        trayIcon = QtGui.QSystemTrayIcon(app_icon)
+        trayIcon.show()
+        #self.trayIcon.setIcon(app_icon)
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []

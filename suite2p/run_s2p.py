@@ -13,6 +13,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'reg_tif': False, # whether to save registered tiffs
         'save_mat': False, # whether to save Matlab results
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing

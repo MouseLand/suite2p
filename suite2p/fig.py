@@ -329,9 +329,11 @@ def make_chosen_ROI(M0, ypix, xpix, lam):
     M0[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
     return M0
 
-def make_chosen_circle(M0, ycirc, xcirc, col):
+def make_chosen_circle(M0, ycirc, xcirc, col, sat):
     ncirc = ycirc.size
-    pix = np.concatenate((col*np.ones((ncirc,1),np.float32), np.ones((ncirc,2), np.float32)),axis=1)
+    pix = np.concatenate((col*np.ones((ncirc,1),np.float32),
+                          sat*np.ones((ncirc,1), np.float32),
+                          np.ones((ncirc,1), np.float32)),axis=1)
     M0[ycirc,xcirc,:] = hsv_to_rgb(pix)
     return M0
 
@@ -376,8 +378,14 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             for n in parent.imerge:
                 ycirc = parent.stat[n]['ycirc']
                 xcirc = parent.stat[n]['xcirc']
-                col   = cols[n,color]
-                M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col)
+                if color==cols.shape[1]:
+                    col = parent.ops_plot[4][n,parent.ichosen]
+                    sat = 0
+                    M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
+                else:
+                    col   = cols[n,color]
+                    sat = 1
+                    M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
     return M[0],M[1]
 
 def flip_cell(parent):

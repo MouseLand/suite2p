@@ -367,7 +367,9 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             ypix = parent.stat[n]['ypix'].flatten()
             xpix = parent.stat[n]['xpix'].flatten()
             if view==0:
-                lam = np.maximum(0, np.minimum(1, 0.75 * parent.stat[n]['lam'] / parent.LamMean))
+                lam = parent.stat[n]['lam']
+                lam /= lam.sum()
+                lam = np.maximum(0, np.minimum(1, 0.75 * lam / parent.LamMean))
                 M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
             else:
                 ypixA = np.concatenate((ypixA,ypix),axis=0)

@@ -172,6 +172,7 @@ def run(classfile,stat):
     return iscell
 
 def load(parent, name, inactive):
+    print('loading classifier ', name)
     parent.model = Classifier(classfile=name,
                                trainfiles=None,
                                statclass=None)
@@ -181,8 +182,7 @@ def load(parent, name, inactive):
         # fill up with current dataset stats
         get_stats(parent)
         parent.trainfiles = parent.model.trainfiles
-        if inactive:
-            activate(parent)
+        activate(parent)
 
 def get_stats(parent):
     ncells = parent.Fcell.shape[0]
@@ -240,7 +240,7 @@ def save_list(parent):
 def activate(parent):
     parent.probcell = parent.model.apply(parent.statistics)
     istat = parent.probcell
-    parent.clabels[-1] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
+    parent.clabels[-2] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
     istat = istat / 1.3

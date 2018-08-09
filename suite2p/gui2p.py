@@ -661,6 +661,8 @@ class MainW(QtGui.QMainWindow):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
             classifier.load(self, name[0], True)
+        else:
+            print('no classifier')
 
     def class_default(self):
         classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')

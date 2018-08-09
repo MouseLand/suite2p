@@ -117,13 +117,15 @@ def combined(ops1):
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))
+        iscell0 = np.load(os.path.join(fpath,'iscell.npy'))
         if k==0:
-            F, Fneu, spks,stat = F0, Fneu0, spks0,stat0
+            F, Fneu, spks,stat,iscell = F0, Fneu0, spks0,stat0, iscell0
         else:
             F    = np.concatenate((F, F0))
             Fneu = np.concatenate((Fneu, Fneu0))
             spks = np.concatenate((spks, spks0))
             stat = np.concatenate((stat,stat0))
+            iscell = np.concatenate((iscell,iscell0))
     ops['meanImg'] = meanImg
     ops['Vcorr'] = Vcorr
     ops['Ly'] = Ly * nY
@@ -139,8 +141,18 @@ def combined(ops1):
     np.save(os.path.join(fpath, 'spks.npy'), spks)
     np.save(os.path.join(fpath, 'ops.npy'), ops)
     np.save(os.path.join(fpath, 'stat.npy'), stat)
-    iscell = np.ones((len(stat),2))
     np.save(os.path.join(fpath, 'iscell.npy'), iscell)
+
+    # save as matlab file
+    if ('save_mat' in ops) and ops['save_mat']:
+        matpath = os.path.join(ops['save_path'],'Fall.mat')
+        scipy.io.savemat(matpath, {'stat': stat,
+                                   'ops': ops,
+                                   'F': F,
+                                   'Fneu': Fneu,
+                                   'spks': spks,
+                                   'iscell': iscell})
+
     return ops
 
 def run_s2p(ops={},db={}):

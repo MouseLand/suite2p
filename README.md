@@ -134,4 +134,4 @@ suite2p relies on the following packages (which are automatically installed if m
 PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 
 ### Logo
-Logo was designed by Shelby Stringer and Chris Czaja.
+Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

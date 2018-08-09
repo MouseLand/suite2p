@@ -20,7 +20,17 @@ class MainW(QtGui.QMainWindow):
 
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
-        self.setWindowIcon(QtGui.QIcon('logo.png'))
+        app_icon = QtGui.QIcon()
+        icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         '..','logo/logo.png')
+        app_icon.addFile(icon_path, QtCore.QSize(16,16))
+        app_icon.addFile(icon_path, QtCore.QSize(24,24))
+        app_icon.addFile(icon_path, QtCore.QSize(32,32))
+        app_icon.addFile(icon_path, QtCore.QSize(48,48))
+        app_icon.addFile(icon_path, QtCore.QSize(96,96))
+        app_icon.addFile(icon_path, QtCore.QSize(256,256))
+        self.setWindowIcon(app_icon)
+        self.trayIcon.setIcon(app_icon)
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
@@ -597,25 +607,24 @@ class MainW(QtGui.QMainWindow):
             ypix = self.stat[0]['ypix']
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
-            self.stat = None
-        if self.stat is not None:
+            stat = None
+        if stat is not None:
             basename, fname = os.path.split(name)
-            self.basename = basename
             goodfolder = True
             try:
-                self.Fcell = np.load(basename + '/F.npy')
-                self.Fneu = np.load(basename + '/Fneu.npy')
+                Fcell = np.load(basename + '/F.npy')
+                Fneu = np.load(basename + '/Fneu.npy')
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('ERROR: there are no fluorescence traces in this folder (F.npy/Fneu.npy)')
                 goodfolder = False
             try:
-                self.Spks = np.load(basename + '/spks.npy')
+                Spks = np.load(basename + '/spks.npy')
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('there are no spike deconvolved traces in this folder (spks.npy)')
             try:
                 iscell = np.load(basename + '/iscell.npy')
-                self.iscell = iscell[:,0].astype(np.bool)
-                self.probcell = iscell[:,1]
+                iscell = iscell[:,0].astype(np.bool)
+                probcell = iscell[:,1]
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('no manual labels found (iscell.npy)')
             # try:
@@ -642,8 +651,16 @@ class MainW(QtGui.QMainWindow):
                 print('ERROR: there is no ops file in this folder (ops.npy)')
                 goodfolder = False
             if goodfolder:
+                self.basename = basename
+                self.stat = stat
+                self.Fcell = Fcell
+                self.Fneu = Fneu
+                self.Spks = spks
+                self.iscell = iscell
+                self.probcell = probcell
                 self.make_masks_and_buttons()
                 self.loaded = True
+
             else:
                 print('stat.npy found, but other files not in folder')
                 Text = 'stat.npy found, but other files missing, choose another?'

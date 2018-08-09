@@ -13,6 +13,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'save_mat': False, # whether to save Matlab results
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
         'h5py': [], # take h5py as input (deactivates data_path)
@@ -207,22 +208,23 @@ def run_s2p(ops={},db={}):
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         dF = F - ops['neucoeff']*Fneu
         spks = dcnv.oasis(dF, ops)
-        stat = np.load(os.path.join(fpath,'stat.npy'))
-        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
         np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+        stat = np.load(os.path.join(fpath,'stat.npy'))
         # apply default classifier
-        classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+        classfile = os.path.join(os.path.dirname(__file__),'..', 'classsifiers/classifier_user.npy')
         iscell = classifier.run(classfile, stat)
         np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
         # save as matlab file
-        matpath = os.path.join(ops['save_path'],'Fall.mat')
-        scipy.io.savemat(matpath, {'stat': stat,
-                                   'ops': ops,
-                                   'F': F,
-                                   'Fneu': Fneu,
-                                   'spks': spks,
-                                   'iscell': iscell})
-                                   
+        if ('save_mat' in ops) and ops['save_mat']:
+            matpath = os.path.join(ops['save_path'],'Fall.mat')
+            scipy.io.savemat(matpath, {'stat': stat,
+                                       'ops': ops,
+                                       'F': F,
+                                       'Fneu': Fneu,
+                                       'spks': spks,
+                                       'iscell': iscell})
+
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
 

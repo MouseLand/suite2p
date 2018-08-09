@@ -40,7 +40,7 @@ class Classifier:
                                     100)
         hists = np.zeros((99,nstats,2), np.float32)
         for k in range(2):
-            if k==1:
+            if k==0:
                 ix = iscell
             else:
                 ix = notcell
@@ -141,15 +141,35 @@ class Classifier:
         self.trainfiles = trainfiles
 
 def smooth_distribution(x, grid):
-    xbin = x
+    ''' smooth x with sig that is proportional to the number of x in each bin of the grid '''
     sig = 10.0
-    xbin[xbin<grid[0]] = grid[0]#*np.ones(((xbin<grid[0]).sum(),))
-    xbin[xbin>grid[-1]] = grid[-1]#*np.ones(((xbin>grid[-1]).sum(),))
-    hist0 = np.histogram(xbin, grid)
-    hist0 = hist0[0]
-    hist = gaussian_filter(hist0, sig)
-    hist = hist / hist.sum()
-    return hist0
+    nbins = grid.size
+    hist_smooth = np.zeros((nbins-1,))
+    x[x<grid[0]] = grid[0]#*np.ones(((xbin<grid[0]).sum(),))
+    x[x>grid[-1]] = grid[-1]#*np.ones(((xbin>grid[-1]).sum(),))
+    hist,b = np.histogram(x, grid)
+    for k in range(nbins-1):
+        L = np.zeros((nbins-1,), np.float32)
+        if hist[k]>0:
+            L[k] = hist[k]
+            hist_smooth += gaussian_filter(L, sig)
+    hist_smooth /= hist_smooth.sum()
+    return hist_smooth
+
+def run(classfile,stat):
+    model = Classifier(classfile=classfile)
+    # put stats into matrix
+    ncells = len(stat)
+    statistics = np.zeros((ncells, len(model.statclass)),np.float32)
+    k=0
+    for key in model.statclass:
+        for n in range(0,ncells):
+            statistics[n,k] = stat[n][key]
+        k+=1
+    probcell = model.apply(statistics)
+    iscell = probcell > 0.5
+    iscell = np.concatenate((np.expand_dims(iscell,axis=1),np.expand_dims(probcell,axis=1)),axis=1)
+    return iscell
 
 def load(parent, name, inactive):
     parent.model = Classifier(classfile=name,

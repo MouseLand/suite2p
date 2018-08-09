@@ -1,8 +1,9 @@
 import numpy as np
 import time, os
-from suite2p import register, dcnv
+from suite2p import register, dcnv, classifier
 from suite2p import celldetect2 as celldetect2
 from scipy import stats
+from scipy import io
 from multiprocessing import Pool
 
 def tic():
@@ -199,16 +200,29 @@ def run_s2p(ops={},db={}):
         for k in range(len(ops1)):
             ops1[k] = get_cells(ops1[k])
 
-    ######### SPIKE DECONVOLUTION #########
+    ######### SPIKE DECONVOLUTION AND CLASSIFIER #########
     for ops in ops1:
         fpath = ops['save_path']
         F = np.load(os.path.join(fpath,'F.npy'))
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         dF = F - ops['neucoeff']*Fneu
         spks = dcnv.oasis(dF, ops)
+        stat = np.load(os.path.join(fpath,'stat.npy'))
         print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
         np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-
+        # apply default classifier
+        classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+        iscell = classifier.run(classfile, stat)
+        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+        # save as matlab file
+        matpath = os.path.join(ops['save_path'],'Fall.mat')
+        scipy.io.savemat(matpath, {'stat': stat,
+                                   'ops': ops,
+                                   'F': F,
+                                   'Fneu': Fneu,
+                                   'spks': spks,
+                                   'iscell': iscell})
+                                   
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
 

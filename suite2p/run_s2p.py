@@ -12,7 +12,11 @@ def toc(i0):
 
 def default_ops():
     ops = {
-        'save_path0': [], # default is the first item in data_path
+        'fast_disk': [], # used to store temporary binary file, defaults to save_path0
+        'delete_bin': False, # whether to delete binary file after processing
+        'h5py': [], # take h5py as input (deactivates data_path)
+        'h5py_key': 'data', #key in h5py where data array is stored
+        'save_path0': [], # stores results, defaults to first item in data_path
         'diameter':12, # this is the main parameter for cell detection
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)
@@ -29,7 +33,6 @@ def default_ops():
         'neumax': 1.,  # maximum neuropil coefficient (not implemented)
         'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
-        'reg_tif': False, # whether to save registered tiffs for manual inspection
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
         'batch_size': 200, # number of frames per batch
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
@@ -48,9 +51,6 @@ def default_ops():
         'allow_overlap': False,
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
-        'h5py': [],
-        'h5py_key': 'data',
-        'delete_bin': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
       }
@@ -77,7 +77,8 @@ def get_cells(ops):
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
     np.save(os.path.join(fpath,'stat.npy'), stat)
-
+    iscell = np.ones((len(stat),2))
+    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
     print('results saved to %s'%ops['save_path'])
     return ops
 

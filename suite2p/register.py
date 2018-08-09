@@ -349,14 +349,18 @@ def h5py_to_binary(ops):
     if nchannels>1:
         reg_file_chan2 = []
     for j in range(0,nplanes):
-        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-        ops['save_path'] = fpath
-        ops['ops_path'] = os.path.join(fpath,'ops.npy')
-        ops['reg_file'] = os.path.join(fpath, 'data.bin')
+        ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
+        if ('fast_disk' not in ops) or len(ops['fast_disk'])>0:
+            ops['fast_disk'] = ops['save_path0']
+        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
+        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
+        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(fpath, 'data_chan2.bin')
-        if not os.path.isdir(fpath):
-            os.makedirs(fpath)
+            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+        if not os.path.isdir(ops['fast_disk']):
+            os.makedirs(ops['fast_disk'])
+        if not os.path.isdir(ops['save_path']):
+            os.makedirs(ops['save_path'])
         ops1.append(ops.copy())
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
@@ -407,12 +411,17 @@ def tiff_to_binary(ops):
     for j in range(0,nplanes):
         fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         ops['save_path'] = fpath
-        ops['ops_path'] = os.path.join(fpath,'ops.npy')
-        ops['reg_file'] = os.path.join(fpath, 'data.bin')
+        if ('fast_disk' not in ops) or len(ops['fast_disk'])>0:
+            ops['fast_disk'] = ops['save_path0']
+        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
+        ops['ops_path'] = os.path.join(ops['save_path]'],'ops.npy')
+        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(fpath, 'data_chan2.bin')
-        if not os.path.isdir(fpath):
-            os.makedirs(fpath)
+            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+        if not os.path.isdir(ops['fast_disk']):
+            os.makedirs(ops['fast_disk'])
+        if not os.path.isdir(ops['save_path']):
+            os.makedirs(ops['save_path'])
         ops1.append(ops.copy())
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:

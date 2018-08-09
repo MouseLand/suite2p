@@ -22,14 +22,14 @@ class MainW(QtGui.QMainWindow):
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                          '..','logo/logo.png')
-        #app_icon = QtGui.QIcon()
-        #app_icon.addFile(icon_path, QtCore.QSize(16,16))
-        #app_icon.addFile(icon_path, QtCore.QSize(24,24))
-        #app_icon.addFile(icon_path, QtCore.QSize(32,32))
-        #app_icon.addFile(icon_path, QtCore.QSize(48,48))
-        #app_icon.addFile(icon_path, QtCore.QSize(96,96))
-        #app_icon.addFile(icon_path, QtCore.QSize(256,256))
-        self.setWindowIcon(QtGui.QIcon(icon_path))
+        app_icon = QtGui.QIcon()
+        app_icon.addFile(icon_path, QtCore.QSize(16,16))
+        app_icon.addFile(icon_path, QtCore.QSize(24,24))
+        app_icon.addFile(icon_path, QtCore.QSize(32,32))
+        app_icon.addFile(icon_path, QtCore.QSize(48,48))
+        app_icon.addFile(icon_path, QtCore.QSize(96,96))
+        app_icon.addFile(icon_path, QtCore.QSize(256,256))
+        self.setWindowIcon(app_icon)
         #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
@@ -601,9 +601,8 @@ class MainW(QtGui.QMainWindow):
         name = self.fname
         print(name)
         try:
-            self.stat = np.load(name)
-            #self.stat = self.stat.item()
-            ypix = self.stat[0]['ypix']
+            stat = np.load(name)
+            ypix = stat[0]['ypix']
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: this is not a stat.npy file :( (needs stat[n]["ypix"]!)')
             stat = None
@@ -622,44 +621,27 @@ class MainW(QtGui.QMainWindow):
                 print('there are no spike deconvolved traces in this folder (spks.npy)')
             try:
                 iscell = np.load(basename + '/iscell.npy')
-                iscell = iscell[:,0].astype(np.bool)
                 probcell = iscell[:,1]
+                iscell = iscell[:,0].astype(np.bool)
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('no manual labels found (iscell.npy)')
-            # try:
-            #     gui_data = np.load(basename + '/gui_data.npy')
-            #     gui_data = gui_data.item()
-            #     self.RGBall = gui_data['RGBall']
-            #     self.RGBback = gui_data['RGBback']
-            #     self.Vback = gui_data['Vback']
-            #     self.iROI = gui_data['iROI']
-            #     self.iExt = gui_data['iExt']
-            #     self.Sroi = gui_data['Sroi']
-            #     self.Sext = gui_data['Sext']
-            #     self.Lam  = gui_data['Lam']
-            #     self.LamMean = gui_data['LamMean']
-            #     self.wasloaded = gui_data['wasloaded']
-            #     self.initialized = True
-            # except (ValueError, OSError, RuntimeError, TypeError, NameError):
-            #     self.initialized = False
-            #     print('no gui data found (gui_data.npy)')
             try:
-                self.ops = np.load(basename + '/ops.npy')
-                self.ops = self.ops.item()
+                ops = np.load(basename + '/ops.npy')
+                ops = ops.item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print('ERROR: there is no ops file in this folder (ops.npy)')
                 goodfolder = False
             if goodfolder:
                 self.basename = basename
                 self.stat = stat
+                self.ops  = ops
                 self.Fcell = Fcell
                 self.Fneu = Fneu
-                self.Spks = spks
+                self.Spks = Spks
                 self.iscell = iscell
                 self.probcell = probcell
                 self.make_masks_and_buttons()
                 self.loaded = True
-
             else:
                 print('stat.npy found, but other files not in folder')
                 Text = 'stat.npy found, but other files missing, choose another?'
@@ -704,7 +686,14 @@ def run():
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                      '..','logo/logo.png')
-    app.setWindowIcon(QtGui.QIcon(icon_path))
+    app_icon = QtGui.QIcon()
+    app_icon.addFile(icon_path, QtCore.QSize(16,16))
+    app_icon.addFile(icon_path, QtCore.QSize(24,24))
+    app_icon.addFile(icon_path, QtCore.QSize(32,32))
+    app_icon.addFile(icon_path, QtCore.QSize(48,48))
+    app_icon.addFile(icon_path, QtCore.QSize(96,96))
+    app_icon.addFile(icon_path, QtCore.QSize(256,256))
+    app.setWindowIcon(app_icon)
     GUI = MainW()
     ret = app.exec_()
     #GUI.save_gui_data()

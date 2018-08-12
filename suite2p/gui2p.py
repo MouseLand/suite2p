@@ -224,7 +224,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
         saveclass = QtGui.QPushButton('save classifier')
         saveclass.resize(100,50)
-        saveclass.clicked.connect(lambda: classfier.save(self))
+        saveclass.clicked.connect(lambda: classifier.save(self))
         saveclass.setEnabled(False)
         self.l0.addWidget(saveclass,self.bend+4,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)

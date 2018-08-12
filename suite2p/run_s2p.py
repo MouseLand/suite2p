@@ -13,6 +13,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'reg_tif': False, # whether to save registered tiffs
         'save_mat': False, # whether to save Matlab results
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
@@ -233,13 +234,11 @@ def run_s2p(ops={},db={}):
         print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
         stat = np.load(os.path.join(fpath,'stat.npy'))
         # apply default classifier
-        #classfile = os.path.join(os.path.dirname(__file__),'..', 'classsifiers/classifier_user.npy')
-        #classfile = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-        #                '..','classifiers/classifier_user.npy')
-
-        #iscell = classifier.run(classfile, stat)
-        #np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
-
+        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                         '..','classifiers/classifier_user.npy')
+        print(classfile)
+        iscell = classifier.run(classfile, stat)
+        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
         # save as matlab file
         if ('save_mat' in ops) and ops['save_mat']:
             matpath = os.path.join(ops['save_path'],'Fall.mat')

@@ -82,21 +82,30 @@ class RunWindow(QtGui.QDialog):
                 k+=1
                 kk+=1
             l+=1
+        # data_path
         btiff = QtGui.QPushButton('Add directory to data_path')
         btiff.clicked.connect(self.get_folders)
         self.layout.addWidget(btiff,0,0,1,1)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,1,0,1,1)
-        btiff = QtGui.QPushButton('Choose save_path\n(default is data_path)')
-        btiff.clicked.connect(self.save_folder)
-        self.layout.addWidget(btiff,13,0,1,1)
-        self.layout.addWidget(QtGui.QLabel('-'),14,0,1,1)
+        # save_path0
+        bsave = QtGui.QPushButton('Add save_path (default is data_path)')
+        bsave.clicked.connect(self.save_folder)
+        self.layout.addWidget(bsave,10,0,1,1)
+        self.savelabel = QtGui.QLabel('')
+        self.layout.addWidget(self.savelabel,11,0,1,1)
+        # fast_disk
+        bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
+        bbin.clicked.connect(self.bin_folder)
+        self.layout.addWidget(bbin,12,0,1,1)
+        self.binlabel = QtGui.QLabel('')
+        self.layout.addWidget(self.binlabel,13,0,1,1)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,16,0,1,1)
+        self.layout.addWidget(self.runButton,15,0,1,1)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 17,0,15,l)
+        self.layout.addWidget(self.textEdit, 16,0,15,l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -106,7 +115,7 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 16,1,1,1)
+        self.layout.addWidget(self.stopButton, 15,1,1,1)
         self.stopButton.clicked.connect(self.stop)
 
     def stop(self):
@@ -168,6 +177,9 @@ class RunWindow(QtGui.QDialog):
             fpath = self.db['data_path'][0]
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
+        if len(self.fast_disk)==0:
+            self.fast_disk = self.save_path
+        self.db['fast_disk'] = self.fast_disk
         print('Running suite2p!')
         print('starting process')
         np.save('ops.npy', self.ops)
@@ -183,7 +195,12 @@ class RunWindow(QtGui.QDialog):
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
         self.save_path = name
-        self.layout.addWidget(QtGui.QLabel(name),14,0,1,1)
+        self.savelabel.setText(name)
+
+    def bin_folder(self):
+        name = QtGui.QFileDialog.getExistingDirectory(self, "Folder for binary file")
+        self.fast_disk = name
+        self.binlabel.setText(name)
 
 ### custom QDialog which makes a list of items you can include/exclude
 class ListChooser(QtGui.QDialog):

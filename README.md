@@ -28,16 +28,17 @@ The quickest way to start is to open the GUI from a command line terminal. You m
 python -m suite2p
 ~~~~
 Then: 
-1. File -> Run suite2p
+1. File -> Run suite2p (or shortcut ctrl+r)
 2. Setup a configuration for your own data
-    * -> Add directory to data_path
-    * -> Choose save_path ((otherwise the data directory is used as save path))
-    * Set some parameters (see full list below). At the minimum: 
+    - -> Add directory to data_path (can be multiple folders, but add them one at a time)
+    - -> Add save_path ((otherwise the data directory is used as save path))
+    - -> Add fast_disk (this is where the binary file of registered data will be created, choose an SSD for this path) ((otherwise the save path is used as the fast disk path))
+    - Set some parameters (see full list below). At the minimum: 
 		~~~~
 		nplanes, nchannels, diameter, tau, fs
 		~~~~
 3. Press run and wait. Messages should start appearing in the embedded command line. 
-4. When the run is finished, use the GUI to visualize and refine the results (see below).
+4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).
 
 ## How to use the GUI
 
@@ -47,17 +48,18 @@ The GUI serves two main functions:
 
 1. Checking the quality of the data and results. 
 	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces
-	* we will later add more views population-level visualizations. 
-2. Classify ROIs into cell / not cell. 
+	* we will later add more views such as population-level visualizations. 
+2. Classify ROIs into cell / not cell (right and left views respectively) 
 	* the default classifier included should work well in a wide variety of scenarios. 
 	* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
 
-Main GUI controls (works for all views):
+Main GUI controls (works in all views):
 
 1. Pan  = Left-Click  + drag  
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
-3. Full view = Double left-click
+3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
+5. 
  
 ## Other ways to call Suite2p
 
@@ -132,3 +134,6 @@ suite2p relies on the following packages (which are automatically installed if m
 - matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
 PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
+
+### Logo
+Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

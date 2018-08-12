@@ -19,7 +19,19 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+
+### Dependencies
+suite2p relies on the following packages (which are automatically installed with pip if missing):
+- pyqtgraph 
+- PyQt5
+- numpy
+- scipy
+- h5py
+- scikit-image
+- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
+
+PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 
 ## Getting started
 
@@ -40,18 +52,20 @@ Then:
 3. Press run and wait. Messages should start appearing in the embedded command line. 
 4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).
 
-## How to use the GUI
+### Using the GUI
 
 suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results. 
 
 The GUI serves two main functions:
 
 1. Checking the quality of the data and results. 
-	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces
+	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, the correlation among cells, and the ROI+neuropil traces
+	* by selecting multiple cells (with "Draw selection" or ctrl+left-click), you can view the activity of multiple ROIs simultaneously in the lower plot
 	* we will later add more views such as population-level visualizations. 
-2. Classify ROIs into cell / not cell (right and left views respectively) 
+2. Classify ROIs into cell / not cell (left and right views respectively) 
 	* the default classifier included should work well in a wide variety of scenarios. 
 	* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
+	* the GUI automatically saves which cells are on the left and right in the first column of "iscell.npy". the second column contains the probability that the ROI is a cell based on the currently loaded classifier.
 
 Main GUI controls (works in all views):
 
@@ -59,7 +73,9 @@ Main GUI controls (works in all views):
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
 3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
-5. 
+5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
+
+You can add your manual curation to the classifier by clicking "Add current data to classifier" (this will add the data to the default classifier - this is the classifier that opens when the GUI starts). You can also make a brand-new classifier from a list of "iscell.npy" files that you've manually curated.
  
 ## Other ways to call Suite2p
 
@@ -82,6 +98,7 @@ Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)
 spks.npy: array of deconvolved traces (ROIs by timepoints)  
 stat.npy: array of statistics computed for each cell (ROIs by 1)  
 ops.npy: options and intermediate outputs
+iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
 ## Option defaults
@@ -123,17 +140,6 @@ ops.npy: options and intermediate outputs
 'allow_overlap': False, # not 100% sure this is being used         
 ~~~~
 
-## Dependencies
-suite2p relies on the following packages (which are automatically installed if missing):
-- pyqtgraph 
-- PyQt5
-- numpy
-- scipy
-- h5py
-- scikit-image
-- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
-
-PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

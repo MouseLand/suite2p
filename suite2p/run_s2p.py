@@ -42,7 +42,7 @@ def default_ops():
         'nimg_init': 200, # subsampled frames for finding reference image
         'navg_frames_svd': 5000, # max number of binned frames for the SVD
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
-        'max_iterations': 10, # maximum number of iterations to do cell detection
+        'max_iterations': 20, # maximum number of iterations to do cell detection
         'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
         'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation
         'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
@@ -63,7 +63,7 @@ def get_cells(ops):
     ops, stat = celldetect2.sourcery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil
-    F, Fneu = celldetect2.extractF(ops, stat)
+    F, Fneu, ops = celldetect2.extractF(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
 
     # subtract neuropil
@@ -91,33 +91,47 @@ def combined(ops1):
     Multi-roi recordings will be arranged by their physical localization.
 
     '''
-    ops = ops1[0]
-    Lx = ops['Lx']
-    Ly = ops['Ly']
-    nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
-    nX = int(nX)
-    nY = int(np.ceil(len(ops1)/nX))
-    dx = np.zeros((len(ops1),), 'int64')
-    dy = np.zeros((len(ops1),),'int64')
-    for j in range(len(ops1)):
-        dx[j] = (j%nX) * Lx
-        dy[j] = int(j/nX) * Ly
-    meanImg = np.zeros((Ly*nX, Lx*nY))
-    Vcorr = np.zeros((Ly*nX, Lx*nY))
+    if ('dx' not in ops) or ('dy' not in ops):
+        ops = ops1[0]
+        Lx = ops['Lx']
+        Ly = ops['Ly']
+        nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
+        nX = int(nX)
+        nY = int(np.ceil(len(ops1)/nX))
+        for j in range(len(ops1)):
+            ops1[j]['dx'] = (j%nX) * Lx
+            ops1[j]['dy'] = int(j/nX) * Ly
+    LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
+    LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
+    meanImg = np.zeros((LY, LX))
+    Vcorr = np.zeros((LY, LX))
+    Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
         fpath = ops['save_path']
         stat0 = np.load(os.path.join(fpath,'stat.npy'))
-        meanImg[dy[k]:dy[k]+Ly, dx[k]:dx[k]+Lx] = ops['meanImg']
-        Vcorr[dy[k] +ops['yrange'][0]:dy[k] +ops['yrange'][-1], dx[k] + ops['xrange'][0]:dx[k] + ops['xrange'][-1]] = ops['Vcorr']
+        xrange = np.arange(ops['dx'],ops['dx']+Lx)
+        yrange = np.arange(ops['dy'],ops['dy']+Ly)
+        meanImg[yrange, xrange] = ops['meanImg']
+        xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
+        yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
+        Vcorr[yrange, xrange] = ops['Vcorr']
         for j in range(len(stat0)):
-            stat0[j]['xpix'] += dx[k]
-            stat0[j]['ypix'] += dy[k]
-            stat0[j]['med'][0] += dx[k]
-            stat0[j]['med'][1] += dy[k]
+            stat0[j]['xpix'] += ops['dx']
+            stat0[j]['ypix'] += ops['dy']
+            stat0[j]['med'][0] += ops['dx']
+            stat0[j]['med'][1] += ops['dy']
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))
         iscell0 = np.load(os.path.join(fpath,'iscell.npy'))
+        nn,nt = F0.shape
+        if nt<Nfr:
+            fcat    = np.zeros((nn,Nfr-nt), 'float32')
+            print(F0.shape)
+            print(fcat.shape)
+            F0      = np.concatenate((F0, fcat), axis=1)
+            spks0   = np.concatenate((spks0, fcat), axis=1)
+            Fneu0   = np.concatenate((Fneu0, fcat), axis=1)
         if k==0:
             F, Fneu, spks,stat,iscell = F0, Fneu0, spks0,stat0, iscell0
         else:
@@ -152,17 +166,13 @@ def combined(ops1):
                                    'Fneu': Fneu,
                                    'spks': spks,
                                    'iscell': iscell})
-
     return ops
 
 def run_s2p(ops={},db={}):
     i0 = tic()
-
     ops = {**ops, **db}
-
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         ops['save_path0'] = ops['data_path'][0]
-
     # check if there are files already registered
     fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
     files_found_flag = True
@@ -178,7 +188,6 @@ def run_s2p(ops={},db={}):
             ops1[i]['yrange'] = op['yrange']
     else:
         files_found_flag = False
-
     ######### REGISTRATION #########
     if not files_found_flag:
         # get default options
@@ -224,9 +233,13 @@ def run_s2p(ops={},db={}):
         print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
         stat = np.load(os.path.join(fpath,'stat.npy'))
         # apply default classifier
-        classfile = os.path.join(os.path.dirname(__file__),'..', 'classsifiers/classifier_user.npy')
-        iscell = classifier.run(classfile, stat)
-        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+        #classfile = os.path.join(os.path.dirname(__file__),'..', 'classsifiers/classifier_user.npy')
+        #classfile = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+        #                '..','classifiers/classifier_user.npy')
+
+        #iscell = classifier.run(classfile, stat)
+        #np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+
         # save as matlab file
         if ('save_mat' in ops) and ops['save_mat']:
             matpath = os.path.join(ops['save_path'],'Fall.mat')

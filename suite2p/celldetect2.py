@@ -60,7 +60,6 @@ def get_mov(ops):
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
-
     # load and bin data
     while True:
         buff = reg_file.read(nbytesread)
@@ -735,6 +734,7 @@ def extractF(ops, stat):
     ix = 0
     data = 1
 
+    ops['meanImg'] = np.zeros((Ly,Lx))
     k0 = tic()
     while data is not None:
         buff = reg_file.read(block_size)
@@ -743,6 +743,7 @@ def extractF(ops, stat):
         if nimgd == 0:
             break
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+        ops['meanImg'] += np.sum(data,axis=0)
 
         # resize data to be Ly*Lx by nimgd
         data = np.reshape(data, (nimgd,-1)).transpose()
@@ -751,10 +752,12 @@ def extractF(ops, stat):
         F[:, inds]    = cell_masks @ data
         Fneu[:, inds] = neuropil_masks @ data
 
+
         if ix%(5*nimgd)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
         ix += nimgd
     print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
+    ops['meanImg'] /= ops['nframes']
 
     reg_file.close()
-    return F, Fneu
+    return F, Fneu, ops

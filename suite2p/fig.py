@@ -298,23 +298,23 @@ def corr_masks(parent):
 def class_masks(parent):
     cols = parent.ops_plot[3]
     c = cols.shape[1] - 1
+    k = parent.ops_plot[1]
     for i in range(2):
-        for k in range(4):
-            H = cols[parent.iROI[i,0,:,:],c]
-            if k<3:
-                S = parent.Sroi[i,:,:]
-            else:
-                S = parent.Sext[i,:,:]
-            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
-            if k>0:
-                V = parent.Vback[k-1,:,:]
-                if k==3:
-                    V = np.maximum(0,np.minimum(1, V + S))
-            H = np.expand_dims(H,axis=2)
-            S = np.expand_dims(S,axis=2)
-            V = np.expand_dims(V,axis=2)
-            hsv = np.concatenate((H,S,V),axis=2)
-            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+        H = cols[parent.iROI[i,0,:,:],c]
+        if k<3:
+            S = parent.Sroi[i,:,:]
+        else:
+            S = parent.Sext[i,:,:]
+        V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k>0:
+            V = parent.Vback[k-1,:,:]
+            if k==3:
+                V = np.maximum(0,np.minimum(1, V + S))
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
 def flip_for_class(parent, iscell):
     ncells = iscell.size

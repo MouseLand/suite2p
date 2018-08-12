@@ -82,6 +82,7 @@ Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)
 spks.npy: array of deconvolved traces (ROIs by timepoints)  
 stat.npy: array of statistics computed for each cell (ROIs by 1)  
 ops.npy: options and intermediate outputs
+iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
 ## Option defaults

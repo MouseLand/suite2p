@@ -47,11 +47,13 @@ suite2p output goes to a folder called "suite2p" inside your save_path, which by
 The GUI serves two main functions:
 
 1. Checking the quality of the data and results. 
-	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, and the ROI+neuropil traces
+	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, the correlation among cells, and the ROI+neuropil traces
+	* by selecting multiple cells (with "Draw selection" or ctrl+left-click), you can view the activity of multiple ROIs simultaneously in the lower plot
 	* we will later add more views such as population-level visualizations. 
-2. Classify ROIs into cell / not cell (right and left views respectively) 
+2. Classify ROIs into cell / not cell (left and right views respectively) 
 	* the default classifier included should work well in a wide variety of scenarios. 
 	* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
+	* the GUI automatically saves which cells are on the left and right in the first column of "iscell.npy". the second column contains the probability that the ROI is a cell based on the currently loaded classifier.
 
 Main GUI controls (works in all views):
 
@@ -60,6 +62,8 @@ Main GUI controls (works in all views):
 3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
 5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
+
+You can add your manual curation to the classifier by clicking "Add current data to classifier" (this will add the data to the default classifier - this is the classifier that opens when the GUI starts). You can also make a brand-new classifier from a list of "iscell.npy" files that you've manually curated.
  
 ## Other ways to call Suite2p
 

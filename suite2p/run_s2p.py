@@ -92,8 +92,8 @@ def combined(ops1):
     Multi-roi recordings will be arranged by their physical localization.
 
     '''
+    ops = ops1[0]
     if ('dx' not in ops) or ('dy' not in ops):
-        ops = ops1[0]
         Lx = ops['Lx']
         Ly = ops['Ly']
         nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
@@ -110,17 +110,17 @@ def combined(ops1):
     for k,ops in enumerate(ops1):
         fpath = ops['save_path']
         stat0 = np.load(os.path.join(fpath,'stat.npy'))
-        xrange = np.arange(ops['dx'],ops['dx']+Lx)
-        yrange = np.arange(ops['dy'],ops['dy']+Ly)
-        meanImg[yrange, xrange] = ops['meanImg']
+        xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
+        yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
+        meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
-        Vcorr[yrange, xrange] = ops['Vcorr']
+        Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
         for j in range(len(stat0)):
             stat0[j]['xpix'] += ops['dx']
             stat0[j]['ypix'] += ops['dy']
-            stat0[j]['med'][0] += ops['dx']
-            stat0[j]['med'][1] += ops['dy']
+            stat0[j]['med'][0] += ops['dy']
+            stat0[j]['med'][1] += ops['dx']
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))
@@ -143,8 +143,8 @@ def combined(ops1):
             iscell = np.concatenate((iscell,iscell0))
     ops['meanImg'] = meanImg
     ops['Vcorr'] = Vcorr
-    ops['Ly'] = Ly * nY
-    ops['Lx'] = Lx * nX
+    ops['Ly'] = LY
+    ops['Lx'] = LX
     ops['xrange'] = [0, ops['Lx']]
     ops['yrange'] = [0, ops['Ly']]
     fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')

@@ -23,13 +23,13 @@ If you don't already have Python (and pip), you'll need to first install a distr
 
 ### Dependencies
 suite2p relies on the following packages (which are automatically installed with pip if missing):
-- pyqtgraph 
-- PyQt5
-- numpy
-- scipy
-- h5py
-- scikit-image
-- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
+- [pyqtgraph](http://pyqtgraph.org/)
+- [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
+- [numpy](http://www.numpy.org/)
+- [scipy](https://www.scipy.org/)
+- [h5py](https://www.h5py.org/)
+- [scikit-image](https://scikit-image.org/)
+- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
 PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 

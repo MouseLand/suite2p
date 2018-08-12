@@ -19,7 +19,19 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose Python 3.x for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+
+### Dependencies
+suite2p relies on the following packages (which are automatically installed with pip if missing):
+- pyqtgraph 
+- PyQt5
+- numpy
+- scipy
+- h5py
+- scikit-image
+- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
+
+PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 
 ## Getting started
 
@@ -128,17 +140,6 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
 'allow_overlap': False, # not 100% sure this is being used         
 ~~~~
 
-## Dependencies
-suite2p relies on the following packages (which are automatically installed if missing):
-- pyqtgraph 
-- PyQt5
-- numpy
-- scipy
-- h5py
-- scikit-image
-- matplotlib (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
-
-PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

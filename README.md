@@ -40,7 +40,7 @@ Then:
 3. Press run and wait. Messages should start appearing in the embedded command line. 
 4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).
 
-## How to use the GUI
+### Using the GUI
 
 suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results. 
 

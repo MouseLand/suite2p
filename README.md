@@ -59,7 +59,7 @@ Main GUI controls (works in all views):
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
 3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
-5. 
+5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
  
 ## Other ways to call Suite2p
 

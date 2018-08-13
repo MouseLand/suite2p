@@ -436,7 +436,7 @@ def flip_cell(parent):
     parent.iExt[i,0,yext,xext] = n
     parent.Lam[i,2,ypix,xpix]  = parent.Lam[i,1,ypix,xpix]
     parent.Lam[i,1,ypix,xpix]  = parent.Lam[i,0,ypix,xpix]
-    parent.Lam[i,0,ypix,xpix]  = lam
+    parent.Lam[i,0,ypix,xpix]  = lam / lam.sum()
     yonly = ypix[~parent.stat[n]['overlap']]
     xonly = xpix[~parent.stat[n]['overlap']]
     parent.Sroi[i,ypix,xpix] = 1

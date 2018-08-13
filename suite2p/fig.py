@@ -34,10 +34,11 @@ def plot_trace(parent):
         parent.fmax=fmax
     else:
         ax = parent.p3.getAxis('left')
-        k=len(parent.imerge)-1
         kspace = 0.5
         ttick = list()
-        for n in parent.imerge[::-1]:
+        pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]
+        k=len(pmerge)-1
+        for n in pmerge[::-1]:
             f = parent.Fcell[n,:]
             fneu = parent.Fneu[n,:]
             sp = parent.Spks[n,:]
@@ -55,7 +56,7 @@ def plot_trace(parent):
             #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
             k-=1
         parent.fmin=0#-(k-1)*0.5
-        parent.fmax=(len(parent.imerge)+1)*kspace
+        parent.fmax=(len(pmerge)+1)*kspace
         ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
@@ -363,19 +364,20 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         ypixA = np.zeros((0,),np.int32)
         xpixA = np.zeros((0,),np.int32)
         vbackA = np.zeros((0,3),np.float32)
-        for n in parent.imerge:
-            ypix = parent.stat[n]['ypix'].flatten()
-            xpix = parent.stat[n]['xpix'].flatten()
-            if view==0:
-                lam = parent.stat[n]['lam']
-                lam /= lam.sum()
-                lam = np.maximum(0, np.minimum(1, 0.75 * lam / parent.LamMean))
-                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
-            else:
+        if view==0:
+            ischosen = np.isin(parent.iROI[wplot,0,:,:], parent.imerge)
+            M[wplot][ischosen,:] = 255
+            #lam = parent.stat[n]['lam']
+            #lam /= lam.sum()
+            #lam = np.maximum(0, np.minimum(1, 0.75 * lam / parent.LamMean))
+            #M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
+        else:
+            for n in parent.imerge:
+                ypix = parent.stat[n]['ypix'].flatten()
+                xpix = parent.stat[n]['xpix'].flatten()
                 ypixA = np.concatenate((ypixA,ypix),axis=0)
                 xpixA = np.concatenate((xpixA,xpix),axis=0)
                 vbackA = np.concatenate((vbackA, parent.RGBback[view-1,ypix,xpix,:]),axis=0)
-        if view>0:
             M[wplot][ypixA,xpixA,:] = vbackA
             for n in parent.imerge:
                 ycirc = parent.stat[n]['ycirc']

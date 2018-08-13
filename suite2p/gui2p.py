@@ -76,9 +76,11 @@ class MainW(QtGui.QMainWindow):
         self.saveClass.triggered.connect(lambda: classifier.save(self))
         self.saveClass.setEnabled(False)
         self.saveDefault = QtGui.QAction('Save classifier as default', self)
-        #self.saveDefault.setShortcut('Ctrl+S')
         self.saveDefault.triggered.connect(self.class_default)
         self.saveDefault.setEnabled(False)
+        self.addToClass = QtGui.QAction('add current data \n to classifier',self)
+        self.addToClass.triggered.connect(lambda: classifier.add_to(self))
+        self.addToClass.setEnabled(False)
         self.saveTrain = QtGui.QAction('Save training list', self)
         self.saveTrain.triggered.connect(lambda: classifier.save_list(self))
         self.saveTrain.setEnabled(False)
@@ -87,7 +89,9 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.loadTrain)
         class_menu.addAction(self.saveClass)
         class_menu.addAction(self.saveDefault)
+        class_menu.addAction(self.addToClass)
         class_menu.addAction(self.saveTrain)
+
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
@@ -157,12 +161,14 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
-        self.views = ['Q: ROIs', 'W: mean img\n    (enhanced)', 'E: mean img', 'R: correlation map']
+        self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
         self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
+        boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
         vlabel.setText('Background')
+        vlabel.setFont(boldfont)
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
         for names in self.views:
@@ -176,6 +182,7 @@ class MainW(QtGui.QMainWindow):
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
         clabel.setText('Colors')
+        clabel.setFont(boldfont)
         self.l0.addWidget(clabel,b+3,0,1,1)
         nv = b+3
         b=0
@@ -205,8 +212,10 @@ class MainW(QtGui.QMainWindow):
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(lambda: classifier.apply(self))
-        self.l0.addWidget(QtGui.QLabel('Classifer'),self.bend,0,1,1)
-        self.l0.addWidget(QtGui.QLabel('\t      cell prob'),self.bend+1,0,1,1)
+        cllabel = QtGui.QLabel('Classifier')
+        cllabel.setFont(boldfont)
+        self.l0.addWidget(cllabel,self.bend,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('\t      cell probability'),self.bend+1,0,1,1)
         applyclass.setEnabled(False)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
@@ -217,29 +226,17 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setFixedWidth(55)
         self.l0.addWidget(self.probedit,self.bend+1,0,1,1)
         self.l0.addWidget(applyclass,self.bend+2,0,1,1)
-        addtoclass = QtGui.QPushButton('add current data \n to classifier')
-        addtoclass.resize(100,100)
-        addtoclass.clicked.connect(lambda: classifier.add_to(self))
-        addtoclass.setEnabled(False)
-        self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
-        saveclass = QtGui.QPushButton('save classifier')
-        saveclass.resize(100,50)
-        saveclass.clicked.connect(lambda: classifier.save(self))
-        saveclass.setEnabled(False)
-        self.l0.addWidget(saveclass,self.bend+4,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)
         self.classbtns.addButton(applyclass,0)
-        self.classbtns.addButton(addtoclass,1)
-        self.classbtns.addButton(saveclass,2)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+3,0,1,1)
         #### ------ CELL STATS -------- ####
         # which stats
-        self.bend = self.bend+6
+        self.bend = self.bend+4
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
         lilfont = QtGui.QFont("Arial", 8)
-        qlabel = QtGui.QLabel('ROI:')
-        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
-        qlabel.setFont(bigfont)
+        qlabel = QtGui.QLabel('Selected ROI:')
+        qlabel.setFont(boldfont)
         self.l0.addWidget(qlabel,self.bend,0,1,1)
         self.ROIedit = QtGui.QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
@@ -257,6 +254,21 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
         self.l0.setRowStretch(self.bend+3+k, 1)
+        flabel = QtGui.QLabel(self)
+        flabel.setText("<font color='blue'>Fluorescence</font>")
+        nlabel = QtGui.QLabel(self)
+        nlabel.setText("<font color='red'>Neuropil</font>")
+        slabel = QtGui.QLabel(self)
+        slabel.setText("<font color='gray'>Deconvolved</font>")
+        flabel.setFont(boldfont)
+        nlabel.setFont(boldfont)
+        slabel.setFont(boldfont)
+        flabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        nlabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        slabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.l0.addWidget(flabel, self.bend+4+k,0,1,1)
+        self.l0.addWidget(nlabel, self.bend+5+k,0,1,1)
+        self.l0.addWidget(slabel, self.bend+6+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
@@ -435,10 +447,12 @@ class MainW(QtGui.QMainWindow):
         self.selectbtn[0].setEnabled(True)
         self.selectbtn[1].setEnabled(True)
         self.minview.setEnabled(True)
+        # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
         self.saveClass.setEnabled(True)
         self.saveDefault.setEnabled(True)
+        self.addToClass.setEnabled(True)
         self.saveTrain.setEnabled(True)
 
     def ROIs_on(self,state):

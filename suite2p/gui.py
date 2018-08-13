@@ -8,8 +8,7 @@ import pickle
 from suite2p import fig
 from suite2p import run_s2p
 
-### custom QDialog which allows user to fill in ops
-# and run suite2p!
+### custom QDialog which allows user to fill in ops and run suite2p!
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
@@ -221,14 +220,15 @@ class ListChooser(QtGui.QDialog):
         #loadtext.resize(loadtext.minimumSizeHint())
         loadtext.clicked.connect(self.load_text)
         layout.addWidget(loadtext,0,1,1,1)
+        layout.addWidget(QtGui.QLabel('(select multiple using ctrl)'),1,0,1,1)
         self.list = QtGui.QListWidget(parent)
-        layout.addWidget(self.list,1,0,5,2)
+        layout.addWidget(self.list,2,0,5,2)
         #self.list.resize(450,250)
         self.list.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         done = QtGui.QPushButton('OK')
         done.resize(done.minimumSizeHint())
         done.clicked.connect(lambda: self.exit_list(parent))
-        layout.addWidget(done,7,0,1,2)
+        layout.addWidget(done,8,0,1,2)
 
     def load_cell(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
@@ -265,8 +265,13 @@ class ListChooser(QtGui.QDialog):
 
     def exit_list(self, parent):
         parent.trainfiles = []
+        i=0
         for item in self.list.selectedItems():
             parent.trainfiles.append(item.text())
+            i+=1
+        if i==0:
+            for r in range(self.list.count()):
+                parent.trainfiles.append(self.list.item(r).text())
         self.accept()
 
 ### custom QPushButton class that plots image when clicked

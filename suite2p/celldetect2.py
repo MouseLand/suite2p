@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
+from matplotlib import pyplot as plt
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
@@ -418,7 +419,45 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
     cell_pix = np.minimum(1, cell_pix)
     return stat, cell_pix, cell_masks
 
-
+def neuropilMasks2(ops, stat, cell_pix):
+    '''creates surround neuropil masks for ROIs in stat
+    inputs:
+        ops, stat, cell_pix
+            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
+            from stat: ypix, xpix
+            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
+    outputs:
+        neuropil_masks (ncells,Ly,Lx)
+    '''
+    ncells = len(stat)
+    Ly = cell_pix.shape[0]
+    Lx = cell_pix.shape[1]
+    neuropil_masks = np.zeros((ncells,Ly,Lx),np.float32)
+    outer_radius = ops['outer_neuropil_radius']
+    # if outer_radius is infinite, define outer radius as a multiple of the cell radius
+    if np.isinf(ops['outer_neuropil_radius']):
+        min_pixels = ops['min_neuropil_pixels']
+        ratio      = ops['ratio_neuropil_to_cell']
+    for n in range(ncells):
+        ypix = stat[n]['ypix']
+        xpix = stat[n]['xpix']
+        # first extend to get ring of dis-allowed pixels
+        ypix, xpix = extendROI(ypix, xpix, Ly, Lx,ops['inner_neuropil_radius'])
+        # count how many pixels are valid
+        nring = np.sum(cell_pix[ypix,xpix]<.5)
+        ypix1,xpix1 = ypix,xpix
+        for j in range(0,100):
+            print(j)
+            ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
+            if np.sum(cell_pix[ypix1,xpix1]<.5)-nring>ops['min_neuropil_pixels']:
+                break # break if there are at least a minimum number of valid pixels
+        ix = cell_pix[ypix1,xpix1]<.5
+        ypix1, xpix1 = ypix1[ix], xpix1[ix]
+        neuropil_masks[n,ypix1,xpix1] = 1.
+        neuropil_masks[n,ypix,xpix] = 0
+    S = np.sum(neuropil_masks, axis=(1,2))
+    neuropil_masks /= S[:, np.newaxis, np.newaxis]
+    return neuropil_masks
 def neuropilMasks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat
     inputs:
@@ -537,11 +576,10 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
         ypix,xpix = yu[:, ix]
     return ypix,xpix
 
-
-def iter_extend(ypix, xpix, Ucell, code, refine=-1):
+def iter_extend(ypix, xpix, Ucell, code, refine=1):
     Lyc, Lxc, nsvd = Ucell.shape
     npix = 0
-    while npix<10000:
+    while npix<200:
         npix = ypix.size
         ypix, xpix = extendROI(ypix,xpix,Lyc,Lxc, 1)
         usub = Ucell[ypix, xpix, :]
@@ -670,6 +708,12 @@ def sourcery(ops):
         err = (Ucell**2).mean()
         print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
 
+        #stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
+        #rgb = drawClusters(stat, ops)
+        #plt.figure(figsize=(12,12))
+        #plt.imshow(rgb)
+        #plt.show()
+
         it += 1
         if refine ==0:
             break
@@ -716,7 +760,7 @@ def extractF(ops, stat):
     ncells = len(stat)
 
     stat,cell_pix,cell_masks = cellMasks(stat,Ly,Lx,False)
-    neuropil_masks           = neuropilMasks(ops,stat,cell_pix)
+    neuropil_masks           = neuropilMasks2(ops,stat,cell_pix)
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
@@ -749,7 +793,6 @@ def extractF(ops, stat):
         inds = ix + np.arange(0,nimgd)
         F[:, inds]    = cell_masks @ data
         Fneu[:, inds] = neuropil_masks @ data
-
 
         if ix%(5*nimgd)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))

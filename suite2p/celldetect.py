@@ -5,6 +5,8 @@ from scipy import ndimage
 import math
 from suite2p import utils
 import time
+from matplotlib import pyplot as plt
+from matplotlib.colors import hsv_to_rgb
 
 def tic():
     return time.time()
@@ -123,7 +125,7 @@ def getStU(ops, U):
     U = np.reshape(U, (-1,Lyc,Lxc))
     return S, StU , StS
 
-def drawClusters(r,mPix,mLam,Ly,Lx):
+def drawClusters(mPix,mLam,Ly,Lx):
     ncells = mPix.shape[1]
     r=np.random.random((ncells,))
     iclust = -1*np.ones((Ly,Lx),np.int32)
@@ -677,6 +679,12 @@ def sourcery(ops):
         err = (Ucell**2).mean()
 
         print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
+
+        rgb =drawClusters(mPix,mLam,Lyc,Lxc)
+        plt.figure(figsize=(12,12))
+        plt.imshow(rgb)
+        plt.show()
+
         if it==0:
             Nfirst = i.size
         it += 1

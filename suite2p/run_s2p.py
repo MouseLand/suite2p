@@ -66,14 +66,14 @@ def get_cells(ops):
     # extract fluorescence and neuropil
     F, Fneu, ops = celldetect2.extractF(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
-
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
     # compute activity statistics for classifier
     sk = stats.skew(dF, axis=1)
+    sd = np.std(dF, axis=1)
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
-
+        stat[k]['std']  = sd[k]
     # save results
     np.save(ops['ops_path'], ops)
     fpath = ops['save_path']
@@ -87,10 +87,9 @@ def get_cells(ops):
 
 def combined(ops1):
     '''
-    Combines all the entries in ops1 into a single result file. Multi-plane recordings are arranged to best tile a square.
-
-    Multi-roi recordings will be arranged by their physical localization.
-
+    Combines all the entries in ops1 into a single result file.
+    Multi-plane recordings are arranged to best tile a square.
+    Multi-roi recordings are arranged by their dx,dy physical localization.
     '''
     ops = ops1[0]
     if ('dx' not in ops) or ('dy' not in ops):
@@ -212,7 +211,6 @@ def run_s2p(ops={},db={}):
         print(ops1[0]['reg_file'])
         print('overwriting ops1 with new ops')
         print('skipping registration...')
-
     ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
@@ -222,7 +220,6 @@ def run_s2p(ops={},db={}):
     else:
         for k in range(len(ops1)):
             ops1[k] = get_cells(ops1[k])
-
     ######### SPIKE DECONVOLUTION AND CLASSIFIER #########
     for ops in ops1:
         fpath = ops['save_path']

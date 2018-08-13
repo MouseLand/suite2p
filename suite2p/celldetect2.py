@@ -538,7 +538,7 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
     return ypix,xpix
 
 
-def iter_extend(ypix, xpix, Ucell, code, flag=False):
+def iter_extend(ypix, xpix, Ucell, code, refine=-1):
     Lyc, Lxc, nsvd = Ucell.shape
     npix = 0
     while npix<10000:
@@ -547,16 +547,14 @@ def iter_extend(ypix, xpix, Ucell, code, flag=False):
         usub = Ucell[ypix, xpix, :]
         lam = usub @ np.expand_dims(code, axis=1)
         lam = np.squeeze(lam, axis=1)
-        if flag:
-            ix = lam>max(0, np.mean(lam)/3)
-        else:
-            ix = lam>max(0, lam.max()/5)
-
+        # ix = lam>max(0, np.mean(lam)/3)
+        ix = lam>max(0, lam.max()/5)
         if ix.sum()==0:
             break;
         ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
         lam = lam/np.sum(lam**2+1e-10)**.5
-        code = lam @ usub[ix, :]
+        if refine<0:
+            code = lam @ usub[ix, :]
         if npix>=ix.sum():
             break
         else:
@@ -651,7 +649,7 @@ def sourcery(ops):
         n,k = 0,0
         while n < len(ypix):
             Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[k,:])
-            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:])
+            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:], refine)
             k+=1
             if ix.sum()==0:
                 print('dropped ROI with no pixels')

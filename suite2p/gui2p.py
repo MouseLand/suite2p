@@ -15,9 +15,7 @@ import time
 class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
-
         pg.setConfigOptions(imageAxisOrder='row-major')
-
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -284,7 +282,7 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        #self.fname = '/media/carsen/DATA2/Github/data/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 

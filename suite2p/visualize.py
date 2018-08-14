@@ -11,6 +11,7 @@ from matplotlib.colors import hsv_to_rgb
 class VisWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(VisWindow, self).__init__(parent)
+        pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(50,50,1100,600)
         self.setWindowTitle('Visualize deconvolved data')
         self.win = QtGui.QWidget(self)
@@ -20,20 +21,20 @@ class VisWindow(QtGui.QDialog):
         self.comboBox = QtGui.QComboBox(self)
         self.comboBox.addItem("PC")
         self.comboBox.addItem("embed")
-        self.comboBox.move(10,10)
         self.comboBox.activated[str].connect(self.sorting)
-        self.l0.addWidget(0,0,1,2)
+        self.l0.addWidget(self.comboBox,0,0,1,2)
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(0,10000))
         self.PCedit.setText('0')
         self.PCedit.setFixedWidth(35)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
         self.PCedit.returnPressed.connect(self.sorting)
-        self.l0.addWidget(QtGui.QLabel('PC: '),0,1,1,1)
-        self.l0.addWidget(self.PCedit,0,2,1,1)
-        self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],
-                                      row=0,col=0, invertY=True)
+        self.l0.addWidget(QtGui.QLabel('PC: '),1,1,1,1)
+        self.l0.addWidget(self.PCedit,1,2,1,1)
+        #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
+        self.p0 = pg.ImageView(self, name='image')
         self.l0.addWidget(self.p0,0,3,10,10)
+        self.p0.show()
 
     def sorting(self):
         print('sort')

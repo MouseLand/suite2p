@@ -63,7 +63,7 @@ def get_cells(ops):
     i0 = tic()
     if (type(ops['diameter']) is int) or len(ops['diameter'])<2:
         ops['diameter'] = [ops['diameter'], ops['diameter']]
-    ops['diameter'] = np.array(ops['diameter'])
+    ops['diameter'] = np.array(ops['diameter']).astype('int32')
     print(ops['diameter'])
     ops, stat = celldetect2.sourcery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))

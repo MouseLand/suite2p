@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import os
 import pickle
-from suite2p import fig, gui, classifier
+from suite2p import fig, gui, classifier, visualize
 import time
 
 #class EventWidget(QtGui.QWidget):
@@ -91,7 +91,13 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.addToClass)
         class_menu.addAction(self.saveTrain)
-
+        # visualizations menuBar
+        self.visualizations = QtGui.QAction('&Visualize selected cells', self)
+        self.visualizations.triggered.connect(self.vis_window)
+        self.visualizations.setEnabled(False)
+        vis_menu = main_menu.addMenu('&Visualizations')
+        vis_menu.addAction(self.visualizations)
+        self.visualizations.setShortcut('Ctrl+V')
 
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
@@ -469,6 +475,7 @@ class MainW(QtGui.QMainWindow):
         self.saveDefault.setEnabled(True)
         self.addToClass.setEnabled(True)
         self.saveTrain.setEnabled(True)
+        self.visualizations.setEnabled(True)
 
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
@@ -620,6 +627,10 @@ class MainW(QtGui.QMainWindow):
     def run_suite2p(self):
         RW = gui.RunWindow(self)
         RW.show()
+
+    def vis_window(self):
+        VW = visualize.VisWindow(self)
+        VW.show()
 
     def load_dialog(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open stat.npy', filter='stat.npy')

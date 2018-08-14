@@ -3,12 +3,12 @@ import math
 
 def fitMVGaus(y,x,lam,thres=2.5):
     ''' computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations
-    inputs: 
+    inputs:
         y, x, lam, thres
             y,x: pixel locations
             lam: pixel weights
         thres: number of standard deviations at which to draw ellipse
-    outputs: 
+    outputs:
         mu, cov, ellipse, area
             mu: mean of gaussian fit
             cov: covariance of gaussian fit
@@ -17,7 +17,7 @@ def fitMVGaus(y,x,lam,thres=2.5):
             area: area of ellipse
     '''
     # normalize pixel weights
-    lam = lam / lam.sum() 
+    lam = lam / lam.sum()
     # mean of gaussian
     yx = np.stack((y,x))
 
@@ -30,7 +30,8 @@ def fitMVGaus(y,x,lam,thres=2.5):
 
     # radii of major and minor axes
     radii,evec  = np.linalg.eig(cov)
-    radii       = thres * np.real(radii)**.5
+    radii = np.maximum(0, np.real(radii))
+    radii       = thres * radii**.5
     # compute pts of ellipse
     npts = 100
 

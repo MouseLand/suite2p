@@ -17,6 +17,7 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
+    ax = parent.p3.getAxis('left')
     if len(parent.imerge)==1:
         n = parent.imerge[0]
         f = parent.Fcell[n,:]
@@ -24,16 +25,17 @@ def plot_trace(parent):
         sp = parent.Spks[n,:]
         fmax = np.maximum(f.max(), fneu.max())
         fmin = np.minimum(f.min(), fneu.min())
+        #sp from 0 to fmax
         sp /= sp.max()
-        sp *= fmax - fmin
-        sp += fmin
+        sp *= fmax# - fmin
+        #sp += fmin
         parent.p3.plot(parent.trange,f,pen='b')
         parent.p3.plot(parent.trange,fneu,pen='r')
         parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
         parent.fmin=fmin
         parent.fmax=fmax
+        ax.setTicks(None)
     else:
-        ax = parent.p3.getAxis('left')
         kspace = 0.5
         ttick = list()
         pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]

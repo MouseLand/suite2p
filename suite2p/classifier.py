@@ -182,7 +182,7 @@ def load(parent, name, inactive):
         # fill up with current dataset stats
         get_stats(parent)
         parent.trainfiles = parent.model.trainfiles
-        activate(parent)
+        activate(parent, inactive)
 
 def get_stats(parent):
     ncells = parent.Fcell.shape[0]
@@ -204,7 +204,7 @@ def load_data(parent):
                                            statclass=parent.statclass)
         if parent.trainfiles is not None:
             get_stats(parent)
-            activate(parent)
+            activate(parent, True)
 
 def apply(parent):
     classval = parent.probedit.value()
@@ -237,8 +237,9 @@ def save_list(parent):
         except (ValueError, OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
             print('ERROR: incorrect filename for saving')
 
-def activate(parent):
-    parent.probcell = parent.model.apply(parent.statistics)
+def activate(parent, inactive):
+    if inactive:
+        parent.probcell = parent.model.apply(parent.statistics)
     istat = parent.probcell
     parent.clabels[-2] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
     istat = istat - istat.min()

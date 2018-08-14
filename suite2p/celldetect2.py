@@ -424,8 +424,8 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
         lam  = stat[n]['lam'][~overlap]
         if xpix.size:
             # compute radius of neuron (used for neuropil scaling)
-            radius = utils.fitMVGaus(ypix,xpix,lam,2)[2]
-            stat[n]['radius'] = radius[0]
+            radius = utils.fitMVGaus(ypix/ops['diameter'][0], xpix/ops['diameter'][1],lam,2)[2]
+            stat[n]['radius'] = radius[0] * np.mean(ops['diameter'])
             stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1

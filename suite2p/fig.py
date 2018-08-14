@@ -206,11 +206,6 @@ def init_masks(parent):
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
     for k in range(4):
-        if k<3:
-            S = Sroi[i,:,:]
-        else:
-            S = Sext[i,:,:]
-        V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
         if k>0:
             if k==1:
                 I = ops['meanImg']
@@ -251,15 +246,21 @@ def init_masks(parent):
                 mimg = np.maximum(0,np.minimum(1,mimg))
             Vback[k-1,:,:] = mimg
             V = mimg
-            if k==3:
-                V = np.maximum(0,np.minimum(1, V + S))
-        S = np.expand_dims(S,axis=2)
-        V = np.expand_dims(V,axis=2)
+            V = np.expand_dims(V,axis=2)
         for i in range(2):
+            if k==0:
+                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
+                V = np.expand_dims(V,axis=2)
+            if k==3:
+                S = np.expand_dims(Sext[i,:,:],axis=2)
+                Va = np.maximum(0,np.minimum(1, V + S))
+            else:
+                S = np.expand_dims(Sroi[i,:,:],axis=2)
+                Va = V
             for c in range(0,cols.shape[1]):
                 H = cols[iROI[i,0,:,:],c]
                 H = np.expand_dims(H,axis=2)
-                hsv = np.concatenate((H,S,V),axis=2)
+                hsv = np.concatenate((H,S,Va),axis=2)
                 RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
     for k in range(3):

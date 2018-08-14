@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
+#from scipy.ndimage import filters
+#from scipy.ndimage import gaussian_filter
 from scipy import signal
 from scipy import ndimage
 import math
@@ -205,60 +205,60 @@ def init_masks(parent):
     Vback   = np.zeros((4,Ly,Lx), np.float32)
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
-    for i in range(2):
-        for c in range(0,cols.shape[1]):
-            for k in range(4):
+    for k in range(4):
+        if k<3:
+            S = Sroi[i,:,:]
+        else:
+            S = Sext[i,:,:]
+        V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
+        if k>0:
+            if k==1:
+                I = ops['meanImg']
+                Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
+                I = I - Imed
+                Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
+                I = I / (1e-10 + Idiv)
+                mimg0 = I[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+                #mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
+                #                                  10,mode='mirror')
+                #mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
+                #                              10,mode='mirror')
+                S     = np.maximum(0,np.minimum(1, V*1.5))
+                mimg1 = -3
+                mimg99 = 6
+                #mimg1 = np.percentile(mimg0,1)
+                #mimg99 = np.percentile(mimg0,99)
+                mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+                mimg0 = np.maximum(0,np.minimum(1,mimg0))
+                mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+                mimg[ops['yrange'][0]:ops['yrange'][1],
+                    ops['xrange'][0]:ops['xrange'][1]] = mimg0
+            elif k==2:
+                mimg = ops['meanImg']
+                S = np.maximum(0,np.minimum(1, V*1.5))
+                mimg1 = np.percentile(mimg,1)
+                mimg99 = np.percentile(mimg,99)
+                mimg     = (mimg - mimg1) / (mimg99 - mimg1)
+                mimg = np.maximum(0,np.minimum(1,mimg))
+            else:
+                vcorr = ops['Vcorr']
+                mimg1 = np.percentile(vcorr,1)
+                mimg99 = np.percentile(vcorr,99)
+                vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
+                mimg = mimg1 * np.ones((ops['Ly'],ops['Lx']),np.float32)
+                mimg[ops['yrange'][0]:ops['yrange'][1],
+                    ops['xrange'][0]:ops['xrange'][1]] = vcorr
+                mimg = np.maximum(0,np.minimum(1,mimg))
+            Vback[k-1,:,:] = mimg
+            V = mimg
+            if k==3:
+                V = np.maximum(0,np.minimum(1, V + S))
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        for i in range(2):
+            for c in range(0,cols.shape[1]):
                 H = cols[iROI[i,0,:,:],c]
-                if k<3:
-                    S = Sroi[i,:,:]
-                else:
-                    S = Sext[i,:,:]
-                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
-                if k>0:
-                    if k==1:
-                        I = ops['meanImg']
-                        Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
-                        I = I - Imed
-                        Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
-                        I = I / (1e-10 + Idiv)
-                        mimg0 = I[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
-                        #mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
-                    #                                  10,mode='mirror')
-                        #mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
-                        #                              10,mode='mirror')
-                        S     = np.maximum(0,np.minimum(1, V*1.5))
-                        mimg1 = -3
-                        mimg99 = 6
-                        #mimg1 = np.percentile(mimg0,1)
-                        #mimg99 = np.percentile(mimg0,99)
-                        mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
-                        mimg0 = np.maximum(0,np.minimum(1,mimg0))
-                        mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
-                        mimg[ops['yrange'][0]:ops['yrange'][1],
-                            ops['xrange'][0]:ops['xrange'][1]] = mimg0
-                    elif k==2:
-                        mimg = ops['meanImg']
-                        S = np.maximum(0,np.minimum(1, V*1.5))
-                        mimg1 = np.percentile(mimg,1)
-                        mimg99 = np.percentile(mimg,99)
-                        mimg     = (mimg - mimg1) / (mimg99 - mimg1)
-                        mimg = np.maximum(0,np.minimum(1,mimg))
-                    else:
-                        vcorr = ops['Vcorr']
-                        mimg1 = np.percentile(vcorr,1)
-                        mimg99 = np.percentile(vcorr,99)
-                        vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
-                        mimg = mimg1 * np.ones((ops['Ly'],ops['Lx']),np.float32)
-                        mimg[ops['yrange'][0]:ops['yrange'][1],
-                            ops['xrange'][0]:ops['xrange'][1]] = vcorr
-                        mimg = np.maximum(0,np.minimum(1,mimg))
-                    Vback[k-1,:,:] = mimg
-                    V = mimg
-                    if k==3:
-                        V = np.maximum(0,np.minimum(1, V + S))
                 H = np.expand_dims(H,axis=2)
-                S = np.expand_dims(S,axis=2)
-                V = np.expand_dims(V,axis=2)
                 hsv = np.concatenate((H,S,V),axis=2)
                 RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 

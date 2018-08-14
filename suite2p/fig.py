@@ -91,11 +91,14 @@ def make_colors(parent):
                     istat[n] = parent.stat[n][names]
             else:
                 istat = np.expand_dims(parent.probcell, axis=1)
-            parent.clabels.append([istat.min(),
-                                 (istat.max()-istat.min())/2 + istat.min(),
-                                 istat.max()])
-            istat = istat - istat.min()
-            istat = istat / istat.max()
+            istat1 = np.percentile(istat,2)
+            istat99 = np.percentile(istat,98)
+            parent.clabels.append([istat1,
+                                 (istat99-istat1)/2 + istat1,
+                                 istat99])
+            istat = istat - istat1
+            istat = istat / (istat99-istat1)
+            istat = np.maximum(0, np.minimum(1, istat))
             istat = istat / 1.3
             istat = istat + 0.1
             icols = 1 - istat

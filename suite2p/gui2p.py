@@ -123,11 +123,16 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
         self.l0.addWidget(self.selectbtn[1], 0,13,1,1)
         # minimize view
-        self.minview = QtGui.QPushButton('minimize')
-        self.minview.setCheckable(True)
-        self.minview.clicked.connect(self.minimize_p2)
-        self.minview.setEnabled(False)
-        self.l0.addWidget(self.minview,0,14,1,1)
+        self.minview = [QtGui.QPushButton('minimize'),
+                        QtGui.QPushButton('minimize')]
+        self.minview[0].setCheckable(True)
+        self.minview[0].clicked.connect(lambda: self.minimize(0))
+        self.minview[0].setEnabled(False)
+        self.l0.addWidget(self.minview[0],0,3,1,1)
+        self.minview[1].setCheckable(True)
+        self.minview[1].clicked.connect(lambda: self.minimize(1))
+        self.minview[1].setEnabled(False)
+        self.l0.addWidget(self.minview[1],0,14,1,1)
         #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
@@ -277,15 +282,25 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
 
-    def minimize_p2(self):
-        if self.minview.isChecked():
+    def minimize(self, wplot):
+        if self.minview[wplot].isChecked():
+            self.minview[1-wplot].setEnabled(False)
             self.p2.linkView(self.p2.XAxis,view=None)
             self.p2.linkView(self.p2.YAxis,view=None)
-            self.p2.setYRange(-10,-9)
-            self.p2.setXRange(-10,-9)
-            self.win.ci.layout.setColumnStretchFactor(0,10)
+            if wplot==0:
+                self.p1.setYRange(-10,-9)
+                self.p1.setXRange(-10,-9)
+            else:
+                self.p2.setYRange(-10,-9)
+                self.p2.setXRange(-10,-9)
+            self.win.ci.layout.setColumnStretchFactor(1-wplot,10)
         else:
-            self.win.ci.layout.setColumnStretchFactor(0,1)
+            if wplot==0:
+                view = self.p2.viewRange()
+                self.p1.setYRange(view[0][0],view[0][1])
+                self.p1.setXRange(view[1][0],view[1][1])
+            self.win.ci.layout.setColumnStretchFactor(1-wplot,1)
+            self.minview[1-wplot].setEnabled(True)
             self.p2.setXLink('plot1')
             self.p2.setYLink('plot1')
 
@@ -444,9 +459,9 @@ class MainW(QtGui.QMainWindow):
                 self.colorbtns.button(b).setChecked(True)
         for btns in self.classbtns.buttons():
             btns.setEnabled(True)
-        self.selectbtn[0].setEnabled(True)
-        self.selectbtn[1].setEnabled(True)
-        self.minview.setEnabled(True)
+        for i in range(2):
+            self.selectbtn[i].setEnabled(True)
+            self.minview[i].setEnabled(True)
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)

@@ -42,6 +42,7 @@ class VisWindow(QtGui.QMainWindow):
         # --- cells image
         self.p0 = self.win.addViewBox(lockAspect=False,name='vis',border=[100,100,100],
                                       row=0,col=0, invertY=True)
+        #self.p0.state['background'] = [1,1,1]
         self.img = pg.ImageItem()
         self.p0.addItem(self.img)
         if len(parent.imerge)==1:
@@ -54,12 +55,17 @@ class VisWindow(QtGui.QMainWindow):
         sp = zscore(sp, axis=1)
         sp -= sp.min()
         sp /= sp.max()
-        sp *= 5
-        sp = np.minimum(1, sp)
+        sp *= 10
+        sp = np.maximum(0, np.minimum(1, sp))
         sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
-        self.img.setImage(sp)
+        self.img.setImage(1-sp)
         self.p0.setXRange(0,np.minimum(sp.shape[0]*2, sp.shape[1]))
         self.p0.setYRange(0,sp.shape[0])
+        self.p0.setLimits(xMin=-100,xMax=sp.shape[1],yMin=-sp.shape[0],yMax=sp.shape[0]*2)
+        xAx = pg.AxisItem(orientation='bottom', linkView=self.p0)
+        self.p0.addItem(xAx)
+        yAx = pg.AxisItem(orientation='left', linkView=self.p0)
+        self.p0.addItem(yAx)
         self.p0.show()
 
 

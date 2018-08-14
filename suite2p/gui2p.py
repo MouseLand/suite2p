@@ -447,6 +447,12 @@ class MainW(QtGui.QMainWindow):
         self.lcell0.setText('cells: %d'%(self.iscell.sum()))
         fig.init_range(self)
         fig.plot_trace(self)
+        if (type(self.ops['diameter']) is not int) and (len(self.ops['diameter'])>1):
+            self.xyrat = self.ops['diameter'][0] / self.ops['diameter'][1]
+        else:
+            self.xyrat = 1.0
+        self.p1.setAspectLocked(lock=True, ratio=self.xyrat)
+        self.p2.setAspectLocked(lock=True, ratio=self.xyrat)
         self.show()
         # default classifier always loaded
         classifier.load(self, self.classfile, False)

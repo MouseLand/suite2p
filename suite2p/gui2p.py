@@ -290,9 +290,9 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
         #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
+        self.load_proc()
 
     def minimize(self, wplot):
         if self.minview[wplot].isChecked():

@@ -31,7 +31,7 @@ pip install suite2p
 ~~~~
 If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows. 
 
-If you are on Yosemite Mac OS, PyQt won't run, and you won't be able to install suite2p. More recent versions of Mac OS work. 
+If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS work. 
 
 ### Dependencies
 suite2p relies on the following packages (which are automatically installed with pip if missing):

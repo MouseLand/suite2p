@@ -12,11 +12,11 @@ from suite2p import run_s2p
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1100,700)
+        self.setGeometry(50,50,1200,800)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
-        #layout = QtGui.QFormLayout()
+        self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
         self.ops = run_s2p.default_ops()
@@ -24,21 +24,22 @@ class RunWindow(QtGui.QDialog):
         self.save_path = []
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
-        parkeys = ['num_workers','num_workers_roi']
+        parkeys = ['num_workers','num_workers_roi','combined']
         regkeys = ['nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
-        cellkeys = ['navg_frames_svd','nsvd_for_roi','threshold_scaling']
+        cellkeys = ['navg_frames_svd','nsvd_for_roi','threshold_scaling','tile_factor','max_overlap','max_iterations']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
         keys = [[],tifkeys, parkeys, regkeys, cellkeys, neukeys, deconvkeys]
-        labels = ['Filepaths','Main settings','Parallel','Registration','Cell detection','Neuropil','Deconvolution']
+        labels = ['Filepaths','Main settings','Parallel','Registration','ROI detection','Neuropil','Deconvolution']
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
-                    'approximate size of the cells in FOV in pixels',
+                    'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
-                    'sampling rate (total across planes)',
+                    'sampling rate (per plane)',
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
-                    '0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    'combine results across planes in separate folder "combined" at end of processing',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
@@ -47,6 +48,9 @@ class RunWindow(QtGui.QDialog):
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
                     'adjust the automatically determined threshold by this scalar multiplier',
+                    'tile factor',
+                    'ROI with greater than this overlap as a fraction of total pixels will be discarded',
+                    'maximum number of iterations for ROI detection',
                     'minimum ratio between neuropil radius and cell radius',
                     'number of pixels between ROI and neuropil donut',
                     'maximum neuropil radius',
@@ -64,48 +68,66 @@ class RunWindow(QtGui.QDialog):
             qlabel = QtGui.QLabel(labels[l])
             bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
             qlabel.setFont(bigfont)
-            self.layout.addWidget(qlabel,0,l,1,1)
+            self.layout.addWidget(qlabel,0,2*l,1,2)
             for key in lkey:
                 lops = 1
                 if self.ops[key] or (self.ops[key] == 0):
                     qedit = QtGui.QLineEdit()
                     qlabel = QtGui.QLabel(key)
                     qlabel.setToolTip(tooltips[kk])
-                    if type(self.ops[key]) is not bool:
-                        qedit.setText(str(self.ops[key]))
+                    if key == 'diameter':
+                        if (type(self.ops[key]) is not int) and (len(self.ops[key])>1):
+                            dstr = str(int(self.ops[key][0])) + ', ' + str(int(self.ops[key][1]))
+                        else:
+                            dstr = str(int(self.ops[key]))
                     else:
-                        qedit.setText(str(int(self.ops[key])))
-                    self.layout.addWidget(qlabel,k*2+1,l,1,1)
-                    self.layout.addWidget(qedit,k*2+2,l,1,1)
+                        if type(self.ops[key]) is not bool:
+                            dstr = str(self.ops[key])
+                        else:
+                            dstr = str(int(self.ops[key]))
+                    qedit.setText(dstr)
+                    qedit.setFixedWidth(105)
+                    self.layout.addWidget(qlabel,k*2+1,2*l,1,2)
+                    self.layout.addWidget(qedit,k*2+2,2*l,1,2)
                     self.keylist.append(key)
                     self.editlist.append(qedit)
                 k+=1
                 kk+=1
             l+=1
         # data_path
+        key = 'look_one_level_down'
+        qlabel = QtGui.QLabel(key)
+        qlabel.setToolTip('whether to look in all subfolders when searching for tiffs')
+        self.layout.addWidget(qlabel,1,0,1,1)
+        qedit = QtGui.QLineEdit()
+        self.layout.addWidget(qedit,2,0,1,1)
+        qedit.setText(str(int(self.ops[key])))
+        qedit.setFixedWidth(105)
+        self.keylist.append(key)
+        self.editlist.append(qedit)
         btiff = QtGui.QPushButton('Add directory to data_path')
         btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(btiff,0,0,1,1)
+        self.layout.addWidget(btiff,3,0,1,1)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
-        self.layout.addWidget(qlabel,1,0,1,1)
+        self.layout.addWidget(qlabel,4,0,1,1)
         # save_path0
-        bsave = QtGui.QPushButton('Add save_path (default is data_path)')
+        bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(bsave,10,0,1,1)
+        self.layout.addWidget(bsave,15,0,1,1)
         self.savelabel = QtGui.QLabel('')
-        self.layout.addWidget(self.savelabel,11,0,1,1)
+        self.layout.addWidget(self.savelabel,16,0,1,1)
         # fast_disk
         bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
         bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(bbin,12,0,1,1)
+        self.layout.addWidget(bbin,17,0,1,1)
         self.binlabel = QtGui.QLabel('')
-        self.layout.addWidget(self.binlabel,13,0,1,1)
+        self.layout.addWidget(self.binlabel,18,0,1,1)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,15,0,1,1)
+        self.layout.addWidget(self.runButton,20,0,1,1)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 16,0,15,l)
+        self.layout.addWidget(self.textEdit, 21,0,30,2*l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -115,7 +137,7 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 15,1,1,1)
+        self.layout.addWidget(self.stopButton, 20,2,1,2)
         self.stopButton.clicked.connect(self.stop)
 
     def stop(self):
@@ -163,12 +185,19 @@ class RunWindow(QtGui.QDialog):
         self.error = False
         k=0
         for key in self.keylist:
-            if type(self.ops[key]) is float:
-                self.ops[key] = float(self.editlist[k].text())
-                #print(key,'\t\t', float(self.editlist[k].text()))
-            elif type(self.ops[key]) is int or bool:
-                self.ops[key] = int(self.editlist[k].text())
-                #print(key,'\t\t', int(self.editlist[k].text()))
+            if key=='diameter':
+                diams = self.editlist[k].text().replace(' ','').split(',')
+                if len(diams)>1:
+                    self.ops[key] = [int(diams[0]), int(diams[1])]
+                else:
+                    self.ops[key] = int(diams[0])
+            else:
+                if type(self.ops[key]) is float:
+                    self.ops[key] = float(self.editlist[k].text())
+                    #print(key,'\t\t', float(self.editlist[k].text()))
+                elif type(self.ops[key]) is int or bool:
+                    self.ops[key] = int(self.editlist[k].text())
+                    #print(key,'\t\t', int(self.editlist[k].text()))
             k+=1
         self.db = {}
         self.db['data_path'] = self.data_path
@@ -190,7 +219,7 @@ class RunWindow(QtGui.QDialog):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
         self.data_path.append(name)
         self.layout.addWidget(QtGui.QLabel(name),
-                              len(self.data_path)+1,0,1,1)
+                              len(self.data_path)+4,0,1,1)
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
@@ -282,7 +311,6 @@ class ViewButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
-        self.setStyleSheet("background-color: gray; Text-align:left")
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
@@ -293,9 +321,6 @@ class ViewButton(QtGui.QPushButton):
             parent.ops_plot[1] = bid
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
-            for btns in parent.viewbtns.buttons():
-                btns.setStyleSheet("background-color: gray; Text-align:left;")
-            self.setStyleSheet("background-color: blue; Text-align:left;")
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
@@ -306,7 +331,6 @@ class ColorButton(QtGui.QPushButton):
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
-        self.setStyleSheet("background-color: gray;")
         self.show()
     def press(self, parent, bid):
         ischecked  = self.isChecked()
@@ -317,6 +341,3 @@ class ColorButton(QtGui.QPushButton):
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
             fig.plot_colorbar(parent,bid)
-            for btns in parent.colorbtns.buttons():
-                btns.setStyleSheet("background-color: gray;")
-            self.setStyleSheet("background-color: blue;")

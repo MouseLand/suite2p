@@ -26,7 +26,7 @@ class RunWindow(QtGui.QDialog):
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
         parkeys = ['num_workers','num_workers_roi','combined']
         regkeys = ['nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
-        cellkeys = ['navg_frames_svd','nsvd_for_roi','threshold_scaling','tile_factor','max_overlap','max_iterations']
+        cellkeys = ['max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
         keys = [[],tifkeys, parkeys, regkeys, cellkeys, neukeys, deconvkeys]
@@ -45,12 +45,12 @@ class RunWindow(QtGui.QDialog):
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     'if 1, registered tiffs are saved',
+                    'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
+                    'adjust the automatically determined threshold by this scalar multiplier',
+                    'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
-                    'adjust the automatically determined threshold by this scalar multiplier',
                     'tile factor',
-                    'ROI with greater than this overlap as a fraction of total pixels will be discarded',
-                    'maximum number of iterations for ROI detection',
                     'minimum ratio between neuropil radius and cell radius',
                     'number of pixels between ROI and neuropil donut',
                     'maximum neuropil radius',
@@ -277,7 +277,6 @@ class ListChooser(QtGui.QDialog):
                 QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
         else:
             QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
-
 
     def load_text(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file', filter='text file (*.txt)')

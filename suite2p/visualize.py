@@ -2,7 +2,7 @@ from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
 from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
 from scipy import ndimage
 from scipy.stats import zscore
 import math
@@ -55,9 +55,8 @@ class VisWindow(QtGui.QMainWindow):
         sp = zscore(sp, axis=1)
         bin = int(parent.ops['fs']) # one second bins
         sp = sp[:,:int(np.floor(sp.shape[1]/bin)*bin)]
-        spbin = sp.reshape((sp.shape[0],bin,sp.shape[1]/bin))
+        spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
         spbin = np.squeeze(spbin.mean(axis=1))
-        print(spbin.shape)
         usv = np.linalg.svd(spbin)
         self.u = usv[0]
         sp -= sp.min()
@@ -65,9 +64,9 @@ class VisWindow(QtGui.QMainWindow):
         sp *= 10
         sp = np.maximum(0, np.minimum(1, sp))
         sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
-        self.sp = 1-sp
+        self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
         self.sorting()
-        self.p0.setXRange(0,np.minimum(sp.shape[0]*2, sp.shape[1]))
+        self.p0.setXRange(0,sp.shape[1])
         self.p0.setYRange(0,sp.shape[0])
         self.p0.setLimits(xMin=-100,xMax=sp.shape[1]+100,yMin=-sp.shape[0],yMax=sp.shape[0]*2)
         xAx = pg.AxisItem(orientation='bottom', linkView=self.p0)
@@ -78,4 +77,5 @@ class VisWindow(QtGui.QMainWindow):
 
     def sorting(self):
         isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
-        self.img.setImage(self.sp[isort,:])
+        sp = gaussian_filter1d(self.sp[isort,:], 3, axis=0)
+        self.img.setImage(sp)

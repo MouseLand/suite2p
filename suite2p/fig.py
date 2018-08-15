@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
-#from scipy.ndimage import filters
-#from scipy.ndimage import gaussian_filter
+from scipy.ndimage import filters
+from scipy.ndimage import gaussian_filter
 from scipy import signal
 from scipy import ndimage
 import math
@@ -211,21 +211,27 @@ def init_masks(parent):
     for k in range(4):
         if k>0:
             if k==1:
-                I = ops['meanImg']
-                Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
-                I = I - Imed
-                Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
-                I = I / (1e-10 + Idiv)
-                mimg0 = I[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
-                #mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
-                #                                  10,mode='mirror')
-                #mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
-                #                              10,mode='mirror')
+                if 1:
+                    I = ops['meanImg']
+                    Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
+                    I = I - Imed
+                    Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
+                    I = I / (1e-10 + Idiv)
+                    mimg1 = -6
+                    mimg99 = 6
+                    mimg0 = I
+                else:
+                    mimg0 = ops['meanImg']
+                    mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
+                                                      10,mode='mirror')
+                    mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
+                                                  10,mode='mirror')
+                    mimg1 = np.percentile(mimg0,1)
+                    mimg99 = np.percentile(mimg0,99)
+                mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+
                 S     = np.maximum(0,np.minimum(1, V*1.5))
-                mimg1 = -3
-                mimg99 = 6
-                #mimg1 = np.percentile(mimg0,1)
-                #mimg99 = np.percentile(mimg0,99)
+
                 mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
                 mimg0 = np.maximum(0,np.minimum(1,mimg0))
                 mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)

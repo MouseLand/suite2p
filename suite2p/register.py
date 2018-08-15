@@ -414,7 +414,7 @@ def tiff_to_binary(ops):
         if ('fast_disk' not in ops) or len(ops['fast_disk'])>0:
             ops['fast_disk'] = ops['save_path0']
         ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
-        ops['ops_path'] = os.path.join(ops['save_path]'],'ops.npy')
+        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')

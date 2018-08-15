@@ -35,22 +35,24 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.PCedit,1,1,1,1)
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
+        # --- cells image
+        self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
         self.l0.addWidget(self.win,0,2,10,14)
         layout = self.win.ci.layout
-        # --- cells image
-        self.p0 = self.win.addViewBox(lockAspect=False,name='vis',border=[100,100,100],
-                                      row=0,col=0, invertY=True)
-        #self.p0.state['background'] = [1,1,1]
+        # A plot area (ViewBox + axes) for displaying the image
+        self.p0 = self.win.addPlot(title="")
         self.img = pg.ImageItem()
         self.p0.addItem(self.img)
+        # cells to plot
         if len(parent.imerge)==1:
             icell = parent.iscell[parent.imerge[0]]
-            roi = (parent.iscell==icell).nonzero()
+            cells = (parent.iscell==icell).nonzero()
         else:
-            roi = np.array(parent.imerge)
-        sp = parent.Spks[roi,:]
+            cells = np.array(parent.imerge)
+        # compute spikes
+        sp = parent.Spks[cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
         bin = int(parent.ops['fs']) # one second bins
@@ -68,14 +70,21 @@ class VisWindow(QtGui.QMainWindow):
         self.sorting()
         self.p0.setXRange(0,sp.shape[1])
         self.p0.setYRange(0,sp.shape[0])
-        self.p0.setLimits(xMin=-100,xMax=sp.shape[1]+100,yMin=-sp.shape[0],yMax=sp.shape[0]*2)
-        xAx = pg.AxisItem(orientation='bottom', linkView=self.p0)
-        self.p0.addItem(xAx)
-        yAx = pg.AxisItem(orientation='left', linkView=self.p0)
-        self.p0.addItem(yAx)
+        self.p0.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
+        # Custom ROI for selecting an image region
+        nt = sp.shape[1]
+        nn = sp.shape[0]
+        self.roi = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='y')
+        self.p0.addItem(roi)
+        roi.setZValue(10)  # make sure ROI is drawn above image
+        # Another plot area for displaying ROI data
+        self.win.nextRow()
+        self.p2 = self.win.addPlot(title='roi')
+        self.p2.setMaximumHeight(250)
         self.p0.show()
+        self.win.show()
 
     def sorting(self):
         isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
-        sp = gaussian_filter1d(self.sp[isort,:], 3, axis=0)
-        self.img.setImage(sp)
+        self.spF = gaussian_filter1d(self.sp[isort,:], 3, axis=0)
+        self.img.setImage(self.spF)

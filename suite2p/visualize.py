@@ -42,9 +42,9 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.win,0,2,10,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
-        self.p0 = self.win.addPlot(title="")
+        self.p1 = self.win.addPlot(title="")
         self.img = pg.ImageItem()
-        self.p0.addItem(self.img)
+        self.p1.addItem(self.img)
         # cells to plot
         if len(parent.imerge)==1:
             icell = parent.iscell[parent.imerge[0]]
@@ -68,21 +68,38 @@ class VisWindow(QtGui.QMainWindow):
         sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
         self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
         self.sorting()
-        self.p0.setXRange(0,sp.shape[1])
-        self.p0.setYRange(0,sp.shape[0])
-        self.p0.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
+        self.p1.setXRange(0,sp.shape[1])
+        self.p1.setYRange(0,sp.shape[0])
+        self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
         # Custom ROI for selecting an image region
         nt = sp.shape[1]
         nn = sp.shape[0]
-        self.roi = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='y')
-        self.p0.addItem(roi)
-        roi.setZValue(10)  # make sure ROI is drawn above image
-        # Another plot area for displaying ROI data
         self.win.nextRow()
         self.p2 = self.win.addPlot(title='roi')
         self.p2.setMaximumHeight(250)
-        self.p0.show()
+        self.imgROI = pg.ImageItem()
+        self.p2.addItem(self.imgROI)
+        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='y')
+        self.ROI_position()
+        self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+        self.p1.addItem(self.ROI)
+        self.ROI.setZValue(10)  # make sure ROI is drawn above image
         self.win.show()
+
+    def ROI_position(self):
+        pos = self.ROI.pos()
+        print(pos)
+        #pos = self.p1.mapSceneToView(pos0[0][1])
+        posy = pos.y()
+        posx = pos.x()
+        sizex,sizey = self.ROI.size()
+        xrange = (np.arange(-1*int(sizex),1) + int(posx)).astype(np.int32)
+        yrange = (np.arange(-1*int(sizey),1) + int(posy)).astype(np.int32)
+        xrange = xrange[xrange>=0]
+        xrange = xrange[xrange<self.spF.shape[1]]
+        yrange = yrange[yrange>=0]
+        yrange = yrange[yrange<self.spF.shape[0]]
+        self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
 
     def sorting(self):
         isort = np.argsort(self.u[:,int(self.PCedit.text())-1])

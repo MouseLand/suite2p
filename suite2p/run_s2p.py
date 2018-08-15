@@ -31,7 +31,7 @@ def default_ops():
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
-        'prctile_baseline': 8.,# smoothing constant for gaussian filter
+        'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
         'neucoeff': .7,  # neuropil coefficient
         'neumax': 1.,  # maximum neuropil coefficient (not implemented)
         'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
@@ -62,7 +62,8 @@ def default_ops():
 def get_cells(ops):
     i0 = tic()
     if (type(ops['diameter']) is int) or len(ops['diameter'])<2:
-        ops['diameter'] = [ops['diameter'], ops['diameter']]
+        ops['diameter'] = int(np.array(ops['diameter']))
+        ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
     print(ops['diameter'])
     ops, stat = celldetect2.sourcery(ops)

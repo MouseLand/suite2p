@@ -401,7 +401,7 @@ def removeOverlaps(stat, ops, Ly, Lx):
             break
     return stat, ix
 
-def cellMasks(stat, Ly, Lx, allow_overlap):
+def cellMasks(ops, stat, Ly, Lx, allow_overlap):
     '''creates cell masks for ROIs in stat and computes radii
     inputs:
         stat, Ly, Lx, allow_overlap
@@ -735,7 +735,7 @@ def extractF(ops, stat):
     Lx = ops['Lx']
     ncells = len(stat)
 
-    stat,cell_pix,cell_masks = cellMasks(stat,Ly,Lx,False)
+    stat,cell_pix,cell_masks = cellMasks(ops, stat,Ly,Lx,False)
     neuropil_masks           = neuropilMasks2(ops,stat,cell_pix)
     # add surround neuropil masks to stat
     for n in range(ncells):

@@ -185,7 +185,15 @@ def run_s2p(ops={},db={}):
         ops1 = np.load(fpathops1)
         files_found_flag = True
         for i,op in enumerate(ops1):
-            files_found_flag &= os.path.isfile(op['reg_file'])
+            # default behavior is to look in the ops
+            flag_reg = os.path.isfile(op['reg_file'])
+            if not flag_reg:
+                # otherwise look in the user defined save_path0
+                op['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%i)
+                op['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
+                op['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+                flag_reg = os.path.isfile(op['reg_file'])
+            files_found_flag &= flag_reg
             # use the new options
             ops1[i] = {**op, **ops}
             # except for registration results

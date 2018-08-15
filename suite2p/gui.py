@@ -22,6 +22,7 @@ class RunWindow(QtGui.QDialog):
         self.ops = run_s2p.default_ops()
         self.data_path = []
         self.save_path = []
+        self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
         parkeys = ['num_workers','num_workers_roi']
         regkeys = ['nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
@@ -281,7 +282,7 @@ class ViewButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
-        self.setStyleSheet("Text-align:left")
+        self.setStyleSheet("background-color: gray; Text-align:left")
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
@@ -292,6 +293,9 @@ class ViewButton(QtGui.QPushButton):
             parent.ops_plot[1] = bid
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
+            for btns in parent.viewbtns.buttons():
+                btns.setStyleSheet("background-color: gray; Text-align:left;")
+            self.setStyleSheet("background-color: blue; Text-align:left;")
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
@@ -302,6 +306,7 @@ class ColorButton(QtGui.QPushButton):
         self.setCheckable(True)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
+        self.setStyleSheet("background-color: gray;")
         self.show()
     def press(self, parent, bid):
         ischecked  = self.isChecked()
@@ -312,3 +317,6 @@ class ColorButton(QtGui.QPushButton):
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
             fig.plot_colorbar(parent,bid)
+            for btns in parent.colorbtns.buttons():
+                btns.setStyleSheet("background-color: gray;")
+            self.setStyleSheet("background-color: blue;")

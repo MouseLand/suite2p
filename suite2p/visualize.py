@@ -61,7 +61,7 @@ class VisWindow(QtGui.QMainWindow):
         self.img.setImage(1-sp)
         self.p0.setXRange(0,np.minimum(sp.shape[0]*2, sp.shape[1]))
         self.p0.setYRange(0,sp.shape[0])
-        self.p0.setLimits(xMin=-100,xMax=sp.shape[1],yMin=-sp.shape[0],yMax=sp.shape[0]*2)
+        self.p0.setLimits(xMin=-100,xMax=sp.shape[1]+100,yMin=-sp.shape[0],yMax=sp.shape[0]*2)
         xAx = pg.AxisItem(orientation='bottom', linkView=self.p0)
         self.p0.addItem(xAx)
         yAx = pg.AxisItem(orientation='left', linkView=self.p0)

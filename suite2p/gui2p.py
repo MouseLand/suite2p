@@ -28,7 +28,7 @@ class MainW(QtGui.QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(96,96))
         app_icon.addFile(icon_path, QtCore.QSize(256,256))
         self.setWindowIcon(app_icon)
-        #self.setStyleSheet("QMainWindow {background: 'black';}")
+        self.setStyleSheet("QMainWindow {background: 'black';}")
         self.loaded = False
         self.ops_plot = []
         # default plot options
@@ -106,18 +106,23 @@ class MainW(QtGui.QMainWindow):
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
         checkBox = QtGui.QCheckBox('ROIs &On')
+        checkBox.setStyleSheet("color: white;")
         checkBox.move(30,100)
         checkBox.stateChanged.connect(self.ROIs_on)
         checkBox.toggle()
         self.l0.addWidget(checkBox,0,0,1,1)
         # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('cells')
+        self.lcell0.setStyleSheet("color: white;")
         self.l0.addWidget(self.lcell0, 0,1,1,1)
         self.lcell1 = QtGui.QLabel('NOT cells')
+        self.lcell1.setStyleSheet("color: white;")
         self.l0.addWidget(self.lcell1, 0,12,1,1)
         self.selectbtn = [QtGui.QPushButton('draw selection'),
                           QtGui.QPushButton('draw selection')]
-        for b in self.selectbtn: b.setCheckable(True)
+        for b in self.selectbtn:
+            b.setCheckable(True)
+            b.setStyleSheet("background-color: gray")
         self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
         self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
         self.selectbtn[0].setEnabled(False)
@@ -176,7 +181,7 @@ class MainW(QtGui.QMainWindow):
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
         vlabel = QtGui.QLabel(self)
-        vlabel.setText('Background')
+        vlabel.setText("<font color='white'>Background</font>")
         vlabel.setFont(boldfont)
         vlabel.resize(vlabel.minimumSizeHint())
         self.l0.addWidget(vlabel,1,0,1,1)
@@ -190,7 +195,7 @@ class MainW(QtGui.QMainWindow):
         # color buttons
         self.colorbtns = QtGui.QButtonGroup(self)
         clabel = QtGui.QLabel(self)
-        clabel.setText('Colors')
+        clabel.setText("<font color='white'>Colors</font>")
         clabel.setFont(boldfont)
         self.l0.addWidget(clabel,b+3,0,1,1)
         nv = b+3
@@ -204,7 +209,6 @@ class MainW(QtGui.QMainWindow):
             b+=1
         self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
-        colorbarW.setBackground(background=[255,255,255])
         colorbarW.setMaximumHeight(60)
         colorbarW.setMaximumWidth(150)
         colorbarW.ci.layout.setRowStretchFactor(0,2)
@@ -214,17 +218,20 @@ class MainW(QtGui.QMainWindow):
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
         cbar.addItem(self.colorbar)
-        self.clabel = [colorbarW.addLabel('0.0',color=[0,0,0],row=1,col=0),
-                        colorbarW.addLabel('0.5',color=[0,0,0],row=1,col=1),
-                        colorbarW.addLabel('1.0',color=[0,0,0],row=1,col=2)]
+        self.clabel = [colorbarW.addLabel('0.0',color=[255,255,255],row=1,col=0),
+                        colorbarW.addLabel('0.5',color=[255,255,255],row=1,col=1),
+                        colorbarW.addLabel('1.0',color=[255,255,255],row=1,col=2)]
         #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton('apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(lambda: classifier.apply(self))
-        cllabel = QtGui.QLabel('Classifier')
+        cllabel = QtGui.QLabel("")
         cllabel.setFont(boldfont)
+        cllabel.setText("<font color='white'>Classifier</font>")
         self.l0.addWidget(cllabel,self.bend,0,1,1)
-        self.l0.addWidget(QtGui.QLabel('\t      cell probability'),self.bend+1,0,1,1)
+        plabel = QtGui.QLabel('\t    cell probability')
+        plabel.setStyleSheet("color: white;")
+        self.l0.addWidget(plabel,self.bend+1,0,1,1)
         applyclass.setEnabled(False)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
@@ -244,8 +251,9 @@ class MainW(QtGui.QMainWindow):
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
         lilfont = QtGui.QFont("Arial", 8)
-        qlabel = QtGui.QLabel('Selected ROI:')
+        qlabel = QtGui.QLabel(self)
         qlabel.setFont(boldfont)
+        qlabel.setText("<font color='white'>Selected ROI:</font>")
         self.l0.addWidget(qlabel,self.bend,0,1,1)
         self.ROIedit = QtGui.QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
@@ -257,8 +265,10 @@ class MainW(QtGui.QMainWindow):
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1,len(self.stats_to_show)+1):
-            self.ROIstats.append(QtGui.QLabel(self.stats_to_show[k-1]))
+            llabel = QtGui.QLabel(self.stats_to_show[k-1])
+            self.ROIstats.append(llabel)
             self.ROIstats[k].setFont(lilfont)
+            self.ROIstats[k].setStyleSheet("color: white;")
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
             self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
@@ -323,7 +333,9 @@ class MainW(QtGui.QMainWindow):
         view = self.p1.viewRange()
         self.ROIplot = wplot
         if self.selectbtn[wplot].isChecked():
+            self.selectbtn[wplot].setStyleSheet("background-color: blue")
             self.selectbtn[1-wplot].setEnabled(False)
+            self.selectbtn[1-wplot].setStyleSheet("background-color: gray")
             imx = (view[0][1] + view[0][0]) / 2
             imy = (view[1][1] + view[1][0]) / 2
             dx  = (view[0][1] - view[0][0]) / 4
@@ -339,6 +351,7 @@ class MainW(QtGui.QMainWindow):
             self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
             self.isROI = True
         else:
+            self.selectbtn[wplot].setStyleSheet("background-color: gray")
             self.ROI_remove()
 
     def ROI_remove(self):
@@ -463,10 +476,12 @@ class MainW(QtGui.QMainWindow):
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
+                self.viewbtns.button(b).setStyleSheet("Text-align:left; background-color: blue;")
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
+                self.colorbtns.button(b).setStyleSheet("background-color: blue;")
         for btns in self.classbtns.buttons():
             btns.setEnabled(True)
         for i in range(2):

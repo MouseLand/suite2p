@@ -312,6 +312,7 @@ class ViewButton(QtGui.QPushButton):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
+        self.setStyleSheet("Text-align:left;")
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()

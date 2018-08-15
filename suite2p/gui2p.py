@@ -471,12 +471,10 @@ class MainW(QtGui.QMainWindow):
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
-                self.viewbtns.button(b).setStyleSheet("Text-align:left; background-color: blue;")
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
-                self.colorbtns.button(b).setStyleSheet("background-color: blue;")
         for btns in self.classbtns.buttons():
             btns.setEnabled(True)
         for i in range(2):

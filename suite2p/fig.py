@@ -211,7 +211,7 @@ def init_masks(parent):
     for k in range(4):
         if k>0:
             if k==1:
-                if 1:
+                if 0:
                     I = ops['meanImg']
                     Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
                     I = I - Imed

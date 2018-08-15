@@ -120,9 +120,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.lcell1, 0,12,1,1)
         self.selectbtn = [QtGui.QPushButton('draw selection'),
                           QtGui.QPushButton('draw selection')]
-        for b in self.selectbtn:
-            b.setCheckable(True)
-            b.setStyleSheet("background-color: gray")
+        for b in self.selectbtn:    b.setCheckable(True)
         self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
         self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
         self.selectbtn[0].setEnabled(False)
@@ -333,9 +331,7 @@ class MainW(QtGui.QMainWindow):
         view = self.p1.viewRange()
         self.ROIplot = wplot
         if self.selectbtn[wplot].isChecked():
-            self.selectbtn[wplot].setStyleSheet("background-color: blue")
             self.selectbtn[1-wplot].setEnabled(False)
-            self.selectbtn[1-wplot].setStyleSheet("background-color: gray")
             imx = (view[0][1] + view[0][0]) / 2
             imy = (view[1][1] + view[1][0]) / 2
             dx  = (view[0][1] - view[0][0]) / 4
@@ -351,7 +347,6 @@ class MainW(QtGui.QMainWindow):
             self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
             self.isROI = True
         else:
-            self.selectbtn[wplot].setStyleSheet("background-color: gray")
             self.ROI_remove()
 
     def ROI_remove(self):

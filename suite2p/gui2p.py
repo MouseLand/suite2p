@@ -177,7 +177,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew','std', 'compact','footprint','aspect_ratio','classifier','correlations']
+        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -249,7 +249,7 @@ class MainW(QtGui.QMainWindow):
         #### ------ CELL STATS -------- ####
         # which stats
         self.bend = self.bend+4
-        self.stats_to_show = ['med','npix','skew','std','compact','footprint',
+        self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel(self)
@@ -293,8 +293,8 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
-        self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
+        #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
         self.load_proc()
 
     def view_size(self, wplot):

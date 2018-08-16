@@ -81,7 +81,6 @@ class VisWindow(QtGui.QMainWindow):
         self.p2.addItem(self.imgROI)
         self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='b')
         #self.ROI.addScaleHandle([0.5, 1], [0.5, 0.5])
-        self.ROI.addScaleHandle([0, 0], [1, 1])
         self.ROI.addScaleHandle([0, 1], [1, 1])
         self.ROI_position()
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)

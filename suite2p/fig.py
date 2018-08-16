@@ -338,11 +338,15 @@ def class_masks(parent):
 
 def flip_for_class(parent, iscell):
     ncells = iscell.size
-    for n in range(ncells):
-        if iscell[n] != parent.iscell[n]:
-            parent.iscell[n] = iscell[n]
-            parent.ichosen = n
-            flip_cell(parent)
+    if (iscell==parent.iscell).sum() < 100:
+        for n in range(ncells):
+            if iscell[n] != parent.iscell[n]:
+                parent.iscell[n] = iscell[n]
+                parent.ichosen = n
+                flip_cell(parent)
+    else:
+        parent.iscell = iscell
+        init_masks(parent)
 
 def make_chosen_ROI(M0, ypix, xpix, lam):
     v = lam

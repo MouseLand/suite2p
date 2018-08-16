@@ -111,10 +111,10 @@ def make_colors(parent):
     parent.ops_plot[3] = allcols
     # make colors for pairwise correlations
     bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
-    nb   = int(np.floor(parent.Spks.shape[1] / bin))
-    parent.Sbin = parent.Spks[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
-    parent.Sbin = parent.Sbin - parent.Sbin.mean(axis=1)[:,np.newaxis]
-    parent.Sstd = (parent.Sbin**2).sum(axis=1)
+    nb   = int(np.floor(parent.Fcell.shape[1] / bin))
+    parent.Fbin = parent.Fcell[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
+    parent.Fbin = parent.Fbin - parent.Fbin.mean(axis=1)[:,np.newaxis]
+    parent.Fstd = (parent.Fbin**2).sum(axis=1)
     #parent.ops_plot[4] = corrcols
     #parent.cc = cc
 
@@ -265,10 +265,10 @@ def corr_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]
     n = np.array(parent.imerge)
-    sn = parent.Sbin[n,:].mean(axis=0)
+    sn = parent.Fbin[n,:].mean(axis=0)
     sn -= sn.mean()
     snstd = (sn**2).sum()
-    cc = np.dot(parent.Sbin, sn.T) / np.sqrt(np.dot(parent.Sstd,snstd))
+    cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
     cc[n] = 0
     istat = cc
     parent.clabels[-1] = [istat.min(),

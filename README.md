@@ -19,7 +19,19 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If you don't already have Python (and pip), you'll need to first install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path.
+If this fails, you might not have Python (or pip, or a recent enough version of pip). You'll need to install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. Try "pip install suite2p" again. If it still fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is 
+~~~~
+python -m pip install --upgrade pip
+~~~~
+And try "pip install suite2p" again. If it still fails, install Anaconda, and use the Anaconda command prompt to have a clean environment. Alternatively, if you already have Anaconda, create a new conda environment just for suite2p with 
+~~~~
+conda create --name suite2p
+(source) activate suite2p 
+pip install suite2p
+~~~~
+If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows. 
+
+If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS work. 
 
 ### Dependencies
 suite2p relies on the following packages (which are automatically installed with pip if missing):
@@ -31,7 +43,7 @@ suite2p relies on the following packages (which are automatically installed with
 - [scikit-image](https://scikit-image.org/)
 - [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
-PyQt has known issues with Yosemite Mac OS, but works on more recent Mac versions. The software has been heavily tested on Windows 10 and Ubuntu 18.04, please let us know if you have problems with other operating systems in the issues.
+The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please let us know if you have problems with other operating systems in the issues.
 
 ## Getting started
 

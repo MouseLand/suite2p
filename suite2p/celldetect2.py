@@ -77,7 +77,7 @@ def get_mov(ops):
             #dbin = np.squeeze(dbin, axis=1)
             #dbin -= dbin.mean(axis=0)
             inds = ix + np.arange(0,dbin.shape[0])
-            # crop into valid area                        
+            # crop into valid area
             mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
             ix += dbin.shape[0]
     nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
@@ -702,14 +702,14 @@ def sourcery(ops):
             refine = 3
             stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
-            stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
-            print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
-            ypix = [stat[n]['ypix'] for n in range(len(stat))]
-            xpix = [stat[n]['xpix'] for n in range(len(stat))]
-            lam = [stat[n]['lam'] for n in range(len(stat))]
-            codes = codes[ix, :]
-            L = L[:,:,ix]
-            ncells = len(ypix)
+            #stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
+            #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
+            #ypix = [stat[n]['ypix'] for n in range(len(stat))]
+            #xpix = [stat[n]['xpix'] for n in range(len(stat))]
+            #lam = [stat[n]['lam'] for n in range(len(stat))]
+            #codes = codes[ix, :]
+            #L = L[:,:,ix]
+            #ncells = len(ypix)
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:
@@ -720,9 +720,9 @@ def sourcery(ops):
 
     Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
     stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
-    stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
-    print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
-    codes = codes[ix, :]
+    #stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
+    #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
+    #codes = codes[ix, :]
 
     stat = postprocess(ops, stat, Ucell, codes)
     return ops, stat

@@ -117,7 +117,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.lcell0, 0,1,1,1)
         self.lcell1 = QtGui.QLabel('NOT cells')
         self.lcell1.setStyleSheet("color: white;")
-        self.l0.addWidget(self.lcell1, 0,12,1,1)
+        self.l0.addWidget(self.lcell1, 0,14,1,1)
         self.selectbtn = [QtGui.QPushButton('draw selection'),
                           QtGui.QPushButton('draw selection')]
         for b in self.selectbtn:    b.setCheckable(True)
@@ -128,23 +128,26 @@ class MainW(QtGui.QMainWindow):
         self.isROI=False
         self.ROIplot = 0
         self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
-        self.l0.addWidget(self.selectbtn[1], 0,13,1,1)
+        self.l0.addWidget(self.selectbtn[1], 0,15,1,1)
         # minimize view
-        self.minview = [QtGui.QPushButton('minimize'),
-                        QtGui.QPushButton('minimize')]
-        self.minview[0].setCheckable(True)
-        self.minview[0].clicked.connect(lambda: self.minimize(0))
-        self.minview[0].setEnabled(False)
-        self.l0.addWidget(self.minview[0],0,3,1,1)
-        self.minview[1].setCheckable(True)
-        self.minview[1].clicked.connect(lambda: self.minimize(1))
-        self.minview[1].setEnabled(False)
-        self.l0.addWidget(self.minview[1],0,14,1,1)
+        self.sizebtns = QtGui.QButtonGroup(self)
+        b=0
+        labels = ['cells','both','not cells']
+        for l in labels:
+            btn = QtGui.QPushButton(l)
+            self.sizebtns.addButton(btn,b)
+            self.sizebtns.button(b).clicked.connect(lambda: self.view_size(b))
+            self.l0.addWidget(btn,0,7+b,1,1)
+            btn.setEnabled(False)
+            if b==1:
+                btn.setEnabled(True)
+            b+=1
+        self.sizebtns.setExclusive(True)
         #### -------- MAIN PLOTTING AREA ---------- ####
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,34,14)
+        self.l0.addWidget(self.win,1,1,36,15)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -174,7 +177,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew','compact','footprint','aspect_ratio','classifier','correlations']
+        self.colors = ['random', 'skew','std', 'compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -246,7 +249,7 @@ class MainW(QtGui.QMainWindow):
         #### ------ CELL STATS -------- ####
         # which stats
         self.bend = self.bend+4
-        self.stats_to_show = ['med','npix','skew','compact','footprint',
+        self.stats_to_show = ['med','npix','skew','std','compact','footprint',
                               'aspect_ratio']
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel(self)
@@ -291,10 +294,10 @@ class MainW(QtGui.QMainWindow):
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
         #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
-        self.fname = 'C:/Users/carse/github/data/stat.npy'
+        self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
         self.load_proc()
 
-    def minimize(self, wplot):
+    def view_size(self, wplot):
         if self.minview[wplot].isChecked():
             self.minview[1-wplot].setEnabled(False)
             self.p2.linkView(self.p2.XAxis,view=None)
@@ -321,11 +324,15 @@ class MainW(QtGui.QMainWindow):
             merge=1
         elif event.key() == QtCore.Qt.Key_Escape:
             self.zoom_plot(1)
+            self.zoom_plot(2)
             self.show()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.ROI_remove()
         elif event.key() == QtCore.Qt.Key_Shift:
             split=1
+        elif event.key() == QtCore.Qt.Key_Q:
+            print(event.modifiers())
+            print('Q')
 
     def ROI_selection(self, wplot):
         if wplot==0:
@@ -480,9 +487,10 @@ class MainW(QtGui.QMainWindow):
                 self.colorbtns.button(b).setChecked(True)
         for btns in self.classbtns.buttons():
             btns.setEnabled(True)
+        for btns in self.sizebtns.buttons():
+            btns.setEnabled(True)
         for i in range(2):
             self.selectbtn[i].setEnabled(True)
-            self.minview[i].setEnabled(True)
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)

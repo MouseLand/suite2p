@@ -311,18 +311,19 @@ class ViewButton(QtGui.QPushButton):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
-        self.setStyleSheet("Text-align:left;")
+        self.setStyleSheet(parent.styleUnpressed)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        ischecked  = self.isChecked()
-        if ischecked:
-            parent.ops_plot[1] = bid
-            if parent.ops_plot[2] == parent.ops_plot[3].shape[1]:
-                fig.draw_corr(parent)
-            M = fig.draw_masks(parent)
-            fig.plot_masks(parent,M)
+        for b in parent.viewbtns.buttons():
+            b.setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        parent.ops_plot[1] = bid
+        if parent.ops_plot[2] == parent.ops_plot[3].shape[1]:
+            fig.draw_corr(parent)
+        M = fig.draw_masks(parent)
+        fig.plot_masks(parent,M)
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
@@ -331,43 +332,49 @@ class ColorButton(QtGui.QPushButton):
         super(ColorButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
+        self.setStyleSheet(parent.styleUnpressed)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        ischecked  = self.isChecked()
-        if ischecked:
-            parent.ops_plot[2] = bid
-            if bid==6:
-                fig.corr_masks(parent)
-            M = fig.draw_masks(parent)
-            fig.plot_masks(parent,M)
-            fig.plot_colorbar(parent,bid)
+        for b in parent.colorbtns.buttons():
+            b.setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        parent.ops_plot[2] = bid
+        if bid==6:
+            fig.corr_masks(parent)
+        M = fig.draw_masks(parent)
+        fig.plot_masks(parent,M)
+        fig.plot_colorbar(parent,bid)
 
 class SizeButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(SizeButton,self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
+        self.setStyleSheet(parent.styleUnpressed)
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        ischecked = self.isChecked()
-        if ischecked:
-            if bid==0:
-                parent.p2.linkView(parent.p2.XAxis,view=None)
-                parent.p2.linkView(parent.p2.YAxis,view=None)
-                parent.win.ci.layout.setColumnStretchFactor(0,14)
-                parent.win.ci.layout.setColumnStretchFactor(1,1)
-            elif bid==1:
-                parent.win.ci.layout.setColumnStretchFactor(0,1)
-                parent.win.ci.layout.setColumnStretchFactor(1,1)
-                parent.p2.setXLink('plot1')
-                parent.p2.setYLink('plot1')
-            elif bid==2:
-                parent.p2.linkView(parent.p2.XAxis,view=None)
-                parent.p2.linkView(parent.p2.YAxis,view=None)
-                parent.win.ci.layout.setColumnStretchFactor(0,1)
-                parent.win.ci.layout.setColumnStretchFactor(1,14)
+        for b in parent.sizebtns.buttons():
+            b.setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        if bid==0:
+            parent.p2.linkView(parent.p2.XAxis,view=None)
+            parent.p2.linkView(parent.p2.YAxis,view=None)
+            parent.win.ci.layout.setColumnStretchFactor(0,14)
+            parent.win.ci.layout.setColumnStretchFactor(1,1)
+        elif bid==1:
+            parent.win.ci.layout.setColumnStretchFactor(0,1)
+            parent.win.ci.layout.setColumnStretchFactor(1,1)
+            parent.win.show()
+        elif bid==2:
+            parent.p2.linkView(parent.p2.XAxis,view=None)
+            parent.p2.linkView(parent.p2.YAxis,view=None)
+            parent.win.ci.layout.setColumnStretchFactor(0,1)
+            parent.win.ci.layout.setColumnStretchFactor(1,14)
         parent.zoom_plot(1)
+        if bid==1:
+            parent.p2.setXLink('plot1')
+            parent.p2.setYLink('plot1')

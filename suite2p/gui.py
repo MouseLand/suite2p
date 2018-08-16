@@ -343,3 +343,31 @@ class ColorButton(QtGui.QPushButton):
             M = fig.draw_masks(parent)
             fig.plot_masks(parent,M)
             fig.plot_colorbar(parent,bid)
+
+class SizeButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, parent=None):
+        super(SizeButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        self.resize(self.minimumSizeHint())
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        ischecked = self.isChecked()
+        if ischecked:
+            if bid==0:
+                parent.p2.linkView(parent.p2.XAxis,view=None)
+                parent.p2.linkView(parent.p2.YAxis,view=None)
+                parent.win.ci.layout.setColumnStretchFactor(0,14)
+                parent.win.ci.layout.setColumnStretchFactor(1,1)
+            elif bid==1:
+                parent.win.ci.layout.setColumnStretchFactor(0,1)
+                parent.win.ci.layout.setColumnStretchFactor(1,1)
+                parent.p2.setXLink('plot1')
+                parent.p2.setYLink('plot1')
+            elif bid==2:
+                parent.p2.linkView(parent.p2.XAxis,view=None)
+                parent.p2.linkView(parent.p2.YAxis,view=None)
+                parent.win.ci.layout.setColumnStretchFactor(0,1)
+                parent.win.ci.layout.setColumnStretchFactor(1,14)
+        parent.zoom_plot(1)

@@ -114,10 +114,11 @@ class MainW(QtGui.QMainWindow):
         # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('cells')
         self.lcell0.setStyleSheet("color: white;")
-        self.l0.addWidget(self.lcell0, 0,1,1,1)
+        self.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.l0.addWidget(self.lcell0, 0,6,1,1)
         self.lcell1 = QtGui.QLabel('NOT cells')
         self.lcell1.setStyleSheet("color: white;")
-        self.l0.addWidget(self.lcell1, 0,14,1,1)
+        self.l0.addWidget(self.lcell1, 0,10,1,1)
         self.selectbtn = [QtGui.QPushButton('draw selection'),
                           QtGui.QPushButton('draw selection')]
         for b in self.selectbtn:    b.setCheckable(True)
@@ -127,16 +128,15 @@ class MainW(QtGui.QMainWindow):
         self.selectbtn[1].setEnabled(False)
         self.isROI=False
         self.ROIplot = 0
-        self.l0.addWidget(self.selectbtn[0], 0,2,1,1)
+        self.l0.addWidget(self.selectbtn[0], 0,1,1,1)
         self.l0.addWidget(self.selectbtn[1], 0,15,1,1)
         # minimize view
         self.sizebtns = QtGui.QButtonGroup(self)
         b=0
         labels = ['cells','both','not cells']
         for l in labels:
-            btn = QtGui.QPushButton(l)
+            btn  = gui.SizeButton(b,l,self)
             self.sizebtns.addButton(btn,b)
-            self.sizebtns.button(b).clicked.connect(lambda: self.view_size(b))
             self.l0.addWidget(btn,0,7+b,1,1)
             btn.setEnabled(False)
             if b==1:
@@ -297,28 +297,6 @@ class MainW(QtGui.QMainWindow):
         #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
         self.load_proc()
 
-    def view_size(self, wplot):
-        if self.minview[wplot].isChecked():
-            self.minview[1-wplot].setEnabled(False)
-            self.p2.linkView(self.p2.XAxis,view=None)
-            self.p2.linkView(self.p2.YAxis,view=None)
-            if wplot==0:
-                self.p1.setYRange(-10,-9)
-                self.p1.setXRange(-10,-9)
-            else:
-                self.p2.setYRange(-10,-9)
-                self.p2.setXRange(-10,-9)
-            self.win.ci.layout.setColumnStretchFactor(1-wplot,10)
-        else:
-            if wplot==0:
-                view = self.p2.viewRange()
-                self.p1.setYRange(view[0][0],view[0][1])
-                self.p1.setXRange(view[1][0],view[1][1])
-            self.win.ci.layout.setColumnStretchFactor(1-wplot,1)
-            self.minview[1-wplot].setEnabled(True)
-            self.p2.setXLink('plot1')
-            self.p2.setYLink('plot1')
-
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return:
             merge=1
@@ -461,8 +439,8 @@ class MainW(QtGui.QMainWindow):
         fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
-        self.lcell1.setText('NOT cells: %d'%(ncells-self.iscell.sum()))
-        self.lcell0.setText('cells: %d'%(self.iscell.sum()))
+        self.lcell1.setText('%d'%(ncells-self.iscell.sum()))
+        self.lcell0.setText('%d'%(self.iscell.sum()))
         fig.init_range(self)
         fig.plot_trace(self)
         if (type(self.ops['diameter']) is not int) and (len(self.ops['diameter'])>1):
@@ -485,10 +463,14 @@ class MainW(QtGui.QMainWindow):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
-        for btns in self.classbtns.buttons():
-            btns.setEnabled(True)
-        for btns in self.sizebtns.buttons():
-            btns.setEnabled(True)
+        for btn in self.classbtns.buttons():
+            btn.setEnabled(True)
+        b = 0
+        for btn in self.sizebtns.buttons():
+            btn.setEnabled(True)
+            if b==1:
+                btn.setChecked(True)
+            b+=1
         for i in range(2):
             self.selectbtn[i].setEnabled(True)
         # enable classifier menu
@@ -623,8 +605,8 @@ class MainW(QtGui.QMainWindow):
         np.save(self.basename+'/iscell.npy',
                 np.concatenate((np.expand_dims(self.iscell,axis=1),
                 np.expand_dims(self.probcell,axis=1)), axis=1))
-        self.lcell0.setText('cells: %d'%(self.iscell.sum()))
-        self.lcell1.setText('NOT cells: %d'%(self.iscell.size-self.iscell.sum()))
+        self.lcell0.setText('%d'%(self.iscell.sum()))
+        self.lcell1.setText('%d'%(self.iscell.size-self.iscell.sum()))
 
     def zoom_plot(self,iplot):
         if iplot==1 or iplot==2 or iplot==4:

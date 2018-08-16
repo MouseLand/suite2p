@@ -33,6 +33,11 @@ def get_sdmov(mov, ops):
 def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
+    if ('smooth_masks' in ops) and ops['smooth_masks']:
+        sig = ops['diameter']/20.
+        for j in range(nbins):
+            mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
+    mov = np.reshape(mov, (-1,Lyc*Lxc))
     mov = np.reshape(mov, (-1,Lyc*Lxc))
     U = u.transpose() @ mov
     U = U.transpose().copy().reshape((Lyc,Lxc,-1))
@@ -389,7 +394,6 @@ def removeOverlaps(stat, ops, Ly, Lx):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         mask[ypix,xpix] += 1
-
     while 1:
         O = np.zeros((len(stat),1))
         for n in range(len(stat)):
@@ -479,49 +483,6 @@ def neuropilMasks2(ops, stat, cell_pix):
         neuropil_masks[n,ypix,xpix] = 0
     S = np.sum(neuropil_masks, axis=(1,2))
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
-    return neuropil_masks
-def neuropilMasks(ops, stat, cell_pix):
-    '''creates surround neuropil masks for ROIs in stat
-    inputs:
-        ops, stat, cell_pix
-            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
-            from stat: med, radius
-            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
-    outputs:
-        neuropil_masks (ncells,Ly,Lx)
-    '''
-    inner_radius = int(ops['inner_neuropil_radius'])
-    outer_radius = ops['outer_neuropil_radius']
-    # if outer_radius is infinite, define outer radius as a multiple of the cell radius
-    if np.isinf(ops['outer_neuropil_radius']):
-        min_pixels = ops['min_neuropil_pixels']
-        ratio      = ops['ratio_neuropil_to_cell']
-    # dilate the cell pixels by inner_radius to create ring around cells
-    expanded_cell_pix = ndimage.grey_dilation(cell_pix, (inner_radius,inner_radius))
-
-    ncells = len(stat)
-    Ly = cell_pix.shape[0]
-    Lx = cell_pix.shape[1]
-    neuropil_masks = np.zeros((ncells,Ly,Lx),np.float32)
-    x,y = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))
-    for n in range(0,ncells):
-        cell_center = stat[n]['med']
-        if stat[n]['radius'] > 0:
-            if np.isinf(ops['outer_neuropil_radius']):
-                cell_radius  = stat[n]['radius']
-                outer_radius = ratio * cell_radius
-                npixels = 0
-                # continue increasing outer_radius until minimum pixel value reached
-                while npixels < min_pixels:
-                    neuropil_on       = (((y - cell_center[1])**2 + (x - cell_center[0])**2)**0.5) <= outer_radius
-                    neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
-                    npixels = neuropil_no_cells.astype(np.int32).sum()
-                    outer_radius *= 1.25
-            else:
-                neuropil_on       = ((y - cell_center[0])**2 + (x - cell_center[1])**2)**0.5 <= outer_radius
-                neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
-            npixels = neuropil_no_cells.astype(np.int32).sum()
-            neuropil_masks[n,:,:] = neuropil_no_cells.astype(np.float32) / npixels
     return neuropil_masks
 
 def getVmap(Ucell, sig):
@@ -705,6 +666,8 @@ def sourcery(ops):
             codes = codes[ix, :]
             L = L[:,:,ix]
             ncells = len(ypix)
+            # also good place to get connected regions
+
         if refine>0:
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):

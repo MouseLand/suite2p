@@ -52,37 +52,43 @@ def get_mov(ops):
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
-    reg_file = open(ops['reg_file'], 'rb')
 
-    nimgbatch = max(500, np.ceil(750 * ops['fs']))
+    nimgbatch = 500
     nimgbatch = min(nframes, nimgbatch)
     nimgbatch = nt0 * np.floor(nimgbatch/nt0)
-
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
     ix = 0
     # load and bin data
-    while True:
-        buff = reg_file.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        nimgd = int(np.floor(data.size / (Ly*Lx)))
-        if nimgd < nt0:
+    with open(ops['reg_file'], 'rb') as reg_file:
+        while True:
+            buff = reg_file.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            nimgd = int(np.floor(data.size / (Ly*Lx)))
+            if nimgd < nt0:
+                break
+            data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+            # bin data
+            if nimgd < nimgbatch:
+                nmax = int(np.floor(nimgd / nt0) * nt0)
+                data = data[:nmax,:,:]
+            dbin = np.reshape(data, (-1,nt0,Ly,Lx))
+            dbin = dbin.mean(axis=1)
+            #dbin = np.squeeze(dbin, axis=1)
+            #dbin -= dbin.mean(axis=0)
+            inds = ix + np.arange(0,dbin.shape[0])
+            # crop into valid area                        
+            mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            ix += dbin.shape[0]
+    nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
+    i0 = 0
+    while 1:
+        irange = i0 + np.arange(0,nimgbatch)
+        irange = irange[irange<mov.shape[0]]
+        if len(irange)==0:
             break
-        data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
-        # bin data
-        if nimgd < nimgbatch:
-            nmax = int(np.floor(nimgd / nt0) * nt0)
-            data = data[:nmax,:,:]
-
-        dbin = np.reshape(data, (-1,nt0,Ly,Lx))
-        dbin = np.squeeze(dbin.mean(axis=1))
-        dbin -= dbin.mean(axis=0)
-        inds = ix + np.arange(0,dbin.shape[0])
-        # crop into valid area
-        mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-        ix += dbin.shape[0]
-    reg_file.close()
-
+        mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
+        i0 += len(irange)
     return mov
 
 def getSVDdata(ops):

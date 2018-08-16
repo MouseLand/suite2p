@@ -190,8 +190,8 @@ def run_s2p(ops={},db={}):
             if not flag_reg:
                 # otherwise look in the user defined save_path0
                 op['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%i)
-                op['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-                op['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+                op['ops_path'] = os.path.join(op['save_path'],'ops.npy')
+                op['reg_file'] = os.path.join(op['save_path'], 'data.bin')
                 flag_reg = os.path.isfile(op['reg_file'])
             files_found_flag &= flag_reg
             # use the new options

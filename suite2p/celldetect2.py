@@ -391,17 +391,16 @@ def removeOverlaps(stat, ops, Ly, Lx):
         mask[ypix,xpix] += 1
 
     while 1:
-        O = np.zeros((ncells,1))
-        for n in range(ncells):
+        O = np.zeros((len(stat),1))
+        for n in range(len(stat)):
             ypix = stat[n]['ypix']
             xpix = stat[n]['xpix']
-            O[n] = np.mean(mask[ypix,xpix] > 1)
+            O[n] = np.mean(mask[ypix,xpix] > 1.5)
         i = np.argmax(O)
         if O[i]>ops['max_overlap']:
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
+            ypix = stat[i]['ypix']
+            xpix = stat[i]['xpix']
             mask[ypix,xpix] -= 1
-            ncells -= 1
             del stat[i], ix[i]
         else:
             break
@@ -696,20 +695,21 @@ def sourcery(ops):
         it += 1
         if refine ==0:
             break
+        if refine==2:
+            # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
+            stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
+            print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
+            ypix = [stat[n]['ypix'] for n in range(len(stat))]
+            xpix = [stat[n]['xpix'] for n in range(len(stat))]
+            lam = [stat[n]['lam'] for n in range(len(stat))]
+            codes = codes[ix, :]
+            L = L[:,:,ix]
+            ncells = len(ypix)
         if refine>0:
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
             stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
-            # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
-            #stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
-            #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
-            #ypix = [stat[n]['ypix'] for n in range(len(stat))]
-            #xpix = [stat[n]['xpix'] for n in range(len(stat))]
-            #lam = [stat[n]['lam'] for n in range(len(stat))]
-            #codes = codes[ix, :]
-            #L = L[:,:,ix]
-            #ncells = len(ypix)
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:

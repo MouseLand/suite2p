@@ -4,6 +4,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import signal
 from scipy import ndimage
+from suite2p import utils
 import math
 from matplotlib.colors import hsv_to_rgb
 

@@ -263,9 +263,10 @@ def init_masks(parent):
 def corr_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]
-    n = parent.ichosen
-    sn = parent.Sbin[n,:]
-    snstd = (sn**2).mean()
+    n = np.array(parent.imerge)
+    sn = parent.Sbin[n,:].mean(axis=0)
+    sn -= sn.mean()
+    snstd = (sn**2).sum()
     cc = np.dot(parent.Sbin, sn.T) / np.sqrt(np.dot(parent.Sstd,snstd))
     cc[n] = 0
     istat = cc

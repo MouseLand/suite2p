@@ -595,15 +595,15 @@ class MainW(QtGui.QMainWindow):
                             self.ichosen = ichosen
                             if ichosen not in self.imerge:
                                 self.imerge = [ichosen]
-                            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
-                                fig.corr_masks(self)
-                                fig.plot_colorbar(self, self.ops_plot[2])
                     if flip:
                         self.flip_plot(iplot)
                         if self.isROI:
                             self.ROI_remove()
                     if choose or flip or replot:
-                        #tic=time.time()
+                        if replot or choose:
+                            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                                fig.corr_masks(self)
+                                fig.plot_colorbar(self, self.ops_plot[2])
                         self.ichosen_stats()
                         M = fig.draw_masks(self)
                         fig.plot_masks(self,M)

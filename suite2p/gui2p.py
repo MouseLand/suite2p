@@ -509,6 +509,14 @@ class MainW(QtGui.QMainWindow):
             M = fig.draw_masks(self)
             fig.plot_masks(self,M)
 
+    def zoom_trace():
+        if len(self.imerge)>10 and len(self.imerge)<21:
+            self.win.ci.layout.setRowStretchFactor(1,2)
+        elif len(self.imerge)<=10:
+            self.win.ci.layout.setRowStretchFactor(1,1)
+        else:
+            self.win.ci.layout.setRowStretchFactor(1,3)
+
     def plot_clicked(self,event):
         '''left-click chooses a cell, right-click flips cell to other view'''
         flip = False
@@ -541,7 +549,6 @@ class MainW(QtGui.QMainWindow):
                 if iplot==1 or iplot==2:
                     if event.button()==2:
                         flip = True
-                        choose = True
                     elif event.button()==1:
                         if event.double():
                             zoom = True
@@ -557,60 +564,41 @@ class MainW(QtGui.QMainWindow):
                     ichosen = int(self.iROI[iplot-1,0,posx,posy])
                     if ichosen<0:
                         choose = False
-                        flip = False
-                    else:
-                        if self.ichosen==ichosen:
-                            choose = False
-                            if event.modifiers() == QtCore.Qt.ControlModifier:
-                                if len(self.imerge)>1:
-                                    self.imerge.remove(ichosen)
-                                    self.ichosen = self.imerge[0]
-                                    replot = True
-                        if choose:
-                            addto = True
-                            if self.isROI:
-                                if ichosen not in self.imerge:
-                                    self.ROI_remove()
-                                else:
-                                    addto = False
-                            if flip:
-                                addto = False
-                            merged = False
-                            if addto:
-                                if event.modifiers() == QtCore.Qt.ControlModifier:
-                                    if self.iscell[self.imerge[-1]] is self.iscell[ichosen]:
-                                        if ichosen not in self.imerge:
-                                            self.imerge.append(ichosen)
-                                        elif ichosen in self.imerge and len(self.imerge)>1:
-                                            self.imerge.remove(ichosen)
-                                        merged = True
-                                if not merged:
-                                    self.imerge = [ichosen]
-                            if len(self.imerge)>10 and len(self.imerge)<21:
-                                self.win.ci.layout.setRowStretchFactor(1,2)
-                            elif len(self.imerge)<=10:
-                                self.win.ci.layout.setRowStretchFactor(1,1)
-                            else:
-                                self.win.ci.layout.setRowStretchFactor(1,3)
-                            self.ichosen = ichosen
+                        flip   = False
+                if choose:
+                    merged = False
+                    if event.modifiers() == QtCore.Qt.ControlModifier:
+                        if self.iscell[self.imerge[0]] == self.iscell[ichosen]:
                             if ichosen not in self.imerge:
-                                self.imerge = [ichosen]
-                    if flip:
-                        self.flip_plot(iplot)
-                        if self.isROI:
-                            self.ROI_remove()
-                    if choose or flip or replot:
-                        if replot or choose:
-                            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
-                                fig.corr_masks(self)
-                                fig.plot_colorbar(self, self.ops_plot[2])
-                        self.ichosen_stats()
-                        M = fig.draw_masks(self)
-                        fig.plot_masks(self,M)
-                        fig.plot_trace(self)
-                        self.show()
-                        #print(time.time()-tic)
-
+                                self.imerge.append(ichosen)
+                                self.ichosen = ichosen
+                                merged = True
+                            elif ichosen in self.imerge and len(self.imerge)>1:
+                                self.imerge.remove(ichosen)
+                                self.ichosen = self.imerge[0]
+                                merged = True
+                    if not merged:
+                        self.imerge = [ichosen]
+                        self.ichosen = ichosen
+                if flip:
+                    if ichosen not in self.imerge:
+                        self.imerge = [ichosen]
+                        self.ichosen = ichosen
+                    self.flip_plot(iplot)
+                    if self.isROI:
+                        self.ROI_remove()
+                if choose or flip or replot:
+                    if self.isROI:
+                        self.ROI_remove()
+                    if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                        fig.corr_masks(self)
+                        fig.plot_colorbar(self, self.ops_plot[2])
+                    self.ichosen_stats()
+                    M = fig.draw_masks(self)
+                    fig.plot_masks(self,M)
+                    fig.plot_trace(self)
+                    self.show()
+                    #print(time.time()-tic)
 
     def ichosen_stats(self):
         n = self.ichosen

@@ -150,7 +150,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,36,15)
+        self.l0.addWidget(self.win,1,1,38,15)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -444,13 +444,6 @@ class MainW(QtGui.QMainWindow):
             if (self.iROI[i,:,ypix,xpix]==n).sum()>0.6*self.stat[n]['npix']:
                 self.imerge.append(n)
         if len(self.imerge)>0:
-            if len(self.imerge)>10 and len(self.imerge)<21:
-                self.win.ci.layout.setRowStretchFactor(1,2)
-            elif len(self.imerge)<=10:
-                self.win.ci.layout.setRowStretchFactor(1,1)
-            else:
-                self.win.ci.layout.setRowStretchFactor(1,3)
-            #print(self.imerge)
             self.ichosen = self.imerge[0]
             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                 fig.corr_masks(self)

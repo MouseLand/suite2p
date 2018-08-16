@@ -29,7 +29,7 @@ class MainW(QtGui.QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(256,256))
         self.setWindowIcon(app_icon)
         self.setStyleSheet("QMainWindow {background: 'black';}")
-        self.stylePressed = "QPushButton {Text-align: left; background-color: rgb(50,0,50); color:white;}"
+        self.stylePressed = "QPushButton {Text-align: left; background-color: rgb(100,50,100); color:white;}"
         self.styleUnpressed = "QPushButton {Text-align: left; background-color: rgb(50,50,50); color:white;}"
         self.loaded = False
         self.ops_plot = []
@@ -172,6 +172,9 @@ class MainW(QtGui.QMainWindow):
         # --- fluorescence trace plot
         self.p3 = self.win.addPlot(row=1,col=0,colspan=2)
         self.win.ci.layout.setRowStretchFactor(0,2)
+        layout.setColumnMinimumWidth(0,1)
+        layout.setColumnMinimumWidth(1,1)
+        layout.setHorizontalSpacing(20)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.enableAutoRange(x=True,y=True)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -311,8 +314,8 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
-        #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
+        self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
         self.load_proc()
 
     def keyPressEvent(self, event):

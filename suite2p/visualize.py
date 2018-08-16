@@ -20,31 +20,20 @@ class VisWindow(QtGui.QMainWindow):
         self.l0 = QtGui.QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
-        self.comboBox = QtGui.QComboBox(self)
-        self.comboBox.addItem("PC")
-        #self.comboBox.addItem("embed")
-        self.comboBox.activated[str].connect(self.sorting)
-        self.l0.addWidget(self.comboBox,0,0,1,2)
-        self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setValidator(QtGui.QIntValidator(1,10000))
-        self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(35)
-        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        self.PCedit.returnPressed.connect(self.sorting)
-        qlabel = QtGui.QLabel('PC: ')
-        qlabel.setStyleSheet('color: white;')
-        self.l0.addWidget(qlabel,1,0,1,1)
-        self.l0.addWidget(self.PCedit,1,1,1,1)
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
         # --- cells image
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,2,10,14)
+        self.l0.addWidget(self.win,0,0,10,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
-        self.p1 = self.win.addPlot(title="",row=0,col=0)
+        self.p0 = self.win.addViewBox(row=0,col=0)
+        self.p0.setMouseEnabled(x=False,y=False)
+        self.p0.setMenuEnabled(False)
+        self.p1 = self.win.addPlot(title="full-view",row=0,col=1)
+        self.p1.setMouseEnabled(x=True,y=False)
         self.img = pg.ImageItem()
         self.p1.addItem(self.img)
         # cells to plot
@@ -69,23 +58,41 @@ class VisWindow(QtGui.QMainWindow):
         sp = np.maximum(0, np.minimum(1, sp))
         sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
         self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
-        self.sorting()
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
         self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
         # Custom ROI for selecting an image region
         nt = sp.shape[1]
         nn = sp.shape[0]
-        self.p2 = self.win.addPlot(title='roi',row=1,col=0)
+        self.p2 = self.win.addPlot(title='roi',row=1,col=0,colspan=2)
         self.imgROI = pg.ImageItem()
         self.p2.addItem(self.imgROI)
-        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='b')
-        #self.ROI.addScaleHandle([0.5, 1], [0.5, 0.5])
+        self.win.ci.layout.setColumnStretchFactor(1,3)
+        # edit buttons
+        self.comboBox = QtGui.QComboBox(self)
+        self.comboBox.addItem("PC")
+        self.comboBox.activated[str].connect(self.sorting)
+        self.l0.addWidget(self.comboBox,0,0,1,2)
+        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit.setValidator(QtGui.QIntValidator(1,10000))
+        self.PCedit.setText('1')
+        self.PCedit.setFixedWidth(35)
+        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
+        self.PCedit.returnPressed.connect(self.sorting)
+        qlabel = QtGui.QLabel('PC: ')
+        qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,1,0,1,1)
+        self.l0.addWidget(self.PCedit,1,1,1,1)
+        self.sorting()
+        # ROI on main plot
+        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,
+                      maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),pen='b')
         self.ROI.addScaleHandle([0, 1], [1, 1])
         self.ROI_position()
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
+
         self.win.show()
 
     def ROI_position(self):
@@ -100,6 +107,8 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.spF.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
+        self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
+                                           xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
 
     def sorting(self):
         isort = np.argsort(self.u[:,int(self.PCedit.text())-1])

@@ -111,20 +111,11 @@ def make_colors(parent):
     # make colors for pairwise correlations
     bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
     nb   = int(np.floor(parent.Spks.shape[1] / bin))
-    Sbin = parent.Spks[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
-    cc = np.corrcoef(Sbin)
-    np.fill_diagonal(cc, 0)
-    corrcols = np.zeros((ncells,ncells))
-    for n in range(0,ncells):
-        istat = cc[:,n]
-        istat = istat - istat.min()
-        istat = istat / istat.max()
-        istat = istat / 1.3
-        istat = istat + 0.1
-        icols = 1 - istat
-        corrcols[:,n] = icols
-    parent.ops_plot[4] = corrcols
-    parent.cc = cc
+    parent.Sbin = parent.Spks[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
+    parent.Sbin = parent.Sbin - parent.Sbin.mean(axis=1)[:,np.newaxis]
+    parent.Sstd = (parent.Sbin**2).sum(axis=1)
+    #parent.ops_plot[4] = corrcols
+    #parent.cc = cc
 
 def boundary(ypix,xpix):
     ''' returns pixels of mask that are on the exterior of the mask '''
@@ -214,7 +205,6 @@ def init_masks(parent):
                 if 'meanImgE' not in ops:
                     ops = utils.enhanced_mean_image(ops)
                 mimg = ops['meanImgE']
-                S     = np.maximum(0,np.minimum(1, V*1.5))
             elif k==2:
                 mimg = ops['meanImg']
                 S = np.maximum(0,np.minimum(1, V*1.5))
@@ -235,15 +225,18 @@ def init_masks(parent):
             V = mimg
             V = np.expand_dims(V,axis=2)
         for i in range(2):
-            if k==0:
-                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
-                V = np.expand_dims(V,axis=2)
+            Vorig = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
+            Vorig = np.expand_dims(Vorig,axis=2)
             if k==3:
                 S = np.expand_dims(Sext[i,:,:],axis=2)
                 Va = np.maximum(0,np.minimum(1, V + S))
             else:
                 S = np.expand_dims(Sroi[i,:,:],axis=2)
-                Va = V
+                if k>0:
+                    S     = np.maximum(0,np.minimum(1, Vorig*1.5))
+                    Va    = V
+                else:
+                    Va = Vorig
             for c in range(0,cols.shape[1]):
                 H = cols[iROI[i,0,:,:],c]
                 H = np.expand_dims(H,axis=2)
@@ -268,30 +261,64 @@ def init_masks(parent):
     parent.LamMean = LamMean
 
 def corr_masks(parent):
+    k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]
-    cols = parent.ops_plot[4]
     n = parent.ichosen
-    for i in range(2):
-        for k in range(4):
-            H = cols[parent.iROI[i,0,:,:],n]
-            if k<3:
-                S = parent.Sroi[i,:,:]
-            else:
-                S = parent.Sext[i,:,:]
-            V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
-            if k>0:
-                V = parent.Vback[k-1,:,:]
-                if k==3:
-                    V = np.maximum(0,np.minimum(1, V + S))
-            H = np.expand_dims(H,axis=2)
-            S = np.expand_dims(S,axis=2)
-            V = np.expand_dims(V,axis=2)
-            hsv = np.concatenate((H,S,V),axis=2)
-            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
-    istat = parent.cc[:,n]
+    sn = parent.Sbin[n,:]
+    snstd = (sn**2).mean()
+    cc = np.dot(parent.Sbin, sn.T) / np.sqrt(np.dot(parent.Sstd,snstd))
+    cc[n] = 0
+    istat = cc
     parent.clabels[-1] = [istat.min(),
                          (istat.max()-istat.min())/2 + istat.min(),
                          istat.max()]
+    istat = istat - istat.min()
+    istat = istat / istat.max()
+    istat = istat / 1.3
+    istat = istat + 0.1
+    cols = 1 - istat
+    parent.ops_plot[4] = cols
+    for i in range(2):
+        H = cols[parent.iROI[i,0,:,:]]
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k==0:
+            S = parent.Sroi[i,:,:]
+            V = Vorig
+        elif k==3:
+            S = parent.Sext[i,:,:]
+            V = parent.Vback[k-1,:,:]
+            V = np.maximum(0,np.minimum(1, V + S))
+        else:
+            S = np.maximum(0,np.minimum(1, Vorig*1.5))
+            V = parent.Vback[k-1,:,:]
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+
+def draw_corr(parent):
+    k = parent.ops_plot[1]
+    c = parent.ops_plot[3].shape[1]
+    cols = parent.ops_plot[4]
+    for i in range(2):
+        H = cols[parent.iROI[i,0,:,:]]
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k==0:
+            S = parent.Sroi[i,:,:]
+            V = Vorig
+        elif k==3:
+            S = parent.Sext[i,:,:]
+            V = parent.Vback[k-1,:,:]
+            V = np.maximum(0,np.minimum(1, V + S))
+        else:
+            S = np.maximum(0,np.minimum(1, Vorig*1.5))
+            V = parent.Vback[k-1,:,:]
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
 def class_masks(parent):
     cols = parent.ops_plot[3]
@@ -316,11 +343,15 @@ def class_masks(parent):
 
 def flip_for_class(parent, iscell):
     ncells = iscell.size
-    for n in range(ncells):
-        if iscell[n] != parent.iscell[n]:
-            parent.iscell[n] = iscell[n]
-            parent.ichosen = n
-            flip_cell(parent)
+    if (iscell==parent.iscell).sum() < 100:
+        for n in range(ncells):
+            if iscell[n] != parent.iscell[n]:
+                parent.iscell[n] = iscell[n]
+                parent.ichosen = n
+                flip_cell(parent)
+    else:
+        parent.iscell = iscell
+        init_masks(parent)
 
 def make_chosen_ROI(M0, ypix, xpix, lam):
     v = lam
@@ -380,7 +411,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
                 ycirc = parent.stat[n]['ycirc']
                 xcirc = parent.stat[n]['xcirc']
                 if color==cols.shape[1]:
-                    col = parent.ops_plot[4][n,parent.ichosen]
+                    col = parent.ops_plot[4][n]
                     sat = 0
                     M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
                 else:

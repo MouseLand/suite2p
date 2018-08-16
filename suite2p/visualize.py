@@ -13,7 +13,7 @@ class VisWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(VisWindow, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
-        self.setGeometry(50,50,1100,600)
+        self.setGeometry(70,70,1100,900)
         self.setWindowTitle('Visualize deconvolved data')
         self.cwidget = QtGui.QWidget(self)
         self.setCentralWidget(self.cwidget)
@@ -22,7 +22,7 @@ class VisWindow(QtGui.QMainWindow):
         self.cwidget.setLayout(self.l0)
         self.comboBox = QtGui.QComboBox(self)
         self.comboBox.addItem("PC")
-        self.comboBox.addItem("embed")
+        #self.comboBox.addItem("embed")
         self.comboBox.activated[str].connect(self.sorting)
         self.l0.addWidget(self.comboBox,0,0,1,2)
         self.PCedit = QtGui.QLineEdit(self)
@@ -31,7 +31,9 @@ class VisWindow(QtGui.QMainWindow):
         self.PCedit.setFixedWidth(35)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
         self.PCedit.returnPressed.connect(self.sorting)
-        self.l0.addWidget(QtGui.QLabel('PC: '),1,0,1,1)
+        qlabel = QtGui.QLabel('PC: ')
+        qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,1,0,1,1)
         self.l0.addWidget(self.PCedit,1,1,1,1)
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
@@ -42,7 +44,7 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.win,0,2,10,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
-        self.p1 = self.win.addPlot(title="")
+        self.p1 = self.win.addPlot(title="",row=0,col=0)
         self.img = pg.ImageItem()
         self.p1.addItem(self.img)
         # cells to plot
@@ -74,12 +76,13 @@ class VisWindow(QtGui.QMainWindow):
         # Custom ROI for selecting an image region
         nt = sp.shape[1]
         nn = sp.shape[0]
-        self.win.nextRow()
-        self.p2 = self.win.addPlot(title='roi')
-        self.p2.setMaximumHeight(250)
+        self.p2 = self.win.addPlot(title='roi',row=1,col=0)
         self.imgROI = pg.ImageItem()
         self.p2.addItem(self.imgROI)
-        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='y')
+        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,pen='b')
+        #self.ROI.addScaleHandle([0.5, 1], [0.5, 0.5])
+        self.ROI.addScaleHandle([0, 0], [1, 1])
+        self.ROI.addScaleHandle([0, 1], [1, 1])
         self.ROI_position()
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
@@ -88,13 +91,11 @@ class VisWindow(QtGui.QMainWindow):
 
     def ROI_position(self):
         pos = self.ROI.pos()
-        print(pos)
-        #pos = self.p1.mapSceneToView(pos0[0][1])
         posy = pos.y()
         posx = pos.x()
         sizex,sizey = self.ROI.size()
-        xrange = (np.arange(-1*int(sizex),1) + int(posx)).astype(np.int32)
-        yrange = (np.arange(-1*int(sizey),1) + int(posy)).astype(np.int32)
+        xrange = (np.arange(1,int(sizex)) + int(posx)).astype(np.int32)
+        yrange = (np.arange(1,int(sizey)) + int(posy)).astype(np.int32)
         xrange = xrange[xrange>=0]
         xrange = xrange[xrange<self.spF.shape[1]]
         yrange = yrange[yrange>=0]

@@ -360,21 +360,22 @@ class SizeButton(QtGui.QPushButton):
         for b in parent.sizebtns.buttons():
             b.setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
+        ts = 100
         if bid==0:
             parent.p2.linkView(parent.p2.XAxis,view=None)
             parent.p2.linkView(parent.p2.YAxis,view=None)
-            parent.win.ci.layout.setColumnStretchFactor(0,14)
-            parent.win.ci.layout.setColumnStretchFactor(1,1)
+            parent.win.ci.layout.setColumnStretchFactor(0,ts)
+            parent.win.ci.layout.setColumnStretchFactor(1,0)
         elif bid==1:
-            parent.win.ci.layout.setColumnStretchFactor(0,14)
-            parent.win.ci.layout.setColumnStretchFactor(1,14)
+            parent.win.ci.layout.setColumnStretchFactor(0,ts)
+            parent.win.ci.layout.setColumnStretchFactor(1,ts)
             parent.p2.setXLink('plot1')
             parent.p2.setYLink('plot1')
         elif bid==2:
             parent.p2.linkView(parent.p2.XAxis,view=None)
             parent.p2.linkView(parent.p2.YAxis,view=None)
-            parent.win.ci.layout.setColumnStretchFactor(0,1)
-            parent.win.ci.layout.setColumnStretchFactor(1,14)
+            parent.win.ci.layout.setColumnStretchFactor(0,0)
+            parent.win.ci.layout.setColumnStretchFactor(1,ts)
         parent.zoom_plot(1)
         parent.win.show()
         parent.show()

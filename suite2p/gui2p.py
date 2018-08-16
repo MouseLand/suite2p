@@ -174,7 +174,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
+        self.colors = ['random', 'skew','compact','footprint','aspect_ratio','classifier','correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -290,8 +290,8 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
+        self.fname = 'C:/Users/carse/github/data/stat.npy'
         self.load_proc()
 
     def minimize(self, wplot):
@@ -328,7 +328,10 @@ class MainW(QtGui.QMainWindow):
             split=1
 
     def ROI_selection(self, wplot):
-        view = self.p1.viewRange()
+        if wplot==0:
+            view = self.p1.viewRange()
+        else:
+            view = self.p2.viewRange()
         self.ROIplot = wplot
         if self.selectbtn[wplot].isChecked():
             self.selectbtn[1-wplot].setEnabled(False)

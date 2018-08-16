@@ -1,9 +1,8 @@
 import numpy as np
 import time, os
-from suite2p import register, dcnv, classifier
+from suite2p import register, dcnv, classifier, utils
 from suite2p import celldetect2 as celldetect2
-from scipy import stats
-from scipy import io
+from scipy import stats, io, signal
 from multiprocessing import Pool
 
 def tic():
@@ -79,8 +78,11 @@ def get_cells(ops):
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std']  = sd[k]
-    # save results
+    # add enhanced mean image
+    ops = utils.enhanced_mean_image(ops)
+    # save ops
     np.save(ops['ops_path'], ops)
+    # save results
     fpath = ops['save_path']
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
@@ -109,6 +111,7 @@ def combined(ops1):
     LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
     LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
     meanImg = np.zeros((LY, LX))
+    meanImgE = np.zeros((LY, LX))
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
@@ -117,6 +120,7 @@ def combined(ops1):
         xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
         yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
+        meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
@@ -145,7 +149,8 @@ def combined(ops1):
             spks = np.concatenate((spks, spks0))
             stat = np.concatenate((stat,stat0))
             iscell = np.concatenate((iscell,iscell0))
-    ops['meanImg'] = meanImg
+    ops['meanImg']  = meanImg
+    ops['meanImgE'] = meanImgE
     ops['Vcorr'] = Vcorr
     ops['Ly'] = LY
     ops['Lx'] = LX

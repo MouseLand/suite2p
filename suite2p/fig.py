@@ -229,9 +229,6 @@ def init_masks(parent):
                     mimg1 = np.percentile(mimg0,1)
                     mimg99 = np.percentile(mimg0,99)
                 mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
-
-                S     = np.maximum(0,np.minimum(1, V*1.5))
-
                 mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
                 mimg0 = np.maximum(0,np.minimum(1,mimg0))
                 mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
@@ -257,15 +254,18 @@ def init_masks(parent):
             V = mimg
             V = np.expand_dims(V,axis=2)
         for i in range(2):
-            if k==0:
-                V = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
-                V = np.expand_dims(V,axis=2)
+            Vorig = np.maximum(0, np.minimum(1, 0.75*Lam[i,0,:,:]/LamMean))
+            Vorig = np.expand_dims(Vorig,axis=2)
             if k==3:
                 S = np.expand_dims(Sext[i,:,:],axis=2)
                 Va = np.maximum(0,np.minimum(1, V + S))
             else:
                 S = np.expand_dims(Sroi[i,:,:],axis=2)
-                Va = V
+                if k>0:
+                    S     = np.maximum(0,np.minimum(1, Vorig*1.5))
+                    Va    = V
+                else:
+                    Va = Vorig
             for c in range(0,cols.shape[1]):
                 H = cols[iROI[i,0,:,:],c]
                 H = np.expand_dims(H,axis=2)

@@ -29,6 +29,8 @@ class MainW(QtGui.QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(256,256))
         self.setWindowIcon(app_icon)
         self.setStyleSheet("QMainWindow {background: 'black';}")
+        self.stylePressed = "QPushButton {Text-align: left; background-color: rgb(50,0,50); color:white;}"
+        self.styleUnpressed = "QPushButton {Text-align: left; background-color: rgb(50,50,50); color:white;}"
         self.loaded = False
         self.ops_plot = []
         # default plot options
@@ -105,23 +107,24 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        checkBox = QtGui.QCheckBox('ROIs &On')
-        checkBox.setStyleSheet("color: white;")
-        checkBox.move(30,100)
-        checkBox.stateChanged.connect(self.ROIs_on)
-        checkBox.toggle()
-        self.l0.addWidget(checkBox,0,0,1,1)
+        self.checkBox = QtGui.QCheckBox('ROIs &On')
+        self.checkBox.setStyleSheet("color: white;")
+        self.checkBox.stateChanged.connect(self.ROIs_on)
+        self.checkBox.toggle()
+        self.l0.addWidget(self.checkBox,0,0,1,1)
         # number of ROIs in each image
-        self.lcell0 = QtGui.QLabel('cells')
+        self.lcell0 = QtGui.QLabel('')
         self.lcell0.setStyleSheet("color: white;")
         self.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.l0.addWidget(self.lcell0, 0,6,1,1)
-        self.lcell1 = QtGui.QLabel('NOT cells')
+        self.lcell1 = QtGui.QLabel('')
         self.lcell1.setStyleSheet("color: white;")
         self.l0.addWidget(self.lcell1, 0,10,1,1)
-        self.selectbtn = [QtGui.QPushButton('draw selection'),
-                          QtGui.QPushButton('draw selection')]
-        for b in self.selectbtn:    b.setCheckable(True)
+        self.selectbtn = [QtGui.QPushButton(' draw selection'),
+                          QtGui.QPushButton(' draw selection')]
+        for b in self.selectbtn:
+            b.setCheckable(True)
+            b.setStyleSheet(self.styleUnpressed)
         self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
         self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
         self.selectbtn[0].setEnabled(False)
@@ -147,7 +150,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,36,15)
+        self.l0.addWidget(self.win,1,1,38,15)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -177,7 +180,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['random', 'skew', 'compact','footprint','aspect_ratio','classifier','correlations']
+        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: classifier','J: correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -203,10 +206,11 @@ class MainW(QtGui.QMainWindow):
         b=0
         # colorbars for different statistics
         for names in self.colors:
-            btn  = gui.ColorButton(b,names,self)
+            btn  = gui.ColorButton(b,'&'+names,self)
             self.colorbtns.addButton(btn,b)
             self.l0.addWidget(btn,nv+b+1,0,1,1)
             btn.setEnabled(False)
+            self.colors[b] = self.colors[b][3:]
             b+=1
         self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
@@ -223,7 +227,7 @@ class MainW(QtGui.QMainWindow):
                         colorbarW.addLabel('0.5',color=[255,255,255],row=1,col=1),
                         colorbarW.addLabel('1.0',color=[255,255,255],row=1,col=2)]
         #### ----- CLASSIFIER BUTTONS ------- ####
-        applyclass = QtGui.QPushButton('apply classifier')
+        applyclass = QtGui.QPushButton(' apply classifier')
         applyclass.resize(100,50)
         applyclass.clicked.connect(lambda: classifier.apply(self))
         cllabel = QtGui.QLabel("")
@@ -234,6 +238,7 @@ class MainW(QtGui.QMainWindow):
         plabel.setStyleSheet("color: white;")
         self.l0.addWidget(plabel,self.bend+1,0,1,1)
         applyclass.setEnabled(False)
+        applyclass.setStyleSheet(self.styleUnpressed)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
         self.probedit.setMaximum(1.0)
@@ -274,6 +279,19 @@ class MainW(QtGui.QMainWindow):
             self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
         self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
         self.l0.setRowStretch(self.bend+3+k, 1)
+        # up/down arrows to resize view
+        self.level = 1
+        self.arrowButtons = [QtGui.QPushButton(u"  \u25b2"), QtGui.QPushButton(u"  \u25bc")]
+        self.arrowButtons[0].clicked.connect(self.expand_trace)
+        self.arrowButtons[1].clicked.connect(self.collapse_trace)
+        b = 0
+        for btn in self.arrowButtons:
+            btn.setMaximumWidth(25)
+            btn.setStyleSheet(self.styleUnpressed)
+            self.l0.addWidget(btn, self.bend+4+k+b,0,1,1,QtCore.Qt.AlignRight)
+            b+=1
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+6+k,0,1,1)
+        # trace labels
         flabel = QtGui.QLabel(self)
         flabel.setText("<font color='blue'>Fluorescence</font>")
         nlabel = QtGui.QLabel(self)
@@ -286,9 +304,9 @@ class MainW(QtGui.QMainWindow):
         flabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         nlabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         slabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.l0.addWidget(flabel, self.bend+4+k,0,1,1)
-        self.l0.addWidget(nlabel, self.bend+5+k,0,1,1)
-        self.l0.addWidget(slabel, self.bend+6+k,0,1,1)
+        self.l0.addWidget(flabel, self.bend+7+k,0,1,1)
+        self.l0.addWidget(nlabel, self.bend+8+k,0,1,1)
+        self.l0.addWidget(slabel, self.bend+9+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
@@ -298,19 +316,52 @@ class MainW(QtGui.QMainWindow):
         self.load_proc()
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Return:
-            merge=1
-        elif event.key() == QtCore.Qt.Key_Escape:
-            self.zoom_plot(1)
-            self.zoom_plot(2)
-            self.show()
-        elif event.key() == QtCore.Qt.Key_Delete:
-            self.ROI_remove()
-        elif event.key() == QtCore.Qt.Key_Shift:
-            split=1
-        elif event.key() == QtCore.Qt.Key_Q:
-            print(event.modifiers())
-            print('Q')
+        if event.modifiers() !=  QtCore.Qt.ControlModifier:
+            if event.key() == QtCore.Qt.Key_Return:
+                merge=1
+            elif event.key() == QtCore.Qt.Key_Escape:
+                self.zoom_plot(1)
+                self.show()
+            elif event.key() == QtCore.Qt.Key_Delete:
+                self.ROI_remove()
+            elif event.key() == QtCore.Qt.Key_Shift:
+                split=1
+            elif event.key() == QtCore.Qt.Key_Q:
+                self.viewbtns.button(0).press(self, 0)
+            elif event.key() == QtCore.Qt.Key_W:
+                self.viewbtns.button(1).press(self, 1)
+            elif event.key() == QtCore.Qt.Key_E:
+                self.viewbtns.button(2).press(self, 2)
+            elif event.key() == QtCore.Qt.Key_R:
+                self.viewbtns.button(3).press(self, 3)
+            elif event.key() == QtCore.Qt.Key_O:
+                self.checkBox.toggle()
+            elif event.key() == QtCore.Qt.Key_A:
+                self.colorbtns.button(0).press(self, 0)
+            elif event.key() == QtCore.Qt.Key_S:
+                self.colorbtns.button(1).press(self, 1)
+            elif event.key() == QtCore.Qt.Key_D:
+                self.colorbtns.button(2).press(self, 2)
+            elif event.key() == QtCore.Qt.Key_F:
+                self.colorbtns.button(3).press(self, 3)
+            elif event.key() == QtCore.Qt.Key_G:
+                self.colorbtns.button(4).press(self, 4)
+            elif event.key() == QtCore.Qt.Key_H:
+                self.colorbtns.button(5).press(self, 5)
+            elif event.key() == QtCore.Qt.Key_J:
+                self.colorbtns.button(6).press(self, 6)
+            #elif event.key() == QtCore.Qt.Key_K:
+            #    self.colorbtns.button(7).press(self, 0)
+
+    def expand_trace(self):
+        self.level+=1
+        self.level = np.minimum(5,self.level)
+        self.win.ci.layout.setRowStretchFactor(1,self.level)
+
+    def collapse_trace(self):
+        self.level-=1
+        self.level = np.maximum(1,self.level)
+        self.win.ci.layout.setRowStretchFactor(1,self.level)
 
     def ROI_selection(self, wplot):
         if wplot==0:
@@ -320,6 +371,8 @@ class MainW(QtGui.QMainWindow):
         self.ROIplot = wplot
         if self.selectbtn[wplot].isChecked():
             self.selectbtn[1-wplot].setEnabled(False)
+            self.selectbtn[wplot].setStyleSheet(self.stylePressed)
+            self.selectbtn[1-wplot].setStyleSheet(self.styleUnpressed)
             imx = (view[0][1] + view[0][0]) / 2
             imy = (view[1][1] + view[1][0]) / 2
             dx  = (view[0][1] - view[0][0]) / 4
@@ -335,6 +388,7 @@ class MainW(QtGui.QMainWindow):
             self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
             self.isROI = True
         else:
+            self.selectbtn[wplot].setStyleSheet(self.styleUnpressed)
             self.ROI_remove()
 
     def ROI_remove(self):
@@ -346,6 +400,7 @@ class MainW(QtGui.QMainWindow):
             self.isROI=False
             self.selectbtn[1-self.ROIplot].setEnabled(True)
             self.selectbtn[self.ROIplot].setChecked(False)
+            for b in range(2): self.selectbtn[b].setStyleSheet(self.styleUnpressed)
 
     def ROI_position(self):
         pos0 = self.ROI.getSceneHandlePositions()
@@ -389,13 +444,6 @@ class MainW(QtGui.QMainWindow):
             if (self.iROI[i,:,ypix,xpix]==n).sum()>0.6*self.stat[n]['npix']:
                 self.imerge.append(n)
         if len(self.imerge)>0:
-            if len(self.imerge)>10 and len(self.imerge)<21:
-                self.win.ci.layout.setRowStretchFactor(1,2)
-            elif len(self.imerge)<=10:
-                self.win.ci.layout.setRowStretchFactor(1,1)
-            else:
-                self.win.ci.layout.setRowStretchFactor(1,3)
-            #print(self.imerge)
             self.ichosen = self.imerge[0]
             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                 fig.corr_masks(self)
@@ -459,10 +507,12 @@ class MainW(QtGui.QMainWindow):
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
+                self.viewbtns.button(b).setStyleSheet(self.stylePressed)
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
+                self.colorbtns.button(b).setStyleSheet(self.stylePressed)
         for btn in self.classbtns.buttons():
             btn.setEnabled(True)
         b = 0
@@ -470,6 +520,7 @@ class MainW(QtGui.QMainWindow):
             btn.setEnabled(True)
             if b==1:
                 btn.setChecked(True)
+                btn.setStyleSheet(self.stylePressed)
             b+=1
         for i in range(2):
             self.selectbtn[i].setEnabled(True)
@@ -490,14 +541,6 @@ class MainW(QtGui.QMainWindow):
         if self.loaded:
             M = fig.draw_masks(self)
             fig.plot_masks(self,M)
-
-    def zoom_trace():
-        if len(self.imerge)>10 and len(self.imerge)<21:
-            self.win.ci.layout.setRowStretchFactor(1,2)
-        elif len(self.imerge)<=10:
-            self.win.ci.layout.setRowStretchFactor(1,1)
-        else:
-            self.win.ci.layout.setRowStretchFactor(1,3)
 
     def plot_clicked(self,event):
         '''left-click chooses a cell, right-click flips cell to other view'''
@@ -612,6 +655,8 @@ class MainW(QtGui.QMainWindow):
         if iplot==1 or iplot==2 or iplot==4:
             self.p1.setXRange(0,self.ops['Lx'])
             self.p1.setYRange(0,self.ops['Ly'])
+            self.p2.setXRange(0,self.ops['Lx'])
+            self.p2.setYRange(0,self.ops['Ly'])
         else:
             self.p3.setXRange(0,self.Fcell.shape[1])
             self.p3.setYRange(self.fmin,self.fmax)

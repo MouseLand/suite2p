@@ -34,7 +34,7 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = ops['diameter']/20.
+        sig = ops['diameter']/30.
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     mov = np.reshape(mov, (-1,Lyc*Lxc))
@@ -245,26 +245,6 @@ def localRegion(i,j,dy,dx,Ly,Lx):
     yc = yc.astype(np.int32)
     xc = xc.astype(np.int32)
     return yc, xc, goodi
-
-def connectedRegion(mLam, rsmall, d0):
-    mLam0 = np.zeros(rsmall.shape)
-    mLam1 = np.zeros(rsmall.shape)
-    # non-zero lam's
-    mLam0[rsmall<=d0] = mLam>0
-    mLam1[rsmall<=d0] = mLam
-
-    mmax = mLam1.argmax()
-    mask = np.zeros(rsmall.size)
-    mask[mmax] = 1
-    mask = np.resize(mask, (2*d0+1, 2*d0+1))
-
-    for m in range(int(np.ceil(mask.shape[0]/2))):
-        mask = filters.maximum_filter1d(mask, 3, axis=0) * mLam0
-        mask = filters.maximum_filter1d(mask, 3, axis=1) * mLam0
-        #mask = filters.maximum_filter(mask, footprint=rsmall<=1.5) * mLam0
-
-    mLam *= mask[rsmall<=d0]
-    return mLam
 
 def pairwiseDistance(y,x):
     dists = ((np.expand_dims(y,axis=-1) - np.expand_dims(y,axis=0))**2
@@ -504,6 +484,33 @@ def minDistance(inputs):
     ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 - np.expand_dims(x2, axis=1))**2
     return np.amin(ds)**.5
 
+def getConnected(Ly, Lx, stat):
+    '''grow i0 until it cannot grow any more
+    '''
+    ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
+    i0   = np.argmax(lam)
+    mask = np.zeros((Ly, Lx))
+    mask[ypix,xpix] = lam
+    ypix, xpix = ypix[i0], xpix[i0]
+    nsel = 1
+    while 1:
+        ypix,xpix = extendROI(ypix, xpix, Ly, Lx)
+        ix = mask[ypix,xpix]>1e-10
+        ypix,xpix = ypix[ix], xpix[ix]
+        if len(ypix)<=nsel:
+            break
+        nsel = len(ypix)
+    lam = mask[ypix, xpix]
+    stat['ypix'], stat['xpix'], stat['lam'] = ypix, xpix, lam
+    return stat
+
+def connectedRegion2(stat, ops):
+    if ('connected' not in ops) or ops['connected']:
+        for j in range(len(stat)):
+            nn = len(stat[j]['ypix'])
+            stat[j] = getConnected(ops['Ly'], ops['Lx'], stat[j])
+            #print(len(stat[j]['ypix']) - nn)
+    return stat
 
 def extendROI(ypix, xpix, Ly, Lx,niter=1):
     for k in range(niter):
@@ -647,16 +654,12 @@ def sourcery(ops):
         err = (Ucell**2).mean()
         print('ROIs: %d, cost: %2.4f, time: %2.4f'%(ncells, err, toc(i0)))
 
-        #stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
-        #rgb = drawClusters(stat, ops)
-        #plt.figure(figsize=(12,12))
-        #plt.imshow(rgb)
-        #plt.show()
-
         it += 1
         if refine ==0:
             break
         if refine==2:
+            # good place to get connected regions
+            stat = connectedRegion2(stat, ops)
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
             stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
             print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
@@ -666,8 +669,6 @@ def sourcery(ops):
             codes = codes[ix, :]
             L = L[:,:,ix]
             ncells = len(ypix)
-            # also good place to get connected regions
-
         if refine>0:
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
@@ -680,9 +681,8 @@ def sourcery(ops):
             #StU = np.reshape(S, (Lyc*Lxc,-1)).transpose() @ np.reshape(Ucell, (Lyc*Lxc, -1))
             neu = np.linalg.solve(StS, StU).astype('float32')
         refine -= 1
-
     Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
-    stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
+    stat  = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
     #stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
     #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
     #codes = codes[ix, :]
@@ -694,6 +694,7 @@ def postprocess(ops, stat, Ucell, codes):
     # this is a good place to merge ROIs
     #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
     stat = getStat(ops, stat, Ucell, codes)
+    stat = connectedRegion2(stat, ops)
     stat = getOverlaps(stat,ops)
     return stat
 

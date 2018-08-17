@@ -55,6 +55,7 @@ def default_ops():
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
+        'connected': True,
       }
     return ops
 
@@ -201,6 +202,8 @@ def run_s2p(ops={},db={}):
             files_found_flag &= flag_reg
             # use the new options
             ops1[i] = {**op, **ops}
+            ops1[i] = ops1[i].copy()
+            print(ops1[i]['save_path'])
             # except for registration results
             ops1[i]['xrange'] = op['xrange']
             ops1[i]['yrange'] = op['yrange']

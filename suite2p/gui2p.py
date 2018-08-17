@@ -313,10 +313,10 @@ class MainW(QtGui.QMainWindow):
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
-        print(self.classfile)
+        #print(self.classfile)
         #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
-        self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
-        self.load_proc()
+        #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
+        #self.load_proc()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:

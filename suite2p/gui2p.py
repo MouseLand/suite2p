@@ -330,28 +330,39 @@ class MainW(QtGui.QMainWindow):
             elif event.key() == QtCore.Qt.Key_Shift:
                 split=1
             elif event.key() == QtCore.Qt.Key_Q:
+                self.viewbtns.button(0).setChecked(True)
                 self.viewbtns.button(0).press(self, 0)
             elif event.key() == QtCore.Qt.Key_W:
+                self.viewbtns.button(1).setChecked(True)
                 self.viewbtns.button(1).press(self, 1)
             elif event.key() == QtCore.Qt.Key_E:
+                self.viewbtns.button(2).setChecked(True)
                 self.viewbtns.button(2).press(self, 2)
             elif event.key() == QtCore.Qt.Key_R:
+                self.viewbtns.button(3).setChecked(True)
                 self.viewbtns.button(3).press(self, 3)
             elif event.key() == QtCore.Qt.Key_O:
                 self.checkBox.toggle()
             elif event.key() == QtCore.Qt.Key_A:
+                self.colorbtns.button(0).setChecked(True)
                 self.colorbtns.button(0).press(self, 0)
             elif event.key() == QtCore.Qt.Key_S:
+                self.colorbtns.button(1).setChecked(True)
                 self.colorbtns.button(1).press(self, 1)
             elif event.key() == QtCore.Qt.Key_D:
+                self.colorbtns.button(2).setChecked(True)
                 self.colorbtns.button(2).press(self, 2)
             elif event.key() == QtCore.Qt.Key_F:
+                self.colorbtns.button(3).setChecked(True)
                 self.colorbtns.button(3).press(self, 3)
             elif event.key() == QtCore.Qt.Key_G:
+                self.colorbtns.button(4).setChecked(True)
                 self.colorbtns.button(4).press(self, 4)
             elif event.key() == QtCore.Qt.Key_H:
+                self.colorbtns.button(5).setChecked(True)
                 self.colorbtns.button(5).press(self, 5)
             elif event.key() == QtCore.Qt.Key_J:
+                self.colorbtns.button(6).setChecked(True)
                 self.colorbtns.button(6).press(self, 6)
             #elif event.key() == QtCore.Qt.Key_K:
             #    self.colorbtns.button(7).press(self, 0)

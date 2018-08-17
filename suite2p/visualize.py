@@ -7,6 +7,11 @@ from scipy import ndimage
 from scipy.stats import zscore
 import math
 from matplotlib.colors import hsv_to_rgb
+from matplotlib import cm
+
+#img = pyqtgraph.ImageItem()
+#p.addItem(img)
+# Get the colormap
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -32,8 +37,8 @@ class VisWindow(QtGui.QMainWindow):
         self.p0 = self.win.addViewBox(row=0,col=0)
         self.p0.setMouseEnabled(x=False,y=False)
         self.p0.setMenuEnabled(False)
-        self.p1 = self.win.addPlot(title="full-view",row=0,col=1)
-        self.p1.setMouseEnabled(x=True,y=False)
+        self.p1 = self.win.addPlot(title="FULL VIEW",row=0,col=1)
+        self.p1.setMouseEnabled(x=False,y=False)
         self.img = pg.ImageItem()
         self.p1.addItem(self.img)
         # cells to plot
@@ -56,18 +61,34 @@ class VisWindow(QtGui.QMainWindow):
         sp /= sp.max()
         sp *= 10
         sp = np.maximum(0, np.minimum(1, sp))
-        sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
-        self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
+        self.sp = 1-sp
+        #sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
+        #self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
         self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
-        # Custom ROI for selecting an image region
+        self.p1.setLabel('left', 'neurons')
+        self.p1.setLabel('bottom', 'time')
+        # zoom in on a selected image region
         nt = sp.shape[1]
         nn = sp.shape[0]
-        self.p2 = self.win.addPlot(title='roi',row=1,col=0,colspan=2)
+        self.p2 = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
         self.imgROI = pg.ImageItem()
+        colormap = cm.get_cmap("viridis")  # cm.get_cmap("CMRmap")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+        lut = lut[0:-3,:]
+        # Apply the colormap
+        self.img.setLookupTable(lut)
+        self.imgROI.setLookupTable(lut)
+        self.img.setLevels([0,1])
+        self.imgROI.setLevels([0,1])
         self.p2.addItem(self.imgROI)
-        self.win.ci.layout.setColumnStretchFactor(1,3)
+        self.p2.setMouseEnabled(x=False,y=False)
+        self.p2.setLabel('left', 'neurons')
+        self.p2.setLabel('bottom', 'time')
+        layout.setColumnStretchFactor(1,3)
+        layout.setRowStretchFactor(1,3)
         # edit buttons
         self.comboBox = QtGui.QComboBox(self)
         self.comboBox.addItem("PC")
@@ -85,14 +106,21 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.PCedit,1,1,1,1)
         self.sorting()
         # ROI on main plot
-        self.ROI = pg.RectROI([nt*.25, nn*.25], [nt*.25, nn*.5],sideScalers=True,
-                      maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),pen='b')
-        self.ROI.addScaleHandle([0, 1], [1, 1])
-        self.ROI_position()
+        redpen = pg.mkPen(pg.mkColor(255, 0, 0),
+                                width=3,
+                                style=QtCore.Qt.SolidLine)
+        self.ROI = pg.RectROI([nt*.25, -1], [nt*.25, nn+1],
+                      maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
+                      pen=redpen)
+        self.ROI.handleSize = 9
+        self.ROI.handlePen = redpen
+        # Add top and right Handles
+        self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
+        self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
-
+        self.ROI_position()
         self.win.show()
 
     def ROI_position(self):
@@ -113,4 +141,5 @@ class VisWindow(QtGui.QMainWindow):
     def sorting(self):
         isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
         self.spF = gaussian_filter1d(self.sp[isort,:], 3, axis=0)
+        self.spF = np.maximum(0,np.minimum(1,self.spF))
         self.img.setImage(self.spF)

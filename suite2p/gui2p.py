@@ -19,7 +19,7 @@ class MainW(QtGui.QMainWindow):
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                         '..','logo/logo.png')
+                         'logo/logo.png')
         app_icon = QtGui.QIcon()
         app_icon.addFile(icon_path, QtCore.QSize(16,16))
         app_icon.addFile(icon_path, QtCore.QSize(24,24))
@@ -312,7 +312,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(slabel, self.bend+9+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy')
+                         'classifiers/classifier_user.npy')
         #print(self.classfile)
         #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
         #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
@@ -779,7 +779,7 @@ def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                     '..','logo/logo.png')
+                     'logo/logo.png')
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16,16))
     app_icon.addFile(icon_path, QtCore.QSize(24,24))

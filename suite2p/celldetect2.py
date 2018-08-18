@@ -34,7 +34,7 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = ops['diameter']/30.
+        sig = ops['diameter']/20.
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     mov = np.reshape(mov, (-1,Lyc*Lxc))
@@ -628,8 +628,8 @@ def sourcery(ops):
             codes = np.linalg.solve(codes + 1e-3*np.eye((codes.shape[0])), Ucode).astype('float32')
             neu   = codes[ncells:,:]
             codes = codes[:ncells,:]
-        Ucell = U - (S.reshape((-1,nbasis))@neu + L.reshape((-1,ncells))@codes).reshape(U.shape)
 
+        Ucell = U - (S.reshape((-1,nbasis))@neu + L.reshape((-1,ncells))@codes).reshape(U.shape)
         # reestimate masks
         n,k = 0,0
         while n < len(ypix):

@@ -69,6 +69,7 @@ def get_mov(ops):
         while True:
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            buff = []
             nimgd = int(np.floor(data.size / (Ly*Lx)))
             if nimgd < nt0:
                 break
@@ -659,6 +660,7 @@ def sourcery(ops):
             break
         if refine==2:
             # good place to get connected regions
+            stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
             stat = connectedRegion2(stat, ops)
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
             stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
@@ -666,14 +668,13 @@ def sourcery(ops):
             ypix = [stat[n]['ypix'] for n in range(len(stat))]
             xpix = [stat[n]['xpix'] for n in range(len(stat))]
             lam = [stat[n]['lam'] for n in range(len(stat))]
-            codes = codes[ix, :]
             L = L[:,:,ix]
+            codes = codes[ix, :]
             ncells = len(ypix)
         if refine>0:
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
-            stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
             U = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:

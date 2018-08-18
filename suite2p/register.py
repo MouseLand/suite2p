@@ -217,6 +217,7 @@ def register_binary(ops):
     while True:
         buff = reg_file.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
@@ -258,6 +259,7 @@ def register_binary(ops):
         while True:
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            buff = []
             if data.size==0:
                 break
             data = np.reshape(data, (-1, Ly, Lx))
@@ -299,6 +301,7 @@ def subsample_frames(ops, nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
         buff = reg_file.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
         frames[j,:,:] = np.reshape(data, (Ly, Lx))
     reg_file.close()
     return frames
@@ -438,7 +441,7 @@ def tiff_to_binary(ops):
             im2write = im[np.arange(int(i0), nframes, nplanes*nchannels),:,:]
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[np.arange(i0+1, nframes, nplanes*nchannels),:,:]
+                im2write = im[np.arange(int(i0)+1, nframes, nplanes*nchannels),:,:]
                 reg_file_chan2[j].write(bytearray(im2write))
         iplane = (iplane+nframes/nchannels)%nplanes
     # write ops files

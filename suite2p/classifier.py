@@ -60,11 +60,11 @@ class Classifier:
         p = np.zeros((nodes-1,nstats))
         for j in range(nodes-1):
             for k in range(nstats):
-                p[j, k] = np.mean(icell[isort[ix[j]:ix[j+1], k]])
+                p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
         p = filters.gaussian_filter(p, (2., 0))
         logp = get_logp(trainstats, grid, p)
         logisticRegr = sklearn.LogisticRegression(C = 100.)
-        logisticRegr.fit(logp, icell)
+        logisticRegr.fit(logp, iscell)
         # now get logP from the test data
         teststats = get_stat_keys(stat, keys)
         logp = get_logp(teststats, grid, p)
@@ -109,7 +109,8 @@ def load_list(parent):
     result = LC.exec_()
     if result:
         print('Populating classifier:')
-        keys = parent.model.keys
+        model = Classifier(classfile=parent.classfile)
+        keys = model.keys
         parent.model = Classifier(classfile=None,
                                            trainfiles=parent.trainfiles,
                                            statclass=parent.statclass)
@@ -168,8 +169,8 @@ def apply(parent):
     np.save(parent.basename+'/iscell.npy',
             np.concatenate((np.expand_dims(parent.iscell,axis=1),
             np.expand_dims(parent.probcell,axis=1)), axis=1))
-    parent.lcell0.setText('cells: %d'%parent.iscell.sum())
-    parent.lcell1.setText('NOT cells: %d'%(parent.iscell.size-parent.iscell.sum()))
+    parent.lcell0.setText(' %d'%parent.iscell.sum())
+    parent.lcell1.setText(' %d'%(parent.iscell.size-parent.iscell.sum()))
 
 def save(parent):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier')
@@ -209,7 +210,6 @@ def disable(parent):
     parent.saveTrain.setEnabled(False)
     for btns in parent.classbtns.buttons():
         btns.setEnabled(False)
-
 
 def add_to(parent):
     fname = parent.basename+'/iscell.npy'

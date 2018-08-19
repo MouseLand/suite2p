@@ -29,13 +29,6 @@ class Classifier:
             print('ERROR: incorrect classifier file')
             self.loaded = False
 
-    def get_stat_keys(self, stat, keys):
-        teststats = np.zeros((len(stat), len(keys)))
-        for j in range(len(stat)):
-            for k in range(len(keys)):
-                teststats[j,k] = stat[j][keys[k]]
-        return teststats
-
     def get_logp(self, teststats, grid, p):
         nroi, nstats = teststats.shape
         logp = np.zeros((nroi,nstats))
@@ -62,12 +55,12 @@ class Classifier:
             for k in range(nstats):
                 p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
         p = filters.gaussian_filter(p, (2., 0))
-        logp = get_logp(trainstats, grid, p)
+        logp = self.get_logp(trainstats, grid, p)
         logisticRegr = sklearn.LogisticRegression(C = 100.)
         logisticRegr.fit(logp, iscell)
         # now get logP from the test data
         teststats = get_stat_keys(stat, keys)
-        logp = get_logp(teststats, grid, p)
+        logp = self.get_logp(teststats, grid, p)
         y_pred = logisticRegr.predict_proba(logp)
         y_pred = y_pred[:,1]
         return y_pred
@@ -79,6 +72,13 @@ class Classifier:
         model['keys']   = self.keys
         print('saving classifier in ' + fname)
         np.save(fname, model)
+
+def get_stat_keys(stat, keys):
+    teststats = np.zeros((len(stat), len(keys)))
+    for j in range(len(stat)):
+        for k in range(len(keys)):
+            teststats[j,k] = stat[j][keys[k]]
+    return teststats
 
 def run(classfile,stat):
     model = Classifier(classfile=classfile)
@@ -94,15 +94,6 @@ def load(parent, name, inactive):
     if parent.model.loaded:
         activate(parent, inactive)
 
-def get_stats(parent):
-    ncells = parent.Fcell.shape[0]
-    parent.statistics = np.zeros((ncells, len(parent.statclass)),np.float32)
-    k=0
-    for key in parent.statclass:
-        for n in range(0,ncells):
-            parent.statistics[n,k] = parent.stat[n][key]
-        k+=1
-
 def load_list(parent):
     # will return
     LC = gui.ListChooser('classifier training files', parent)
@@ -116,6 +107,15 @@ def load_list(parent):
                                            statclass=parent.statclass)
         if parent.trainfiles is not None:
             activate(parent, True)
+
+def get_stats(stat,keys):
+    ncells = len(stat)
+    stats = np.zeros((ncells, len(keys)),np.float32)
+    k=0
+    for key in parent.statclass:
+        for n in range(0,ncells):
+            parent.statistics[n,k] = parent.stat[n][key]
+        k+=1
 
 def load_data(statclass,trainfiles):
     statclass = self.statclass

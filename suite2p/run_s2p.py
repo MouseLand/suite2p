@@ -133,7 +133,7 @@ def run_s2p(ops={},db={}):
         stat = np.load(os.path.join(fpath,'stat.npy'))
         # apply default classifier
         classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         'classifiers/classifier_user.npy')
+                         '..','classifiers/classifier_user.npy')
         print(classfile)
         iscell = classifier.run(classfile, stat)
         np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)

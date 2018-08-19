@@ -9,8 +9,8 @@ import math
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import sys
-sys.path.insert(0, 'C:/Users/carse/github/embeddings/map/')
-import map
+#sys.path.insert(0, 'C:/Users/carse/github/embeddings/map/')
+#import map
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):

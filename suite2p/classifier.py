@@ -80,49 +80,6 @@ class Classifier:
         print('saving classifier in ' + fname)
         np.save(fname, model)
 
-    def load_data(self):
-        statclass = self.statclass
-        trainfiles = self.trainfiles
-        traindata = np.zeros((0,len(statclass)+1),np.float32)
-        trainfiles_good = []
-        if trainfiles is not None:
-            for fname in trainfiles:
-                badfile = False
-                basename, bname = os.path.split(fname)
-                try:
-                    iscells = np.load(fname)
-                    ncells = iscells.shape[0]
-                except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                    print('\t'+fname+': not a numpy array of booleans')
-                    badfile = True
-                if not badfile:
-                    basename, bname = os.path.split(fname)
-                    lstat = 0
-                    try:
-                        stat = np.load(basename+'/stat.npy')
-                        ypix = stat[0]['ypix']
-                        lstat = len(stat)
-                    except (KeyError, OSError, RuntimeError, TypeError, NameError):
-                        print('\t'+basename+': incorrect or missing stat.npy file :(')
-                    if lstat != ncells:
-                        print('\t'+basename+': stat.npy is not the same length as iscell.npy')
-                    else:
-                        # add iscell and stat to classifier
-                        print('\t'+fname+' was added to classifier')
-                        iscell = iscells[:,0].astype(np.float32)
-                        nall = np.zeros((ncells, len(statclass)+1),np.float32)
-                        nall[:,0] = iscell
-                        k=0
-                        for key in statclass:
-                            k+=1
-                            for n in range(0,ncells):
-                                nall[n,k] = stat[n][key]
-                        traindata = np.concatenate((traindata,nall),axis=0)
-                        trainfiles_good.append(fname)
-        self.traindata = traindata
-        self.trainfiles = trainfiles
-
-
 def run(classfile,stat):
     model = Classifier(classfile=classfile)
     # compute cell probability
@@ -146,17 +103,61 @@ def get_stats(parent):
             parent.statistics[n,k] = parent.stat[n][key]
         k+=1
 
-def load_data(parent):
+def load_list(parent):
     # will return
     LC = gui.ListChooser('classifier training files', parent)
     result = LC.exec_()
     if result:
         print('Populating classifier:')
+        keys = parent.model.keys
         parent.model = Classifier(classfile=None,
                                            trainfiles=parent.trainfiles,
                                            statclass=parent.statclass)
         if parent.trainfiles is not None:
             activate(parent, True)
+
+def load_data(statclass,trainfiles):
+    statclass = self.statclass
+    trainfiles = self.trainfiles
+    traindata = np.zeros((0,len(statclass)+1),np.float32)
+    trainfiles_good = []
+    if trainfiles is not None:
+        for fname in trainfiles:
+            badfile = False
+            basename, bname = os.path.split(fname)
+            try:
+                iscells = np.load(fname)
+                ncells = iscells.shape[0]
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print('\t'+fname+': not a numpy array of booleans')
+                badfile = True
+            if not badfile:
+                basename, bname = os.path.split(fname)
+                lstat = 0
+                try:
+                    stat = np.load(basename+'/stat.npy')
+                    ypix = stat[0]['ypix']
+                    lstat = len(stat)
+                except (KeyError, OSError, RuntimeError, TypeError, NameError):
+                    print('\t'+basename+': incorrect or missing stat.npy file :(')
+                if lstat != ncells:
+                    print('\t'+basename+': stat.npy is not the same length as iscell.npy')
+                else:
+                    # add iscell and stat to classifier
+                    print('\t'+fname+' was added to classifier')
+                    iscell = iscells[:,0].astype(np.float32)
+                    nall = np.zeros((ncells, len(statclass)+1),np.float32)
+                    nall[:,0] = iscell
+                    k=0
+                    for key in statclass:
+                        k+=1
+                        for n in range(0,ncells):
+                            nall[n,k] = stat[n][key]
+                    traindata = np.concatenate((traindata,nall),axis=0)
+                    trainfiles_good.append(fname)
+    self.traindata = traindata
+    self.trainfiles = trainfiles
+
 
 def apply(parent):
     classval = parent.probedit.value()

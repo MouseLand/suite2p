@@ -271,9 +271,12 @@ def get_cells(ops):
     # compute activity statistics for classifier
     sk = stats.skew(dF, axis=1)
     sd = np.std(dF, axis=1)
+    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
+    npix /= np.mean(npix)
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std']  = sd[k]
+        stat[k]['npix_norm'] = npix[k]
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
     # save ops

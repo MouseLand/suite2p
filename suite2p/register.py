@@ -286,7 +286,6 @@ def register_binary(ops):
     ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
 
     np.save(ops['ops_path'], ops)
-
     return ops
 
 def subsample_frames(ops, nsamps):
@@ -327,183 +326,17 @@ def refine_init_init(ops, frames, refImg):
     for iter in range(0,niter):
         freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops, True)
         isort = np.argsort(-cmax)
-        if iter>=niter/2:
-            nmax = int(frames.shape[0]/2)
+        nmax = int(frames.shape[0] * (1.+iter)/niter)
         refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)
-    return refImg
+    return refImg, freg
 
 def pick_init(ops):
     nbytes = os.path.getsize(ops['reg_file'])
     Ly = ops['Ly']
     Lx = ops['Lx']
     nFrames = int(nbytes/(2*Ly*Lx))
-    nFramesInit = np.minimum(ops['nimg_init'], nFrames)
+    nFramesInit = np.minimum(ops['nimg_init'], nFrames)    
     frames = subsample_frames(ops, nFramesInit)
     refImg = pick_init_init(ops, frames)
-    refImg = refine_init_init(ops, frames, refImg)
+    refImg, freg = refine_init_init(ops, frames, refImg)
     return refImg
-
-def h5py_to_binary(ops):
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    ops1 = []
-    # open all binary files for writing
-    reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
-    for j in range(0,nplanes):
-        ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-        if ('fast_disk' not in ops) or len(ops['fast_disk'])>0:
-            ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
-        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
-        if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
-        if not os.path.isdir(ops['fast_disk']):
-            os.makedirs(ops['fast_disk'])
-        if not os.path.isdir(ops['save_path']):
-            os.makedirs(ops['save_path'])
-        ops1.append(ops.copy())
-        reg_file.append(open(ops['reg_file'], 'wb'))
-        if nchannels>1:
-            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-
-    # open h5py file for reading
-    key = ops['h5py_key']
-
-    with h5py.File(ops['h5py'], 'r') as f:
-        # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-        nbatch = nplanes*nchannels*math.ceil(ops['batch_size']/(nplanes*nchannels))
-        nframes_all = f[key].shape[0]
-        # loop over all tiffs
-        i0 = 0
-        while 1:
-            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
-            if irange.size==0:
-                break
-            im = f[key][irange, :, :]
-            nframes = im.shape[0]
-            for j in range(0,nplanes):
-                im2write = im[np.arange(j, nframes, nplanes*nchannels),:,:]
-                reg_file[j].write(bytearray(im2write))
-                if nchannels>1:
-                    im2write = im[np.arange(j+1, nframes, nplanes*nchannels),:,:]
-                    reg_file_chan2[j].write(bytearray(im2write))
-            i0 += nframes
-    # write ops files
-    for ops in ops1:
-        ops['Ly'] = im2write.shape[1]
-        ops['Lx'] = im2write.shape[2]
-        np.save(ops['ops_path'], ops)
-    # close all binary files and write ops files
-    for j in range(0,nplanes):
-        reg_file[j].close()
-        if nchannels>1:
-            reg_file_chan2[j].close()
-    return ops1
-
-def tiff_to_binary(ops):
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    ops1 = []
-    # open all binary files for writing
-    reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
-    for j in range(0,nplanes):
-        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-        ops['save_path'] = fpath
-        if ('fast_disk' not in ops) or len(ops['fast_disk'])>0:
-            ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
-        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
-        if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
-        if not os.path.isdir(ops['fast_disk']):
-            os.makedirs(ops['fast_disk'])
-        if not os.path.isdir(ops['save_path']):
-            os.makedirs(ops['save_path'])
-        ops1.append(ops.copy())
-        reg_file.append(open(ops['reg_file'], 'wb'))
-        if nchannels>1:
-            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs = get_tif_list(ops) # look for tiffs in all requested folders
-    # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-    iplane = 0
-    # loop over all tiffs
-    for file in fs:
-        im = io.imread(file)
-        nframes = im.shape[0]
-        for j in range(0,nplanes):
-            i0 = nchannels * ((iplane+j)%nplanes)
-            im2write = im[np.arange(int(i0), nframes, nplanes*nchannels),:,:]
-            reg_file[j].write(bytearray(im2write))
-            if nchannels>1:
-                im2write = im[np.arange(int(i0)+1, nframes, nplanes*nchannels),:,:]
-                reg_file_chan2[j].write(bytearray(im2write))
-        iplane = (iplane+nframes/nchannels)%nplanes
-    # write ops files
-    for ops in ops1:
-        ops['Ly'] = im.shape[1]
-        ops['Lx'] = im.shape[2]
-        np.save(ops['ops_path'], ops)
-    # close all binary files and write ops files
-    for j in range(0,nplanes):
-        reg_file[j].close()
-        if nchannels>1:
-            reg_file_chan2[j].close()
-    return ops1
-
-def list_tifs(froot, look_one_level_down):
-    lpath = os.path.join(froot, "*.tif")
-    fs  = sorted(glob.glob(lpath))
-    lpath = os.path.join(froot, "*.tiff")
-    fs2 = sorted(glob.glob(lpath))
-    fs.extend(fs2)
-    if look_one_level_down:
-        fdir = glob.glob(os.path.join(froot, "*", ""))
-        for folder_down in fdir:
-            lpath = os.path.join(froot, folder_down, "*.tif")
-            fs3 = sorted(glob.glob(lpath))
-            lpath = os.path.join(froot, folder_down, "*.tiff")
-            fs4 = sorted(glob.glob(lpath))
-            fs.extend(fs3)
-            fs.extend(fs4)
-    return fs
-
-def get_tif_list(ops):
-    froot = ops['data_path']
-
-    if len(froot)==1:
-        if len(ops['subfolders'])==0:
-            fold_list = ops['data_path']
-        else:
-            fold_list = []
-            for folder_down in ops['subfolders']:
-                fold = os.path.join(froot[0], folder_down)
-                fold_list.append(fold)
-    else:
-        fold_list = froot
-    fs = []
-    for fld in fold_list:
-        fs.extend(list_tifs(fld, ops['look_one_level_down']))
-
-    if len(fs)==0:
-        raise Exception('Could not find any tifs')
-    else:
-        print('Found %d tifs'%(len(fs)))
-    return fs
-
-def get_tif_list_old(ops):
-    froot = ops['data_path']
-    if len(ops['subfolders'])==0:
-        fs = list_tifs(ops, froot)
-    else:
-        fs = []
-        for folder_down in ops['subfolders']:
-            fold = os.path.join(froot, folder_down)
-            fs.extend(list_tifs(ops, fold))
-    if fs is None:
-        raise Exception('Could not find any tifs')

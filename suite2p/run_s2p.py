@@ -59,126 +59,6 @@ def default_ops():
       }
     return ops
 
-def get_cells(ops):
-    i0 = tic()
-    if (type(ops['diameter']) is int) or len(ops['diameter'])<2:
-        ops['diameter'] = int(np.array(ops['diameter']))
-        ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
-    ops['diameter'] = np.array(ops['diameter']).astype('int32')
-    print(ops['diameter'])
-    ops, stat = celldetect2.sourcery(ops)
-    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
-    # extract fluorescence and neuropil
-    F, Fneu, ops = celldetect2.extractF(ops, stat)
-    print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
-    # subtract neuropil
-    dF = F - ops['neucoeff'] * Fneu
-    # compute activity statistics for classifier
-    sk = stats.skew(dF, axis=1)
-    sd = np.std(dF, axis=1)
-    for k in range(F.shape[0]):
-        stat[k]['skew'] = sk[k]
-        stat[k]['std']  = sd[k]
-    # add enhanced mean image
-    ops = utils.enhanced_mean_image(ops)
-    # save ops
-    np.save(ops['ops_path'], ops)
-    # save results
-    fpath = ops['save_path']
-    np.save(os.path.join(fpath,'F.npy'), F)
-    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
-    np.save(os.path.join(fpath,'stat.npy'), stat)
-    iscell = np.ones((len(stat),2))
-    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
-    print('results saved to %s'%ops['save_path'])
-    return ops
-
-def combined(ops1):
-    '''
-    Combines all the entries in ops1 into a single result file.
-    Multi-plane recordings are arranged to best tile a square.
-    Multi-roi recordings are arranged by their dx,dy physical localization.
-    '''
-    ops = ops1[0]
-    if ('dx' not in ops) or ('dy' not in ops):
-        Lx = ops['Lx']
-        Ly = ops['Ly']
-        nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
-        nX = int(nX)
-        nY = int(np.ceil(len(ops1)/nX))
-        for j in range(len(ops1)):
-            ops1[j]['dx'] = (j%nX) * Lx
-            ops1[j]['dy'] = int(j/nX) * Ly
-    LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
-    LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
-    meanImg = np.zeros((LY, LX))
-    meanImgE = np.zeros((LY, LX))
-    Vcorr = np.zeros((LY, LX))
-    Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
-    for k,ops in enumerate(ops1):
-        fpath = ops['save_path']
-        stat0 = np.load(os.path.join(fpath,'stat.npy'))
-        xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
-        yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
-        meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
-        meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
-        xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
-        yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
-        Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
-        for j in range(len(stat0)):
-            stat0[j]['xpix'] += ops['dx']
-            stat0[j]['ypix'] += ops['dy']
-            stat0[j]['med'][0] += ops['dy']
-            stat0[j]['med'][1] += ops['dx']
-        F0    = np.load(os.path.join(fpath,'F.npy'))
-        Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
-        spks0 = np.load(os.path.join(fpath,'spks.npy'))
-        iscell0 = np.load(os.path.join(fpath,'iscell.npy'))
-        nn,nt = F0.shape
-        if nt<Nfr:
-            fcat    = np.zeros((nn,Nfr-nt), 'float32')
-            print(F0.shape)
-            print(fcat.shape)
-            F0      = np.concatenate((F0, fcat), axis=1)
-            spks0   = np.concatenate((spks0, fcat), axis=1)
-            Fneu0   = np.concatenate((Fneu0, fcat), axis=1)
-        if k==0:
-            F, Fneu, spks,stat,iscell = F0, Fneu0, spks0,stat0, iscell0
-        else:
-            F    = np.concatenate((F, F0))
-            Fneu = np.concatenate((Fneu, Fneu0))
-            spks = np.concatenate((spks, spks0))
-            stat = np.concatenate((stat,stat0))
-            iscell = np.concatenate((iscell,iscell0))
-    ops['meanImg']  = meanImg
-    ops['meanImgE'] = meanImgE
-    ops['Vcorr'] = Vcorr
-    ops['Ly'] = LY
-    ops['Lx'] = LX
-    ops['xrange'] = [0, ops['Lx']]
-    ops['yrange'] = [0, ops['Ly']]
-    fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')
-    if not os.path.isdir(fpath):
-        os.makedirs(fpath)
-    ops['save_path'] = fpath
-    np.save(os.path.join(fpath, 'F.npy'), F)
-    np.save(os.path.join(fpath, 'Fneu.npy'), Fneu)
-    np.save(os.path.join(fpath, 'spks.npy'), spks)
-    np.save(os.path.join(fpath, 'ops.npy'), ops)
-    np.save(os.path.join(fpath, 'stat.npy'), stat)
-    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
-
-    # save as matlab file
-    if ('save_mat' in ops) and ops['save_mat']:
-        matpath = os.path.join(ops['save_path'],'Fall.mat')
-        scipy.io.savemat(matpath, {'stat': stat,
-                                   'ops': ops,
-                                   'F': F,
-                                   'Fneu': Fneu,
-                                   'spks': spks,
-                                   'iscell': iscell})
-    return ops
-
 def run_s2p(ops={},db={}):
     i0 = tic()
     ops = {**ops, **db}
@@ -217,10 +97,10 @@ def run_s2p(ops={},db={}):
         ops = {**ops0, **ops}
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = register.h5py_to_binary(ops)
+            ops1 = utils.h5py_to_binary(ops)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
-            ops1 = register.tiff_to_binary(ops)
+            ops1 = utils.tiff_to_binary(ops)
             print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         # register tiff
         ops1 = register.register_binary(ops1)
@@ -237,10 +117,10 @@ def run_s2p(ops={},db={}):
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)
         with Pool(ops['num_workers_roi']) as p:
-            ops1 = p.map(get_cells, ops1)
+            ops1 = p.map(utils.get_cells, ops1)
     else:
         for k in range(len(ops1)):
-            ops1[k] = get_cells(ops1[k])
+            ops1[k] = utils.get_cells(ops1[k])
     ######### SPIKE DECONVOLUTION AND CLASSIFIER #########
     for ops in ops1:
         fpath = ops['save_path']
@@ -272,7 +152,7 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined']:
-        combined(ops1)
+        utils.combined(ops1)
 
     for ops in ops1:
         if ('delete_bin' in ops) and ops['delete_bin']:

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import os
-import sklearn
+from sklearn.linear_model  import LogisticRegression
 from suite2p import fig, gui
 import time
 
@@ -56,7 +56,7 @@ class Classifier:
                 p[j, k] = np.mean(icell[isort[ix[j]:ix[j+1], k]])
         p = filters.gaussian_filter(p, (2., 0))
         logp = get_logp(stats, grid, p)
-        logisticRegr = LogisticRegression(C = 100.)
+        logisticRegr = sklearn.LogisticRegression(C = 100.)
         logisticRegr.fit(logp, icell)
         # now get logP from the test data
         stats2 = get_stat_keys(stat, keys)

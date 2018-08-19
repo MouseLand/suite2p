@@ -23,6 +23,47 @@ class Classifier:
                 self.loaded = True
                 self.train()
 
+    def get_stat_keys(stat, keys):
+        stats= np.zeros((len(stat), len(keys)))
+        for j in range(len(stat)):
+            for k in range(len(keys)):
+                stats[j,k] = stat[j][keys[k]]
+        return stats
+
+    def get_logp(stats, grid, p):
+        nroi, nstats = stats.shape
+        logp = np.zeros((nroi,nstats))
+        for n in range(nstats):
+            x = stats[:,n]
+            x[x<grid[0,n]]   = grid[0,n]
+            x[x>grid[-1,n]]  = grid[-1,n]
+            ibin = np.digitize(x, grid[:,n], right=True) - 1
+            logp[:,n] = np.log(p[ibin,n] + 1e-6) - np.log(1-p[ibin,n] + 1e-6)
+        return logp
+
+    def class_prob(clsf, stat):
+        stats, icell, keys = clsf['stats'], clsf['iscell'], clsf['keys']
+        nodes = 100
+        nroi, nstats = stats.shape
+        ssort= np.sort(stats, axis=0)
+        isort= np.argsort(stats, axis=0)
+        ix = np.linspace(0, nroi-1, nodes).astype('int32')
+        grid = ssort[ix, :]
+        p = np.zeros((nodes-1,nstats))
+        for j in range(nodes-1):
+            for k in range(nstats):
+                p[j, k] = np.mean(icell[isort[ix[j]:ix[j+1], k]])
+        p = filters.gaussian_filter(p, (2., 0))
+        logp = get_logp(stats, grid, p)
+        logisticRegr = LogisticRegression(C = 100.)
+        logisticRegr.fit(logp, icell)
+        # now get logP from the test data
+        stats2 = get_stat_keys(stat, keys)
+        logp = get_logp(stats2, grid, p)
+        y_pred = logisticRegr.predict_proba(logp)
+        y_pred = y_pred[:,1]
+        return y_pred
+
     def train(self):
         '''input: matrix ncells x cols, where first column are labels, and the other
                     columns are the statistics to use for classification
@@ -140,21 +181,6 @@ class Classifier:
         self.traindata = traindata
         self.trainfiles = trainfiles
 
-def smooth_distribution(x, grid):
-    ''' smooth x with sig that is proportional to the number of x in each bin of the grid '''
-    sig = 10.0
-    nbins = grid.size
-    hist_smooth = np.zeros((nbins-1,))
-    x[x<grid[0]] = grid[0]#*np.ones(((xbin<grid[0]).sum(),))
-    x[x>grid[-1]] = grid[-1]#*np.ones(((xbin>grid[-1]).sum(),))
-    hist,b = np.histogram(x, grid)
-    for k in range(nbins-1):
-        L = np.zeros((nbins-1,), np.float32)
-        if hist[k]>0:
-            L[k] = hist[k]
-            hist_smooth += gaussian_filter(L, sig)
-    hist_smooth /= hist_smooth.sum()
-    return hist_smooth
 
 def run(classfile,stat):
     model = Classifier(classfile=classfile)

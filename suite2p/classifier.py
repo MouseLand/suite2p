@@ -8,46 +8,53 @@ from suite2p import fig, gui
 import time
 
 class Classifier:
-    def __init__(self, classfile=None, trainfiles=None, statclass=None):
-        # load previously trained classifier
+    def __init__(self, classfile=None):
+        # stat are cell stats from currently loaded recording
+        # classfile is a previously saved classifier file
         if classfile is not None:
             self.classfile = classfile
             self.load()
+        else:
+            self.loaded = False
 
-        elif trainfiles is not None and statclass is not None:
-            self.trainfiles = trainfiles
-            self.statclass = statclass
-            self.load_data()
-            if self.traindata.shape[0]==0:
-                self.loaded = False
-            else:
-                self.loaded = True
-                self.train()
+    def load(self):
+        try:
+            model = np.load(self.classfile)
+            model = model.item()
+            self.stats = model['stats']
+            self.iscell = model['iscell']
+            self.keys = model['keys']
+            self.loaded = True
+        except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
+            print('ERROR: incorrect classifier file')
+            self.loaded = False
 
-    def get_stat_keys(stat, keys):
-        stats= np.zeros((len(stat), len(keys)))
+    def get_stat_keys(self, stat, keys):
+        teststats = np.zeros((len(stat), len(keys)))
         for j in range(len(stat)):
             for k in range(len(keys)):
-                stats[j,k] = stat[j][keys[k]]
-        return stats
+                teststats[j,k] = stat[j][keys[k]]
+        return teststats
 
-    def get_logp(stats, grid, p):
-        nroi, nstats = stats.shape
+    def get_logp(self, teststats, grid, p):
+        nroi, nstats = teststats.shape
         logp = np.zeros((nroi,nstats))
         for n in range(nstats):
-            x = stats[:,n]
+            x = teststats[:,n]
             x[x<grid[0,n]]   = grid[0,n]
             x[x>grid[-1,n]]  = grid[-1,n]
             ibin = np.digitize(x, grid[:,n], right=True) - 1
             logp[:,n] = np.log(p[ibin,n] + 1e-6) - np.log(1-p[ibin,n] + 1e-6)
         return logp
 
-    def class_prob(clsf, stat):
-        stats, icell, keys = clsf['stats'], clsf['iscell'], clsf['keys']
+    def apply(self, stat):
+        trainstats = self.stats
+        iscell     = self.iscell
+        keys       = self.keys
         nodes = 100
-        nroi, nstats = stats.shape
-        ssort= np.sort(stats, axis=0)
-        isort= np.argsort(stats, axis=0)
+        nroi, nstats = trainstats.shape
+        ssort= np.sort(trainstats, axis=0)
+        isort= np.argsort(trainstats, axis=0)
         ix = np.linspace(0, nroi-1, nodes).astype('int32')
         grid = ssort[ix, :]
         p = np.zeros((nodes-1,nstats))
@@ -55,88 +62,21 @@ class Classifier:
             for k in range(nstats):
                 p[j, k] = np.mean(icell[isort[ix[j]:ix[j+1], k]])
         p = filters.gaussian_filter(p, (2., 0))
-        logp = get_logp(stats, grid, p)
+        logp = get_logp(trainstats, grid, p)
         logisticRegr = sklearn.LogisticRegression(C = 100.)
         logisticRegr.fit(logp, icell)
         # now get logP from the test data
-        stats2 = get_stat_keys(stat, keys)
-        logp = get_logp(stats2, grid, p)
+        teststats = get_stat_keys(stat, keys)
+        logp = get_logp(teststats, grid, p)
         y_pred = logisticRegr.predict_proba(logp)
         y_pred = y_pred[:,1]
         return y_pred
 
-    def train(self):
-        '''input: matrix ncells x cols, where first column are labels, and the other
-                    columns are the statistics to use for classification
-            output: distribution of cell likelihood for each statistic
-        '''
-        iscell = self.traindata[:,0].astype(bool)
-        notcell = ~iscell
-        stats = self.traindata[:,1:]
-        # make grid of statistics values
-        ncells,nstats = stats.shape
-        grid = np.zeros((100, stats.shape[1]), np.float32)
-        for n in range(nstats):
-            grid[:,n] = np.linspace(np.percentile(stats[:,n], 2),
-                                    np.percentile(stats[:,n], 98),
-                                    100)
-        hists = np.zeros((99,nstats,2), np.float32)
-        for k in range(2):
-            if k==0:
-                ix = iscell
-            else:
-                ix = notcell
-            for n in range(nstats):
-                hists[:,n,k] = smooth_distribution(stats[ix,n], grid[:,n])
-        self.hists = hists
-        self.grid = grid
-
-    def apply(self, stats):
-        '''inputs: model (from train), statistics of cells to classify, and
-                    classval (probability of cell cutoff)
-            output: iscell labels
-        '''
-        ncells, nstats = stats.shape
-        grid = self.grid
-        hists = self.hists
-        logp = np.zeros((ncells,2), np.float32)
-        for n in range(nstats):
-            x = stats[:,n]
-            x[x<grid[0,n]]   = grid[0,n]
-            x[x>grid[-1,n]]  = grid[-1,n]
-            ibin = np.digitize(x, grid[:,n], right=True) - 1
-            logp = logp + np.log(np.squeeze(hists[ibin,n,:])+1e-5)
-        p = np.ones((1,2),np.float32)
-        p = p / p.sum()
-        for n in range(10):
-            L = logp + np.log(p)
-            L = L - np.expand_dims(L.max(axis=1), axis=1)
-            rs = np.exp(L) + 1e-5
-            rs = rs / np.expand_dims(rs.sum(axis=1), axis=1)
-            p = rs.mean(axis=0)
-        probcell = rs[:,0]
-        return probcell
-
-    def load(self):
-        try:
-            model = np.load(self.classfile)
-            model = model.item()
-            self.grid = model['grid']
-            self.hists = model['hists']
-            self.trainfiles = model['trainfiles']
-            self.statclass = model['statclass']
-            self.loaded = True
-        except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
-            print('ERROR: incorrect classifier file')
-            self.loaded = False
-
-
     def save(self, fname):
         model = {}
-        model['grid'] = self.grid
-        model['hists'] = self.hists
-        model['trainfiles'] = self.trainfiles
-        model['statclass'] = self.statclass
+        model['stats']  = self.stats
+        model['iscell'] = self.iscell
+        model['keys']   = self.keys
         print('saving classifier in ' + fname)
         np.save(fname, model)
 
@@ -185,30 +125,16 @@ class Classifier:
 
 def run(classfile,stat):
     model = Classifier(classfile=classfile)
-    # put stats into matrix
-    ncells = len(stat)
-    statistics = np.zeros((ncells, len(model.statclass)),np.float32)
-    k=0
-    for key in model.statclass:
-        for n in range(0,ncells):
-            statistics[n,k] = stat[n][key]
-        k+=1
-    probcell = model.apply(statistics)
+    # compute cell probability
+    probcell = model.apply(stat)
     iscell = probcell > 0.5
     iscell = np.concatenate((np.expand_dims(iscell,axis=1),np.expand_dims(probcell,axis=1)),axis=1)
     return iscell
 
 def load(parent, name, inactive):
     print('loading classifier ', name)
-    parent.model = Classifier(classfile=name,
-                               trainfiles=None,
-                               statclass=None)
+    parent.model = Classifier(classfile=name)
     if parent.model.loaded:
-        # statistics from current dataset for Classifier
-        parent.statclass = parent.model.statclass
-        # fill up with current dataset stats
-        get_stats(parent)
-        parent.trainfiles = parent.model.trainfiles
         activate(parent, inactive)
 
 def get_stats(parent):
@@ -230,7 +156,6 @@ def load_data(parent):
                                            trainfiles=parent.trainfiles,
                                            statclass=parent.statclass)
         if parent.trainfiles is not None:
-            get_stats(parent)
             activate(parent, True)
 
 def apply(parent):
@@ -266,7 +191,7 @@ def save_list(parent):
 
 def activate(parent, inactive):
     if inactive:
-        parent.probcell = parent.model.apply(parent.statistics)
+        parent.probcell = parent.model.apply(parent.stat)
     istat = parent.probcell
     parent.clabels[-2] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
     istat = istat - istat.min()

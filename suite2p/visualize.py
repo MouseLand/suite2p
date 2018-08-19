@@ -8,10 +8,9 @@ from scipy.stats import zscore
 import math
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
-
-#img = pyqtgraph.ImageItem()
-#p.addItem(img)
-# Get the colormap
+import sys
+sys.path.insert(0, 'C:/Users/carse/github/embeddings/map/')
+import map
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -51,19 +50,15 @@ class VisWindow(QtGui.QMainWindow):
         sp = parent.Spks[cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
-        bin = int(parent.ops['fs']) # one second bins
-        sp = sp[:,:int(np.floor(sp.shape[1]/bin)*bin)]
-        spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
-        spbin = np.squeeze(spbin.mean(axis=1))
-        usv = np.linalg.svd(spbin)
-        self.u = usv[0]
         sp -= sp.min()
         sp /= sp.max()
-        sp *= 10
+        sp *= 5
         sp = np.maximum(0, np.minimum(1, sp))
-        self.sp = 1-sp
-        #sp = np.tile(np.expand_dims(sp,axis=2),(1,1,3))
-        #self.sp = gaussian_filter1d(1-sp, bin/2, axis=1)
+        self.sp = sp
+        self.spF = self.sp
+        # 100 ms bins
+        self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
+        # draw axes
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
         self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
@@ -89,22 +84,8 @@ class VisWindow(QtGui.QMainWindow):
         self.p2.setLabel('bottom', 'time')
         layout.setColumnStretchFactor(1,3)
         layout.setRowStretchFactor(1,3)
-        # edit buttons
-        self.comboBox = QtGui.QComboBox(self)
-        self.comboBox.addItem("PC")
-        self.comboBox.activated[str].connect(self.sorting)
-        self.l0.addWidget(self.comboBox,0,0,1,2)
-        self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setValidator(QtGui.QIntValidator(1,10000))
-        self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(35)
-        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        self.PCedit.returnPressed.connect(self.sorting)
-        qlabel = QtGui.QLabel('PC: ')
-        qlabel.setStyleSheet('color: white;')
-        self.l0.addWidget(qlabel,1,0,1,1)
-        self.l0.addWidget(self.PCedit,1,1,1,1)
-        self.sorting()
+        self.sp = np.maximum(0,np.minimum(1,self.sp))
+        self.img.setImage(self.sp)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
                                 width=3,
@@ -121,7 +102,58 @@ class VisWindow(QtGui.QMainWindow):
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
         self.ROI_position()
+        # buttons for computations
+        self.PCOn = QtGui.QPushButton('compute PCs')
+        self.PCOn.clicked.connect(self.PC_on)
+        self.l0.addWidget(self.PCOn,0,0,1,2)
+        self.mapOn = QtGui.QPushButton('compute activity maps')
+        self.mapOn.clicked.connect(self.map_on)
+        self.l0.addWidget(self.mapOn,1,0,1,2)
+        self.comboBox = QtGui.QComboBox(self)
+        self.l0.addWidget(self.comboBox,2,0,1,2)
         self.win.show()
+
+
+    def PC_on(self):
+        # edit buttons
+        self.comboBox.addItem("PC")
+        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
+        self.PCedit.setText('1')
+        self.PCedit.setFixedWidth(35)
+        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
+        self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
+        qlabel = QtGui.QLabel('PC: ')
+        qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,3,0,1,1)
+        self.l0.addWidget(self.PCedit,3,1,1,1)
+        self.compute_svd(self.bin)
+        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        self.comboBox.setCurrentIndex(1)
+        self.PCOn.setEnabled(False)
+
+    def map_on(self):
+        if u not in self:
+            self.comboBox.addItem('PC')
+            self.compute_svd(self.bin)
+        self.comboBox.addItem('Activity map')
+        self.compute_map()
+        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        self.comboBox.setCurrentIndex(1)
+        self.PCOn.setEnabled(False)
+        self.mapOn.setEnabled(False)
+
+    def compute_map(self):
+        self.isort1, self.isort2 = map.main(self.sp,None,self.u,self.sv,self.v)
+
+    def compute_svd(self,bin):
+        sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
+        spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
+        spbin = np.squeeze(spbin.mean(axis=1))
+        usv = np.linalg.svd(spbin, full_matrices=1)
+        self.u = usv[0]
+        self.sv = usv[1]
+        self.v = usv[2]
 
     def ROI_position(self):
         pos = self.ROI.pos()
@@ -131,15 +163,21 @@ class VisWindow(QtGui.QMainWindow):
         xrange = (np.arange(1,int(sizex)) + int(posx)).astype(np.int32)
         yrange = (np.arange(1,int(sizey)) + int(posy)).astype(np.int32)
         xrange = xrange[xrange>=0]
-        xrange = xrange[xrange<self.spF.shape[1]]
+        xrange = xrange[xrange<self.sp.shape[1]]
         yrange = yrange[yrange>=0]
-        yrange = yrange[yrange<self.spF.shape[0]]
+        yrange = yrange[yrange<self.sp.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
         self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
                                            xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
 
-    def sorting(self):
-        isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
-        self.spF = gaussian_filter1d(self.sp[isort,:], 3, axis=0)
+    def neural_sorting(self,i):
+        if i==0:
+            isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
+        else:
+            isort = self.isort1
+        self.spF = gaussian_filter1d(self.sp[isort,:],
+                                     self.sp.shape[0]*0.02,
+                                     axis=0)
         self.spF = np.maximum(0,np.minimum(1,self.spF))
         self.img.setImage(self.spF)
+        self.ROI_position()

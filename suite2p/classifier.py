@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import os
+import sklearn
 from suite2p import fig, gui
 import time
 

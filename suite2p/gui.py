@@ -8,6 +8,8 @@ import pickle
 from suite2p import fig
 from suite2p import run_s2p
 
+# this file contains helper functions for GUI and run dialog
+
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
@@ -231,6 +233,20 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = name
         self.binlabel.setText(name)
 
+# custom vertical label
+class VerticalLabel(QtGui.QWidget):
+    def __init__(self, text=None):
+        super(self.__class__, self).__init__()
+        self.text = text
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setPen(QtCore.Qt.white)
+        painter.translate(0, 0)
+        painter.rotate(90)
+        if self.text:
+            painter.drawText(0, 0, self.text)
+        painter.end()
 
 ### custom QPushButton class that plots image when clicked
 # requires buttons to put into a QButtonGroup (parent.viewbtns)

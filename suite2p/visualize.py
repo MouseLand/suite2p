@@ -9,8 +9,10 @@ import math
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import sys
-#sys.path.insert(0, 'C:/Users/carse/github/embeddings/map/')
-#import map
+sys.path.insert(0, '/media/carsen/DATA2/Github/dynamap/dynamap/')
+import map
+from suite2p import gui
+
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -30,7 +32,7 @@ class VisWindow(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,0,10,14)
+        self.l0.addWidget(self.win,0,0,14,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
         self.p0 = self.win.addViewBox(row=0,col=0)
@@ -52,13 +54,13 @@ class VisWindow(QtGui.QMainWindow):
         sp = zscore(sp, axis=1)
         sp -= sp.min()
         sp /= sp.max()
-        sp *= 5
         sp = np.maximum(0, np.minimum(1, sp))
-        self.sp = sp
+        self.sp = np.maximum(0,np.minimum(1,sp))
         self.spF = self.sp
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
         # draw axes
+        self.img.setImage(self.sp)
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
         self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
@@ -69,23 +71,34 @@ class VisWindow(QtGui.QMainWindow):
         nn = sp.shape[0]
         self.p2 = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
         self.imgROI = pg.ImageItem()
-        colormap = cm.get_cmap("viridis")  # cm.get_cmap("CMRmap")
-        colormap._init()
-        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
-        lut = lut[0:-3,:]
-        # Apply the colormap
-        self.img.setLookupTable(lut)
-        self.imgROI.setLookupTable(lut)
-        self.img.setLevels([0,1])
-        self.imgROI.setLevels([0,1])
         self.p2.addItem(self.imgROI)
         self.p2.setMouseEnabled(x=False,y=False)
         self.p2.setLabel('left', 'neurons')
         self.p2.setLabel('bottom', 'time')
+        # set colormap to viridis
+        colormap = cm.get_cmap("viridis")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+        lut = lut[0:-3,:]
+        # apply the colormap
+        self.img.setLookupTable(lut)
+        self.imgROI.setLookupTable(lut)
+        self.img.setLevels([0,1])
+        self.imgROI.setLevels([0,1])
         layout.setColumnStretchFactor(1,3)
         layout.setRowStretchFactor(1,3)
-        self.sp = np.maximum(0,np.minimum(1,self.sp))
-        self.img.setImage(self.sp)
+        # add slider for levels
+        self.sl = QtGui.QSlider(QtCore.Qt.Vertical)
+        self.sl.setMinimum(0)
+        self.sl.setMaximum(100)
+        self.sl.setValue(100)
+        self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
+        self.sl.setTickInterval(10)
+        self.sl.sliderReleased.connect(self.levelchange)
+        self.l0.addWidget(self.sl,0,2,5,1)
+        qlabel = gui.VerticalLabel(text='saturation')
+        #qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,1,3,3,1)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
                                 width=3,
@@ -111,35 +124,44 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.mapOn,1,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,2,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),3,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.l0.setRowStretch(6, 1)
         self.win.show()
+        self.show()
 
+    def levelchange(self):
+        self.imgROI.setImage(self.sp)
 
     def PC_on(self):
         # edit buttons
-        self.comboBox.addItem("PC")
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
         self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(35)
+        self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
         qlabel = QtGui.QLabel('PC: ')
         qlabel.setStyleSheet('color: white;')
         self.l0.addWidget(qlabel,3,0,1,1)
         self.l0.addWidget(self.PCedit,3,1,1,1)
+        self.comboBox.addItem("PC")
+        self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
         self.compute_svd(self.bin)
+        self.comboBox.setCurrentIndex(0)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
-        self.comboBox.setCurrentIndex(1)
+        self.neural_sorting(0)
         self.PCOn.setEnabled(False)
 
     def map_on(self):
-        if u not in self:
-            self.comboBox.addItem('PC')
-            self.compute_svd(self.bin)
+        if not hasattr(self,'u'):
+            self.PC_on()
         self.comboBox.addItem('Activity map')
         self.compute_map()
-        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
         self.comboBox.setCurrentIndex(1)
+        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        self.neural_sorting(1)
         self.PCOn.setEnabled(False)
         self.mapOn.setEnabled(False)
 
@@ -150,7 +172,7 @@ class VisWindow(QtGui.QMainWindow):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
         spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
         spbin = np.squeeze(spbin.mean(axis=1))
-        usv = np.linalg.svd(spbin, full_matrices=1)
+        usv = np.linalg.svd(spbin, full_matrices=0)
         self.u = usv[0]
         self.sv = usv[1]
         self.v = usv[2]
@@ -173,7 +195,7 @@ class VisWindow(QtGui.QMainWindow):
     def neural_sorting(self,i):
         if i==0:
             isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
-        else:
+        elif i==1:
             isort = self.isort1
         self.spF = gaussian_filter1d(self.sp[isort,:],
                                      self.sp.shape[0]*0.02,

@@ -154,7 +154,7 @@ def add_to(parent):
         stats = get_stat_keys(parent.stat, parent.model.keys)
         parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
         parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
-        np.save(parent.classfile, parent.model)
+        save_model(parent.classfile, parent.model.stats, parent.model.stats, parent.model.keys)
         activate(parent, True)
         msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')
@@ -171,18 +171,21 @@ def apply(parent):
     parent.lcell0.setText(' %d'%parent.iscell.sum())
     parent.lcell1.setText(' %d'%(parent.iscell.size-parent.iscell.sum()))
 
+def save_model(name, train_stats, train_iscell, keys):
+    model = {}
+    model['stats']  = train_stats
+    model['iscell'] = train_iscell
+    model['keys']   = keys
+    print('saving classifier in ' + name)
+    np.save(name, model)
+
 def save(parent, train_stats, train_iscell, keys):
-    name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier (*.npy)')
+    name = QtGui.QFileDialog.getSaveFileName(parent,'Classifier name (*.npy)')
     name = name[0]
     saved = False
     if name:
         try:
-            model = {}
-            model['stats']  = train_stats
-            model['iscell'] = train_iscell
-            model['keys']   = keys
-            print('saving classifier in ' + name)
-            np.save(name, model)
+            save_model(name, train_stats, train_iscell, keys)
             saved = True
         except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
             print('ERROR: incorrect filename for saving')

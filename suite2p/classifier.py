@@ -56,7 +56,7 @@ class Classifier:
                 p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
         p = gaussian_filter(p, (2., 0))
         logp = self.get_logp(trainstats, grid, p)
-        logisticRegr = sklearn.LogisticRegression(C = 100.)
+        logisticRegr = LogisticRegression(C = 100.)
         logisticRegr.fit(logp, iscell)
         # now get logP from the test data
         teststats = get_stat_keys(stat, keys)

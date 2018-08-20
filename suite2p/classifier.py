@@ -54,7 +54,7 @@ class Classifier:
         for j in range(nodes-1):
             for k in range(nstats):
                 p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
-        p = filters.gaussian_filter(p, (2., 0))
+        p = gaussian_filter(p, (2., 0))
         logp = self.get_logp(trainstats, grid, p)
         logisticRegr = sklearn.LogisticRegression(C = 100.)
         logisticRegr.fit(logp, iscell)
@@ -88,11 +88,11 @@ def run(classfile,stat):
     iscell = np.concatenate((np.expand_dims(iscell,axis=1),np.expand_dims(probcell,axis=1)),axis=1)
     return iscell
 
-def load(parent, name, inactive):
+def load(parent, name):
     print('loading classifier ', name)
     parent.model = Classifier(classfile=name)
     if parent.model.loaded:
-        activate(parent, inactive)
+        activate(parent, True)
 
 def load_list(parent):
     # will return
@@ -108,19 +108,8 @@ def load_list(parent):
         if parent.trainfiles is not None:
             activate(parent, True)
 
-def get_stats(stat,keys):
-    ncells = len(stat)
-    stats = np.zeros((ncells, len(keys)),np.float32)
-    k=0
-    for key in parent.statclass:
-        for n in range(0,ncells):
-            parent.statistics[n,k] = parent.stat[n][key]
-        k+=1
-
-def load_data(statclass,trainfiles):
-    statclass = self.statclass
-    trainfiles = self.trainfiles
-    traindata = np.zeros((0,len(statclass)+1),np.float32)
+def load_data(keys,trainfiles):
+    traindata = np.zeros((0,len(keys)),np.float32)
     trainfiles_good = []
     if trainfiles is not None:
         for fname in trainfiles:
@@ -147,13 +136,7 @@ def load_data(statclass,trainfiles):
                     # add iscell and stat to classifier
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
-                    nall = np.zeros((ncells, len(statclass)+1),np.float32)
-                    nall[:,0] = iscell
-                    k=0
-                    for key in statclass:
-                        k+=1
-                        for n in range(0,ncells):
-                            nall[n,k] = stat[n][key]
+                    nall = get_stat_keys(stat,keys)
                     traindata = np.concatenate((traindata,nall),axis=0)
                     trainfiles_good.append(fname)
     self.traindata = traindata

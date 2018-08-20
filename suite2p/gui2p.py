@@ -92,7 +92,6 @@ class MainW(QtGui.QMainWindow):
         vis_menu = main_menu.addMenu('&Visualizations')
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut('Ctrl+V')
-
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
         #cwidget = EventWidget(self)

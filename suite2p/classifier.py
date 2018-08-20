@@ -89,18 +89,8 @@ def load(parent, name):
 
 def load_list(parent):
     # will return
-    LC = gui.ListChooser('classifier training files', parent)
+    LC = ListChooser('classifier training files', parent)
     result = LC.exec_()
-    if result:
-        print('Populating classifier:')
-        keys = parent.model.keys
-        loaded = load_data(parent, keys, parent.trainfiles)
-        if loaded:
-            parent.model = Classifier(classfile=parent.classfile)
-            msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
-                                                'Classifier built from valid files, and cell probabilities computed and in GUI.')
-            activate(parent, True)
-
 
 def load_data(parent,keys,trainfiles):
     train_stats = np.zeros((0,len(keys)),np.float32)
@@ -227,3 +217,92 @@ def disable(parent):
     parent.saveTrain.setEnabled(False)
     for btns in parent.classbtns.buttons():
         btns.setEnabled(False)
+
+### custom QDialog which makes a list of items you can include/exclude
+class ListChooser(QtGui.QDialog):
+    def __init__(self, Text, parent=None):
+        super(ListChooser, self).__init__(parent)
+        self.setGeometry(300,300,300,320)
+        self.setWindowTitle(Text)
+        self.win = QtGui.QWidget(self)
+        layout = QtGui.QGridLayout()
+        self.win.setLayout(layout)
+        #self.setCentralWidget(self.win)
+        loadcell = QtGui.QPushButton('Load iscell.npy')
+        loadcell.resize(200,50)
+        loadcell.clicked.connect(self.load_cell)
+        layout.addWidget(loadcell,0,0,1,1)
+        loadtext = QtGui.QPushButton('Load txt file')
+        loadcell.resize(200,50)
+        #loadtext.resize(loadtext.minimumSizeHint())
+        loadtext.clicked.connect(self.load_text)
+        layout.addWidget(loadtext,0,1,1,1)
+        layout.addWidget(QtGui.QLabel('(select multiple using ctrl)'),1,0,1,1)
+        self.list = QtGui.QListWidget(parent)
+        layout.addWidget(self.list,2,0,5,3)
+        #self.list.resize(450,250)
+        self.list.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        save = QtGui.QPushButton('save files to classifier')
+        save.clicked.connect(lambda: self.build_classifier(parent))
+        layout.addWidget(save,8,0,1,1)
+        apply = QtGui.QPushButton('load in GUI')
+        apply.clicked.connect(lambda: self.apply_class(parent))
+        layout.addWidget(apply,8,1,1,1)
+        done = QtGui.QPushButton('done')
+        done.clicked.connect(lambda: self.exit_list(parent))
+        layout.addWidget(done,8,2,1,1)
+
+    def load_cell(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
+        if name:
+            try:
+                iscell = np.load(name[0])
+                badfile = True
+                if iscell.shape[0] > 0:
+                    if iscell[0,0]==0 or iscell[0,0]==1:
+                        badfile = False
+                        self.list.addItem(name[0])
+                if badfile:
+                    QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+            except (OSError, RuntimeError, TypeError, NameError):
+                QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+        else:
+            QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+
+    def load_text(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file', filter='text file (*.txt)')
+        if name:
+            try:
+                txtfile = open(name[0], 'r')
+                files = txtfile.read()
+                txtfile.close()
+                files = files.splitlines()
+                for f in files:
+                    self.list.addItem(f)
+            except (OSError, RuntimeError, TypeError, NameError):
+                QtGui.QMessageBox.information(self, 'not a text file')
+                print('not a good list')
+
+    def build_classifier(self, parent):
+        parent.trainfiles = []
+        i=0
+        for item in self.list.selectedItems():
+            parent.trainfiles.append(item.text())
+            i+=1
+        if i==0:
+            for r in range(self.list.count()):
+                parent.trainfiles.append(self.list.item(r).text())
+        if len(parent.trainfiles)>0:
+            print('Populating classifier:')
+            keys = parent.model.keys
+            loaded = load_data(parent, keys, parent.trainfiles)
+            if loaded:
+                msg = QtGui.QMessageBox.information(parent,'Classifier saved',
+                                                    'Classifier built from valid files and saved.')
+
+    def apply_class(self, parent):
+        parent.model = Classifier(classfile=parent.classfile)
+        activate(parent, True)
+
+    def exit_list(self):
+        self.accept()

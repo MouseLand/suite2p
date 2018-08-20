@@ -56,7 +56,7 @@ def probability(stat, train_stats, train_iscell, keys):
         for k in range(nstats):
             p[j, k] = np.mean(train_iscell[isort[ix[j]:ix[j+1], k]])
     p = gaussian_filter(p, (2., 0))
-    logp = self.get_logp(train_stats, grid, p)
+    logp = get_logp(train_stats, grid, p)
     logisticRegr = LogisticRegression(C = 100.)
     logisticRegr.fit(logp, train_iscell)
     # now get logP from the test data
@@ -93,19 +93,20 @@ def load_list(parent):
     result = LC.exec_()
     if result:
         print('Populating classifier:')
-        keys = model.keys
+        keys = parent.model.keys
         loaded = load_data(parent, keys, parent.trainfiles)
         if loaded:
             parent.model = Classifier(classfile=parent.classfile)
-            if parent.trainfiles is not None:
-                activate(parent, True)
-        else:
-            print('No valid files, thus no classifier made')
+            msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
+                                                'Classifier built from valid files, and cell probabilities computed and in GUI.')
+            activate(parent, True)
+
 
 def load_data(parent,keys,trainfiles):
     train_stats = np.zeros((0,len(keys)),np.float32)
     train_iscell = np.zeros((0,),np.float32)
     trainfiles_good = []
+    loaded = False
     if trainfiles is not None:
         for fname in trainfiles:
             badfile = False
@@ -131,30 +132,39 @@ def load_data(parent,keys,trainfiles):
                     # add iscell and stat to classifier
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
-                    nall = get_stat_keys(stat,keys)
-                    train_stats = np.concatenate((train_stats,nall),axis=0)
+                    stats = get_stat_keys(stat,parent.model.keys)
+                    train_stats = np.concatenate((train_stats,stats),axis=0)
                     train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
     if len(trainfiles_good) > 0:
-        parent.classfile = save(parent,train_stats,train_iscell,keys)
-        loaded = True
+        classfile, saved = save(parent,train_stats,train_iscell,keys)
+        if saved:
+            parent.classfile = classfile
+            loaded = True
+        else:
+            msg = QtGui.QMessageBox.information(parent,'Incorrect file path',
+                                                'Incorrect save path for classifier, classifier not built.')
     else:
-        loaded = False
+        msg = QtGui.QMessageBox.information(parent,'Incorrect files',
+                                            'No valid datasets chosen to build classifier, classifier not built.')
     return loaded
 
 def add_to(parent):
     fname = parent.basename+'/iscell.npy'
-    if hasattr(parent,'model'):
-        print('model')
+    print('Adding current dataset to classifier')
+    stats = get_stat_keys(parent.stat, parent.model.keys)
+    parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
+    parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
+    classfile, saved = save(parent,parent.model.stats,parent.model.iscell,parent.model.keys)
+    if saved:
+        parent.classfile = classfile
+        parent.model = Classifier(classfile=classfile)
+        activate(parent, True)
+        msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
+                                            'Current dataset added to classifier, and cell probabilities computed and in GUI')
     else:
-        print('no model')
-
-    if len(ftrue)==0:
-        parent.trainfiles.append(parent.basename+'/iscell.npy')
-    print('Repopulating classifier including current dataset:')
-    parent.model = Classifier(classfile=None,
-                                       trainfiles=parent.trainfiles,
-                                       statclass=parent.statclass)
+        msg = QtGui.QMessageBox.information(parent,'Incorrect file path',
+                                            'Incorrect save path for classifier, data not added to classifier.')
 
 def apply(parent):
     classval = parent.probedit.value()
@@ -169,18 +179,21 @@ def apply(parent):
     parent.lcell1.setText(' %d'%(parent.iscell.size-parent.iscell.sum()))
 
 def save(parent, train_stats, train_iscell, keys):
-    name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier')
+    name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier (*.npy)')
+    name = name[0]
+    saved = False
     if name:
         try:
             model = {}
             model['stats']  = train_stats
             model['iscell'] = train_iscell
             model['keys']   = keys
-            print('saving classifier in ' + fname)
-            np.save(fname, model)
+            print('saving classifier in ' + name)
+            np.save(name, model)
+            saved = True
         except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
             print('ERROR: incorrect filename for saving')
-    return name
+    return name, saved
 
 def save_list(parent):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Save list of iscell.npy')
@@ -205,6 +218,8 @@ def activate(parent, inactive):
     icols = 1 - istat
     parent.ops_plot[3][:,-1] = icols
     fig.class_masks(parent)
+    M = fig.draw_masks(parent)
+    fig.plot_masks(parent,M)
 
 def disable(parent):
     parent.classbtn.setEnabled(False)

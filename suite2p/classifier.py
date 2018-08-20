@@ -54,11 +54,11 @@ def probability(stat, train_stats, train_iscell, keys):
     p = np.zeros((nodes-1,nstats))
     for j in range(nodes-1):
         for k in range(nstats):
-            p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
+            p[j, k] = np.mean(train_iscell[isort[ix[j]:ix[j+1], k]])
     p = gaussian_filter(p, (2., 0))
     logp = self.get_logp(train_stats, grid, p)
     logisticRegr = LogisticRegression(C = 100.)
-    logisticRegr.fit(logp, iscell)
+    logisticRegr.fit(logp, train_iscell)
     # now get logP from the test data
     test_stats = get_stat_keys(stat, keys)
     logp = get_logp(test_stats, grid, p)

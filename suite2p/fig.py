@@ -34,7 +34,7 @@ def plot_trace(parent):
         parent.p3.plot(parent.trange,f,pen='b')
         parent.p3.plot(parent.trange,fneu,pen='r')
         parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
-        parent.fmin=fmin
+        parent.fmin=0
         parent.fmax=fmax
         ax.setTicks(None)
     else:

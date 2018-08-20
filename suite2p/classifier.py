@@ -142,19 +142,22 @@ def load_data(parent,keys,trainfiles):
 def add_to(parent):
     fname = parent.basename+'/iscell.npy'
     print('Adding current dataset to classifier')
-    stats = get_stat_keys(parent.stat, parent.model.keys)
-    parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
-    parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
-    classfile, saved = save(parent,parent.model.stats,parent.model.iscell,parent.model.keys)
-    if saved:
-        parent.classfile = classfile
-        parent.model = Classifier(classfile=classfile)
+    if parent.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                     '..','classifiers/classifier_user.npy'):
+        cfile = 'the default classifier'
+    else:
+        cfile = parent.classfile
+    dm = QtGui.QMessageBox.question(parent,'Default classifier',
+                                    'Current classifier is '+cfile+'. Add to this classifier?',
+                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+    if dm == QtGui.QMessageBox.Yes:
+        stats = get_stat_keys(parent.stat, parent.model.keys)
+        parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
+        parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
+        np.save(parent.classfile, parent.model)
         activate(parent, True)
         msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')
-    else:
-        msg = QtGui.QMessageBox.information(parent,'Incorrect file path',
-                                            'Incorrect save path for classifier, data not added to classifier.')
 
 def apply(parent):
     classval = parent.probedit.value()

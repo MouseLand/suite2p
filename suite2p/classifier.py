@@ -56,7 +56,7 @@ class Classifier:
                 p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
         p = gaussian_filter(p, (2., 0))
         logp = self.get_logp(trainstats, grid, p)
-        logisticRegr = sklearn.LogisticRegression(C = 100.)
+        logisticRegr = LogisticRegression(C = 100.)
         logisticRegr.fit(logp, iscell)
         # now get logP from the test data
         teststats = get_stat_keys(stat, keys)
@@ -109,7 +109,8 @@ def load_list(parent):
             activate(parent, True)
 
 def load_data(keys,trainfiles):
-    traindata = np.zeros((0,len(keys)),np.float32)
+    train_stats = np.zeros((0,len(keys)),np.float32)
+    train_iscell = np.zeros((0,),np.float32)
     trainfiles_good = []
     if trainfiles is not None:
         for fname in trainfiles:
@@ -137,10 +138,10 @@ def load_data(keys,trainfiles):
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
                     nall = get_stat_keys(stat,keys)
-                    traindata = np.concatenate((traindata,nall),axis=0)
+                    train_stats = np.concatenate((train_stats,nall),axis=0)
+                    train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
-    self.traindata = traindata
-    self.trainfiles = trainfiles
+    if trainfiles is not None:
 
 
 def apply(parent):

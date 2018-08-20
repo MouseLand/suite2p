@@ -111,7 +111,7 @@ def shift_data(inputs):
     return Y
 
 def phasecorr_worker(inputs):
-    data, refImg, ops, flag_zeroed = inputs
+    data, refImg, ops = inputs
     nimg, Ly, Lx = data.shape
     refImg = np.reshape(refImg, (1, Ly, Lx))
     Lyhalf = int(np.floor(Ly/2))
@@ -120,15 +120,12 @@ def phasecorr_worker(inputs):
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
     cc = correlation_map(data, refImg)
     ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
-    if flag_zeroed:
-        xmax = xmax - xmax.mean()
-        ymax = ymax - ymax.mean()
     Y = shift_data((data, ymax,xmax))
     return Y, ymax, xmax, cmax
 
-def phasecorr(data, refImg, ops, flag_zeroed):
+def phasecorr(data, refImg, ops):
     if ops['num_workers']<0:
-        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops, flag_zeroed))
+        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops))
     else:
         nimg = data.shape[0]
         if ops['num_workers']<1:
@@ -144,10 +141,9 @@ def phasecorr(data, refImg, ops, flag_zeroed):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(ilist)
-            dsplit.append([data[ilist,:, :], refImg, ops, flag_zeroed])
+            dsplit.append([data[ilist,:, :], refImg, ops])
         with Pool(num_cores) as p:
             results = p.map(phasecorr_worker, dsplit)
-
         Y = np.zeros_like(data)
         ymax = np.zeros((nimg,))
         xmax = np.zeros((nimg,))
@@ -175,7 +171,6 @@ def register_myshifts(ops, data, ymax, xmax):
         nbatch = int(np.ceil(nimg/float(num_cores)))
         #nbatch = 50
         inputs = np.arange(0, nimg, nbatch)
-
         irange = []
         dsplit = []
         for i in inputs:
@@ -192,7 +187,7 @@ def register_myshifts(ops, data, ymax, xmax):
 
 def register_binary(ops):
     # if ops is a list of dictionaries, each will be registered separately
-    if type(ops) is list:
+    if (type(ops) is list) or (type(ops) is np.ndarray):
         for op in ops:
             op = register_binary(op)
         return ops
@@ -221,7 +216,7 @@ def register_binary(ops):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops, False)
+        dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops)
         dwrite = dwrite.astype('int16')
         reg_file.seek(-2*dwrite.size,1)
         reg_file.write(bytearray(dwrite))
@@ -324,19 +319,24 @@ def refine_init_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
-        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops, True)
+        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops)
         isort = np.argsort(-cmax)
-        nmax = int(frames.shape[0] * (1.+iter)/niter)
+        nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
+        #if iter>=np.floor(niter/2):
+        #    nmax = int(frames.shape[0] /2)
         refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)
-    return refImg, freg
+        dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
+        refImg = shift_data((refImg[np.newaxis,:,:], dy,dx)).squeeze()
+        ymax, xmax = ymax+dy, xmax+dx
+    return refImg, freg, ymax, xmax, cmax
 
 def pick_init(ops):
     nbytes = os.path.getsize(ops['reg_file'])
     Ly = ops['Ly']
     Lx = ops['Lx']
     nFrames = int(nbytes/(2*Ly*Lx))
-    nFramesInit = np.minimum(ops['nimg_init'], nFrames)    
+    nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
     refImg = pick_init_init(ops, frames)
-    refImg, freg = refine_init_init(ops, frames, refImg)
+    refImg, freg, ymax, xmax, cmax = refine_init_init(ops, frames, refImg)
     return refImg

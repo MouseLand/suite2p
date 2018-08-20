@@ -168,6 +168,8 @@ def tiff_to_binary(ops):
         if ops['first_tiffs'][ik]:
             iplane = 0
         im = io.imread(file)
+        if len(im.shape)<3:
+            im = np.expand_dims(im, axis=0)
         nframes = im.shape[0]
         for j in range(0,nplanes):
             i0 = nchannels * ((iplane+j)%nplanes)

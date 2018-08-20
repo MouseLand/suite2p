@@ -66,10 +66,10 @@ def run_s2p(ops={},db={}):
         ops['save_path0'] = ops['data_path'][0]
     # check if there are files already registered
     fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
-    files_found_flag = True
     if os.path.isfile(fpathops1):
-        ops1 = np.load(fpathops1)
         files_found_flag = True
+        flag_binreg = True
+        ops1 = np.load(fpathops1)
         for i,op in enumerate(ops1):
             # default behavior is to look in the ops
             flag_reg = os.path.isfile(op['reg_file'])
@@ -80,6 +80,8 @@ def run_s2p(ops={},db={}):
                 op['reg_file'] = os.path.join(op['save_path'], 'data.bin')
                 flag_reg = os.path.isfile(op['reg_file'])
             files_found_flag &= flag_reg
+            if 'refImg' not in op:
+                flag_binreg = False
             # use the new options
             ops1[i] = {**op, **ops}
             ops1[i] = ops1[i].copy()
@@ -89,6 +91,7 @@ def run_s2p(ops={},db={}):
             ops1[i]['yrange'] = op['yrange']
     else:
         files_found_flag = False
+        flag_binreg = False
     ######### REGISTRATION #########
     if not files_found_flag:
         # get default options
@@ -102,10 +105,11 @@ def run_s2p(ops={},db={}):
         else:
             ops1 = utils.tiff_to_binary(ops)
             print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
-        # register tiff
-        ops1 = register.register_binary(ops1)
         # save ops1
-        np.save(fpathops1, ops1)
+        np.save(fpathops1, ops1)    
+    if not flag_binreg:
+        ops1 = register.register_binary(ops1) # register tiff
+        np.save(fpathops1, ops1) # save ops1
         print('time %4.4f. Registration complete'%toc(i0))
     else:
         print('found ops1 and pre-registered binaries')

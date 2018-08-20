@@ -4,8 +4,8 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 import os
 from sklearn.linear_model  import LogisticRegression
-from suite2p import fig, gui
-import time
+from suite2p import fig
+import shutil
 
 class Classifier:
     def __init__(self, classfile=None):
@@ -122,7 +122,7 @@ def load_data(parent,keys,trainfiles):
                     # add iscell and stat to classifier
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
-                    stats = get_stat_keys(stat,parent.model.keys)
+                    stats = get_stat_keys(stat,parent.default_keys)
                     train_stats = np.concatenate((train_stats,stats),axis=0)
                     train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
@@ -222,7 +222,7 @@ def disable(parent):
 class ListChooser(QtGui.QDialog):
     def __init__(self, Text, parent=None):
         super(ListChooser, self).__init__(parent)
-        self.setGeometry(300,300,300,320)
+        self.setGeometry(300,300,500,320)
         self.setWindowTitle(Text)
         self.win = QtGui.QWidget(self)
         layout = QtGui.QGridLayout()
@@ -232,25 +232,28 @@ class ListChooser(QtGui.QDialog):
         loadcell.resize(200,50)
         loadcell.clicked.connect(self.load_cell)
         layout.addWidget(loadcell,0,0,1,1)
-        loadtext = QtGui.QPushButton('Load txt file')
-        loadcell.resize(200,50)
-        #loadtext.resize(loadtext.minimumSizeHint())
+        loadtext = QtGui.QPushButton('Load txt file list')
         loadtext.clicked.connect(self.load_text)
         layout.addWidget(loadtext,0,1,1,1)
         layout.addWidget(QtGui.QLabel('(select multiple using ctrl)'),1,0,1,1)
         self.list = QtGui.QListWidget(parent)
-        layout.addWidget(self.list,2,0,5,3)
+        layout.addWidget(self.list,2,0,5,4)
         #self.list.resize(450,250)
         self.list.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        save = QtGui.QPushButton('save files to classifier')
+        save = QtGui.QPushButton('build classifier')
         save.clicked.connect(lambda: self.build_classifier(parent))
         layout.addWidget(save,8,0,1,1)
-        apply = QtGui.QPushButton('load in GUI')
-        apply.clicked.connect(lambda: self.apply_class(parent))
-        layout.addWidget(apply,8,1,1,1)
-        done = QtGui.QPushButton('done')
-        done.clicked.connect(lambda: self.exit_list(parent))
-        layout.addWidget(done,8,2,1,1)
+        self.apply = QtGui.QPushButton('load in GUI')
+        self.apply.clicked.connect(lambda: self.apply_class(parent))
+        self.apply.setEnabled(False)
+        layout.addWidget(self.apply,8,1,1,1)
+        self.saveasdefault = QtGui.QPushButton('save as default')
+        self.saveasdefault.clicked.connect(lambda: self.save_default(parent))
+        self.saveasdefault.setEnabled(False)
+        layout.addWidget(self.saveasdefault,8,2,1,1)
+        done = QtGui.QPushButton('close')
+        done.clicked.connect(self.exit_list)
+        layout.addWidget(done,8,3,1,1)
 
     def load_cell(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
@@ -294,15 +297,27 @@ class ListChooser(QtGui.QDialog):
                 parent.trainfiles.append(self.list.item(r).text())
         if len(parent.trainfiles)>0:
             print('Populating classifier:')
-            keys = parent.model.keys
+            keys = parent.default_keys
             loaded = load_data(parent, keys, parent.trainfiles)
             if loaded:
                 msg = QtGui.QMessageBox.information(parent,'Classifier saved',
                                                     'Classifier built from valid files and saved.')
+                self.apply.setEnabled(True)
+                self.saveasdefault.setEnabled(True)
 
     def apply_class(self, parent):
         parent.model = Classifier(classfile=parent.classfile)
         activate(parent, True)
+
+    def save_default(self, parent):
+        dm = QtGui.QMessageBox.question(self,'Default classifier',
+                                        'Are you sure you want to overwrite your default classifier?',
+                                        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        if dm == QtGui.QMessageBox.Yes:
+            classorig = parent.classfile
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             '..','classifiers/classifier_user.npy')
+            shutil.copy(classorig, classfile)
 
     def exit_list(self):
         self.accept()

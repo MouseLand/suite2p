@@ -73,7 +73,7 @@ class MainW(QtGui.QMainWindow):
         self.addToClass = QtGui.QAction('Add current dataset to classifier',self)
         self.addToClass.triggered.connect(lambda: classifier.add_to(self))
         self.addToClass.setEnabled(False)
-        self.saveDefault = QtGui.QAction('Set current classifier as default', self)
+        self.saveDefault = QtGui.QAction('Save current classifier as default', self)
         self.saveDefault.triggered.connect(self.class_default)
         self.saveDefault.setEnabled(False)
         self.resetDefault =  QtGui.QAction('Reset default classifier to suite2p classifier', self)
@@ -224,7 +224,6 @@ class MainW(QtGui.QMainWindow):
                         colorbarW.addLabel('1.0',color=[255,255,255],row=1,col=2)]
         #### ----- CLASSIFIER BUTTONS ------- ####
         applyclass = QtGui.QPushButton(' apply classifier')
-        applyclass.resize(100,50)
         applyclass.clicked.connect(lambda: classifier.apply(self))
         cllabel = QtGui.QLabel("")
         cllabel.setFont(boldfont)
@@ -235,6 +234,9 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(plabel,self.bend+1,0,1,1)
         applyclass.setEnabled(False)
         applyclass.setStyleSheet(self.styleUnpressed)
+        addtoclass = QtGui.QPushButton(' add current data to classifier')
+        addtoclass.clicked.connect(lambda: classifier.add_to(self))
+        addtoclass.setStyleSheet(self.styleUnpressed)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
         self.probedit.setMaximum(1.0)
@@ -244,9 +246,10 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setFixedWidth(55)
         self.l0.addWidget(self.probedit,self.bend+1,0,1,1)
         self.l0.addWidget(applyclass,self.bend+2,0,1,1)
+        self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
         self.classbtns = QtGui.QButtonGroup(self)
         self.classbtns.addButton(applyclass,0)
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+3,0,1,1)
+        self.classbtns.addButton(addtoclass,1)
         #### ------ CELL STATS -------- ####
         # which stats
         self.bend = self.bend+4
@@ -306,7 +309,11 @@ class MainW(QtGui.QMainWindow):
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
-        print(self.classfile)
+        self.classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                          '..','classifiers/classifier.npy')
+        model = np.load(self.classorig)
+        model = model.item()
+        self.default_keys = model['keys']
         self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
         self.load_proc()
@@ -751,22 +758,21 @@ class MainW(QtGui.QMainWindow):
 
     def class_default(self):
         dm = QtGui.QMessageBox.question(self,'Default classifier',
-                                        'Are you sure you want to overwrite default classifier (this can be undone by resetting the default classifier)?',
+                                        'Are you sure you want to overwrite your default classifier?',
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
-            classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             '..','classifiers/classifier_user.npy')
             np.save(classfile, self.model)
 
     def reset_default(self):
         dm = QtGui.QMessageBox.question(self,'Default classifier',
-                                        'Are you sure you want to reset default classifier to built-in suite2p classifier (this action CANNOT be undone, make sure your classifier is saved somewhere locally if you care about it)?',
+                                        'Are you sure you want to reset the default classifier to the built-in suite2p classifier?',
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
-            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier.npy')
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                              '..','classifiers/classifier_user.npy')
-            shutil.copy(classorig, classfile)
+            shutil.copy(self.classorig, classfile)
     #def save_gui_data(self):
     #    gui_data = {
     #                'RGBall': self.RGBall,

@@ -3,9 +3,8 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 import os
-import pickle
+import shutil
 from suite2p import fig, gui, classifier, visualize
-import time
 
 #class EventWidget(QtGui.QWidget):
 #    def __init__(self,parent=None):
@@ -67,30 +66,25 @@ class MainW(QtGui.QMainWindow):
         self.loadClass.setShortcut('Ctrl+K')
         self.loadClass.triggered.connect(self.load_classifier)
         self.loadClass.setEnabled(False)
-        self.loadTrain = QtGui.QAction('Train classifier (choose iscell.npy files)', self)
-        self.loadTrain.setShortcut('Ctrl+T')
-        self.loadTrain.triggered.connect(lambda: classifier.load_data(self))
+        self.loadTrain = QtGui.QAction('Build classifier (choose iscell.npy files)', self)
+        self.loadTrain.setShortcut('Ctrl+B')
+        self.loadTrain.triggered.connect(lambda: classifier.load_list(self))
         self.loadTrain.setEnabled(False)
-        self.saveClass = QtGui.QAction('&Save classifier', self)
-        self.saveClass.setShortcut('Ctrl+S')
-        self.saveClass.triggered.connect(lambda: classifier.save(self))
-        self.saveClass.setEnabled(False)
-        self.saveDefault = QtGui.QAction('Save classifier as default', self)
-        self.saveDefault.triggered.connect(self.class_default)
-        self.saveDefault.setEnabled(False)
-        self.addToClass = QtGui.QAction('add current data \n to classifier',self)
+        self.addToClass = QtGui.QAction('Add current dataset to classifier',self)
         self.addToClass.triggered.connect(lambda: classifier.add_to(self))
         self.addToClass.setEnabled(False)
-        self.saveTrain = QtGui.QAction('Save training list', self)
-        self.saveTrain.triggered.connect(lambda: classifier.save_list(self))
-        self.saveTrain.setEnabled(False)
+        self.saveDefault = QtGui.QAction('Set current classifier as default', self)
+        self.saveDefault.triggered.connect(self.class_default)
+        self.saveDefault.setEnabled(False)
+        self.resetDefault =  QtGui.QAction('Reset default classifier to suite2p classifier', self)
+        self.resetDefault.triggered.connect(self.reset_default)
+        self.resetDefault.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
         class_menu.addAction(self.loadClass)
         class_menu.addAction(self.loadTrain)
-        class_menu.addAction(self.saveClass)
-        class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.addToClass)
-        class_menu.addAction(self.saveTrain)
+        class_menu.addAction(self.saveDefault)
+        class_menu.addAction(self.resetDefault)
         # visualizations menuBar
         self.visualizations = QtGui.QAction('&Visualize selected cells', self)
         self.visualizations.triggered.connect(self.vis_window)
@@ -314,9 +308,9 @@ class MainW(QtGui.QMainWindow):
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          '..','classifiers/classifier_user.npy')
         print(self.classfile)
-        #self.fname = '/media/carsen/DATA2/Github/data3/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
-        #self.load_proc()
+        self.load_proc()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:
@@ -512,7 +506,8 @@ class MainW(QtGui.QMainWindow):
         self.p1.setAspectLocked(lock=True, ratio=self.xyrat)
         self.p2.setAspectLocked(lock=True, ratio=self.xyrat)
         self.show()
-        # default classifier always loaded
+        # default classifier always loaded (but not applied)
+        self.model = classifier.Classifier(self.classfile)
         classifier.activate(self, False)
 
     def enable_views_and_classifier(self):
@@ -541,10 +536,9 @@ class MainW(QtGui.QMainWindow):
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
-        self.saveClass.setEnabled(True)
-        self.saveDefault.setEnabled(True)
         self.addToClass.setEnabled(True)
-        self.saveTrain.setEnabled(True)
+        self.saveDefault.setEnabled(True)
+        self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
 
     def ROIs_on(self,state):
@@ -752,14 +746,28 @@ class MainW(QtGui.QMainWindow):
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
-            classifier.load(self, name[0], True)
+            classifier.load(self, name[0])
         else:
             print('no classifier')
 
     def class_default(self):
-        classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
-        np.save(classfile, self.model)
+        dm = QtGui.QMessageBox.question(self,'Default classifier',
+                                        'Are you sure you want to overwrite default classifier (this can be undone by resetting the default classifier)?',
+                                        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        if dm == QtGui.QMessageBox.Yes:
+            classfile = os.path.join(os.path.dirname(__file__), 'classifier_user.npy')
+            np.save(classfile, self.model)
 
+    def reset_default(self):
+        dm = QtGui.QMessageBox.question(self,'Default classifier',
+                                        'Are you sure you want to reset default classifier to built-in suite2p classifier (this action CANNOT be undone, make sure your classifier is saved somewhere locally if you care about it)?',
+                                        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        if dm == QtGui.QMessageBox.Yes:
+            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             '..','classifiers/classifier.npy')
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             '..','classifiers/classifier_user.npy')
+            shutil.copy(classorig, classfile)
     #def save_gui_data(self):
     #    gui_data = {
     #                'RGBall': self.RGBall,
@@ -779,7 +787,7 @@ def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                     'logo/logo.png')
+                    '..','logo/logo.png')
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16,16))
     app_icon.addFile(icon_path, QtCore.QSize(24,24))

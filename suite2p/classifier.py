@@ -54,7 +54,7 @@ class Classifier:
         for j in range(nodes-1):
             for k in range(nstats):
                 p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
-        p = filters.gaussian_filter(p, (2., 0))
+        p = gaussian_filter(p, (2., 0))
         logp = self.get_logp(trainstats, grid, p)
         logisticRegr = sklearn.LogisticRegression(C = 100.)
         logisticRegr.fit(logp, iscell)

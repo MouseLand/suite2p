@@ -29,56 +29,49 @@ class Classifier:
             print('ERROR: incorrect classifier file')
             self.loaded = False
 
-    def get_logp(self, teststats, grid, p):
-        nroi, nstats = teststats.shape
-        logp = np.zeros((nroi,nstats))
-        for n in range(nstats):
-            x = teststats[:,n]
-            x[x<grid[0,n]]   = grid[0,n]
-            x[x>grid[-1,n]]  = grid[-1,n]
-            ibin = np.digitize(x, grid[:,n], right=True) - 1
-            logp[:,n] = np.log(p[ibin,n] + 1e-6) - np.log(1-p[ibin,n] + 1e-6)
-        return logp
-
     def apply(self, stat):
-        trainstats = self.stats
-        iscell     = self.iscell
-        keys       = self.keys
-        nodes = 100
-        nroi, nstats = trainstats.shape
-        ssort= np.sort(trainstats, axis=0)
-        isort= np.argsort(trainstats, axis=0)
-        ix = np.linspace(0, nroi-1, nodes).astype('int32')
-        grid = ssort[ix, :]
-        p = np.zeros((nodes-1,nstats))
-        for j in range(nodes-1):
-            for k in range(nstats):
-                p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
-        p = gaussian_filter(p, (2., 0))
-        logp = self.get_logp(trainstats, grid, p)
-        logisticRegr = LogisticRegression(C = 100.)
-        logisticRegr.fit(logp, iscell)
-        # now get logP from the test data
-        teststats = get_stat_keys(stat, keys)
-        logp = self.get_logp(teststats, grid, p)
-        y_pred = logisticRegr.predict_proba(logp)
-        y_pred = y_pred[:,1]
+        y_pred     = probability(stat,self.stats,self.iscell,self.keys)
         return y_pred
 
-    def save(self, fname):
-        model = {}
-        model['stats']  = self.stats
-        model['iscell'] = self.iscell
-        model['keys']   = self.keys
-        print('saving classifier in ' + fname)
-        np.save(fname, model)
+def get_logp(test_stats, grid, p):
+    nroi, nstats = test_stats.shape
+    logp = np.zeros((nroi,nstats))
+    for n in range(nstats):
+        x = test_stats[:,n]
+        x[x<grid[0,n]]   = grid[0,n]
+        x[x>grid[-1,n]]  = grid[-1,n]
+        ibin = np.digitize(x, grid[:,n], right=True) - 1
+        logp[:,n] = np.log(p[ibin,n] + 1e-6) - np.log(1-p[ibin,n] + 1e-6)
+    return logp
+
+def probability(stat, train_stats, train_iscell, keys):
+    nodes = 100
+    nroi, nstats = train_stats.shape
+    ssort= np.sort(train_stats, axis=0)
+    isort= np.argsort(train_stats, axis=0)
+    ix = np.linspace(0, nroi-1, nodes).astype('int32')
+    grid = ssort[ix, :]
+    p = np.zeros((nodes-1,nstats))
+    for j in range(nodes-1):
+        for k in range(nstats):
+            p[j, k] = np.mean(iscell[isort[ix[j]:ix[j+1], k]])
+    p = gaussian_filter(p, (2., 0))
+    logp = self.get_logp(train_stats, grid, p)
+    logisticRegr = LogisticRegression(C = 100.)
+    logisticRegr.fit(logp, iscell)
+    # now get logP from the test data
+    test_stats = get_stat_keys(stat, keys)
+    logp = get_logp(test_stats, grid, p)
+    y_pred = logisticRegr.predict_proba(logp)
+    y_pred = y_pred[:,1]
+    return y_pred
 
 def get_stat_keys(stat, keys):
-    teststats = np.zeros((len(stat), len(keys)))
+    test_stats = np.zeros((len(stat), len(keys)))
     for j in range(len(stat)):
         for k in range(len(keys)):
-            teststats[j,k] = stat[j][keys[k]]
-    return teststats
+            test_stats[j,k] = stat[j][keys[k]]
+    return test_stats
 
 def run(classfile,stat):
     model = Classifier(classfile=classfile)
@@ -109,7 +102,8 @@ def load_list(parent):
             activate(parent, True)
 
 def load_data(keys,trainfiles):
-    traindata = np.zeros((0,len(keys)),np.float32)
+    train_stats = np.zeros((0,len(keys)),np.float32)
+    train_iscell = np.zeros((0,),np.float32)
     trainfiles_good = []
     if trainfiles is not None:
         for fname in trainfiles:
@@ -137,10 +131,11 @@ def load_data(keys,trainfiles):
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
                     nall = get_stat_keys(stat,keys)
-                    traindata = np.concatenate((traindata,nall),axis=0)
+                    train_stats = np.concatenate((train_stats,nall),axis=0)
+                    train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
-    self.traindata = traindata
-    self.trainfiles = trainfiles
+    if len(trainfiles_good) > 0:
+        save(parent,train_stats,train_iscell,keys)
 
 
 def apply(parent):
@@ -155,11 +150,16 @@ def apply(parent):
     parent.lcell0.setText(' %d'%parent.iscell.sum())
     parent.lcell1.setText(' %d'%(parent.iscell.size-parent.iscell.sum()))
 
-def save(parent):
+def save(parent, train_stats, train_iscell, keys):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Save classifier')
     if name:
         try:
-            parent.model.save(name[0])
+            model = {}
+            model['stats']  = train_stats
+            model['iscell'] = train_iscell
+            model['keys']   = keys
+            print('saving classifier in ' + fname)
+            np.save(fname, model)
         except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
             print('ERROR: incorrect filename for saving')
 

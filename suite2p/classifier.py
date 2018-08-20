@@ -93,15 +93,16 @@ def load_list(parent):
     result = LC.exec_()
     if result:
         print('Populating classifier:')
-        model = Classifier(classfile=parent.classfile)
         keys = model.keys
-        parent.model = Classifier(classfile=None,
-                                           trainfiles=parent.trainfiles,
-                                           statclass=parent.statclass)
-        if parent.trainfiles is not None:
-            activate(parent, True)
+        loaded = load_data(parent, keys, parent.trainfiles)
+        if loaded:
+            parent.model = Classifier(classfile=parent.classfile)
+            if parent.trainfiles is not None:
+                activate(parent, True)
+        else:
+            print('No valid files, thus no classifier made')
 
-def load_data(keys,trainfiles):
+def load_data(parent,keys,trainfiles):
     train_stats = np.zeros((0,len(keys)),np.float32)
     train_iscell = np.zeros((0,),np.float32)
     trainfiles_good = []
@@ -135,8 +136,25 @@ def load_data(keys,trainfiles):
                     train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
     if len(trainfiles_good) > 0:
-        save(parent,train_stats,train_iscell,keys)
+        parent.classfile = save(parent,train_stats,train_iscell,keys)
+        loaded = True
+    else:
+        loaded = False
+    return loaded
 
+def add_to(parent):
+    fname = parent.basename+'/iscell.npy'
+    if hasattr(parent,'model'):
+        print('model')
+    else:
+        print('no model')
+
+    if len(ftrue)==0:
+        parent.trainfiles.append(parent.basename+'/iscell.npy')
+    print('Repopulating classifier including current dataset:')
+    parent.model = Classifier(classfile=None,
+                                       trainfiles=parent.trainfiles,
+                                       statclass=parent.statclass)
 
 def apply(parent):
     classval = parent.probedit.value()
@@ -162,6 +180,7 @@ def save(parent, train_stats, train_iscell, keys):
             np.save(fname, model)
         except (OSError, RuntimeError, TypeError, NameError,FileNotFoundError):
             print('ERROR: incorrect filename for saving')
+    return name
 
 def save_list(parent):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Save list of iscell.npy')
@@ -193,13 +212,3 @@ def disable(parent):
     parent.saveTrain.setEnabled(False)
     for btns in parent.classbtns.buttons():
         btns.setEnabled(False)
-
-def add_to(parent):
-    fname = parent.basename+'/iscell.npy'
-    ftrue =  [f for f in parent.trainfiles if fname in f]
-    if len(ftrue)==0:
-        parent.trainfiles.append(parent.basename+'/iscell.npy')
-    print('Repopulating classifier including current dataset:')
-    parent.model = Classifier(classfile=None,
-                                       trainfiles=parent.trainfiles,
-                                       statclass=parent.statclass)

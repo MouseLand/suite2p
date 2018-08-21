@@ -118,7 +118,7 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI_position()
         # buttons for computations
         self.PCOn = QtGui.QPushButton('compute PCs')
-        self.PCOn.clicked.connect(self.PC_on)
+        self.PCOn.clicked.connect(lambda: self.PC_on(True))
         self.l0.addWidget(self.PCOn,0,0,1,2)
         self.mapOn = QtGui.QPushButton('compute activity maps')
         self.mapOn.clicked.connect(self.map_on)
@@ -138,7 +138,7 @@ class VisWindow(QtGui.QMainWindow):
         self.img.setLevels([0,self.sat])
         self.imgROI.setLevels([0,self.sat])
 
-    def PC_on(self):
+    def PC_on(self, plot):
         # edit buttons
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
@@ -152,14 +152,14 @@ class VisWindow(QtGui.QMainWindow):
         self.comboBox.addItem("PC")
         self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
         self.compute_svd(self.bin)
-        self.comboBox.setCurrentIndex(0)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
-        self.neural_sorting(0)
+        if plot:
+            self.neural_sorting(0)
         self.PCOn.setEnabled(False)
 
     def map_on(self):
         if not hasattr(self,'u'):
-            self.PC_on()
+            self.PC_on(False)
         self.comboBox.addItem('activity map')
         tic = time.time()
         self.compute_map()

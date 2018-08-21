@@ -8,14 +8,9 @@ from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
 import sys
-<<<<<<< HEAD
 sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap import mapping
 from suite2p import gui
-=======
-from rastermap import mapping
-from suite2p import gui,fig
->>>>>>> a9c3fce3717662a83deff835cce508f23e86084a
 
 
 ### custom QDialog which allows user to fill in ops and run suite2p!

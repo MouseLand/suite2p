@@ -1,16 +1,17 @@
 from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
-from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter1d
-from scipy import ndimage
+from scipy.sparse.linalg import eigsh
 from scipy.stats import zscore
-import math
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
+import time
 import sys
-#sys.path.insert(0, 'C:/Users/carse/github/embeddings/map/')
-#import map
+sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
+import mapping
+from suite2p import gui
+
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -30,7 +31,7 @@ class VisWindow(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,0,0,10,14)
+        self.l0.addWidget(self.win,0,0,14,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
         self.p0 = self.win.addViewBox(row=0,col=0)
@@ -38,7 +39,7 @@ class VisWindow(QtGui.QMainWindow):
         self.p0.setMenuEnabled(False)
         self.p1 = self.win.addPlot(title="FULL VIEW",row=0,col=1)
         self.p1.setMouseEnabled(x=False,y=False)
-        self.img = pg.ImageItem()
+        self.img = pg.ImageItem(autoDownsample=True)
         self.p1.addItem(self.img)
         # cells to plot
         if len(parent.imerge)==1:
@@ -52,10 +53,8 @@ class VisWindow(QtGui.QMainWindow):
         sp = zscore(sp, axis=1)
         sp -= sp.min()
         sp /= sp.max()
-        sp *= 5
         sp = np.maximum(0, np.minimum(1, sp))
-        self.sp = sp
-        self.spF = self.sp
+        self.sp = np.maximum(0,np.minimum(1,sp))
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
         # draw axes
@@ -68,24 +67,36 @@ class VisWindow(QtGui.QMainWindow):
         nt = sp.shape[1]
         nn = sp.shape[0]
         self.p2 = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
-        self.imgROI = pg.ImageItem()
-        colormap = cm.get_cmap("viridis")  # cm.get_cmap("CMRmap")
-        colormap._init()
-        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
-        lut = lut[0:-3,:]
-        # Apply the colormap
-        self.img.setLookupTable(lut)
-        self.imgROI.setLookupTable(lut)
-        self.img.setLevels([0,1])
-        self.imgROI.setLevels([0,1])
+        self.imgROI = pg.ImageItem(autoDownsample=True)
         self.p2.addItem(self.imgROI)
         self.p2.setMouseEnabled(x=False,y=False)
         self.p2.setLabel('left', 'neurons')
         self.p2.setLabel('bottom', 'time')
+        # set colormap to viridis
+        colormap = cm.get_cmap("viridis")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+        lut = lut[0:-3,:]
+        # apply the colormap
+        self.img.setLookupTable(lut)
+        self.imgROI.setLookupTable(lut)
+        self.img.setLevels([0,1])
+        self.imgROI.setLevels([0,1])
         layout.setColumnStretchFactor(1,3)
         layout.setRowStretchFactor(1,3)
-        self.sp = np.maximum(0,np.minimum(1,self.sp))
-        self.img.setImage(self.sp)
+        # add slider for levels
+        self.sl = QtGui.QSlider(QtCore.Qt.Vertical)
+        self.sl.setMinimum(0)
+        self.sl.setMaximum(100)
+        self.sl.setValue(100)
+        self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
+        self.sl.setTickInterval(10)
+        self.sl.sliderReleased.connect(self.levelchange)
+        self.sat = 1.0
+        self.l0.addWidget(self.sl,0,2,5,1)
+        qlabel = gui.VerticalLabel(text='saturation')
+        #qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,1,3,3,1)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
                                 width=3,
@@ -93,7 +104,7 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI = pg.RectROI([nt*.25, -1], [nt*.25, nn+1],
                       maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
-        self.ROI.handleSize = 9
+        self.ROI.handleSize = 14
         self.ROI.handlePen = redpen
         # Add top and right Handles
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
@@ -101,59 +112,83 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
-        self.ROI_position()
+        self.neural_sorting(2)
         # buttons for computations
         self.PCOn = QtGui.QPushButton('compute PCs')
-        self.PCOn.clicked.connect(self.PC_on)
+        self.PCOn.clicked.connect(lambda: self.PC_on(True))
         self.l0.addWidget(self.PCOn,0,0,1,2)
         self.mapOn = QtGui.QPushButton('compute activity maps')
         self.mapOn.clicked.connect(self.map_on)
         self.l0.addWidget(self.mapOn,1,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,2,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),3,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.l0.setRowStretch(6, 1)
         self.win.show()
+        self.show()
 
+    def levelchange(self):
+        self.sat = float(self.sl.value())/100
+        self.img.setLevels([0,self.sat])
+        self.imgROI.setLevels([0,self.sat])
 
-    def PC_on(self):
+    def PC_on(self, plot):
         # edit buttons
-        self.comboBox.addItem("PC")
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
         self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(35)
+        self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
         qlabel = QtGui.QLabel('PC: ')
         qlabel.setStyleSheet('color: white;')
         self.l0.addWidget(qlabel,3,0,1,1)
         self.l0.addWidget(self.PCedit,3,1,1,1)
+        self.comboBox.addItem("PC")
+        self.PCedit.returnPressed.connect(self.PCreturn)
         self.compute_svd(self.bin)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
-        self.comboBox.setCurrentIndex(1)
+        if plot:
+            self.neural_sorting(0)
         self.PCOn.setEnabled(False)
 
+    def PCreturn(self):
+        self.comboBox.setCurrentIndex(0)
+        self.neural_sorting(0)
+
     def map_on(self):
-        if u not in self:
-            self.comboBox.addItem('PC')
-            self.compute_svd(self.bin)
-        self.comboBox.addItem('Activity map')
+        if not hasattr(self,'u'):
+            self.PC_on(False)
+        self.comboBox.addItem('activity map')
+        tic = time.time()
         self.compute_map()
-        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        print('activity map computed in %3.2f s'%(time.time()-tic))
         self.comboBox.setCurrentIndex(1)
+        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        self.neural_sorting(1)
         self.PCOn.setEnabled(False)
         self.mapOn.setEnabled(False)
 
     def compute_map(self):
-        self.isort1, self.isort2 = map.main(self.sp,None,self.u,self.sv,self.v)
+        self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
     def compute_svd(self,bin):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
         spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
         spbin = np.squeeze(spbin.mean(axis=1))
-        usv = np.linalg.svd(spbin, full_matrices=1)
-        self.u = usv[0]
-        self.sv = usv[1]
-        self.v = usv[2]
+        tic=time.time()
+        nmin = min([spbin.shape[0],spbin.shape[1]])
+        nmin = np.minimum(nmin-1, 200)
+        spbin -= spbin.mean(axis=1)[:,np.newaxis]
+        self.sv,self.u = eigsh(np.dot(spbin,spbin.T), k=nmin)
+        # these eigenvectors are in the opposite order
+        self.sv = self.sv[::-1]
+        self.u  = self.u[:,::-1]
+        self.sv = self.sv ** 0.5
+        self.v = (self.sp-self.sp.mean(axis=1)[:,np.newaxis]).T @ self.u
+        print('svd computed in %3.2f s'%(time.time()-tic))
 
     def ROI_position(self):
         pos = self.ROI.pos()
@@ -167,17 +202,30 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.sp.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
-        self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
-                                           xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
+        axy = self.p2.getAxis('left')
+        axx = self.p2.getAxis('bottom')
+        axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        axx.setTicks([[(0.0,str(xrange[0])),(float(xrange.size),str(xrange[-1]))]])
+        # bug in range, going to comment out for now
+        #self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
+        #                                   xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
+        self.imgROI.setLevels([0,self.sat])
 
     def neural_sorting(self,i):
         if i==0:
             isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
-        else:
+        elif i==1:
             isort = self.isort1
-        self.spF = gaussian_filter1d(self.sp[isort,:],
-                                     self.sp.shape[0]*0.02,
-                                     axis=0)
-        self.spF = np.maximum(0,np.minimum(1,self.spF))
+        if i<2:
+            self.spF = gaussian_filter1d(self.sp[isort,:].T,
+                                        np.minimum(10,np.maximum(1,int(self.sp.shape[0]*0.01))),
+                                        axis=1)
+            self.spF = self.spF.T
+        else:
+            self.spF = self.sp
+        self.spF = zscore(self.spF, axis=1)
+        self.spF = np.minimum(8, self.spF)
+        self.spF = np.maximum(0, self.spF)
+        self.spF /= 8
         self.img.setImage(self.spF)
         self.ROI_position()

@@ -43,14 +43,10 @@ def plot_trace(parent):
         pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]
         k=len(pmerge)-1
         for n in pmerge[::-1]:
-            f = parent.Fcell[n,:]
-            fneu = parent.Fneu[n,:]
-            sp = parent.Spks[n,:]
-            fmax = np.maximum(f.max(), fneu.max())
-            fmin = np.minimum(f.min(), fneu.min())
+            f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
+            fmax = f.max()
+            fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
-            fneu = (fneu - fmin) / (fmax - fmin)
-            sp = (sp - sp.min()) / (sp.max() - sp.min())
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
@@ -112,7 +108,8 @@ def make_colors(parent):
     # make colors for pairwise correlations
     bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
     nb   = int(np.floor(parent.Fcell.shape[1] / bin))
-    parent.Fbin = parent.Fcell[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
+    f = parent.Fcell - 0.7 * parent.Fneu
+    parent.Fbin = f[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
     parent.Fbin = parent.Fbin - parent.Fbin.mean(axis=1)[:,np.newaxis]
     parent.Fstd = (parent.Fbin**2).sum(axis=1)
     #parent.ops_plot[4] = corrcols

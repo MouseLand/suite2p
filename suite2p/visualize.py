@@ -8,9 +8,8 @@ from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
 import sys
-#sys.path.insert(0, '/media/carsen/DATA2/Github/dynamap/dynamap/')
-sys.path.insert(0, 'C:/Users/carse/github/embeddings/dynamap/')
-import map
+sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
+import mapping
 from suite2p import gui
 
 
@@ -56,11 +55,9 @@ class VisWindow(QtGui.QMainWindow):
         sp /= sp.max()
         sp = np.maximum(0, np.minimum(1, sp))
         self.sp = np.maximum(0,np.minimum(1,sp))
-        self.spF = self.sp
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
         # draw axes
-        self.img.setImage(self.sp)
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
         self.p1.setLimits(xMin=-10,xMax=sp.shape[1]+10,yMin=-10,yMax=sp.shape[0]+10)
@@ -107,7 +104,7 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI = pg.RectROI([nt*.25, -1], [nt*.25, nn+1],
                       maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
-        self.ROI.handleSize = 9
+        self.ROI.handleSize = 14
         self.ROI.handlePen = redpen
         # Add top and right Handles
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
@@ -115,7 +112,7 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
-        self.ROI_position()
+        self.neural_sorting(2)
         # buttons for computations
         self.PCOn = QtGui.QPushButton('compute PCs')
         self.PCOn.clicked.connect(lambda: self.PC_on(True))
@@ -150,12 +147,16 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(qlabel,3,0,1,1)
         self.l0.addWidget(self.PCedit,3,1,1,1)
         self.comboBox.addItem("PC")
-        self.PCedit.returnPressed.connect(lambda: self.neural_sorting(0))
+        self.PCedit.returnPressed.connect(self.PCreturn)
         self.compute_svd(self.bin)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
         if plot:
             self.neural_sorting(0)
         self.PCOn.setEnabled(False)
+
+    def PCreturn(self):
+        self.comboBox.setCurrentIndex(0)
+        self.neural_sorting(0)
 
     def map_on(self):
         if not hasattr(self,'u'):
@@ -171,16 +172,22 @@ class VisWindow(QtGui.QMainWindow):
         self.mapOn.setEnabled(False)
 
     def compute_map(self):
-        self.isort1, self.isort2 = map.main(self.sp,None,self.u,self.sv,self.v)
+        self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
     def compute_svd(self,bin):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
         spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
         spbin = np.squeeze(spbin.mean(axis=1))
         tic=time.time()
-        self.sv,self.u = eigsh(spbin @ spbin.T, k=200)
+        nmin = min([spbin.shape[0],spbin.shape[1]])
+        nmin = np.minimum(nmin-1, 200)
+        spbin -= spbin.mean(axis=1)[:,np.newaxis]
+        self.sv,self.u = eigsh(np.dot(spbin,spbin.T), k=nmin)
+        # these eigenvectors are in the opposite order
+        self.sv = self.sv[::-1]
+        self.u  = self.u[:,::-1]
         self.sv = self.sv ** 0.5
-        self.v = (self.sp).T @ self.u
+        self.v = (self.sp-self.sp.mean(axis=1)[:,np.newaxis]).T @ self.u
         print('svd computed in %3.2f s'%(time.time()-tic))
 
     def ROI_position(self):
@@ -195,8 +202,13 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.sp.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
-        self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
-                                           xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
+        axy = self.p2.getAxis('left')
+        axx = self.p2.getAxis('bottom')
+        axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        axx.setTicks([[(0.0,str(xrange[0])),(float(xrange.size),str(xrange[-1]))]])
+        # bug in range, going to comment out for now
+        #self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
+        #                                   xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
         self.imgROI.setLevels([0,self.sat])
 
     def neural_sorting(self,i):
@@ -204,11 +216,16 @@ class VisWindow(QtGui.QMainWindow):
             isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
         elif i==1:
             isort = self.isort1
-        self.spF = gaussian_filter1d(self.sp[isort,:].T,
-                                     self.sp.shape[0]*0.005,
-                                     axis=1)
-        self.spF = self.spF.T
-        self.spF -= self.spF.min()
-        self.spF /= self.spF.max()
+        if i<2:
+            self.spF = gaussian_filter1d(self.sp[isort,:].T,
+                                        np.minimum(10,np.maximum(1,int(self.sp.shape[0]*0.01))),
+                                        axis=1)
+            self.spF = self.spF.T
+        else:
+            self.spF = self.sp
+        self.spF = zscore(self.spF, axis=1)
+        self.spF = np.minimum(8, self.spF)
+        self.spF = np.maximum(0, self.spF)
+        self.spF /= 8
         self.img.setImage(self.spF)
         self.ROI_position()

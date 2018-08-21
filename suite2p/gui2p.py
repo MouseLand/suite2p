@@ -456,6 +456,8 @@ class MainW(QtGui.QMainWindow):
             else:
                 self.p2.removeItem(self.ROI)
             self.isROI=False
+            self.topbtns.button(0).setStyleSheet(self.styleUnpressed)
+            self.topbtns.button(3).setStyleSheet(self.styleUnpressed)
 
     def ROI_position(self):
         pos0 = self.ROI.getSceneHandlePositions()
@@ -526,8 +528,9 @@ class MainW(QtGui.QMainWindow):
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
             ycirc,xcirc = fig.circle(self.stat[n]['med'],self.stat[n]['radius'])
-            self.stat[n]['ycirc'] = ycirc
-            self.stat[n]['xcirc'] = xcirc
+            goodi = (ycirc>=0) & (xcirc>=0) & (ycirc<self.ops['Ly']) & (xcirc<self.ops['Lx'])
+            self.stat[n]['ycirc'] = ycirc[goodi]
+            self.stat[n]['xcirc'] = xcirc[goodi]
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views

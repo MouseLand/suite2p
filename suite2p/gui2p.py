@@ -18,7 +18,7 @@ class MainW(QtGui.QMainWindow):
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                         '..','logo/logo.png')
+                         'logo/logo.png')
         app_icon = QtGui.QIcon()
         app_icon.addFile(icon_path, QtCore.QSize(16,16))
         app_icon.addFile(icon_path, QtCore.QSize(24,24))
@@ -312,9 +312,9 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(slabel, self.bend+9+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy')
+                         'classifiers/classifier_user.npy')
         self.classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                          '..','classifiers/classifier.npy')
+                                          'classifiers/classifier.npy')
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
@@ -814,15 +814,15 @@ class MainW(QtGui.QMainWindow):
 
     def load_default_classifier(self):
         classifier.load(self, os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy'))
+                         'classifiers/classifier_user.npy'))
         self.class_activated()
 
     def class_file(self):
         if self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy'):
+                         'classifiers/classifier_user.npy'):
             cfile = 'default classifier'
         elif self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier.npy'):
+                             'classifiers/classifier.npy'):
             cfile = 'suite2p classifier'
         else:
             cfile = self.classfile
@@ -841,7 +841,7 @@ class MainW(QtGui.QMainWindow):
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier_user.npy')
+                             'classifiers/classifier_user.npy')
             np.save(classfile, self.model)
 
     def reset_default(self):
@@ -850,7 +850,7 @@ class MainW(QtGui.QMainWindow):
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier_user.npy')
+                             'classifiers/classifier_user.npy')
             shutil.copy(self.classorig, classfile)
     #def save_gui_data(self):
     #    gui_data = {
@@ -871,7 +871,7 @@ def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                    '..','logo/logo.png')
+                    'logo/logo.png')
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16,16))
     app_icon.addFile(icon_path, QtCore.QSize(24,24))

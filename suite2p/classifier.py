@@ -143,7 +143,7 @@ def add_to(parent):
     fname = parent.basename+'/iscell.npy'
     print('Adding current dataset to classifier')
     if parent.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                     '..','classifiers/classifier_user.npy'):
+                     'classifiers/classifier_user.npy'):
         cfile = 'the default classifier'
     else:
         cfile = parent.classfile
@@ -322,7 +322,7 @@ class ListChooser(QtGui.QDialog):
         if dm == QtGui.QMessageBox.Yes:
             classorig = parent.classfile
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier_user.npy')
+                             'classifiers/classifier_user.npy')
             shutil.copy(classorig, classfile)
 
     def exit_list(self):

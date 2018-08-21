@@ -9,7 +9,7 @@ from matplotlib import cm
 import time
 import sys
 sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
-import mapping
+from rastermap import mapping
 from suite2p import gui
 
 

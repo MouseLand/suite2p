@@ -338,5 +338,5 @@ def pick_init(ops):
     nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
     refImg = pick_init_init(ops, frames)
-    refImg, freg, ymax, xmax, cmax = refine_init_init(ops, frames, refImg)
+    refImg = refine_init_init(ops, frames, refImg)
     return refImg

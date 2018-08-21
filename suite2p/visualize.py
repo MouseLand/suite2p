@@ -1,15 +1,15 @@
 from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
-from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter1d
-from scipy import ndimage
+from scipy.sparse.linalg import eigsh
 from scipy.stats import zscore
-import math
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
+import time
 import sys
-sys.path.insert(0, '/media/carsen/DATA2/Github/dynamap/dynamap/')
+#sys.path.insert(0, '/media/carsen/DATA2/Github/dynamap/dynamap/')
+sys.path.insert(0, 'C:/Users/carse/github/embeddings/dynamap/')
 import map
 from suite2p import gui
 
@@ -40,7 +40,7 @@ class VisWindow(QtGui.QMainWindow):
         self.p0.setMenuEnabled(False)
         self.p1 = self.win.addPlot(title="FULL VIEW",row=0,col=1)
         self.p1.setMouseEnabled(x=False,y=False)
-        self.img = pg.ImageItem()
+        self.img = pg.ImageItem(autoDownsample=True)
         self.p1.addItem(self.img)
         # cells to plot
         if len(parent.imerge)==1:
@@ -70,7 +70,7 @@ class VisWindow(QtGui.QMainWindow):
         nt = sp.shape[1]
         nn = sp.shape[0]
         self.p2 = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
-        self.imgROI = pg.ImageItem()
+        self.imgROI = pg.ImageItem(autoDownsample=True)
         self.p2.addItem(self.imgROI)
         self.p2.setMouseEnabled(x=False,y=False)
         self.p2.setLabel('left', 'neurons')
@@ -95,6 +95,7 @@ class VisWindow(QtGui.QMainWindow):
         self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
         self.sl.setTickInterval(10)
         self.sl.sliderReleased.connect(self.levelchange)
+        self.sat = 1.0
         self.l0.addWidget(self.sl,0,2,5,1)
         qlabel = gui.VerticalLabel(text='saturation')
         #qlabel.setStyleSheet('color: white;')
@@ -133,7 +134,9 @@ class VisWindow(QtGui.QMainWindow):
         self.show()
 
     def levelchange(self):
-        self.imgROI.setImage(self.sp)
+        self.sat = float(self.sl.value())/100
+        self.img.setLevels([0,self.sat])
+        self.imgROI.setLevels([0,self.sat])
 
     def PC_on(self):
         # edit buttons
@@ -157,8 +160,10 @@ class VisWindow(QtGui.QMainWindow):
     def map_on(self):
         if not hasattr(self,'u'):
             self.PC_on()
-        self.comboBox.addItem('Activity map')
+        self.comboBox.addItem('activity map')
+        tic = time.time()
         self.compute_map()
+        print('activity map computed in %3.2f s'%(time.time()-tic))
         self.comboBox.setCurrentIndex(1)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
         self.neural_sorting(1)
@@ -172,10 +177,11 @@ class VisWindow(QtGui.QMainWindow):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
         spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
         spbin = np.squeeze(spbin.mean(axis=1))
-        usv = np.linalg.svd(spbin, full_matrices=0)
-        self.u = usv[0]
-        self.sv = usv[1]
-        self.v = usv[2]
+        tic=time.time()
+        self.sv,self.u = eigsh(spbin @ spbin.T, k=200)
+        self.sv = self.sv ** 0.5
+        self.v = (self.sp).T @ self.u
+        print('svd computed in %3.2f s'%(time.time()-tic))
 
     def ROI_position(self):
         pos = self.ROI.pos()
@@ -191,15 +197,18 @@ class VisWindow(QtGui.QMainWindow):
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
         self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
                                            xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
+        self.imgROI.setLevels([0,self.sat])
 
     def neural_sorting(self,i):
         if i==0:
             isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
         elif i==1:
             isort = self.isort1
-        self.spF = gaussian_filter1d(self.sp[isort,:],
-                                     self.sp.shape[0]*0.02,
-                                     axis=0)
-        self.spF = np.maximum(0,np.minimum(1,self.spF))
+        self.spF = gaussian_filter1d(self.sp[isort,:].T,
+                                     self.sp.shape[0]*0.005,
+                                     axis=1)
+        self.spF = self.spF.T
+        self.spF -= self.spF.min()
+        self.spF /= self.spF.max()
         self.img.setImage(self.spF)
         self.ROI_position()

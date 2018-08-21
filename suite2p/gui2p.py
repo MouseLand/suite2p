@@ -1,11 +1,11 @@
 from PyQt5 import QtGui, QtCore
+from suite2p import fig, gui, classifier, visualize
 import pyqtgraph as pg
-import sys
 import numpy as np
+import sys
 import os
 import shutil
-from suite2p import fig, gui, classifier, visualize
-
+import time
 #class EventWidget(QtGui.QWidget):
 #    def __init__(self,parent=None):
 #        super(EventWidget, self, parent).__init__()
@@ -30,6 +30,7 @@ class MainW(QtGui.QMainWindow):
         self.setStyleSheet("QMainWindow {background: 'black';}")
         self.stylePressed = "QPushButton {Text-align: left; background-color: rgb(100,50,100); color:white;}"
         self.styleUnpressed = "QPushButton {Text-align: left; background-color: rgb(50,50,50); color:white;}"
+        self.styleInactive = "QPushButton {Text-align: left; background-color: rgb(50,50,50); color:gray;}"
         self.loaded = False
         self.ops_plot = []
         # default plot options
@@ -62,27 +63,25 @@ class MainW(QtGui.QMainWindow):
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['skew','compact','aspect_ratio','footprint']
-        self.loadClass = QtGui.QAction('Load classifier', self)
-        self.loadClass.setShortcut('Ctrl+K')
+        self.loadClass = QtGui.QAction('Load', self)
         self.loadClass.triggered.connect(self.load_classifier)
         self.loadClass.setEnabled(False)
-        self.loadTrain = QtGui.QAction('Build classifier (choose iscell.npy files)', self)
-        self.loadTrain.setShortcut('Ctrl+B')
+        self.loadSClass = QtGui.QAction('Load suite2p classifier', self)
+        self.loadSClass.triggered.connect(self.load_s2p_classifier)
+        self.loadSClass.setEnabled(False)
+        self.loadTrain = QtGui.QAction('Build', self)
         self.loadTrain.triggered.connect(lambda: classifier.load_list(self))
         self.loadTrain.setEnabled(False)
-        self.addToClass = QtGui.QAction('Add current dataset to classifier',self)
-        self.addToClass.triggered.connect(lambda: classifier.add_to(self))
-        self.addToClass.setEnabled(False)
-        self.saveDefault = QtGui.QAction('Save current classifier as default', self)
+        self.saveDefault = QtGui.QAction('Save current as user classifier', self)
         self.saveDefault.triggered.connect(self.class_default)
         self.saveDefault.setEnabled(False)
-        self.resetDefault =  QtGui.QAction('Reset default classifier to suite2p classifier', self)
+        self.resetDefault =  QtGui.QAction('Reset user classifier to suite2p classifier', self)
         self.resetDefault.triggered.connect(self.reset_default)
         self.resetDefault.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
         class_menu.addAction(self.loadClass)
         class_menu.addAction(self.loadTrain)
-        class_menu.addAction(self.addToClass)
+        class_menu.addAction(self.loadSClass)
         class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.resetDefault)
         # visualizations menuBar
@@ -117,7 +116,7 @@ class MainW(QtGui.QMainWindow):
                           QtGui.QPushButton(' draw selection')]
         for b in self.selectbtn:
             b.setCheckable(True)
-            b.setStyleSheet(self.styleUnpressed)
+            b.setStyleSheet(self.styleInactive)
         self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
         self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
         self.selectbtn[0].setEnabled(False)
@@ -148,7 +147,7 @@ class MainW(QtGui.QMainWindow):
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
                                       row=0,col=0, invertY=True)
-        self.img1 = pg.ImageItem()
+        self.img1 = pg.ImageItem(autoDownsample=True)
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
@@ -157,7 +156,7 @@ class MainW(QtGui.QMainWindow):
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
                                       row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
-        self.img2 = pg.ImageItem()
+        self.img2 = pg.ImageItem(autoDownsample=True)
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
         self.p2.setXLink('plot1')
@@ -176,7 +175,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: classifier','J: correlations']
+        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: cell probability','J: correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -222,21 +221,6 @@ class MainW(QtGui.QMainWindow):
         self.clabel = [colorbarW.addLabel('0.0',color=[255,255,255],row=1,col=0),
                         colorbarW.addLabel('0.5',color=[255,255,255],row=1,col=1),
                         colorbarW.addLabel('1.0',color=[255,255,255],row=1,col=2)]
-        #### ----- CLASSIFIER BUTTONS ------- ####
-        applyclass = QtGui.QPushButton(' apply classifier')
-        applyclass.clicked.connect(lambda: classifier.apply(self))
-        cllabel = QtGui.QLabel("")
-        cllabel.setFont(boldfont)
-        cllabel.setText("<font color='white'>Classifier</font>")
-        self.l0.addWidget(cllabel,self.bend,0,1,1)
-        plabel = QtGui.QLabel('\t    cell probability')
-        plabel.setStyleSheet("color: white;")
-        self.l0.addWidget(plabel,self.bend+1,0,1,1)
-        applyclass.setEnabled(False)
-        applyclass.setStyleSheet(self.styleUnpressed)
-        addtoclass = QtGui.QPushButton(' add current data to classifier')
-        addtoclass.clicked.connect(lambda: classifier.add_to(self))
-        addtoclass.setStyleSheet(self.styleUnpressed)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
         self.probedit.setMaximum(1.0)
@@ -244,15 +228,31 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setSingleStep(0.01)
         self.probedit.setValue(0.5)
         self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit,self.bend+1,0,1,1)
-        self.l0.addWidget(applyclass,self.bend+2,0,1,1)
-        self.l0.addWidget(addtoclass,self.bend+3,0,1,1)
-        self.classbtns = QtGui.QButtonGroup(self)
-        self.classbtns.addButton(applyclass,0)
-        self.classbtns.addButton(addtoclass,1)
+        self.l0.addWidget(self.probedit,self.bend,0,1,1)
+        plabel = QtGui.QLabel('\t    cell probability')
+        plabel.setStyleSheet("color: white;")
+        self.l0.addWidget(plabel,self.bend,0,1,1)
+        self.applyclass = QtGui.QPushButton(' apply')
+        self.applyclass.clicked.connect(lambda: classifier.apply(self))
+        self.applyclass.setEnabled(False)
+        self.applyclass.setStyleSheet(self.styleInactive)
+        self.l0.addWidget(self.applyclass,self.bend+1,0,1,1)
+
+        #### ----- CLASSIFIER BUTTONS ------- ####
+        cllabel = QtGui.QLabel("")
+        cllabel.setFont(boldfont)
+        cllabel.setText("<font color='white'>Classifier</font>")
+        self.classLabel = QtGui.QLabel("<font color='white'>load a classifier</font>")
+        self.classLabel.setFont(QtGui.QFont('Arial',8))
+        self.l0.addWidget(cllabel,self.bend+2,0,1,1)
+        self.l0.addWidget(self.classLabel,self.bend+3,0,1,1)
+        self.addtoclass = QtGui.QPushButton(' add current data to classifier')
+        self.addtoclass.clicked.connect(lambda: classifier.add_to(self))
+        self.addtoclass.setStyleSheet(self.styleInactive)
+        self.l0.addWidget(self.addtoclass,self.bend+4,0,1,1)
         #### ------ CELL STATS -------- ####
         # which stats
-        self.bend = self.bend+4
+        self.bend = self.bend+5
         self.stats_to_show = ['med','npix','skew','compact','footprint',
                               'aspect_ratio']
         lilfont = QtGui.QFont("Arial", 8)
@@ -314,8 +314,8 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
-        #self.fname = 'C:/Users/carse/github/tiffs/suite2p/plane0/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        self.fname = 'C:/Users/carse/github/TX4/stat.npy'
         self.load_proc()
 
     def keyPressEvent(self, event):
@@ -497,7 +497,9 @@ class MainW(QtGui.QMainWindow):
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
+        tic=time.time()
         fig.init_masks(self)
+        print(time.time()-tic)
         fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
@@ -512,37 +514,40 @@ class MainW(QtGui.QMainWindow):
         self.p1.setAspectLocked(lock=True, ratio=self.xyrat)
         self.p2.setAspectLocked(lock=True, ratio=self.xyrat)
         self.show()
-        # default classifier always loaded (but not applied)
-        self.model = classifier.Classifier(self.classfile)
+        # no classifier loaded
         classifier.activate(self, False)
 
     def enable_views_and_classifier(self):
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
+            self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
+            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
                 self.colorbtns.button(b).setStyleSheet(self.stylePressed)
-        for btn in self.classbtns.buttons():
-            btn.setEnabled(True)
+        self.applyclass.setStyleSheet(self.styleUnpressed)
+        self.applyclass.setEnabled(True)
         b = 0
         for btn in self.sizebtns.buttons():
+            btn.setStyleSheet(self.styleUnpressed)
             btn.setEnabled(True)
             if b==1:
                 btn.setChecked(True)
                 btn.setStyleSheet(self.stylePressed)
             b+=1
         for i in range(2):
+            self.selectbtn[i].setStyleSheet(self.styleUnpressed)
             self.selectbtn[i].setEnabled(True)
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
-        self.addToClass.setEnabled(True)
+        self.loadSClass.setEnabled(True)
         self.saveDefault.setEnabled(True)
         self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
@@ -755,6 +760,21 @@ class MainW(QtGui.QMainWindow):
             classifier.load(self, name[0])
         else:
             print('no classifier')
+
+    def load_s2p_classifier(self):
+        classifier.load(self, self.classorig)
+
+    def class_file(self):
+        if self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                         '..','classifiers/classifier_user.npy'):
+            cfile = 'user classifier'
+        elif self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             '..','classifiers/classifier.npy'):
+            cfile = 'suite2p classifier'
+        else:
+            cfile = parent.classfile
+        cstr = "<font color='white'>" + cfile + "</font>"
+        self.classLabel.setText(cstr)
 
     def class_default(self):
         dm = QtGui.QMessageBox.question(self,'Default classifier',

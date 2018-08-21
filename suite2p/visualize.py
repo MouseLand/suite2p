@@ -8,9 +8,14 @@ from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
 import sys
+<<<<<<< HEAD
 sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap import mapping
 from suite2p import gui
+=======
+from rastermap import mapping
+from suite2p import gui,fig
+>>>>>>> a9c3fce3717662a83deff835cce508f23e86084a
 
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
@@ -44,11 +49,11 @@ class VisWindow(QtGui.QMainWindow):
         # cells to plot
         if len(parent.imerge)==1:
             icell = parent.iscell[parent.imerge[0]]
-            cells = (parent.iscell==icell).nonzero()
+            self.cells = np.array((parent.iscell==icell).nonzero()).flatten()
         else:
-            cells = np.array(parent.imerge)
+            self.cells = np.array(parent.imerge).flatten()
         # compute spikes
-        sp = parent.Spks[cells,:]
+        sp = parent.Spks[self.cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
         sp -= sp.min()
@@ -97,6 +102,7 @@ class VisWindow(QtGui.QMainWindow):
         qlabel = gui.VerticalLabel(text='saturation')
         #qlabel.setStyleSheet('color: white;')
         self.l0.addWidget(qlabel,1,3,3,1)
+        self.isort = np.arange(0,self.cells.size).astype(np.int32)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
                                 width=3,
@@ -117,14 +123,17 @@ class VisWindow(QtGui.QMainWindow):
         self.PCOn = QtGui.QPushButton('compute PCs')
         self.PCOn.clicked.connect(lambda: self.PC_on(True))
         self.l0.addWidget(self.PCOn,0,0,1,2)
-        self.mapOn = QtGui.QPushButton('compute activity maps')
+        self.mapOn = QtGui.QPushButton('compute raster map')
         self.mapOn.clicked.connect(self.map_on)
         self.l0.addWidget(self.mapOn,1,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,2,0,1,2)
         self.l0.addWidget(QtGui.QLabel(''),3,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        #self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
+        self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
+        self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
+        self.selectBtn.setEnabled(True)
+        self.l0.addWidget(self.selectBtn,4,0,1,2)
         self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
         self.l0.setRowStretch(6, 1)
         self.win.show()
@@ -161,10 +170,10 @@ class VisWindow(QtGui.QMainWindow):
     def map_on(self):
         if not hasattr(self,'u'):
             self.PC_on(False)
-        self.comboBox.addItem('activity map')
+        self.comboBox.addItem('raster map')
         tic = time.time()
         self.compute_map()
-        print('activity map computed in %3.2f s'%(time.time()-tic))
+        print('raster map computed in %3.2f s'%(time.time()-tic))
         self.comboBox.setCurrentIndex(1)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
         self.neural_sorting(1)
@@ -202,6 +211,10 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.sp.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
+        #self.selected = (self.sp.shape[0]-1) - yrange
+        self.selected = yrange
+        self.p2.setXRange(0,xrange.size)
+        self.p2.setYRange(0,yrange.size)
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
         axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
@@ -211,14 +224,29 @@ class VisWindow(QtGui.QMainWindow):
         #                                   xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
         self.imgROI.setLevels([0,self.sat])
 
+    def select_cells(self,parent):
+        parent.imerge = []
+        if self.selected.size < 1000:
+            for n in self.selected:
+                parent.imerge.append(self.cells[self.isort[n]])
+            parent.ichosen = parent.imerge[0]
+            parent.ichosen_stats()
+            M = fig.draw_masks(parent)
+            fig.plot_masks(parent,M)
+            fig.plot_trace(parent)
+            parent.show()
+        else:
+            print('too many cells selected')
+
+
     def neural_sorting(self,i):
         if i==0:
-            isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
+            self.isort = np.argsort(self.u[:,int(self.PCedit.text())-1])
         elif i==1:
-            isort = self.isort1
+            self.isort = self.isort1
         if i<2:
-            self.spF = gaussian_filter1d(self.sp[isort,:].T,
-                                        np.minimum(10,np.maximum(1,int(self.sp.shape[0]*0.01))),
+            self.spF = gaussian_filter1d(self.sp[self.isort,:].T,
+                                        np.minimum(8,np.maximum(1,int(self.sp.shape[0]*0.005))),
                                         axis=1)
             self.spF = self.spF.T
         else:

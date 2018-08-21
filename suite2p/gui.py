@@ -286,12 +286,22 @@ class ColorButton(QtGui.QPushButton):
             b.setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot[2] = bid
+        # disable top click
+        if bid==0:
+            for b in [1,2,4,5]:
+                parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
+                parent.topbtns.button(b).setEnabled(False)
+        else:
+            for b in [1,2,4,5]:
+                parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
+                parent.topbtns.button(b).setEnabled(True)
         if bid==6:
             fig.corr_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)
 
+# size of view
 class SizeButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(SizeButton,self).__init__(parent)
@@ -327,3 +337,24 @@ class SizeButton(QtGui.QPushButton):
         parent.zoom_plot(1)
         parent.win.show()
         parent.show()
+
+# selection of top neurons
+class TopButton(QtGui.QPushButton):
+    def __init__(self, bid, parent=None):
+        super(TopButton,self).__init__(parent)
+        text = [' draw selection', ' select top', ' select bottom',
+                ' draw selection', ' select top', ' select bottom']
+        self.setText(text[bid])
+        self.setCheckable(True)
+        self.setStyleSheet(parent.styleInactive)
+        self.resize(self.minimumSizeHint())
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        for b in parent.topbtns.buttons():
+            b.setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        if bid==0 or bid==3:
+            parent.ROI_selection(bid)
+        else:
+            parent.top_selection(bid)

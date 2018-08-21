@@ -18,7 +18,7 @@ class MainW(QtGui.QMainWindow):
         self.setGeometry(25,25,1600,1000)
         self.setWindowTitle('suite2p (run pipeline or load stat.npy)')
         icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                         '..','logo/logo.png')
+                         'logo/logo.png')
         app_icon = QtGui.QIcon()
         app_icon.addFile(icon_path, QtCore.QSize(16,16))
         app_icon.addFile(icon_path, QtCore.QSize(24,24))
@@ -63,27 +63,33 @@ class MainW(QtGui.QMainWindow):
         self.trainfiles = []
         self.statlabels = None
         self.statclass = ['skew','compact','aspect_ratio','footprint']
-        self.loadClass = QtGui.QAction('Load', self)
+        self.loadMenu = QtGui.QMenu('Load', self)
+        self.loadClass = QtGui.QAction('from file', self)
         self.loadClass.triggered.connect(self.load_classifier)
         self.loadClass.setEnabled(False)
-        self.loadSClass = QtGui.QAction('Load suite2p classifier', self)
+        self.loadMenu.addAction(self.loadClass)
+        self.loadUClass = QtGui.QAction('default classifier', self)
+        self.loadUClass.triggered.connect(self.load_default_classifier)
+        self.loadUClass.setEnabled(False)
+        self.loadMenu.addAction(self.loadUClass)
+        self.loadSClass = QtGui.QAction('built-in classifier', self)
         self.loadSClass.triggered.connect(self.load_s2p_classifier)
         self.loadSClass.setEnabled(False)
+        self.loadMenu.addAction(self.loadSClass)
         self.loadTrain = QtGui.QAction('Build', self)
         self.loadTrain.triggered.connect(lambda: classifier.load_list(self))
         self.loadTrain.setEnabled(False)
-        self.saveDefault = QtGui.QAction('Save current as user classifier', self)
+        self.saveDefault = QtGui.QAction('Save loaded as default', self)
         self.saveDefault.triggered.connect(self.class_default)
         self.saveDefault.setEnabled(False)
-        self.resetDefault =  QtGui.QAction('Reset user classifier to suite2p classifier', self)
+        self.resetDefault =  QtGui.QAction('Reset default to built-in', self)
         self.resetDefault.triggered.connect(self.reset_default)
         self.resetDefault.setEnabled(False)
         class_menu = main_menu.addMenu('&Classifier')
-        class_menu.addAction(self.loadClass)
+        class_menu.addMenu(self.loadMenu)
         class_menu.addAction(self.loadTrain)
-        class_menu.addAction(self.loadSClass)
-        class_menu.addAction(self.saveDefault)
         class_menu.addAction(self.resetDefault)
+        class_menu.addAction(self.saveDefault)
         # visualizations menuBar
         self.visualizations = QtGui.QAction('&Visualize selected cells', self)
         self.visualizations.triggered.connect(self.vis_window)
@@ -112,19 +118,17 @@ class MainW(QtGui.QMainWindow):
         self.lcell1 = QtGui.QLabel('')
         self.lcell1.setStyleSheet("color: white;")
         self.l0.addWidget(self.lcell1, 0,10,1,1)
-        self.selectbtn = [QtGui.QPushButton(' draw selection'),
-                          QtGui.QPushButton(' draw selection')]
-        for b in self.selectbtn:
-            b.setCheckable(True)
-            b.setStyleSheet(self.styleInactive)
-        self.selectbtn[0].clicked.connect(lambda: self.ROI_selection(0))
-        self.selectbtn[1].clicked.connect(lambda: self.ROI_selection(1))
-        self.selectbtn[0].setEnabled(False)
-        self.selectbtn[1].setEnabled(False)
+        # buttons to draw a square on view
+        self.topbtns = QtGui.QButtonGroup()
+        pos = [1,2,3,13,14,15]
+        for b in range(6):
+            btn  = gui.TopButton(b,self)
+            self.topbtns.addButton(btn,b)
+            self.l0.addWidget(btn, 0,pos[b],1,1)
+            btn.setEnabled(False)
+        self.topbtns.setExclusive(True)
         self.isROI=False
         self.ROIplot = 0
-        self.l0.addWidget(self.selectbtn[0], 0,1,1,1)
-        self.l0.addWidget(self.selectbtn[1], 0,15,1,1)
         # minimize view
         self.sizebtns = QtGui.QButtonGroup(self)
         b=0
@@ -175,7 +179,7 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
         self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: cell probability','J: correlations']
+        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: classifier','J: correlations']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -308,15 +312,15 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(slabel, self.bend+9+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy')
+                         'classifiers/classifier_user.npy')
         self.classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                          '..','classifiers/classifier.npy')
+                                          'classifiers/classifier.npy')
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        self.load_proc()
+        #self.load_proc()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:
@@ -377,33 +381,73 @@ class MainW(QtGui.QMainWindow):
         self.level = np.maximum(1,self.level)
         self.win.ci.layout.setRowStretchFactor(1,self.level)
 
+    def top_selection(self, bid):
+        self.ROI_remove()
+        ncells = len(self.stat)
+        icells = np.minimum(ncells, 40)
+        if bid==1:
+            wplot=0
+            top = True
+        elif bid==2:
+            wplot=0
+            top = False
+        elif bid==4:
+            wplot=1
+            top = True
+        elif bid==5:
+            wplot=1
+            top=False
+        if self.ops_plot[2] != 0:
+            # correlation view
+            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                istat = self.ops_plot[4]
+            # statistics view
+            else:
+                istat = self.ops_plot[3][:,self.ops_plot[2]]
+            if wplot==0:
+                icell = np.array(self.iscell.nonzero()).flatten()
+                istat = istat[self.iscell]
+            else:
+                icell = np.array((~self.iscell).nonzero()).flatten()
+                istat = istat[~self.iscell]
+            inds = istat.argsort()
+            if top:
+                inds = inds[:icells]
+                self.ichosen = icell[inds[-1]]
+            else:
+                inds = inds[-icells:]
+                self.ichosen = icell[inds[0]]
+            self.imerge = []
+            for n in inds:
+                self.imerge.append(icell[n])
+            # draw choices
+            self.ichosen_stats()
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+            fig.plot_trace(self)
+            self.show()
+
     def ROI_selection(self, wplot):
         if wplot==0:
             view = self.p1.viewRange()
         else:
             view = self.p2.viewRange()
-        self.ROIplot = wplot
-        if self.selectbtn[wplot].isChecked():
-            self.selectbtn[1-wplot].setEnabled(False)
-            self.selectbtn[wplot].setStyleSheet(self.stylePressed)
-            self.selectbtn[1-wplot].setStyleSheet(self.styleUnpressed)
-            imx = (view[0][1] + view[0][0]) / 2
-            imy = (view[1][1] + view[1][0]) / 2
-            dx  = (view[0][1] - view[0][0]) / 4
-            dy  = (view[1][1] - view[1][0]) / 4
-            imx = imx - dx/2
-            imy = imy - dy/2
-            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
-            if wplot==0:
-                self.p1.addItem(self.ROI)
-            else:
-                self.p2.addItem(self.ROI)
-            self.ROI_position()
-            self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
-            self.isROI = True
+        self.ROI_remove()
+        self.ROIplot = int(np.floor(wplot/3))
+        imx = (view[0][1] + view[0][0]) / 2
+        imy = (view[1][1] + view[1][0]) / 2
+        dx  = (view[0][1] - view[0][0]) / 4
+        dy  = (view[1][1] - view[1][0]) / 4
+        imx = imx - dx/2
+        imy = imy - dy/2
+        self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
+        if wplot==0:
+            self.p1.addItem(self.ROI)
         else:
-            self.selectbtn[wplot].setStyleSheet(self.styleUnpressed)
-            self.ROI_remove()
+            self.p2.addItem(self.ROI)
+        self.ROI_position()
+        self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+        self.isROI = True
 
     def ROI_remove(self):
         if self.isROI:
@@ -412,9 +456,8 @@ class MainW(QtGui.QMainWindow):
             else:
                 self.p2.removeItem(self.ROI)
             self.isROI=False
-            self.selectbtn[1-self.ROIplot].setEnabled(True)
-            self.selectbtn[self.ROIplot].setChecked(False)
-            for b in range(2): self.selectbtn[b].setStyleSheet(self.styleUnpressed)
+            self.topbtns.button(0).setStyleSheet(self.styleUnpressed)
+            self.topbtns.button(3).setStyleSheet(self.styleUnpressed)
 
     def ROI_position(self):
         pos0 = self.ROI.getSceneHandlePositions()
@@ -470,6 +513,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.ROI_remove()
+        self.isROI=False
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
         self.ops_plot[3] = []
@@ -484,8 +528,9 @@ class MainW(QtGui.QMainWindow):
             self.stat[n]['yext'] = ypix[iext]
             self.stat[n]['xext'] = xpix[iext]
             ycirc,xcirc = fig.circle(self.stat[n]['med'],self.stat[n]['radius'])
-            self.stat[n]['ycirc'] = ycirc
-            self.stat[n]['xcirc'] = xcirc
+            goodi = (ycirc>=0) & (xcirc>=0) & (ycirc<self.ops['Ly']) & (xcirc<self.ops['Lx'])
+            self.stat[n]['ycirc'] = ycirc[goodi]
+            self.stat[n]['xcirc'] = xcirc[goodi]
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views
@@ -531,6 +576,9 @@ class MainW(QtGui.QMainWindow):
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
                 self.colorbtns.button(b).setStyleSheet(self.stylePressed)
+        for b in [0,3]:
+            self.topbtns.button(b).setStyleSheet(self.styleUnpressed)
+            self.topbtns.button(b).setEnabled(True)
         self.applyclass.setStyleSheet(self.styleUnpressed)
         self.applyclass.setEnabled(True)
         b = 0
@@ -541,14 +589,11 @@ class MainW(QtGui.QMainWindow):
                 btn.setChecked(True)
                 btn.setStyleSheet(self.stylePressed)
             b+=1
-        for i in range(2):
-            self.selectbtn[i].setStyleSheet(self.styleUnpressed)
-            self.selectbtn[i].setEnabled(True)
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
+        self.loadUClass.setEnabled(True)
         self.loadSClass.setEnabled(True)
-        self.saveDefault.setEnabled(True)
         self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
 
@@ -629,11 +674,11 @@ class MainW(QtGui.QMainWindow):
                         self.imerge = [ichosen]
                         self.ichosen = ichosen
                     self.flip_plot(iplot)
-                    if self.isROI:
-                        self.ROI_remove()
                 if choose or flip or replot:
                     if self.isROI:
                         self.ROI_remove()
+                    for btn in self.topbtns.buttons():
+                        btn.setStyleSheet(self.styleUnpressed)
                     if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                         fig.corr_masks(self)
                         fig.plot_colorbar(self, self.ops_plot[2])
@@ -758,23 +803,37 @@ class MainW(QtGui.QMainWindow):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
             classifier.load(self, name[0])
+            self.class_activated()
         else:
             print('no classifier')
 
     def load_s2p_classifier(self):
         classifier.load(self, self.classorig)
+        self.class_file()
+        self.saveDefault.setEnabled(True)
+
+    def load_default_classifier(self):
+        classifier.load(self, os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                         'classifiers/classifier_user.npy'))
+        self.class_activated()
 
     def class_file(self):
         if self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         '..','classifiers/classifier_user.npy'):
-            cfile = 'user classifier'
+                         'classifiers/classifier_user.npy'):
+            cfile = 'default classifier'
         elif self.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier.npy'):
+                             'classifiers/classifier.npy'):
             cfile = 'suite2p classifier'
         else:
-            cfile = parent.classfile
+            cfile = self.classfile
         cstr = "<font color='white'>" + cfile + "</font>"
         self.classLabel.setText(cstr)
+
+    def class_activated(self):
+        self.class_file()
+        self.saveDefault.setEnabled(True)
+        self.addtoclass.setStyleSheet(self.styleUnpressed)
+        self.addtoclass.setEnabled(True)
 
     def class_default(self):
         dm = QtGui.QMessageBox.question(self,'Default classifier',
@@ -782,7 +841,7 @@ class MainW(QtGui.QMainWindow):
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier_user.npy')
+                             'classifiers/classifier_user.npy')
             np.save(classfile, self.model)
 
     def reset_default(self):
@@ -791,7 +850,7 @@ class MainW(QtGui.QMainWindow):
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '..','classifiers/classifier_user.npy')
+                             'classifiers/classifier_user.npy')
             shutil.copy(self.classorig, classfile)
     #def save_gui_data(self):
     #    gui_data = {
@@ -812,7 +871,7 @@ def run():
     ## Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                    '..','logo/logo.png')
+                    'logo/logo.png')
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16,16))
     app_icon.addFile(icon_path, QtCore.QSize(24,24))

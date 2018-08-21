@@ -43,7 +43,7 @@ def plot_trace(parent):
         pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]
         k=len(pmerge)-1
         for n in pmerge[::-1]:
-            f = parent.Fcell[n,:]# - 0.7*parent.Fneu[n,:]
+            f = parent.Spks[n,:]#parent.Fcell[n,:]# - 0.7*parent.Fneu[n,:]
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
@@ -108,7 +108,7 @@ def make_colors(parent):
     # make colors for pairwise correlations
     bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
     nb   = int(np.floor(parent.Fcell.shape[1] / bin))
-    f = parent.Fcell #- 0.7 * parent.Fneu
+    f = parent.Spks #- 0.7 * parent.Fneu
     parent.Fbin = f[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
     parent.Fbin = parent.Fbin - parent.Fbin.mean(axis=1)[:,np.newaxis]
     parent.Fstd = (parent.Fbin**2).sum(axis=1)

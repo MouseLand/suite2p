@@ -511,6 +511,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.ROI_remove()
+        self.isROI=False
         self.ops_plot[1] = 0
         self.ops_plot[2] = 0
         self.ops_plot[3] = []

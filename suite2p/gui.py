@@ -257,6 +257,7 @@ class ViewButton(QtGui.QPushButton):
         self.setText(Text)
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
@@ -278,6 +279,7 @@ class ColorButton(QtGui.QPushButton):
         self.setText(Text)
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
@@ -286,15 +288,19 @@ class ColorButton(QtGui.QPushButton):
             b.setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot[2] = bid
-        # disable top click
-        if bid==0:
-            for b in [1,2,4,5]:
-                parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
-                parent.topbtns.button(b).setEnabled(False)
+        if not parent.sizebtns.button(1).isChecked():
+            if bid==0:
+                for b in [1,2]:
+                    parent.topbtns.button(b).setEnabled(False)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
+            else:
+                for b in [1,2]:
+                    parent.topbtns.button(b).setEnabled(True)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
         else:
-            for b in [1,2,4,5]:
-                parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
-                parent.topbtns.button(b).setEnabled(True)
+            for b in range(3):
+                parent.topbtns.button(b).setEnabled(False)
+                parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
         if bid==6:
             fig.corr_masks(parent)
         M = fig.draw_masks(parent)
@@ -308,6 +314,7 @@ class SizeButton(QtGui.QPushButton):
         self.setText(Text)
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
@@ -333,13 +340,18 @@ class SizeButton(QtGui.QPushButton):
             parent.win.ci.layout.setColumnStretchFactor(1,ts)
         # only enable selection buttons when not in 'both' view
         if bid!=1:
-            for btn in self.topbtns.buttons():
-                btn.setStyleSheet(self.styleUnpressed)
-                btn.setEnabled(True)
+            if parent.ops_plot[2]!=0:
+                for btn in parent.topbtns.buttons():
+                    btn.setStyleSheet(parent.styleUnpressed)
+                    btn.setEnabled(True)
+            else:
+                parent.topbtns.button(0).setStyleSheet(parent.styleUnpressed)
+                parent.topbtns.button(0).setEnabled(True)
         else:
-            for btn in self.topbtns.buttons():
-                btn.setStyleSheet(self.styleInactive)
-                btn.setEnabled(True)
+            parent.ROI_remove()
+            for btn in parent.topbtns.buttons():
+                btn.setEnabled(False)
+                btn.setStyleSheet(parent.styleInactive)
         parent.zoom_plot(1)
         parent.win.show()
         parent.show()
@@ -355,14 +367,26 @@ class TopButton(QtGui.QPushButton):
         self.setText(text[bid])
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in parent.topbtns.buttons():
-            b.setStyleSheet(parent.styleUnpressed)
+        if not parent.sizebtns.button(1).isChecked():
+            if parent.ops_plot[2]==0:
+                for b in [1,2]:
+                    parent.topbtns.button(b).setEnabled(False)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
+            else:
+                for b in [1,2]:
+                    parent.topbtns.button(b).setEnabled(True)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        else:
+            for b in range(3):
+                parent.topbtns.button(b).setEnabled(False)
+                parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
         self.setStyleSheet(parent.stylePressed)
         if bid==0:
-            parent.ROI_selection(bid)
+            parent.ROI_selection()
         else:
             parent.top_selection(bid)

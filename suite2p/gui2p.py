@@ -109,37 +109,52 @@ class MainW(QtGui.QMainWindow):
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.checkBox.toggle()
-        self.l0.addWidget(self.checkBox,0,0,1,1)
+        self.l0.addWidget(self.checkBox,0,0,1,2)
         # number of ROIs in each image
         self.lcell0 = QtGui.QLabel('')
         self.lcell0.setStyleSheet("color: white;")
         self.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.l0.addWidget(self.lcell0, 0,6,1,1)
+        self.l0.addWidget(self.lcell0, 0,12,1,2)
         self.lcell1 = QtGui.QLabel('')
         self.lcell1.setStyleSheet("color: white;")
-        self.l0.addWidget(self.lcell1, 0,10,1,1)
+        self.l0.addWidget(self.lcell1, 0,20,1,2)
         # buttons to draw a square on view
         self.topbtns = QtGui.QButtonGroup()
         ql = QtGui.QLabel('select cells')
         ql.setStyleSheet('color: white;')
-        self.l0.addWidget(ql,0,1,1,1)
+        ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.l0.addWidget(ql,0,1,1,2)
         pos = [2,3,4]
         for b in range(3):
             btn  = gui.TopButton(b,self)
+            btn.setFont(QtGui.QFont("Arial", 8))
             self.topbtns.addButton(btn,b)
-            self.l0.addWidget(btn, 0,pos[b],1,1)
+            self.l0.addWidget(btn, 0,(pos[b]-1)*2,1,2)
             btn.setEnabled(False)
         self.topbtns.setExclusive(True)
         self.isROI=False
         self.ROIplot = 0
+        ql = QtGui.QLabel('n=')
+        ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        ql.setStyleSheet('color: white;')
+        ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.l0.addWidget(ql,0,9,1,1)
+        #self.l0.setColumnStretch(5,0.1)
+        self.topedit = QtGui.QLineEdit(self)
+        self.topedit.setValidator(QtGui.QIntValidator(0,500))
+        self.topedit.setText('40')
+        self.topedit.setFixedWidth(35)
+        self.topedit.setAlignment(QtCore.Qt.AlignRight)
+        self.topedit.returnPressed.connect(self.number_chosen)
+        self.l0.addWidget(self.topedit,0,10,1,1)
         # minimize view
         self.sizebtns = QtGui.QButtonGroup(self)
         b=0
-        labels = ['cells','both','not cells']
+        labels = [' cells',' both',' not cells']
         for l in labels:
             btn  = gui.SizeButton(b,l,self)
             self.sizebtns.addButton(btn,b)
-            self.l0.addWidget(btn,0,7+b,1,1)
+            self.l0.addWidget(btn,0,14+2*b,1,2)
             btn.setEnabled(False)
             if b==1:
                 btn.setEnabled(True)
@@ -149,7 +164,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,38,15)
+        self.l0.addWidget(self.win,1,1,38,30)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -240,6 +255,7 @@ class MainW(QtGui.QMainWindow):
         plabel.setStyleSheet("color: white;")
         self.l0.addWidget(plabel,self.bend,0,1,1)
         self.applyclass = QtGui.QPushButton(' apply')
+        self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.applyclass.clicked.connect(lambda: classifier.apply(self))
         self.applyclass.setEnabled(False)
         self.applyclass.setStyleSheet(self.styleInactive)
@@ -254,6 +270,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(cllabel,self.bend+2,0,1,1)
         self.l0.addWidget(self.classLabel,self.bend+3,0,1,1)
         self.addtoclass = QtGui.QPushButton(' add current data to classifier')
+        self.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.addtoclass.clicked.connect(lambda: classifier.add_to(self))
         self.addtoclass.setStyleSheet(self.styleInactive)
         self.l0.addWidget(self.addtoclass,self.bend+4,0,1,1)
@@ -386,71 +403,78 @@ class MainW(QtGui.QMainWindow):
 
     def top_selection(self, bid):
         self.ROI_remove()
+        draw = False
         ncells = len(self.stat)
         icells = np.minimum(ncells, 40)
         if bid==1:
-            wplot=0
             top = True
         elif bid==2:
-            wplot=0
             top = False
-        elif bid==4:
-            wplot=1
-            top = True
-        elif bid==5:
-            wplot=1
-            top=False
-        if self.ops_plot[2] != 0:
-            # correlation view
-            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
-                istat = self.ops_plot[4]
-            # statistics view
-            else:
-                istat = self.ops_plot[3][:,self.ops_plot[2]]
-            if wplot==0:
-                icell = np.array(self.iscell.nonzero()).flatten()
-                istat = istat[self.iscell]
-            else:
-                icell = np.array((~self.iscell).nonzero()).flatten()
-                istat = istat[~self.iscell]
-            inds = istat.argsort()
-            if top:
-                inds = inds[:icells]
-                self.ichosen = icell[inds[-1]]
-            else:
-                inds = inds[-icells:]
-                self.ichosen = icell[inds[0]]
-            self.imerge = []
-            for n in inds:
-                self.imerge.append(icell[n])
-            # draw choices
-            self.ichosen_stats()
-            M = fig.draw_masks(self)
-            fig.plot_masks(self,M)
-            fig.plot_trace(self)
-            self.show()
+        if self.sizebtns.button(0).isChecked():
+            wplot = 0
+            draw = True
+        elif self.sizebtns.button(2).isChecked():
+            wplot = 1
+            draw = True
+        if draw:
+            if self.ops_plot[2] != 0:
+                # correlation view
+                if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                    istat = self.ops_plot[4]
+                # statistics view
+                else:
+                    istat = self.ops_plot[3][:,self.ops_plot[2]]
+                if wplot==0:
+                    icell = np.array(self.iscell.nonzero()).flatten()
+                    istat = istat[self.iscell]
+                else:
+                    icell = np.array((~self.iscell).nonzero()).flatten()
+                    istat = istat[~self.iscell]
+                inds = istat.argsort()
+                if top:
+                    inds = inds[:icells]
+                    self.ichosen = icell[inds[-1]]
+                else:
+                    inds = inds[-icells:]
+                    self.ichosen = icell[inds[0]]
+                self.imerge = []
+                for n in inds:
+                    self.imerge.append(icell[n])
+                # draw choices
+                self.ichosen_stats()
+                M = fig.draw_masks(self)
+                fig.plot_masks(self,M)
+                fig.plot_trace(self)
+                self.show()
 
-    def ROI_selection(self, wplot):
-        if wplot==0:
+    def ROI_selection(self):
+        draw = False
+        if self.sizebtns.button(0).isChecked():
+            wplot = 0
             view = self.p1.viewRange()
-        else:
+            draw = True
+        elif self.sizebtns.button(2).isChecked():
+            wplot = 1
             view = self.p2.viewRange()
-        self.ROI_remove()
-        self.ROIplot = int(np.floor(wplot/3))
-        imx = (view[0][1] + view[0][0]) / 2
-        imy = (view[1][1] + view[1][0]) / 2
-        dx  = (view[0][1] - view[0][0]) / 4
-        dy  = (view[1][1] - view[1][0]) / 4
-        imx = imx - dx/2
-        imy = imy - dy/2
-        self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
-        if wplot==0:
-            self.p1.addItem(self.ROI)
-        else:
-            self.p2.addItem(self.ROI)
-        self.ROI_position()
-        self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
-        self.isROI = True
+            draw = True
+        if draw:
+            self.ROI_remove()
+            self.topbtns.button(0).setStyleSheet(self.stylePressed)
+            self.ROIplot = wplot
+            imx = (view[0][1] + view[0][0]) / 2
+            imy  = (view[1][1] + view[1][0]) / 2
+            dx  = (view[0][1] - view[0][0]) / 4
+            dy  = (view[1][1] - view[1][0]) / 4
+            imx = imx - dx/2
+            imy = imy - dy/2
+            self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
+            if wplot==0:
+                self.p1.addItem(self.ROI)
+            else:
+                self.p2.addItem(self.ROI)
+            self.ROI_position()
+            self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+            self.isROI = True
 
     def ROI_remove(self):
         if self.isROI:
@@ -459,8 +483,12 @@ class MainW(QtGui.QMainWindow):
             else:
                 self.p2.removeItem(self.ROI)
             self.isROI=False
+        if self.sizebtns.button(1).isChecked():
+            self.topbtns.button(0).setStyleSheet(self.styleInactive)
+            self.topbtns.button(0).setEnabled(False)
+        else:
             self.topbtns.button(0).setStyleSheet(self.styleUnpressed)
-            self.topbtns.button(3).setStyleSheet(self.styleUnpressed)
+
 
     def ROI_position(self):
         pos0 = self.ROI.getSceneHandlePositions()
@@ -589,6 +617,9 @@ class MainW(QtGui.QMainWindow):
                 btn.setChecked(True)
                 btn.setStyleSheet(self.stylePressed)
             b+=1
+        for b in range(3):
+            self.topbtns.button(b).setEnabled(False)
+            self.topbtns.button(b).setStyleSheet(self.styleInactive)
         # enable classifier menu
         self.loadClass.setEnabled(True)
         self.loadTrain.setEnabled(True)
@@ -677,8 +708,10 @@ class MainW(QtGui.QMainWindow):
                 if choose or flip or replot:
                     if self.isROI:
                         self.ROI_remove()
-                    for btn in self.topbtns.buttons():
-                        btn.setStyleSheet(self.styleUnpressed)
+                    if not self.sizebtns.button(1).isChecked():
+                        for btn in self.topbtns.buttons():
+                            if btn.isChecked():
+                                btn.setStyleSheet(self.styleUnpressed)
                     if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                         fig.corr_masks(self)
                         fig.plot_colorbar(self, self.ops_plot[2])

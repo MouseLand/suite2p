@@ -331,6 +331,15 @@ class SizeButton(QtGui.QPushButton):
             parent.p2.linkView(parent.p2.YAxis,view=None)
             parent.win.ci.layout.setColumnStretchFactor(0,0)
             parent.win.ci.layout.setColumnStretchFactor(1,ts)
+        # only enable selection buttons when not in 'both' view
+        if bid!=1:
+            for btn in self.topbtns.buttons():
+                btn.setStyleSheet(self.styleUnpressed)
+                btn.setEnabled(True)
+        else:
+            for btn in self.topbtns.buttons():
+                btn.setStyleSheet(self.styleInactive)
+                btn.setEnabled(True)
         parent.zoom_plot(1)
         parent.win.show()
         parent.show()
@@ -342,8 +351,7 @@ class SizeButton(QtGui.QPushButton):
 class TopButton(QtGui.QPushButton):
     def __init__(self, bid, parent=None):
         super(TopButton,self).__init__(parent)
-        text = [' draw selection', ' select top', ' select bottom',
-                ' draw selection', ' select top', ' select bottom']
+        text = [' draw selection', ' select top n', ' select bottom n']
         self.setText(text[bid])
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
@@ -354,7 +362,7 @@ class TopButton(QtGui.QPushButton):
         for b in parent.topbtns.buttons():
             b.setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
-        if bid==0 or bid==3:
+        if bid==0:
             parent.ROI_selection(bid)
         else:
             parent.top_selection(bid)

@@ -120,8 +120,11 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.lcell1, 0,10,1,1)
         # buttons to draw a square on view
         self.topbtns = QtGui.QButtonGroup()
-        pos = [1,2,3,13,14,15]
-        for b in range(6):
+        ql = QtGui.QLabel('select cells')
+        ql.setStyleSheet('color: white;')
+        self.l0.addWidget(ql,0,1,1,1)
+        pos = [2,3,4]
+        for b in range(3):
             btn  = gui.TopButton(b,self)
             self.topbtns.addButton(btn,b)
             self.l0.addWidget(btn, 0,pos[b],1,1)
@@ -151,7 +154,7 @@ class MainW(QtGui.QMainWindow):
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
                                       row=0,col=0, invertY=True)
-        self.img1 = pg.ImageItem(autoDownsample=True)
+        self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
@@ -160,7 +163,7 @@ class MainW(QtGui.QMainWindow):
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
                                       row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
-        self.img2 = pg.ImageItem(autoDownsample=True)
+        self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
         self.p2.setXLink('plot1')
@@ -318,9 +321,9 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        #self.load_proc()
+        self.load_proc()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:
@@ -576,9 +579,6 @@ class MainW(QtGui.QMainWindow):
             if b==0:
                 self.colorbtns.button(b).setChecked(True)
                 self.colorbtns.button(b).setStyleSheet(self.stylePressed)
-        for b in [0,3]:
-            self.topbtns.button(b).setStyleSheet(self.styleUnpressed)
-            self.topbtns.button(b).setEnabled(True)
         self.applyclass.setStyleSheet(self.styleUnpressed)
         self.applyclass.setEnabled(True)
         b = 0

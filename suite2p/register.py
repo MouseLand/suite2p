@@ -328,7 +328,7 @@ def refine_init_init(ops, frames, refImg):
         dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
         refImg = shift_data((refImg[np.newaxis,:,:], dy,dx)).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
-    return refImg, freg, ymax, xmax, cmax
+    return refImg
 
 def pick_init(ops):
     nbytes = os.path.getsize(ops['reg_file'])

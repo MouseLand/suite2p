@@ -350,14 +350,14 @@ class MainW(QtGui.QMainWindow):
             btn.setStyleSheet(self.styleUnpressed)
             self.l0.addWidget(btn, self.bend+4+k+b,1,1,1)
             b+=1
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+6+k,0,1,2)
         # trace labels
         flabel = QtGui.QLabel(self)
-        flabel.setText("<font color='blue'>Fluorescence</font>")
+        flabel.setText("<font color='blue'>Fluorescence -></font>")
         nlabel = QtGui.QLabel(self)
-        nlabel.setText("<font color='red'>Neuropil</font>")
+        nlabel.setText("<font color='red'>Neuropil -></font>")
         slabel = QtGui.QLabel(self)
-        slabel.setText("<font color='gray'>Deconvolved</font>")
+        slabel.setText("<font color='gray'>Deconvolved -></font>")
+        boldfont = QtGui.QFont('Arial',8,QtGui.QFont.Bold)
         flabel.setFont(boldfont)
         nlabel.setFont(boldfont)
         slabel.setFont(boldfont)
@@ -367,6 +367,15 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(flabel, self.bend+7+k,0,1,2)
         self.l0.addWidget(nlabel, self.bend+8+k,0,1,2)
         self.l0.addWidget(slabel, self.bend+9+k,0,1,2)
+        # choose max # of cells plotted
+        self.l0.addWidget(QtGui.QLabel("<font color='white'>max # plotted:</font>"), self.bend+6+k,0,1,1)
+        self.ncedit = QtGui.QLineEdit(self)
+        self.ncedit.setValidator(QtGui.QIntValidator(0,400))
+        self.ncedit.setText('40')
+        self.ncedit.setFixedWidth(35)
+        self.ncedit.setAlignment(QtCore.Qt.AlignRight)
+        self.ncedit.returnPressed.connect(self.nc_chosen)
+        self.l0.addWidget(self.ncedit, self.bend+7+k,0,1,1)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          'classifiers/classifier_user.npy')
@@ -381,30 +390,31 @@ class MainW(QtGui.QMainWindow):
 
     def mode_change(self,i):
         self.activityMode = i
-        # activity used for correlations
-        self.bin = int(self.binedit.text())
-        nb   = int(np.floor(float(self.Fcell.shape[1]) / float(self.bin)))
-        if i==0:
-            f = self.Fcell
-        elif i==1:
-            f = self.Fneu
-        elif i==2:
-            f = self.Fcell - 0.7*self.Fneu
-        else:
-            f = self.Spks
-        ncells = len(self.stat)
-        self.Fbin = f[:,:nb*self.bin].reshape((ncells,nb,self.bin)).mean(axis=2)
-        self.Fbin = self.Fbin - self.Fbin.mean(axis=1)[:,np.newaxis]
-        self.Fstd = (self.Fbin**2).sum(axis=1)
-        self.trange = np.arange(0,self.Fcell.shape[1])
-        # if in correlation-view, recompute
-        if self.ops_plot[2]==self.ops_plot[3].shape[1]:
-            fig.corr_masks(self)
-            fig.plot_colorbar(self, self.ops_plot[2])
-            M = fig.draw_masks(self)
-            fig.plot_masks(self,M)
-        fig.plot_trace(self)
-        self.show()
+        if self.loaded:
+            # activity used for correlations
+            self.bin = int(self.binedit.text())
+            nb   = int(np.floor(float(self.Fcell.shape[1]) / float(self.bin)))
+            if i==0:
+                f = self.Fcell
+            elif i==1:
+                f = self.Fneu
+            elif i==2:
+                f = self.Fcell - 0.7*self.Fneu
+            else:
+                f = self.Spks
+            ncells = len(self.stat)
+            self.Fbin = f[:,:nb*self.bin].reshape((ncells,nb,self.bin)).mean(axis=2)
+            self.Fbin = self.Fbin - self.Fbin.mean(axis=1)[:,np.newaxis]
+            self.Fstd = (self.Fbin**2).sum(axis=1)
+            self.trange = np.arange(0,self.Fcell.shape[1])
+            # if in correlation-view, recompute
+            if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                fig.corr_masks(self)
+                fig.plot_colorbar(self, self.ops_plot[2])
+                M = fig.draw_masks(self)
+                fig.plot_masks(self,M)
+            fig.plot_trace(self)
+            self.show()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:
@@ -477,9 +487,14 @@ class MainW(QtGui.QMainWindow):
         self.level = np.maximum(1,self.level)
         self.win.ci.layout.setRowStretchFactor(1,self.level)
 
-    def top_number_chosen(self):
+    def nc_chosen(self):
         if self.loaded:
-            self.ntop = int(self.topedit.text())
+            fig.plot_trace(self)
+            self.show()
+
+    def top_number_chosen(self):
+        self.ntop = int(self.topedit.text())
+        if self.loaded:
             if not self.sizebtns.button(1).isChecked():
                 for b in [1,2]:
                     if self.topbtns.button(b).isChecked():
@@ -661,6 +676,7 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         self.ichosen_stats()
         self.comboBox.setCurrentIndex(2)
+        self.loaded = True
         self.mode_change(2)
         # colorbar
         self.colormat = fig.make_colorbar()
@@ -668,7 +684,6 @@ class MainW(QtGui.QMainWindow):
         tic=time.time()
         fig.init_masks(self)
         print(time.time()-tic)
-        fig.corr_masks(self)
         M = fig.draw_masks(self)
         fig.plot_masks(self,M)
         self.lcell1.setText('%d'%(ncells-self.iscell.sum()))

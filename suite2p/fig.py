@@ -38,9 +38,10 @@ def plot_trace(parent):
         parent.fmax=fmax
         ax.setTicks(None)
     else:
+        nmax = int(parent.ncedit.text())
         kspace = 1.0/parent.sc
         ttick = list()
-        pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]
+        pmerge = parent.imerge[:np.minimum(len(parent.imerge),nmax)]
         k=len(pmerge)-1
         i = parent.activityMode
         for n in pmerge[::-1]:

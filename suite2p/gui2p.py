@@ -338,9 +338,9 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        self.load_proc()
+        #self.load_proc()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:

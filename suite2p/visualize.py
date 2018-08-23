@@ -18,7 +18,7 @@ class VisWindow(QtGui.QMainWindow):
         super(VisWindow, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1100,900)
-        self.setWindowTitle('Visualize deconvolved data')
+        self.setWindowTitle('Visualize data')
         self.cwidget = QtGui.QWidget(self)
         self.setCentralWidget(self.cwidget)
         self.l0 = QtGui.QGridLayout()

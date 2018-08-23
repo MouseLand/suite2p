@@ -10,8 +10,7 @@ import time
 import sys
 sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap import mapping
-from suite2p import gui
-
+from suite2p import gui,fig
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -48,7 +47,15 @@ class VisWindow(QtGui.QMainWindow):
         else:
             self.cells = np.array(parent.imerge).flatten()
         # compute spikes
-        sp = parent.Spks[self.cells,:]
+        i = parent.activityMode
+        if i==0:
+            sp = parent.Fcell[self.cells,:]
+        elif i==1:
+            sp = parent.Fneu[self.cells,:]
+        elif i==2:
+            sp = parent.Fcell[self.cells,:] - 0.7*parent.Fneu[self.cells,:]
+        else:
+            sp = parent.Spks[self.cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
         sp -= sp.min()

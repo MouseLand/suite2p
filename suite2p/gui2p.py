@@ -62,7 +62,6 @@ class MainW(QtGui.QMainWindow):
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
-        self.statclass = ['skew','compact','aspect_ratio','footprint']
         self.loadMenu = QtGui.QMenu('Load', self)
         self.loadClass = QtGui.QAction('from file', self)
         self.loadClass.triggered.connect(self.load_classifier)
@@ -105,7 +104,7 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        self.checkBox = QtGui.QCheckBox('ROIs &On')
+        self.checkBox = QtGui.QCheckBox('&O: ROIs On')
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.checkBox.toggle()
@@ -123,13 +122,13 @@ class MainW(QtGui.QMainWindow):
         ql = QtGui.QLabel('select cells')
         ql.setStyleSheet('color: white;')
         ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.l0.addWidget(ql,0,1,1,2)
+        self.l0.addWidget(ql,0,2,1,2)
         pos = [2,3,4]
         for b in range(3):
             btn  = gui.TopButton(b,self)
             btn.setFont(QtGui.QFont("Arial", 8))
             self.topbtns.addButton(btn,b)
-            self.l0.addWidget(btn, 0,(pos[b]-1)*2,1,2)
+            self.l0.addWidget(btn, 0,(pos[b])*2,1,2)
             btn.setEnabled(False)
         self.topbtns.setExclusive(True)
         self.isROI=False
@@ -138,15 +137,16 @@ class MainW(QtGui.QMainWindow):
         ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         ql.setStyleSheet('color: white;')
         ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.l0.addWidget(ql,0,9,1,1)
+        self.l0.addWidget(ql,0,10,1,1)
         #self.l0.setColumnStretch(5,0.1)
         self.topedit = QtGui.QLineEdit(self)
         self.topedit.setValidator(QtGui.QIntValidator(0,500))
         self.topedit.setText('40')
+        self.ntop = 40
         self.topedit.setFixedWidth(35)
         self.topedit.setAlignment(QtCore.Qt.AlignRight)
-        self.topedit.returnPressed.connect(self.number_chosen)
-        self.l0.addWidget(self.topedit,0,10,1,1)
+        self.topedit.returnPressed.connect(self.top_number_chosen)
+        self.l0.addWidget(self.topedit,0,11,1,1)
         # minimize view
         self.sizebtns = QtGui.QButtonGroup(self)
         b=0
@@ -164,7 +164,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,38,30)
+        self.l0.addWidget(self.win,1,2,38,30)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(lockAspect=True,name='plot1',border=[100,100,100],
@@ -196,8 +196,9 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
-        self.views = ['Q: ROIs', 'W: mean img (enhanced)', 'E: mean img', 'R: correlation map']
-        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint','G: aspect_ratio','H: classifier','J: correlations']
+        self.views = ['Q: ROIs', 'W: mean img', 'E: mean img (enhanced)', 'R: correlation map']
+        self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint',
+                        'G: aspect_ratio','H: classifier','J: correlations, bin=']
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -209,7 +210,7 @@ class MainW(QtGui.QMainWindow):
         for names in self.views:
             btn  = gui.ViewButton(b,'&'+names,self)
             self.viewbtns.addButton(btn,b)
-            self.l0.addWidget(btn,b+2,0,1,1)
+            self.l0.addWidget(btn,b+2,0,1,2)
             btn.setEnabled(False)
             b+=1
         self.viewbtns.setExclusive(True)
@@ -218,24 +219,34 @@ class MainW(QtGui.QMainWindow):
         clabel = QtGui.QLabel(self)
         clabel.setText("<font color='white'>Colors</font>")
         clabel.setFont(boldfont)
-        self.l0.addWidget(clabel,b+3,0,1,1)
+        self.l0.addWidget(clabel,b+3,0,1,2)
         nv = b+3
         b=0
         # colorbars for different statistics
         for names in self.colors:
             btn  = gui.ColorButton(b,'&'+names,self)
             self.colorbtns.addButton(btn,b)
-            self.l0.addWidget(btn,nv+b+1,0,1,1)
+            if b==len(self.colors)-1:
+                self.l0.addWidget(btn,nv+b+1,0,1,1)
+            else:
+                self.l0.addWidget(btn,nv+b+1,0,1,2)
             btn.setEnabled(False)
             self.colors[b] = self.colors[b][3:]
             b+=1
+        self.binedit = QtGui.QLineEdit(self)
+        self.binedit.setValidator(QtGui.QIntValidator(0,500))
+        self.binedit.setText('0')
+        self.binedit.setFixedWidth(40)
+        self.binedit.setAlignment(QtCore.Qt.AlignRight)
+        self.binedit.returnPressed.connect(lambda: self.mode_change(self.activityMode))
+        self.l0.addWidget(self.binedit,nv+b,1,1,1)
         self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
         colorbarW.setMaximumHeight(60)
         colorbarW.setMaximumWidth(150)
         colorbarW.ci.layout.setRowStretchFactor(0,2)
         colorbarW.ci.layout.setContentsMargins(0,0,0,0)
-        self.l0.addWidget(colorbarW, nv+b+2,0,1,1)
+        self.l0.addWidget(colorbarW, nv+b+2,0,1,2)
         self.colorbar = pg.ImageItem()
         cbar = colorbarW.addViewBox(row=0,col=0,colspan=3)
         cbar.setMenuEnabled(False)
@@ -243,6 +254,9 @@ class MainW(QtGui.QMainWindow):
         self.clabel = [colorbarW.addLabel('0.0',color=[255,255,255],row=1,col=0),
                         colorbarW.addLabel('0.5',color=[255,255,255],row=1,col=1),
                         colorbarW.addLabel('1.0',color=[255,255,255],row=1,col=2)]
+        plabel = QtGui.QLabel('\t    cell probability')
+        plabel.setStyleSheet("color: white;")
+        self.l0.addWidget(plabel,self.bend,0,1,2)
         self.probedit = QtGui.QDoubleSpinBox(self)
         self.probedit.setDecimals(3)
         self.probedit.setMaximum(1.0)
@@ -251,9 +265,6 @@ class MainW(QtGui.QMainWindow):
         self.probedit.setValue(0.5)
         self.probedit.setFixedWidth(55)
         self.l0.addWidget(self.probedit,self.bend,0,1,1)
-        plabel = QtGui.QLabel('\t    cell probability')
-        plabel.setStyleSheet("color: white;")
-        self.l0.addWidget(plabel,self.bend,0,1,1)
         self.applyclass = QtGui.QPushButton(' apply')
         self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.applyclass.clicked.connect(lambda: classifier.apply(self))
@@ -265,15 +276,15 @@ class MainW(QtGui.QMainWindow):
         cllabel = QtGui.QLabel("")
         cllabel.setFont(boldfont)
         cllabel.setText("<font color='white'>Classifier</font>")
-        self.classLabel = QtGui.QLabel("<font color='white'>load a classifier</font>")
+        self.classLabel = QtGui.QLabel("<font color='white'>not loaded</font>")
         self.classLabel.setFont(QtGui.QFont('Arial',8))
-        self.l0.addWidget(cllabel,self.bend+2,0,1,1)
-        self.l0.addWidget(self.classLabel,self.bend+3,0,1,1)
+        self.l0.addWidget(cllabel,self.bend+2,0,1,2)
+        self.l0.addWidget(self.classLabel,self.bend+3,0,1,2)
         self.addtoclass = QtGui.QPushButton(' add current data to classifier')
         self.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.addtoclass.clicked.connect(lambda: classifier.add_to(self))
         self.addtoclass.setStyleSheet(self.styleInactive)
-        self.l0.addWidget(self.addtoclass,self.bend+4,0,1,1)
+        self.l0.addWidget(self.addtoclass,self.bend+4,0,1,2)
         #### ------ CELL STATS -------- ####
         # which stats
         self.bend = self.bend+5
@@ -283,7 +294,7 @@ class MainW(QtGui.QMainWindow):
         qlabel = QtGui.QLabel(self)
         qlabel.setFont(boldfont)
         qlabel.setText("<font color='white'>Selected ROI:</font>")
-        self.l0.addWidget(qlabel,self.bend,0,1,1)
+        self.l0.addWidget(qlabel,self.bend,0,1,2)
         self.ROIedit = QtGui.QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
         self.ROIedit.setText('0')
@@ -299,21 +310,47 @@ class MainW(QtGui.QMainWindow):
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].setStyleSheet("color: white;")
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
-            self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,1)
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,1)
+            self.l0.addWidget(self.ROIstats[k], self.bend+2+k,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+3+k,0,1,2)
         self.l0.setRowStretch(self.bend+3+k, 1)
+        # combo box to decide what kind of activity to view
+        qlabel = QtGui.QLabel(self)
+        qlabel.setText("<font color='white'>Activity mode:</font>")
+        self.l0.addWidget(qlabel,self.bend+k+4,0,1,1)
+        self.comboBox = QtGui.QComboBox(self)
+        self.comboBox.setFixedWidth(100)
+        self.l0.addWidget(self.comboBox,self.bend+k+5,0,1,1)
+        self.comboBox.addItem('F')
+        self.comboBox.addItem('Fneu')
+        self.comboBox.addItem('F - 0.7*Fneu')
+        self.comboBox.addItem('deconvolved')
+        self.activityMode = 2
+        self.comboBox.setCurrentIndex(self.activityMode)
+        self.comboBox.currentIndexChanged.connect(self.mode_change)
         # up/down arrows to resize view
         self.level = 1
-        self.arrowButtons = [QtGui.QPushButton(u"  \u25b2"), QtGui.QPushButton(u"  \u25bc")]
+        self.arrowButtons = [QtGui.QPushButton(u" \u25b2"), QtGui.QPushButton(u" \u25bc")]
         self.arrowButtons[0].clicked.connect(self.expand_trace)
         self.arrowButtons[1].clicked.connect(self.collapse_trace)
         b = 0
         for btn in self.arrowButtons:
-            btn.setMaximumWidth(25)
+            btn.setMaximumWidth(22)
+            btn.setFont(QtGui.QFont('Arial',11,QtGui.QFont.Bold))
             btn.setStyleSheet(self.styleUnpressed)
-            self.l0.addWidget(btn, self.bend+4+k+b,0,1,1,QtCore.Qt.AlignRight)
+            self.l0.addWidget(btn, self.bend+4+k+b,1,1,1,QtCore.Qt.AlignRight)
             b+=1
-        self.l0.addWidget(QtGui.QLabel(''), self.bend+6+k,0,1,1)
+        self.pmButtons = [QtGui.QPushButton(' +'), QtGui.QPushButton(' -')]
+        self.pmButtons[0].clicked.connect(self.expand_scale)
+        self.pmButtons[1].clicked.connect(self.collapse_scale)
+        b = 0
+        self.sc = 2
+        for btn in self.pmButtons:
+            btn.setMaximumWidth(22)
+            btn.setFont(QtGui.QFont('Arial',11,QtGui.QFont.Bold))
+            btn.setStyleSheet(self.styleUnpressed)
+            self.l0.addWidget(btn, self.bend+4+k+b,1,1,1)
+            b+=1
+        self.l0.addWidget(QtGui.QLabel(''), self.bend+6+k,0,1,2)
         # trace labels
         flabel = QtGui.QLabel(self)
         flabel.setText("<font color='blue'>Fluorescence</font>")
@@ -327,9 +364,9 @@ class MainW(QtGui.QMainWindow):
         flabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         nlabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         slabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.l0.addWidget(flabel, self.bend+7+k,0,1,1)
-        self.l0.addWidget(nlabel, self.bend+8+k,0,1,1)
-        self.l0.addWidget(slabel, self.bend+9+k,0,1,1)
+        self.l0.addWidget(flabel, self.bend+7+k,0,1,2)
+        self.l0.addWidget(nlabel, self.bend+8+k,0,1,2)
+        self.l0.addWidget(slabel, self.bend+9+k,0,1,2)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          'classifiers/classifier_user.npy')
@@ -341,6 +378,33 @@ class MainW(QtGui.QMainWindow):
         #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
         #self.load_proc()
+
+    def mode_change(self,i):
+        self.activityMode = i
+        # activity used for correlations
+        self.bin = int(self.binedit.text())
+        nb   = int(np.floor(float(self.Fcell.shape[1]) / float(self.bin)))
+        if i==0:
+            f = self.Fcell
+        elif i==1:
+            f = self.Fneu
+        elif i==2:
+            f = self.Fcell - 0.7*self.Fneu
+        else:
+            f = self.Spks
+        ncells = len(self.stat)
+        self.Fbin = f[:,:nb*self.bin].reshape((ncells,nb,self.bin)).mean(axis=2)
+        self.Fbin = self.Fbin - self.Fbin.mean(axis=1)[:,np.newaxis]
+        self.Fstd = (self.Fbin**2).sum(axis=1)
+        self.trange = np.arange(0,self.Fcell.shape[1])
+        # if in correlation-view, recompute
+        if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+            fig.corr_masks(self)
+            fig.plot_colorbar(self, self.ops_plot[2])
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+        fig.plot_trace(self)
+        self.show()
 
     def keyPressEvent(self, event):
         if event.modifiers() !=  QtCore.Qt.ControlModifier:
@@ -391,6 +455,18 @@ class MainW(QtGui.QMainWindow):
             #elif event.key() == QtCore.Qt.Key_K:
             #    self.colorbtns.button(7).press(self, 0)
 
+    def expand_scale(self):
+        self.sc+=0.5
+        self.sc = np.minimum(10,self.sc)
+        fig.plot_trace(self)
+        self.show()
+
+    def collapse_scale(self):
+        self.sc-=0.5
+        self.sc = np.maximum(0.5,self.sc)
+        fig.plot_trace(self)
+        self.show()
+
     def expand_trace(self):
         self.level+=1
         self.level = np.minimum(5,self.level)
@@ -401,11 +477,20 @@ class MainW(QtGui.QMainWindow):
         self.level = np.maximum(1,self.level)
         self.win.ci.layout.setRowStretchFactor(1,self.level)
 
+    def top_number_chosen(self):
+        if self.loaded:
+            self.ntop = int(self.topedit.text())
+            if not self.sizebtns.button(1).isChecked():
+                for b in [1,2]:
+                    if self.topbtns.button(b).isChecked():
+                        self.top_selection(b)
+                        self.show()
+
     def top_selection(self, bid):
         self.ROI_remove()
         draw = False
         ncells = len(self.stat)
-        icells = np.minimum(ncells, 40)
+        icells = np.minimum(ncells, self.ntop)
         if bid==1:
             top = True
         elif bid==2:
@@ -465,6 +550,8 @@ class MainW(QtGui.QMainWindow):
             imy  = (view[1][1] + view[1][0]) / 2
             dx  = (view[0][1] - view[0][0]) / 4
             dy  = (view[1][1] - view[1][0]) / 4
+            dx = np.minimum(dx,300)
+            dy = np.minimum(dy,300)
             imx = imx - dx/2
             imy = imy - dy/2
             self.ROI = pg.RectROI([imx,imy],[dx,dy],pen='w',sideScalers=True)
@@ -550,6 +637,9 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot[3] = []
         self.ops_plot[4] = []
         self.setWindowTitle(self.fname)
+        # set bin size to be 0.5s by default
+        self.bin  = int(self.ops['tau'] * self.ops['fs'] / 2)
+        self.binedit.setText(str(self.bin))
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)
         for n in range(0,ncells):
@@ -570,6 +660,8 @@ class MainW(QtGui.QMainWindow):
         self.imerge = [int(0)]
         self.iflip = int(0)
         self.ichosen_stats()
+        self.comboBox.setCurrentIndex(2)
+        self.mode_change(2)
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
@@ -720,7 +812,6 @@ class MainW(QtGui.QMainWindow):
                     fig.plot_masks(self,M)
                     fig.plot_trace(self)
                     self.show()
-                    #print(time.time()-tic)
 
     def ichosen_stats(self):
         n = self.ichosen

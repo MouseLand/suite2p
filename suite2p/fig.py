@@ -38,12 +38,20 @@ def plot_trace(parent):
         parent.fmax=fmax
         ax.setTicks(None)
     else:
-        kspace = 0.5
+        kspace = 1.0/parent.sc
         ttick = list()
-        pmerge = parent.imerge[:np.minimum(len(parent.imerge),40)]
+        pmerge = parent.imerge[:np.minimum(len(parent.imerge),200)]
         k=len(pmerge)-1
+        i = parent.activityMode
         for n in pmerge[::-1]:
-            f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
+            if i==0:
+                f = parent.Fcell[n,:]
+            elif i==1:
+                f = parent.Fneu[n,:]
+            elif i==2:
+                f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
+            else:
+                f = parent.Spks[n,:]
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
@@ -56,7 +64,7 @@ def plot_trace(parent):
             #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
             k-=1
         parent.fmin=0#-(k-1)*0.5
-        parent.fmax=(len(pmerge)+1)*kspace
+        parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
@@ -105,13 +113,6 @@ def make_colors(parent):
         b+=1
     parent.clabels.append([0,0.5,1])
     parent.ops_plot[3] = allcols
-    # make colors for pairwise correlations
-    bin  = int(parent.ops['tau'] * parent.ops['fs'] / 2)
-    nb   = int(np.floor(parent.Fcell.shape[1] / bin))
-    f = parent.Fcell - 0.7 * parent.Fneu
-    parent.Fbin = f[:,:nb*bin].reshape((ncells,bin,nb)).mean(axis=1)
-    parent.Fbin = parent.Fbin - parent.Fbin.mean(axis=1)[:,np.newaxis]
-    parent.Fstd = (parent.Fbin**2).sum(axis=1)
     #parent.ops_plot[4] = corrcols
     #parent.cc = cc
 
@@ -199,13 +200,13 @@ def init_masks(parent):
 
     for k in range(4):
         if k>0:
-            if k==1:
+            if k==2:
                 if 'meanImgE' not in ops:
                     ops = utils.enhanced_mean_image(ops)
                 mimg = ops['meanImgE']
-            elif k==2:
+            elif k==1:
                 mimg = ops['meanImg']
-                S = np.maximum(0,np.minimum(1, V*1.5))
+                S = np.maximum(0,np.minimum(1, Vorig*1.5))
                 mimg1 = np.percentile(mimg,1)
                 mimg99 = np.percentile(mimg,99)
                 mimg     = (mimg - mimg1) / (mimg99 - mimg1)
@@ -266,7 +267,7 @@ def corr_masks(parent):
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
-    cc[n] = 0
+    cc[n] = cc.mean()
     istat = cc
     parent.clabels[-1] = [istat.min(),
                          (istat.max()-istat.min())/2 + istat.min(),

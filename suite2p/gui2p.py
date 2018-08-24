@@ -46,10 +46,15 @@ class MainW(QtGui.QMainWindow):
         runS2P.triggered.connect(self.run_suite2p)
         self.addAction(runS2P)
         # load processed data
-        loadProc = QtGui.QAction('&Load processed data (choose stat.npy file)', self)
+        loadProc = QtGui.QAction('&Load processed data', self)
         loadProc.setShortcut('Ctrl+L')
         loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
+        # load a behavioral trace
+        self.loadBeh = QtGui.QAction('Load behavior or stim trace (1D only)', self)
+        self.loadBeh.triggered.connect(self.load_behavior)
+        self.loadBeh.setEnabled(False)
+        self.addAction(self.loadBeh)
         # load masks
         #loadMask = QtGui.QAction('&Load masks (stat.npy) and extract traces', self)
         #loadMask.setShortcut('Ctrl+M')
@@ -59,6 +64,7 @@ class MainW(QtGui.QMainWindow):
         file_menu = main_menu.addMenu('&File')
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
+        file_menu.addAction(self.loadBeh)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
@@ -223,7 +229,9 @@ class MainW(QtGui.QMainWindow):
         nv = b+3
         b=0
         # colorbars for different statistics
-        for names in self.colors:
+        colorsAll = self.colors.copy()
+        colorsAll.append('K: corr with 1D var, bin ^')
+        for names in colorsAll:
             btn  = gui.ColorButton(b,'&'+names,self)
             self.colorbtns.addButton(btn,b)
             if b==len(self.colors)-1:
@@ -231,7 +239,8 @@ class MainW(QtGui.QMainWindow):
             else:
                 self.l0.addWidget(btn,nv+b+1,0,1,2)
             btn.setEnabled(False)
-            self.colors[b] = self.colors[b][3:]
+            if b<len(self.colors):
+                self.colors[b] = self.colors[b][3:]
             b+=1
         self.binedit = QtGui.QLineEdit(self)
         self.binedit.setValidator(QtGui.QIntValidator(0,500))
@@ -239,7 +248,7 @@ class MainW(QtGui.QMainWindow):
         self.binedit.setFixedWidth(40)
         self.binedit.setAlignment(QtCore.Qt.AlignRight)
         self.binedit.returnPressed.connect(lambda: self.mode_change(self.activityMode))
-        self.l0.addWidget(self.binedit,nv+b,1,1,1)
+        self.l0.addWidget(self.binedit,nv+b-1,1,1,1)
         self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
         colorbarW.setMaximumHeight(60)
@@ -410,9 +419,11 @@ class MainW(QtGui.QMainWindow):
             # if in correlation-view, recompute
             if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                 fig.corr_masks(self)
-                fig.plot_colorbar(self, self.ops_plot[2])
-                M = fig.draw_masks(self)
-                fig.plot_masks(self,M)
+            elif self.ops_plot[2]==self.ops_plot[3].shape[1]+1:
+                fig.beh_masks(self)
+            fig.plot_colorbar(self, self.ops_plot[2])
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
             fig.plot_trace(self)
             self.show()
 
@@ -462,8 +473,10 @@ class MainW(QtGui.QMainWindow):
             elif event.key() == QtCore.Qt.Key_J:
                 self.colorbtns.button(6).setChecked(True)
                 self.colorbtns.button(6).press(self, 6)
-            #elif event.key() == QtCore.Qt.Key_K:
-            #    self.colorbtns.button(7).press(self, 0)
+            elif event.key() == QtCore.Qt.Key_K:
+                if self.bloaded:
+                    self.colorbtns.button(7).setChecked(True)
+                    self.colorbtns.button(7).press(self, 7)
 
     def expand_scale(self):
         self.sc+=0.5
@@ -645,6 +658,8 @@ class MainW(QtGui.QMainWindow):
             self.show()
 
     def make_masks_and_buttons(self):
+        #self.loadBeh.setEnabled(True)
+        self.bloaded = False
         self.ROI_remove()
         self.isROI=False
         self.ops_plot[1] = 0
@@ -676,8 +691,6 @@ class MainW(QtGui.QMainWindow):
         self.iflip = int(0)
         self.ichosen_stats()
         self.comboBox.setCurrentIndex(2)
-        self.loaded = True
-        self.mode_change(2)
         # colorbar
         self.colormat = fig.make_colorbar()
         fig.plot_colorbar(self, self.ops_plot[2])
@@ -696,6 +709,8 @@ class MainW(QtGui.QMainWindow):
             self.xyrat = 1.0
         self.p1.setAspectLocked(lock=True, ratio=self.xyrat)
         self.p2.setAspectLocked(lock=True, ratio=self.xyrat)
+        self.loaded = True
+        self.mode_change(2)
         self.show()
         # no classifier loaded
         classifier.activate(self, False)
@@ -930,6 +945,27 @@ class MainW(QtGui.QMainWindow):
         else:
             Text = 'Incorrect file, not a stat.npy, choose another?'
             self.load_again(Text)
+
+
+    def load_behavior(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.npy', filter='*.npy')
+        bloaded = False
+        try:
+            beh = np.load(name[0])
+            beh = beh.flatten()
+            if beh.size == self.Fcell.shape[1]:
+                self.bloaded = True
+        except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
+            print('ERROR: this is not a 1D array with length of data')
+        if bloaded:
+            self.beh = beh
+            b = len(self.colors)
+            self.colorbtns.button(b).setEnabled(True)
+            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            fig.plot_trace(self)
+            self.show()
+        else:
+            print('ERROR: this is not a 1D array with length of data')
 
     def load_again(self,Text):
         tryagain = QtGui.QMessageBox.question(self, 'ERROR',

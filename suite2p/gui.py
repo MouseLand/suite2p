@@ -284,8 +284,8 @@ class ColorButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in parent.colorbtns.buttons():
-            b.setStyleSheet(parent.styleUnpressed)
+        for b in range(len(parent.colors)):
+            parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot[2] = bid
         if not parent.sizebtns.button(1).isChecked():
@@ -303,6 +303,8 @@ class ColorButton(QtGui.QPushButton):
                 parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
         if bid==6:
             fig.corr_masks(parent)
+        elif bid==7:
+            fig.beh_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)

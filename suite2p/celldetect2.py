@@ -175,7 +175,8 @@ def getNeuropilBasis(ops, Ly, Lx):
 
     ntilesY  = int(np.ceil(tile_factor * Ly / (ratio_neuropil * diameter[0]/2)))
     ntilesX  = int(np.ceil(tile_factor * Lx / (ratio_neuropil * diameter[1]/2)))
-
+    ntilesY  = np.maximum(2,ntilesY)
+    ntilesX  = np.maximum(2,ntilesX)
     yc = np.linspace(1, Ly, ntilesY)
     xc = np.linspace(1, Lx, ntilesX)
     ys = np.arange(0,Ly)

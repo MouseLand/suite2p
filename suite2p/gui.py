@@ -8,13 +8,33 @@ import pickle
 from suite2p import fig
 from suite2p import run_s2p
 
-# this file contains helper functions for GUI and run dialog
+### ---- this file contains helper functions for GUI and the RUN window ---- ###
+
+# type in h5py key
+class TextChooser(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(TextChooser, self).__init__(parent)
+        self.setGeometry(300,300,180,100)
+        self.setWindowTitle('h5py key')
+        self.win = QtGui.QWidget(self)
+        layout = QtGui.QGridLayout()
+        self.win.setLayout(layout)
+        self.qedit = QtGui.QLineEdit('data')
+        layout.addWidget(QtGui.QLabel('key for h5py data field'),0,0,1,3)
+        layout.addWidget(self.qedit,1,0,1,2)
+        done = QtGui.QPushButton('OK')
+        done.clicked.connect(self.exit_list)
+        layout.addWidget(done,2,1,1,1)
+
+    def exit_list(self):
+        self.h5_key = self.qedit.text()
+        self.accept()
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,800)
+        self.setGeometry(50,50,1200,700)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -52,7 +72,7 @@ class RunWindow(QtGui.QDialog):
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
-                    'tile factor',
+                    'tiling of neuropil during cell detection (1.0 corresponds to approx 14x14 grid of basis functions, 0.5 -> 7x7)',
                     'minimum ratio between neuropil radius and cell radius',
                     'number of pixels between ROI and neuropil donut',
                     'maximum neuropil radius',
@@ -104,30 +124,36 @@ class RunWindow(QtGui.QDialog):
         qedit = QtGui.QLineEdit()
         self.layout.addWidget(qedit,2,0,1,1)
         qedit.setText(str(int(self.ops[key])))
-        qedit.setFixedWidth(105)
+        qedit.setFixedWidth(95)
         self.keylist.append(key)
         self.editlist.append(qedit)
         btiff = QtGui.QPushButton('Add directory to data_path')
         btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(btiff,3,0,1,1)
+        self.layout.addWidget(btiff,3,0,1,2)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,4,0,1,1)
         # save_path0
+        bh5py = QtGui.QPushButton('OR add h5py file path')
+        bh5py.clicked.connect(self.get_h5py)
+        self.layout.addWidget(bh5py,13,0,1,2)
+        self.h5text = QtGui.QLabel('')
+        self.layout.addWidget(self.h5text,14,0,1,2)
         bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(bsave,15,0,1,1)
+        self.layout.addWidget(bsave,15,0,1,2)
         self.savelabel = QtGui.QLabel('')
-        self.layout.addWidget(self.savelabel,16,0,1,1)
+        self.layout.addWidget(self.savelabel,16,0,1,2)
         # fast_disk
         bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
         bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(bbin,17,0,1,1)
+        self.layout.addWidget(bbin,17,0,1,2)
         self.binlabel = QtGui.QLabel('')
-        self.layout.addWidget(self.binlabel,18,0,1,1)
+        self.layout.addWidget(self.binlabel,18,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
         self.layout.addWidget(self.runButton,20,0,1,1)
+        self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
         self.layout.addWidget(self.textEdit, 21,0,30,2*l)
         self.process = QtCore.QProcess(self)
@@ -139,7 +165,7 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 20,2,1,2)
+        self.layout.addWidget(self.stopButton, 20,1,1,1)
         self.stopButton.clicked.connect(self.stop)
 
     def stop(self):
@@ -204,8 +230,14 @@ class RunWindow(QtGui.QDialog):
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
+        if hasattr(self, 'h5_path'):
+            self.db['h5_path'] = self.h5_path
+            self.db['h5_key'] = self.h5_key
         if len(self.save_path)==0:
-            fpath = self.db['data_path'][0]
+            if len(self.db['data_path'])>0:
+                fpath = self.db['data_path'][0]
+            else:
+                fpath = os.path.dirname(self.db['h5_path'])
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
         if len(self.fast_disk)==0:
@@ -213,6 +245,7 @@ class RunWindow(QtGui.QDialog):
         self.db['fast_disk'] = self.fast_disk
         print('Running suite2p!')
         print('starting process')
+        print(self.db)
         np.save('ops.npy', self.ops)
         np.save('db.npy', self.db)
         self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
@@ -222,6 +255,20 @@ class RunWindow(QtGui.QDialog):
         self.data_path.append(name)
         self.layout.addWidget(QtGui.QLabel(name),
                               len(self.data_path)+4,0,1,1)
+        self.runButton.setEnabled(True)
+
+    def get_h5py(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
+        name = name[0]
+        self.h5_path = name
+        self.h5text.setText(name)
+        TC = TextChooser(self)
+        result = TC.exec_()
+        if result:
+            self.h5_key = TC.h5_key
+        else:
+            self.h5_key = 'data'
+        self.runButton.setEnabled(True)
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
@@ -284,8 +331,9 @@ class ColorButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in range(len(parent.colors)):
-            parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        for b in range(len(parent.colors)+1):
+            if parent.colorbtns.button(b).isEnabled():
+                parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot[2] = bid
         if not parent.sizebtns.button(1).isChecked():

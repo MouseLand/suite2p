@@ -60,7 +60,6 @@ class VisWindow(QtGui.QMainWindow):
         sp = zscore(sp, axis=1)
         sp -= sp.min()
         sp /= sp.max()
-        sp = np.maximum(0, np.minimum(1, sp))
         self.sp = np.maximum(0,np.minimum(1,sp))
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
@@ -77,8 +76,19 @@ class VisWindow(QtGui.QMainWindow):
         self.imgROI = pg.ImageItem(autoDownsample=True)
         self.p2.addItem(self.imgROI)
         self.p2.setMouseEnabled(x=False,y=False)
-        self.p2.setLabel('left', 'neurons')
-        self.p2.setLabel('bottom', 'time')
+        #self.p2.setLabel('left', 'neurons')
+        self.p2.hideAxis('bottom')
+        self.bloaded = parent.bloaded
+        if self.bloaded:
+            self.beh = parent.beh
+            self.p3 = self.win.addPlot(title='',row=2,col=0,colspan=2)
+            self.p3.plot(np.arange(0,self.beh.size),self.beh)
+            self.avg = self.sp.mean(axis=0)
+            self.p3.plot(np.arange(0,self.beh.size),self.avg)
+            self.p3.setMouseEnabled(x=False,y=False)
+            #self.p3.hideAxis('left')
+            self.p3.getAxis('left').setTicks([[(0,'')]])
+            self.p3.setLabel('bottom', 'time')
         # set colormap to viridis
         colormap = cm.get_cmap("viridis")
         colormap._init()
@@ -112,7 +122,7 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI = pg.RectROI([nt*.25, -1], [nt*.25, nn+1],
                       maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
-        self.ROI.handleSize = 14
+        self.ROI.handleSize = 10
         self.ROI.handlePen = redpen
         # Add top and right Handles
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
@@ -213,6 +223,15 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.sp.shape[0]]
         self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
+        # also plot range of 1D variable (if active)
+        if self.bloaded:
+            self.p3.clear()
+            avg = self.spF[np.ix_(yrange,xrange)].mean(axis=0)
+            avg -= avg.min()
+            avg /= avg.max()
+            self.p3.plot(xrange,avg,pen=(140,140,140))
+            self.p3.plot(xrange,self.beh[xrange],pen='w')
+            self.p3.setXRange(xrange[0],xrange[-1])
         #self.selected = (self.sp.shape[0]-1) - yrange
         self.selected = yrange
         self.p2.setXRange(0,xrange.size)
@@ -220,7 +239,7 @@ class VisWindow(QtGui.QMainWindow):
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
         axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
-        axx.setTicks([[(0.0,str(xrange[0])),(float(xrange.size),str(xrange[-1]))]])
+        #axx.setTicks([[(0.0,str(xrange[0])),(float(xrange.size),str(xrange[-1]))]])
         # bug in range, going to comment out for now
         #self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
         #                                   xrange[-1]-xrange[0],yrange[-1]-yrange[0]))

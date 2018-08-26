@@ -230,7 +230,7 @@ class MainW(QtGui.QMainWindow):
         b=0
         # colorbars for different statistics
         colorsAll = self.colors.copy()
-        colorsAll.append('K: corr with 1D var, bin ^')
+        colorsAll.append('K: corr with 1D var, bin= ^^^')
         for names in colorsAll:
             btn  = gui.ColorButton(b,'&'+names,self)
             self.colorbtns.addButton(btn,b)
@@ -359,23 +359,6 @@ class MainW(QtGui.QMainWindow):
             btn.setStyleSheet(self.styleUnpressed)
             self.l0.addWidget(btn, self.bend+4+k+b,1,1,1)
             b+=1
-        # trace labels
-        flabel = QtGui.QLabel(self)
-        flabel.setText("<font color='blue'>Fluorescence -></font>")
-        nlabel = QtGui.QLabel(self)
-        nlabel.setText("<font color='red'>Neuropil -></font>")
-        slabel = QtGui.QLabel(self)
-        slabel.setText("<font color='gray'>Deconvolved -></font>")
-        boldfont = QtGui.QFont('Arial',8,QtGui.QFont.Bold)
-        flabel.setFont(boldfont)
-        nlabel.setFont(boldfont)
-        slabel.setFont(boldfont)
-        flabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        nlabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        slabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.l0.addWidget(flabel, self.bend+7+k,0,1,2)
-        self.l0.addWidget(nlabel, self.bend+8+k,0,1,2)
-        self.l0.addWidget(slabel, self.bend+9+k,0,1,2)
         # choose max # of cells plotted
         self.l0.addWidget(QtGui.QLabel("<font color='white'>max # plotted:</font>"), self.bend+6+k,0,1,1)
         self.ncedit = QtGui.QLineEdit(self)
@@ -385,6 +368,15 @@ class MainW(QtGui.QMainWindow):
         self.ncedit.setAlignment(QtCore.Qt.AlignRight)
         self.ncedit.returnPressed.connect(self.nc_chosen)
         self.l0.addWidget(self.ncedit, self.bend+7+k,0,1,1)
+        # labels for traces
+        self.traceLabel = [QtGui.QLabel(self), QtGui.QLabel(self), QtGui.QLabel(self)]
+        self.traceText = ["<font color='blue'>fluorescence</font>",
+                          "<font color='red'>neuropil</font>",
+                          "<font color='gray'>deconvolved</font>"]
+        for n in range(3):
+            self.traceLabel[n].setText(self.traceText[n])
+            self.traceLabel[n].setFont(boldfont)
+            self.l0.addWidget(self.traceLabel[n], self.bend+8+k,4+n*2,1,2)
         # classifier file to load
         self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          'classifiers/classifier_user.npy')
@@ -396,6 +388,7 @@ class MainW(QtGui.QMainWindow):
         #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
         #self.load_proc()
+        #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def mode_change(self,i):
         self.activityMode = i
@@ -658,7 +651,7 @@ class MainW(QtGui.QMainWindow):
             self.show()
 
     def make_masks_and_buttons(self):
-        #self.loadBeh.setEnabled(True)
+        self.loadBeh.setEnabled(True)
         self.bloaded = False
         self.ROI_remove()
         self.isROI=False
@@ -949,15 +942,18 @@ class MainW(QtGui.QMainWindow):
 
     def load_behavior(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.npy', filter='*.npy')
+        name = name[0]
         bloaded = False
         try:
-            beh = np.load(name[0])
+            beh = np.load(name)
             beh = beh.flatten()
             if beh.size == self.Fcell.shape[1]:
                 self.bloaded = True
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: this is not a 1D array with length of data')
-        if bloaded:
+        if self.bloaded:
+            beh -= beh.min()
+            beh /= beh.max()
             self.beh = beh
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)

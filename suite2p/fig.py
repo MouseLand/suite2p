@@ -6,6 +6,7 @@ from scipy import signal
 from scipy import ndimage
 from suite2p import utils
 import math
+from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
 
 
@@ -37,6 +38,8 @@ def plot_trace(parent):
         parent.fmin=0
         parent.fmax=fmax
         ax.setTicks(None)
+        for n in range(3):
+            parent.traceLabel[n].setText(parent.traceText[n])
     else:
         nmax = int(parent.ncedit.text())
         kspace = 1.0/parent.sc
@@ -44,6 +47,7 @@ def plot_trace(parent):
         pmerge = parent.imerge[:np.minimum(len(parent.imerge),nmax)]
         k=len(pmerge)-1
         i = parent.activityMode
+        favg = np.zeros((parent.Fcell.shape[1],))
         for n in pmerge[::-1]:
             if i==0:
                 f = parent.Fcell[n,:]
@@ -53,18 +57,29 @@ def plot_trace(parent):
                 f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
             else:
                 f = parent.Spks[n,:]
+            favg += f.flatten()
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
-            #parent.p3.plot([0,parent.trange[-1]*.001],
-            #               [k*kspace+f.mean(),k*kspace+f.mean()],
-            #               pen=pg.mkPen(rgb,width=4))
-            #parent.p3.addItem(pg.TextItem(str(n),color=(100,100,100),anchor=(-5,0.5)))
             k-=1
-        parent.fmin=0#-(k-1)*0.5
+        bsc = len(pmerge)/25 + 1
+        # at bottom plot behavior and avg trace
+        if parent.bloaded:
+            favg -= favg.min()
+            favg /= favg.max()
+            parent.p3.plot(parent.trange,-1*bsc+parent.beh*bsc,pen='w')
+            parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
+            parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
+            parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
+            parent.traceLabel[2].setText("")
+        else:
+            for n in range(3):
+                parent.traceLabel[n].setText("")
+        #ttick.append((-0.5*bsc,'1D var'))
+        parent.fmin=-1*bsc#-(k-1)*0.5
         parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])
@@ -196,7 +211,7 @@ def init_masks(parent):
 
     LamMean = LamAll[LamAll>1e-10].mean()
     RGBall = np.zeros((2,cols.shape[1]+1,4,Ly,Lx,3), np.float32)
-    Vback   = np.zeros((4,Ly,Lx), np.float32)
+    Vback   = np.zeros((3,Ly,Lx), np.float32)
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
     for k in range(4):
@@ -260,6 +275,60 @@ def init_masks(parent):
     parent.Lam  = Lam
     parent.LamMean = LamMean
 
+def beh_masks(parent):
+    k = parent.ops_plot[1]
+    c = parent.ops_plot[3].shape[1]+1
+    n = np.array(parent.imerge)
+    nb = int(np.floor(parent.beh.size/parent.bin))
+    sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    sn -= sn.mean()
+    snstd = (sn**2).sum()
+    cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
+    cc[n] = cc.mean()
+    istat = cc
+    inactive=False
+    if len(parent.clabels)==len(parent.colors):
+        parent.clabels.append([istat.min(),
+                              (istat.max()-istat.min())/2 + istat.min(),
+                              istat.max()])
+        inactive=True
+    else:
+        parent.clabels[-1] = [istat.min(),
+                             (istat.max()-istat.min())/2 + istat.min(),
+                             istat.max()]
+    istat = istat - istat.min()
+    istat = istat / istat.max()
+    istat = istat / 1.3
+    istat = istat + 0.1
+    cols = 1 - istat
+    parent.ops_plot[4] = cols
+    if inactive:
+        nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
+        rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)
+    for i in range(2):
+        H = cols[parent.iROI[i,0,:,:]]
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k==0:
+            S = parent.Sroi[i,:,:]
+            V = Vorig
+        elif k==3:
+            S = parent.Sext[i,:,:]
+            V = parent.Vback[k-1,:,:]
+            V = np.maximum(0,np.minimum(1, V + S))
+        else:
+            S = np.maximum(0,np.minimum(1, Vorig*1.5))
+            V = parent.Vback[k-1,:,:]
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        if inactive:
+            rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
+        else:
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    if inactive:
+        parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
+
 def corr_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]
@@ -270,7 +339,7 @@ def corr_masks(parent):
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
     cc[n] = cc.mean()
     istat = cc
-    parent.clabels[-1] = [istat.min(),
+    parent.clabels[len(parent.colors)-1] = [istat.min(),
                          (istat.max()-istat.min())/2 + istat.min(),
                          istat.max()]
     istat = istat - istat.min()

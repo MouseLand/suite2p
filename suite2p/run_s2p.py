@@ -63,7 +63,10 @@ def run_s2p(ops={},db={}):
     i0 = tic()
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        ops['save_path0'] = ops['data_path'][0]
+        if len(ops['h5py']):            
+            ops['save_path0'], tail = os.path.split(ops['h5py'])
+        else:
+            ops['save_path0'] = ops['data_path'][0]
     # check if there are files already registered
     fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
     if os.path.isfile(fpathops1):

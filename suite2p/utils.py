@@ -111,15 +111,15 @@ def h5py_to_binary(ops):
         # loop over all tiffs
         i0 = 0
         while 1:
+            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
+            if irange.size==0:
+                break
+            im = f[key][irange, :, :]
             if i0==0:
                 ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                 if nchannels>1:
                     ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                 ops1[j]['nframes'] = 0
-            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
-            if irange.size==0:
-                break
-            im = f[key][irange, :, :]
             nframes = im.shape[0]
             for j in range(0,nplanes):
                 im2write = im[np.arange(j, nframes, nplanes*nchannels),:,:]

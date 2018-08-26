@@ -163,6 +163,7 @@ def tiff_to_binary(ops):
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
     fs, ops = get_tif_list(ops) # look for tiffs in all requested folders
     # loop over all tiffs
+
     for ik, file in enumerate(fs):
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
@@ -172,17 +173,27 @@ def tiff_to_binary(ops):
             im = np.expand_dims(im, axis=0)
         nframes = im.shape[0]
         for j in range(0,nplanes):
+            if ik==0:
+                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                if nchannels>1:
+                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                ops1[j]['nframes'] = 0
             i0 = nchannels * ((iplane+j)%nplanes)
             im2write = im[np.arange(int(i0), nframes, nplanes*nchannels),:,:]
+            ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
                 im2write = im[np.arange(int(i0)+1, nframes, nplanes*nchannels),:,:]
                 reg_file_chan2[j].write(bytearray(im2write))
+                ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+            ops1[j]['nframes']+= im2write.shape[0]
         iplane = (iplane+nframes/nchannels)%nplanes
     # write ops files
     for ops in ops1:
         ops['Ly'] = im.shape[1]
         ops['Lx'] = im.shape[2]
+        ops['yrange'] = np.array([0,ops['Ly']])
+        ops['xrange'] = np.array([0,ops['Lx']])
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
     for j in range(0,nplanes):

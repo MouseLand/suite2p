@@ -13,6 +13,7 @@ def toc(i0):
 def default_ops():
     ops = {
         'reg_tif': False, # whether to save registered tiffs
+        'do_registration': True, # whether to register data
         'save_mat': False, # whether to save Matlab results
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
@@ -110,15 +111,22 @@ def run_s2p(ops={},db={}):
             print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         # save ops1
         np.save(fpathops1, ops1)
+    if not ops['do_registration']:
+        flag_binreg = True
     if not flag_binreg:
         ops1 = register.register_binary(ops1) # register tiff
         np.save(fpathops1, ops1) # save ops1
         print('time %4.4f. Registration complete'%toc(i0))
-    else:
+    elif files_found_flag:
         print('found ops1 and pre-registered binaries')
         print(ops1[0]['reg_file'])
         print('overwriting ops1 with new ops')
         print('skipping registration...')
+    # registration is off, but previous binary was not found
+    # need to initialize ops
+    else:
+        print('binary file created, but registration not performed')
+
     ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:

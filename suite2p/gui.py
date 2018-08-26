@@ -47,7 +47,7 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
         parkeys = ['num_workers','num_workers_roi','combined']
-        regkeys = ['nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
+        regkeys = ['do_registration','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
         cellkeys = ['max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
@@ -62,6 +62,7 @@ class RunWindow(QtGui.QDialog):
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
                     'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
                     'combine results across planes in separate folder "combined" at end of processing',
+                    'whether or not to perform registration on tiffs or h5 file',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
@@ -254,7 +255,7 @@ class RunWindow(QtGui.QDialog):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
         self.data_path.append(name)
         self.layout.addWidget(QtGui.QLabel(name),
-                              len(self.data_path)+4,0,1,1)
+                              len(self.data_path)+4,0,1,2)
         self.runButton.setEnabled(True)
 
     def get_h5py(self):

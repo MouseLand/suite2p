@@ -19,7 +19,7 @@ From a command line terminal, type:
 ~~~~
 pip install suite2p
 ~~~~
-If this fails, you might not have Python (or pip, or a recent enough version of pip). You'll need to install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. Try "pip install suite2p" again. If it still fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is 
+If this fails, you might not have Python 3 (or pip, or a recent enough version of pip). You'll need to install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. Try "pip install suite2p" again. If it still fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is 
 ~~~~
 python -m pip install --upgrade pip
 ~~~~
@@ -29,7 +29,12 @@ conda create --name suite2p
 (source) activate suite2p 
 pip install suite2p
 ~~~~
-If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows. 
+If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows.
+
+To upgrade a current install of suite2p to the latest version (see latest package on [pypi](https://pypi.org/project/suite2p/)).
+~~~~
+pip install suite2p --upgrade
+~~~~
 
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS work. 
 

@@ -111,6 +111,11 @@ def h5py_to_binary(ops):
         # loop over all tiffs
         i0 = 0
         while 1:
+            if i0==0:
+                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                if nchannels>1:
+                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                ops1[j]['nframes'] = 0
             irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
             if irange.size==0:
                 break
@@ -119,14 +124,22 @@ def h5py_to_binary(ops):
             for j in range(0,nplanes):
                 im2write = im[np.arange(j, nframes, nplanes*nchannels),:,:]
                 reg_file[j].write(bytearray(im2write))
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels>1:
                     im2write = im[np.arange(j+1, nframes, nplanes*nchannels),:,:]
                     reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                ops1[j]['nframes'] += im2write.shape[0]
             i0 += nframes
     # write ops files
     for ops in ops1:
         ops['Ly'] = im2write.shape[1]
         ops['Lx'] = im2write.shape[2]
+        ops['yrange'] = np.array([0,ops['Ly']])
+        ops['xrange'] = np.array([0,ops['Lx']])
+        ops['meanImg'] /= ops['nframes']
+        if nchannels>1:
+            ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
     for j in range(0,nplanes):
@@ -194,6 +207,9 @@ def tiff_to_binary(ops):
         ops['Lx'] = im.shape[2]
         ops['yrange'] = np.array([0,ops['Ly']])
         ops['xrange'] = np.array([0,ops['Lx']])
+        ops['meanImg'] /= ops['nframes']
+        if nchannels>1:
+            ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
     for j in range(0,nplanes):

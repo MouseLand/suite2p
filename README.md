@@ -46,6 +46,7 @@ suite2p relies on the following packages (which are automatically installed with
 - [scipy](https://www.scipy.org/)
 - [h5py](https://www.h5py.org/)
 - [scikit-image](https://scikit-image.org/)
+- [scikit-learn](http://scikit-learn.org/stable/)
 - [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please let us know if you have problems with other operating systems in the issues.

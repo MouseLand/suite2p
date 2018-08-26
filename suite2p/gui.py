@@ -15,12 +15,12 @@ class TextChooser(QtGui.QDialog):
     def __init__(self,parent=None):
         super(TextChooser, self).__init__(parent)
         self.setGeometry(300,300,180,100)
-        self.setWindowTitle('h5py key')
+        self.setWindowTitle('h5 key')
         self.win = QtGui.QWidget(self)
         layout = QtGui.QGridLayout()
         self.win.setLayout(layout)
         self.qedit = QtGui.QLineEdit('data')
-        layout.addWidget(QtGui.QLabel('key for h5py data field'),0,0,1,3)
+        layout.addWidget(QtGui.QLabel('h5 key for data field'),0,0,1,3)
         layout.addWidget(self.qedit,1,0,1,2)
         done = QtGui.QPushButton('OK')
         done.clicked.connect(self.exit_list)
@@ -134,7 +134,7 @@ class RunWindow(QtGui.QDialog):
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,4,0,1,1)
         # save_path0
-        bh5py = QtGui.QPushButton('OR add h5py file path')
+        bh5py = QtGui.QPushButton('OR add h5 file path')
         bh5py.clicked.connect(self.get_h5py)
         self.layout.addWidget(bh5py,13,0,1,2)
         self.h5text = QtGui.QLabel('')
@@ -231,13 +231,13 @@ class RunWindow(QtGui.QDialog):
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
         if hasattr(self, 'h5_path'):
-            self.db['h5_path'] = self.h5_path
-            self.db['h5_key'] = self.h5_key
+            self.db['h5py'] = self.h5_path
+            self.db['h5py_key'] = self.h5_key
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
             else:
-                fpath = os.path.dirname(self.db['h5_path'])
+                fpath = os.path.dirname(self.db['h5py'])
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
         if len(self.fast_disk)==0:

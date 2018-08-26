@@ -75,11 +75,13 @@ def plot_trace(parent):
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             parent.traceLabel[2].setText("")
+            parent.fmin=-1*bsc
         else:
             for n in range(3):
                 parent.traceLabel[n].setText("")
+            parent.fmin=0
         #ttick.append((-0.5*bsc,'1D var'))
-        parent.fmin=-1*bsc#-(k-1)*0.5
+
         parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])
     parent.p3.setXRange(0,parent.Fcell.shape[1])

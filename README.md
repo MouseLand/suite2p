@@ -31,7 +31,7 @@ pip install suite2p
 ~~~~
 If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows.
 
-To upgrade a current install of suite2p to the latest version (see latest package on [pypi](https://pypi.org/project/suite2p/)).
+To upgrade a current install of suite2p to the latest version (package page [here](https://pypi.org/project/suite2p/)), run the following command:
 ~~~~
 pip install suite2p --upgrade
 ~~~~

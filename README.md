@@ -87,7 +87,7 @@ Main GUI controls (works in all views):
 4. Swap cell = Right-click on the cell
 5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
 
-You can add your manual curation to the classifier by clicking "Add current data to classifier" (this will add the data to the default classifier - this is the classifier that opens when the GUI starts). You can also make a brand-new classifier from a list of "iscell.npy" files that you've manually curated.
+You can add your manual curation to a pre-built classifier by clicking "Add current data to classifier". Or you can make a brand-new classifier from a list of "iscell.npy" files that you've manually curated. The default classifier in the GUI is initialized as the suite2p classifier, but you can overwrite it by adding to it, or loading a different classifier and saving it as the default. The default classifier is used in the pipeline to produce the initial "iscell.npy" file 
  
 ## Other ways to call Suite2p
 

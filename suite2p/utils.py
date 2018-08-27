@@ -133,9 +133,9 @@ def h5py_to_binary(ops):
             i0 += nframes
     # write ops files
     for ops in ops1:
+        ops['Ly'] = im2write.shape[1]
+        ops['Lx'] = im2write.shape[2]
         if not ops['do_registration']:
-            ops['Ly'] = im2write.shape[1]
-            ops['Lx'] = im2write.shape[2]
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
         ops['meanImg'] /= ops['nframes']
@@ -204,9 +204,9 @@ def tiff_to_binary(ops):
         iplane = (iplane+nframes/nchannels)%nplanes
     # write ops files
     for ops in ops1:
+        ops['Ly'] = im.shape[1]
+        ops['Lx'] = im.shape[2]
         if not ops['do_registration']:
-            ops['Ly'] = im.shape[1]
-            ops['Lx'] = im.shape[2]        
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
         ops['meanImg'] /= ops['nframes']

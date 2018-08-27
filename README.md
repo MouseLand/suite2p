@@ -60,7 +60,8 @@ python -m suite2p
 Then: 
 1. File -> Run suite2p (or shortcut ctrl+r)
 2. Setup a configuration for your own data
-    - -> Add directory to data_path (can be multiple folders, but add them one at a time)
+    - -> Add directory which contains tiffs to data_path (can be multiple folders, but add them one at a time)
+    - -> OR choose an h5 file which has a key with the data, data shape should be time x pixels x pixels (you can type in the key name for the data after you choose the file)
     - -> Add save_path ((otherwise the data directory is used as save path))
     - -> Add fast_disk (this is where the binary file of registered data will be created, choose an SSD for this path) ((otherwise the save path is used as the fast disk path))
     - Set some parameters (see full list below). At the minimum: 

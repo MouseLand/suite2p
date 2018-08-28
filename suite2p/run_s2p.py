@@ -12,6 +12,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'save_mat': False, # whether to save output as matlab files
         'reg_tif': False, # whether to save registered tiffs
         'do_registration': True, # whether to register data
         'save_mat': False, # whether to save Matlab results
@@ -64,7 +65,7 @@ def run_s2p(ops={},db={}):
     i0 = tic()
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if len(ops['h5py']):            
+        if len(ops['h5py']):
             ops['save_path0'], tail = os.path.split(ops['h5py'])
         else:
             ops['save_path0'] = ops['data_path'][0]
@@ -155,7 +156,7 @@ def run_s2p(ops={},db={}):
         # save as matlab file
         if ('save_mat' in ops) and ops['save_mat']:
             matpath = os.path.join(ops['save_path'],'Fall.mat')
-            scipy.io.savemat(matpath, {'stat': stat,
+            io.savemat(matpath, {'stat': stat,
                                        'ops': ops,
                                        'F': F,
                                        'Fneu': Fneu,

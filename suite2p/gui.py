@@ -46,28 +46,30 @@ class RunWindow(QtGui.QDialog):
         self.save_path = []
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
-        parkeys = ['num_workers','num_workers_roi','combined']
+        outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
-        cellkeys = ['max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
+        cellkeys = ['connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
-        keys = [[],tifkeys, parkeys, regkeys, cellkeys, neukeys, deconvkeys]
-        labels = ['Filepaths','Main settings','Parallel','Registration','ROI detection','Neuropil','Deconvolution']
+        keys = [[],tifkeys, outkeys, regkeys, cellkeys, neukeys, deconvkeys]
+        labels = ['Filepaths','Main settings',['Output settings','Parallel'],'Registration','ROI detection','Neuropil','Deconvolution']
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
+                    'save output also as mat file "Fall.mat"',
+                    'combine results across planes in separate folder "combined" at end of processing',
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
                     'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
-                    'combine results across planes in separate folder "combined" at end of processing',
                     'whether or not to perform registration on tiffs or h5 file',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     'if 1, registered tiffs are saved',
+                    'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',
                     'maximum number of iterations for ROI detection',
@@ -86,36 +88,46 @@ class RunWindow(QtGui.QDialog):
         self.keylist = []
         self.editlist = []
         kk=0
+        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         for lkey in keys:
             k = 0
-            qlabel = QtGui.QLabel(labels[l])
-            bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
-            qlabel.setFont(bigfont)
-            self.layout.addWidget(qlabel,0,2*l,1,2)
-            for key in lkey:
-                lops = 1
-                if self.ops[key] or (self.ops[key] == 0):
-                    qedit = QtGui.QLineEdit()
-                    qlabel = QtGui.QLabel(key)
-                    qlabel.setToolTip(tooltips[kk])
-                    if key == 'diameter':
-                        if (type(self.ops[key]) is not int) and (len(self.ops[key])>1):
-                            dstr = str(int(self.ops[key][0])) + ', ' + str(int(self.ops[key][1]))
-                        else:
-                            dstr = str(int(self.ops[key]))
-                    else:
-                        if type(self.ops[key]) is not bool:
-                            dstr = str(self.ops[key])
-                        else:
-                            dstr = str(int(self.ops[key]))
-                    qedit.setText(dstr)
-                    qedit.setFixedWidth(105)
-                    self.layout.addWidget(qlabel,k*2+1,2*l,1,2)
-                    self.layout.addWidget(qedit,k*2+2,2*l,1,2)
-                    self.keylist.append(key)
-                    self.editlist.append(qedit)
+            kl=0
+            if type(labels[l]) is list:
+                labs = labels[l]
+                keyl = lkey
+            else:
+                labs = [labels[l]]
+                keyl = [lkey]
+            for label in labs:
+                qlabel = QtGui.QLabel(label)
+                qlabel.setFont(bigfont)
+                self.layout.addWidget(qlabel,k*2,2*l,1,2)
                 k+=1
-                kk+=1
+                for key in keyl[kl]:
+                    lops = 1
+                    if self.ops[key] or (self.ops[key] == 0):
+                        qedit = QtGui.QLineEdit()
+                        qlabel = QtGui.QLabel(key)
+                        qlabel.setToolTip(tooltips[kk])
+                        if key == 'diameter':
+                            if (type(self.ops[key]) is not int) and (len(self.ops[key])>1):
+                                dstr = str(int(self.ops[key][0])) + ', ' + str(int(self.ops[key][1]))
+                            else:
+                                dstr = str(int(self.ops[key]))
+                        else:
+                            if type(self.ops[key]) is not bool:
+                                dstr = str(self.ops[key])
+                            else:
+                                dstr = str(int(self.ops[key]))
+                        qedit.setText(dstr)
+                        qedit.setFixedWidth(105)
+                        self.layout.addWidget(qlabel,k*2-1,2*l,1,2)
+                        self.layout.addWidget(qedit,k*2,2*l,1,2)
+                        self.keylist.append(key)
+                        self.editlist.append(qedit)
+                    k+=1
+                    kk+=1
+                kl+=1
             l+=1
         # data_path
         key = 'look_one_level_down'

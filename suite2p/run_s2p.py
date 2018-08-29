@@ -4,6 +4,11 @@ from suite2p import register, dcnv, classifier, utils
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, io, signal
 from multiprocessing import Pool
+try:
+    from haussmeister import haussio
+    HAS_HAUS = True
+except ImportError:
+    HAS_HAUS = False
 
 def tic():
     return time.time()
@@ -12,6 +17,7 @@ def toc(i0):
 
 def default_ops():
     ops = {
+        'save_mat': False, # whether to save output as matlab files
         'reg_tif': False, # whether to save registered tiffs
         'do_registration': True, # whether to register data
         'save_mat': False, # whether to save Matlab results
@@ -64,7 +70,7 @@ def run_s2p(ops={},db={}):
     i0 = tic()
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if len(ops['h5py']):            
+        if len(ops['h5py']):
             ops['save_path0'], tail = os.path.split(ops['h5py'])
         else:
             ops['save_path0'] = ops['data_path'][0]
@@ -107,8 +113,17 @@ def run_s2p(ops={},db={}):
             ops1 = utils.h5py_to_binary(ops)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
-            ops1 = utils.tiff_to_binary(ops)
-            print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+            try:
+                ops1 = utils.tiff_to_binary(ops)
+                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+            except Exception as e:
+                if HAS_HAUS:
+                    dataset = haussio.load_haussio(ops['data_path'][0])
+                    ops1 = dataset.tosuite2p(ops)
+                    print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
+                else:
+                    print('Unsupported file format: ' + e.message)
+                    return
         # save ops1
         np.save(fpathops1, ops1)
     if not ops['do_registration']:
@@ -154,7 +169,7 @@ def run_s2p(ops={},db={}):
         # save as matlab file
         if ('save_mat' in ops) and ops['save_mat']:
             matpath = os.path.join(ops['save_path'],'Fall.mat')
-            scipy.io.savemat(matpath, {'stat': stat,
+            io.savemat(matpath, {'stat': stat,
                                        'ops': ops,
                                        'F': F,
                                        'Fneu': Fneu,

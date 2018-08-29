@@ -146,7 +146,6 @@ def run_s2p(ops={},db={}):
     # need to initialize ops
     else:
         print('binary file created, but registration not performed')
-
     ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:

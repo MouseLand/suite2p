@@ -419,7 +419,6 @@ def cellMasks(stat, Ly, Lx, allow_overlap):
     cell_pix = np.minimum(1, cell_pix)
     return stat, cell_pix, cell_masks
 
-
 def neuropilMasks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat
     inputs:

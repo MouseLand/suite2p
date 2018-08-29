@@ -17,52 +17,57 @@ def toc(i0):
 
 def default_ops():
     ops = {
-        'save_mat': False, # whether to save output as matlab files
-        'reg_tif': False, # whether to save registered tiffs
-        'do_registration': True, # whether to register data
-        'save_mat': False, # whether to save Matlab results
+        # file paths
+        'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
-        'diameter':12, # this is the main parameter for cell detection, 2-dimensional if Y and X are different (e.g. [6 12])
-        'tau':  1., # this is the main parameter for deconvolution
-        'fs': 10.,  # sampling rate (total across planes)
+        'subfolders': [],
+        # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane
         'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
+        'diameter':12, # this is the main parameter for cell detection, 2-dimensional if Y and X are different (e.g. [6 12])
+        'tau':  1., # this is the main parameter for deconvolution
+        'fs': 10.,  # sampling rate (total across planes)
+        # output settings
+        'save_mat': False, # whether to save output as matlab files
+        'combined': True, # combine multiple planes into a single result /single canvas for GUI
+        # parallel settings
+        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
+        'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
+        # registration settings
+        'do_registration': True, # whether to register data
+        'nimg_init': 200, # subsampled frames for finding reference image
+        'batch_size': 200, # number of frames per batch
+        'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
-        'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
+        'reg_tif': False, # whether to save registered tiffs
+        'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
+        # cell detection settings
+        'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
+        'navg_frames_svd': 5000, # max number of binned frames for the SVD
+        'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
+        'max_iterations': 20, # maximum number of iterations to do cell detection
+        'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
+        'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
+        'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation during cell detection
+        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
+        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
+        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
+        'outer_neuropil_radius': np.inf, # maximum neuropil radius
+        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
+        # deconvolution settings
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
         'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
         'neucoeff': .7,  # neuropil coefficient
-        'neumax': 1.,  # maximum neuropil coefficient (not implemented)
-        'niterneu': 5, # number of iterations when the neuropil coefficient is estimated (not implemented)
-        'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
-        'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-        'batch_size': 200, # number of frames per batch
-        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
-        'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
-        'nimg_init': 200, # subsampled frames for finding reference image
-        'navg_frames_svd': 5000, # max number of binned frames for the SVD
-        'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
-        'max_iterations': 20, # maximum number of iterations to do cell detection
-        'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
-        'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation
-        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
-        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
-        'outer_neuropil_radius': np.inf, # maximum neuropil radius
-        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
-        'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
         'allow_overlap': False,
-        'combined': True, # combine multiple planes into a single result /single canvas for GUI
-        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-        'connected': True,
       }
     return ops
 
@@ -70,7 +75,7 @@ def run_s2p(ops={},db={}):
     i0 = tic()
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if len(ops['h5py']):
+        if ('h5py' in ops) and len(ops['h5py'])>0:
             ops['save_path0'], tail = os.path.split(ops['h5py'])
         else:
             ops['save_path0'] = ops['data_path'][0]
@@ -122,7 +127,7 @@ def run_s2p(ops={},db={}):
                     ops1 = dataset.tosuite2p(ops)
                     print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
                 else:
-                    print('Unsupported file format: ' + e.message)
+                    print('Unsupported file format: ' + str(e))
                     return
         # save ops1
         np.save(fpathops1, ops1)
@@ -171,11 +176,11 @@ def run_s2p(ops={},db={}):
         if ('save_mat' in ops) and ops['save_mat']:
             matpath = os.path.join(ops['save_path'],'Fall.mat')
             io.savemat(matpath, {'stat': stat,
-                                       'ops': ops,
-                                       'F': F,
-                                       'Fneu': Fneu,
-                                       'spks': spks,
-                                       'iscell': iscell})
+                                 'ops': ops,
+                                 'F': F,
+                                 'Fneu': Fneu,
+                                 'spks': spks,
+                                 'iscell': iscell})
 
     # save final ops1 with all planes
     np.save(fpathops1, ops1)

@@ -8,7 +8,7 @@ from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
 import sys
-sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
+#sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap import mapping
 from suite2p import gui,fig
 

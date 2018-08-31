@@ -41,6 +41,7 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 ### Dependencies
 suite2p relies on the following packages (which are automatically installed with pip if missing):
+- [rastermap](https://github.com/MouseLand/rastermap)
 - [pyqtgraph](http://pyqtgraph.org/)
 - [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
 - [numpy](http://www.numpy.org/) (>=1.13.0)

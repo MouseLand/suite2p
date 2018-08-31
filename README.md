@@ -12,7 +12,8 @@ suite2p includes the following modules:
 
 This code was written by Carsen Stringer and Marius Pachitariu.  
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
-The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). 
+The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  
+The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
 ## Installation
 From a command line terminal, type:
@@ -40,6 +41,7 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 ### Dependencies
 suite2p relies on the following packages (which are automatically installed with pip if missing):
+- [rastermap](https://github.com/MouseLand/rastermap)
 - [pyqtgraph](http://pyqtgraph.org/)
 - [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
 - [numpy](http://www.numpy.org/) (>=1.13.0)

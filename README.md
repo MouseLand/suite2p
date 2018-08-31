@@ -127,15 +127,10 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
 ~~~~python
  ops = {
         # file paths
-	'data_path': [], #list of folders with tiffs
-        'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
-	'save_path0': [], # sets the save path (defaults to data_path)
-        'fast_disk': [], # used to store temporary binary file, defaults to save_path0
+	'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
+	'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
-        'h5py': [], # take h5py as input (deactivates data_path)
-        'h5py_key': 'data', #key in h5py where data array is stored
-        'save_path0': [], # stores results, defaults to first item in data_path
-        'subfolders': [],
+        'h5py_key': 'data', # key in h5 where data array is stored (data should be time x pixels x pixels)
         # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane

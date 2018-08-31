@@ -129,7 +129,7 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         # file paths
 	'data_path': [], #list of folders with tiffs
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
-	'save_path0': [], # sets the save path
+	'save_path0': [], # sets the save path (defaults to data_path)
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
         'h5py': [], # take h5py as input (deactivates data_path)

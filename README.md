@@ -24,34 +24,22 @@ If this fails, you might not have Python 3 (or pip, or a recent enough version o
 ~~~~
 python -m pip install --upgrade pip
 ~~~~
-And try "pip install suite2p" again. If it still fails, install Anaconda, and use the Anaconda command prompt to have a clean environment. Alternatively, if you already have Anaconda, create a new conda environment just for suite2p with 
+And try "pip install suite2p" again. If it still fails, install Anaconda, and use the Anaconda command prompt to have a clean environment. Alternatively, if you already have Anaconda, create a clean conda environment just for suite2p with 
 ~~~~
 conda create --name suite2p
 (source) activate suite2p 
 pip install suite2p
 ~~~~
-If you choose this path, you will need to "(source) activate suite2p" every time you use suite2p. Omit the "source" on Windows.
+Omit the "source" on Windows. If you install in this way, you will need to "(source) activate suite2p" every time you use suite2p. 
 
-To upgrade a current install of suite2p to the latest version (package page [here](https://pypi.org/project/suite2p/)), run the following command:
+To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run:
 ~~~~
 pip install suite2p --upgrade
 ~~~~
 
-If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS work. 
+If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine. 
 
-### Dependencies
-suite2p relies on the following packages (which are automatically installed with pip if missing):
-- [rastermap](https://github.com/MouseLand/rastermap)
-- [pyqtgraph](http://pyqtgraph.org/)
-- [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
-- [numpy](http://www.numpy.org/) (>=1.13.0)
-- [scipy](https://www.scipy.org/)
-- [h5py](https://www.h5py.org/)
-- [scikit-image](https://scikit-image.org/)
-- [scikit-learn](http://scikit-learn.org/stable/)
-- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
-
-The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please let us know if you have problems with other operating systems in the issues.
+The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. 
 
 ## Getting started
 
@@ -60,8 +48,8 @@ The quickest way to start is to open the GUI from a command line terminal. You m
 python -m suite2p
 ~~~~
 Then: 
-1. File -> Run suite2p (or shortcut ctrl+r)
-2. Setup a configuration for your own data
+1. File -> Run suite2p (or ctrl+r)
+2. Setup a configuration 
     - -> Add directory which contains tiffs to data_path (can be multiple folders, but add them one at a time)
     - -> OR choose an h5 file which has a key with the data, data shape should be time x pixels x pixels (you can type in the key name for the data after you choose the file)
     - -> Add save_path ((otherwise the data directory is used as save path))
@@ -82,11 +70,11 @@ The GUI serves two main functions:
 1. Checking the quality of the data and results. 
 	* there are currently several views such as the enhanced mean image, the ROI masks, the correlation map, the correlation among cells, and the ROI+neuropil traces
 	* by selecting multiple cells (with "Draw selection" or ctrl+left-click), you can view the activity of multiple ROIs simultaneously in the lower plot
-	* we will later add more views such as population-level visualizations. 
+	* there are also population-level visualizations, such as [rastermap](https://github.com/MouseLand/rastermap)
 2. Classify ROIs into cell / not cell (left and right views respectively) 
-	* the default classifier included should work well in a wide variety of scenarios. 
-	* this classifier can learn from manual curation, and in this way adapt to the statistics of your own data. 
-	* the GUI automatically saves which cells are on the left and right in the first column of "iscell.npy". the second column contains the probability that the ROI is a cell based on the currently loaded classifier.
+	* the default classifier included should work well in a variety of scenarios. 
+	* a user-classifier can be learnt from manual curation, thus adapting to the statistics of your own data. 
+	* the GUI automatically saves which ROIs are good in "iscell.npy". The second column contains the probability that the ROI is a cell based on the currently loaded classifier.
 
 Main GUI controls (works in all views):
 
@@ -176,6 +164,18 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'yrange': np.array([0, 0]),
       }
 ~~~~
+
+### Dependencies
+suite2p relies on the following packages (which are automatically installed with pip if missing):
+- [rastermap](https://github.com/MouseLand/rastermap)
+- [pyqtgraph](http://pyqtgraph.org/)
+- [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
+- [numpy](http://www.numpy.org/) (>=1.13.0)
+- [scipy](https://www.scipy.org/)
+- [h5py](https://www.h5py.org/)
+- [scikit-image](https://scikit-image.org/)
+- [scikit-learn](http://scikit-learn.org/stable/)
+- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
 
 
 ### Logo

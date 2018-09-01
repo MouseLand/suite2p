@@ -6,5 +6,6 @@ import suite2p.gui2p
 import suite2p.gui
 import suite2p.fig
 import suite2p.classifier
+import suite2p.cuda_utils
 
 name = "suite2p"

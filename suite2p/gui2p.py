@@ -426,6 +426,7 @@ class MainW(QtGui.QMainWindow):
                 merge=1
             elif event.key() == QtCore.Qt.Key_Escape:
                 self.zoom_plot(1)
+                self.zoom_plot(3)
                 self.show()
             elif event.key() == QtCore.Qt.Key_Delete:
                 self.ROI_remove()

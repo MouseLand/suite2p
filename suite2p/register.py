@@ -6,6 +6,7 @@ from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
 import math
+from suite2p import cuda_utils
 
 def tic():
     return time.time()
@@ -38,7 +39,7 @@ def mat_upsample(lpad, ops):
     nup = larUP.shape[0]
     return Kmat, nup
 
-def prepareMasks(refImg):
+def prepareMasks(refImg, use_cuda):
     i0,Ly,Lx = refImg.shape
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
@@ -55,8 +56,12 @@ def prepareMasks(refImg):
     hgy = np.exp(-np.square(yy/smoothSigma))
     hgg = hgy * hgx
     hgg = hgg/hgg.sum()
-    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
-    cfRefImg   = np.conj(fft.fft2(refImg));
+    if use_cuda and cuda_utils.HAS_CUDA:
+        fft2 = cuda_utils.cufft2
+    else:
+        fft2 = fft.fft2
+    fhg = np.real(fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+    cfRefImg   = np.conj(fft2(refImg));
     absRef     = np.absolute(cfRefImg);
     cfRefImg   = cfRefImg / (eps0 + absRef) * fhg;
 
@@ -65,13 +70,19 @@ def prepareMasks(refImg):
     cfRefImg = cfRefImg.astype('complex64')
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(data, refImg):
-    (maskMul, maskOffset, cfRefImg) = prepareMasks(refImg)
+def correlation_map(data, refImg, use_cuda):
+    if use_cuda and cuda_utils.HAS_CUDA:
+        fft2 = cuda_utils.cufft2
+        ifft2 = cuda_utils.cuifft2
+    else:
+        fft2 = fft.fft2
+        ifft2 = fft.ifft2
+    (maskMul, maskOffset, cfRefImg) = prepareMasks(refImg, use_cuda)
     data = data.astype('float32') * maskMul + maskOffset
-    X = fft.fft2(data)
+    X = fft2(data)
     J = X / (eps0 + np.absolute(X))
     J = J * cfRefImg
-    cc = np.real(fft.ifft2(J))
+    cc = np.real(ifft2(J))
     cc = fft.fftshift(cc, axes=(1,2))
     return cc
 
@@ -98,8 +109,14 @@ def getXYup(cc, Ls, ops):
     return ymax, xmax, cmax
 
 def shift_data(inputs):
-    X, ymax, xmax = inputs
-    X = fft.fft2(X.astype('float32'))
+    X, ymax, xmax, use_cuda = inputs
+    if use_cuda and cuda_utils.HAS_CUDA:
+        fft2 = cuda_utils.cufft2
+        ifft2 = cuda_utils.cuifft2
+    else:
+        fft2 = fft.fft2
+        ifft2 = fft.ifft2
+    X = fft2(X.astype('float32'))
     nimg, Ly, Lx = X.shape
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
     Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
@@ -107,25 +124,31 @@ def shift_data(inputs):
     Nx = Nx.astype('float32') / Lx
     Ny = Ny.astype('float32') / Ly
     dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
-    Y = np.real(fft.ifft2(X * np.exp((2j * np.pi) * dph)))
+    Y = np.real(ifft2(X * np.exp((2j * np.pi) * dph)))
     return Y
 
 def phasecorr_worker(inputs):
-    data, refImg, ops = inputs
+    data, refImg, ops, use_cuda = inputs
     nimg, Ly, Lx = data.shape
     refImg = np.reshape(refImg, (1, Ly, Lx))
     Lyhalf = int(np.floor(Ly/2))
     Lxhalf = int(np.floor(Lx/2))
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    cc = correlation_map(data, refImg)
+    if use_cuda and cuda_utils.HAS_CUDA:
+        fft2 = cuda_utils.cufft2
+        ifft2 = cuda_utils.cuifft2
+        cuda_utils.init_cuda_process()
+    cc = correlation_map(data, refImg, use_cuda)
     ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
-    Y = shift_data((data, ymax,xmax))
+    Y = shift_data((data, ymax,xmax, use_cuda))
+    if use_cuda and cuda_utils.HAS_CUDA:
+        cuda_utils.close_cuda_process()
     return Y, ymax, xmax, cmax
 
-def phasecorr(data, refImg, ops):
+def phasecorr(data, refImg, ops, use_cuda):
     if ops['num_workers']<0:
-        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops))
+        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops, use_cuda))
     else:
         nimg = data.shape[0]
         if ops['num_workers']<1:
@@ -141,7 +164,7 @@ def phasecorr(data, refImg, ops):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(ilist)
-            dsplit.append([data[ilist,:, :], refImg, ops])
+            dsplit.append([data[ilist,:, :], refImg, ops, use_cuda])
         with Pool(num_cores) as p:
             results = p.map(phasecorr_worker, dsplit)
         Y = np.zeros_like(data)
@@ -160,9 +183,13 @@ def get_nFrames(ops):
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
 
-def register_myshifts(ops, data, ymax, xmax):
+def register_myshifts(ops, data, ymax, xmax, use_cuda):
     if ops['num_workers']<0:
-        dreg = shift_data((data, ymax, xmax))
+        if use_cuda and cuda_utils.HAS_CUDA:
+            cuda_utils.init_cuda_process()
+        dreg = shift_data((data, ymax, xmax, use_cuda))
+        if use_cuda and cuda_utils.HAS_CUDA:
+            cuda_utils.close_cuda_process()
     else:
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)
@@ -176,16 +203,21 @@ def register_myshifts(ops, data, ymax, xmax):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist]])
+            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist], use_cuda])
         with Pool(num_cores) as p:
+            p.map(cuda_utils.init_cuda_process, dsplit)
             results = p.map(shift_data, dsplit)
-
+            p.map(cuda_utils.close_cuda_process, dsplit)
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]
     return dreg
 
-def register_binary(ops):
+def register_binary(ops, use_cuda=True):
+    if use_cuda and not cuda_utils.HAS_CUDA:
+        print("pycuda is unavailable. Falling back to default FFT.")
+        use_cuda = False
+
     # if ops is a list of dictionaries, each will be registered separately
     if (type(ops) is list) or (type(ops) is np.ndarray):
         for op in ops:
@@ -194,7 +226,7 @@ def register_binary(ops):
     Ly = ops['Ly']
     Lx = ops['Lx']
     ops['nframes'] = get_nFrames(ops)
-    refImg = pick_init(ops)
+    refImg = pick_init(ops, use_cuda)
     print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch
@@ -216,7 +248,7 @@ def register_binary(ops):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops)
+        dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops, use_cuda)
         dwrite = dwrite.astype('int16')
         reg_file.seek(-2*dwrite.size,1)
         reg_file.write(bytearray(dwrite))
@@ -260,7 +292,7 @@ def register_binary(ops):
             data = np.reshape(data, (-1, Ly, Lx))
             nframes = data.shape[0]
             # register by pre-determined amount
-            dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
+            dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)], use_cuda)
             ix += nframes
             dwrite = dwrite.astype('int16')
             reg_file.seek(-2*dwrite.size,1)
@@ -315,22 +347,22 @@ def pick_init_init(ops, frames):
     refImg = np.reshape(refImg, (ops['Ly'], ops['Lx']))
     return refImg
 
-def refine_init_init(ops, frames, refImg):
+def refine_init_init(ops, frames, refImg, use_cuda):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
-        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops)
+        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops, use_cuda)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
         #if iter>=np.floor(niter/2):
         #    nmax = int(frames.shape[0] /2)
         refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)
         dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
-        refImg = shift_data((refImg[np.newaxis,:,:], dy,dx)).squeeze()
+        refImg = shift_data((refImg[np.newaxis,:,:], dy,dx, False)).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
-def pick_init(ops):
+def pick_init(ops, use_cuda):
     nbytes = os.path.getsize(ops['reg_file'])
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -338,5 +370,5 @@ def pick_init(ops):
     nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
     refImg = pick_init_init(ops, frames)
-    refImg = refine_init_init(ops, frames, refImg)
+    refImg = refine_init_init(ops, frames, refImg, use_cuda)
     return refImg

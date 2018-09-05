@@ -61,6 +61,7 @@ class VisWindow(QtGui.QMainWindow):
         sp -= sp.min()
         sp /= sp.max()
         self.sp = np.maximum(0,np.minimum(1,sp))
+        self.tsort = np.arange(0,sp.shape[1]).astype(np.int32)
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
         # draw axes
@@ -79,16 +80,15 @@ class VisWindow(QtGui.QMainWindow):
         #self.p2.setLabel('left', 'neurons')
         self.p2.hideAxis('bottom')
         self.bloaded = parent.bloaded
+        self.p3 = self.win.addPlot(title='',row=2,col=0,colspan=2)
+        self.avg = self.sp.mean(axis=0)
+        self.p3.plot(np.arange(0,self.avg.size),self.avg)
+        self.p3.setMouseEnabled(x=False,y=False)
+        self.p3.getAxis('left').setTicks([[(0,'')]])
+        self.p3.setLabel('bottom', 'time')
         if self.bloaded:
             self.beh = parent.beh
-            self.p3 = self.win.addPlot(title='',row=2,col=0,colspan=2)
             self.p3.plot(np.arange(0,self.beh.size),self.beh)
-            self.avg = self.sp.mean(axis=0)
-            self.p3.plot(np.arange(0,self.beh.size),self.avg)
-            self.p3.setMouseEnabled(x=False,y=False)
-            #self.p3.hideAxis('left')
-            self.p3.getAxis('left').setTicks([[(0,'')]])
-            self.p3.setLabel('bottom', 'time')
         # set colormap to viridis
         colormap = cm.get_cmap("viridis")
         colormap._init()
@@ -146,10 +146,121 @@ class VisWindow(QtGui.QMainWindow):
         self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn,4,0,1,2)
-        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.sortTime = QtGui.QCheckBox('&Time sort')
+        self.sortTime.setStyleSheet("color: white;")
+        self.sortTime.stateChanged.connect(self.sort_time)
+        self.l0.addWidget(self.sortTime,5,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),6,0,1,1)
         self.l0.setRowStretch(6, 1)
+        self.raster = False
         self.win.show()
         self.show()
+
+    def keyPressEvent(self, event):
+        bid = -1
+        move = False
+        if event.modifiers() !=  QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_Down:
+                bid = 0
+            elif event.key() == QtCore.Qt.Key_Up:
+                bid=1
+            elif event.key() == QtCore.Qt.Key_Left:
+                bid=2
+            elif event.key() == QtCore.Qt.Key_Right:
+                bid=3
+            if bid >= 0:
+                xrange,yrange = self.ROI_range()
+                nn,nt = self.sp.shape
+                if bid<2:
+                    if yrange.size < nn:
+                        # can move
+                        move = True
+                        if bid==0:
+                            yrange = yrange - np.minimum(yrange.min(),nn*0.05)
+                        else:
+                            yrange = yrange + np.minimum(nn-yrange.max()-1,nn*0.05)
+                else:
+                    if xrange.size < nt:
+                        # can move
+                        move = True
+                        if bid==2:
+                            xrange = xrange - np.minimum(xrange.min()+1,nt*0.05)
+                        else:
+                            xrange = xrange + np.minimum(nt-xrange.max()-1,nt*0.05)
+                if move:
+                    self.ROI.setPos([xrange.min()-1, yrange.min()-1])
+                    self.ROI.setSize([xrange.size+1, yrange.size+1])
+        else:
+            if event.key() == QtCore.Qt.Key_Down:
+                bid = 0
+            elif event.key() == QtCore.Qt.Key_Up:
+                bid=1
+            elif event.key() == QtCore.Qt.Key_Left:
+                bid=2
+            elif event.key() == QtCore.Qt.Key_Right:
+                bid=3
+            if bid >= 0:
+                xrange,yrange = self.ROI_range()
+                nn,nt = self.sp.shape
+                if bid==0:
+                    if yrange.size > nn*0.02:
+                        # can move
+                        move = True
+                        ymax = yrange.size - nn*0.02
+                        yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
+                elif bid==1:
+                    if yrange.size < 0.98*nn + 1:
+                        move = True
+                        ymax = yrange.size + nn*0.02
+                        yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
+                elif bid==2:
+                    if xrange.size > nt*0.02:
+                        # can move
+                        move = True
+                        xmax = xrange.size - nt*0.02
+                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
+                elif bid==3:
+                    if xrange.size < 0.98*nt + 1:
+                        move = True
+                        xmax = xrange.size + nt*0.02
+                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
+                if move:
+                    self.ROI.setPos([xrange.min()-1, yrange.min()-1])
+                    self.ROI.setSize([xrange.size+1, yrange.size+1])
+
+    def ROI_range(self):
+        pos = self.ROI.pos()
+        posy = pos.y()
+        posx = pos.x()
+        sizex,sizey = self.ROI.size()
+        xrange = (np.arange(1,int(sizex)) + int(posx)).astype(np.int32)
+        yrange = (np.arange(1,int(sizey)) + int(posy)).astype(np.int32)
+        xrange = xrange[xrange>=0]
+        xrange = xrange[xrange<self.sp.shape[1]]
+        yrange = yrange[yrange>=0]
+        yrange = yrange[yrange<self.sp.shape[0]]
+        return xrange,yrange
+
+    def ROI_position(self):
+        xrange,yrange = self.ROI_range()
+        self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
+        # also plot range of 1D variable (if active)
+        self.p3.clear()
+        avg = self.spF[np.ix_(yrange,xrange)].mean(axis=0)
+        avg -= avg.min()
+        avg /= avg.max()
+        self.p3.plot(xrange,avg,pen=(140,140,140))
+        self.p3.setXRange(xrange[0],xrange[-1])
+        if self.bloaded:
+            self.p3.plot(xrange,self.beh[xrange],pen='w')
+        #self.selected = (self.sp.shape[0]-1) - yrange
+        self.selected = yrange
+        self.p2.setXRange(0,xrange.size)
+        self.p2.setYRange(0,yrange.size)
+        axy = self.p2.getAxis('left')
+        axx = self.p2.getAxis('bottom')
+        axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        self.imgROI.setLevels([0,self.sat])
 
     def levelchange(self):
         self.sat = float(self.sl.value())/100
@@ -191,9 +302,11 @@ class VisWindow(QtGui.QMainWindow):
         self.neural_sorting(1)
         self.PCOn.setEnabled(False)
         self.mapOn.setEnabled(False)
+        self.sortTime.setChecked(False)
 
     def compute_map(self):
         self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
+        self.raster = True
 
     def compute_svd(self,bin):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
@@ -211,39 +324,6 @@ class VisWindow(QtGui.QMainWindow):
         self.v = (self.sp-self.sp.mean(axis=1)[:,np.newaxis]).T @ self.u
         print('svd computed in %3.2f s'%(time.time()-tic))
 
-    def ROI_position(self):
-        pos = self.ROI.pos()
-        posy = pos.y()
-        posx = pos.x()
-        sizex,sizey = self.ROI.size()
-        xrange = (np.arange(1,int(sizex)) + int(posx)).astype(np.int32)
-        yrange = (np.arange(1,int(sizey)) + int(posy)).astype(np.int32)
-        xrange = xrange[xrange>=0]
-        xrange = xrange[xrange<self.sp.shape[1]]
-        yrange = yrange[yrange>=0]
-        yrange = yrange[yrange<self.sp.shape[0]]
-        self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
-        # also plot range of 1D variable (if active)
-        if self.bloaded:
-            self.p3.clear()
-            avg = self.spF[np.ix_(yrange,xrange)].mean(axis=0)
-            avg -= avg.min()
-            avg /= avg.max()
-            self.p3.plot(xrange,avg,pen=(140,140,140))
-            self.p3.plot(xrange,self.beh[xrange],pen='w')
-            self.p3.setXRange(xrange[0],xrange[-1])
-        #self.selected = (self.sp.shape[0]-1) - yrange
-        self.selected = yrange
-        self.p2.setXRange(0,xrange.size)
-        self.p2.setYRange(0,yrange.size)
-        axy = self.p2.getAxis('left')
-        axx = self.p2.getAxis('bottom')
-        axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
-        #axx.setTicks([[(0.0,str(xrange[0])),(float(xrange.size),str(xrange[-1]))]])
-        # bug in range, going to comment out for now
-        #self.imgROI.setRect(QtCore.QRectF(xrange[0],yrange[0],
-        #                                   xrange[-1]-xrange[0],yrange[-1]-yrange[0]))
-        self.imgROI.setLevels([0,self.sat])
 
     def select_cells(self,parent):
         parent.imerge = []
@@ -259,6 +339,13 @@ class VisWindow(QtGui.QMainWindow):
         else:
             print('too many cells selected')
 
+    def sort_time(self):
+        if self.raster:
+            if self.sortTime.isChecked():
+                self.tsort = self.isort2
+            else:
+                self.tsort = np.arange(0,self.sp.shape[1]).astype(np.int32)
+            self.neural_sorting(self.comboBox.currentIndex())
 
     def neural_sorting(self,i):
         if i==0:
@@ -266,7 +353,7 @@ class VisWindow(QtGui.QMainWindow):
         elif i==1:
             self.isort = self.isort1
         if i<2:
-            self.spF = gaussian_filter1d(self.sp[self.isort,:].T,
+            self.spF = gaussian_filter1d(self.sp[np.ix_(self.isort,self.tsort)].T,
                                         np.minimum(8,np.maximum(1,int(self.sp.shape[0]*0.005))),
                                         axis=1)
             self.spF = self.spF.T

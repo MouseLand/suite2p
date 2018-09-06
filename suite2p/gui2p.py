@@ -386,8 +386,8 @@ class MainW(QtGui.QMainWindow):
         model = model.item()
         self.default_keys = model['keys']
         #self.fname = '/home/carsen/TIFFS/suite2p/plane3/stat.npy'
-        self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        self.load_proc()
+        #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
+        #self.load_proc()
         #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def mode_change(self,i):

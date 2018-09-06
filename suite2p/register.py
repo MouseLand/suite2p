@@ -198,7 +198,6 @@ def register_binary(ops):
     print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch
-    print(ops['functional_chan'] == ops['align_by_chan'])
     if ops['nchannels']>1:
         if ops['functional_chan'] == ops['align_by_chan']:
             reg_file_align = open(ops['reg_file'], 'r+b')
@@ -241,6 +240,7 @@ def register_binary(ops):
         k += 1
         if k%20==0:
             print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+    reg_file_align.close()
 
     ops['yoff'] = yoff
     ops['xoff'] = xoff
@@ -275,13 +275,13 @@ def register_binary(ops):
             ops['meanImg'] = meanImg/ops['nframes']
         else:
             ops['meanImg_chan2'] = meanImg/ops['nframes']
+        reg_file_alt.close()
     ymin = np.maximum(0, np.ceil(np.amax(yoff)))
     ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
     ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
     xmin = np.maximum(0, np.ceil(np.amax(xoff)))
     xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
     ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
-
     np.save(ops['ops_path'], ops)
     return ops
 
@@ -292,7 +292,11 @@ def subsample_frames(ops, nsamps):
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
-    reg_file = open(ops['reg_file'], 'rb')
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            reg_file = open(ops['reg_file'], 'rb')
+        else:
+            reg_file = open(ops['reg_file_chan2'], 'rb')
     for j in range(0,nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
         buff = reg_file.read(nbytesread)

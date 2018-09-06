@@ -198,6 +198,7 @@ def register_binary(ops):
     print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch
+    print(ops['functional_chan'] == ops['align_by_chan'])
     if ops['nchannels']>1:
         if ops['functional_chan'] == ops['align_by_chan']:
             reg_file_align = open(ops['reg_file'], 'r+b')

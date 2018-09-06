@@ -553,6 +553,9 @@ class MainW(QtGui.QMainWindow):
                 for n in inds:
                     self.imerge.append(icell[n])
                 # draw choices
+                if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                    fig.corr_masks(self)
+                    fig.plot_colorbar(self, self.ops_plot[2])
                 self.ichosen_stats()
                 M = fig.draw_masks(self)
                 fig.plot_masks(self,M)

@@ -220,12 +220,8 @@ def init_masks(parent):
         if k>0:
             if k==2:
                 if ops['functional_chan']==1:
-                    if 'meanImgE' not in ops:
-                        ops = utils.enhanced_mean_image(ops)
                     mimg = ops['meanImgE']
                 else:
-                    if 'meanImgE_chan2' not in ops:
-                        ops = utils.enhanced_mean_image(ops)
                     mimg = ops['meanImgE_chan2']
             elif k==1:
                 if ops['functional_chan']==1:
@@ -248,10 +244,7 @@ def init_masks(parent):
                 mimg = np.maximum(0,np.minimum(1,mimg))
             else:
                 if ops['nchannels']>1:
-                    if ops['functional_chan']==1:
-                        mimg = ops['meanImg_chan2']
-                    else:
-                        mimg = ops['meanImg']
+                    mimg = ops['meanImg_chan2']
                     mimg1 = np.percentile(mimg,1)
                     mimg99 = np.percentile(mimg,99)
                     mimg     = (mimg - mimg1) / (mimg99 - mimg1)

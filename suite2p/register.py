@@ -198,10 +198,15 @@ def register_binary(ops):
     print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch
-    if ops['nchannels']>1 and ops['align_by_chan']>1:
-        reg_file = open(ops['reg_file_chan2'], 'r+b')
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            reg_file_align = open(ops['reg_file'], 'r+b')
+            reg_file_alt = open(ops['reg_file_chan2'], 'r+b')
+        else:
+            reg_file_align = open(ops['reg_file_chan2'], 'r+b')
+            reg_file_alt = open(ops['reg_file'], 'r+b')
     else:
-        reg_file = open(ops['reg_file'], 'r+b')
+        reg_file_align = open(ops['reg_file'], 'r+b')
     yoff = []
     xoff = []
     corrXY = []
@@ -210,7 +215,7 @@ def register_binary(ops):
     nfr = 0
     k0 = tic()
     while True:
-        buff = reg_file.read(nbytesread)
+        buff = reg_file_align.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
         buff = []
         if data.size==0:
@@ -218,8 +223,8 @@ def register_binary(ops):
         data = np.reshape(data, (-1, Ly, Lx))
         dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops)
         dwrite = dwrite.astype('int16')
-        reg_file.seek(-2*dwrite.size,1)
-        reg_file.write(bytearray(dwrite))
+        reg_file_align.seek(-2*dwrite.size,1)
+        reg_file_align.write(bytearray(dwrite))
         meanImg += dwrite.sum(axis=0)
         yoff = np.append(yoff, ymax)
         xoff = np.append(xoff, xmax)
@@ -240,19 +245,15 @@ def register_binary(ops):
     ops['xoff'] = xoff
     ops['corrXY'] = corrXY
     ops['refImg'] = refImg
-    if ops['align_by_chan']>1:
-        ops['meanImg_chan2'] = meanImg/ops['nframes']
-    else:
+    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
         ops['meanImg'] = meanImg/ops['nframes']
+    else:
+        ops['meanImg_chan2'] = meanImg/ops['nframes']
     if ops['nchannels']>1:
         ix = 0
         meanImg = np.zeros((Ly, Lx))
-        if ops['align_by_chan']>1:
-            reg_file = open(ops['reg_file'], 'r+b')
-        else:
-            reg_file = open(ops['reg_file_chan2'], 'r+b')
         while True:
-            buff = reg_file.read(nbytesread)
+            buff = reg_file_alt.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             buff = []
             if data.size==0:
@@ -263,16 +264,16 @@ def register_binary(ops):
             dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
             ix += nframes
             dwrite = dwrite.astype('int16')
-            reg_file.seek(-2*dwrite.size,1)
-            reg_file.write(bytearray(dwrite))
+            reg_file_alt.seek(-2*dwrite.size,1)
+            reg_file_alt.write(bytearray(dwrite))
             meanImg += dwrite.sum(axis=0)
             yoff = np.append(yoff, ymax)
             xoff = np.append(xoff, xmax)
             corrXY = np.append(corrXY, cmax)
-            if ops['align_by_chan']>1:
-                ops['meanImg'] = meanImg/ops['nframes']
-            else:
-                ops['meanImg_chan2'] = meanImg/ops['nframes']
+        if ops['functional_chan']!=ops['align_by_chan']:
+            ops['meanImg'] = meanImg/ops['nframes']
+        else:
+            ops['meanImg_chan2'] = meanImg/ops['nframes']
     ymin = np.maximum(0, np.ceil(np.amax(yoff)))
     ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
     ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]

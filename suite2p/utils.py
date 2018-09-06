@@ -49,38 +49,30 @@ def fitMVGaus(y,x,lam,thres=2.5):
     return mu, cov, radii, ellipse, area
 
 def enhanced_mean_image(ops):
-    for n in range(ops['nchannels']):
-        if n==0:
-            I = ops['meanImg']
-        else:
-            I = ops['meanImg_chan2']
-        if 1:
-            I = ops['meanImg']
-            Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
-            I = I - Imed
-            Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
-            I = I / (1e-10 + Idiv)
-            mimg1 = -6
-            mimg99 = 6
-            mimg0 = I
-        else:
-            mimg0 = ops['meanImg']
-            mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
-                                              10,mode='mirror')
-            mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
+    if 1:
+        I = ops['meanImg']
+        Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
+        I = I - Imed
+        Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
+        I = I / (1e-10 + Idiv)
+        mimg1 = -6
+        mimg99 = 6
+        mimg0 = I
+    else:
+        mimg0 = ops['meanImg']
+        mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
                                           10,mode='mirror')
-            mimg1 = np.percentile(mimg0,1)
-            mimg99 = np.percentile(mimg0,99)
-        mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
-        mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
-        mimg0 = np.maximum(0,np.minimum(1,mimg0))
-        mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
-        mimg[ops['yrange'][0]:ops['yrange'][1],
-            ops['xrange'][0]:ops['xrange'][1]] = mimg0
-        if n==0:
-            ops['meanImgE'] = mimg
-        else:
-            ops['meanImgE_chan2'] = mimg
+        mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
+                                      10,mode='mirror')
+        mimg1 = np.percentile(mimg0,1)
+        mimg99 = np.percentile(mimg0,99)
+    mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+    mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+    mimg0 = np.maximum(0,np.minimum(1,mimg0))
+    mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+    mimg[ops['yrange'][0]:ops['yrange'][1],
+        ops['xrange'][0]:ops['xrange'][1]] = mimg0
+    ops['meanImgE'] = mimg
     return ops
 
 def h5py_to_binary(ops):
@@ -133,11 +125,15 @@ def h5py_to_binary(ops):
                 ops1[j]['nframes'] = 0
             nframes = im.shape[0]
             for j in range(0,nplanes):
-                im2write = im[np.arange(j, nframes, nplanes*nchannels),:,:]
+                if nchannels>1:
+                    nfunc = ops['functional_chan'] - 1
+                else:
+                    nfunc = 0
+                im2write = im[np.arange(j+nfunc, nframes, nplanes*nchannels),:,:]
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels>1:
-                    im2write = im[np.arange(j+1, nframes, nplanes*nchannels),:,:]
+                    im2write = im[np.arange(j+1-nfunc, nframes, nplanes*nchannels),:,:]
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
@@ -206,11 +202,15 @@ def tiff_to_binary(ops):
                     ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                 ops1[j]['nframes'] = 0
             i0 = nchannels * ((iplane+j)%nplanes)
-            im2write = im[np.arange(int(i0), nframes, nplanes*nchannels),:,:]
+            if nchannels>1:
+                nfunc = ops['functional_chan']-1
+            else:
+                nfunc = 0
+            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:]
             ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[np.arange(int(i0)+1, nframes, nplanes*nchannels),:,:]
+                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:]
                 reg_file_chan2[j].write(bytearray(im2write))
                 ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             ops1[j]['nframes']+= im2write.shape[0]

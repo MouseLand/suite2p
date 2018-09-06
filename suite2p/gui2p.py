@@ -386,8 +386,8 @@ class MainW(QtGui.QMainWindow):
         model = model.item()
         self.default_keys = model['keys']
         #self.fname = '/home/carsen/TIFFS/suite2p/plane3/stat.npy'
-        #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        #self.load_proc()
+        self.fname = 'C:/Users/carse/github/TX4/stat.npy'
+        self.load_proc()
         #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def mode_change(self,i):
@@ -722,8 +722,8 @@ class MainW(QtGui.QMainWindow):
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
+        b = len(self.views)-1
         if 'meanImg_chan2' in self.ops:
-            b = len(self.views)-1
             self.viewbtns.button(b).setEnabled(True)
             self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
         else:

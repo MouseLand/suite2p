@@ -248,9 +248,9 @@ def register_binary(ops):
         ix = 0
         meanImg = np.zeros((Ly, Lx))
         if ops['align_by_chan']>1:
-            reg_file = open(ops['reg_file_chan2'], 'r+b')
-        else:
             reg_file = open(ops['reg_file'], 'r+b')
+        else:
+            reg_file = open(ops['reg_file_chan2'], 'r+b')
         while True:
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)

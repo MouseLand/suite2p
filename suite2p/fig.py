@@ -212,24 +212,32 @@ def init_masks(parent):
             LamAll[ypix,xpix] = lam
 
     LamMean = LamAll[LamAll>1e-10].mean()
-    RGBall = np.zeros((2,cols.shape[1]+1,4,Ly,Lx,3), np.float32)
-    Vback   = np.zeros((3,Ly,Lx), np.float32)
+    RGBall = np.zeros((2,cols.shape[1]+1,5,Ly,Lx,3), np.float32)
+    Vback   = np.zeros((4,Ly,Lx), np.float32)
     RGBback = np.zeros((4,Ly,Lx,3), np.float32)
 
-    for k in range(4):
+    for k in range(5):
         if k>0:
             if k==2:
-                if 'meanImgE' not in ops:
-                    ops = utils.enhanced_mean_image(ops)
-                mimg = ops['meanImgE']
+                if ops['functional_chan']==1:
+                    if 'meanImgE' not in ops:
+                        ops = utils.enhanced_mean_image(ops)
+                    mimg = ops['meanImgE']
+                else:
+                    if 'meanImgE_chan2' not in ops:
+                        ops = utils.enhanced_mean_image(ops)
+                    mimg = ops['meanImgE_chan2']
             elif k==1:
-                mimg = ops['meanImg']
+                if ops['functional_chan']==1:
+                    mimg = ops['meanImg']
+                else:
+                    mimg = ops['meanImg_chan2']
                 S = np.maximum(0,np.minimum(1, Vorig*1.5))
                 mimg1 = np.percentile(mimg,1)
                 mimg99 = np.percentile(mimg,99)
                 mimg     = (mimg - mimg1) / (mimg99 - mimg1)
                 mimg = np.maximum(0,np.minimum(1,mimg))
-            else:
+            elif k==3:
                 vcorr = ops['Vcorr']
                 mimg1 = np.percentile(vcorr,1)
                 mimg99 = np.percentile(vcorr,99)
@@ -238,6 +246,19 @@ def init_masks(parent):
                 mimg[ops['yrange'][0]:ops['yrange'][1],
                     ops['xrange'][0]:ops['xrange'][1]] = vcorr
                 mimg = np.maximum(0,np.minimum(1,mimg))
+            else:
+                if ops['nchannels']>1:
+                    if ops['functional_chan']==1:
+                        mimg = ops['meanImg_chan2']
+                    else:
+                        mimg = ops['meanImg']
+                    mimg1 = np.percentile(mimg,1)
+                    mimg99 = np.percentile(mimg,99)
+                    mimg     = (mimg - mimg1) / (mimg99 - mimg1)
+                    mimg = np.maximum(0,np.minimum(1,mimg))
+                else:
+                    mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+
             Vback[k-1,:,:] = mimg
             V = mimg
             V = np.expand_dims(V,axis=2)
@@ -260,7 +281,7 @@ def init_masks(parent):
                 hsv = np.concatenate((H,S,Va),axis=2)
                 RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
-    for k in range(3):
+    for k in range(4):
         H = np.zeros((Ly,Lx,1),np.float32)
         S = np.zeros((Ly,Lx,1),np.float32)
         V = np.expand_dims(Vback[k,:,:],axis=2)
@@ -548,8 +569,8 @@ def flip_cell(parent):
 
     for i in range(2):
         for c in range(cols.shape[1]):
-            for k in range(4):
-                if k<3:
+            for k in range(5):
+                if k<3 or k==4:
                     H = cols[parent.iROI[i,0,ypix,xpix],c]
                     S = parent.Sroi[i,ypix,xpix]
                 else:
@@ -557,7 +578,7 @@ def flip_cell(parent):
                     S = parent.Sext[i,ypix,xpix]
                 if k==0:
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
-                elif k==1 or k==2:
+                elif k==1 or k==2 or k==4:
                     V = parent.Vback[k-1,ypix,xpix]
                     S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
                 elif k==3:
@@ -567,11 +588,7 @@ def flip_cell(parent):
                 S = np.expand_dims(S.flatten(),axis=1)
                 V = np.expand_dims(V.flatten(),axis=1)
                 hsv = np.concatenate((H,S,V),axis=1)
-                if k<3:
-                    parent.RGBall[i,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
-                else:
-                    parent.RGBall[i,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
-
+                parent.RGBall[i,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
 
 def ROI_index(ops, stat):
     '''matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)'''

@@ -322,8 +322,9 @@ class ViewButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in parent.viewbtns.buttons():
-            b.setStyleSheet(parent.styleUnpressed)
+        for b in range(len(parent.views)):
+            if parent.viewbtns.button(b).isEnabled():
+                parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot[1] = bid
         if parent.ops_plot[2] == parent.ops_plot[3].shape[1]:

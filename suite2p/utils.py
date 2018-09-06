@@ -49,36 +49,47 @@ def fitMVGaus(y,x,lam,thres=2.5):
     return mu, cov, radii, ellipse, area
 
 def enhanced_mean_image(ops):
-    if 1:
-        I = ops['meanImg']
-        Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
-        I = I - Imed
-        Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
-        I = I / (1e-10 + Idiv)
-        mimg1 = -6
-        mimg99 = 6
-        mimg0 = I
-    else:
-        mimg0 = ops['meanImg']
-        mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
+    for n in range(ops['nchannels']):
+        if n==0:
+            I = ops['meanImg']
+        else:
+            I = ops['meanImg_chan2']
+        if 1:
+            I = ops['meanImg']
+            Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
+            I = I - Imed
+            Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
+            I = I / (1e-10 + Idiv)
+            mimg1 = -6
+            mimg99 = 6
+            mimg0 = I
+        else:
+            mimg0 = ops['meanImg']
+            mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
+                                              10,mode='mirror')
+            mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
                                           10,mode='mirror')
-        mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
-                                      10,mode='mirror')
-        mimg1 = np.percentile(mimg0,1)
-        mimg99 = np.percentile(mimg0,99)
-    mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
-    mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
-    mimg0 = np.maximum(0,np.minimum(1,mimg0))
-    mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
-    mimg[ops['yrange'][0]:ops['yrange'][1],
-        ops['xrange'][0]:ops['xrange'][1]] = mimg0
-    ops['meanImgE'] = mimg
+            mimg1 = np.percentile(mimg0,1)
+            mimg99 = np.percentile(mimg0,99)
+        mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+        mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+        mimg0 = np.maximum(0,np.minimum(1,mimg0))
+        mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+        mimg[ops['yrange'][0]:ops['yrange'][1],
+            ops['xrange'][0]:ops['xrange'][1]] = mimg0
+        if n==0:
+            ops['meanImgE'] = mimg
+        else:
+            ops['meanImgE_chan2'] = mimg
     return ops
 
 def h5py_to_binary(ops):
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     ops1 = []
+    if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
+        ops['fast_disk'] = ops['save_path0']
+    fast_disk = ops['fast_disk']
     # open all binary files for writing
     reg_file = []
     if nchannels>1:
@@ -87,7 +98,7 @@ def h5py_to_binary(ops):
         ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
             ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
+        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
@@ -154,6 +165,9 @@ def tiff_to_binary(ops):
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     ops1 = []
+    if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
+        ops['fast_disk'] = ops['save_path0']
+    fast_disk = ops['fast_disk']
     # open all binary files for writing
     reg_file = []
     if nchannels>1:
@@ -161,9 +175,7 @@ def tiff_to_binary(ops):
     for j in range(0,nplanes):
         fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         ops['save_path'] = fpath
-        if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
-            ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
+        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:

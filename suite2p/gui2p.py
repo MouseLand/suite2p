@@ -202,7 +202,7 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
         #### --------- VIEW AND COLOR BUTTONS ---------- ####
-        self.views = ['Q: ROIs', 'W: mean img', 'E: mean img (enhanced)', 'R: correlation map']
+        self.views = ['Q: ROIs', 'W: mean img', 'E: mean img (enhanced)', 'R: correlation map', 'T: mean img (non-functional)']
         self.colors = ['A: random', 'S: skew', 'D: compact','F: footprint',
                         'G: aspect_ratio','H: classifier','J: correlations, bin=']
         b = 0
@@ -385,7 +385,7 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        #self.fname = '/home/carsen/TIFFS/suite2p/plane3/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
         #self.load_proc()
         #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
@@ -444,6 +444,11 @@ class MainW(QtGui.QMainWindow):
             elif event.key() == QtCore.Qt.Key_R:
                 self.viewbtns.button(3).setChecked(True)
                 self.viewbtns.button(3).press(self, 3)
+            elif event.key() == QtCore.Qt.Key_T:
+                if self.loaded:
+                    if 'meanImg_chan2' in self.ops:
+                        self.viewbtns.button(4).setChecked(True)
+                        self.viewbtns.button(4).press(self, 4)
             elif event.key() == QtCore.Qt.Key_O:
                 self.checkBox.toggle()
             elif event.key() == QtCore.Qt.Key_A:
@@ -710,13 +715,20 @@ class MainW(QtGui.QMainWindow):
         classifier.activate(self, False)
 
     def enable_views_and_classifier(self):
-        for b in range(len(self.views)):
+        for b in range(len(self.views)-1):
             self.viewbtns.button(b).setEnabled(True)
             self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
             #self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b==0:
                 self.viewbtns.button(b).setChecked(True)
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
+        if 'meanImg_chan2' in self.ops:
+            b = len(self.views)-1
+            self.viewbtns.button(b).setEnabled(True)
+            self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
+        else:
+            self.viewbtns.button(b).setEnabled(False)
+            self.viewbtns.button(b).setStyleSheet(self.styleInactive)
         for b in range(len(self.colors)):
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)

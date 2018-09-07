@@ -116,28 +116,29 @@ def h5py_to_binary(ops):
         else:
             nfunc = 0
         # loop over all tiffs
-        i0 = 0
+        ik = 0
         while 1:
-            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
+            irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
             if irange.size==0:
                 break
             im = f[key][irange, :, :]
             nframes = im.shape[0]
             for j in range(0,nplanes):
-                if i0==0:
+                if ik==0:
                     ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                     if nchannels>1:
                         ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                     ops1[j]['nframes'] = 0
-                im2write = im[np.arange(j+nfunc, nframes, nplanes*nchannels),:,:]
+                i0 = nchannels * ((j)%nplanes)
+                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:]
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels>1:
-                    im2write = im[np.arange(j+1-nfunc, nframes, nplanes*nchannels),:,:]
+                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:]
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
-            i0 += nframes
+            ik += nframes
     # write ops files
     do_registration = ops['do_registration']
     for ops in ops1:

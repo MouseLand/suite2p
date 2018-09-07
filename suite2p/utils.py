@@ -3,9 +3,9 @@ import math, time
 import glob, h5py, os
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
-from scipy import stats, io, signal
-
+from scipy import stats, signal
 from skimage import io
+
 def tic():
     return time.time()
 def toc(i0):
@@ -111,6 +111,10 @@ def h5py_to_binary(ops):
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         nbatch = nplanes*nchannels*math.ceil(ops['batch_size']/(nplanes*nchannels))
         nframes_all = f[key].shape[0]
+        if nchannels>1:
+            nfunc = ops['functional_chan'] - 1
+        else:
+            nfunc = 0
         # loop over all tiffs
         i0 = 0
         while 1:
@@ -118,17 +122,13 @@ def h5py_to_binary(ops):
             if irange.size==0:
                 break
             im = f[key][irange, :, :]
-            if i0==0:
-                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                if nchannels>1:
-                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                ops1[j]['nframes'] = 0
             nframes = im.shape[0]
             for j in range(0,nplanes):
-                if nchannels>1:
-                    nfunc = ops['functional_chan'] - 1
-                else:
-                    nfunc = 0
+                if i0==0:
+                    ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    if nchannels>1:
+                        ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    ops1[j]['nframes'] = 0
                 im2write = im[np.arange(j+nfunc, nframes, nplanes*nchannels),:,:]
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)

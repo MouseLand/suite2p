@@ -113,13 +113,15 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
+        # copy ops to list where each element is ops for each plane
+        ops1 = utils.init_ops(ops)
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = utils.h5py_to_binary(ops)
+            ops1 = utils.h5py_to_binary(ops1)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
             try:
-                ops1 = utils.tiff_to_binary(ops)
+                ops1 = utils.tiff_to_binary(ops1)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
             except Exception as e:
                 if HAS_HAUS:

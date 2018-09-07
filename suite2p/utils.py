@@ -4,7 +4,7 @@ import glob, h5py, os
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, signal
-import scipy
+import scipy.io
 from skimage import io
 
 def tic():
@@ -76,17 +76,18 @@ def enhanced_mean_image(ops):
     ops['meanImgE'] = mimg
     return ops
 
-def h5py_to_binary(ops):
+def init_ops(ops):
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     ops1 = []
     if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
         ops['fast_disk'] = ops['save_path0']
     fast_disk = ops['fast_disk']
-    # open all binary files for writing
-    reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
+    # for mesoscope recording FOV locations
+    if 'dy' in ops:
+        dy = ops['dy']
+        dx = ops['dx']
+    # compile ops into list across planes
     for j in range(0,nplanes):
         ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
@@ -96,21 +97,31 @@ def h5py_to_binary(ops):
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+        if 'dy' in ops:
+            ops['dy'] = dy[j]
+            ops['dx'] = dx[j]
         if not os.path.isdir(ops['fast_disk']):
             os.makedirs(ops['fast_disk'])
         if not os.path.isdir(ops['save_path']):
             os.makedirs(ops['save_path'])
         ops1.append(ops.copy())
+    return ops1
+
+def h5py_to_binary(ops1):
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
+    # open all binary files for writing
+    reg_file = []
+    reg_file_chan2=[]
+    for ops in ops1:
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-
     # open h5py file for reading
-    key = ops['h5py_key']
-
-    with h5py.File(ops['h5py'], 'r') as f:
+    key = ops1[0]['h5py_key']
+    with h5py.File(ops1[0]['h5py'], 'r') as f:
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-        nbatch = nplanes*nchannels*math.ceil(ops['batch_size']/(nplanes*nchannels))
+        nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
         nframes_all = f[key].shape[0]
         if nchannels>1:
             nfunc = ops['functional_chan'] - 1
@@ -141,7 +152,7 @@ def h5py_to_binary(ops):
                 ops1[j]['nframes'] += im2write.shape[0]
             ik += nframes
     # write ops files
-    do_registration = ops['do_registration']
+    do_registration = ops1[0]['do_registration']
     for ops in ops1:
         ops['Ly'] = im2write.shape[1]
         ops['Lx'] = im2write.shape[2]
@@ -159,36 +170,18 @@ def h5py_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
-def tiff_to_binary(ops):
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    ops1 = []
-    if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
-        ops['fast_disk'] = ops['save_path0']
-    fast_disk = ops['fast_disk']
+def tiff_to_binary(ops1):
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
     # open all binary files for writing
     reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
-    for j in range(0,nplanes):
-        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-        ops['save_path'] = fpath
-        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
-        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
-        if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
-        if not os.path.isdir(ops['fast_disk']):
-            os.makedirs(ops['fast_disk'])
-        if not os.path.isdir(ops['save_path']):
-            os.makedirs(ops['save_path'])
-        ops1.append(ops.copy())
+    reg_file_chan2=[]
+    for ops in ops1:
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs, ops = get_tif_list(ops) # look for tiffs in all requested folders
+    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
     # loop over all tiffs
-
     for ik, file in enumerate(fs):
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:

@@ -4,6 +4,7 @@ import glob, h5py, os
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, signal
+import scipy
 from skimage import io
 
 def tic():
@@ -349,6 +350,8 @@ def combined(ops1):
     LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
     meanImg = np.zeros((LY, LX))
     meanImgE = np.zeros((LY, LX))
+    if ops['nchannels']>1:
+        meanImg_chan2 = np.zeros((LY, LX))
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
@@ -358,6 +361,8 @@ def combined(ops1):
         yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
         meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
+        if ops['nchannels']>1:
+            meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
@@ -388,6 +393,8 @@ def combined(ops1):
             iscell = np.concatenate((iscell,iscell0))
     ops['meanImg']  = meanImg
     ops['meanImgE'] = meanImgE
+    if ops['nchannels']>1:
+        ops['meanImg_chan2'] = meanImg_chan2
     ops['Vcorr'] = Vcorr
     ops['Ly'] = LY
     ops['Lx'] = LX

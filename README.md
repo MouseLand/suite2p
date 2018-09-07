@@ -101,6 +101,8 @@ from suite2p.run_s2p import run_s2p
 ops1 = run_s2p(ops, db)
 ~~~~
 
+See our example jupyter notebook [here](https://github.com/MouseLand/suite2p/blob/master/jupyter/run_pipeline_batch.ipynb). It also explains how to batch-run suite2p.
+
 ## Outputs
 
 ~~~~

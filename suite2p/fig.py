@@ -219,6 +219,8 @@ def init_masks(parent):
     for k in range(5):
         if k>0:
             if k==2:
+                if 'meanImgE' not in ops:
+                    ops = utils.enhanced_mean_image(ops)
                 mimg = ops['meanImgE']
             elif k==1:
                 mimg = ops['meanImg']

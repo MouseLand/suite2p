@@ -142,11 +142,11 @@ def h5py_to_binary(ops1):
                         ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                     ops1[j]['nframes'] = 0
                 i0 = nchannels * ((j)%nplanes)
-                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:]
+                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels>1:
-                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:]
+                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
@@ -201,11 +201,11 @@ def tiff_to_binary(ops1):
                 nfunc = ops['functional_chan']-1
             else:
                 nfunc = 0
-            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:]
+            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
             ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:]
+                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file_chan2[j].write(bytearray(im2write))
                 ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             ops1[j]['nframes']+= im2write.shape[0]

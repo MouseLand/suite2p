@@ -244,6 +244,12 @@ def register_binary(ops):
 
     ops['yoff'] = yoff
     ops['xoff'] = xoff
+    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
+    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
+    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
+    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
     ops['refImg'] = refImg
     if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
@@ -275,13 +281,6 @@ def register_binary(ops):
             ops['meanImg'] = meanImg/ops['nframes']
         else:
             ops['meanImg_chan2'] = meanImg/ops['nframes']
-        reg_file_alt.close()
-    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
-    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
-    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
-    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
     np.save(ops['ops_path'], ops)
     return ops
 
@@ -297,6 +296,8 @@ def subsample_frames(ops, nsamps):
             reg_file = open(ops['reg_file'], 'rb')
         else:
             reg_file = open(ops['reg_file_chan2'], 'rb')
+    else:
+        reg_file = open(ops['reg_file'], 'rb')
     for j in range(0,nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
         buff = reg_file.read(nbytesread)

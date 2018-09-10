@@ -4,6 +4,7 @@ np.fft.fft2
 2018-09-01, CSH
 """
 import numpy as np
+from numpy import fft
 
 try:
     import pycuda.gpuarray as gpuarray
@@ -117,23 +118,20 @@ def cuifft2(y):
     d1, d2 = y.shape[-2:]
     if y.ndim > 2:
         nbatch = y.shape[0]
-        y2 = np.asarray(y[:, :, 0:int(d2/2)+1], np.complex64)
     else:
         nbatch = 1
-        y2 = np.asarray(y[:, 0:int(d2/2)+1], np.complex64)
 
     # From numpy array to GPUarray. Take only the first d2/2+1 non redundant FFT coefficients
-    y_gpu = gpuarray.to_gpu(y2) 
+    y_gpu = gpuarray.to_gpu(y.astype(np.complex64))
 
     # Initialise empty output GPUarray 
-    x_gpu = gpuarray.empty(y.shape, np.float32)
+    x_gpu = gpuarray.empty(y.shape, np.complex64)
 
     # Inverse FFT
-    plan_backward = Plan((d1, d2), np.complex64, np.float32, nbatch)
-    cudaifft(y_gpu, x_gpu, plan_backward)
+    plan_backward = Plan((d1, d2), np.complex64, np.complex64, nbatch)
+    cudaifft(y_gpu, x_gpu, plan_backward, scale=True)
 
-    # Must divide by the total number of pixels in the image to get the normalisation right
-    xout = x_gpu.get()/d1/d2
+    xout = x_gpu.get()
 
     if TEST_CUDA:
         np.testing.assert_allclose(fft.ifft2(y), xout, rtol=1e-1, atol=1e-1)

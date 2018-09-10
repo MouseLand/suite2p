@@ -97,11 +97,10 @@ def cufft2(x):
 
     if TEST_CUDA:
         npfft = fft.fft2(x)
-        print(x.shape)
         np.testing.assert_allclose(
             npfft, yout.astype('complex128'),
-            rtol=1e-1, atol=np.abs(yout).max()*1e-6)
-        print("Test succeeded", x.shape)
+            rtol=1e-1, atol=np.abs(yout).max()*1e-5)
+        print("fft test succeeded", x.shape)
     return yout.astype('complex128')
 
 
@@ -134,7 +133,8 @@ def cuifft2(y):
     xout = x_gpu.get()
 
     if TEST_CUDA:
-        np.testing.assert_allclose(fft.ifft2(y), xout, rtol=1e-1, atol=1e-1)
-        print("Test succeeded")
+        np.testing.assert_allclose(
+            fft.ifft2(y.astype(np.complex64)), xout, rtol=1e-1, atol=1e-1)
+        print("ifft test succeeded")
 
     return xout

@@ -108,7 +108,8 @@ class VisWindow(QtGui.QMainWindow):
         self.sl.setValue(100)
         self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
         self.sl.setTickInterval(10)
-        self.sl.sliderReleased.connect(self.levelchange)
+        self.sl.valueChanged.connect(self.levelchange)
+        self.sl.setTracking(False)
         self.sat = 1.0
         self.l0.addWidget(self.sl,0,2,5,1)
         qlabel = gui.VerticalLabel(text='saturation')

@@ -237,7 +237,6 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.frameSlider.setValue(self.cframe)
                 self.jump_to_frame(self.cframe)
 
-
     def cell_mask(self):
         #self.cmask = np.zeros((self.Ly,self.Lx,3),np.float32)
         self.yext = self.stat[self.ichosen]['yext']

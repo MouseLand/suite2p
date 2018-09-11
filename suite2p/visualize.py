@@ -155,7 +155,17 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.setRowStretch(6, 1)
         self.raster = False
         self.win.show()
+        self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         self.show()
+
+    def plot_clicked(self,event):
+        items = self.win.scene().items(event.scenePos())
+        for x in items:
+            if x==self.p1:
+                if event.button()==1:
+                    if event.double():
+                        self.ROI.setPos([-1,-1])
+                        self.ROI.setSize([self.sp.shape[1]+1, self.sp.shape[0]+1])
 
     def keyPressEvent(self, event):
         bid = -1

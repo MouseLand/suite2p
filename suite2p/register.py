@@ -355,6 +355,12 @@ def register_binary(ops):
     reg_file_align.close()
     ops['yoff'] = yoff
     ops['xoff'] = xoff
+    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
+    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
+    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
+    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
     if ops['nonrigid']:
         ops['yoff1'] = yoff1
@@ -389,12 +395,72 @@ def register_binary(ops):
             ops['meanImg'] = meanImg/ops['nframes']
         else:
             ops['meanImg_chan2'] = meanImg/ops['nframes']
-        reg_file_alt.close()
-    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
-    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
-    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
-    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
     np.save(ops['ops_path'], ops)
     return ops
+<<<<<<< HEAD
+=======
+
+def subsample_frames(ops, nsamps):
+    nFrames = get_nFrames(ops)
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
+    nbytesread = 2 * Ly * Lx
+    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            reg_file = open(ops['reg_file'], 'rb')
+        else:
+            reg_file = open(ops['reg_file_chan2'], 'rb')
+    else:
+        reg_file = open(ops['reg_file'], 'rb')
+    for j in range(0,nsamps):
+        reg_file.seek(nbytesread * istart[j], 0)
+        buff = reg_file.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        frames[j,:,:] = np.reshape(data, (Ly, Lx))
+    reg_file.close()
+    return frames
+
+def pick_init_init(ops, frames):
+    nimg = frames.shape[0]
+    frames = np.reshape(frames, (nimg,-1)).astype('float32')
+    frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
+    cc = frames @ np.transpose(frames)
+    ndiag = np.sqrt(np.diag(cc))
+    cc = cc / np.outer(ndiag, ndiag)
+    CCsort = -np.sort(-cc, axis = 1)
+    bestCC = np.mean(CCsort[:, 1:20], axis=1);
+    imax = np.argmax(bestCC)
+    indsort = np.argsort(-cc[imax, :])
+    refImg = np.mean(frames[indsort[0:20], :], axis = 0)
+    refImg = np.reshape(refImg, (ops['Ly'], ops['Lx']))
+    return refImg
+
+def refine_init_init(ops, frames, refImg):
+    niter = 8
+    nmax  = np.minimum(100, int(frames.shape[0]/2))
+    for iter in range(0,niter):
+        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops)
+        isort = np.argsort(-cmax)
+        nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
+        #if iter>=np.floor(niter/2):
+        #    nmax = int(frames.shape[0] /2)
+        refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)
+        dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
+        refImg = shift_data((refImg[np.newaxis,:,:], dy,dx)).squeeze()
+        ymax, xmax = ymax+dy, xmax+dx
+    return refImg
+
+def pick_init(ops):
+    nbytes = os.path.getsize(ops['reg_file'])
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nFrames = int(nbytes/(2*Ly*Lx))
+    nFramesInit = np.minimum(ops['nimg_init'], nFrames)
+    frames = subsample_frames(ops, nFramesInit)
+    refImg = pick_init_init(ops, frames)
+    refImg = refine_init_init(ops, frames, refImg)
+    return refImg
+>>>>>>> d78d25812f67ea44894589311342853d851c4dfe

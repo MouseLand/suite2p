@@ -28,7 +28,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
         self.p0 = self.win.addViewBox(lockAspect=True,row=0,col=0,invertY=True)
-        self.p0.setMouseEnabled(x=False,y=False)
+        #self.p0.setMouseEnabled(x=False,y=False)
         self.p0.setMenuEnabled(False)
         self.pimg = pg.ImageItem()
         self.p0.addItem(self.pimg)
@@ -116,17 +116,18 @@ class BinaryPlayer(QtGui.QMainWindow):
             if not fromgui:
                 self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
                 self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'))
-                ncells = len(self.stat)
-                for n in range(0,ncells):
-                    ypix = self.stat[n]['ypix'].flatten()
-                    xpix = self.stat[n]['xpix'].flatten()
-                    iext = fig.boundary(ypix,xpix)
-                    self.stat[n]['yext'] = ypix[iext]
-                    self.stat[n]['xext'] = xpix[iext]
-                    ycirc,xcirc = fig.circle(self.stat[n]['med'],self.stat[n]['radius'])
-                    goodi = (ycirc>=0) & (xcirc>=0) & (ycirc<self.Ly) & (xcirc<self.Lx)
-                    self.stat[n]['ycirc'] = ycirc[goodi]
-                    self.stat[n]['xcirc'] = xcirc[goodi]
+            ncells = len(self.stat)
+            for n in range(0,ncells):
+                ypix = self.stat[n]['ypix'].flatten()
+                xpix = self.stat[n]['xpix'].flatten()
+                iext = fig.boundary(ypix,xpix)
+                yext = ypix[iext]
+                xext = xpix[iext]
+                #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))
+                #xext = np.hstack((xext,xext+1,xext-1,xext+1,xext-1))
+                goodi = (yext>=0) & (xext>=0) & (yext<self.Ly) & (xext<self.Lx)
+                self.stat[n]['yext'] = yext[goodi]
+                self.stat[n]['xext'] = xext[goodi]
             good = True
         except Exception as e:
             print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
@@ -202,6 +203,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         posy  = 0
         iplot = 0
         zoom = False
+        zoomImg = False
         choose = False
         if self.loaded:
             for x in items:
@@ -215,12 +217,18 @@ class BinaryPlayer(QtGui.QMainWindow):
                     pos = vb.mapSceneToView(event.scenePos())
                     posx = pos.x()
                     iplot = 2
+                elif x==self.p0:
+                    if event.button()==1:
+                        if event.double():
+                            zoomImg=True
                 if iplot==1 or iplot==2:
                     if event.button()==1:
                         if event.double():
                             zoom=True
                         else:
                             choose=True
+        if zoomImg:
+            self.p0.setRange(xRange=(0,self.Ly),yRange=(0,self.Lx))
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
         if choose:
@@ -231,10 +239,10 @@ class BinaryPlayer(QtGui.QMainWindow):
 
 
     def cell_mask(self):
-        self.cmask = np.zeros((self.Ly,self.Lx,3),np.float32)
+        #self.cmask = np.zeros((self.Ly,self.Lx,3),np.float32)
         self.yext = self.stat[self.ichosen]['yext']
         self.xext = self.stat[self.ichosen]['xext']
-        self.cmask[self.yext,self.xext,2] = (self.srange[1]-self.srange[0])/2 * np.ones((self.yext.size,),np.float32)
+        #self.cmask[self.yext,self.xext,2] = (self.srange[1]-self.srange[0])/2 * np.ones((self.yext.size,),np.float32)
 
     def go_to_frame(self, frame):
         self.jump_to_frame(frame)

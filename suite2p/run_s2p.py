@@ -40,6 +40,7 @@ def default_ops():
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # registration settings
         'do_registration': True, # whether to register data
+        'nonrigid': False, # whether to use nonrigid registration
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
@@ -136,7 +137,7 @@ def run_s2p(ops={},db={}):
     if not ops['do_registration']:
         flag_binreg = True
     if not flag_binreg:
-        ops1 = register.register_binary(ops1) # register tiff
+        ops1 = register.register_binary(ops1) # register binary
         np.save(fpathops1, ops1) # save ops1
         print('time %4.4f. Registration complete'%toc(i0))
     elif files_found_flag:

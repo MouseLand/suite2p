@@ -6,6 +6,7 @@ from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
 import math
+from suite2p import nonrigid
 
 def tic():
     return time.time()
@@ -38,8 +39,8 @@ def mat_upsample(lpad, ops):
     nup = larUP.shape[0]
     return Kmat, nup
 
-def prepareMasks(refImg):
-    i0,Ly,Lx = refImg.shape
+def prepare_masks(refImg):
+    Ly,Lx = refImg.shape
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
     x = np.abs(x - x.mean())
@@ -65,8 +66,12 @@ def prepareMasks(refImg):
     cfRefImg = cfRefImg.astype('complex64')
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(data, refImg):
-    (maskMul, maskOffset, cfRefImg) = prepareMasks(refImg)
+def correlation_map(data, refAndMasks):
+    maskMul    = refAndMasks[0]
+    maskOffset = refAndMasks[1]
+    cfRefImg   = refAndMasks[2]
+    nimg, Ly, Lx = data.shape
+    cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
     data = data.astype('float32') * maskMul + maskOffset
     X = fft.fft2(data)
     J = X / (eps0 + np.absolute(X))
@@ -99,6 +104,10 @@ def getXYup(cc, Ls, ops):
 
 def shift_data(inputs):
     X, ymax, xmax = inputs
+    ymax = ymax.flatten()
+    xmax = xmax.flatten()
+    if X.ndim<3:
+        X = X[np.newaxis,:,:]
     X = fft.fft2(X.astype('float32'))
     nimg, Ly, Lx = X.shape
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
@@ -111,21 +120,34 @@ def shift_data(inputs):
     return Y
 
 def phasecorr_worker(inputs):
-    data, refImg, ops = inputs
+    data, refAndMasks, ops = inputs
+    if ops['nonrigid'] and len(refAndMasks)>3:
+        refAndMasksNR = refAndMasks[3:]
+        refAndMasks = refAndMasks[:3]
+        nr = True
+    else:
+        nr = False
     nimg, Ly, Lx = data.shape
-    refImg = np.reshape(refImg, (1, Ly, Lx))
     Lyhalf = int(np.floor(Ly/2))
     Lxhalf = int(np.floor(Lx/2))
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    cc = correlation_map(data, refImg)
+    cc = correlation_map(data, refAndMasks)
     ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
-    Y = shift_data((data, ymax,xmax))
-    return Y, ymax, xmax, cmax
+    Y = shift_data((data, ymax, xmax))
+    yxnr = []
+    if nr:
+        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
+        yxnr = [ymax1,xmax1,cmax1]
+    return Y, ymax, xmax, cmax, yxnr
 
-def phasecorr(data, refImg, ops):
+def phasecorr(data, refAndMasks, ops):
+    nr=False
+    if ops['nonrigid'] and len(refAndMasks)>3:
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        nr=True
     if ops['num_workers']<0:
-        Y, ymax, xmax, cmax = phasecorr_worker((data, refImg, ops))
+        Y, ymax, xmax, cmax, yxnr = phasecorr_worker((data, refAndMasks, ops))
     else:
         nimg = data.shape[0]
         if ops['num_workers']<1:
@@ -135,25 +157,37 @@ def phasecorr(data, refImg, ops):
         nbatch = int(np.ceil(nimg/float(num_cores)))
         #nbatch = 50
         inputs = np.arange(0, nimg, nbatch)
-
         irange = []
         dsplit = []
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(ilist)
-            dsplit.append([data[ilist,:, :], refImg, ops])
+            dsplit.append([data[ilist,:, :], refAndMasks, ops])
         with Pool(num_cores) as p:
             results = p.map(phasecorr_worker, dsplit)
         Y = np.zeros_like(data)
         ymax = np.zeros((nimg,))
         xmax = np.zeros((nimg,))
         cmax = np.zeros((nimg,))
+        if nr:
+            ymax1 = np.zeros((nimg,nb))
+            xmax1 = np.zeros((nimg,nb))
+            cmax1 = np.zeros((nimg,nb))
         for i in range(0,len(results)):
             Y[irange[i], :, :] = results[i][0]
             ymax[irange[i]] = results[i][1]
             xmax[irange[i]] = results[i][2]
             cmax[irange[i]] = results[i][3]
-    return Y, ymax, xmax, cmax
+            if nr:
+                ymax1[irange[i],:] = results[i][4][0]
+                xmax1[irange[i],:] = results[i][4][1]
+                cmax1[irange[i],:] = results[i][4][2]
+        if nr:
+            yxnr = [ymax1,xmax1,cmax1]
+            print(ymax1.max(),xmax1.max())
+        else:
+            yxnr = []
+    return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
     nbytes = os.path.getsize(ops['reg_file'])
@@ -185,106 +219,6 @@ def register_myshifts(ops, data, ymax, xmax):
             dreg[irange[i], :, :] = results[i]
     return dreg
 
-def register_binary(ops):
-    # if ops is a list of dictionaries, each will be registered separately
-    if (type(ops) is list) or (type(ops) is np.ndarray):
-        for op in ops:
-            op = register_binary(op)
-        return ops
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    ops['nframes'] = get_nFrames(ops)
-    refImg = pick_init(ops)
-    print('computed reference frame for registration')
-    nbatch = ops['batch_size']
-    nbytesread = 2 * Ly * Lx * nbatch
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            reg_file_align = open(ops['reg_file'], 'r+b')
-            reg_file_alt = open(ops['reg_file_chan2'], 'r+b')
-        else:
-            reg_file_align = open(ops['reg_file_chan2'], 'r+b')
-            reg_file_alt = open(ops['reg_file'], 'r+b')
-    else:
-        reg_file_align = open(ops['reg_file'], 'r+b')
-    yoff = []
-    xoff = []
-    corrXY = []
-    meanImg = np.zeros((Ly, Lx))
-    k = 0
-    nfr = 0
-    k0 = tic()
-    while True:
-        buff = reg_file_align.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        buff = []
-        if data.size==0:
-            break
-        data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax = phasecorr(data, refImg, ops)
-        dwrite = dwrite.astype('int16')
-        reg_file_align.seek(-2*dwrite.size,1)
-        reg_file_align.write(bytearray(dwrite))
-        meanImg += dwrite.sum(axis=0)
-        yoff = np.append(yoff, ymax)
-        xoff = np.append(xoff, xmax)
-        corrXY = np.append(corrXY, cmax)
-        if ops['reg_tif']:
-            if k==0:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif')
-                if not os.path.isdir(tifroot):
-                    os.makedirs(tifroot)
-            fname = 'file_chan%0.3d.tif'%k
-            io.imsave(os.path.join(tifroot, fname), dwrite)
-        nfr += dwrite.shape[0]
-        k += 1
-        if k%20==0:
-            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
-    reg_file_align.close()
-
-    ops['yoff'] = yoff
-    ops['xoff'] = xoff
-    ops['corrXY'] = corrXY
-    ops['refImg'] = refImg
-    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
-        ops['meanImg'] = meanImg/ops['nframes']
-    else:
-        ops['meanImg_chan2'] = meanImg/ops['nframes']
-    if ops['nchannels']>1:
-        ix = 0
-        meanImg = np.zeros((Ly, Lx))
-        while True:
-            buff = reg_file_alt.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            buff = []
-            if data.size==0:
-                break
-            data = np.reshape(data, (-1, Ly, Lx))
-            nframes = data.shape[0]
-            # register by pre-determined amount
-            dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
-            ix += nframes
-            dwrite = dwrite.astype('int16')
-            reg_file_alt.seek(-2*dwrite.size,1)
-            reg_file_alt.write(bytearray(dwrite))
-            meanImg += dwrite.sum(axis=0)
-            yoff = np.append(yoff, ymax)
-            xoff = np.append(xoff, xmax)
-            corrXY = np.append(corrXY, cmax)
-        if ops['functional_chan']!=ops['align_by_chan']:
-            ops['meanImg'] = meanImg/ops['nframes']
-        else:
-            ops['meanImg_chan2'] = meanImg/ops['nframes']
-        reg_file_alt.close()
-    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
-    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
-    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
-    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
-    np.save(ops['ops_path'], ops)
-    return ops
-
 def subsample_frames(ops, nsamps):
     nFrames = get_nFrames(ops)
     Ly = ops['Ly']
@@ -297,6 +231,8 @@ def subsample_frames(ops, nsamps):
             reg_file = open(ops['reg_file'], 'rb')
         else:
             reg_file = open(ops['reg_file_chan2'], 'rb')
+    else:
+        reg_file = open(ops['reg_file'], 'rb')
     for j in range(0,nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
         buff = reg_file.read(nbytesread)
@@ -325,14 +261,13 @@ def refine_init_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
-        freg, ymax, xmax, cmax = phasecorr(frames, refImg, ops)
+        maskMul, maskOffset, cfRefImg = prepare_masks(refImg)
+        freg, ymax, xmax, cmax, yxnr = phasecorr(frames, [maskMul, maskOffset, cfRefImg], ops)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
-        #if iter>=np.floor(niter/2):
-        #    nmax = int(frames.shape[0] /2)
-        refImg = np.mean(freg[isort[1:nmax], :, :], axis=0)
+        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze()
         dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
-        refImg = shift_data((refImg[np.newaxis,:,:], dy,dx)).squeeze()
+        refImg = shift_data((refImg, dy, dx)).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
@@ -346,3 +281,120 @@ def pick_init(ops):
     refImg = pick_init_init(ops, frames)
     refImg = refine_init_init(ops, frames, refImg)
     return refImg
+
+def register_binary(ops):
+    # if ops is a list of dictionaries, each will be registered separately
+    if (type(ops) is list) or (type(ops) is np.ndarray):
+        for op in ops:
+            op = register_binary(op)
+        return ops
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    ops['nframes'] = get_nFrames(ops)
+    refImg = pick_init(ops)
+    ops['refImg'] = refImg
+    print('computed reference frame for registration')
+    nbatch = ops['batch_size']
+    nbytesread = 2 * Ly * Lx * nbatch
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            reg_file_align = open(ops['reg_file'], 'r+b')
+            reg_file_alt = open(ops['reg_file_chan2'], 'r+b')
+        else:
+            reg_file_align = open(ops['reg_file_chan2'], 'r+b')
+            reg_file_alt = open(ops['reg_file'], 'r+b')
+    else:
+        reg_file_align = open(ops['reg_file'], 'r+b')
+    meanImg = np.zeros((Ly, Lx))
+    k = 0
+    nfr = 0
+    k0 = tic()
+    maskMul, maskOffset, cfRefImg = prepare_masks(refImg)
+    yoff = np.zeros((0,),np.float32)
+    xoff = np.zeros((0,),np.float32)
+    corrXY = np.zeros((0,),np.float32)
+    if ops['nonrigid']:
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
+        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        yoff1 = np.zeros((0,nb),np.float32)
+        xoff1 = np.zeros((0,nb),np.float32)
+        corrXY1 = np.zeros((0,nb),np.float32)
+    else:
+        refAndMasks = [maskMul, maskOffset, cfRefImg]
+    while True:
+        buff = reg_file_align.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        if data.size==0:
+            break
+        data = np.reshape(data, (-1, Ly, Lx))
+        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
+        dwrite = dwrite.astype('int16')
+        reg_file_align.seek(-2*dwrite.size,1)
+        reg_file_align.write(bytearray(dwrite))
+        meanImg += dwrite.sum(axis=0)
+        yoff = np.hstack((yoff, ymax))
+        xoff = np.hstack((xoff, xmax))
+        corrXY = np.hstack((corrXY, cmax))
+        if ops['nonrigid']:
+            yoff1 = np.vstack((yoff1, yxnr[0]))
+            xoff1 = np.vstack((xoff1, yxnr[1]))
+            corrXY1 = np.vstack((corrXY1, yxnr[2]))
+        if ops['reg_tif']:
+            if k==0:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif')
+                if not os.path.isdir(tifroot):
+                    os.makedirs(tifroot)
+            fname = 'file_chan%0.3d.tif'%k
+            io.imsave(os.path.join(tifroot, fname), dwrite)
+        nfr += dwrite.shape[0]
+        k += 1
+        if k%5==0:
+            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+    reg_file_align.close()
+    ops['yoff'] = yoff
+    ops['xoff'] = xoff
+    ops['corrXY'] = corrXY
+    if ops['nonrigid']:
+        ops['yoff1'] = yoff1
+        ops['xoff1'] = xoff1
+        ops['corrXY1'] = corrXY1
+    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
+        ops['meanImg'] = meanImg/ops['nframes']
+    else:
+        ops['meanImg_chan2'] = meanImg/ops['nframes']
+    if ops['nchannels']>1:
+        ix = 0
+        meanImg = np.zeros((Ly, Lx))
+        while True:
+            buff = reg_file_alt.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            buff = []
+            if data.size==0:
+                break
+            data = np.reshape(data, (-1, Ly, Lx))
+            nframes = data.shape[0]
+            # register by pre-determined amount
+            if ops['nonrigid']==True:
+                dwrite = nonrigid.register_myshifts(ops, data, yoff[ix + np.arange(0,nframes),:], xoff[ix + np.arange(0,nframes),:])
+            else:
+                dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
+            ix += nframes
+            dwrite = dwrite.astype('int16')
+            reg_file_alt.seek(-2*dwrite.size,1)
+            reg_file_alt.write(bytearray(dwrite))
+            meanImg += dwrite.sum(axis=0)
+        if ops['functional_chan']!=ops['align_by_chan']:
+            ops['meanImg'] = meanImg/ops['nframes']
+        else:
+            ops['meanImg_chan2'] = meanImg/ops['nframes']
+        reg_file_alt.close()
+    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
+    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
+    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
+    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
+    np.save(ops['ops_path'], ops)
+    return ops

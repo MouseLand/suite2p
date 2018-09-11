@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import fig, gui, classifier, visualize
+from suite2p import fig, gui, classifier, visualize, reggui
 import pyqtgraph as pg
 import numpy as np
 import sys
@@ -102,6 +102,13 @@ class MainW(QtGui.QMainWindow):
         vis_menu = main_menu.addMenu('&Visualizations')
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut('Ctrl+V')
+        self.reg = QtGui.QAction('View registered &binary', self)
+        self.reg.triggered.connect(self.reg_window)
+        self.reg.setShortcut('Ctrl+B')
+        self.reg.setEnabled(True)
+        reg_menu = main_menu.addMenu('&Registration')
+        reg_menu.addAction(self.reg)
+        #self.reg.setShortcut('Ctrl+V')
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
         #cwidget = EventWidget(self)
@@ -896,6 +903,10 @@ class MainW(QtGui.QMainWindow):
     def vis_window(self):
         VW = visualize.VisWindow(self)
         VW.show()
+
+    def reg_window(self):
+        RW = reggui.BinaryPlayer(self)
+        RW.show()
 
     def load_dialog(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open stat.npy', filter='stat.npy')

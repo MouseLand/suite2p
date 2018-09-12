@@ -34,13 +34,15 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = ops['diameter']/20.
+        sig = ops['diameter']/30.
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
-    mov = np.reshape(mov, (-1,Lyc*Lxc))
-    mov = np.reshape(mov, (-1,Lyc*Lxc))
-    U = u.transpose() @ mov
-    U = U.transpose().copy().reshape((Lyc,Lxc,-1))
+    if 1:
+        mov = np.reshape(mov, (-1,Lyc*Lxc))
+        U = u.transpose() @ mov
+        U = U.transpose().copy().reshape((Lyc,Lxc,-1))
+    else:
+        U = np.transpose(mov, (1, 2, 0)).copy()
     return U
 
 def get_mov(ops):
@@ -112,16 +114,19 @@ def getSVDdata(ops):
 
     # normalize pixels by noise variance
     mov /= sdmov
+    if 1:
+        # compute covariance of binned frames
+        cov = mov @ mov.transpose() / mov.shape[1]
+        cov = cov.astype('float32')
 
-    # compute covariance of binned frames
-    cov = mov @ mov.transpose() / mov.shape[1]
-    cov = cov.astype('float32')
+        nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
+        u, s, v = np.linalg.svd(cov)
 
-    nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
-    u, s, v = np.linalg.svd(cov)
-
-    u = u[:, :nsvd_for_roi]
-    U = u.transpose() @ mov
+        u = u[:, :nsvd_for_roi]
+        U = u.transpose() @ mov
+    else:
+        U = mov
+        u = []
     U = np.reshape(U, (-1,Lyc,Lxc))
     U = np.transpose(U, (1, 2, 0)).copy()
     return U, sdmov, u
@@ -344,26 +349,21 @@ def getOverlaps(stat, ops):
         stat
         assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
     '''
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-
+    Ly, Lx = ops['Ly'], ops['Lx']
     stat2 = []
     ncells = len(stat)
     mask = np.zeros((Ly,Lx))
-    k=0
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
-        mask[ypix,xpix] += + 1
+        mask[ypix,xpix] += 1
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
-        stat[n]['overlap'] = mask[ypix,xpix] > 1
+        stat[n]['overlap'] = mask[ypix,xpix] > 1.5
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        if np.mean(stat[n]['overlap'])<1.: #ops['max_overlap']:
-            stat2.append(stat[n])
-            k+=1
+        stat2.append(stat[n])
     return stat2
 
 def removeOverlaps(stat, ops, Ly, Lx):
@@ -392,7 +392,7 @@ def removeOverlaps(stat, ops, Ly, Lx):
             break
     return stat, ix
 
-def cellMasks(ops, stat, Ly, Lx, allow_overlap):
+def cellMasks(ops, stat, Ly, Lx, allow_overlap=False):
     '''creates cell masks for ROIs in stat and computes radii
     inputs:
         stat, Ly, Lx, allow_overlap
@@ -509,9 +509,7 @@ def getConnected(Ly, Lx, stat):
 def connectedRegion2(stat, ops):
     if ('connected' not in ops) or ops['connected']:
         for j in range(len(stat)):
-            nn = len(stat[j]['ypix'])
-            stat[j] = getConnected(ops['Ly'], ops['Lx'], stat[j])
-            #print(len(stat[j]['ypix']) - nn)
+            stat[j] = getConnected(ops['Lyc'], ops['Lxc'], stat[j])
     return stat
 
 def extendROI(ypix, xpix, Ly, Lx,niter=1):
@@ -593,7 +591,7 @@ def sourcery(ops):
 
             # add extra ROIs here
             n = ncells
-            while n<ncells+100:
+            while n<ncells+200:
                 ind = np.argmax(V)
                 i,j = np.unravel_index(ind, V.shape)
                 if V[i,j] < thres:
@@ -685,9 +683,6 @@ def sourcery(ops):
         refine -= 1
     Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
     stat  = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
-    #stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
-    #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
-    #codes = codes[ix, :]
 
     stat = postprocess(ops, stat, Ucell, codes)
     return ops, stat
@@ -695,8 +690,8 @@ def sourcery(ops):
 def postprocess(ops, stat, Ucell, codes):
     # this is a good place to merge ROIs
     #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
-    stat = getStat(ops, stat, Ucell, codes)
     stat = connectedRegion2(stat, ops)
+    stat = getStat(ops, stat, Ucell, codes)
     stat = getOverlaps(stat,ops)
     return stat
 

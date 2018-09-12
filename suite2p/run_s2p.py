@@ -68,6 +68,7 @@ def default_ops():
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
+        'smooth_masks': 1,
       }
     return ops
 

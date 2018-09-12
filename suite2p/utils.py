@@ -107,6 +107,12 @@ def init_ops(ops):
         ops1.append(ops.copy())
     return ops1
 
+def list_h5(ops):
+    froot = os.path.dirname(ops['h5py'])
+    lpath = os.path.join(froot, "*.h5")
+    fs = sorted(glob.glob(lpath))
+    return fs
+
 def h5py_to_binary(ops1):
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
@@ -181,29 +187,6 @@ def h5py_to_binary(ops1):
         if nchannels>1:
             reg_file_chan2[j].close()
     return ops1
-
-def list_tifs(froot, look_one_level_down):
-    lpath = os.path.join(froot, "*.tif")
-    fs  = sorted(glob.glob(lpath))
-    lpath = os.path.join(froot, "*.tiff")
-    fs2 = sorted(glob.glob(lpath))
-    fs.extend(fs2)
-    if look_one_level_down:
-        fdir = glob.glob(os.path.join(froot, "*", ""))
-        for folder_down in fdir:
-            lpath = os.path.join(froot, folder_down, "*.tif")
-            fs3 = sorted(glob.glob(lpath))
-            lpath = os.path.join(froot, folder_down, "*.tiff")
-            fs4 = sorted(glob.glob(lpath))
-            fs.extend(fs3)
-            fs.extend(fs4)
-    return fs
-
-def list_h5(ops):
-    froot = os.path.dirname(ops['h5py'])
-    lpath = os.path.join(froot, "*.h5")
-    fs = sorted(glob.glob(lpath))
-    return fs
 
 def tiff_to_binary(ops1):
     nplanes = ops1[0]['nplanes']

@@ -108,7 +108,8 @@ class VisWindow(QtGui.QMainWindow):
         self.sl.setValue(100)
         self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
         self.sl.setTickInterval(10)
-        self.sl.sliderReleased.connect(self.levelchange)
+        self.sl.valueChanged.connect(self.levelchange)
+        self.sl.setTracking(False)
         self.sat = 1.0
         self.l0.addWidget(self.sl,0,2,5,1)
         qlabel = gui.VerticalLabel(text='saturation')
@@ -154,7 +155,17 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.setRowStretch(6, 1)
         self.raster = False
         self.win.show()
+        self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         self.show()
+
+    def plot_clicked(self,event):
+        items = self.win.scene().items(event.scenePos())
+        for x in items:
+            if x==self.p1:
+                if event.button()==1:
+                    if event.double():
+                        self.ROI.setPos([-1,-1])
+                        self.ROI.setSize([self.sp.shape[1]+1, self.sp.shape[0]+1])
 
     def keyPressEvent(self, event):
         bid = -1
@@ -202,27 +213,29 @@ class VisWindow(QtGui.QMainWindow):
             if bid >= 0:
                 xrange,yrange = self.ROI_range()
                 nn,nt = self.sp.shape
+                dy = nn*0.05 / (nn/yrange.size)
+                dx = nt*0.05 / (nt/xrange.size)
                 if bid==0:
-                    if yrange.size > nn*0.02:
+                    if yrange.size > dy:
                         # can move
                         move = True
-                        ymax = yrange.size - nn*0.02
+                        ymax = yrange.size - dy
                         yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
                 elif bid==1:
-                    if yrange.size < 0.98*nn + 1:
+                    if yrange.size < nn-dy + 1:
                         move = True
-                        ymax = yrange.size + nn*0.02
+                        ymax = yrange.size + dy
                         yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
                 elif bid==2:
-                    if xrange.size > nt*0.02:
+                    if xrange.size > dx:
                         # can move
                         move = True
-                        xmax = xrange.size - nt*0.02
+                        xmax = xrange.size - dx
                         xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
                 elif bid==3:
-                    if xrange.size < 0.98*nt + 1:
+                    if xrange.size < nt-dx + 1:
                         move = True
-                        xmax = xrange.size + nt*0.02
+                        xmax = xrange.size + dx
                         xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
                 if move:
                     self.ROI.setPos([xrange.min()-1, yrange.min()-1])
@@ -327,7 +340,7 @@ class VisWindow(QtGui.QMainWindow):
 
     def select_cells(self,parent):
         parent.imerge = []
-        if self.selected.size < 1000:
+        if self.selected.size < 5000:
             for n in self.selected:
                 parent.imerge.append(self.cells[self.isort[n]])
             parent.ichosen = parent.imerge[0]

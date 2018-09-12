@@ -40,6 +40,7 @@ def default_ops():
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # registration settings
         'do_registration': True, # whether to register data
+        'nonrigid': False, # whether to use nonrigid registration
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
@@ -114,13 +115,15 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
+        # copy ops to list where each element is ops for each plane
+        ops1 = utils.init_ops(ops)
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = utils.h5py_to_binary(ops)
+            ops1 = utils.h5py_to_binary(ops1)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
             try:
-                ops1 = utils.tiff_to_binary(ops)
+                ops1 = utils.tiff_to_binary(ops1)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
             except Exception as e:
                 if HAS_HAUS:
@@ -135,7 +138,7 @@ def run_s2p(ops={},db={}):
     if not ops['do_registration']:
         flag_binreg = True
     if not flag_binreg:
-        ops1 = register.register_binary(ops1) # register tiff
+        ops1 = register.register_binary(ops1) # register binary
         np.save(fpathops1, ops1) # save ops1
         print('time %4.4f. Registration complete'%toc(i0))
     elif files_found_flag:

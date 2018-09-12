@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import fig, gui, classifier, visualize
+from suite2p import fig, gui, classifier, visualize, reggui
 import pyqtgraph as pg
 import numpy as np
 import sys
@@ -102,6 +102,13 @@ class MainW(QtGui.QMainWindow):
         vis_menu = main_menu.addMenu('&Visualizations')
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut('Ctrl+V')
+        self.reg = QtGui.QAction('View registered &binary', self)
+        self.reg.triggered.connect(self.reg_window)
+        self.reg.setShortcut('Ctrl+B')
+        self.reg.setEnabled(True)
+        reg_menu = main_menu.addMenu('&Registration')
+        reg_menu.addAction(self.reg)
+        #self.reg.setShortcut('Ctrl+V')
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
         #cwidget = EventWidget(self)
@@ -386,8 +393,8 @@ class MainW(QtGui.QMainWindow):
         model = model.item()
         self.default_keys = model['keys']
         #self.fname = '/home/carsen/TIFFS/suite2p/plane3/stat.npy'
-        self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        self.load_proc()
+        #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
+        #self.load_proc()
         #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def mode_change(self,i):
@@ -553,6 +560,9 @@ class MainW(QtGui.QMainWindow):
                 for n in inds:
                     self.imerge.append(icell[n])
                 # draw choices
+                if self.ops_plot[2]==self.ops_plot[3].shape[1]:
+                    fig.corr_masks(self)
+                    fig.plot_colorbar(self, self.ops_plot[2])
                 self.ichosen_stats()
                 M = fig.draw_masks(self)
                 fig.plot_masks(self,M)
@@ -893,6 +903,10 @@ class MainW(QtGui.QMainWindow):
     def vis_window(self):
         VW = visualize.VisWindow(self)
         VW.show()
+
+    def reg_window(self):
+        RW = reggui.BinaryPlayer(self)
+        RW.show()
 
     def load_dialog(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open stat.npy', filter='stat.npy')

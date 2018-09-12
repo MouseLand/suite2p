@@ -3,9 +3,10 @@ import math, time
 import glob, h5py, os
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
-from scipy import stats, io, signal
-
+from scipy import stats, signal
+import scipy.io
 from skimage import io
+
 def tic():
     return time.time()
 def toc(i0):
@@ -75,17 +76,18 @@ def enhanced_mean_image(ops):
     ops['meanImgE'] = mimg
     return ops
 
-def h5py_to_binary(ops):
+def init_ops(ops):
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     ops1 = []
     if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
         ops['fast_disk'] = ops['save_path0']
     fast_disk = ops['fast_disk']
-    # open all binary files for writing
-    reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
+    # for mesoscope recording FOV locations
+    if 'dy' in ops:
+        dy = ops['dy']
+        dx = ops['dx']
+    # compile ops into list across planes
     for j in range(0,nplanes):
         ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
@@ -95,57 +97,71 @@ def h5py_to_binary(ops):
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+        if 'dy' in ops:
+            ops['dy'] = dy[j]
+            ops['dx'] = dx[j]
         if not os.path.isdir(ops['fast_disk']):
             os.makedirs(ops['fast_disk'])
         if not os.path.isdir(ops['save_path']):
             os.makedirs(ops['save_path'])
         ops1.append(ops.copy())
+    return ops1
+
+def h5py_to_binary(ops1):
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
+    # open all binary files for writing
+    reg_file = []
+    reg_file_chan2=[]
+    for ops in ops1:
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-
     # open h5py file for reading
-    key = ops['h5py_key']
-
-    with h5py.File(ops['h5py'], 'r') as f:
+    key = ops1[0]['h5py_key']
+    with h5py.File(ops1[0]['h5py'], 'r') as f:
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-        nbatch = nplanes*nchannels*math.ceil(ops['batch_size']/(nplanes*nchannels))
+        nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
         nframes_all = f[key].shape[0]
+        if nchannels>1:
+            nfunc = ops['functional_chan'] - 1
+        else:
+            nfunc = 0
         # loop over all tiffs
-        i0 = 0
+        ik = 0
         while 1:
-            irange = np.arange(i0, min(i0+nbatch, nframes_all), 1)
+            irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
             if irange.size==0:
                 break
             im = f[key][irange, :, :]
-            if i0==0:
-                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                if nchannels>1:
-                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                ops1[j]['nframes'] = 0
             nframes = im.shape[0]
             for j in range(0,nplanes):
-                if nchannels>1:
-                    nfunc = ops['functional_chan'] - 1
-                else:
-                    nfunc = 0
-                im2write = im[np.arange(j+nfunc, nframes, nplanes*nchannels),:,:]
+                if ik==0:
+                    ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    if nchannels>1:
+                        ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    ops1[j]['nframes'] = 0
+                i0 = nchannels * ((j)%nplanes)
+                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels>1:
-                    im2write = im[np.arange(j+1-nfunc, nframes, nplanes*nchannels),:,:]
+                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
-            i0 += nframes
+            ik += nframes
     # write ops files
-    do_registration = ops['do_registration']
+    do_registration = ops1[0]['do_registration']
+    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'] = im2write.shape[1]
         ops['Lx'] = im2write.shape[2]
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
+        elif do_registration and do_nonrigid:
+            ops = make_blocks(ops)
         ops['meanImg'] /= ops['nframes']
         if nchannels>1:
             ops['meanImg_chan2'] /= ops['nframes']
@@ -157,36 +173,18 @@ def h5py_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
-def tiff_to_binary(ops):
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    ops1 = []
-    if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
-        ops['fast_disk'] = ops['save_path0']
-    fast_disk = ops['fast_disk']
+def tiff_to_binary(ops1):
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
     # open all binary files for writing
     reg_file = []
-    if nchannels>1:
-        reg_file_chan2 = []
-    for j in range(0,nplanes):
-        fpath = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-        ops['save_path'] = fpath
-        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
-        ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
-        if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
-        if not os.path.isdir(ops['fast_disk']):
-            os.makedirs(ops['fast_disk'])
-        if not os.path.isdir(ops['save_path']):
-            os.makedirs(ops['save_path'])
-        ops1.append(ops.copy())
+    reg_file_chan2=[]
+    for ops in ops1:
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs, ops = get_tif_list(ops) # look for tiffs in all requested folders
+    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
     # loop over all tiffs
-
     for ik, file in enumerate(fs):
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
@@ -206,23 +204,26 @@ def tiff_to_binary(ops):
                 nfunc = ops['functional_chan']-1
             else:
                 nfunc = 0
-            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:]
+            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
             ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:]
+                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file_chan2[j].write(bytearray(im2write))
                 ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             ops1[j]['nframes']+= im2write.shape[0]
         iplane = (iplane+nframes/nchannels)%nplanes
     # write ops files
     do_registration = ops['do_registration']
+    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'] = im.shape[1]
         ops['Lx'] = im.shape[2]
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
+        elif do_registration and do_nonrigid:
+            ops = make_blocks(ops)
         ops['meanImg'] /= ops['nframes']
         if nchannels>1:
             ops['meanImg_chan2'] /= ops['nframes']
@@ -348,6 +349,8 @@ def combined(ops1):
     LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
     meanImg = np.zeros((LY, LX))
     meanImgE = np.zeros((LY, LX))
+    if ops['nchannels']>1:
+        meanImg_chan2 = np.zeros((LY, LX))
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
@@ -357,6 +360,8 @@ def combined(ops1):
         yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
         meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
+        if ops['nchannels']>1:
+            meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
@@ -387,6 +392,8 @@ def combined(ops1):
             iscell = np.concatenate((iscell,iscell0))
     ops['meanImg']  = meanImg
     ops['meanImgE'] = meanImgE
+    if ops['nchannels']>1:
+        ops['meanImg_chan2'] = meanImg_chan2
     ops['Vcorr'] = Vcorr
     ops['Ly'] = LY
     ops['Lx'] = LX

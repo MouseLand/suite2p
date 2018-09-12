@@ -219,15 +219,11 @@ def init_masks(parent):
     for k in range(5):
         if k>0:
             if k==2:
-                if ops['functional_chan']==1:
-                    mimg = ops['meanImgE']
-                else:
-                    mimg = ops['meanImgE_chan2']
+                if 'meanImgE' not in ops:
+                    ops = utils.enhanced_mean_image(ops)
+                mimg = ops['meanImgE']
             elif k==1:
-                if ops['functional_chan']==1:
-                    mimg = ops['meanImg']
-                else:
-                    mimg = ops['meanImg_chan2']
+                mimg = ops['meanImg']
                 S = np.maximum(0,np.minimum(1, Vorig*1.5))
                 mimg1 = np.percentile(mimg,1)
                 mimg99 = np.percentile(mimg,99)

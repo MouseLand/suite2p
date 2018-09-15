@@ -244,9 +244,9 @@ def list_tifs(froot, look_one_level_down):
     if look_one_level_down:
         fdir = glob.glob(os.path.join(froot, "*", ""))
         for folder_down in fdir:
-            lpath = os.path.join(froot, folder_down, "*.tif")
+            lpath = os.path.join(folder_down, "*.tif")
             fs3 = sorted(glob.glob(lpath))
-            lpath = os.path.join(froot, folder_down, "*.tiff")
+            lpath = os.path.join(folder_down, "*.tiff")
             fs4 = sorted(glob.glob(lpath))
             fs.extend(fs3)
             fs.extend(fs4)

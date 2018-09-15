@@ -34,7 +34,8 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = ops['diameter']/30.
+        sig = ops['diameter']/20.
+        print(sig)
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     if 1:

@@ -14,76 +14,19 @@ lpad = 3   # upsample from a square +/- lpad
 smoothSigma = 1.15 # smoothing constant
 maskSlope   = 2. # slope of taper mask at the edges
 
-def make_blocks(ops):
-    ## split FOV into blocks to register separately
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    if 'maxregshiftNR' not in ops:
-        ops['maxregshiftNR'] = 0.01
-    if 'nblocks' in ops:
-        nblocks = ops['nblocks']
-    else:
-        nblocks = [5,2]
-        ops['nblocks'] = nblocks
-    nblocks = np.array(nblocks)
-    if 'block_fraction' in ops:
-        bfrac = ops['block_fraction']
-    else:
-        bfrac = 1.0 / np.maximum(2.0, nblocks-1)
-        bfrac[nblocks==1] = 1.0
-        ops['block_fraction'] = bfrac
-    bpix = bfrac * np.array([Ly,Lx])
-    # choose bpix to be the closest power of 2
-    bpix = 2**np.round(np.log2(bpix))
-    ops['block_overlap'] = np.round((bpix*nblocks - [Ly,Lx]) / (nblocks-1.9))
-    # block centers
-    yblocks = np.linspace(0, Ly-1, nblocks[0]+1)
-    yblocks = np.round((yblocks[:-1] + yblocks[1:]) / 2)
-    xblocks = np.linspace(0, Lx-1, nblocks[1]+1)
-    xblocks = np.round((xblocks[:-1] + xblocks[1:]) / 2)
-    # block ranges
-    ib=0
-    ops['yblock'] = []
-    ops['xblock'] = []
-    bhalf = np.floor(bpix / 2)
-    for iy in range(nblocks[0]):
-        if iy==nblocks[0]-1:
-            yind = Ly-1 + np.array([-bhalf[0]*2+1,0])
-        elif iy==0:
-            yind = np.array([0,bhalf[0]*2-1])
-        else:
-            yind = yblocks[iy] + np.array([-bhalf[0], bhalf[0]-1])
-        for ix in range(nblocks[1]):
-            if ix==nblocks[0]-1:
-                xind = Lx-1 + np.array([-bhalf[1]*2+1,0])
-            elif ix==0:
-                xind = np.array([0,bhalf[1]*2-1])
-            else:
-                xind = xblocks[ix] + np.array([-bhalf[1], bhalf[1]-1])
-            ops['yblock'].append(yind)
-            ops['xblock'].append(xind)
-            ib+=1
-    ## smoothing masks
-    # gaussian centered on block with width 2/3 the size of block
-    # (or user-specified as ops['smooth_blocks'])
-    #sigT = [np.diff(yblocks).mean()*2.0/3, np.diff(xblocks).mean()*2.0/3]
-    #if 'smooth_blocks' in ops:
-    #    sigT = ops['smooth_blocks']
-    #sigT = np.maximum(10.0, sigT)
-    #ops['smooth_blocks'] = sigT
-    return ops
-
 def prepare_masks(refImg0, ops):
     # split refImg0 into multiple parts
     cfRefImg1 = []
     maskMul1 = []
     maskOffset1 = []
     nb = len(ops['yblock'])
+    print(ops['yblock'])
+    print(ops['xblock'])
     for n in range(nb):
         yind = ops['yblock'][n]
-        yind = np.arange(yind[0],yind[-1]+1).astype(int)
+        yind = np.arange(yind[0],yind[-1]).astype('int')
         xind = ops['xblock'][n]
-        xind = np.arange(xind[0],xind[-1]+1).astype(int)
+        xind = np.arange(xind[0],xind[-1]).astype('int')
         refImg = refImg0[np.ix_(yind,xind)]
         Ly,Lx = refImg.shape
         if n==0:
@@ -136,8 +79,8 @@ def phasecorr_worker(inputs):
     nimg, Ly, Lx = data.shape
     maxregshift = np.round(ops['maxregshiftNR'] *np.maximum(Ly, Lx))
     LyMax = np.diff(np.array(ops['yblock']))
-    ly = int(np.diff(ops['yblock'][0])+1)
-    lx = int(np.diff(ops['xblock'][0])+1)
+    ly = int(np.diff(ops['yblock'][0]))
+    lx = int(np.diff(ops['xblock'][0]))
     lyhalf = int(np.floor(ly/2))
     lxhalf = int(np.floor(lx/2))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly,lx)/2.)-lpad))
@@ -195,13 +138,20 @@ def shift_data(inputs):
     x = np.round(np.unique(np.array(ops['xblock']).mean(axis=1)))
     x = np.hstack((0,x,Lx-1))
     mshx,mshy = np.meshgrid(np.arange(0,Ly),np.arange(0,Lx))
+
+    print(ops['yblock'])
+    print(ops['xblock'])
+    print(ymax.shape)
     # loop over frames
     for t in range(nimg):
         I = data[t,:,:]
         ymax0 = np.pad(ymax[t,:,:],((1,),(1,)),mode='edge')
         xmax0 = np.pad(xmax[t,:,:],((1,),(1,)),mode='edge')
-        fy = interp2d(y,x,ymax0,kind='linear')
-        fx = interp2d(y,x,xmax0,kind='linear')
+        print(y.size )
+        print(x.size )
+        print(ymax0.shape)
+        fy = interp2d(y,x,ymax0.T,kind='linear')
+        fx = interp2d(y,x,xmax0.T,kind='linear')
         # interpolated values on grid with all points
         fyout = fy(np.arange(0,Ly),np.arange(0,Lx)) + mshy
         fxout = fx(np.arange(0,Ly),np.arange(0,Lx)) + mshx

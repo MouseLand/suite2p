@@ -703,7 +703,7 @@ def extractF(ops, stat):
     Lx = ops['Lx']
     ncells = len(stat)
 
-    stat,cell_pix,cell_masks = cellMasks(ops, stat,Ly,Lx,False)
+    stat,cell_pix,cell_masks = cellMasks(ops, stat,Ly,Lx,ops['allow_overlap'])
     neuropil_masks           = neuropilMasks2(ops,stat,cell_pix)
     # add surround neuropil masks to stat
     for n in range(ncells):

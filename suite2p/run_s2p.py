@@ -75,7 +75,6 @@ def default_ops():
 
 def run_s2p(ops={},db={}):
     i0 = tic()
-    ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
             ops['save_path0'], tail = os.path.split(ops['h5py'])
@@ -122,7 +121,7 @@ def run_s2p(ops={},db={}):
             ops1 = utils.h5py_to_binary(ops1)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
-            try:
+            try:                
                 ops1 = utils.tiff_to_binary(ops1)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
             except Exception as e:

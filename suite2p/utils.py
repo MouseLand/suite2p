@@ -445,8 +445,8 @@ def make_blocks(ops):
     if 'block_size' not in ops:
         ops['block_size'] = [128, 128]
 
-    ny = int(np.ceil(float(Ly) / ops['block_size'][0]))
-    nx = int(np.ceil(float(Lx) / ops['block_size'][1]))
+    ny = int(np.ceil(2 * float(Ly) / ops['block_size'][0]))
+    nx = int(np.ceil(2 * float(Lx) / ops['block_size'][1]))
     ystart = np.linspace(0, Ly - ops['block_size'][0], ny).astype('int')
     xstart = np.linspace(0, Lx - ops['block_size'][1], nx).astype('int')
     ops['yblock'] = []
@@ -457,7 +457,7 @@ def make_blocks(ops):
             xind = np.array([xstart[ix], xstart[ix]+ops['block_size'][1]])
             ops['yblock'].append(yind)
             ops['xblock'].append(xind)
-
+    ops['nblocks'] = [ny, nx]
     #
     # bpix = bfrac * np.array([Ly,Lx])
     # # choose bpix to be the closest power of 2

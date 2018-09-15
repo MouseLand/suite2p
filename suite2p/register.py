@@ -143,6 +143,7 @@ def phasecorr_worker(inputs):
 
 def phasecorr(data, refAndMasks, ops):
     nr=False
+    yxnr = []
     if ops['nonrigid'] and len(refAndMasks)>3:
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
@@ -184,9 +185,8 @@ def phasecorr(data, refAndMasks, ops):
                 cmax1[irange[i],:] = results[i][4][2]
         if nr:
             yxnr = [ymax1,xmax1,cmax1]
-            print(ymax1.max(),xmax1.max())
-        else:
-            yxnr = []
+    #if nr:
+        #print(yxnr[0].max(),yxnr[1].max())
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

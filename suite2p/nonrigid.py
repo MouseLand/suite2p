@@ -20,8 +20,6 @@ def prepare_masks(refImg0, ops):
     maskMul1 = []
     maskOffset1 = []
     nb = len(ops['yblock'])
-    print(ops['yblock'])
-    print(ops['xblock'])
     for n in range(nb):
         yind = ops['yblock'][n]
         yind = np.arange(yind[0],yind[-1]).astype('int')
@@ -77,7 +75,7 @@ def phasecorr_worker(inputs):
     maskOffset1 = refAndMasks[1]
     cfRefImg1   = refAndMasks[2]
     nimg, Ly, Lx = data.shape
-    maxregshift = np.round(ops['maxregshiftNR'] *np.maximum(Ly, Lx))
+    maxregshift = np.round(ops['maxregshiftNR'])
     LyMax = np.diff(np.array(ops['yblock']))
     ly = int(np.diff(ops['yblock'][0]))
     lx = int(np.diff(ops['xblock'][0]))
@@ -93,9 +91,9 @@ def phasecorr_worker(inputs):
     # compute phase-correlation of blocks
     for n in range(nb):
         yind = ops['yblock'][n]
-        yind = np.arange(yind[0],yind[-1]+1).astype(int)
+        yind = np.arange(yind[0],yind[-1]).astype(int)
         xind = ops['xblock'][n]
-        xind = np.arange(xind[0],xind[-1]+1).astype(int)
+        xind = np.arange(xind[0],xind[-1]).astype(int)
         data_block[n,:,:,:] = data[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
     cc1 = correlation_map(data_block, refAndMasks)
     for n in range(nb):
@@ -137,27 +135,19 @@ def shift_data(inputs):
     y = np.hstack((0,y,Ly-1))
     x = np.round(np.unique(np.array(ops['xblock']).mean(axis=1)))
     x = np.hstack((0,x,Lx-1))
-    mshx,mshy = np.meshgrid(np.arange(0,Ly),np.arange(0,Lx))
-
-    print(ops['yblock'])
-    print(ops['xblock'])
-    print(ymax.shape)
+    mshx,mshy = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))    
     # loop over frames
     for t in range(nimg):
         I = data[t,:,:]
         ymax0 = np.pad(ymax[t,:,:],((1,),(1,)),mode='edge')
         xmax0 = np.pad(xmax[t,:,:],((1,),(1,)),mode='edge')
-        print(y.size )
-        print(x.size )
-        print(ymax0.shape)
-        fy = interp2d(y,x,ymax0.T,kind='linear')
-        fx = interp2d(y,x,xmax0.T,kind='linear')
+        fy = interp2d(x,y,ymax0,kind='cubic')
+        fx = interp2d(x,y,xmax0,kind='cubic')
         # interpolated values on grid with all points
-        fyout = fy(np.arange(0,Ly),np.arange(0,Lx)) + mshy
-        fxout = fx(np.arange(0,Ly),np.arange(0,Lx)) + mshx
-        coords = np.concatenate((fyout[np.newaxis,:],fxout[np.newaxis,:]))
-        Iw = warp(I,coords, order=0, clip=False, preserve_range=True)
-        Y[t,:,:] = Iw
+        fyout = mshy + fy(np.arange(0,Lx),np.arange(0,Ly))
+        fxout = mshx + fx(np.arange(0,Lx),np.arange(0,Ly))
+        coords = np.concatenate((fyout[np.newaxis,:], fxout[np.newaxis,:]))
+        Y[t,:,:] = warp(I,coords, order=0, clip=False, preserve_range=True)
     return Y
 
 def register_myshifts(ops, data, ymax, xmax):

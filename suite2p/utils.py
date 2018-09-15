@@ -107,6 +107,12 @@ def init_ops(ops):
         ops1.append(ops.copy())
     return ops1
 
+def list_h5(ops):
+    froot = os.path.dirname(ops['h5py'])
+    lpath = os.path.join(froot, "*.h5")
+    fs = sorted(glob.glob(lpath))
+    return fs
+
 def h5py_to_binary(ops1):
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
@@ -119,39 +125,48 @@ def h5py_to_binary(ops1):
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
     # open h5py file for reading
     key = ops1[0]['h5py_key']
-    with h5py.File(ops1[0]['h5py'], 'r') as f:
-        # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-        nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
-        nframes_all = f[key].shape[0]
-        if nchannels>1:
-            nfunc = ops['functional_chan'] - 1
-        else:
-            nfunc = 0
-        # loop over all tiffs
-        ik = 0
-        while 1:
-            irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
-            if irange.size==0:
-                break
-            im = f[key][irange, :, :]
-            nframes = im.shape[0]
-            for j in range(0,nplanes):
-                if ik==0:
-                    ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+    if ops1[0]['look_one_level_down']:
+        h5list = list_h5(ops1[0])
+        print('using a list of h5 files:')
+        print(h5list)
+    else:
+        h5list = [ops1[0]['h5py']]
+    iall = 0
+    for h5 in h5list:
+        with h5py.File(h5, 'r') as f:
+            # keep track of the plane identity of the first frame (channel identity is assumed always 0)
+            nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
+            nframes_all = f[key].shape[0]
+            if nchannels>1:
+                nfunc = ops['functional_chan'] - 1
+            else:
+                nfunc = 0
+            # loop over all tiffs
+            ik = 0
+            while 1:
+                irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
+                if irange.size==0:
+                    break
+                im = f[key][irange, :, :]
+                nframes = im.shape[0]
+                for j in range(0,nplanes):
+                    if iall==0:
+                        ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                        if nchannels>1:
+                            ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                        ops1[j]['nframes'] = 0
+                    i0 = nchannels * ((j)%nplanes)
+                    im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                    reg_file[j].write(bytearray(im2write))
+                    ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                     if nchannels>1:
-                        ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                    ops1[j]['nframes'] = 0
-                i0 = nchannels * ((j)%nplanes)
-                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                reg_file[j].write(bytearray(im2write))
-                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
-                if nchannels>1:
-                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                    reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                ops1[j]['nframes'] += im2write.shape[0]
-            ik += nframes
-    # write ops files
+                        im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                        reg_file_chan2[j].write(bytearray(im2write))
+                        ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                    ops1[j]['nframes'] += im2write.shape[0]
+                ik += nframes
+                iall += nframes
+        # write ops files
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:

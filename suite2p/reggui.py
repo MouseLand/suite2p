@@ -86,6 +86,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.updateTimer.timeout.connect(self.next_frame)
         self.cframe = 0
         self.loaded = False
+        self.Floaded = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -94,6 +95,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 print(fileName)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
+                self.Floaded = True
                 self.openFile(fileName, True)
 
     def open(self):
@@ -114,20 +116,25 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.reg_file = open(self.reg_loc,'rb')
             self.reg_file.close()
             if not fromgui:
-                self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
-                self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'))
-            ncells = len(self.stat)
-            for n in range(0,ncells):
-                ypix = self.stat[n]['ypix'].flatten()
-                xpix = self.stat[n]['xpix'].flatten()
-                iext = fig.boundary(ypix,xpix)
-                yext = ypix[iext]
-                xext = xpix[iext]
-                #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))
-                #xext = np.hstack((xext,xext+1,xext-1,xext+1,xext-1))
-                goodi = (yext>=0) & (xext>=0) & (yext<self.Ly) & (xext<self.Lx)
-                self.stat[n]['yext'] = yext[goodi]
-                self.stat[n]['xext'] = xext[goodi]
+                if os.path.isfile(os.path.join(os.path.dirname(fileName),'F.npy')):
+                    self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
+                    self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'))
+                    self.Floaded = True
+                else:
+                    self.Floaded = False
+            if self.Floaded:
+                ncells = len(self.stat)
+                for n in range(0,ncells):
+                    ypix = self.stat[n]['ypix'].flatten()
+                    xpix = self.stat[n]['xpix'].flatten()
+                    iext = fig.boundary(ypix,xpix)
+                    yext = ypix[iext]
+                    xext = xpix[iext]
+                    #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))
+                    #xext = np.hstack((xext,xext+1,xext-1,xext+1,xext-1))
+                    goodi = (yext>=0) & (xext>=0) & (yext<self.Ly) & (xext<self.Lx)
+                    self.stat[n]['yext'] = yext[goodi]
+                    self.stat[n]['xext'] = xext[goodi]
             good = True
         except Exception as e:
             print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
@@ -141,7 +148,6 @@ class BinaryPlayer(QtGui.QMainWindow):
             # get scaling from 100 random frames
             frames = register.subsample_frames(ops, np.minimum(ops['nframes'],100))
             self.srange = frames.mean() + frames.std()*np.array([-3,3])
-            self.cell_mask()
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
             self.movieLabel.setText(self.reg_loc)
@@ -166,22 +172,24 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.scatter1.setData([self.cframe,self.cframe],
                                   [self.yoff[self.cframe],self.xoff[self.cframe]],
                                   size=10,brush=pg.mkBrush(255,0,0))
-            self.ft = self.Fcell[self.ichosen,:]
-            self.p2.plot(self.ft, pen='b')
-            self.p2.setRange(xRange=(0,self.nframes),
-                             yRange=(self.ft.min(),self.ft.max()),
-                             padding=0.0)
-            self.p2.setLimits(xMin=0,xMax=self.nframes)
-            self.scatter2 = pg.ScatterPlotItem()
-            self.p2.addItem(self.scatter2)
-            self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
-            self.p2.setXLink('plot1')
+            if self.Floaded:
+                self.cell_mask()
+                self.ft = self.Fcell[self.ichosen,:]
+                self.p2.plot(self.ft, pen='b')
+                self.p2.setRange(xRange=(0,self.nframes),
+                                 yRange=(self.ft.min(),self.ft.max()),
+                                 padding=0.0)
+                self.p2.setLimits(xMin=0,xMax=self.nframes)
+                self.scatter2 = pg.ScatterPlotItem()
+                self.p2.addItem(self.scatter2)
+                self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+                self.p2.setXLink('plot1')
             self.cframe = -1
             self.loaded = True
             self.next_frame()
 
     def number_chosen(self):
-        if self.loaded:
+        if self.Floaded:
             self.ichosen = int(self.ROIedit.text())
             if self.ichosen >= len(self.stat):
                 self.ichosen = len(self.stat) - 1
@@ -212,7 +220,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                     pos = vb.mapSceneToView(event.scenePos())
                     posx = pos.x()
                     iplot = 1
-                elif x==self.p2:
+                elif x==self.p2 and self.Floaded:
                     vb = self.p1.vb
                     pos = vb.mapSceneToView(event.scenePos())
                     posx = pos.x()
@@ -314,9 +322,10 @@ class BinaryPlayer(QtGui.QMainWindow):
             buff = self.reg_file.read(self.nbytesread)
             self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
             self.img = np.tile(self.img,(1,1,3))
-            self.img[self.yext,self.xext,0] = self.srange[0]
-            self.img[self.yext,self.xext,1] = self.srange[0]
-            self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
+            if self.Floaded:
+                self.img[self.yext,self.xext,0] = self.srange[0]
+                self.img[self.yext,self.xext,1] = self.srange[0]
+                self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
             self.pimg.setImage(self.img)
             self.pimg.setLevels(self.srange)
             self.cframe+=1
@@ -325,7 +334,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.scatter1.setData([self.cframe,self.cframe],
                                   [self.yoff[self.cframe],self.xoff[self.cframe]],
                                   size=10,brush=pg.mkBrush(255,0,0))
-            self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+            if self.Floaded:
+                self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
         else:
             self.pauseButton.setChecked(True)
             self.pause()

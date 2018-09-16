@@ -135,14 +135,14 @@ def shift_data(inputs):
     y = np.hstack((0,y,Ly-1))
     x = np.round(np.unique(np.array(ops['xblock']).mean(axis=1)))
     x = np.hstack((0,x,Lx-1))
-    mshx,mshy = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))    
+    mshx,mshy = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))
     # loop over frames
     for t in range(nimg):
         I = data[t,:,:]
         ymax0 = np.pad(ymax[t,:,:],((1,),(1,)),mode='edge')
         xmax0 = np.pad(xmax[t,:,:],((1,),(1,)),mode='edge')
-        fy = interp2d(x,y,ymax0,kind='cubic')
-        fx = interp2d(x,y,xmax0,kind='cubic')
+        fy = interp2d(x,y,ymax0,kind='linear')
+        fx = interp2d(x,y,xmax0,kind='linear')
         # interpolated values on grid with all points
         fyout = mshy + fy(np.arange(0,Lx),np.arange(0,Ly))
         fxout = mshx + fx(np.arange(0,Lx),np.arange(0,Ly))

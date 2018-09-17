@@ -129,6 +129,7 @@ class RunWindow(QtGui.QDialog):
                     kk+=1
                 kl+=1
             l+=1
+
         # data_path
         key = 'look_one_level_down'
         qlabel = QtGui.QLabel(key)
@@ -243,6 +244,7 @@ class RunWindow(QtGui.QDialog):
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
+        print(self.db['data_path'])
         if hasattr(self, 'h5_path'):
             self.db['h5py'] = self.h5_path
             self.db['h5py_key'] = self.h5_key

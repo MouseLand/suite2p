@@ -1,6 +1,7 @@
 from PyQt5 import QtGui, QtCore
 from suite2p import fig, gui, classifier, visualize, reggui
 import pyqtgraph as pg
+from pyqtgraph import GraphicsScene
 import numpy as np
 import sys
 import os
@@ -55,6 +56,11 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
+        # export figure
+        exportFig = QtGui.QAction('Export as image (svg)', self)
+        exportFig.triggered.connect(self.export_fig)
+        exportFig.setEnabled(True)
+        self.addAction(exportFig)
         # load masks
         #loadMask = QtGui.QAction('&Load masks (stat.npy) and extract traces', self)
         #loadMask.setShortcut('Ctrl+M')
@@ -65,6 +71,7 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
         file_menu.addAction(self.loadBeh)
+        file_menu.addAction(exportFig)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
@@ -184,6 +191,7 @@ class MainW(QtGui.QMainWindow):
                                       row=0,col=0, invertY=True)
         self.img1 = pg.ImageItem()
         self.p1.setMenuEnabled(False)
+        self.p1.scene().contextMenuItem=self.p1
         data = np.zeros((700,512,3))
         self.img1.setImage(data)
         self.p1.addItem(self.img1)
@@ -191,6 +199,7 @@ class MainW(QtGui.QMainWindow):
         self.p2 = self.win.addViewBox(lockAspect=True,name='plot2',border=[100,100,100],
                                       row=0,col=1, invertY=True)
         self.p2.setMenuEnabled(False)
+        self.p2.scene().contextMenuItem=self.p2
         self.img2 = pg.ImageItem()
         self.img2.setImage(data)
         self.p2.addItem(self.img2)
@@ -392,10 +401,17 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model['keys']
-        #self.fname = '/home/carsen/TIFFS/suite2p/plane3/stat.npy'
+        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
         #self.load_proc()
         #self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
+
+    def export_fig(self):
+        #self.exportDialog= pg.exportDialog.ExportDialog(self.win.scene())
+        #self.exportDialog.show(self.win.scene().contextMenuItem)
+        #self.win.scene().contextMenuItem(self.win.scene())
+        self.win.scene().contextMenuItem = self.p1
+        self.win.scene().showExportDialog()
 
     def mode_change(self,i):
         self.activityMode = i
@@ -766,6 +782,8 @@ class MainW(QtGui.QMainWindow):
         self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
 
+        #self.p1.scene().showExportDialog()
+
     def ROIs_on(self,state):
         if state == QtCore.Qt.Checked:
             self.ops_plot[0] = True
@@ -858,6 +876,13 @@ class MainW(QtGui.QMainWindow):
                     fig.plot_masks(self,M)
                     fig.plot_trace(self)
                     self.show()
+                elif event.button()==2:
+                    if iplot==1:
+                        event.acceptedItem = self.p1
+                        self.p1.raiseContextMenu(event)
+                    elif iplot==2:
+                        event.acceptedItem = self.p2
+                        self.p2.raiseContextMenu(event)
 
     def ichosen_stats(self):
         n = self.ichosen

@@ -66,13 +66,18 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.frameNumber.setStyleSheet("color: white;")
         self.frameSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
         #self.frameSlider.setTickPosition(QtGui.QSlider.TicksBelow)
-        self.frameSlider.setTickInterval(10)
+        self.frameSlider.setTickInterval(5)
+        self.frameSlider.setTracking(False)
+        self.frameDelta = 10
         self.l0.addWidget(QtGui.QLabel(''),12,0,1,1)
         self.l0.setRowStretch(12,1)
         self.l0.addWidget(self.frameLabel, 13,0,1,2)
         self.l0.addWidget(self.frameNumber, 14,0,1,2)
         self.l0.addWidget(self.frameSlider, 13,2,14,13)
         self.l0.addWidget(QtGui.QLabel(''),14,1,1,1)
+        ll = QtGui.QLabel('(when paused, left/right arrow keys can move slider)')
+        ll.setStyleSheet("color: white;")
+        self.l0.addWidget(ll,16,0,1,3)
         #speedLabel = QtGui.QLabel("Speed:")
         #self.speedSpinBox = QtGui.QSpinBox()
         #self.speedSpinBox.setRange(1, 9999)
@@ -153,6 +158,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
             self.nframes = ops['nframes']
+            self.frameDelta = int(np.maximum(5,self.nframes/200))
+            self.frameSlider.setSingleStep(self.frameDelta)
             self.currentMovieDirectory = QtCore.QFileInfo(fileName).path()
             if self.nframes > 0:
                 self.updateFrameSlider()
@@ -188,6 +195,19 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.loaded = True
             self.next_frame()
 
+    def keyPressEvent(self, event):
+        bid = -1
+        if self.playButton.isEnabled():
+            if event.modifiers() !=  QtCore.Qt.ShiftModifier:
+                if event.key() == QtCore.Qt.Key_Left:
+                    self.cframe -= self.frameDelta
+                    self.cframe  = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
+                    self.frameSlider.setValue(self.cframe)
+                elif event.key() == QtCore.Qt.Key_Right:
+                    self.cframe += self.frameDelta
+                    self.cframe  = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
+                    self.frameSlider.setValue(self.cframe)
+
     def number_chosen(self):
         if self.Floaded:
             self.ichosen = int(self.ROIedit.text())
@@ -202,7 +222,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.p2.addItem(self.scatter2)
             self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
             self.p2.setXLink('plot1')
-            self.jump_to_frame(self.cframe)
+            self.jump_to_frame()
             self.show()
 
     def plot_clicked(self,event):
@@ -243,7 +263,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if self.playButton.isEnabled():
                 self.cframe = np.maximum(0, np.minimum(self.nframes-1, int(np.round(posx))))
                 self.frameSlider.setValue(self.cframe)
-                self.jump_to_frame(self.cframe)
+                #self.jump_to_frame()
 
     def cell_mask(self):
         #self.cmask = np.zeros((self.Ly,self.Lx,3),np.float32)
@@ -251,14 +271,16 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.xext = self.stat[self.ichosen]['xext']
         #self.cmask[self.yext,self.xext,2] = (self.srange[1]-self.srange[0])/2 * np.ones((self.yext.size,),np.float32)
 
-    def go_to_frame(self, frame):
-        self.jump_to_frame(frame)
+    def go_to_frame(self):
+        self.cframe = int(self.frameSlider.value())
+        self.jump_to_frame()
 
     def fitToWindow(self):
         self.movieLabel.setScaledContents(self.fitCheckBox.isChecked())
 
     def updateFrameSlider(self):
-        self.frameSlider.setMaximum(self.nframes - 1)
+        self.frameSlider.setMaximum(self.nframes-1)
+        self.frameSlider.setMinimum(0)
         self.frameLabel.setEnabled(True)
         self.frameSlider.setEnabled(True)
 
@@ -308,9 +330,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.pauseButton.setEnabled(False)
         self.pauseButton.setChecked(True)
 
-    def jump_to_frame(self,frame):
+    def jump_to_frame(self):
         if self.playButton.isEnabled():
-            self.cframe = self.frameSlider.value()
             self.cframe = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
             # seek to absolute position
             self.reg_file.seek(self.nbytesread * self.cframe, 0)
@@ -318,37 +339,44 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.next_frame()
 
     def next_frame(self):
-        if self.cframe < self.nframes - 1:
-            buff = self.reg_file.read(self.nbytesread)
-            self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
-            self.img = np.tile(self.img,(1,1,3))
-            if self.Floaded:
-                self.img[self.yext,self.xext,0] = self.srange[0]
-                self.img[self.yext,self.xext,1] = self.srange[0]
-                self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
-            self.pimg.setImage(self.img)
-            self.pimg.setLevels(self.srange)
-            self.cframe+=1
-            self.frameSlider.setValue(self.cframe)
-            self.frameNumber.setText(str(self.cframe))
-            self.scatter1.setData([self.cframe,self.cframe],
-                                  [self.yoff[self.cframe],self.xoff[self.cframe]],
-                                  size=10,brush=pg.mkBrush(255,0,0))
-            if self.Floaded:
-                self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
-        else:
-            self.pauseButton.setChecked(True)
-            self.pause()
+        # loop after video finishes
+        self.cframe+=1
+        if self.cframe > self.nframes - 1:
+            self.cframe = 0
+            self.reg_file.seek(0, 0)
+
+        buff = self.reg_file.read(self.nbytesread)
+        self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+        self.img = np.tile(self.img,(1,1,3))
+        if self.Floaded:
+            self.img[self.yext,self.xext,0] = self.srange[0]
+            self.img[self.yext,self.xext,1] = self.srange[0]
+            self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
+        self.pimg.setImage(self.img)
+        self.pimg.setLevels(self.srange)
+        self.frameSlider.setValue(self.cframe)
+        self.frameNumber.setText(str(self.cframe))
+        self.scatter1.setData([self.cframe,self.cframe],
+                              [self.yoff[self.cframe],self.xoff[self.cframe]],
+                              size=10,brush=pg.mkBrush(255,0,0))
+        if self.Floaded:
+            self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+        #else:
+        #    self.pauseButton.setChecked(True)
+        #    self.pause()
 
     def start(self):
         if self.cframe < self.nframes - 1:
             print('playing')
             self.playButton.setEnabled(False)
             self.pauseButton.setEnabled(True)
-            self.updateTimer.start(30)
+            self.frameSlider.setEnabled(False)
+            self.updateTimer.start(25)
+
 
     def pause(self):
         self.updateTimer.stop()
         self.playButton.setEnabled(True)
         self.pauseButton.setEnabled(False)
+        self.frameSlider.setEnabled(True)
         print('paused')

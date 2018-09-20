@@ -148,7 +148,7 @@ def run_s2p(ops={},db={}):
     if flag_binreg:
         print('foundpre-registered binaries')
         print('skipping registration...')
-    if not flag_binreg and not files_found_flag:
+    if flag_binreg and not files_found_flag:
         print('binary file created, but registration not performed')
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
@@ -161,14 +161,14 @@ def run_s2p(ops={},db={}):
         ipl = ik + np.arange(0, ni)
         ipl = ipl[ipl<len(ops1)]
         if not flag_binreg:
-            ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
+            ops1[ipl[0]] = register.register_binary(ops1[ipl[0]]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
         if ni>1:
             with Pool(ni) as p:
                 ops1[ipl] = p.map(utils.get_cells, ops1[ipl])
         else:
-            ops1[0] = utils.get_cells(ops1[0])
+            ops1[ipl[0]] = utils.get_cells(ops1[ipl[0]])
         for ops in ops1[ipl]:
             fpath = ops['save_path']
             F = np.load(os.path.join(fpath,'F.npy'))

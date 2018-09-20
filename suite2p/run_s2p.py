@@ -46,15 +46,9 @@ def default_ops():
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
         'reg_tif': False, # whether to save registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-<<<<<<< HEAD
-        # nonrigid registration options
-        'nonrigid': False, # whether to use nonrigid registration
-        'block_size': [128,128], # block size in number of pixels in Y and X (2 numbers separated by a ,)
-=======
-        # non rigid settings
+        # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register
->>>>>>> 4a9041e6f6db2270e7603638caa6cb4cfd7d32fb
         'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # cell detection settings

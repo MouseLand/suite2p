@@ -79,7 +79,7 @@ def correlation_map(data, refAndMasks):
     cc = np.real(fft.ifft2(J))
     cc = fft.fftshift(cc, axes=(1,2))
     return cc
-    
+
 def getSNR(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
     nimg = cc.shape[0]
@@ -432,10 +432,9 @@ def register_binary(ops):
             data = np.reshape(data, (-1, Ly, Lx))
             nframes = data.shape[0]
             # register by pre-determined amount
+            dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
             if ops['nonrigid']==True:
-                dwrite = nonrigid.register_myshifts(ops, data, yoff[ix + np.arange(0,nframes),:], xoff[ix + np.arange(0,nframes),:])
-            else:
-                dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
+                dwrite = nonrigid.register_myshifts(ops, dwrite, yoff1[ix + np.arange(0,nframes),:], xoff1[ix + np.arange(0,nframes),:])
             ix += nframes
             dwrite = dwrite.astype('int16')
             reg_file_alt.seek(-2*dwrite.size,1)

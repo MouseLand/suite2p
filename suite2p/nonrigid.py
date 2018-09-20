@@ -193,7 +193,7 @@ def register_myshifts(ops, data, ymax, xmax):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist], ops])
+            dsplit.append([data[ilist,:, :], ymax[ilist,:], xmax[ilist,:], ops])
         with Pool(num_cores) as p:
             results = p.map(shift_data, dsplit)
 

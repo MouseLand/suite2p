@@ -306,7 +306,7 @@ def get_tif_list_old(ops):
 def get_cells(ops):
     i0 = tic()
     ops['diameter'] = np.array(ops['diameter'])
-    if len(ops['diameter'])<2:
+    if ops['diameter'].size<2:
         ops['diameter'] = int(np.array(ops['diameter']))
         ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')

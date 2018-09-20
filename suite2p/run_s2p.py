@@ -46,7 +46,7 @@ def default_ops():
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
         'reg_tif': False, # whether to save registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-        # non rigid settings
+        # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register
         'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
@@ -56,11 +56,12 @@ def default_ops():
         'navg_frames_svd': 5000, # max number of binned frames for the SVD
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
+        'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
+        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
+        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
         'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation during cell detection
-        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
-        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
@@ -73,7 +74,7 @@ def default_ops():
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-        'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
+
       }
     return ops
 
@@ -113,7 +114,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-    print(flag_binreg)
+    #print(flag_binreg)
     ######### REGISTRATION #########
     if not files_found_flag:
         # get default options

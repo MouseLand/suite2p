@@ -34,7 +34,7 @@ class TextChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1300,800)
+        self.setGeometry(50,50,1500,800)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -56,11 +56,12 @@ class RunWindow(QtGui.QDialog):
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
-        cellkeys = ['connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
+        nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
+        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
-        keys = [tifkeys, outkeys, regkeys, cellkeys, neukeys, deconvkeys]
-        labels = ['Main settings',['Output settings','Parallel'],'Registration','ROI detection','Neuropil','Deconvolution']
+        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neukeys, deconvkeys]
+        labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection','Neuropil','Deconvolution']
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -77,9 +78,14 @@ class RunWindow(QtGui.QDialog):
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     'if 1, registered tiffs are saved',
+                    'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
+                    'block size in number of pixels in Y and X (two numbers separated by a comma)',
+                    'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',
+                    'maximum *pixel* shift allowed for nonrigid, relative to rigid',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',
+                    'whether to smooth masks in final pass of cell detection',
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
@@ -103,9 +109,9 @@ class RunWindow(QtGui.QDialog):
 
         loadOps = QtGui.QPushButton('Load ops file')
         loadOps.clicked.connect(self.load_ops)
-        saveDef = QtGui.QPushButton('Save current as default')
+        saveDef = QtGui.QPushButton('Save ops as default')
         saveDef.clicked.connect(self.save_default_ops)
-        saveOps = QtGui.QPushButton('Save current to file')
+        saveOps = QtGui.QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
         self.layout.addWidget(loadOps,0,2,1,2)
         self.layout.addWidget(saveDef,1,2,1,2)
@@ -137,7 +143,7 @@ class RunWindow(QtGui.QDialog):
                         qlabel = QtGui.QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
                         qedit.set_text(self.ops)
-                        qedit.setFixedWidth(105)
+                        qedit.setFixedWidth(90)
                         self.layout.addWidget(qlabel,k*2-1,2*(l+2),1,2)
                         self.layout.addWidget(qedit,k*2,2*(l+2),1,2)
                         self.keylist.append(key)
@@ -317,7 +323,7 @@ class RunWindow(QtGui.QDialog):
             self.layout.addWidget(QtGui.QLabel(name),
                                   len(self.data_path)+4,0,1,2)
             self.runButton.setEnabled(True)
-            self.loadDb.setEnabled(False)
+            #self.loadDb.setEnabled(False)
             self.bh5py.setEnabled(False)
 
     def get_h5py(self):
@@ -333,7 +339,7 @@ class RunWindow(QtGui.QDialog):
             else:
                 self.h5_key = 'data'
             self.runButton.setEnabled(True)
-            self.loadDb.setEnabled(False)
+            #self.loadDb.setEnabled(False)
             self.btiff.setEnabled(False)
 
     def save_folder(self):
@@ -355,7 +361,7 @@ class LineEdit(QtGui.QLineEdit):
 
     def get_text(self,okey):
         key = self.key
-        if key=='diameter':
+        if key=='diameter' or key=='block_size':
             diams = self.text().replace(' ','').split(',')
             if len(diams)>1:
                 okey = [int(diams[0]), int(diams[1])]
@@ -370,7 +376,7 @@ class LineEdit(QtGui.QLineEdit):
 
     def set_text(self,ops):
         key = self.key
-        if key == 'diameter':
+        if key=='diameter' or key=='block_size':
             if (type(ops[key]) is not int) and (len(ops[key])>1):
                 dstr = str(int(ops[key][0])) + ', ' + str(int(ops[key][1]))
             else:

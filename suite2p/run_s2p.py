@@ -159,10 +159,10 @@ def run_s2p(ops={},db={}):
         ni = 1
     ik = 0
     while ik<len(ops1):
-        ipl = ik + np.arange(0, ni)
-        ipl = ipl[ipl<len(ops1)]
+        ipl = np.arange(ik, ik + min(ni, len(ops1)-ik))
         if not flag_binreg:
-            ops1[ipl[0]] = register.register_binary(ops1[ipl[0]]) # register binary
+            for j in range(len(ipl)):
+                ops1[ipl[j]] = register.register_binary(ops1[ipl[j]]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
         if ni>1:

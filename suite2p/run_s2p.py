@@ -40,13 +40,17 @@ def default_ops():
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # registration settings
         'do_registration': True, # whether to register data
-        'nonrigid': False, # whether to use nonrigid registration
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
         'reg_tif': False, # whether to save registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
+        # non rigid settings
+        'nonrigid': False, # whether to use nonrigid registration
+        'block_size': [128, 128], # block size to register
+        'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
+        'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # cell detection settings
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'navg_frames_svd': 5000, # max number of binned frames for the SVD
@@ -70,8 +74,6 @@ def default_ops():
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
         'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
-        'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
-        'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid        
       }
     return ops
 

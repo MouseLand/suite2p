@@ -34,14 +34,22 @@ class TextChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,800)
+        self.setGeometry(50,50,1300,800)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
-        self.ops = run_s2p.default_ops()
+        self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                          'ops/ops.npy')
+        try:
+            self.ops = np.load(self.opsfile)
+            self.ops = self.ops.item()
+            print('loaded default ops')
+        except Exception as e:
+            print('could not load default ops, using built-in ops settings')
+            self.ops = run_s2p.default_ops()
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
@@ -51,8 +59,8 @@ class RunWindow(QtGui.QDialog):
         cellkeys = ['connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
         deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
-        keys = [[],tifkeys, outkeys, regkeys, cellkeys, neukeys, deconvkeys]
-        labels = ['Filepaths','Main settings',['Output settings','Parallel'],'Registration','ROI detection','Neuropil','Deconvolution']
+        keys = [tifkeys, outkeys, regkeys, cellkeys, neukeys, deconvkeys]
+        labels = ['Main settings',['Output settings','Parallel'],'Registration','ROI detection','Neuropil','Deconvolution']
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -84,11 +92,30 @@ class RunWindow(QtGui.QDialog):
                     'smoothing constant for gaussian filter',
                     'smoothing constant for gaussian filter',
                     'neuropil coefficient']
+
+        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+        qlabel = QtGui.QLabel('File paths')
+        qlabel.setFont(bigfont)
+        self.layout.addWidget(qlabel,0,0,1,1)
+        #self.loadDb = QtGui.QPushButton('Load db.npy')
+        #self.loadDb.clicked.connect(self.load_db)
+        #self.layout.addWidget(self.loadDb,0,1,1,1)
+
+        loadOps = QtGui.QPushButton('Load ops file')
+        loadOps.clicked.connect(self.load_ops)
+        saveDef = QtGui.QPushButton('Save current as default')
+        saveDef.clicked.connect(self.save_default_ops)
+        saveOps = QtGui.QPushButton('Save current to file')
+        saveOps.clicked.connect(self.save_ops)
+        self.layout.addWidget(loadOps,0,2,1,2)
+        self.layout.addWidget(saveDef,1,2,1,2)
+        self.layout.addWidget(saveOps,2,2,1,2)
+
         l=0
         self.keylist = []
         self.editlist = []
         kk=0
-        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+        wk=0
         for lkey in keys:
             k = 0
             kl=0
@@ -101,30 +128,21 @@ class RunWindow(QtGui.QDialog):
             for label in labs:
                 qlabel = QtGui.QLabel(label)
                 qlabel.setFont(bigfont)
-                self.layout.addWidget(qlabel,k*2,2*l,1,2)
+                self.layout.addWidget(qlabel,k*2,2*(l+2),1,2)
                 k+=1
                 for key in keyl[kl]:
                     lops = 1
                     if self.ops[key] or (self.ops[key] == 0):
-                        qedit = QtGui.QLineEdit()
+                        qedit = LineEdit(wk,key,self)
                         qlabel = QtGui.QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
-                        if key == 'diameter':
-                            if (type(self.ops[key]) is not int) and (len(self.ops[key])>1):
-                                dstr = str(int(self.ops[key][0])) + ', ' + str(int(self.ops[key][1]))
-                            else:
-                                dstr = str(int(self.ops[key]))
-                        else:
-                            if type(self.ops[key]) is not bool:
-                                dstr = str(self.ops[key])
-                            else:
-                                dstr = str(int(self.ops[key]))
-                        qedit.setText(dstr)
+                        qedit.set_text(self.ops)
                         qedit.setFixedWidth(105)
-                        self.layout.addWidget(qlabel,k*2-1,2*l,1,2)
-                        self.layout.addWidget(qedit,k*2,2*l,1,2)
+                        self.layout.addWidget(qlabel,k*2-1,2*(l+2),1,2)
+                        self.layout.addWidget(qedit,k*2,2*(l+2),1,2)
                         self.keylist.append(key)
                         self.editlist.append(qedit)
+                        wk+=1
                     k+=1
                     kk+=1
                 kl+=1
@@ -135,41 +153,42 @@ class RunWindow(QtGui.QDialog):
         qlabel = QtGui.QLabel(key)
         qlabel.setToolTip('whether to look in all subfolders when searching for tiffs')
         self.layout.addWidget(qlabel,1,0,1,1)
-        qedit = QtGui.QLineEdit()
-        self.layout.addWidget(qedit,2,0,1,1)
-        qedit.setText(str(int(self.ops[key])))
+        qedit = LineEdit(wk,key,self)
+        qedit.set_text(self.ops)
         qedit.setFixedWidth(95)
+        self.layout.addWidget(qedit,2,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
-        btiff = QtGui.QPushButton('Add directory to data_path')
-        btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(btiff,3,0,1,2)
+        self.editlist[wk].textChanged.connect(lambda: self.edit_changed(wk))
+        self.btiff = QtGui.QPushButton('Add directory to data_path')
+        self.btiff.clicked.connect(self.get_folders)
+        self.layout.addWidget(self.btiff,3,0,1,2)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,4,0,1,1)
         # save_path0
-        bh5py = QtGui.QPushButton('OR add h5 file path')
-        bh5py.clicked.connect(self.get_h5py)
-        self.layout.addWidget(bh5py,13,0,1,2)
+        self.bh5py = QtGui.QPushButton('OR add h5 file path')
+        self.bh5py.clicked.connect(self.get_h5py)
+        self.layout.addWidget(self.bh5py,11,0,1,2)
         self.h5text = QtGui.QLabel('')
-        self.layout.addWidget(self.h5text,14,0,1,2)
+        self.layout.addWidget(self.h5text,12,0,1,2)
         bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(bsave,15,0,1,2)
+        self.layout.addWidget(bsave,13,0,1,2)
         self.savelabel = QtGui.QLabel('')
-        self.layout.addWidget(self.savelabel,16,0,1,2)
+        self.layout.addWidget(self.savelabel,14,0,1,2)
         # fast_disk
         bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
         bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(bbin,17,0,1,2)
+        self.layout.addWidget(bbin,15,0,1,2)
         self.binlabel = QtGui.QLabel('')
-        self.layout.addWidget(self.binlabel,18,0,1,2)
+        self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,20,0,1,1)
+        self.layout.addWidget(self.runButton,17,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 21,0,30,2*l)
+        self.layout.addWidget(self.textEdit, 18,0,30,2*l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -179,7 +198,7 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 20,1,1,1)
+        self.layout.addWidget(self.stopButton, 17,1,1,1)
         self.stopButton.clicked.connect(self.stop)
 
     def stop(self):
@@ -208,6 +227,46 @@ class RunWindow(QtGui.QDialog):
             cursor.movePosition(cursor.End)
             cursor.insertText('Interrupted by error (not finished)\n')
 
+    def save_ops(self):
+        name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
+        name = name[0]
+        self.save_text()
+        if name:
+            np.save(name, self.ops)
+            print('saved current settings to %s'%(name))
+
+    def save_default_ops(self):
+        name = self.opsfile
+        self.save_text()
+        np.save(name, self.ops)
+        print('saved current settings as default ops')
+
+    def save_text(self):
+        for k in range(len(self.editlist)):
+            key = self.keylist[k]
+            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+
+    def load_ops(self):
+        print('loading ops')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
+        name = name[0]
+        if len(name)>0:
+            try:
+                ops = np.load(name)
+                ops = ops.item()
+                for k,key in enumerate(self.keylist):
+                    if key in ops:
+                        self.editlist[k].set_text(ops)
+                    else:
+                        ops[key] = self.ops[key]
+                self.ops = ops
+            except Exception as e:
+                print('could not load ops file')
+                print(e)
+
+    def load_db(self):
+        print('loading db')
+
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
@@ -225,22 +284,8 @@ class RunWindow(QtGui.QDialog):
     def run_S2P(self, parent):
         self.finish = True
         self.error = False
-        k=0
-        for key in self.keylist:
-            if key=='diameter':
-                diams = self.editlist[k].text().replace(' ','').split(',')
-                if len(diams)>1:
-                    self.ops[key] = [int(diams[0]), int(diams[1])]
-                else:
-                    self.ops[key] = int(diams[0])
-            else:
-                if type(self.ops[key]) is float:
-                    self.ops[key] = float(self.editlist[k].text())
-                    #print(key,'\t\t', float(self.editlist[k].text()))
-                elif type(self.ops[key]) is int or bool:
-                    self.ops[key] = int(self.editlist[k].text())
-                    #print(key,'\t\t', int(self.editlist[k].text()))
-            k+=1
+        for k,key in enumerate(self.keylist):
+            self.ops[key] = self.editlist[k].get_text(self.ops[key])
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
@@ -267,33 +312,75 @@ class RunWindow(QtGui.QDialog):
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
-        self.data_path.append(name)
-        self.layout.addWidget(QtGui.QLabel(name),
-                              len(self.data_path)+4,0,1,2)
-        self.runButton.setEnabled(True)
+        if len(name)>0:
+            self.data_path.append(name)
+            self.layout.addWidget(QtGui.QLabel(name),
+                                  len(self.data_path)+4,0,1,2)
+            self.runButton.setEnabled(True)
+            self.loadDb.setEnabled(False)
+            self.bh5py.setEnabled(False)
 
     def get_h5py(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
         name = name[0]
-        self.h5_path = name
-        self.h5text.setText(name)
-        TC = TextChooser(self)
-        result = TC.exec_()
-        if result:
-            self.h5_key = TC.h5_key
-        else:
-            self.h5_key = 'data'
-        self.runButton.setEnabled(True)
+        if len(name)>0:
+            self.h5_path = name
+            self.h5text.setText(name)
+            TC = TextChooser(self)
+            result = TC.exec_()
+            if result:
+                self.h5_key = TC.h5_key
+            else:
+                self.h5_key = 'data'
+            self.runButton.setEnabled(True)
+            self.loadDb.setEnabled(False)
+            self.btiff.setEnabled(False)
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
-        self.save_path = name
-        self.savelabel.setText(name)
+        if len(name)>0:
+            self.save_path = name
+            self.savelabel.setText(name)
 
     def bin_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Folder for binary file")
         self.fast_disk = name
         self.binlabel.setText(name)
+
+class LineEdit(QtGui.QLineEdit):
+    def __init__(self,k,key,parent=None):
+        super(LineEdit,self).__init__(parent)
+        self.key = key
+        #self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))
+
+    def get_text(self,okey):
+        key = self.key
+        if key=='diameter':
+            diams = self.text().replace(' ','').split(',')
+            if len(diams)>1:
+                okey = [int(diams[0]), int(diams[1])]
+            else:
+                okey = int(diams[0])
+        else:
+            if type(okey) is float:
+                okey = float(self.text())
+            elif type(okey) is int or bool:
+                okey = int(self.text())
+        return okey
+
+    def set_text(self,ops):
+        key = self.key
+        if key == 'diameter':
+            if (type(ops[key]) is not int) and (len(ops[key])>1):
+                dstr = str(int(ops[key][0])) + ', ' + str(int(ops[key][1]))
+            else:
+                dstr = str(int(ops[key]))
+        else:
+            if type(ops[key]) is not bool:
+                dstr = str(ops[key])
+            else:
+                dstr = str(int(ops[key]))
+        self.setText(dstr)
 
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):

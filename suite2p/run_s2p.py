@@ -141,6 +141,7 @@ def run_s2p(ops={},db={}):
                     return
         # save ops1
         np.save(fpathops1, ops1)
+    ops1 = np.array(ops1)
     if not ops['do_registration']:
         flag_binreg = True
     if files_found_flag:
@@ -159,14 +160,14 @@ def run_s2p(ops={},db={}):
         ni = 1
     ik = 0
     while ik<len(ops1):
-        ipl = np.arange(ik, ik + min(ni, len(ops1)-ik))
+        ipl = np.arange(ik, ik + min(ni, len(ops1)-ik))        
         if not flag_binreg:
             for j in range(len(ipl)):
                 ops1[ipl[j]] = register.register_binary(ops1[ipl[j]]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
         if ni>1:
-            with Pool(ni) as p:
+            with Pool(len(ipl)) as p:
                 ops1[ipl] = p.map(utils.get_cells, ops1[ipl])
         else:
             ops1[ipl[0]] = utils.get_cells(ops1[ipl[0]])

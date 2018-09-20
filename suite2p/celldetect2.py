@@ -34,7 +34,7 @@ def getSVDproj(ops, u):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = np.maximum([.5, .5], ops['diameter']/20.)        
+        sig = np.maximum([.5, .5], ops['diameter']/20.)
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     if 1:
@@ -65,6 +65,7 @@ def get_mov(ops):
     nimgbatch = nt0 * np.floor(nimgbatch/nt0)
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
+    print(mov.shape)
     ix = 0
     # load and bin data
     with open(ops['reg_file'], 'rb') as reg_file:
@@ -90,13 +91,16 @@ def get_mov(ops):
             ix += dbin.shape[0]
     nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     i0 = 0
-    while 1:
+    while 0:
         irange = i0 + np.arange(0,nimgbatch)
         irange = irange[irange<mov.shape[0]]
         if len(irange)==0:
             break
         mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
         i0 += len(irange)
+    for j in range(mov.shape[1]):
+        mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [2, 0])
+
     return mov
 
 def getSVDdata(ops):
@@ -175,6 +179,7 @@ def getNeuropilBasis(ops, Ly, Lx):
             basis functions (pixels x nbasis functions)
     '''
     ratio_neuropil = ops['ratio_neuropil']
+    print(ratio_neuropil)
     tile_factor    = ops['tile_factor']
     diameter       = ops['diameter']
 

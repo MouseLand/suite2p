@@ -86,6 +86,7 @@ def phasecorr_worker(inputs):
     nblocks = ops['nblocks']
     ymax1 = np.zeros((nimg,nb),np.float32)
     cmax1 = np.zeros((nimg,nb),np.float32)
+    snr1  = np.zeros((nimg,nb),np.float32)
     xmax1 = np.zeros((nimg,nb),np.float32)
     data_block = np.zeros((nb,nimg,ly,lx),np.float32)
     # compute phase-correlation of blocks
@@ -96,12 +97,38 @@ def phasecorr_worker(inputs):
         xind = np.arange(xind[0],xind[-1]).astype(int)
         data_block[n,:,:,:] = data[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
     cc1 = correlation_map(data_block, refAndMasks)
+
+    cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
+    cc0 = cc0.reshape((cc0.shape[0], -1))
+    cc2 = []
+    R = ops['NRsm']
+    cc2.append(cc0)
+    for j in range(2):
+        cc2.append(R @ cc2[j])
+    for j in range(len(cc2)):
+        cc2[j] = cc2[j].reshape((nb, nimg, 2*lcorr+2*lpad+1, 2*lcorr+2*lpad+1))
+    ccsm = cc2[0]
     for n in range(nb):
-        cc = cc1[n,:,:,:]
-        ymax, xmax, cmax = register.getXYup(cc, (lcorr,lpad, lyhalf, lxhalf), ops)
+        snr = np.ones((nimg,), 'float32')
+        for j in range(len(cc2)):
+            ism = snr<ops['snr_thresh']
+            if np.sum(ism)==0:
+                break
+            cc = cc2[j][n,ism,:,:]
+            if j>0:
+                ccsm[n, ism, :, :] = cc
+            snr[ism] = register.getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+
+    for n in range(nb):
+        cc = ccsm[n,:,:,:]
+        ymax, xmax, cmax, snr = register.getXYup(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+        #cc = cc1[n,:,:,:]
+        #ymax, xmax, cmax, snr = register.getXYup(cc, (lcorr,lpad, lyhalf, lxhalf), ops)
+        # here cc1 should be smooth if the SNR is insufficient
         ymax1[:,n] = ymax
         xmax1[:,n] = xmax
         cmax1[:,n] = cmax
+        snr1[:,n] = snr
     # smooth cc across blocks if sig>0
     sig = 0
     if sig>0:
@@ -114,7 +141,7 @@ def phasecorr_worker(inputs):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
     Y = shift_data((data, ymax1, xmax1, ops))
-    return Y, ymax1, xmax1, cmax1
+    return Y, ymax1, xmax1, cmax1, snr1
 
 def shift_data(inputs):
     ''' piecewise affine transformation of data using shifts from phasecorr_worker '''
@@ -147,7 +174,7 @@ def shift_data(inputs):
         fyout = mshy + fy(np.arange(0,Lx),np.arange(0,Ly))
         fxout = mshx + fx(np.arange(0,Lx),np.arange(0,Ly))
         coords = np.concatenate((fyout[np.newaxis,:], fxout[np.newaxis,:]))
-        Y[t,:,:] = warp(I,coords, order=0, clip=False, preserve_range=True)
+        Y[t,:,:] = warp(I,coords, order=1, clip=False, preserve_range=True)
     return Y
 
 def register_myshifts(ops, data, ymax, xmax):

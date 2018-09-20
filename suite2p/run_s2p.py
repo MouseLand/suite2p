@@ -69,7 +69,9 @@ def default_ops():
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-        'smooth_masks': 1,
+        'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
+        'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
+        'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid        
       }
     return ops
 
@@ -100,8 +102,8 @@ def run_s2p(ops={},db={}):
             if 'refImg' not in op:
                 flag_binreg = False
             # use the new options
-            ops1[i] = {**op, **ops}
-            ops1[i] = ops1[i].copy()
+            ops1[i] = {**op, **ops}.copy()
+            #ops1[i] = ops1[i].copy()
             print(ops1[i]['save_path'])
             # except for registration results
             ops1[i]['xrange'] = op['xrange']
@@ -109,6 +111,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
+    print(flag_binreg)
     ######### REGISTRATION #########
     if not files_found_flag:
         # get default options
@@ -137,53 +140,58 @@ def run_s2p(ops={},db={}):
         np.save(fpathops1, ops1)
     if not ops['do_registration']:
         flag_binreg = True
-    if not flag_binreg:
-        ops1 = register.register_binary(ops1) # register binary
-        np.save(fpathops1, ops1) # save ops1
-        print('time %4.4f. Registration complete'%toc(i0))
-    elif files_found_flag:
-        print('found ops1 and pre-registered binaries')
+    if files_found_flag:
+        print('found ops1 and binaries')
         print(ops1[0]['reg_file'])
-        print('overwriting ops1 with new ops')
+    if flag_binreg:
+        print('foundpre-registered binaries')
         print('skipping registration...')
-    # registration is off, but previous binary was not found
-    # need to initialize ops
-    else:
+    if not flag_binreg and not files_found_flag:
         print('binary file created, but registration not performed')
-    ######### CELL DETECTION #########
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)
-        with Pool(ops['num_workers_roi']) as p:
-            ops1 = p.map(utils.get_cells, ops1)
+        ni = ops['num_workers_roi']
     else:
-        for k in range(len(ops1)):
-            ops1[k] = utils.get_cells(ops1[k])
-    ######### SPIKE DECONVOLUTION AND CLASSIFIER #########
-    for ops in ops1:
-        fpath = ops['save_path']
-        F = np.load(os.path.join(fpath,'F.npy'))
-        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-        dF = F - ops['neucoeff']*Fneu
-        spks = dcnv.oasis(dF, ops)
-        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
-        stat = np.load(os.path.join(fpath,'stat.npy'))
-        # apply default classifier
-        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                         'classifiers/classifier_user.npy')
-        print(classfile)
-        iscell = classifier.run(classfile, stat)
-        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
-        # save as matlab file
-        if ('save_mat' in ops) and ops['save_mat']:
-            matpath = os.path.join(ops['save_path'],'Fall.mat')
-            io.savemat(matpath, {'stat': stat,
-                                 'ops': ops,
-                                 'F': F,
-                                 'Fneu': Fneu,
-                                 'spks': spks,
-                                 'iscell': iscell})
+        ni = 1
+    ik = 0
+    while ik<len(ops1):
+        ipl = ik + np.arange(0, ni)
+        ipl = ipl[ipl<len(ops1)]
+        if not flag_binreg:
+            ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
+            np.save(fpathops1, ops1) # save ops1
+            print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
+        if ni>1:
+            with Pool(ni) as p:
+                ops1[ipl] = p.map(utils.get_cells, ops1[ipl])
+        else:
+            ops1[0] = utils.get_cells(ops1[0])
+        for ops in ops1[ipl]:
+            fpath = ops['save_path']
+            F = np.load(os.path.join(fpath,'F.npy'))
+            Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
+            dF = F - ops['neucoeff']*Fneu
+            spks = dcnv.oasis(dF, ops)
+            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+            print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+            stat = np.load(os.path.join(fpath,'stat.npy'))
+            # apply default classifier
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             'classifiers/classifier_user.npy')
+            print(classfile)
+            iscell = classifier.run(classfile, stat)
+            np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+            # save as matlab file
+            if ('save_mat' in ops) and ops['save_mat']:
+                matpath = os.path.join(ops['save_path'],'Fall.mat')
+                io.savemat(matpath, {'stat': stat,
+                                     'ops': ops,
+                                     'F': F,
+                                     'Fneu': Fneu,
+                                     'spks': spks,
+                                     'iscell': iscell})
+        ik += len(ipl)
 
     # save final ops1 with all planes
     np.save(fpathops1, ops1)

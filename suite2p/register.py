@@ -6,7 +6,7 @@ from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
 import math
-from suite2p import nonrigid
+from suite2p import nonrigid, utils
 
 def tic():
     return time.time()
@@ -79,6 +79,23 @@ def correlation_map(data, refAndMasks):
     cc = np.real(fft.ifft2(J))
     cc = fft.fftshift(cc, axes=(1,2))
     return cc
+    
+def getSNR(cc, Ls, ops):
+    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
+    nimg = cc.shape[0]
+    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    X1max  = np.amax(cc0, axis = 1)
+    ix  = np.argmax(cc0, axis = 1)
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    # set to 0 all pts +-lpad from ymax,xmax
+    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)]
+    for j in range(nimg):
+        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
+    cc0 = np.reshape(cc0, (nimg, -1))
+    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
+    snr = X1max / Xmax # computes snr
+    return snr
 
 def getXYup(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
@@ -87,6 +104,37 @@ def getXYup(cc, Ls, ops):
     cc0 = np.reshape(cc0, (nimg, -1))
     ix  = np.argmax(cc0, axis = 1)
     ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    X1max  = np.amax(cc0, axis = 1)
+    # set to 0 all pts +-lpad from ymax,xmax
+    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)].copy()
+    for j in range(nimg):
+        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
+    cc0 = np.reshape(cc0, (nimg, -1))
+    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
+    snr = X1max / Xmax # computes snr
+    mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
+    ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
+    for j in range(0, nimg):
+        ccmat[j,:,:] = cc[j, (mxpt[0][j] -lpad):(mxpt[0][j] +lpad+1), (mxpt[1][j] -lpad):(mxpt[1][j] +lpad+1)]
+    ccmat = np.reshape(ccmat, (nimg,-1))
+    Kmat, nup = mat_upsample(lpad, ops)
+    ccb = np.dot(ccmat, Kmat)
+    imax = np.argmax(ccb, axis=1)
+    cmax = np.amax(ccb, axis=1)
+    ymax, xmax = np.unravel_index(imax, (nup,nup))
+    mdpt = np.floor(nup/2)
+    ymax,xmax = (ymax-mdpt)/ops['subpixel'], (xmax-mdpt)/ops['subpixel']
+    ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
+    return ymax, xmax, cmax, snr
+
+def getXYup2(cc, Ls, ops):
+    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
+    nimg = cc.shape[0]
+    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    ix  = np.argmax(cc0, axis = 1)
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+
     mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
     ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
     for j in range(0, nimg):
@@ -133,12 +181,12 @@ def phasecorr_worker(inputs):
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
     cc = correlation_map(data, refAndMasks)
-    ymax, xmax, cmax = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
+    ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
     Y = shift_data((data, ymax, xmax))
     yxnr = []
     if nr:
-        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
-        yxnr = [ymax1,xmax1,cmax1]
+        Y, ymax1, xmax1, cmax1, snr1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
+        yxnr = [ymax1,xmax1,cmax1, snr1]
     return Y, ymax, xmax, cmax, yxnr
 
 def phasecorr(data, refAndMasks, ops):
@@ -288,6 +336,8 @@ def register_binary(ops):
         for op in ops:
             op = register_binary(op)
         return ops
+    if ops['nonrigid']:
+        ops = utils.make_blocks(ops)
     Ly = ops['Ly']
     Lx = ops['Lx']
     ops['nframes'] = get_nFrames(ops)
@@ -357,10 +407,10 @@ def register_binary(ops):
     ops['xoff'] = xoff
     ymin = np.maximum(0, np.ceil(np.amax(yoff)))
     ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    ops['yrange'] = ops['yrange'] + [int(ymin), int(ymax)]
+    ops['yrange'] = [int(ymin), int(ymax)]
     xmin = np.maximum(0, np.ceil(np.amax(xoff)))
     xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['xrange'] = ops['xrange'] + [int(xmin), int(xmax)]
+    ops['xrange'] = [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
     if ops['nonrigid']:
         ops['yoff1'] = yoff1

@@ -175,8 +175,6 @@ def h5py_to_binary(ops1):
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
-        elif do_registration and do_nonrigid:
-            ops = make_blocks(ops)
         ops['meanImg'] /= ops['nframes']
         if nchannels>1:
             ops['meanImg_chan2'] /= ops['nframes']
@@ -237,8 +235,6 @@ def tiff_to_binary(ops1):
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
-        elif do_registration and do_nonrigid:
-            ops = make_blocks(ops)
         ops['meanImg'] /= ops['nframes']
         if nchannels>1:
             ops['meanImg_chan2'] /= ops['nframes']
@@ -309,7 +305,8 @@ def get_tif_list_old(ops):
 
 def get_cells(ops):
     i0 = tic()
-    if (type(ops['diameter']) is int) or len(ops['diameter'])<2:
+    ops['diameter'] = np.array(ops['diameter'])
+    if len(ops['diameter'])<2:
         ops['diameter'] = int(np.array(ops['diameter']))
         ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
@@ -445,8 +442,8 @@ def make_blocks(ops):
     if 'block_size' not in ops:
         ops['block_size'] = [128, 128]
 
-    ny = int(np.ceil(2 * float(Ly) / ops['block_size'][0]))
-    nx = int(np.ceil(2 * float(Lx) / ops['block_size'][1]))
+    ny = int(np.ceil(1.5 * float(Ly) / ops['block_size'][0]))
+    nx = int(np.ceil(1.5 * float(Lx) / ops['block_size'][1]))
     ystart = np.linspace(0, Ly - ops['block_size'][0], ny).astype('int')
     xstart = np.linspace(0, Lx - ops['block_size'][1], nx).astype('int')
     ops['yblock'] = []
@@ -458,6 +455,15 @@ def make_blocks(ops):
             ops['yblock'].append(yind)
             ops['xblock'].append(xind)
     ops['nblocks'] = [ny, nx]
+
+    ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
+    ys = ys.flatten()
+    xs = xs.flatten()
+    ds = (ys - ys[:,np.newaxis])**2 + (xs - xs[:,np.newaxis])**2
+    R = np.exp(-ds)
+    R = R / np.sum(R,axis=0)
+    ops['NRsm'] = R.T
+
     #
     # bpix = bfrac * np.array([Ly,Lx])
     # # choose bpix to be the closest power of 2

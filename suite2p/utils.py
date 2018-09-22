@@ -246,6 +246,71 @@ def tiff_to_binary(ops1):
             reg_file_chan2[j].close()
     return ops1
 
+def mesoscan_to_binary(ops1):
+    # load json file with line start stops
+    pcfg = np.load('config_run.npy')
+    nplanes = len(pcfg)
+
+    for j in range(nplanes)
+        ops1[j] = {**ops1[j], **pcfg[j]}.copy()
+        ops1[j]['nplanes'] = nplanes        
+
+    nchannels = ops1[0]['nchannels']
+    # open all binary files for writing
+    reg_file = []
+    reg_file_chan2=[]
+    for ops in ops1:
+        reg_file.append(open(ops['reg_file'], 'wb'))
+        if nchannels>1:
+            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
+    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
+    if nchannels>1:
+        nfunc = ops['functional_chan']-1
+    else:
+        nfunc = 0
+    ir = []
+
+    # loop over all tiffs
+    for ik, file in enumerate(fs):
+        im = io.imread(file)
+        if len(im.shape)<3:
+            im = np.expand_dims(im, axis=0)
+        nframes = im.shape[0]
+        for j in range(0,nplanes):
+            if ik==0:
+                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                if nchannels>1:
+                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                ops1[j]['nframes'] = 0
+            im2write = im[:,ir[j],:].astype(np.int16)
+            ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+            reg_file[j].write(bytearray(im2write))
+            if nchannels>1:
+                im2write = im[1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                reg_file_chan2[j].write(bytearray(im2write))
+                ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+            ops1[j]['nframes']+= im2write.shape[0]
+        iplane = (iplane+nframes/nchannels)%nplanes
+    # write ops files
+    do_registration = ops['do_registration']
+    do_nonrigid = ops1[0]['nonrigid']
+    for ops in ops1:
+        ops['Ly'] = im.shape[1]
+        ops['Lx'] = im.shape[2]
+        if not do_registration:
+            ops['yrange'] = np.array([0,ops['Ly']])
+            ops['xrange'] = np.array([0,ops['Lx']])
+        ops['meanImg'] /= ops['nframes']
+        if nchannels>1:
+            ops['meanImg_chan2'] /= ops['nframes']
+        np.save(ops['ops_path'], ops)
+    # close all binary files and write ops files
+    for j in range(0,nplanes):
+        reg_file[j].close()
+        if nchannels>1:
+            reg_file_chan2[j].close()
+    return ops1
+
 def list_tifs(froot, look_one_level_down):
     lpath = os.path.join(froot, "*.tif")
     fs  = sorted(glob.glob(lpath))

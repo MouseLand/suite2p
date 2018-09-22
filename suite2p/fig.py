@@ -6,7 +6,7 @@ from scipy import signal
 from scipy import ndimage
 from suite2p import utils
 import math
-from PyQt5 import QtGui
+from PyQt5 import QtGui, sip
 from matplotlib.colors import hsv_to_rgb
 
 

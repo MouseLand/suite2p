@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, sip
 from suite2p import fig, gui, classifier, visualize, reggui, classgui
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene

@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, sip
 import pyqtgraph as pg
 from pyqtgraph import console
 import sys

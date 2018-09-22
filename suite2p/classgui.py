@@ -54,7 +54,7 @@ def load_data(parent,keys,trainfiles):
                     # add iscell and stat to classifier
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
-                    stats = get_stat_keys(stat,parent.default_keys)
+                    stats = classifier.get_stat_keys(stat,parent.default_keys)
                     train_stats = np.concatenate((train_stats,stats),axis=0)
                     train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
@@ -83,7 +83,7 @@ def add_to(parent):
                                     'Current classifier is '+cfile+'. Add to this classifier?',
                                     QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     if dm == QtGui.QMessageBox.Yes:
-        stats = get_stat_keys(parent.stat, parent.model.keys)
+        stats = classifier.get_stat_keys(parent.stat, parent.model.keys)
         parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
         parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
         save_model(parent.classfile, parent.model.stats, parent.model.stats, parent.model.keys)

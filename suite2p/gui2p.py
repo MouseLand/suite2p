@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import fig, gui, classifier, visualize, reggui
+from suite2p import fig, gui, classifier, visualize, reggui, classgui
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
 import numpy as np
@@ -89,7 +89,7 @@ class MainW(QtGui.QMainWindow):
         self.loadSClass.setEnabled(False)
         self.loadMenu.addAction(self.loadSClass)
         self.loadTrain = QtGui.QAction('Build', self)
-        self.loadTrain.triggered.connect(lambda: classifier.load_list(self))
+        self.loadTrain.triggered.connect(lambda: classgui.load_list(self))
         self.loadTrain.setEnabled(False)
         self.saveDefault = QtGui.QAction('Save loaded as default', self)
         self.saveDefault.triggered.connect(self.class_default)
@@ -292,7 +292,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.probedit,self.bend,0,1,1)
         self.applyclass = QtGui.QPushButton(' apply')
         self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.applyclass.clicked.connect(lambda: classifier.apply(self))
+        self.applyclass.clicked.connect(lambda: classgui.apply(self))
         self.applyclass.setEnabled(False)
         self.applyclass.setStyleSheet(self.styleInactive)
         self.l0.addWidget(self.applyclass,self.bend+1,0,1,1)
@@ -307,7 +307,7 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.classLabel,self.bend+3,0,1,2)
         self.addtoclass = QtGui.QPushButton(' add current data to classifier')
         self.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.addtoclass.clicked.connect(lambda: classifier.add_to(self))
+        self.addtoclass.clicked.connect(lambda: classgui.add_to(self))
         self.addtoclass.setStyleSheet(self.styleInactive)
         self.l0.addWidget(self.addtoclass,self.bend+4,0,1,2)
         #### ------ CELL STATS -------- ####
@@ -738,7 +738,7 @@ class MainW(QtGui.QMainWindow):
         self.mode_change(2)
         self.show()
         # no classifier loaded
-        classifier.activate(self, False)
+        classgui.activate(self, False)
 
     def enable_views_and_classifier(self):
         for b in range(len(self.views)-1):
@@ -1025,18 +1025,18 @@ class MainW(QtGui.QMainWindow):
     def load_classifier(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open File')
         if name:
-            classifier.load(self, name[0])
+            classgui.load(self, name[0])
             self.class_activated()
         else:
             print('no classifier')
 
     def load_s2p_classifier(self):
-        classifier.load(self, self.classorig)
+        classgui.load(self, self.classorig)
         self.class_file()
         self.saveDefault.setEnabled(True)
 
     def load_default_classifier(self):
-        classifier.load(self, os.path.join(os.path.abspath(os.path.dirname(__file__)),
+        classgui.load(self, os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          'classifiers/classifier_user.npy'))
         self.class_activated()
 

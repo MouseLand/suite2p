@@ -21,6 +21,7 @@ def default_ops():
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
+        'scanmeso': False, # reads in scanimage mesoscope files
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
@@ -74,7 +75,6 @@ def default_ops():
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-
       }
     return ops
 

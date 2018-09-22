@@ -251,9 +251,9 @@ def mesoscan_to_binary(ops1):
     pcfg = np.load('config_run.npy')
     nplanes = len(pcfg)
 
-    for j in range(nplanes)
+    for j in range(nplanes):
         ops1[j] = {**ops1[j], **pcfg[j]}.copy()
-        ops1[j]['nplanes'] = nplanes        
+        ops1[j]['nplanes'] = nplanes
 
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -286,7 +286,7 @@ def mesoscan_to_binary(ops1):
             ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file_chan2[j].write(bytearray(im2write))
                 ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             ops1[j]['nframes']+= im2write.shape[0]

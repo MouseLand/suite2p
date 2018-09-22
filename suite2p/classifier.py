@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui
 import sys
 import numpy as np
 from scipy.ndimage import gaussian_filter

@@ -21,7 +21,7 @@ def default_ops():
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
-        'scanmeso': False, # reads in scanimage mesoscope files
+        'mesoscan': False, # reads in scanimage mesoscope files
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
@@ -121,15 +121,16 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
-        # copy ops to list where each element is ops for each plane
-        ops1 = utils.init_ops(ops)
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = utils.h5py_to_binary(ops1)
+            ops1 = utils.h5py_to_binary(ops)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
             try:
-                ops1 = utils.tiff_to_binary(ops1)
+                if not ops['mesoscan']:
+                    ops1 = utils.tiff_to_binary(ops)
+                else:
+                    ops1 = utils.mesoscan_to_binary(ops)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
             except Exception as e:
                 if HAS_HAUS:

@@ -1,6 +1,6 @@
 import numpy as np
 import math, time
-import glob, h5py, os
+import glob, h5py, os, json
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, signal
@@ -113,7 +113,10 @@ def list_h5(ops):
     fs = sorted(glob.glob(lpath))
     return fs
 
-def h5py_to_binary(ops1):
+def h5py_to_binary(ops):
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -186,7 +189,10 @@ def h5py_to_binary(ops1):
             reg_file_chan2[j].close()
     return ops1
 
-def tiff_to_binary(ops1):
+def tiff_to_binary(ops):
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -246,14 +252,18 @@ def tiff_to_binary(ops1):
             reg_file_chan2[j].close()
     return ops1
 
-def mesoscan_to_binary(ops1):
+def mesoscan_to_binary(ops):
     # load json file with line start stops
-    pcfg = np.load('config_run.npy')
-    nplanes = len(pcfg)
+    fpath = os.path.join(ops['data_path'][0], '*json')
+    fs = glob.glob(fpath)
+    with open(fs[0], 'r') as f:
+        opsj = json.load(f)
+    ops['nplanes'] = len(opsj)
 
-    for j in range(nplanes):
-        ops1[j] = {**ops1[j], **pcfg[j]}.copy()
-        ops1[j]['nplanes'] = nplanes
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+    for j in range(len(ops1)):
+        ops1[j] = {**ops1[j], **opsj[j]}/copy()
 
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing

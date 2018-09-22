@@ -127,7 +127,7 @@ def run_s2p(ops={},db={}):
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
             try:
-                if ('mesoscan' not in ops) or not ops['mesoscan']:
+                if not ops['mesoscan']:
                     ops1 = utils.tiff_to_binary(ops)
                 else:
                     ops1 = utils.mesoscan_to_binary(ops)

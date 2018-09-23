@@ -134,9 +134,16 @@ def h5py_to_binary(ops1):
     iall = 0
     for h5 in h5list:
         with h5py.File(h5, 'r') as f:
+            # if h5py data is 4D instead of 3D, assume that
+            # data = nframes x nplanes x pixels x pixels
+            hdims = f[key].ndim
             # keep track of the plane identity of the first frame (channel identity is assumed always 0)
             nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
-            nframes_all = f[key].shape[0]
+            if hdims==3:
+                nframes_all = f[key].shape[0]
+            else:
+                nframes_all = f[key].shape[0] * f[key].shape[1]
+            nbatch = min(nbatch, nframes_all)
             if nchannels>1:
                 nfunc = ops['functional_chan'] - 1
             else:
@@ -144,10 +151,17 @@ def h5py_to_binary(ops1):
             # loop over all tiffs
             ik = 0
             while 1:
-                irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
-                if irange.size==0:
-                    break
-                im = f[key][irange, :, :]
+                if hdims==3:
+                    irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
+                    if irange.size==0:
+                        break
+                    im = f[key][irange, :, :]
+                else:
+                    irange = np.arange(ik/nplanes, min(ik/nplanes+nbatch/nplanes, nframes_all/nplanes), 1)
+                    if irange.size==0:
+                        break
+                    im = f[key][irange,:,:,:]
+                    im = np.reshape(im, (im.shape[0]*nplanes,im.shape[2],im.shape[3]))
                 nframes = im.shape[0]
                 for j in range(0,nplanes):
                     if iall==0:

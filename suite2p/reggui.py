@@ -1,6 +1,6 @@
 # heavily modified script from a pyqt4 release
 
-from PyQt5 import QtGui, QtCore, sip
+from PyQt5 import QtGui, QtCore
 from suite2p import register,fig
 import pyqtgraph as pg
 import os

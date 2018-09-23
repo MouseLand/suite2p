@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore, sip
+from PyQt5 import QtGui, QtCore
 import sys
 import numpy as np
 import os

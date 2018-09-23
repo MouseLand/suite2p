@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore, sip
+from PyQt5 import QtGui, QtCore
 from suite2p import fig, gui, classifier, visualize, reggui, classgui
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
@@ -7,10 +7,6 @@ import sys
 import os
 import shutil
 import time
-#class EventWidget(QtGui.QWidget):
-#    def __init__(self,parent=None):
-#        super(EventWidget, self, parent).__init__()
-#    def
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):

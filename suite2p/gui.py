@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore, sip
+from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import console
 import sys
@@ -34,7 +34,7 @@ class TextChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1500,800)
+        self.setGeometry(50,50,1200,800)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -53,21 +53,21 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs']
+        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
-        neukeys = ['ratio_neuropil_to_cell','inner_neuropil_radius','outer_neuropil_radius','min_neuropil_pixels']
-        deconvkeys = ['win_baseline','sig_baseline','prctile_baseline','neucoeff']
-        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neukeys, deconvkeys]
-        labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection','Neuropil','Deconvolution']
+        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
+        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
+        labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
+                    'if 1, binary file is deleted after processing is complete',
                     'save output also as mat file "Fall.mat"',
                     'combine results across planes in separate folder "combined" at end of processing',
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
@@ -90,9 +90,8 @@ class RunWindow(QtGui.QDialog):
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
                     'tiling of neuropil during cell detection (1.0 corresponds to approx 14x14 grid of basis functions, 0.5 -> 7x7)',
-                    'minimum ratio between neuropil radius and cell radius',
+                    'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
-                    'maximum neuropil radius',
                     'minimum number of pixels in the neuropil',
                     'window for maximin',
                     'smoothing constant for gaussian filter',
@@ -206,6 +205,19 @@ class RunWindow(QtGui.QDialog):
         self.stopButton.setEnabled(False)
         self.layout.addWidget(self.stopButton, 17,1,1,1)
         self.stopButton.clicked.connect(self.stop)
+        # cleanup button
+        self.cleanButton = QtGui.QPushButton('run a clean-up *.py')
+        self.cleanButton.setEnabled(False)
+        self.layout.addWidget(self.cleanButton, 17,2,1,2)
+        self.cleanButton.clicked.connect(self.cleanup)
+
+    def cleanup(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
+        name = name[0]
+        if name:
+            ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
+            print('loading '+ops_path+' and running '+name)
+            os.system('python '+name+' '+ops_path)
 
     def stop(self):
         self.finish = False
@@ -214,11 +226,13 @@ class RunWindow(QtGui.QDialog):
     def started(self):
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(True)
+        self.cleanButton.setEnabled(False)
 
     def finished(self, parent):
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         if self.finish and not self.error:
+            self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')

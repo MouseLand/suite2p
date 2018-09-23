@@ -339,7 +339,7 @@ def register_binary(ops):
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
     if ops['keep_movie_original']:
-
+        print('copy binary')
 
     Ly = ops['Ly']
     Lx = ops['Lx']

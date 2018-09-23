@@ -92,6 +92,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.cframe = 0
         self.loaded = False
         self.Floaded = False
+        self.wraw = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -155,6 +156,11 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.srange = frames.mean() + frames.std()*np.array([-3,3])
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
+            self.wraw = False
+            if 'reg_file_raw' in ops:
+                self.reg_loc_raw = ops['reg_file_raw']
+                self.reg_file_raw = open(self.reg_loc_raw,'rb')
+                self.wraw=True
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
             self.nframes = ops['nframes']
@@ -207,6 +213,13 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.cframe += self.frameDelta
                     self.cframe  = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
                     self.frameSlider.setValue(self.cframe)
+        if event.modifiers() != QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_Space:
+                if self.playButton.isEnabled():
+                    # then play
+                    self.start()
+                else:
+                    self.pause()
 
     def number_chosen(self):
         if self.Floaded:
@@ -256,7 +269,10 @@ class BinaryPlayer(QtGui.QMainWindow):
                         else:
                             choose=True
         if zoomImg:
-            self.p0.setRange(xRange=(0,self.Ly),yRange=(0,self.Lx))
+            if not self.wraw:
+                self.p0.setRange(xRange=(0,self.Lx),yRange=(0,self.Ly))
+            else:
+                self.p0.setRange(xRange=(0,self.Lx*2+max(10,int(self.Lx*.05))),yRange=(0,self.Ly))
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
         if choose:
@@ -286,7 +302,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def updateButtons(self):
         self.playButton.setEnabled(True)
-        self.pauseButton.setEnabled(True)
+        self.pauseButton.setEnabled(False)
         self.pauseButton.setChecked(True)
 
     def createButtons(self):
@@ -335,6 +351,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.cframe = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
             # seek to absolute position
             self.reg_file.seek(self.nbytesread * self.cframe, 0)
+            if self.wraw:
+                self.reg_file_raw.seek(self.nbytesread * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 
@@ -344,7 +362,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.cframe > self.nframes - 1:
             self.cframe = 0
             self.reg_file.seek(0, 0)
-
+            if self.wraw:
+                self.reg_file_raw.seek(0, 0)
         buff = self.reg_file.read(self.nbytesread)
         self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
         self.img = np.tile(self.img,(1,1,3))
@@ -352,6 +371,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.img[self.yext,self.xext,0] = self.srange[0]
             self.img[self.yext,self.xext,1] = self.srange[0]
             self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
+        if self.wraw:
+            buff = self.reg_file_raw.read(self.nbytesread)
+            imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            imgraw = np.tile(imgraw,(1,1,3))
+            blk = self.srange[0]*np.ones((imgraw.shape[0],max(10,int(imgraw.shape[1]*0.05)),3),dtype=np.int16)
+            self.img = np.concatenate((imgraw,blk,self.img),axis=1)
         self.pimg.setImage(self.img)
         self.pimg.setLevels(self.srange)
         self.frameSlider.setValue(self.cframe)

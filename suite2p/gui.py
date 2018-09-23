@@ -55,7 +55,7 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
+        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
@@ -72,7 +72,8 @@ class RunWindow(QtGui.QDialog):
                     'combine results across planes in separate folder "combined" at end of processing',
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
                     'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
-                    'whether or not to perform registration on tiffs or h5 file',
+                    'if 1, registration is performed',
+                    'if 1, unregistered binary is kept in a separate file data_raw.bin',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',

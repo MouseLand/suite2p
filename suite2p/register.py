@@ -338,10 +338,15 @@ def register_binary(ops):
         return ops
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
+<<<<<<< HEAD
     if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
         ops['reg_file_raw'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
         print(ops['reg_file_raw'])
         shutil.copyfile(ops['reg_file'], ops['reg_file_raw'])
+=======
+    if ops['keep_movie_original']:
+        print('copy binary')
+>>>>>>> 82c0414dc95ceab6b6205a5528108cd180d4a9ca
 
     Ly = ops['Ly']
     Lx = ops['Lx']

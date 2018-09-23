@@ -1,5 +1,5 @@
 from skimage import io
-import glob, h5py, time, os
+import glob, h5py, time, os, shutil
 import numpy as np
 from numpy import fft
 from numpy import random as rnd
@@ -338,8 +338,10 @@ def register_binary(ops):
         return ops
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
-    if ops['keep_movie_original']:
-
+    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+        ops['reg_file_raw'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
+        print(ops['reg_file_raw'])
+        shutil.copyfile(ops['reg_file'], ops['reg_file_raw'])
 
     Ly = ops['Ly']
     Lx = ops['Lx']

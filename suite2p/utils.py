@@ -94,7 +94,7 @@ def init_ops(ops):
         ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
             ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
+        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)        
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
         if nchannels>1:
@@ -208,7 +208,6 @@ def h5py_to_binary(ops):
 def tiff_to_binary(ops):
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
-
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing

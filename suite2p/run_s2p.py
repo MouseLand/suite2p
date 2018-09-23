@@ -41,6 +41,7 @@ def default_ops():
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # registration settings
         'do_registration': True, # whether to register data
+        'keep_movie_raw': True,
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
@@ -81,7 +82,7 @@ def default_ops():
 def run_s2p(ops={},db={}):
     i0 = tic()
     ops0 = default_ops()
-    ops = {**ops0, **ops}    
+    ops = {**ops0, **ops}
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
@@ -128,7 +129,7 @@ def run_s2p(ops={},db={}):
             ops1 = utils.h5py_to_binary(ops)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
-            if not ops['mesoscan']:
+            if not ops['mesoscan']:                
                 ops1 = utils.tiff_to_binary(ops)
             else:
                 ops1 = utils.mesoscan_to_binary(ops)

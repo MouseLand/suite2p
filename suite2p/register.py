@@ -338,6 +338,9 @@ def register_binary(ops):
         return ops
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
+    if ops['keep_movie_original']:
+
+
     Ly = ops['Ly']
     Lx = ops['Lx']
     ops['nframes'] = get_nFrames(ops)
@@ -444,5 +447,20 @@ def register_binary(ops):
             ops['meanImg'] = meanImg/ops['nframes']
         else:
             ops['meanImg_chan2'] = meanImg/ops['nframes']
+        print('registered second channel in time %4.2f'%(toc(k0)))
+
+    # compute metrics for registration
+    nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
+    nPC      = 20 # n PCs to compute motion for
+    nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
+    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
+    mov  = utils.sample_frames(ops, ix)
+    mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+    pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
+    X    = utils.metric_register(pclow, pchigh, ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
+    ops['regDX'] = X
+    print('computed registration metrics in time %4.2f'%(toc(k0)))
+
     np.save(ops['ops_path'], ops)
     return ops

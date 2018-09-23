@@ -3,8 +3,9 @@ import math, time
 import glob, h5py, os, json
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
-from suite2p import utils
+from suite2p import utils, register, nonrigid
 from scipy import stats, signal
+from scipy.sparse import linalg
 import scipy.io
 from skimage import io
 
@@ -518,6 +519,14 @@ def make_blocks(ops):
 
     ny = int(np.ceil(1.5 * float(Ly) / ops['block_size'][0]))
     nx = int(np.ceil(1.5 * float(Lx) / ops['block_size'][1]))
+
+    if ops['block_size'][0]>=Ly:
+        ops['block_size'][0] = Ly
+        ny = 1
+    if ops['block_size'][1]>=Lx:
+        ops['block_size'][1] = Lx
+        nx = 1
+
     ystart = np.linspace(0, Ly - ops['block_size'][0], ny).astype('int')
     xstart = np.linspace(0, Lx - ops['block_size'][1], nx).astype('int')
     ops['yblock'] = []
@@ -538,44 +547,66 @@ def make_blocks(ops):
     R = R / np.sum(R,axis=0)
     ops['NRsm'] = R.T
 
-    #
-    # bpix = bfrac * np.array([Ly,Lx])
-    # # choose bpix to be the closest power of 2
-    # bpix = 2**np.round(np.log2(bpix))
-    # ops['block_overlap'] = np.round((bpix*nblocks - [Ly,Lx]) / (nblocks-1.9))
-    # # block centers
-    # yblocks = np.linspace(0, Ly-1, nblocks[0]+1)
-    # yblocks = np.round((yblocks[:-1] + yblocks[1:]) / 2)
-    # xblocks = np.linspace(0, Lx-1, nblocks[1]+1)
-    # xblocks = np.round((xblocks[:-1] + xblocks[1:]) / 2)
-    # # block ranges
-    # ib=0
-    # ops['yblock'] = []
-    # ops['xblock'] = []
-    # bhalf = np.floor(bpix / 2)
-    # for iy in range(nblocks[0]):
-    #     if iy==nblocks[0]-1:
-    #         yind = Ly-1 + np.array([-bhalf[0]*2+1,0])
-    #     elif iy==0:
-    #         yind = np.array([0,bhalf[0]*2-1])
-    #     else:
-    #         yind = yblocks[iy] + np.array([-bhalf[0], bhalf[0]-1])
-    #     for ix in range(nblocks[1]):
-    #         if ix==nblocks[0]-1:
-    #             xind = Lx-1 + np.array([-bhalf[1]*2+1,0])
-    #         elif ix==0:
-    #             xind = np.array([0,bhalf[1]*2-1])
-    #         else:
-    #             xind = xblocks[ix] + np.array([-bhalf[1], bhalf[1]-1])
-    #         ops['yblock'].append(yind)
-    #         ops['xblock'].append(xind)
-    #         ib+=1
-    ## smoothing masks
-    # gaussian centered on block with width 2/3 the size of block
-    # (or user-specified as ops['smooth_blocks'])
-    #sigT = [np.diff(yblocks).mean()*2.0/3, np.diff(xblocks).mean()*2.0/3]
-    #if 'smooth_blocks' in ops:
-    #    sigT = ops['smooth_blocks']
-    #sigT = np.maximum(10.0, sigT)
-    #ops['smooth_blocks'] = sigT
     return ops
+
+def sample_frames(ops, ix):
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread =  np.int64(Ly*Lx*2)
+    mov = np.zeros((len(ix), Ly, Lx), np.int16)
+    # load and bin data
+    with open(ops['reg_file'], 'rb') as reg_file:
+        for i in range(len(ix)):
+            reg_file.seek(nbytesread*ix[i], 0)
+            buff = reg_file.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            mov[i,:,:] = np.reshape(data, (Ly, Lx))
+    return mov
+
+def pclowhigh(mov, nlowhigh, nPC):
+    nframes, Ly, Lx = mov.shape
+    mov = mov.reshape((nframes, -1))
+    mov = mov.astype('float32')
+    mimg = np.mean(mov, axis=0)
+    mov -= mimg
+    COV = mov @ mov.T
+    w,v = linalg.eigsh(COV, k = nPC)
+    v = v[:, ::-1]
+    mov += mimg
+    mov = mov.reshape((nframes, Ly, Lx))
+    pclow  = np.zeros((nPC, Ly, Lx), 'float32')
+    pchigh = np.zeros((nPC, Ly, Lx), 'float32')
+    for i in range(nPC):
+        isort = np.argsort(v[:,i])
+        pclow[i,:,:] = np.mean(mov[isort[:nlowhigh],:,:], axis=0)
+        pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
+    return pclow, pchigh, w
+
+def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5):
+    ops = {
+        'num_workers': -1,
+        'snr_thresh': 1.0,
+        'nonrigid': True,
+        'num_workers': -1,
+        'block_size': np.array(block_size),
+        'maxregshiftNR': np.array(maxregshiftNR),
+        'maxregshift': np.array(maxregshift),
+        'subpixel': 10,
+        }
+    nPC, ops['Ly'], ops['Lx'] = pclow.shape
+
+    X = np.zeros((nPC,3))
+    ops = make_blocks(ops)
+    for i in range(nPC):
+        refImg = pclow[i]
+        Img = pchigh[i][np.newaxis, :, :]
+        #Img = np.tile(Img, (1,1,1))
+        maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg)
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
+        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
+        dwrite, ymax, xmax, cmax, yxnr = register.phasecorr(Img, refAndMasks, ops)
+        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
+        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
+        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+
+    return X

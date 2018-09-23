@@ -21,7 +21,7 @@ def default_ops():
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
-        'scanmeso': False, # reads in scanimage mesoscope files
+        'mesoscan': False, # reads in scanimage mesoscope files
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
@@ -80,6 +80,8 @@ def default_ops():
 
 def run_s2p(ops={},db={}):
     i0 = tic()
+    ops0 = default_ops()
+    ops = {**ops0, **ops}    
     ops = {**ops, **db}
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
@@ -121,24 +123,24 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
-        # copy ops to list where each element is ops for each plane
-        ops1 = utils.init_ops(ops)
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = utils.h5py_to_binary(ops1)
+            ops1 = utils.h5py_to_binary(ops)
             print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
         else:
-            try:
-                ops1 = utils.tiff_to_binary(ops1)
-                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
-            except Exception as e:
-                if HAS_HAUS:
-                    dataset = haussio.load_haussio(ops['data_path'][0])
-                    ops1 = dataset.tosuite2p(ops)
-                    print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
-                else:
-                    print('Unsupported file format: ' + str(e))
-                    return
+            if not ops['mesoscan']:
+                ops1 = utils.tiff_to_binary(ops)
+            else:
+                ops1 = utils.mesoscan_to_binary(ops)
+            print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+            #except Exception as e:
+            #    if HAS_HAUS:
+            #        dataset = haussio.load_haussio(ops['data_path'][0])
+            #        ops1 = dataset.tosuite2p(ops)
+            #        print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
+            #    else:
+            #        print('Unsupported file format: ' + str(e))
+            #        return
         # save ops1
         np.save(fpathops1, ops1)
     ops1 = np.array(ops1)

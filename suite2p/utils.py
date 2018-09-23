@@ -1,8 +1,9 @@
 import numpy as np
 import math, time
-import glob, h5py, os
+import glob, h5py, os, json
 from scipy import signal
 from suite2p import celldetect2 as celldetect2
+from suite2p import utils
 from scipy import stats, signal
 import scipy.io
 from skimage import io
@@ -113,7 +114,10 @@ def list_h5(ops):
     fs = sorted(glob.glob(lpath))
     return fs
 
-def h5py_to_binary(ops1):
+def h5py_to_binary(ops):
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -200,7 +204,10 @@ def h5py_to_binary(ops1):
             reg_file_chan2[j].close()
     return ops1
 
-def tiff_to_binary(ops1):
+def tiff_to_binary(ops):
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -260,14 +267,19 @@ def tiff_to_binary(ops1):
             reg_file_chan2[j].close()
     return ops1
 
-def mesoscan_to_binary(ops1):
+def mesoscan_to_binary(ops):
     # load json file with line start stops
-    pcfg = np.load('config_run.npy')
-    nplanes = len(pcfg)
-
-    for j in range(nplanes):
-        ops1[j] = {**ops1[j], **pcfg[j]}.copy()
-        ops1[j]['nplanes'] = nplanes
+    fpath = os.path.join(ops['data_path'][0], '*json')
+    fs = glob.glob(fpath)
+    with open(fs[0], 'r') as f:
+        opsj = json.load(f)
+    ops['nplanes'] = len(opsj)
+    nplanes = ops['nplanes']
+    print(nplanes)
+    # copy ops to list where each element is ops for each plane
+    ops1 = utils.init_ops(ops)
+    for j in range(len(ops1)):
+        ops1[j] = {**ops1[j], **opsj[j]}.copy()
 
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -282,7 +294,6 @@ def mesoscan_to_binary(ops1):
         nfunc = ops['functional_chan']-1
     else:
         nfunc = 0
-    ir = []
 
     # loop over all tiffs
     for ik, file in enumerate(fs):
@@ -292,25 +303,23 @@ def mesoscan_to_binary(ops1):
         nframes = im.shape[0]
         for j in range(0,nplanes):
             if ik==0:
-                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                ops1[j]['meanImg'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
                 if nchannels>1:
-                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    ops1[j]['meanImg_chan2'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
                 ops1[j]['nframes'] = 0
-            im2write = im[:,ir[j],:].astype(np.int16)
+            im2write = im[:,ops1[j]['lines'],:].astype(np.int16)
             ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
             reg_file[j].write(bytearray(im2write))
             if nchannels>1:
-                im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                #im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 reg_file_chan2[j].write(bytearray(im2write))
                 ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             ops1[j]['nframes']+= im2write.shape[0]
-        iplane = (iplane+nframes/nchannels)%nplanes
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
-        ops['Ly'] = im.shape[1]
-        ops['Lx'] = im.shape[2]
+        ops['Ly'],ops['Lx'] = ops1[j]['meanImg'].shape
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])

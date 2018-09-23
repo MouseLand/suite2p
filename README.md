@@ -39,9 +39,20 @@ To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run:
 pip install suite2p --upgrade
 ~~~~
 
+If when running `python -m suite2p`, you receive the error: `No module named PyQt5.sip`, then try uninstalling and reinstalling pyqt5
+~~~
+pip uninstall pyqt5 pyqt5-tools
+pip install pyqt5 pyqt5-tools pyqt5.sip
+~~~
+
+If when running `python -m suite2p`, you receive an error associated with **matplotlib**, try upgrading it:
+~~~
+pip install matplotlib --upgrade
+~~~
+
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine. 
 
-The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. 
+The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. 
 
 ## Getting started
 

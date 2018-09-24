@@ -330,6 +330,23 @@ def pick_init(ops):
     refImg = refine_init_init(ops, frames, refImg)
     return refImg
 
+def get_metrics(ops):
+    nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
+    nPC      = 50 # n PCs to compute motion for
+    nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
+    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
+    mov  = utils.sample_frames(ops, ix)
+    mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+    pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
+    if 'block_size' not in ops:
+        ops['block_size']   = [128, 128]
+    if 'maxregshiftNR' not in ops:
+        ops['maxregshiftNR'] = 5
+    X    = utils.metric_register(pclow, pchigh, ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
+    ops['regDX'] = X
+    return ops
+
 def register_binary(ops):
     # if ops is a list of dictionaries, each will be registered separately
     if (type(ops) is list) or (type(ops) is np.ndarray):
@@ -338,15 +355,10 @@ def register_binary(ops):
         return ops
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
-<<<<<<< HEAD
     if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
         ops['reg_file_raw'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
         print(ops['reg_file_raw'])
         shutil.copyfile(ops['reg_file'], ops['reg_file_raw'])
-=======
-    if ops['keep_movie_original']:
-        print('copy binary')
->>>>>>> 82c0414dc95ceab6b6205a5528108cd180d4a9ca
 
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -457,16 +469,7 @@ def register_binary(ops):
         print('registered second channel in time %4.2f'%(toc(k0)))
 
     # compute metrics for registration
-    nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
-    nPC      = 20 # n PCs to compute motion for
-    nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
-    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    mov  = utils.sample_frames(ops, ix)
-    mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-    pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
-    X    = utils.metric_register(pclow, pchigh, ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
-    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
-    ops['regDX'] = X
+    ops = get_metrics(ops)
     print('computed registration metrics in time %4.2f'%(toc(k0)))
 
     np.save(ops['ops_path'], ops)

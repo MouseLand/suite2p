@@ -12,54 +12,78 @@ class PCViewer(QtGui.QMainWindow):
         super(PCViewer, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1300,800)
-        self.setWindowTitle('View registered binary')
+        self.setWindowTitle('Metrics for registration')
         self.cwidget = QtGui.QWidget(self)
         self.setCentralWidget(self.cwidget)
         self.l0 = QtGui.QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
 
-        iconSize = QtCore.QSize(30, 30)
-        openButton = QtGui.QToolButton()
-        openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
-        openButton.setIconSize(iconSize)
-        openButton.setToolTip("Open ops file")
-        openButton.clicked.connect(self.open)
-        self.l0.addWidget(openButton, 0,0,1,1)
-
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
         # --- cells image
         self.win = pg.GraphicsLayoutWidget()
-        self.l0.addWidget(self.win,1,1,13,14)
+        self.l0.addWidget(self.win,0,2,13,14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
-        self.p0 = self.win.addViewBox(name='plot1',lockAspect=True,row=0,col=0,invertY=True)
-        self.p1 = self.win.addViewBox(lockAspect=True,row=0,col=1,invertY=True)
+        self.p3 = self.win.addPlot(row=0,col=0)
+        self.p3.setMouseEnabled(x=False,y=False)
+        self.p3.setMenuEnabled(False)
+
+        self.p0 = self.win.addViewBox(name='plot1',lockAspect=True,row=1,col=0,invertY=True)
+        self.p1 = self.win.addViewBox(lockAspect=True,row=1,col=1,invertY=True)
         self.p1.setMenuEnabled(False)
         self.p1.setXLink('plot1')
         self.p1.setYLink('plot1')
-        self.p2 = self.win.addViewBox(lockAspect=True,row=0,col=2,invertY=True)
+        self.p2 = self.win.addViewBox(lockAspect=True,row=1,col=2,invertY=True)
         self.p2.setMenuEnabled(False)
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
-
-        self.p3 = self.win.addPlot(row=1,col=0,invertY=True)
-        self.p3.setMouseEnabled(x=True,y=False)
-        self.p3.setMenuEnabled(False)
+        self.img0=pg.ImageItem()
+        self.img1=pg.ImageItem()
+        self.img2=pg.ImageItem()
+        self.p0.addItem(self.img0)
+        self.p1.addItem(self.img1)
+        self.p2.addItem(self.img2)
+        self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
+        self.PCedit.setValidator(QtGui.QIntValidator(1,50))
         self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(60)
+        self.PCedit.setFixedWidth(40)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
+        self.PCedit.returnPressed.connect(self.plot_frame)
+        self.PCedit.textEdited.connect(self.pause)
         qlabel = QtGui.QLabel('PC: ')
+        boldfont = QtGui.QFont("Arial", 14, QtGui.QFont.Bold)
+        bigfont = QtGui.QFont("Arial", 14)
+        qlabel.setFont(boldfont)
+        self.PCedit.setFont(bigfont)
         qlabel.setStyleSheet('color: white;')
-        self.l0.addWidget(qlabel,3,0,1,1)
-        self.l0.addWidget(self.PCedit,3,1,1,1)
-
+        #qlabel.setAlignment(QtCore.Qt.AlignRight)
+        self.l0.addWidget(QtGui.QLabel(''),1,0,1,1)
+        self.l0.addWidget(qlabel,2,0,1,1)
+        self.l0.addWidget(self.PCedit,2,1,1,1)
+        self.nums = []
+        self.titles=[]
+        for j in range(3):
+            num1 = QtGui.QLabel('')
+            num1.setStyleSheet('color: white;')
+            self.l0.addWidget(num1,3+j,0,1,2)
+            self.nums.append(num1)
+            t1 = QtGui.QLabel('')
+            t1.setStyleSheet('color: white;')
+            self.l0.addWidget(t1,12,4+j*4,1,2)
+            self.titles.append(t1)
         self.loaded = False
         self.wraw = False
+        self.l0.addWidget(QtGui.QLabel(''),7,0,1,1)
+        self.l0.setRowStretch(7,1)
+        self.cframe = 0
+        self.createButtons()
+        # play button
+        self.updateTimer = QtCore.QTimer()
+        self.updateTimer.timeout.connect(self.next_frame)
         #self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -67,6 +91,53 @@ class PCViewer(QtGui.QMainWindow):
                 fileName = os.path.join(parent.basename, 'ops.npy')
                 print(fileName)
                 self.openFile(fileName)
+
+    def createButtons(self):
+        iconSize = QtCore.QSize(30, 30)
+        openButton = QtGui.QToolButton()
+        openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
+        openButton.setIconSize(iconSize)
+        openButton.setToolTip("Open ops file")
+        openButton.clicked.connect(self.open)
+
+        self.playButton = QtGui.QToolButton()
+        self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+        self.playButton.setIconSize(iconSize)
+        self.playButton.setToolTip("Play")
+        self.playButton.setCheckable(True)
+        self.playButton.clicked.connect(self.start)
+
+        self.pauseButton = QtGui.QToolButton()
+        self.pauseButton.setCheckable(True)
+        self.pauseButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPause))
+        self.pauseButton.setIconSize(iconSize)
+        self.pauseButton.setToolTip("Pause")
+        self.pauseButton.clicked.connect(self.pause)
+
+        btns = QtGui.QButtonGroup(self)
+        btns.addButton(self.playButton,0)
+        btns.addButton(self.pauseButton,1)
+        btns.setExclusive(True)
+
+        self.l0.addWidget(openButton,0,0,1,1)
+        self.l0.addWidget(self.playButton,14,12,1,1)
+        self.l0.addWidget(self.pauseButton,14,13,1,1)
+        #self.l0.addWidget(quitButton,0,1,1,1)
+        self.playButton.setEnabled(False)
+        self.pauseButton.setEnabled(False)
+        self.pauseButton.setChecked(True)
+
+    def start(self):
+        if self.loaded:
+            self.playButton.setEnabled(False)
+            self.pauseButton.setEnabled(True)
+            self.updateTimer.start(200)
+
+    def pause(self):
+        self.updateTimer.stop()
+        self.playButton.setEnabled(True)
+        self.pauseButton.setChecked(True)
+        self.pauseButton.setEnabled(False)
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,
@@ -90,24 +161,114 @@ class PCViewer(QtGui.QMainWindow):
             print(e)
             good = False
         if good:
+            self.loaded=True
             self.plot_frame()
+            self.playButton.setEnabled(True)
+
+    def next_frame(self):
+        iPC = int(self.PCedit.text()) - 1
+        pc1 = self.PC[1,iPC,:,:]
+        pc0 = self.PC[0,iPC,:,:]
+        if self.cframe==0:
+            self.img2.setImage(np.tile(pc0[:,:,np.newaxis],(1,1,3)))
+            self.titles[2].setText('top')
+
+        else:
+            self.img2.setImage(np.tile(pc1[:,:,np.newaxis],(1,1,3)))
+            self.titles[2].setText('bottom')
+
+        self.img2.setLevels([pc0.min(),pc0.max()])
+        self.cframe = 1-self.cframe
 
     def plot_frame(self):
-        iPC = int(self.PCedit.text()) - 1
+        if self.loaded:
+            self.titles[0].setText('difference')
+            self.titles[1].setText('merged')
+            self.titles[2].setText('top')
+            iPC = int(self.PCedit.text()) - 1
+            pc1 = self.PC[1,iPC,:,:]
+            pc0 = self.PC[0,iPC,:,:]
+            self.img0.setImage(np.tile(pc1[:,:,np.newaxis]-pc0[:,:,np.newaxis],(1,1,3)))
+            self.img0.setLevels([(pc1-pc0).min(),(pc1-pc0).max()])
+            rgb = np.zeros((self.PC.shape[2], self.PC.shape[3],3), np.float32)
+            rgb[:,:,0] = (pc1-pc1.min())/(pc1.max()-pc1.min())*255
+            rgb[:,:,1] = np.minimum(1, np.maximum(0,(pc0-pc1.min())/(pc1.max()-pc1.min())))*255
+            rgb[:,:,2] = (pc1-pc1.min())/(pc1.max()-pc1.min())*255
+            self.img1.setImage(rgb)
+            if self.cframe==0:
+                self.img2.setImage(np.tile(pc0[:,:,np.newaxis],(1,1,3)))
+            else:
+                self.img2.setImage(np.tile(pc1[:,:,np.newaxis],(1,1,3)))
+            self.img2.setLevels([pc0.min(),pc0.max()])
+            self.zoom_plot()
 
-        self.p0.setImage(self.PC[1,iPC,:,:] - self.PC[0,iPC,:,:])
-        rgb = np.zeros((self.PC.shape[2], self.PC.shape[3]), np.float32)
-        rgb[:,:,0] = self.PC[1,iPC,:,:]
-        rgb[:,:,2] = self.PC[0,iPC,:,:]
-        self.p1.setImage(rgb)
-        self.p2.setImage(self.PC[0,self.iPC,:,:])
+            self.p3.clear()
+            p = [(200,200,255),(255,100,100),(100,50,200)]
+            ptitle = ['rigid','nonrigid','nonrigid max']
+            if not hasattr(self,'leg'):
+                self.leg = pg.LegendItem((100,60),offset=(350,30))
+                self.leg.setParentItem(self.p3)
+                drawLeg = True
+            else:
+                drawLeg = False
+            for j in range(3):
+                cj = self.p3.plot(np.arange(1,51),self.DX[:,j],pen=p[j])
+                if drawLeg:
+                    self.leg.addItem(cj,ptitle[j])
+                self.nums[j].setText('%s: %1.3f'%(ptitle[j],self.DX[iPC,j]))
+            self.scatter = pg.ScatterPlotItem()
+            self.p3.addItem(self.scatter)
+            self.scatter.setData([iPC+1,iPC+1,iPC+1],self.DX[iPC,:].tolist(),
+                                 size=10,brush=pg.mkBrush(255,255,255))
+            self.p3.setLabel('left', 'pixel shift')
+            self.p3.setLabel('bottom', 'PC #')
+            self.show()
+            self.zoom_plot()
 
-        self.p3.clear()
-        self.p3.plot(ops['regDX'])
-        self.scatter = pg.ScatterPlotItem()
-        self.p3.addItem(self.scatter)
-        self.scatter.setData([iPC+1,iPC+1,iPC+1],ops['regDX'][iPC,:].tolist(),
-                             size=10,brush=pg.mkBrush(255,0,0))
+    def zoom_plot(self):
+        self.p0.setXRange(0,self.Lx)
+        self.p0.setYRange(0,self.Ly)
+        self.p1.setXRange(0,self.Lx)
+        self.p1.setYRange(0,self.Ly)
+        self.p2.setXRange(0,self.Lx)
+        self.p2.setYRange(0,self.Ly)
+
+    def plot_clicked(self,event):
+        items = self.win.scene().items(event.scenePos())
+        posx  = 0
+        posy  = 0
+        iplot = 0
+        zoom = False
+        if self.loaded:
+            for x in items:
+                if x==self.p0 or x==self.p1 or x==self.p2:
+                    if event.button()==1:
+                        if event.double():
+                            zoom=True
+                            self.zoom_plot()
+
+    def keyPressEvent(self, event):
+        bid = -1
+        if event.modifiers() !=  QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_Left:
+                self.pause()
+                ipc = int(self.PCedit.text())
+                ipc = max(ipc-1, 1)
+                self.PCedit.setText(str(ipc))
+                self.plot_frame()
+            elif event.key() == QtCore.Qt.Key_Right:
+                self.pause()
+                ipc = int(self.PCedit.text())
+                ipc = min(ipc+1, 50)
+                self.PCedit.setText(str(ipc))
+                self.plot_frame()
+            elif event.key() == QtCore.Qt.Key_Space:
+                if self.playButton.isEnabled():
+                    # then play
+                    self.playButton.setChecked(True)
+                    self.start()
+                else:
+                    self.pause()
 
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -205,6 +366,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.stat = parent.stat
                 self.Floaded = True
                 self.openFile(fileName, True)
+
+
+
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,

@@ -105,12 +105,18 @@ class MainW(QtGui.QMainWindow):
         vis_menu = main_menu.addMenu('&Visualizations')
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut('Ctrl+V')
+        reg_menu = main_menu.addMenu('&Registration')
         self.reg = QtGui.QAction('View registered &binary', self)
         self.reg.triggered.connect(self.reg_window)
         self.reg.setShortcut('Ctrl+B')
         self.reg.setEnabled(True)
-        reg_menu = main_menu.addMenu('&Registration')
+        self.regPC = QtGui.QAction('View registered &PCs', self)
+        self.regPC.triggered.connect(self.regPC_window)
+        self.regPC.setShortcut('Ctrl+P')
+        self.regPC.setEnabled(True)
         reg_menu.addAction(self.reg)
+        reg_menu.addAction(self.regPC)
+
         #self.reg.setShortcut('Ctrl+V')
         #### --------- MAIN WIDGET LAYOUT --------- ####
         #pg.setConfigOption('background', 'w')
@@ -927,6 +933,10 @@ class MainW(QtGui.QMainWindow):
 
     def reg_window(self):
         RW = reggui.BinaryPlayer(self)
+        RW.show()
+
+    def regPC_window(self):
+        RW = reggui.PCViewer(self)
         RW.show()
 
     def load_dialog(self):

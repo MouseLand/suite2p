@@ -207,18 +207,22 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.stopButton, 17,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
-        self.cleanButton = QtGui.QPushButton('run a clean-up *.py')
-        self.cleanButton.setEnabled(False)
+        self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
+        self.cleanButton.setToolTip('will run at end of processing')
+        self.cleanButton.setEnabled(True)
         self.layout.addWidget(self.cleanButton, 17,2,1,2)
-        self.cleanButton.clicked.connect(self.cleanup)
+        self.cleanup = False
+        self.cleanButton.clicked.connect(self.clean_script)
+        self.cleanLabel = QtGui.QLabel('')
+        self.layout.addWidget(self.cleanLabel,17,4,1,12)
 
-    def cleanup(self):
+    def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
         name = name[0]
         if name:
-            ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
-            print('loading '+ops_path+' and running '+name)
-            os.system('python '+name+' '+ops_path)
+            self.cleanup = True
+            self.cleanScript = name
+            self.cleanLabel.setText(name)
 
     def stop(self):
         self.finish = False
@@ -236,6 +240,11 @@ class RunWindow(QtGui.QDialog):
             self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
+            if self.cleanup:
+                ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
+                os.system('python '+self.cleanScript+' '+ops_path)
+                cursor.insertText('running clean-up script')
+                cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
             parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
             parent.load_proc()

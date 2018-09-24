@@ -43,20 +43,26 @@ class PCViewer(QtGui.QMainWindow):
         self.p2.setMenuEnabled(False)
         self.p2.setXLink('plot1')
         self.p2.setYLink('plot1')
+        self.img0=pg.ImageItem()
+        self.img1=pg.ImageItem()
+        self.img2=pg.ImageItem()
+        self.p0.addItem(self.img0)
+        self.p1.addItem(self.img1)
+        self.p2.addItem(self.img2)
 
-        self.p3 = self.win.addPlot(row=1,col=0,invertY=True)
+        self.p3 = self.win.addPlot(row=1,col=0,colspan=3)
         self.p3.setMouseEnabled(x=True,y=False)
         self.p3.setMenuEnabled(False)
 
         self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
+        self.PCedit.setValidator(QtGui.QIntValidator(1,50))
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
         qlabel = QtGui.QLabel('PC: ')
         qlabel.setStyleSheet('color: white;')
-        self.l0.addWidget(qlabel,3,0,1,1)
-        self.l0.addWidget(self.PCedit,3,1,1,1)
+        self.l0.addWidget(qlabel,0,1,1,1)
+        self.l0.addWidget(self.PCedit,0,2,1,1)
 
         self.loaded = False
         self.wraw = False
@@ -94,19 +100,24 @@ class PCViewer(QtGui.QMainWindow):
 
     def plot_frame(self):
         iPC = int(self.PCedit.text()) - 1
-
-        self.p0.setImage(self.PC[1,iPC,:,:] - self.PC[0,iPC,:,:])
-        rgb = np.zeros((self.PC.shape[2], self.PC.shape[3]), np.float32)
-        rgb[:,:,0] = self.PC[1,iPC,:,:]
-        rgb[:,:,2] = self.PC[0,iPC,:,:]
-        self.p1.setImage(rgb)
-        self.p2.setImage(self.PC[0,self.iPC,:,:])
+        pc1 = self.PC[1,iPC,:,:]
+        pc0 = self.PC[0,iPC,:,:]
+        self.img0.setImage(np.tile(pc1[:,:,np.newaxis]-pc0[:,:,np.newaxis],(1,1,3)))
+        self.img0.setLevels([(pc1-pc0).min(),(pc1-pc0).max()])
+        rgb = np.zeros((self.PC.shape[2], self.PC.shape[3],3), np.float32)
+        rgb[:,:,0] = (pc1-pc1.min())/(pc1.max()-pc1.min())*255
+        rgb[:,:,2] = (pc0-pc0.min())/(pc0.max()-pc0.min())*255
+        self.img1.setImage(rgb)
+        self.img2.setImage(np.tile(pc0[:,:,np.newaxis],(1,1,3)))
+        self.img2.setLevels([pc0.min(),pc0.max()])
+        self.show()
 
         self.p3.clear()
-        self.p3.plot(ops['regDX'])
+        for j in range(3):
+            self.p3.plot(np.arange(1,51),self.DX[:,j])
         self.scatter = pg.ScatterPlotItem()
         self.p3.addItem(self.scatter)
-        self.scatter.setData([iPC+1,iPC+1,iPC+1],ops['regDX'][iPC,:].tolist(),
+        self.scatter.setData([iPC+1,iPC+1,iPC+1],self.DX[iPC,:].tolist(),
                              size=10,brush=pg.mkBrush(255,0,0))
 
 class BinaryPlayer(QtGui.QMainWindow):

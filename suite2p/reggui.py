@@ -7,6 +7,108 @@ import os
 import sys
 import numpy as np
 
+class PCViewer(QtGui.QMainWindow):
+    def __init__(self, parent=None):
+        super(PCViewer, self).__init__(parent)
+        pg.setConfigOptions(imageAxisOrder='row-major')
+        self.setGeometry(70,70,1300,800)
+        self.setWindowTitle('View registered binary')
+        self.cwidget = QtGui.QWidget(self)
+        self.setCentralWidget(self.cwidget)
+        self.l0 = QtGui.QGridLayout()
+        #layout = QtGui.QFormLayout()
+        self.cwidget.setLayout(self.l0)
+
+        iconSize = QtCore.QSize(30, 30)
+        openButton = QtGui.QToolButton()
+        openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
+        openButton.setIconSize(iconSize)
+        openButton.setToolTip("Open ops file")
+        openButton.clicked.connect(self.open)
+        self.l0.addWidget(openButton, 0,0,1,1)
+
+        #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
+        self.win = pg.GraphicsLayoutWidget()
+        # --- cells image
+        self.win = pg.GraphicsLayoutWidget()
+        self.l0.addWidget(self.win,1,1,13,14)
+        layout = self.win.ci.layout
+        # A plot area (ViewBox + axes) for displaying the image
+        self.p0 = self.win.addViewBox(name='plot1',lockAspect=True,row=0,col=0,invertY=True)
+        self.p1 = self.win.addViewBox(lockAspect=True,row=0,col=1,invertY=True)
+        self.p1.setMenuEnabled(False)
+        self.p1.setXLink('plot1')
+        self.p1.setYLink('plot1')
+        self.p2 = self.win.addViewBox(lockAspect=True,row=0,col=2,invertY=True)
+        self.p2.setMenuEnabled(False)
+        self.p2.setXLink('plot1')
+        self.p2.setYLink('plot1')
+
+        self.p3 = self.win.addPlot(row=1,col=0,invertY=True)
+        self.p3.setMouseEnabled(x=True,y=False)
+        self.p3.setMenuEnabled(False)
+
+        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
+        self.PCedit.setText('1')
+        self.PCedit.setFixedWidth(60)
+        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
+        qlabel = QtGui.QLabel('PC: ')
+        qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,3,0,1,1)
+        self.l0.addWidget(self.PCedit,3,1,1,1)
+
+        self.loaded = False
+        self.wraw = False
+        #self.win.scene().sigMouseClicked.connect(self.plot_clicked)
+        # if not a combined recording, automatically open binary
+        if hasattr(parent, 'ops'):
+            if parent.ops['save_path'][-8:]!='combined':
+                fileName = os.path.join(parent.basename, 'ops.npy')
+                print(fileName)
+                self.openFile(fileName)
+
+    def open(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self,
+                            "Open single-plane ops.npy file",filter="ops.npy")
+        # load ops in same folder
+        if fileName:
+            print(fileName[0])
+            self.openFile(fileName[0])
+
+    def openFile(self, fileName):
+        try:
+            ops = np.load(fileName)
+            ops = ops.item()
+            self.Ly = ops['Ly']
+            self.Lx = ops['Lx']
+            self.PC = ops['regPC']
+            self.DX = ops['regDX']
+            good = True
+        except Exception as e:
+            print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
+            print(e)
+            good = False
+        if good:
+            self.plot_frame()
+
+    def plot_frame(self):
+        iPC = int(self.PCedit.text()) - 1
+
+        self.p0.setImage(self.PC[1,iPC,:,:] - self.PC[0,iPC,:,:])
+        rgb = np.zeros((self.PC.shape[2], self.PC.shape[3]), np.float32)
+        rgb[:,:,0] = self.PC[1,iPC,:,:]
+        rgb[:,:,2] = self.PC[0,iPC,:,:]
+        self.p1.setImage(rgb)
+        self.p2.setImage(self.PC[0,self.iPC,:,:])
+
+        self.p3.clear()
+        self.p3.plot(ops['regDX'])
+        self.scatter = pg.ScatterPlotItem()
+        self.p3.addItem(self.scatter)
+        self.scatter.setData([iPC+1,iPC+1,iPC+1],ops['regDX'][iPC,:].tolist(),
+                             size=10,brush=pg.mkBrush(255,0,0))
+
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(BinaryPlayer, self).__init__(parent)
@@ -92,6 +194,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.cframe = 0
         self.loaded = False
         self.Floaded = False
+        self.wraw = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -117,9 +220,14 @@ class BinaryPlayer(QtGui.QMainWindow):
             ops = ops.item()
             self.Ly = ops['Ly']
             self.Lx = ops['Lx']
-            self.reg_loc = ops['reg_file']
-            self.reg_file = open(self.reg_loc,'rb')
-            self.reg_file.close()
+            if os.path.isfile(ops['reg_file']):
+                self.reg_loc = ops['reg_file']
+                self.reg_file = open(self.reg_loc,'rb')
+                self.reg_file.close()
+            else:
+                self.reg_loc = os.path.join(os.path.dirname(fileName),'data.bin')
+                self.reg_file = open(self.reg_loc,'rb')
+                self.reg_file.close()
             if not fromgui:
                 if os.path.isfile(os.path.join(os.path.dirname(fileName),'F.npy')):
                     self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
@@ -151,10 +259,18 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ichosen = 0
             self.ROIedit.setText('0')
             # get scaling from 100 random frames
-            frames = register.subsample_frames(ops, np.minimum(ops['nframes'],100))
+            frames = subsample_frames(ops, np.minimum(ops['nframes'],100), self.reg_loc)
             self.srange = frames.mean() + frames.std()*np.array([-3,3])
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
+            self.wraw = False
+            if 'reg_file_raw' in ops:
+                if self.reg_loc == ops['reg_file']:
+                    self.reg_loc_raw = ops['reg_file_raw']
+                else:
+                    self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
+                self.reg_file_raw = open(self.reg_loc_raw,'rb')
+                self.wraw=True
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
             self.nframes = ops['nframes']
@@ -207,6 +323,13 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.cframe += self.frameDelta
                     self.cframe  = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
                     self.frameSlider.setValue(self.cframe)
+        if event.modifiers() != QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_Space:
+                if self.playButton.isEnabled():
+                    # then play
+                    self.start()
+                else:
+                    self.pause()
 
     def number_chosen(self):
         if self.Floaded:
@@ -256,7 +379,10 @@ class BinaryPlayer(QtGui.QMainWindow):
                         else:
                             choose=True
         if zoomImg:
-            self.p0.setRange(xRange=(0,self.Ly),yRange=(0,self.Lx))
+            if not self.wraw:
+                self.p0.setRange(xRange=(0,self.Lx),yRange=(0,self.Ly))
+            else:
+                self.p0.setRange(xRange=(0,self.Lx*2+max(10,int(self.Lx*.05))),yRange=(0,self.Ly))
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
         if choose:
@@ -286,7 +412,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def updateButtons(self):
         self.playButton.setEnabled(True)
-        self.pauseButton.setEnabled(True)
+        self.pauseButton.setEnabled(False)
         self.pauseButton.setChecked(True)
 
     def createButtons(self):
@@ -333,8 +459,11 @@ class BinaryPlayer(QtGui.QMainWindow):
     def jump_to_frame(self):
         if self.playButton.isEnabled():
             self.cframe = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
+            self.cframe = int(self.cframe)
             # seek to absolute position
             self.reg_file.seek(self.nbytesread * self.cframe, 0)
+            if self.wraw:
+                self.reg_file_raw.seek(self.nbytesread * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 
@@ -344,7 +473,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.cframe > self.nframes - 1:
             self.cframe = 0
             self.reg_file.seek(0, 0)
-
+            if self.wraw:
+                self.reg_file_raw.seek(0, 0)
         buff = self.reg_file.read(self.nbytesread)
         self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
         self.img = np.tile(self.img,(1,1,3))
@@ -352,6 +482,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.img[self.yext,self.xext,0] = self.srange[0]
             self.img[self.yext,self.xext,1] = self.srange[0]
             self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
+        if self.wraw:
+            buff = self.reg_file_raw.read(self.nbytesread)
+            imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            imgraw = np.tile(imgraw,(1,1,3))
+            blk = self.srange[0]*np.ones((imgraw.shape[0],max(10,int(imgraw.shape[1]*0.05)),3),dtype=np.int16)
+            self.img = np.concatenate((imgraw,blk,self.img),axis=1)
         self.pimg.setImage(self.img)
         self.pimg.setLevels(self.srange)
         self.frameSlider.setValue(self.cframe)
@@ -380,3 +516,20 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.pauseButton.setEnabled(False)
         self.frameSlider.setEnabled(True)
         print('paused')
+
+def subsample_frames(ops, nsamps, reg_loc):
+    nFrames = ops['nframes']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
+    nbytesread = 2 * Ly * Lx
+    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
+    reg_file = open(reg_loc, 'rb')
+    for j in range(0,nsamps):
+        reg_file.seek(nbytesread * istart[j], 0)
+        buff = reg_file.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        frames[j,:,:] = np.reshape(data, (Ly, Lx))
+    reg_file.close()
+    return frames

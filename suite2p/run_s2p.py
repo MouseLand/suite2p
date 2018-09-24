@@ -47,6 +47,7 @@ def default_ops():
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
         'reg_tif': False, # whether to save registered tiffs
+        'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
         # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration

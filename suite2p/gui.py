@@ -55,7 +55,7 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
+        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
@@ -79,6 +79,7 @@ class RunWindow(QtGui.QDialog):
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     'if 1, registered tiffs are saved',
+                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',

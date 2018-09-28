@@ -53,7 +53,7 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
+        tifkeys = ['nplanes','nchannels','mesoscan','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
@@ -63,6 +63,7 @@ class RunWindow(QtGui.QDialog):
         labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
+                    'if 1, treats tiffs as scanimage mesoscope tiffs',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',

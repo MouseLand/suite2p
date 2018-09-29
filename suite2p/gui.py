@@ -1,10 +1,8 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import console
-import sys
+import sys, json, os, pickle
 import numpy as np
-import os
-import pickle
 from suite2p import fig
 from suite2p import run_s2p
 
@@ -284,21 +282,20 @@ class RunWindow(QtGui.QDialog):
         name = name[0]
         if len(name)>0:
             ext = os.path.splitext(name)[1]
-            print(ext)
-            print(ext == '.npy')
             try:
                 if ext == '.npy':
                     ops = np.load(name)
                     ops = ops.item()
-                    for k,key in enumerate(self.keylist):
-                        if key in ops:
-                            self.editlist[k].set_text(ops)
-                        else:
-                            ops[key] = self.ops[key]
-                    self.ops = ops
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
+                    print(ops['fs'])
+                for k,key in enumerate(self.keylist):
+                    if key in ops:
+                        self.editlist[k].set_text(ops)
+                    else:
+                        ops[key] = self.ops[key]
+                self.ops = ops
             except Exception as e:
                 print('could not load ops file')
                 print(e)

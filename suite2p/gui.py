@@ -53,9 +53,9 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
+        tifkeys = ['nplanes','nchannels','mesoscan','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif']
+        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
@@ -63,6 +63,7 @@ class RunWindow(QtGui.QDialog):
         labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
+                    'if 1, treats tiffs as scanimage mesoscope tiffs',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
@@ -79,6 +80,7 @@ class RunWindow(QtGui.QDialog):
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     'if 1, registered tiffs are saved',
+                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',
@@ -207,18 +209,22 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.stopButton, 17,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
-        self.cleanButton = QtGui.QPushButton('run a clean-up *.py')
-        self.cleanButton.setEnabled(False)
+        self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
+        self.cleanButton.setToolTip('will run at end of processing')
+        self.cleanButton.setEnabled(True)
         self.layout.addWidget(self.cleanButton, 17,2,1,2)
-        self.cleanButton.clicked.connect(self.cleanup)
+        self.cleanup = False
+        self.cleanButton.clicked.connect(self.clean_script)
+        self.cleanLabel = QtGui.QLabel('')
+        self.layout.addWidget(self.cleanLabel,17,4,1,12)
 
-    def cleanup(self):
+    def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
         name = name[0]
         if name:
-            ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
-            print('loading '+ops_path+' and running '+name)
-            os.system('python '+name+' '+ops_path)
+            self.cleanup = True
+            self.cleanScript = name
+            self.cleanLabel.setText(name)
 
     def stop(self):
         self.finish = False
@@ -236,6 +242,11 @@ class RunWindow(QtGui.QDialog):
             self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
+            if self.cleanup:
+                ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
+                os.system('python '+self.cleanScript+' '+ops_path)
+                cursor.insertText('running clean-up script')
+                cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
             parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
             parent.load_proc()

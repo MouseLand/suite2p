@@ -416,9 +416,13 @@ def register_binary(ops):
             corrXY1 = np.vstack((corrXY1, yxnr[2]))
         if ops['reg_tif']:
             if k==0:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif')
+                if ops['functional_chan']==ops['align_by_chan']:
+                    tifroot = os.path.join(ops['save_path'], 'reg_tif')
+                else:
+                    tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
                 if not os.path.isdir(tifroot):
                     os.makedirs(tifroot)
+                print(tifroot)
             fname = 'file_chan%0.3d.tif'%k
             io.imsave(os.path.join(tifroot, fname), dwrite)
         nfr += dwrite.shape[0]
@@ -443,6 +447,7 @@ def register_binary(ops):
         ops['meanImg'] = meanImg/ops['nframes']
     else:
         ops['meanImg_chan2'] = meanImg/ops['nframes']
+    k=0
     if ops['nchannels']>1:
         ix = 0
         meanImg = np.zeros((Ly, Lx))
@@ -463,6 +468,18 @@ def register_binary(ops):
             reg_file_alt.seek(-2*dwrite.size,1)
             reg_file_alt.write(bytearray(dwrite))
             meanImg += dwrite.sum(axis=0)
+            if ops['reg_tif_chan2']:
+                if k==0:
+                    if ops['functional_chan']!=ops['align_by_chan']:
+                        tifroot = os.path.join(ops['save_path'], 'reg_tif')
+                    else:
+                        tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+                    print(tifroot)
+                    if not os.path.isdir(tifroot):
+                        os.makedirs(tifroot)
+                fname = 'file_chan%0.3d.tif'%k
+                io.imsave(os.path.join(tifroot, fname), dwrite)
+            k+=1
         if ops['functional_chan']!=ops['align_by_chan']:
             ops['meanImg'] = meanImg/ops['nframes']
         else:

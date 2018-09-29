@@ -48,7 +48,6 @@ class PCViewer(QtGui.QMainWindow):
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setValidator(QtGui.QIntValidator(1,50))
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(40)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
@@ -81,6 +80,8 @@ class PCViewer(QtGui.QMainWindow):
         self.l0.setRowStretch(7,1)
         self.cframe = 0
         self.createButtons()
+        self.nPCs = 50
+        self.PCedit.setValidator(QtGui.QIntValidator(1,self.nPCs))
         # play button
         self.updateTimer = QtCore.QTimer()
         self.updateTimer.timeout.connect(self.next_frame)
@@ -162,6 +163,8 @@ class PCViewer(QtGui.QMainWindow):
             good = False
         if good:
             self.loaded=True
+            self.nPCs = self.PC.shape[1]
+            self.PCedit.setValidator(QtGui.QIntValidator(1,self.nPCs))
             self.plot_frame()
             self.playButton.setEnabled(True)
 
@@ -201,7 +204,6 @@ class PCViewer(QtGui.QMainWindow):
                 self.img2.setImage(np.tile(pc1[:,:,np.newaxis],(1,1,3)))
             self.img2.setLevels([pc0.min(),pc0.max()])
             self.zoom_plot()
-
             self.p3.clear()
             p = [(200,200,255),(255,100,100),(100,50,200)]
             ptitle = ['rigid','nonrigid','nonrigid max']
@@ -212,7 +214,7 @@ class PCViewer(QtGui.QMainWindow):
             else:
                 drawLeg = False
             for j in range(3):
-                cj = self.p3.plot(np.arange(1,51),self.DX[:,j],pen=p[j])
+                cj = self.p3.plot(np.arange(1,self.nPCs+1),self.DX[:,j],pen=p[j])
                 if drawLeg:
                     self.leg.addItem(cj,ptitle[j])
                 self.nums[j].setText('%s: %1.3f'%(ptitle[j],self.DX[iPC,j]))
@@ -259,7 +261,7 @@ class PCViewer(QtGui.QMainWindow):
             elif event.key() == QtCore.Qt.Key_Right:
                 self.pause()
                 ipc = int(self.PCedit.text())
-                ipc = min(ipc+1, 50)
+                ipc = min(ipc+1, self.nPCs)
                 self.PCedit.setText(str(ipc))
                 self.plot_frame()
             elif event.key() == QtCore.Qt.Key_Space:

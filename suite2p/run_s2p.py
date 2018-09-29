@@ -51,7 +51,7 @@ def default_ops():
         # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register
-        'snr_thresh': 1., # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
+        'snr_thresh': 1.2, # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # cell detection settings
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)

@@ -598,7 +598,7 @@ def pclowhigh(mov, nlowhigh, nPC):
 def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5):
     ops = {
         'num_workers': -1,
-        'snr_thresh': 1.0,
+        'snr_thresh': 1.25,
         'nonrigid': True,
         'num_workers': -1,
         'block_size': np.array(block_size),

@@ -79,6 +79,9 @@ def enhanced_mean_image(ops):
     return ops
 
 def init_ops(ops):
+    if 'lines' in ops:
+        lines = ops['lines']
+        ops['nplanes'] = len(ops['lines'])
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     ops1 = []
@@ -97,6 +100,8 @@ def init_ops(ops):
         ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
+        if 'lines' in ops:
+            ops['lines'] = lines[j]
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
         if 'dy' in ops:
@@ -269,13 +274,16 @@ def tiff_to_binary(ops):
 
 def mesoscan_to_binary(ops):
     # load json file with line start stops
-    fpath = os.path.join(ops['data_path'][0], '*json')
-    fs = glob.glob(fpath)
-    with open(fs[0], 'r') as f:
-        opsj = json.load(f)
-    ops['nplanes'] = len(opsj)
-    nplanes = ops['nplanes']
-    print(nplanes)
+    if 'lines' not in ops:
+        fpath = os.path.join(ops['data_path'][0], '*json')
+        fs = glob.glob(fpath)
+        with open(fs[0], 'r') as f:
+            opsj = json.load(f)
+        ops['nplanes'] = len(opsj)
+        nplanes = ops['nplanes']
+        print(nplanes)
+    else:
+        ops['nplanes'] = len(ops['lines'])
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     for j in range(len(ops1)):

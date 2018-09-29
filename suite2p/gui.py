@@ -280,18 +280,25 @@ class RunWindow(QtGui.QDialog):
 
     def load_ops(self):
         print('loading ops')
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
         name = name[0]
         if len(name)>0:
+            ext = os.path.splitext(name)[1]
+            print(ext)
+            print(ext == '.npy')
             try:
-                ops = np.load(name)
-                ops = ops.item()
-                for k,key in enumerate(self.keylist):
-                    if key in ops:
-                        self.editlist[k].set_text(ops)
-                    else:
-                        ops[key] = self.ops[key]
-                self.ops = ops
+                if ext == '.npy':
+                    ops = np.load(name)
+                    ops = ops.item()
+                    for k,key in enumerate(self.keylist):
+                        if key in ops:
+                            self.editlist[k].set_text(ops)
+                        else:
+                            ops[key] = self.ops[key]
+                    self.ops = ops
+                elif ext == '.json':
+                    with open(name, 'r') as f:
+                        ops = json.load(f)
             except Exception as e:
                 print('could not load ops file')
                 print(e)

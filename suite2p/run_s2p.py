@@ -68,6 +68,7 @@ def default_ops():
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
+        'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         # deconvolution settings
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin

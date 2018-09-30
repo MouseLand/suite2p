@@ -91,15 +91,15 @@ def get_mov(ops):
             ix += dbin.shape[0]
     nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     i0 = 0
-    while 0:
-        irange = i0 + np.arange(0,nimgbatch)
+    if ops['high_pass']<10:
+        for j in range(mov.shape[1]):
+            mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
+    else:
+        irange = i0 + np.arange(0,int(ops['high_pass']))
         irange = irange[irange<mov.shape[0]]
-        if len(irange)==0:
-            break
-        mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
-        i0 += len(irange)
-    for j in range(mov.shape[1]):
-        mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [2, 0])
+        if len(irange)>0:
+            mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
+            i0 += len(irange)
 
     return mov
 

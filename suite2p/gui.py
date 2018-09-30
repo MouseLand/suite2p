@@ -55,7 +55,7 @@ class RunWindow(QtGui.QDialog):
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
-        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
+        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
@@ -89,7 +89,8 @@ class RunWindow(QtGui.QDialog):
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
-                    'tiling of neuropil during cell detection (1.0 corresponds to approx 14x14 grid of basis functions, 0.5 -> 7x7)',
+                    'ratio between neuropil basis size and cell radius',
+                    'running mean subtraction with window of size "high_pass" (use low values for 1P)',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',

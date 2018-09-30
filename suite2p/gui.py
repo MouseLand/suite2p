@@ -51,7 +51,7 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        tifkeys = ['nplanes','nchannels','mesoscan','functional_chan','diameter','tau','fs','delete_bin']
+        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
@@ -61,7 +61,6 @@ class RunWindow(QtGui.QDialog):
         labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
-                    'if 1, treats tiffs as scanimage mesoscope tiffs',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
@@ -172,6 +171,11 @@ class RunWindow(QtGui.QDialog):
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,4,0,1,1)
+        self.qdata = []
+        for n in range(7):
+            self.qdata.append(QtGui.QLabel(''))
+            self.layout.addWidget(self.qdata[n],
+                                  n+5,0,1,2)
         # save_path0
         self.bh5py = QtGui.QPushButton('OR add h5 file path')
         self.bh5py.clicked.connect(self.get_h5py)
@@ -223,6 +227,7 @@ class RunWindow(QtGui.QDialog):
             self.cleanup = True
             self.cleanScript = name
             self.cleanLabel.setText(name)
+            self.ops['clean_script'] = name
 
     def stop(self):
         self.finish = False
@@ -240,11 +245,6 @@ class RunWindow(QtGui.QDialog):
             self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
-            if self.cleanup:
-                ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
-                os.system('python '+self.cleanScript+' '+ops_path)
-                cursor.insertText('running clean-up script')
-                cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
             parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
             parent.load_proc()
@@ -295,6 +295,39 @@ class RunWindow(QtGui.QDialog):
                         self.editlist[k].set_text(ops)
                     else:
                         ops[key] = self.ops[key]
+                if 'data_path' in ops and len(ops['data_path'])>0:
+                    self.data_path = ops['data_path']
+                    for n in range(7):
+                        if n<len(self.data_path):
+                            self.qdata[n].setText(self.data_path[n])
+                        else:
+                            self.qdata[n].setText('')
+                    self.runButton.setEnabled(True)
+                    self.bh5py.setEnabled(False)
+                    self.btiff.setEnabled(True)
+                    if hasattr(self,'h5_path'):
+                        self.h5text.setText('')
+                        del self.h5_path
+                elif 'h5py' in ops:
+                    self.h5_path = ops['h5py']
+                    self.h5_key = ops['h5py_key']
+                    self.h5text.setText(ops['h5py'])
+                    self.data_path = []
+                    for n in range(7):
+                        self.qdata[n].setText('')
+                    self.runButton.setEnabled(True)
+                    self.btiff.setEnabled(False)
+                    self.bh5py.setEnabled(True)
+                if 'save_path0' in ops:
+                    self.save_path = ops['save_path0']
+                    self.savelabel.setText(self.save_path)
+                if 'fast_disk' in ops:
+                    self.fast_disk = ops['fast_disk']
+                    self.binlabel.setText(self.fast_disk)
+                if 'clean_script' in ops:
+                    self.ops['clean_script'] = ops['clean_script']
+                    self.cleanLabel.setText(ops['clean_script'])
+
                 self.ops = ops
             except Exception as e:
                 print('could not load ops file')
@@ -350,8 +383,7 @@ class RunWindow(QtGui.QDialog):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
         if len(name)>0:
             self.data_path.append(name)
-            self.layout.addWidget(QtGui.QLabel(name),
-                                  len(self.data_path)+4,0,1,2)
+            self.qdata[len(self.data_path)-1].setText(name)
             self.runButton.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.bh5py.setEnabled(False)

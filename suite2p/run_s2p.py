@@ -208,6 +208,11 @@ def run_s2p(ops={},db={}):
     if len(ops1)>1 and ops1[0]['combined']:
         utils.combined(ops1)
 
+    # running a clean up script
+    if 'clean_script' in ops1[0]:
+        print('running clean-up script')
+        os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
+
     for ops in ops1:
         if ('delete_bin' in ops) and ops['delete_bin']:
             os.remove(ops['reg_file'])

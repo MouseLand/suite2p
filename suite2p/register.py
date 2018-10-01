@@ -16,8 +16,6 @@ def toc(i0):
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
-smoothSigma = 1.15 # smoothing constant
-maskSlope   = 2. # slope of taper mask at the edges
 
 # smoothing kernel
 def kernelD(a, b):
@@ -39,7 +37,8 @@ def mat_upsample(lpad, ops):
     nup = larUP.shape[0]
     return Kmat, nup
 
-def prepare_masks(refImg,do_phasecorr):
+def prepare_masks(refImg, ops):
+    maskSlope   = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
@@ -53,20 +52,14 @@ def prepare_masks(refImg,do_phasecorr):
     maskMul = maskY * maskX
     maskOffset = refImg.mean() * (1. - maskMul);
 
-    hgx = np.exp(-np.square(xx/smoothSigma))
-    hgy = np.exp(-np.square(yy/smoothSigma))
+    hgx = np.exp(-np.square(xx/ops['smooth_sigma']))
+    hgy = np.exp(-np.square(yy/ops['smooth_sigma']))
     hgg = hgy * hgx
     hgg /= hgg.sum()
-    #hgx2 = np.exp(-np.square(xx/(4*smoothSigma)))
-    #hgy2 = np.exp(-np.square(yy/(4*smoothSigma)))
-    #hgg2 = hgx2 * hgy2
-    #hgg2 /= hgg2.sum()
-    #hgall = hgg - hgg2
-    hgall = hgg
-    fhg = np.real(fft.fft2(fft.ifftshift(hgall))); # smoothing filter in Fourier domain
+    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
 
     cfRefImg   = np.conj(fft.fft2(refImg));
-    if do_phasecorr:
+    if ops['do_phasecorr']:
         absRef     = np.absolute(cfRefImg);
         cfRefImg   = cfRefImg / (eps0 + absRef)
     cfRefImg *= fhg
@@ -322,7 +315,7 @@ def refine_init_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
-        maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops['do_phasecorr'])
+        maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
         freg, ymax, xmax, cmax, yxnr = phasecorr(frames, [maskMul, maskOffset, cfRefImg], ops)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
@@ -356,7 +349,7 @@ def get_metrics(ops):
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = utils.metric_register(pclow, pchigh, ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
+    X    = utils.metric_register(pclow, pchigh, ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
     return ops
@@ -395,7 +388,7 @@ def register_binary(ops):
     k = 0
     nfr = 0
     k0 = tic()
-    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops['do_phasecorr'])
+    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
     yoff = np.zeros((0,),np.float32)
     xoff = np.zeros((0,),np.float32)
     corrXY = np.zeros((0,),np.float32)

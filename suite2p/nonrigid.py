@@ -15,6 +15,7 @@ smoothSigma = 1.15 # smoothing constant
 maskSlope   = 2. # slope of taper mask at the edges
 
 def prepare_masks(refImg0, ops):
+    maskSlope   = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     # split refImg0 into multiple parts
     cfRefImg1 = []
     maskMul1 = []
@@ -42,11 +43,13 @@ def prepare_masks(refImg0, ops):
         maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
         maskMul = maskY * maskX
         maskOffset = refImg.mean() * (1. - maskMul);
-        hgx = np.exp(-np.square(xx/smoothSigma))
-        hgy = np.exp(-np.square(yy/smoothSigma))
+
+        hgx = np.exp(-np.square(xx/ops['smooth_sigma']))
+        hgy = np.exp(-np.square(yy/ops['smooth_sigma']))
         hgg = hgy * hgx
         hgg = hgg/hgg.sum()
         fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+
         cfRefImg   = np.conj(fft.fft2(refImg));
         if ops['do_phasecorr']:
             absRef     = np.absolute(cfRefImg);

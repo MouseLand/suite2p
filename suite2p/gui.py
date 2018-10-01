@@ -53,7 +53,7 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
+        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
@@ -71,11 +71,12 @@ class RunWindow(QtGui.QDialog):
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
                     'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
                     'if 1, registration is performed',
-                    'if 1, unregistered binary is kept in a separate file data_raw.bin',
+                    'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
-                    'when multi-channel, you can align by non-functional channel (1-based)',
+                    '1.15 good for 2P recordings, recommend >5 for 1P recordings',
+                    'if 1, unregistered binary is kept in a separate file data_raw.bin',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',

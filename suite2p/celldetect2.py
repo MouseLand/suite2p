@@ -137,7 +137,7 @@ def getSVDdata(ops):
 
 def getStU(ops, U):
     Lyc, Lxc, nbins = np.shape(U)
-    S = getNeuropilBasis(ops, Lyc, Lxc)
+    S = create_neuropil_basis(ops, Lyc, Lxc)
     # compute covariance of neuropil masks with spatial masks
     StU = S.reshape((Lyc*Lxc,-1)).transpose() @ U.reshape((Lyc*Lxc,-1))
     StS = S.reshape((Lyc*Lxc,-1)).transpose() @ S.reshape((Lyc*Lxc,-1))
@@ -170,7 +170,7 @@ def drawClusters(stat, ops):
     return rgb
 
 
-def getNeuropilBasis(ops, Ly, Lx):
+def create_neuropil_basis(ops, Ly, Lx):
     ''' computes neuropil basis functions
         inputs:
             ops, Ly, Lx
@@ -279,25 +279,8 @@ def convert_to_pix(mPix, mLam):
         stat.append(stat0.copy())
     return stat
 
-def circleMask(d0):
-    ''' creates array with indices which are the radius of that x,y point
-        inputs:
-            d0 (patch of (-d0,d0+1) over which radius computed
-        outputs:
-            rs: array (2*d0+1,2*d0+1) of radii
-            dx,dy: indices in rs where the radius is less than d0
-    '''
-    dx  = np.tile(np.arange(-d0[1],d0[1]+1)/d0[1], (2*d0[0]+1,1))
-    dy  = np.tile(np.arange(-d0[0],d0[0]+1)/d0[0], (2*d0[1]+1,1))
-    dy  = dy.transpose()
-
-    rs  = (dy**2 + dx**2) ** 0.5
-    dx  = dx[rs<=1.]
-    dy  = dy[rs<=1.]
-    return rs, dx, dy
-
 # this function needs to be updated with the new stat
-def getStat(ops, stat, Ucell, codes):
+def get_stat(ops, stat, Ucell, codes):
     '''computes statistics of cells found using sourcery
     inputs:
         Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
@@ -346,7 +329,7 @@ def getStat(ops, stat, Ucell, codes):
         stat[n]['footprint'] = footprints[n] / mfoot
     return stat
 
-def getOverlaps(stat, ops):
+def get_overlaps(stat, ops):
     '''computes overlapping pixels from ROIs in stat
     inputs:
         stat, Ly, Lx
@@ -371,7 +354,7 @@ def getOverlaps(stat, ops):
         stat2.append(stat[n])
     return stat2
 
-def removeOverlaps(stat, ops, Ly, Lx):
+def remove_overlaps(stat, ops, Ly, Lx):
     '''removes overlaps iteratively
     '''
     ncells = len(stat)
@@ -397,7 +380,7 @@ def removeOverlaps(stat, ops, Ly, Lx):
             break
     return stat, ix
 
-def cellMasks(ops, stat, Ly, Lx, allow_overlap=False):
+def create_cell_masks(ops, stat, Ly, Lx, allow_overlap=False):
     '''creates cell masks for ROIs in stat and computes radii
     inputs:
         stat, Ly, Lx, allow_overlap
@@ -433,7 +416,7 @@ def cellMasks(ops, stat, Ly, Lx, allow_overlap=False):
     cell_pix = np.minimum(1, cell_pix)
     return stat, cell_pix, cell_masks
 
-def neuropilMasks2(ops, stat, cell_pix):
+def create_neuropil_masks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat
     inputs:
         ops, stat, cell_pix
@@ -491,7 +474,7 @@ def minDistance(inputs):
     ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 - np.expand_dims(x2, axis=1))**2
     return np.amin(ds)**.5
 
-def getConnected(Ly, Lx, stat):
+def get_connected(Ly, Lx, stat):
     '''grow i0 until it cannot grow any more
     '''
     ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
@@ -511,10 +494,10 @@ def getConnected(Ly, Lx, stat):
     stat['ypix'], stat['xpix'], stat['lam'] = ypix, xpix, lam
     return stat
 
-def connectedRegion2(stat, ops):
+def connected_region(stat, ops):
     if ('connected' not in ops) or ops['connected']:
         for j in range(len(stat)):
-            stat[j] = getConnected(ops['Lyc'], ops['Lxc'], stat[j])
+            stat[j] = get_connected(ops['Lyc'], ops['Lxc'], stat[j])
     return stat
 
 def extendROI(ypix, xpix, Ly, Lx,niter=1):
@@ -665,9 +648,9 @@ def sourcery(ops):
         if refine==2:
             # good place to get connected regions
             stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
-            stat = connectedRegion2(stat, ops)
+            stat = connected_region(stat, ops)
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
-            stat, ix = removeOverlaps(stat, ops, Lyc, Lxc)
+            stat, ix = remove_overlaps(stat, ops, Lyc, Lxc)
             print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
             ypix = [stat[n]['ypix'] for n in range(len(stat))]
             xpix = [stat[n]['xpix'] for n in range(len(stat))]
@@ -695,9 +678,9 @@ def sourcery(ops):
 def postprocess(ops, stat, Ucell, codes):
     # this is a good place to merge ROIs
     #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
-    stat = connectedRegion2(stat, ops)
-    stat = getStat(ops, stat, Ucell, codes)
-    stat = getOverlaps(stat,ops)
+    stat = connected_region(stat, ops)
+    stat = get_stat(ops, stat, Ucell, codes)
+    stat = get_overlaps(stat,ops)
     return stat
 
 def extractF(ops, stat):
@@ -707,8 +690,8 @@ def extractF(ops, stat):
     Lx = ops['Lx']
     ncells = len(stat)
 
-    stat,cell_pix,cell_masks = cellMasks(ops, stat,Ly,Lx,ops['allow_overlap'])
-    neuropil_masks           = neuropilMasks2(ops,stat,cell_pix)
+    stat,cell_pix,cell_masks = create_cell_masks(ops, stat,Ly,Lx,ops['allow_overlap'])
+    neuropil_masks           = create_neuropil_masks(ops,stat,cell_pix)
     # add surround neuropil masks to stat
     for n in range(ncells):
         stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();

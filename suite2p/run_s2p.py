@@ -49,6 +49,7 @@ def default_ops():
         'reg_tif': False, # whether to save registered tiffs
         'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
+        'do_phasecorr': True,
         # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register

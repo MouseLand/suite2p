@@ -39,34 +39,44 @@ def mat_upsample(lpad, ops):
     nup = larUP.shape[0]
     return Kmat, nup
 
-def prepare_masks(refImg):
+def prepare_masks(refImg,do_phasecorr):
     Ly,Lx = refImg.shape
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
     x = np.abs(x - x.mean())
     y = np.abs(y - y.mean())
     xx, yy = np.meshgrid(x, y)
-    mY = y.max() - 4.
-    mX = x.max() - 4.
+    mY = y.max() - 2*maskSlope
+    mX = x.max() - 2*maskSlope
     maskY = 1./(1.+np.exp((yy-mY)/maskSlope))
     maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
     maskMul = maskY * maskX
     maskOffset = refImg.mean() * (1. - maskMul);
+
     hgx = np.exp(-np.square(xx/smoothSigma))
     hgy = np.exp(-np.square(yy/smoothSigma))
     hgg = hgy * hgx
-    hgg = hgg/hgg.sum()
-    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+    hgg /= hgg.sum()
+    #hgx2 = np.exp(-np.square(xx/(4*smoothSigma)))
+    #hgy2 = np.exp(-np.square(yy/(4*smoothSigma)))
+    #hgg2 = hgx2 * hgy2
+    #hgg2 /= hgg2.sum()
+    #hgall = hgg - hgg2
+    hgall = hgg
+    fhg = np.real(fft.fft2(fft.ifftshift(hgall))); # smoothing filter in Fourier domain
+
     cfRefImg   = np.conj(fft.fft2(refImg));
-    absRef     = np.absolute(cfRefImg);
-    cfRefImg   = cfRefImg / (eps0 + absRef) * fhg;
+    if do_phasecorr:
+        absRef     = np.absolute(cfRefImg);
+        cfRefImg   = cfRefImg / (eps0 + absRef)
+    cfRefImg *= fhg
 
     maskMul = maskMul.astype('float32')
     maskOffset = maskOffset.astype('float32')
     cfRefImg = cfRefImg.astype('complex64')
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(data, refAndMasks):
+def correlation_map(data, refAndMasks, do_phasecorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2]
@@ -74,7 +84,10 @@ def correlation_map(data, refAndMasks):
     cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
     data = data.astype('float32') * maskMul + maskOffset
     X = fft.fft2(data)
-    J = X / (eps0 + np.absolute(X))
+    if do_phasecorr:
+        J = X / (eps0 + np.absolute(X))
+    else:
+        J = X
     J = J * cfRefImg
     cc = np.real(fft.ifft2(J))
     cc = fft.fftshift(cc, axes=(1,2))
@@ -180,7 +193,7 @@ def phasecorr_worker(inputs):
     Lxhalf = int(np.floor(Lx/2))
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    cc = correlation_map(data, refAndMasks)
+    cc = correlation_map(data, refAndMasks, ops['do_phasecorr'])
     ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
     Y = shift_data((data, ymax, xmax))
     yxnr = []
@@ -309,7 +322,7 @@ def refine_init_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
-        maskMul, maskOffset, cfRefImg = prepare_masks(refImg)
+        maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops['do_phasecorr'])
         freg, ymax, xmax, cmax, yxnr = phasecorr(frames, [maskMul, maskOffset, cfRefImg], ops)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
@@ -382,7 +395,7 @@ def register_binary(ops):
     k = 0
     nfr = 0
     k0 = tic()
-    maskMul, maskOffset, cfRefImg = prepare_masks(refImg)
+    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops['do_phasecorr'])
     yoff = np.zeros((0,),np.float32)
     xoff = np.zeros((0,),np.float32)
     corrXY = np.zeros((0,),np.float32)

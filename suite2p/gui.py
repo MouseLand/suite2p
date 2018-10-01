@@ -196,10 +196,10 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,17,0,1,1)
+        self.layout.addWidget(self.runButton,19,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 18,0,30,2*l)
+        self.layout.addWidget(self.textEdit, 20,0,30,2*l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -209,17 +209,17 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 17,1,1,1)
+        self.layout.addWidget(self.stopButton, 19,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
         self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
         self.cleanButton.setToolTip('will run at end of processing')
         self.cleanButton.setEnabled(True)
-        self.layout.addWidget(self.cleanButton, 17,2,1,2)
+        self.layout.addWidget(self.cleanButton, 19,2,1,2)
         self.cleanup = False
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
-        self.layout.addWidget(self.cleanLabel,17,4,1,12)
+        self.layout.addWidget(self.cleanLabel,19,4,1,12)
 
     def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
@@ -294,8 +294,7 @@ class RunWindow(QtGui.QDialog):
                 for k,key in enumerate(self.keylist):
                     if key in ops:
                         self.editlist[k].set_text(ops)
-                    else:
-                        ops[key] = self.ops[key]
+                        self.ops[key] = ops[key]
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     self.data_path = ops['data_path']
                     for n in range(7):
@@ -329,7 +328,6 @@ class RunWindow(QtGui.QDialog):
                     self.ops['clean_script'] = ops['clean_script']
                     self.cleanLabel.setText(ops['clean_script'])
 
-                self.ops = ops
             except Exception as e:
                 print('could not load ops file')
                 print(e)

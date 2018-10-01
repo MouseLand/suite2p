@@ -36,8 +36,8 @@ def prepare_masks(refImg0, ops):
         x = np.abs(x - x.mean())
         y = np.abs(y - y.mean())
         xx, yy = np.meshgrid(x, y)
-        mY = y.max() - 4.
-        mX = x.max() - 4.
+        mY = y.max() - 2*maskSlope
+        mX = x.max() - 2*maskSlope
         maskY = 1./(1.+np.exp((yy-mY)/maskSlope))
         maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
         maskMul = maskY * maskX
@@ -48,21 +48,26 @@ def prepare_masks(refImg0, ops):
         hgg = hgg/hgg.sum()
         fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
         cfRefImg   = np.conj(fft.fft2(refImg));
-        absRef     = np.absolute(cfRefImg);
-        cfRefImg   = cfRefImg / (eps0 + absRef) * fhg;
+        if ops['do_phasecorr']:
+            absRef     = np.absolute(cfRefImg);
+            cfRefImg   = cfRefImg / (eps0 + absRef);
+        cfRefImg *= fhg
         maskMul1[n,0,:,:] = (maskMul.astype('float32'))
         maskOffset1[n,0,:,:] = (maskOffset.astype('float32'))
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
 
-def correlation_map(data, refAndMasks):
+def correlation_map(data, refAndMasks, do_phasecorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2]
     nb, nimg, Ly, Lx = data.shape
     data = data.astype('float32') * maskMul + maskOffset
     X = fft.fft2(data)
-    J = X / (eps0 + np.absolute(X))
+    if do_phasecorr:
+        J = X / (eps0 + np.absolute(X))
+    else:
+        J = X
     J = J * cfRefImg
     cc = np.real(fft.ifft2(J))
     cc = fft.fftshift(cc, axes=(2,3))
@@ -96,7 +101,7 @@ def phasecorr_worker(inputs):
         xind = ops['xblock'][n]
         xind = np.arange(xind[0],xind[-1]).astype(int)
         data_block[n,:,:,:] = data[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
-    cc1 = correlation_map(data_block, refAndMasks)
+    cc1 = correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
 
     cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
     cc0 = cc0.reshape((cc0.shape[0], -1))

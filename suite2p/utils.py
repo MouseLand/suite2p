@@ -603,7 +603,7 @@ def pclowhigh(mov, nlowhigh, nPC):
         pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
     return pclow, pchigh, w
 
-def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5):
+def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, do_phasecorr=True):
     ops = {
         'num_workers': -1,
         'snr_thresh': 1.25,
@@ -613,6 +613,7 @@ def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxreg
         'maxregshiftNR': np.array(maxregshiftNR),
         'maxregshift': np.array(maxregshift),
         'subpixel': 10,
+        'do_phasecorr': do_phasecorr
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
 
@@ -622,7 +623,7 @@ def metric_register(pclow, pchigh, block_size=(128,128), maxregshift=0.1, maxreg
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
         #Img = np.tile(Img, (1,1,1))
-        maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg)
+        maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, do_phasecorr)
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
         dwrite, ymax, xmax, cmax, yxnr = register.phasecorr(Img, refAndMasks, ops)

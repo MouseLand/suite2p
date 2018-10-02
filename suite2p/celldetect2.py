@@ -90,11 +90,11 @@ def get_mov(ops):
             mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
             ix += dbin.shape[0]
     nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
-    i0 = 0
     if ops['high_pass']<10:
         for j in range(mov.shape[1]):
             mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
     else:
+        i0 = 0
         while 1:
             irange = i0 + np.arange(0,int(ops['high_pass']))
             irange = irange[irange<mov.shape[0]]

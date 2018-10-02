@@ -8,7 +8,7 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# Compiled source 
+# Compiled source
 *.mexa64
 *.mexw64
 *.asv
@@ -24,7 +24,7 @@ __pycache__/
 dist/
 suite2p.egg-info/
 build/
-*.npy
+suite2p/classifiers/classifier_user.npy
 *.ipynb
 
 # =========================

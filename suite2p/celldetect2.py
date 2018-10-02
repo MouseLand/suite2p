@@ -95,12 +95,14 @@ def get_mov(ops):
         for j in range(mov.shape[1]):
             mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
     else:
-        irange = i0 + np.arange(0,int(ops['high_pass']))
-        irange = irange[irange<mov.shape[0]]
-        if len(irange)>0:
-            mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
-            i0 += len(irange)
-
+        while 1:
+            irange = i0 + np.arange(0,int(ops['high_pass']))
+            irange = irange[irange<mov.shape[0]]
+            if len(irange)>0:
+                mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
+                i0 += len(irange)
+            else:
+                break
     return mov
 
 def getSVDdata(ops):

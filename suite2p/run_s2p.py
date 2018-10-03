@@ -118,7 +118,6 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-    #print(flag_binreg)
     ######### REGISTRATION #########
     if not files_found_flag:
         # get default options
@@ -147,6 +146,7 @@ def run_s2p(ops={},db={}):
         # save ops1
         np.save(fpathops1, ops1)
     ops1 = np.array(ops1)
+    ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
     if files_found_flag:

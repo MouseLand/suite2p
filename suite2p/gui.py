@@ -289,7 +289,6 @@ class RunWindow(QtGui.QDialog):
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
-                    print(ops['fs'])
                 for k,key in enumerate(self.keylist):
                     if key in ops:
                         self.editlist[k].set_text(ops)

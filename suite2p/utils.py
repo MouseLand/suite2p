@@ -272,7 +272,15 @@ def tiff_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
+def split_multiops(ops1):
+    for j in range(len(ops1)):
+        if 'dx' in ops1[j] and np.size(ops1[j]['dx'])>1:
+            ops1[j]['dx'] = ops1[j]['dx'][j]
+            ops1[j]['dy'] = ops1[j]['dy'][j]
+    return ops1
 def mesoscan_to_binary(ops):
+    # copy ops to list where each element is ops for each plane
+
     # load json file with line start stops
     if 'lines' not in ops:
         fpath = os.path.join(ops['data_path'][0], '*json')
@@ -280,15 +288,14 @@ def mesoscan_to_binary(ops):
         with open(fs[0], 'r') as f:
             opsj = json.load(f)
         ops['nplanes'] = len(opsj)
-        nplanes = ops['nplanes']
-        print(nplanes)
     else:
         ops['nplanes'] = len(ops['lines'])
-    # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
-    for j in range(len(ops1)):
-        ops1[j] = {**ops1[j], **opsj[j]}.copy()
-
+    if 'lines' not in ops:
+        for j in range(len(ops1)):
+            ops1[j] = {**ops1[j], **opsj[j]}.copy()
+    nplanes = ops['nplanes']
+    print(nplanes)
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
     reg_file = []

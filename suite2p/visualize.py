@@ -323,7 +323,10 @@ class VisWindow(QtGui.QMainWindow):
         ncells = len(parent.stat)
         # cells not in sorting are set to -1
         parent.isort = -1*np.ones((ncells,),dtype=np.int64)
-        parent.isort[self.cells] = self.isort1
+        nsel = len(self.cells)
+        I = np.zeros(nsel)
+        I[self.isort1] = np.arange(nsel).astype('int')
+        parent.isort[self.cells] = I #self.isort1
         # set up colors for rastermap
         fig.rastermap_masks(parent)
         b = len(parent.colors)+1

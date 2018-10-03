@@ -447,8 +447,12 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.updateFrameSlider()
                 self.updateButtons()
             # plot ops X-Y offsets
-            self.yoff = ops['yoff']
-            self.xoff = ops['xoff']
+            if yoff in ops:
+                self.yoff = ops['yoff']
+                self.xoff = ops['xoff']
+            else:
+                self.yoff = np.zeros((ops['nframes'],))
+                self.xoff = np.zeros((ops['nframes'],))
             self.p1.plot(self.yoff, pen='g')
             self.p1.plot(self.xoff, pen='y')
             self.p1.setRange(xRange=(0,self.nframes),

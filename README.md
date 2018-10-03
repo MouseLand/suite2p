@@ -54,6 +54,10 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. 
 
+## Examples
+
+An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1R3ota25jdUthSzQ). It's a single-plane, single-channel recording.
+
 ## Getting started
 
 The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. 

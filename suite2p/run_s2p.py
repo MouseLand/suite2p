@@ -49,6 +49,8 @@ def default_ops():
         'reg_tif': False, # whether to save registered tiffs
         'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
+        'do_phasecorr': True, # whether to do cross-correlation or phase-correlation (recommend PHASE-CORR)
+        'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         # non rigid registration settings
         'nonrigid': False, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register
@@ -68,6 +70,7 @@ def default_ops():
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
+        'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         # deconvolution settings
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin
@@ -207,6 +210,11 @@ def run_s2p(ops={},db={}):
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined']:
         utils.combined(ops1)
+
+    # running a clean up script
+    if 'clean_script' in ops1[0]:
+        print('running clean-up script')
+        os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
 
     for ops in ops1:
         if ('delete_bin' in ops) and ops['delete_bin']:

@@ -287,9 +287,63 @@ def init_masks(parent):
     parent.Lam  = Lam
     parent.LamMean = LamMean
 
+def rastermap_masks(parent):
+    k = parent.ops_plot[1]
+    c = parent.ops_plot[3].shape[1]+2
+    n = np.array(parent.imerge)
+    inactive=False
+    no_1d = False
+    istat = parent.isort
+    # no 1D variable loaded -- leave blank
+    if len(parent.clabels)==len(parent.colors):
+        parent.clabels.append([])
+        no_1d = True
+    if len(parent.clabels)==len(parent.colors)+1:
+        parent.clabels.append([0, istat.max()/2, istat.max()])
+        inactive=True
+    else:
+        parent.clabels[-1] = [0, istat.max()/2, istat.max()]
+
+    istat = istat / istat.max()
+    istat = istat / 1.3
+    istat = istat + 0.1
+    cols = 1 - istat
+    cols[parent.isort==-1] = 0
+    parent.ops_plot[6] = cols
+    if inactive:
+        nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
+        rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)
+    for i in range(2):
+        H = cols[parent.iROI[i,0,:,:]]
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k==0:
+            S = parent.Sroi[i,:,:]
+            V = Vorig
+        elif k==3:
+            S = parent.Sext[i,:,:]
+            V = parent.Vback[k-1,:,:]
+            V = np.maximum(0,np.minimum(1, V + S))
+        else:
+            S = np.maximum(0,np.minimum(1, Vorig*1.5))
+            V = parent.Vback[k-1,:,:]
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        if inactive:
+            rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
+        else:
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    if inactive:
+        if no_1d:
+            parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
+        parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
+
+
 def beh_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+1
+    print(c)
     n = np.array(parent.imerge)
     nb = int(np.floor(parent.beh.size/parent.bin))
     sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
@@ -299,21 +353,23 @@ def beh_masks(parent):
     cc[n] = cc.mean()
     istat = cc
     inactive=False
-    if len(parent.clabels)==len(parent.colors):
-        parent.clabels.append([istat.min(),
-                              (istat.max()-istat.min())/2 + istat.min(),
-                              istat.max()])
-        inactive=True
-    else:
-        parent.clabels[-1] = [istat.min(),
-                             (istat.max()-istat.min())/2 + istat.min(),
-                             istat.max()]
+    istat_min = istat.min()
+    istat_max = istat.max()
     istat = istat - istat.min()
     istat = istat / istat.max()
     istat = istat / 1.3
     istat = istat + 0.1
     cols = 1 - istat
-    parent.ops_plot[4] = cols
+    parent.ops_plot[5] = cols
+    if len(parent.clabels)==len(parent.colors):
+        parent.clabels.append([istat_min,
+                              (istat_max-istat_min)/2 + istat_min,
+                              istat_max])
+        inactive=True
+    else:
+        parent.clabels[-1] = [istat_min,
+                              (istat_max-istat_min)/2 + istat_min,
+                              istat_max]
     if inactive:
         nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
         rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)

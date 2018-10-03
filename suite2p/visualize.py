@@ -137,7 +137,7 @@ class VisWindow(QtGui.QMainWindow):
         self.PCOn.clicked.connect(lambda: self.PC_on(True))
         self.l0.addWidget(self.PCOn,0,0,1,2)
         self.mapOn = QtGui.QPushButton('compute raster map')
-        self.mapOn.clicked.connect(self.map_on)
+        self.mapOn.clicked.connect(lambda: self.map_on(parent))
         self.l0.addWidget(self.mapOn,1,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,2,0,1,2)
@@ -303,12 +303,12 @@ class VisWindow(QtGui.QMainWindow):
         self.comboBox.setCurrentIndex(0)
         self.neural_sorting(0)
 
-    def map_on(self):
+    def map_on(self, parent):
         if not hasattr(self,'u'):
             self.PC_on(False)
         self.comboBox.addItem('raster map')
         tic = time.time()
-        self.compute_map()
+        self.compute_map(parent)
         print('raster map computed in %3.2f s'%(time.time()-tic))
         self.comboBox.setCurrentIndex(1)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
@@ -317,9 +317,21 @@ class VisWindow(QtGui.QMainWindow):
         self.mapOn.setEnabled(False)
         self.sortTime.setChecked(False)
 
-    def compute_map(self):
+    def compute_map(self, parent):
         self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
         self.raster = True
+        ncells = len(parent.stat)
+        # cells not in sorting are set to -1
+        parent.isort = -1*np.ones((ncells,),dtype=np.int64)
+        nsel = len(self.cells)
+        I = np.zeros(nsel)
+        I[self.isort1] = np.arange(nsel).astype('int')
+        parent.isort[self.cells] = I #self.isort1
+        # set up colors for rastermap
+        fig.rastermap_masks(parent)
+        b = len(parent.colors)+1
+        parent.colorbtns.button(b).setEnabled(True)
+        parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
 
     def compute_svd(self,bin):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]

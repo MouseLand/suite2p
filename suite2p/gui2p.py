@@ -36,6 +36,8 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot.append(0)
         self.ops_plot.append(0)
         self.ops_plot.append(0)
+        self.ops_plot.append(0)
+        self.ops_plot.append(0)
         #### ------ MENU BAR ----------------- ####
         # run suite2p from scratch
         runS2P =  QtGui.QAction('&Run suite2p ', self)
@@ -249,6 +251,7 @@ class MainW(QtGui.QMainWindow):
         # colorbars for different statistics
         colorsAll = self.colors.copy()
         colorsAll.append('K: corr with 1D var, bin= ^^^')
+        colorsAll.append('L: rastermap')
         for names in colorsAll:
             btn  = gui.ColorButton(b,'&'+names,self)
             self.colorbtns.addButton(btn,b)
@@ -266,7 +269,7 @@ class MainW(QtGui.QMainWindow):
         self.binedit.setFixedWidth(40)
         self.binedit.setAlignment(QtCore.Qt.AlignRight)
         self.binedit.returnPressed.connect(lambda: self.mode_change(self.activityMode))
-        self.l0.addWidget(self.binedit,nv+b-1,1,1,1)
+        self.l0.addWidget(self.binedit,nv+b-2,1,1,1)
         self.bend = nv+b+4
         colorbarW = pg.GraphicsLayoutWidget()
         colorbarW.setMaximumHeight(60)
@@ -558,6 +561,10 @@ class MainW(QtGui.QMainWindow):
                 # correlation view
                 if self.ops_plot[2]==self.ops_plot[3].shape[1]:
                     istat = self.ops_plot[4]
+                elif self.ops_plot[2]==self.ops_plot[3].shape[1]+1:
+                    istat = self.ops_plot[5]
+                elif self.ops_plot[2]==self.ops_plot[3].shape[1]+2:
+                    istat = self.ops_plot[6]
                 # statistics view
                 else:
                     istat = self.ops_plot[3][:,self.ops_plot[2]]
@@ -693,6 +700,8 @@ class MainW(QtGui.QMainWindow):
         self.ops_plot[2] = 0
         self.ops_plot[3] = []
         self.ops_plot[4] = []
+        self.ops_plot[5] = []
+        self.ops_plot[6] = []
         self.setWindowTitle(self.fname)
         # set bin size to be 0.5s by default
         self.bin  = int(self.ops['tau'] * self.ops['fs'] / 2)
@@ -1016,6 +1025,7 @@ class MainW(QtGui.QMainWindow):
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            fig.beh_masks(self)
             fig.plot_trace(self)
             self.show()
         else:

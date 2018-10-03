@@ -51,17 +51,16 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        tifkeys = ['nplanes','nchannels','mesoscan','functional_chan','diameter','tau','fs','delete_bin']
+        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','keep_movie_raw','nimg_init', 'batch_size', 'maxregshift', 'align_by_chan', 'reg_tif','reg_tif_chan2']
+        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
         nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
-        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','tile_factor']
+        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
-                    'if 1, treats tiffs as scanimage mesoscope tiffs',
                     'this channel is used to extract functional ROIs (1-based)',
                     'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
@@ -72,11 +71,12 @@ class RunWindow(QtGui.QDialog):
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',
                     'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
                     'if 1, registration is performed',
-                    'if 1, unregistered binary is kept in a separate file data_raw.bin',
+                    'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
-                    'when multi-channel, you can align by non-functional channel (1-based)',
+                    '1.15 good for 2P recordings, recommend >5 for 1P recordings',
+                    'if 1, unregistered binary is kept in a separate file data_raw.bin',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
@@ -90,7 +90,8 @@ class RunWindow(QtGui.QDialog):
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',
-                    'tiling of neuropil during cell detection (1.0 corresponds to approx 14x14 grid of basis functions, 0.5 -> 7x7)',
+                    'ratio between neuropil basis size and cell radius',
+                    'running mean subtraction with window of size "high_pass" (use low values for 1P)',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
@@ -172,6 +173,11 @@ class RunWindow(QtGui.QDialog):
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,4,0,1,1)
+        self.qdata = []
+        for n in range(7):
+            self.qdata.append(QtGui.QLabel(''))
+            self.layout.addWidget(self.qdata[n],
+                                  n+5,0,1,2)
         # save_path0
         self.bh5py = QtGui.QPushButton('OR add h5 file path')
         self.bh5py.clicked.connect(self.get_h5py)
@@ -191,10 +197,10 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,17,0,1,1)
+        self.layout.addWidget(self.runButton,19,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 18,0,30,2*l)
+        self.layout.addWidget(self.textEdit, 20,0,30,2*l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -204,17 +210,17 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 17,1,1,1)
+        self.layout.addWidget(self.stopButton, 19,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
         self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
         self.cleanButton.setToolTip('will run at end of processing')
         self.cleanButton.setEnabled(True)
-        self.layout.addWidget(self.cleanButton, 17,2,1,2)
+        self.layout.addWidget(self.cleanButton, 19,2,1,2)
         self.cleanup = False
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
-        self.layout.addWidget(self.cleanLabel,17,4,1,12)
+        self.layout.addWidget(self.cleanLabel,19,4,1,12)
 
     def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
@@ -223,6 +229,7 @@ class RunWindow(QtGui.QDialog):
             self.cleanup = True
             self.cleanScript = name
             self.cleanLabel.setText(name)
+            self.ops['clean_script'] = name
 
     def stop(self):
         self.finish = False
@@ -240,11 +247,6 @@ class RunWindow(QtGui.QDialog):
             self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
-            if self.cleanup:
-                ops_path = os.path.join(self.save_path,'suite2p','ops1.npy')
-                os.system('python '+self.cleanScript+' '+ops_path)
-                cursor.insertText('running clean-up script')
-                cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
             parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
             parent.load_proc()
@@ -292,9 +294,40 @@ class RunWindow(QtGui.QDialog):
                 for k,key in enumerate(self.keylist):
                     if key in ops:
                         self.editlist[k].set_text(ops)
-                    else:
-                        ops[key] = self.ops[key]
-                self.ops = ops
+                        self.ops[key] = ops[key]
+                if 'data_path' in ops and len(ops['data_path'])>0:
+                    self.data_path = ops['data_path']
+                    for n in range(7):
+                        if n<len(self.data_path):
+                            self.qdata[n].setText(self.data_path[n])
+                        else:
+                            self.qdata[n].setText('')
+                    self.runButton.setEnabled(True)
+                    self.bh5py.setEnabled(False)
+                    self.btiff.setEnabled(True)
+                    if hasattr(self,'h5_path'):
+                        self.h5text.setText('')
+                        del self.h5_path
+                elif 'h5py' in ops:
+                    self.h5_path = ops['h5py']
+                    self.h5_key = ops['h5py_key']
+                    self.h5text.setText(ops['h5py'])
+                    self.data_path = []
+                    for n in range(7):
+                        self.qdata[n].setText('')
+                    self.runButton.setEnabled(True)
+                    self.btiff.setEnabled(False)
+                    self.bh5py.setEnabled(True)
+                if 'save_path0' in ops:
+                    self.save_path = ops['save_path0']
+                    self.savelabel.setText(self.save_path)
+                if 'fast_disk' in ops:
+                    self.fast_disk = ops['fast_disk']
+                    self.binlabel.setText(self.fast_disk)
+                if 'clean_script' in ops:
+                    self.ops['clean_script'] = ops['clean_script']
+                    self.cleanLabel.setText(ops['clean_script'])
+
             except Exception as e:
                 print('could not load ops file')
                 print(e)
@@ -349,8 +382,7 @@ class RunWindow(QtGui.QDialog):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
         if len(name)>0:
             self.data_path.append(name)
-            self.layout.addWidget(QtGui.QLabel(name),
-                                  len(self.data_path)+4,0,1,2)
+            self.qdata[len(self.data_path)-1].setText(name)
             self.runButton.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.bh5py.setEnabled(False)
@@ -469,7 +501,7 @@ class ColorButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in range(len(parent.colors)+1):
+        for b in range(len(parent.colors)+2):
             if parent.colorbtns.button(b).isEnabled():
                 parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
@@ -489,8 +521,8 @@ class ColorButton(QtGui.QPushButton):
                 parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
         if bid==6:
             fig.corr_masks(parent)
-        elif bid==7:
-            fig.beh_masks(parent)
+        #elif bid==7:
+        #    fig.beh_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)

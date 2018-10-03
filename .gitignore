@@ -25,6 +25,7 @@ dist/
 suite2p.egg-info/
 build/
 suite2p/classifiers/classifier_user.npy
+suite2p/ops/ops.npy
 *.ipynb
 
 # =========================

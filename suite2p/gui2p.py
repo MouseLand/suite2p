@@ -1025,7 +1025,7 @@ class MainW(QtGui.QMainWindow):
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
-            fig.beh_masks(parent)
+            fig.beh_masks(self)
             fig.plot_trace(self)
             self.show()
         else:

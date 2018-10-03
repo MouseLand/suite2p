@@ -343,6 +343,7 @@ def rastermap_masks(parent):
 def beh_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+1
+    print(c)
     n = np.array(parent.imerge)
     nb = int(np.floor(parent.beh.size/parent.bin))
     sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)

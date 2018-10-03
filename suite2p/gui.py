@@ -502,7 +502,7 @@ class ColorButton(QtGui.QPushButton):
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
     def press(self, parent, bid):
-        for b in range(len(parent.colors)+1):
+        for b in range(len(parent.colors)+2):
             if parent.colorbtns.button(b).isEnabled():
                 parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
@@ -522,8 +522,8 @@ class ColorButton(QtGui.QPushButton):
                 parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
         if bid==6:
             fig.corr_masks(parent)
-        elif bid==7:
-            fig.beh_masks(parent)
+        #elif bid==7:
+        #    fig.beh_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)

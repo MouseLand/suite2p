@@ -512,7 +512,7 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
         ypix,xpix = yu[:, ix]
     return ypix,xpix
 
-def iter_extend(ypix, xpix, Ucell, code, refine=-1):
+def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
     Lyc, Lxc, nsvd = Ucell.shape
     npix = 0
     while npix<10000:
@@ -527,7 +527,7 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1):
             break;
         ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
         lam = lam/np.sum(lam**2+1e-10)**.5
-        if refine<0:
+        if refine<0 and change_codes:
             code = lam @ usub[ix, :]
         if npix>=ix.sum():
             break
@@ -536,6 +536,7 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1):
     return ypix, xpix, lam, ix, code
 
 def sourcery(ops):
+    change_codes = True
     i0 = tic()
     U,sdmov, u      = getSVDdata(ops) # get SVD components
     S, StU , StS = getStU(ops, U)
@@ -586,7 +587,7 @@ def sourcery(ops):
                 i,j = np.unravel_index(ind, V.shape)
                 if V[i,j] < thres:
                     break;
-                yp, xp, la, ix, code = iter_extend(i, j, Ucell, us[i,j,:])
+                yp, xp, la, ix, code = iter_extend(i, j, Ucell, us[i,j,:], change_codes=change_codes)
                 codes = np.append(codes, np.expand_dims(code,axis=0), axis=0)
                 ypix.append(yp)
                 xpix.append(xp)
@@ -623,7 +624,7 @@ def sourcery(ops):
         n,k = 0,0
         while n < len(ypix):
             Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[k,:])
-            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:], refine)
+            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:], refine, change_codes=change_codes)
             k+=1
             if ix.sum()==0:
                 print('dropped ROI with no pixels')

@@ -294,7 +294,7 @@ class RunWindow(QtGui.QDialog):
                 for key in ops:
                     if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0':
                         if key in self.keylist:
-                            self.editlist[k].set_text(ops)
+                            self.editlist[self.keylist.index(key)].set_text(ops)
                         self.ops[key] = ops[key]
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     self.data_path = ops['data_path']

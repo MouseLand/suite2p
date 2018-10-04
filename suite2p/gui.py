@@ -291,7 +291,7 @@ class RunWindow(QtGui.QDialog):
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
-                for key in ops: enumerate():
+                for key in ops:
                     if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0':
                         if key in self.keylist:
                             self.editlist[k].set_text(ops)

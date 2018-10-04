@@ -280,7 +280,6 @@ def split_multiops(ops1):
     return ops1
 def mesoscan_to_binary(ops):
     # copy ops to list where each element is ops for each plane
-
     # load json file with line start stops
     if 'lines' not in ops:
         fpath = os.path.join(ops['data_path'][0], '*json')

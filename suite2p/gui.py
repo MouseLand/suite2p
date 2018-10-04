@@ -309,7 +309,7 @@ class RunWindow(QtGui.QDialog):
                     if hasattr(self,'h5_path'):
                         self.h5text.setText('')
                         del self.h5_path
-                elif 'h5py' in ops:
+                elif 'h5py' in ops and len(ops['h5py'])>0:
                     self.h5_path = ops['h5py']
                     self.h5_key = ops['h5py_key']
                     self.h5text.setText(ops['h5py'])
@@ -319,13 +319,13 @@ class RunWindow(QtGui.QDialog):
                     self.runButton.setEnabled(True)
                     self.btiff.setEnabled(False)
                     self.bh5py.setEnabled(True)
-                if 'save_path0' in ops:
+                if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)
-                if 'fast_disk' in ops:
+                if 'fast_disk' in ops and len(ops['fast_disk'])>0:
                     self.fast_disk = ops['fast_disk']
                     self.binlabel.setText(self.fast_disk)
-                if 'clean_script' in ops:
+                if 'clean_script' in ops and len(ops['clean_script'])>0:
                     self.ops['clean_script'] = ops['clean_script']
                     self.cleanLabel.setText(ops['clean_script'])
 

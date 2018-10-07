@@ -134,20 +134,16 @@ def run_s2p(ops={},db={}):
         else:
             if 'mesoscan' in ops and ops['mesoscan']:
                 ops1 = utils.mesoscan_to_binary(ops)
+                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+            elif HAS_HAUS:
+                print('time %4.4f. Using HAUSIO')
+                dataset = haussio.load_haussio(ops['data_path'][0])
+                ops1 = dataset.tosuite2p(ops)
+                print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
             else:
-                try:
-                    ops1 = utils.tiff_to_binary(ops)
-                except Exception as e:
-                    if HAS_HAUS:
-                        dataset = haussio.load_haussio(ops['data_path'][0])
-                        ops1 = dataset.tosuite2p(ops)
-                        print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
-                    else:
-                        print('Unsupported file format: ' + str(e))
-                        return
-            print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
-        # save ops1
-        np.save(fpathops1, ops1)
+                ops1 = utils.tiff_to_binary(ops)
+                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+        np.save(fpathops1, ops1) # save ops1
     ops1 = np.array(ops1)
     ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:

@@ -7,6 +7,7 @@ from suite2p import utils, register, nonrigid
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
+from skimage.external.tifffile import imread
 from skimage import io
 
 def tic():
@@ -223,41 +224,47 @@ def tiff_to_binary(ops):
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
     fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
+    batch_size = 2000
+    batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     for ik, file in enumerate(fs):
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
             iplane = 0
-        im = io.imread(file)
-        if len(im.shape)<3:
-            im = np.expand_dims(im, axis=0)
-        nframes = im.shape[0]
-        for j in range(0,nplanes):
-            if ik==0:
-                ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+        ix = 0
+        while 1:
+            im = imread(file, pages = range(ix,ix+batch_size))
+            if im.size==0:
+                break
+            if len(im.shape)<3:
+                im = np.expand_dims(im, axis=0)
+            nframes = im.shape[0]
+            for j in range(0,nplanes):
+                if ik==0:
+                    ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    if nchannels>1:
+                        ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    ops1[j]['nframes'] = 0
+                i0 = nchannels * ((iplane+j)%nplanes)
                 if nchannels>1:
-                    ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                ops1[j]['nframes'] = 0
-            i0 = nchannels * ((iplane+j)%nplanes)
-            if nchannels>1:
-                nfunc = ops['functional_chan']-1
-            else:
-                nfunc = 0
-            im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-            ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
-            reg_file[j].write(bytearray(im2write))
-            if nchannels>1:
-                im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                reg_file_chan2[j].write(bytearray(im2write))
-                ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-            ops1[j]['nframes']+= im2write.shape[0]
-        iplane = (iplane+nframes/nchannels)%nplanes
+                    nfunc = ops['functional_chan']-1
+                else:
+                    nfunc = 0
+                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+                reg_file[j].write(bytearray(im2write))
+                if nchannels>1:
+                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                    reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                ops1[j]['nframes']+= im2write.shape[0]
+            iplane = (iplane+nframes/nchannels)%nplanes
+            ix+=nframes
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
-        ops['Ly'] = im.shape[1]
-        ops['Lx'] = im.shape[2]
+        ops['Ly'],ops['Lx'] = ops['meanImg'].shape
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
@@ -308,32 +315,38 @@ def mesoscan_to_binary(ops):
         nfunc = ops['functional_chan']-1
     else:
         nfunc = 0
-
+    batch_size = 500    
     # loop over all tiffs
     for ik, file in enumerate(fs):
-        im = io.imread(file)
-        if len(im.shape)<3:
-            im = np.expand_dims(im, axis=0)
-        nframes = im.shape[0]
-        for j in range(0,nplanes):
-            if ik==0:
-                ops1[j]['meanImg'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
+        ix = 0
+        while 1:
+            im = imread(file, pages = range(ix,ix+batch_size))
+            if im.size==0:
+                break
+            #im = io.imread(file)
+            if len(im.shape)<3:
+                im = np.expand_dims(im, axis=0)
+            nframes = im.shape[0]
+            for j in range(0,nplanes):
+                if ik==0:
+                    ops1[j]['meanImg'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
+                    if nchannels>1:
+                        ops1[j]['meanImg_chan2'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
+                    ops1[j]['nframes'] = 0
+                im2write = im[:,ops1[j]['lines'],:].astype(np.int16)
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+                reg_file[j].write(bytearray(im2write))
                 if nchannels>1:
-                    ops1[j]['meanImg_chan2'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
-                ops1[j]['nframes'] = 0
-            im2write = im[:,ops1[j]['lines'],:].astype(np.int16)
-            ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
-            reg_file[j].write(bytearray(im2write))
-            if nchannels>1:
-                #im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                reg_file_chan2[j].write(bytearray(im2write))
-                ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-            ops1[j]['nframes']+= im2write.shape[0]
+                    #im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                    reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                ops1[j]['nframes']+= im2write.shape[0]
+            ix+=nframes
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
-        ops['Ly'],ops['Lx'] = ops1[j]['meanImg'].shape
+        ops['Ly'],ops['Lx'] = ops['meanImg'].shape
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])

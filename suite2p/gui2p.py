@@ -7,6 +7,7 @@ import sys
 import os
 import shutil
 import time
+from pkg_resources import iter_entry_points
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -100,6 +101,7 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.loadTrain)
         class_menu.addAction(self.resetDefault)
         class_menu.addAction(self.saveDefault)
+
         # visualizations menuBar
         self.visualizations = QtGui.QAction('&Visualize selected cells', self)
         self.visualizations.triggered.connect(self.vis_window)
@@ -107,6 +109,8 @@ class MainW(QtGui.QMainWindow):
         vis_menu = main_menu.addMenu('&Visualizations')
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut('Ctrl+V')
+
+        # registration menuBar
         reg_menu = main_menu.addMenu('&Registration')
         self.reg = QtGui.QAction('View registered &binary', self)
         self.reg.triggered.connect(self.reg_window)
@@ -118,6 +122,14 @@ class MainW(QtGui.QMainWindow):
         self.regPC.setEnabled(True)
         reg_menu.addAction(self.reg)
         reg_menu.addAction(self.regPC)
+
+        # plugins menuBar
+        self.plugins = {}
+        plugin_menu = main_menu.addMenu('&Plugins')
+        for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
+            self.plugins[entry_pt.name] = QtGui.QAction(entry_pt.menu, self)
+            self.plugins[entry_pt.name].triggered.connect(entry_pt.window)
+            plugin_menu.addAction(self.plugins[entry_pt.name])
 
         #self.reg.setShortcut('Ctrl+V')
         #### --------- MAIN WIDGET LAYOUT --------- ####

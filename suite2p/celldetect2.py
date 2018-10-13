@@ -30,8 +30,39 @@ def get_sdmov(mov, ops):
     #sdmov = np.mean(np.diff(mov, axis = 0)**2, axis = 0)**.5
     return sdmov
 
+def getSVDdata(ops):
+    mov = get_mov(ops)
+    nbins, Lyc, Lxc = np.shape(mov)
+
+    sig = ops['diameter']/10. # PICK UP
+    for j in range(nbins):
+        mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
+
+    mov = np.reshape(mov, (-1,Lyc*Lxc))
+
+    # compute noise variance across frames
+    sdmov = get_sdmov(mov, ops)
+    mov /= sdmov
+    if 1:
+        # compute covariance of binned frames
+        cov = mov @ mov.transpose() / mov.shape[1]
+        cov = cov.astype('float32')
+
+        nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
+        u, s, v = np.linalg.svd(cov)
+
+        u = u[:, :nsvd_for_roi]
+        U = u.transpose() @ mov
+    else:
+        U = mov
+        u = []
+    U = np.reshape(U, (-1,Lyc,Lxc))
+    U = np.transpose(U, (1, 2, 0)).copy()
+    return U, sdmov, u
+
 def getSVDproj(ops, u):
     mov = get_mov(ops)
+
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
         sig = np.maximum([.5, .5], ops['diameter']/20.)
@@ -39,11 +70,15 @@ def getSVDproj(ops, u):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     if 1:
         mov = np.reshape(mov, (-1,Lyc*Lxc))
+        #sdmov = np.ones((Lyc*Lxc,), 'float32')
+        sdmov = get_sdmov(mov, ops)
+        mov/=sdmov
+
         U = u.transpose() @ mov
         U = U.transpose().copy().reshape((Lyc,Lxc,-1))
     else:
         U = np.transpose(mov, (1, 2, 0)).copy()
-    return U
+    return U, sdmov
 
 def get_mov(ops):
     i0 = tic()
@@ -54,7 +89,7 @@ def get_mov(ops):
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)
     ops['navg_frames_svd'] = np.floor(nframes/nt0).astype('int32')
-
+    print('nt0=%2.2d'%nt0)
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
@@ -89,7 +124,7 @@ def get_mov(ops):
             # crop into valid area
             mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
             ix += dbin.shape[0]
-    nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
+    #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
         for j in range(mov.shape[1]):
             mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
@@ -104,38 +139,6 @@ def get_mov(ops):
             else:
                 break
     return mov
-
-def getSVDdata(ops):
-    mov = get_mov(ops)
-    nbins, Lyc, Lxc = np.shape(mov)
-
-    sig = ops['diameter']/10.
-    for j in range(nbins):
-        mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
-
-    mov = np.reshape(mov, (-1,Lyc*Lxc))
-
-    # compute noise variance across frames
-    sdmov = get_sdmov(mov, ops)
-
-    # normalize pixels by noise variance
-    mov /= sdmov
-    if 1:
-        # compute covariance of binned frames
-        cov = mov @ mov.transpose() / mov.shape[1]
-        cov = cov.astype('float32')
-
-        nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
-        u, s, v = np.linalg.svd(cov)
-
-        u = u[:, :nsvd_for_roi]
-        U = u.transpose() @ mov
-    else:
-        U = mov
-        u = []
-    U = np.reshape(U, (-1,Lyc,Lxc))
-    U = np.transpose(U, (1, 2, 0)).copy()
-    return U, sdmov, u
 
 def getStU(ops, U):
     Lyc, Lxc, nbins = np.shape(U)
@@ -185,8 +188,8 @@ def create_neuropil_basis(ops, Ly, Lx):
     tile_factor    = ops['tile_factor']
     diameter       = ops['diameter']
 
-    ntilesY  = int(np.ceil(tile_factor * Ly / (ratio_neuropil * diameter[0]/2)))
-    ntilesX  = int(np.ceil(tile_factor * Lx / (ratio_neuropil * diameter[1]/2)))
+    ntilesY  = 1+2*int(np.ceil(tile_factor * Ly / (ratio_neuropil * diameter[0]/2))/2)
+    ntilesX  = 1+2*int(np.ceil(tile_factor * Lx / (ratio_neuropil * diameter[1]/2))/2)
     ntilesY  = np.maximum(2,ntilesY)
     ntilesX  = np.maximum(2,ntilesX)
     yc = np.linspace(1, Ly, ntilesY)
@@ -194,12 +197,21 @@ def create_neuropil_basis(ops, Ly, Lx):
     ys = np.arange(0,Ly)
     xs = np.arange(0,Lx)
 
-    Kx = np.zeros((Lx, ntilesX), 'float32')
-    Ky = np.zeros((Ly, ntilesY), 'float32')
-    for k in range(ntilesX):
-        Kx[:,k] = np.cos(math.pi * (xs+0.5) *  k/Lx)
-    for k in range(ntilesY):
-        Ky[:,k] = np.cos(math.pi * (ys+0.5) *  k/Ly)
+    Kx = np.ones((Lx, ntilesX), 'float32')
+    Ky = np.ones((Ly, ntilesY), 'float32')
+    if 1:
+        print('here')
+        for k in range(int((ntilesX-1)/2)):
+            Kx[:,2*k+1] = np.sin(2*math.pi * (xs+0.5) *  (1+k)/Lx)
+            Kx[:,2*k+2] = np.cos(2*math.pi * (xs+0.5) *  (1+k)/Lx)
+        for k in range(int((ntilesY-1)/2)):
+            Ky[:,2*k+1] = np.sin(2*math.pi * (ys+0.5) *  (1+k)/Ly)
+            Ky[:,2*k+2] = np.cos(2*math.pi * (ys+0.5) *  (1+k)/Ly)
+    else:
+        for k in range(ntilesX):
+            Kx[:,k] = np.cos(math.pi * (xs+0.5) *  k/Lx)
+        for k in range(ntilesY):
+            Ky[:,k] = np.cos(math.pi * (ys+0.5) *  k/Ly)
 
     S = np.zeros((ntilesY, ntilesX, Ly, Lx), np.float32)
     for kx in range(ntilesX):
@@ -242,7 +254,7 @@ def localMax(V, footprint, thres):
         outputs:
             i,j: indices of local max greater than thres
     '''
-    maxV = filters.maximum_filter(V, footprint=footprint)
+    maxV = filters.maximum_filter(V, footprint=footprint, mode = 'reflect')
     imax = V > np.maximum(thres, maxV - 1e-10)
     i,j  = imax.nonzero()
     i    = i.astype(np.int32)
@@ -515,6 +527,7 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
 def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
     Lyc, Lxc, nsvd = Ucell.shape
     npix = 0
+    iter = 0
     while npix<10000:
         npix = ypix.size
         ypix, xpix = extendROI(ypix,xpix,Lyc,Lxc, 1)
@@ -522,23 +535,27 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
         lam = usub @ np.expand_dims(code, axis=1)
         lam = np.squeeze(lam, axis=1)
         # ix = lam>max(0, np.mean(lam)/3)
-        ix = lam>max(0, lam.max()/5)
+        ix = lam>max(0, lam.max()/5.0)
         if ix.sum()==0:
             break;
         ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
         lam = lam/np.sum(lam**2+1e-10)**.5
         if refine<0 and change_codes:
             code = lam @ usub[ix, :]
-        if npix>=ix.sum():
+        if iter == 0:
+            sgn = 1.
+            #sgn = np.sign(ix.sum()-npix)
+        if np.sign(sgn * (ix.sum()-npix))<=0:
             break
         else:
             npix = ypix.size
+        iter += 1
     return ypix, xpix, lam, ix, code
 
 def sourcery(ops):
     change_codes = True
     i0 = tic()
-    U,sdmov, u      = getSVDdata(ops) # get SVD components
+    U,sdmov, u   = getSVDdata(ops) # get SVD components
     S, StU , StS = getStU(ops, U)
     Lyc, Lxc,nsvd = U.shape
     ops['Lyc'] = Lyc
@@ -572,7 +589,7 @@ def sourcery(ops):
             if it==0:
                 V = V.astype('float64')
                 # find indices of all maxima in +/- 1 range
-                maxV   = filters.maximum_filter(V, footprint= np.ones((3,3)))
+                maxV   = filters.maximum_filter(V, footprint= np.ones((3,3)), mode='reflect')
                 imax   = V > (maxV - 1e-10)
                 peaks  = V[imax]
                 # use the median of these peaks to decide if ROI is accepted
@@ -624,7 +641,8 @@ def sourcery(ops):
         n,k = 0,0
         while n < len(ypix):
             Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[k,:])
-            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell, codes[k,:], refine, change_codes=change_codes)
+            ypix[n], xpix[n], lam[n], ix, codes[n,:] = iter_extend(ypix[n], xpix[n], Ucell,
+                codes[k,:], refine, change_codes=change_codes)
             k+=1
             if ix.sum()==0:
                 print('dropped ROI with no pixels')
@@ -665,7 +683,7 @@ def sourcery(ops):
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
-            U = getSVDproj(ops, u)
+            U, sdmov = getSVDproj(ops, u)
             Ucell = U
         if refine>=0:
             StU = S.reshape((Lyc*Lxc,-1)).transpose() @ Ucell.reshape((Lyc*Lxc,-1))
@@ -673,7 +691,10 @@ def sourcery(ops):
             neu = np.linalg.solve(StS, StU).astype('float32')
         refine -= 1
     Ucell = U - (S.reshape((-1,nbasis))@neu).reshape(U.shape)
-    stat  = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
+
+    sdmov = np.reshape(sdmov, (Lyc, Lxc))
+    ops['sdmov'] = sdmov
+    stat  = [{'ypix':ypix[n], 'lam':lam[n]*sdmov[ypix[n], xpix[n]], 'xpix':xpix[n]} for n in range(ncells)]
 
     stat = postprocess(ops, stat, Ucell, codes)
     return ops, stat

@@ -342,7 +342,7 @@ def get_metrics(ops):
     nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
     mov  = utils.sample_frames(ops, ix)
-    mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+    #mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
     pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:

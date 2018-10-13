@@ -315,7 +315,7 @@ def mesoscan_to_binary(ops):
         nfunc = ops['functional_chan']-1
     else:
         nfunc = 0
-    batch_size = 500    
+    batch_size = 500
     # loop over all tiffs
     for ik, file in enumerate(fs):
         ix = 0
@@ -593,14 +593,17 @@ def sample_frames(ops, ix):
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
-    mov = np.zeros((len(ix), Ly, Lx), np.int16)
+    Lyc = ops['yrange'][-1] - ops['yrange'][0]
+    Lxc = ops['xrange'][-1] - ops['xrange'][0]
+    mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
     # load and bin data
     with open(ops['reg_file'], 'rb') as reg_file:
         for i in range(len(ix)):
             reg_file.seek(nbytesread*ix[i], 0)
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            mov[i,:,:] = np.reshape(data, (Ly, Lx))
+            data = np.reshape(data, (Ly, Lx))
+            mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
     return mov
 
 def pclowhigh(mov, nlowhigh, nPC):

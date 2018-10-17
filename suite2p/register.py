@@ -370,6 +370,10 @@ def register_binary(ops):
     Ly = ops['Ly']
     Lx = ops['Lx']
     ops['nframes'] = get_nFrames(ops)
+    if ops['nframes']<50:
+        raise Exception('the total number of frames should be at least 50 ')
+    if ops['nframes']<200:
+        print('number of frames is below 200, unpredictable behaviors may occur')
     refImg = pick_init(ops)
     ops['refImg'] = refImg
     print('computed reference frame for registration')

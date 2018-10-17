@@ -86,7 +86,7 @@ def add_to(parent):
         stats = classifier.get_stat_keys(parent.stat, parent.model.keys)
         parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
         parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
-        save_model(parent.classfile, parent.model.stats, parent.model.stats, parent.model.keys)
+        save_model(parent.classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
         activate(parent, True)
         msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')

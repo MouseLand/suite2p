@@ -106,7 +106,7 @@ class MainW(QtGui.QMainWindow):
         self.saveDefault.setEnabled(False)
         self.resetDefault = QtGui.QAction("Reset default to built-in", self)
         self.resetDefault.triggered.connect(self.reset_default)
-        self.resetDefault.setEnabled(False)
+        self.resetDefault.setEnabled(True)
         class_menu = main_menu.addMenu("&Classifier")
         class_menu.addMenu(self.loadMenu)
         class_menu.addAction(self.loadTrain)

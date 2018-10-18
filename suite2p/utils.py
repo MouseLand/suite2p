@@ -1,4 +1,5 @@
 import numpy as np
+from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
@@ -118,7 +119,7 @@ def init_ops(ops):
 def list_h5(ops):
     froot = os.path.dirname(ops['h5py'])
     lpath = os.path.join(froot, "*.h5")
-    fs = sorted(glob.glob(lpath))
+    fs = natsorted(glob.glob(lpath))
     return fs
 
 def h5py_to_binary(ops):
@@ -265,6 +266,7 @@ def tiff_to_binary(ops):
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'],ops['Lx'] = ops['meanImg'].shape
+        ops['filelist'] = fs
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
@@ -363,17 +365,17 @@ def mesoscan_to_binary(ops):
 
 def list_tifs(froot, look_one_level_down):
     lpath = os.path.join(froot, "*.tif")
-    fs  = sorted(glob.glob(lpath))
+    fs  = natsorted(glob.glob(lpath))
     lpath = os.path.join(froot, "*.tiff")
-    fs2 = sorted(glob.glob(lpath))
+    fs2 = natsorted(glob.glob(lpath))
     fs.extend(fs2)
     if look_one_level_down:
         fdir = glob.glob(os.path.join(froot, "*", ""))
         for folder_down in fdir:
             lpath = os.path.join(folder_down, "*.tif")
-            fs3 = sorted(glob.glob(lpath))
+            fs3 = natsorted(glob.glob(lpath))
             lpath = os.path.join(folder_down, "*.tiff")
-            fs4 = sorted(glob.glob(lpath))
+            fs4 = natsorted(glob.glob(lpath))
             fs.extend(fs3)
             fs.extend(fs4)
     return fs

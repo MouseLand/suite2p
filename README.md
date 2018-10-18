@@ -39,7 +39,7 @@ To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run:
 pip install suite2p --upgrade
 ~~~~
 
-If when running `python -m suite2p`, you receive the error: `No module named PyQt5.sip`, then try uninstalling and reinstalling pyqt5
+If when running `python -m suite2p`, you receive the error: `No module named PyQt5.sip`, then try uninstalling and reinstalling pyqt5 (and/or creating a specific environment just for suite2p)
 ~~~
 pip uninstall pyqt5 pyqt5-tools
 pip install pyqt5 pyqt5-tools pyqt5.sip

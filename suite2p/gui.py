@@ -166,7 +166,6 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(qedit,2,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
-        self.editlist[wk].textChanged.connect(lambda: self.edit_changed(wk))
         self.btiff = QtGui.QPushButton('Add directory to data_path')
         self.btiff.clicked.connect(self.get_folders)
         self.layout.addWidget(self.btiff,3,0,1,2)

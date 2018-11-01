@@ -8,7 +8,7 @@ from suite2p import utils, register, nonrigid
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
-from skimage.external.tifffile import imread
+from skimage.external.tifffile import imread, TiffFile
 from skimage import io
 
 def tic():
@@ -229,16 +229,22 @@ def tiff_to_binary(ops):
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     for ik, file in enumerate(fs):
+        # size of tiff
+        tif = TiffFile(file)
+        Ltif = len(tif)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
             iplane = 0
         ix = 0
         while 1:
-            im = imread(file, pages = range(ix,ix+batch_size))
-            if im.size==0:
+            if ix >= Ltif:
                 break
-            if len(im.shape)<3:
+            nfr = min(Ltif - ix, batch_size)
+            im = imread(file, pages = range(ix, ix + nfr))
+            if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
+            if im.shape[0] > nfr:
+                im = im[:nfr, :, :]
             nframes = im.shape[0]
             for j in range(0,nplanes):
                 if ik==0:

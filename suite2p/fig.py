@@ -8,7 +8,7 @@ from suite2p import utils
 import math
 from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
-
+import time
 
 def plot_colorbar(parent, bid):
     if bid==0:
@@ -491,9 +491,8 @@ def flip_for_class(parent, iscell):
         parent.iscell = iscell
         init_masks(parent)
 
-def make_chosen_ROI(M0, ypix, xpix, lam):
-    v = lam
-    M0[ypix,xpix,:] = np.resize(np.tile(v, 3), (3,ypix.size)).transpose()
+def make_chosen_ROI(M0, ypix, xpix):
+    M0[ypix,xpix,:] = np.ones((ypix.size,3), np.float32)
     return M0
 
 def make_chosen_circle(M0, ycirc, xcirc, col, sat):
@@ -531,12 +530,10 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         xpixA = np.zeros((0,),np.int32)
         vbackA = np.zeros((0,3),np.float32)
         if view==0:
-            ischosen = np.isin(parent.iROI[wplot,0,:,:], parent.imerge)
-            M[wplot][ischosen,:] = 255
-            #lam = parent.stat[n]['lam']
-            #lam /= lam.sum()
-            #lam = np.maximum(0, np.minimum(1, 0.75 * lam / parent.LamMean))
-            #M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, lam)
+            for n in parent.imerge:
+                ypix = parent.stat[n]['ypix'].flatten()
+                xpix = parent.stat[n]['xpix'].flatten()
+                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix)
         else:
             for n in parent.imerge:
                 ypix = parent.stat[n]['ypix'].flatten()
@@ -574,16 +571,24 @@ def flip_cell(parent):
     ipix1 = np.array((parent.iROI[i0,1,:,:]==n).nonzero()).astype(np.int32)
     ipix2 = np.array((parent.iROI[i0,2,:,:]==n).nonzero()).astype(np.int32)
     # get rid of cell and push up overlaps
-    parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
-    parent.iROI[i0,0,ipix1[0,:],ipix1[1,:]] = -1
-    parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = parent.iROI[i0,2,ipix[0,:],ipix[1,:]]
-    parent.iROI[i0,1,ipix2[0,:],ipix2[1,:]] = -1
-    parent.iROI[i0,2,ipix[0,:],ipix[1,:]] = -1
-    parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
-    parent.Lam[i0,0,ipix1[0,:],ipix1[1,:]] = 0
-    parent.Lam[i0,1,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,2,ipix[0,:],ipix[1,:]]
-    parent.Lam[i0,1,ipix2[0,:],ipix2[1,:]] = 0
-    parent.Lam[i0,2,ipix[0,:],ipix[1,:]]  = 0
+    if 0:
+        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
+        parent.iROI[i0,0,ipix1[0,:],ipix1[1,:]] = -1
+        parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = parent.iROI[i0,2,ipix[0,:],ipix[1,:]]
+        parent.iROI[i0,1,ipix2[0,:],ipix2[1,:]] = -1
+        parent.iROI[i0,2,ipix[0,:],ipix[1,:]] = -1
+        parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
+        parent.Lam[i0,0,ipix1[0,:],ipix1[1,:]] = 0
+        parent.Lam[i0,1,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,2,ipix[0,:],ipix[1,:]]
+        parent.Lam[i0,1,ipix2[0,:],ipix2[1,:]] = 0
+        parent.Lam[i0,2,ipix[0,:],ipix[1,:]]  = 0
+    else:
+        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
+        parent.iROI[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]]
+        parent.iROI[i0,2,ipix2[0,:],ipix2[1,:]] = -1
+        parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
+        parent.Lam[i0,1,ipix1[0,:],ipix1[1,:]]  = parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]]
+        parent.Lam[i0,2,ipix2[0,:],ipix2[1,:]] = 0
     ipix = np.array((parent.iExt[i0,0,:,:]==n).nonzero()).astype(np.int32)
     ipix1 = np.array((parent.iExt[i0,1,:,:]==n).nonzero()).astype(np.int32)
     ipix2 = np.array((parent.iExt[i0,2,:,:]==n).nonzero()).astype(np.int32)

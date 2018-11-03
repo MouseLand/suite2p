@@ -38,14 +38,30 @@ class MainW(QtGui.QMainWindow):
                               "color:gray;}")
         self.loaded = False
         self.ops_plot = []
+        ### first time running, need to check for user files
+        # check for classifier file
+        self.classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier_user.npy",
+        )
+        self.classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier.npy"
+        )
+        if not os.path.isfile(self.classfile):
+            shutil.copy(self.classorig, self.classfile)
+        # check for ops file (for running suite2p)
+        self.opsorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                          'ops/ops.npy')
+        self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                          'ops/ops_user.npy')
+        if not os.path.isfile(self.opsfile):
+            shutil.copy(self.opsorig, self.opsfile)
+
+
         # default plot options
         self.ops_plot.append(True)
-        self.ops_plot.append(0)
-        self.ops_plot.append(0)
-        self.ops_plot.append(0)
-        self.ops_plot.append(0)
-        self.ops_plot.append(0)
-        self.ops_plot.append(0)
+        for k in range(6):
+            self.ops_plot.append(0)
+
         # ------ MENU BAR -----------------
         # run suite2p from scratch
         runS2P = QtGui.QAction("&Run suite2p ", self)

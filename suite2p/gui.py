@@ -40,7 +40,7 @@ class RunWindow(QtGui.QDialog):
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                          'ops/ops.npy')
+                                          'ops/ops_user.npy')
         try:
             self.ops = np.load(self.opsfile)
             self.ops = self.ops.item()
@@ -268,9 +268,12 @@ class RunWindow(QtGui.QDialog):
 
     def save_default_ops(self):
         name = self.opsfile
+        ops = self.ops.copy()
+        self.ops = {}
         self.save_text()
         np.save(name, self.ops)
-        print('saved current settings as default ops')
+        self.ops = ops
+        print('saved current settings in GUI as default ops')
 
     def save_text(self):
         for k in range(len(self.editlist)):

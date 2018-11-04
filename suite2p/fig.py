@@ -265,10 +265,16 @@ def init_masks(parent):
                 else:
                     Va = Vorig
             for c in range(0,cols.shape[1]):
-                H = cols[iROI[i,0,:,:],c]
-                H = np.expand_dims(H,axis=2)
-                hsv = np.concatenate((H,S,Va),axis=2)
-                RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+                if k==3:
+                    H = cols[iExt[i,0,:,:],c]
+                    H = np.expand_dims(H,axis=2)
+                    hsv = np.concatenate((H,S,Va),axis=2)
+                    RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+                else:
+                    H = cols[iROI[i,0,:,:],c]
+                    H = np.expand_dims(H,axis=2)
+                    hsv = np.concatenate((H,S,Va),axis=2)
+                    RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
     for k in range(4):
         H = np.zeros((Ly,Lx,1),np.float32)

@@ -574,39 +574,27 @@ def flip_cell(parent):
     ipix = np.array((parent.iROI[i0,0,:,:]==n).nonzero()).astype(np.int32)
     ipix1 = np.array((parent.iROI[i0,1,:,:]==n).nonzero()).astype(np.int32)
     ipix2 = np.array((parent.iROI[i0,2,:,:]==n).nonzero()).astype(np.int32)
-    # get rid of cell and push up overlaps
-    if 0:
-        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
-        parent.iROI[i0,0,ipix1[0,:],ipix1[1,:]] = -1
-        parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = parent.iROI[i0,2,ipix[0,:],ipix[1,:]]
-        parent.iROI[i0,1,ipix2[0,:],ipix2[1,:]] = -1
-        parent.iROI[i0,2,ipix[0,:],ipix[1,:]] = -1
-        parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
-        parent.Lam[i0,0,ipix1[0,:],ipix1[1,:]] = 0
-        parent.Lam[i0,1,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,2,ipix[0,:],ipix[1,:]]
-        parent.Lam[i0,1,ipix2[0,:],ipix2[1,:]] = 0
-        parent.Lam[i0,2,ipix[0,:],ipix[1,:]]  = 0
-    else:
-        parent.Lam[i0,0,ipix[0,:],ipix[1,:]] = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
-        parent.Lam[i0,1,ipix[0,:],ipix[1,:]] = 0
-        parent.Lam[i0,1,ipix1[0,:],ipix1[1,:]] = parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]]
-        parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]] = 0
-        parent.Lam[i0,2,ipix2[0,:],ipix2[1,:]] = 0
-        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
-        parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = -1
-        parent.iROI[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]]
-        parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]] = -1
-        parent.iROI[i0,2,ipix2[0,:],ipix2[1,:]] = -1
-
+    # get rid of cell and push up overlaps on main views
+    parent.Lam[i0,0,ipix[0,:],ipix[1,:]] = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
+    parent.Lam[i0,1,ipix[0,:],ipix[1,:]] = 0
+    parent.Lam[i0,1,ipix1[0,:],ipix1[1,:]] = parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]]
+    parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]] = 0
+    parent.Lam[i0,2,ipix2[0,:],ipix2[1,:]] = 0
+    parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
+    parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = -1
+    parent.iROI[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]]
+    parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]] = -1
+    parent.iROI[i0,2,ipix2[0,:],ipix2[1,:]] = -1
+    # get rid of cell and push up overlaps on correlation map view
     ipix = np.array((parent.iExt[i0,0,:,:]==n).nonzero()).astype(np.int32)
     ipix1 = np.array((parent.iExt[i0,1,:,:]==n).nonzero()).astype(np.int32)
     ipix2 = np.array((parent.iExt[i0,2,:,:]==n).nonzero()).astype(np.int32)
     parent.iExt[i0,0,ipix[0,:],ipix[1,:]] = parent.iExt[i0,1,ipix[0,:],ipix[1,:]]
     goodi = parent.iExt[i0,0,yext,xext]<0
-    parent.iExt[i0,0,ipix1[0,:],ipix1[1,:]] = -1
-    parent.iExt[i0,1,ipix[0,:],ipix[1,:]] = parent.iExt[i0,2,ipix[0,:],ipix[1,:]]
-    parent.iExt[i0,1,ipix2[0,:],ipix2[1,:]] = -1
-    parent.iExt[i0,2,ipix[0,:],ipix[1,:]] = -1
+    parent.iExt[i0,1,ipix[0,:],ipix[1,:]] = -1
+    parent.iExt[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iExt[i0,2,ipix1[0,:],ipix1[1,:]]
+    parent.iExt[i0,2,ipix1[0,:],ipix1[1,:]] = -1
+    parent.iExt[i0,2,ipix2[0,:],ipix2[1,:]] = -1
     # add cell to other side (on top) and push down overlaps
     parent.iROI[i,2,ypix,xpix] = parent.iROI[i,1,ypix,xpix]
     parent.iROI[i,1,ypix,xpix] = parent.iROI[i,0,ypix,xpix]

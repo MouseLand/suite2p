@@ -170,7 +170,18 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(loadOps,0,2,1,2)
         self.layout.addWidget(saveDef,1,2,1,2)
         self.layout.addWidget(saveOps,2,2,1,2)
-
+        self.layout.addWidget(QtGui.QLabel(''),3,2,1,2)
+        self.layout.addWidget(QtGui.QLabel('Load example ops'),4,2,1,2)
+        for k in range(3):
+            qw = QtGui.QPushButton('Save ops to file')
+        saveOps.clicked.connect(self.save_ops)
+        self.opsbtns = QtGui.QButtonGroup(self)
+        opsstr = ['cell soma', 'dendrites/axons']
+        self.opsname = ['soma', 'dendrite']
+        for b in range(len(opsstr)):
+            btn = OpsButton(b, opsstr[b], self)
+            self.opsbtns.addButton(btn, b)
+            self.layout.addWidget(btn, 5+b,2,1,2)
         l=0
         self.keylist = []
         self.editlist = []
@@ -583,6 +594,27 @@ class LineEdit(QtGui.QLineEdit):
                 dstr = str(int(ops[key]))
         self.setText(dstr)
 
+class OpsButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, parent=None):
+        super(OpsButton,self).__init__(parent)
+        self.setText(Text)
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        try:
+            opsdef = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                              'ops/ops_%s.npy'%parent.opsname[bid])
+            ops = np.load(opsdef)
+            ops = ops.item()
+            for key in ops:
+                if key in parent.keylist:
+                    parent.editlist[parent.keylist.index(key)].set_text(ops)
+                    parent.ops[key] = ops[key]
+        except Exception as e:
+            print('could not load ops file')
+            print(e)
+
+
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):
     def __init__(self, text=None):
@@ -597,6 +629,8 @@ class VerticalLabel(QtGui.QWidget):
         if self.text:
             painter.drawText(0, 0, self.text)
         painter.end()
+
+
 
 ### custom QPushButton class that plots image when clicked
 # requires buttons to put into a QButtonGroup (parent.viewbtns)

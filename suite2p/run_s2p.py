@@ -52,7 +52,7 @@ def default_ops():
         'do_phasecorr': True, # whether to do cross-correlation or phase-correlation (recommend PHASE-CORR)
         'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         # non rigid registration settings
-        'nonrigid': False, # whether to use nonrigid registration
+        'nonrigid': True, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register
         'snr_thresh': 1.2, # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid

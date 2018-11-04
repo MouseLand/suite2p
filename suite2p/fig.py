@@ -556,6 +556,10 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     return M[0],M[1]
 
 def flip_cell(parent):
+    ''' flips a cell to other plot
+    there are 3 levels of overlap so this may be buggy if more than 3 cells are on
+    top of each other
+    '''
     cols = parent.ops_plot[3]
     n = parent.ichosen
     i = int(1-parent.iscell[n])
@@ -583,12 +587,17 @@ def flip_cell(parent):
         parent.Lam[i0,1,ipix2[0,:],ipix2[1,:]] = 0
         parent.Lam[i0,2,ipix[0,:],ipix[1,:]]  = 0
     else:
-        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
-        parent.iROI[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]]
-        parent.iROI[i0,2,ipix2[0,:],ipix2[1,:]] = -1
-        parent.Lam[i0,0,ipix[0,:],ipix[1,:]]  = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
-        parent.Lam[i0,1,ipix1[0,:],ipix1[1,:]]  = parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]]
+        parent.Lam[i0,0,ipix[0,:],ipix[1,:]] = parent.Lam[i0,1,ipix[0,:],ipix[1,:]]
+        parent.Lam[i0,1,ipix[0,:],ipix[1,:]] = 0
+        parent.Lam[i0,1,ipix1[0,:],ipix1[1,:]] = parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]]
+        parent.Lam[i0,2,ipix1[0,:],ipix1[1,:]] = 0
         parent.Lam[i0,2,ipix2[0,:],ipix2[1,:]] = 0
+        parent.iROI[i0,0,ipix[0,:],ipix[1,:]] = parent.iROI[i0,1,ipix[0,:],ipix[1,:]]
+        parent.iROI[i0,1,ipix[0,:],ipix[1,:]] = -1
+        parent.iROI[i0,1,ipix1[0,:],ipix1[1,:]] = parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]]
+        parent.iROI[i0,2,ipix1[0,:],ipix1[1,:]] = -1
+        parent.iROI[i0,2,ipix2[0,:],ipix2[1,:]] = -1
+
     ipix = np.array((parent.iExt[i0,0,:,:]==n).nonzero()).astype(np.int32)
     ipix1 = np.array((parent.iExt[i0,1,:,:]==n).nonzero()).astype(np.int32)
     ipix2 = np.array((parent.iExt[i0,2,:,:]==n).nonzero()).astype(np.int32)

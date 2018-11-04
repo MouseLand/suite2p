@@ -1,7 +1,7 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import console
-import sys, json, os, pickle
+import sys, json, os, pickle, time, shutil
 import numpy as np
 from suite2p import fig
 from suite2p import run_s2p
@@ -28,11 +28,62 @@ class TextChooser(QtGui.QDialog):
         self.h5_key = self.qedit.text()
         self.accept()
 
+### choose files for batch processing
+### custom QDialog which makes a list of items you can include/exclude
+class ListChooser(QtGui.QDialog):
+    def __init__(self, Text, parent=None):
+        super(ListChooser, self).__init__(parent)
+        self.setGeometry(300,300,500,320)
+        self.setWindowTitle(Text)
+        self.win = QtGui.QWidget(self)
+        layout = QtGui.QGridLayout()
+        self.win.setLayout(layout)
+        #self.setCentralWidget(self.win)
+        loadcell = QtGui.QPushButton('Load ops.npy / db.npy')
+        loadcell.resize(200,50)
+        parent.opslist = []
+        loadcell.clicked.connect(lambda: self.load_ops(parent))
+        layout.addWidget(loadcell,0,0,1,1)
+        layout.addWidget(QtGui.QLabel('(any ops not in loaded file will be pulled from GUI)'),1,0,1,1)
+        #layout.addWidget(QtGui.QLabel('select multiple files using ctrl'),2,0,1,1)
+        self.list = QtGui.QListWidget(parent)
+        layout.addWidget(self.list,2,0,5,4)
+        #self.list.resize(450,250)
+        done = QtGui.QPushButton('OK')
+        done.clicked.connect(lambda: self.exit_list(parent))
+        layout.addWidget(done,8,3,1,1)
+
+    def load_ops(self, parent):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops.npy / db.npy file',filter='*.npy')
+        if name:
+            try:
+                ops = np.load(name[0])
+                badfile = True
+                ops = ops.item()
+                if 'data_path' in ops and len(ops['data_path'])>0:
+                    badfile = False
+                elif 'h5py' in ops and len(ops['h5py']) > 0:
+                    badfile = False
+                if badfile:
+                    QtGui.QMessageBox.information(self, 'lacks any file paths')
+                else:
+                    self.list.addItem(name[0])
+                    parent.opslist.append(name[0])
+            except (OSError, RuntimeError, TypeError, NameError):
+                QtGui.QMessageBox.information(self, 'not a dict')
+        else:
+            QtGui.QMessageBox.information(self, 'no file selected')
+
+    def exit_list(self, parent):
+        if len(parent.opslist) > 0:
+            parent.batch = True
+        self.accept()
+
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,800)
+        self.setGeometry(50,50,1200,900)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -51,6 +102,8 @@ class RunWindow(QtGui.QDialog):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
+        self.opslist = []
+        self.batch = False
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
@@ -183,15 +236,15 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.bh5py,11,0,1,2)
         self.h5text = QtGui.QLabel('')
         self.layout.addWidget(self.h5text,12,0,1,2)
-        bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
-        bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(bsave,13,0,1,2)
+        self.bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
+        self.bsave.clicked.connect(self.save_folder)
+        self.layout.addWidget(self.bsave,13,0,1,2)
         self.savelabel = QtGui.QLabel('')
         self.layout.addWidget(self.savelabel,14,0,1,2)
         # fast_disk
-        bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
-        bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(bbin,15,0,1,2)
+        self.bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
+        self.bbin.clicked.connect(self.bin_folder)
+        self.layout.addWidget(self.bbin,15,0,1,2)
         self.binlabel = QtGui.QLabel('')
         self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
@@ -220,15 +273,107 @@ class RunWindow(QtGui.QDialog):
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
         self.layout.addWidget(self.cleanLabel,19,4,1,12)
+        self.listOps = QtGui.QPushButton('save settings and\n add more (batch)')
+        self.listOps.clicked.connect(self.list_ops)
+        self.layout.addWidget(self.listOps,19,14,1,2)
+        self.listOps.setEnabled(False)
+        self.removeOps = QtGui.QPushButton('remove last added')
+        self.removeOps.clicked.connect(self.remove_ops)
+        self.layout.addWidget(self.removeOps,19,16,1,2)
+        self.removeOps.setEnabled(False)
+        self.odata = []
+        for n in range(10):
+            self.odata.append(QtGui.QLabel(''))
+            self.layout.addWidget(self.odata[n],
+                                  20+n,14,1,4)
+        self.f = 0
 
-    def clean_script(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='*.py')
-        name = name[0]
-        if name:
-            self.cleanup = True
-            self.cleanScript = name
-            self.cleanLabel.setText(name)
-            self.ops['clean_script'] = name
+    def remove_ops(self):
+        L = len(self.opslist)
+        if L == 1:
+            self.batch = False
+            self.opslist = []
+            self.removeOps.setEnabled(False)
+        else:
+            del self.opslist[L-1]
+        self.odata[L-1].setText('')
+
+    def list_ops(self):
+        self.batch = True
+        self.compile_ops_db()
+        L = len(self.opslist)
+        self.odata[L].setText(self.datastr)
+        np.save('ops%d.npy'%L, self.ops)
+        np.save('db%d.npy'%L, self.db)
+        self.opslist.append('ops%d.npy'%L)
+        # clear file fields
+        self.db = {}
+        self.data_path = []
+        if hasattr(self, 'h5_path'):
+            self.h5_path = []
+            self.h5_key = 'data'
+        self.save_path = []
+        self.fast_disk = []
+        # clear labels
+        for n in range(7):
+            self.qdata[n].setText('')
+        self.savelabel.setText('')
+        self.binlabel.setText('')
+        self.h5text.setText('')
+        # clear ops not in GUI
+        self.ops = np.load(self.opsfile)
+        self.ops = self.ops.item()
+        self.save_text() # grab ops in GUI
+        # enable all the file loaders again
+        self.bh5py.setEnabled(True)
+        self.btiff.setEnabled(True)
+        self.bsave.setEnabled(True)
+        self.bbin.setEnabled(True)
+        # and enable the run button
+        self.runButton.setEnabled(True)
+        self.removeOps.setEnabled(True)
+        self.listOps.setEnabled(False)
+
+    def compile_ops_db(self):
+        for k,key in enumerate(self.keylist):
+            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+        self.db = {}
+        self.db['data_path'] = self.data_path
+        self.db['subfolders'] = []
+        if hasattr(self, 'h5_path') and len(self.h5_path) > 0:
+            self.db['h5py'] = self.h5_path
+            self.db['h5py_key'] = self.h5_key
+            self.datastr = self.h5_path
+        else:
+            self.datastr = self.data_path[0]
+        print(self.datastr)
+        if len(self.save_path)==0:
+            if len(self.db['data_path'])>0:
+                fpath = self.db['data_path'][0]
+            else:
+                fpath = os.path.dirname(self.db['h5py'])
+            self.save_path = fpath
+        self.db['save_path0'] = self.save_path
+        if len(self.fast_disk)==0:
+            self.fast_disk = self.save_path
+        self.db['fast_disk'] = self.fast_disk
+
+    def run_S2P(self, parent):
+        self.finish = True
+        self.error = False
+        if self.batch:
+            shutil.copy('ops%d.npy'%self.f, 'ops.npy')
+            shutil.copy('db%d.npy'%self.f, 'db.npy')
+            self.db = np.load('db.npy')
+            self.db = self.db.item()
+        else:
+            self.compile_ops_db()
+            np.save('ops.npy', self.ops)
+            np.save('db.npy', self.db)
+        print('Running suite2p!')
+        print('starting process')
+        print(self.db)
+        self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 
     def stop(self):
         self.finish = False
@@ -247,7 +392,7 @@ class RunWindow(QtGui.QDialog):
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText('Opening in GUI (can close this window)\n')
-            parent.fname = os.path.join(self.save_path, 'suite2p', 'plane0','stat.npy')
+            parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
             parent.load_proc()
         elif not self.error:
             cursor = self.textEdit.textCursor()
@@ -257,6 +402,10 @@ class RunWindow(QtGui.QDialog):
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
             cursor.insertText('Interrupted by error (not finished)\n')
+        if self.batch:
+            self.f += 1
+            if self.f < len(self.opslist):
+                self.run_S2P(parent)
 
     def save_ops(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
@@ -294,7 +443,7 @@ class RunWindow(QtGui.QDialog):
                     with open(name, 'r') as f:
                         ops = json.load(f)
                 for key in ops:
-                    if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0':
+                    if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0' and key!='h5py':
                         if key in self.keylist:
                             self.editlist[self.keylist.index(key)].set_text(ops)
                         self.ops[key] = ops[key]
@@ -352,34 +501,14 @@ class RunWindow(QtGui.QDialog):
         self.textEdit.ensureCursorVisible()
         self.error = True
 
-    def run_S2P(self, parent):
-        self.finish = True
-        self.error = False
-        for k,key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text(self.ops[key])
-        self.db = {}
-        self.db['data_path'] = self.data_path
-        self.db['subfolders'] = []
-        print(self.db['data_path'])
-        if hasattr(self, 'h5_path'):
-            self.db['h5py'] = self.h5_path
-            self.db['h5py_key'] = self.h5_key
-        if len(self.save_path)==0:
-            if len(self.db['data_path'])>0:
-                fpath = self.db['data_path'][0]
-            else:
-                fpath = os.path.dirname(self.db['h5py'])
-            self.save_path = fpath
-        self.db['save_path0'] = self.save_path
-        if len(self.fast_disk)==0:
-            self.fast_disk = self.save_path
-        self.db['fast_disk'] = self.fast_disk
-        print('Running suite2p!')
-        print('starting process')
-        print(self.db)
-        np.save('ops.npy', self.ops)
-        np.save('db.npy', self.db)
-        self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
+    def clean_script(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')
+        name = name[0]
+        if name:
+            self.cleanup = True
+            self.cleanScript = name
+            self.cleanLabel.setText(name)
+            self.ops['clean_script'] = name
 
     def get_folders(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
@@ -387,6 +516,7 @@ class RunWindow(QtGui.QDialog):
             self.data_path.append(name)
             self.qdata[len(self.data_path)-1].setText(name)
             self.runButton.setEnabled(True)
+            self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.bh5py.setEnabled(False)
 
@@ -403,6 +533,7 @@ class RunWindow(QtGui.QDialog):
             else:
                 self.h5_key = 'data'
             self.runButton.setEnabled(True)
+            self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.btiff.setEnabled(False)
 

@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
-from suite2p import fig, gui, classifier, visualize, reggui, classgui
+from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
 
 class MainW(QtGui.QMainWindow):
@@ -501,15 +501,13 @@ class MainW(QtGui.QMainWindow):
             )
         # initialize merges
         self.merged = []
-        self.Fmerge = []
-        self.stat_merge = []
 
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model["keys"]
-        # self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
+        self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
         #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
-        #self.load_proc()
+        self.load_proc()
         # self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def export_fig(self):
@@ -616,7 +614,9 @@ class MainW(QtGui.QMainWindow):
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
         )
         if dm == QtGui.QMessageBox.Yes:
-            fig.merge_masks(self)
+            nmerged = len(self.merged)
+            merge.activity_stats(self)
+            merge.fig_masks(self)
             M = fig.draw_masks(self)
             fig.plot_masks(self, M)
             fig.plot_trace(self)

@@ -1,7 +1,8 @@
 include suite2p/classifiers/classifier.npy
-include suite2p/classifiers/classifier_user.npy
 include suite2p/logo/logo.png
 include suite2p/logo/logo_unshaded.png
 include suite2p/ops/ops.npy
+include suite2p/ops/ops_soma.npy
+include suite2p/ops/ops_dendrite.npy
 include README.md
 include LICENSE

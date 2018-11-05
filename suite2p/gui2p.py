@@ -499,15 +499,11 @@ class MainW(QtGui.QMainWindow):
                 4 + n * 2,
                 1, 2
             )
-        # classifier file to load
-        self.classfile = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)),
-            "classifiers/classifier_user.npy",
-        )
-        self.classorig = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)),
-            "classifiers/classifier.npy"
-        )
+        # initialize merges
+        self.merged = []
+        self.Fmerge = []
+        self.stat_merge = []
+
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model["keys"]
@@ -517,9 +513,6 @@ class MainW(QtGui.QMainWindow):
         # self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
 
     def export_fig(self):
-        # self.exportDialog= pg.exportDialog.ExportDialog(self.win.scene())
-        # self.exportDialog.show(self.win.scene().contextMenuItem)
-        # self.win.scene().contextMenuItem(self.win.scene())
         self.win.scene().contextMenuItem = self.p1
         self.win.scene().showExportDialog()
 
@@ -559,7 +552,9 @@ class MainW(QtGui.QMainWindow):
     def keyPressEvent(self, event):
         if event.modifiers() != QtCore.Qt.ControlModifier:
             if event.key() == QtCore.Qt.Key_Return:
-                merge = 1
+                if 0:
+                    if len(self.imerge) > 1:
+                        self.merge_cells()
             elif event.key() == QtCore.Qt.Key_Escape:
                 self.zoom_plot(1)
                 self.zoom_plot(3)
@@ -612,6 +607,23 @@ class MainW(QtGui.QMainWindow):
                 if self.bloaded:
                     self.colorbtns.button(7).setChecked(True)
                     self.colorbtns.button(7).press(self, 7)
+
+    def merge_cells(self):
+        dm = QtGui.QMessageBox.question(
+            self,
+            "Merge cells",
+            "Do you want to merge selected cells?",
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+        )
+        if dm == QtGui.QMessageBox.Yes:
+            fig.merge_masks(self)
+            M = fig.draw_masks(self)
+            fig.plot_masks(self, M)
+            fig.plot_trace(self)
+            self.show()
+            self.merged.append(self.imerge)
+            print(self.merged)
+            print('merged ROIs')
 
     def expand_scale(self):
         self.sc += 0.5

@@ -561,6 +561,51 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
                     M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
     return M[0],M[1]
 
+def merge_masks(parent):
+    ncells  = len(parent.stat)
+    nmerged = len(parent.merged)
+    # cells or notcells
+    i0      = int(1-parent.iscell[parent.ichosen])
+    ypix = np.array([])
+    xpix = np.array([])
+    for n in np.array(parent.imerge):
+        #for k in range(parent.iROI.shape[1]):
+        #    ipix = np.array((parent.iROI[i0,k,:,:]==n).nonzero()).astype(np.int32)
+        #    parent.iROI[i0, k, ipix[0,:], ipix[1,:]] = ncells + nmerged
+        #    ipix = np.array((parent.iExt[i0,k,:,:]==n).nonzero()).astype(np.int32)
+        #    parent.iExt[i0, k, ipix[0,:], ipix[1,:]] = ncells + nmerged
+        ypix = np.append(ypix, parent.stat[n]['ypix'])
+        xpix = np.append(xpix, parent.stat[n]['xpix'])
+    ypix = ypix.astype(np.int32)
+    xpix = xpix.astype(np.int32)
+    parent.iROI[i0, 0, ypix, xpix] = ncells + nmerged
+    parent.iExt[i0, 0, ypix, xpix] = ncells + nmerged
+
+    cols = parent.ops_plot[3]
+    cols = np.append(cols, np.ones((1,cols.shape[1])), axis=0)
+    parent.ops_plot[3] = cols
+    for c in range(cols.shape[1]):
+        for k in range(5):
+            if k<3 or k==4:
+                H = cols[parent.iROI[i0,0,ypix,xpix],c]
+                S = parent.Sroi[i0,ypix,xpix]
+            else:
+                H = cols[parent.iExt[i0,0,ypix,xpix],c]
+                S = parent.Sext[i0,ypix,xpix]
+            if k==0:
+                V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i0,0,ypix,xpix]/parent.LamMean))
+            elif k==1 or k==2 or k==4:
+                V = parent.Vback[k-1,ypix,xpix]
+                S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i0,0,ypix,xpix]/parent.LamMean))
+            elif k==3:
+                V = parent.Vback[k-1,ypix,xpix]
+                V = np.minimum(1, V + S)
+            H = np.expand_dims(H.flatten(),axis=1)
+            S = np.expand_dims(S.flatten(),axis=1)
+            V = np.expand_dims(V.flatten(),axis=1)
+            hsv = np.concatenate((H,S,V),axis=1)
+            parent.RGBall[i0,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
+
 def flip_cell(parent):
     ''' flips a cell to other plot
     there are 3 levels of overlap so this may be buggy if more than 3 cells are on

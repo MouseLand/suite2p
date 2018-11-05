@@ -200,7 +200,7 @@ def create_neuropil_basis(ops, Ly, Lx):
     Kx = np.ones((Lx, ntilesX), 'float32')
     Ky = np.ones((Ly, ntilesY), 'float32')
     if 1:
-        print('here')
+        # basis functions are fourier modes
         for k in range(int((ntilesX-1)/2)):
             Kx[:,2*k+1] = np.sin(2*math.pi * (xs+0.5) *  (1+k)/Lx)
             Kx[:,2*k+2] = np.cos(2*math.pi * (xs+0.5) *  (1+k)/Lx)

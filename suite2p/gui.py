@@ -468,6 +468,7 @@ class RunWindow(QtGui.QDialog):
                     self.runButton.setEnabled(True)
                     self.bh5py.setEnabled(False)
                     self.btiff.setEnabled(True)
+                    self.listOps.setEnabled(True)
                     if hasattr(self,'h5_path'):
                         self.h5text.setText('')
                         del self.h5_path
@@ -481,6 +482,7 @@ class RunWindow(QtGui.QDialog):
                     self.runButton.setEnabled(True)
                     self.btiff.setEnabled(False)
                     self.bh5py.setEnabled(True)
+                    self.listOps.setEnabled(True)
                 if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)

@@ -91,7 +91,7 @@ def init_ops(ops):
         ops['fast_disk'] = ops['save_path0']
     fast_disk = ops['fast_disk']
     # for mesoscope recording FOV locations
-    if 'dy' in ops:
+    if 'dy' in ops and len(ops['dy'])>0:
         dy = ops['dy']
         dx = ops['dx']
     # compile ops into list across planes
@@ -106,7 +106,7 @@ def init_ops(ops):
             ops['lines'] = lines[j]
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
-        if 'dy' in ops:
+        if 'dy' in ops and len(ops['dy'])>0:
             ops['dy'] = dy[j]
             ops['dx'] = dx[j]
         if not os.path.isdir(ops['fast_disk']):
@@ -512,8 +512,8 @@ def combined(ops1):
         nn,nt = F0.shape
         if nt<Nfr:
             fcat    = np.zeros((nn,Nfr-nt), 'float32')
-            print(F0.shape)
-            print(fcat.shape)
+            #print(F0.shape)
+            #print(fcat.shape)
             F0      = np.concatenate((F0, fcat), axis=1)
             spks0   = np.concatenate((spks0, fcat), axis=1)
             Fneu0   = np.concatenate((Fneu0, fcat), axis=1)

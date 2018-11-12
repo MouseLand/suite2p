@@ -578,6 +578,7 @@ def sourcery(ops):
     ncells = 0
     refine = -1
 
+    # initialize
     ypix,xpix,lam = [], [], []
 
     while 1:

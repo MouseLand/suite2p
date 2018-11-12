@@ -265,7 +265,7 @@ def tiff_to_binary(ops):
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes']+= im2write.shape[0]
-            iplane = (iplane - nframes/nchannels) % nplanes
+            iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
     # write ops files
     do_registration = ops['do_registration']

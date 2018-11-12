@@ -429,7 +429,7 @@ class RunWindow(QtGui.QDialog):
     def save_default_ops(self):
         name = self.opsfile
         ops = self.ops.copy()
-        self.ops = {}
+        self.ops = run_s2p.default_ops()
         self.save_text()
         np.save(name, self.ops)
         self.ops = ops

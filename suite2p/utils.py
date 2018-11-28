@@ -90,7 +90,7 @@ def init_ops(ops):
     if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
         ops['fast_disk'] = ops['save_path0']
     fast_disk = ops['fast_disk']
-    # for mesoscope recording FOV locations
+    # for mesoscope recording FOV locations    
     if 'dy' in ops and ops['dy']!='':
         dy = ops['dy']
         dx = ops['dx']

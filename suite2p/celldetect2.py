@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils
+from suite2p import utils, register
 import time
 #from matplotlib.colors import hsv_to_rgb
 #from matplotlib import pyplot as plt
@@ -84,7 +84,7 @@ def get_mov(ops):
     i0 = tic()
 
     nframes = ops['nframes']
-    bin_min = np.round(nframes / ops['navg_frames_svd']).astype('int32');
+    bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)

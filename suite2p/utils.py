@@ -90,7 +90,7 @@ def init_ops(ops):
     if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
         ops['fast_disk'] = ops['save_path0']
     fast_disk = ops['fast_disk']
-    # for mesoscope recording FOV locations    
+    # for mesoscope recording FOV locations
     if 'dy' in ops and ops['dy']!='':
         dy = ops['dy']
         dx = ops['dx']
@@ -247,7 +247,7 @@ def tiff_to_binary(ops):
                 im = im[:nfr, :, :]
             nframes = im.shape[0]
             for j in range(0,nplanes):
-                if ik==0:
+                if ik==0 and ix==0:
                     ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                     if nchannels>1:
                         ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
@@ -260,13 +260,14 @@ def tiff_to_binary(ops):
                 im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
+                ops1[j]['nframes'] += im2write.shape[0]
                 if nchannels>1:
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                ops1[j]['nframes']+= im2write.shape[0]
             iplane = (iplane - nframes/nchannels) % nplanes
             ix+=nframes
+    print(ops1[0]['nframes'])
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']

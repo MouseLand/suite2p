@@ -326,7 +326,7 @@ def get_stat(ops, stat, Ucell, codes):
 
         proj  = Ucell[yp, xp, :] @ np.expand_dims(codes[k,:], axis=1)
         inds  = proj.flatten() > proj.max()*frac
-        footprints[k] = np.mean(rs0[inds])
+        footprints[k] = np.nanmean(rs0[inds])
 
         # compute compactness of ROI
         r2 = ((ypix-y0)/d0[0])**2 + ((xpix-x0)/d0[1])**2
@@ -338,9 +338,11 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['xpix'] += ops['xrange'][0]
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
-    mfoot = np.median(footprints)
+    mfoot = np.nanmedian(footprints)
     for n in range(len(stat)):
         stat[n]['footprint'] = footprints[n] / mfoot
+        if np.isnan(stat[n]['footprint']):
+            stat[n]['footprint'] = 0
     return stat
 
 def get_overlaps(stat, ops):

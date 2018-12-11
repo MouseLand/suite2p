@@ -332,6 +332,7 @@ class VisWindow(QtGui.QMainWindow):
         b = len(parent.colors)+1
         parent.colorbtns.button(b).setEnabled(True)
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        parent.rastermap = True
 
     def compute_svd(self,bin):
         sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]

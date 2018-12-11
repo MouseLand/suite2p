@@ -3,8 +3,7 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import celldetect2 as celldetect2
-from suite2p import utils, register, nonrigid
+from suite2p import utils, register, nonrigid, chan2, celldetect2
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
@@ -451,6 +450,9 @@ def get_cells(ops):
         stat[k]['skew'] = sk[k]
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
+    # if second channel, detect bright cells in second channel
+    if 'meanImg_chan2' in ops:
+        ops, stat = chan2.detect(ops, stat)
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
     # save ops

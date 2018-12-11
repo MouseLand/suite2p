@@ -3,7 +3,7 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import utils, register, nonrigid, chan2, celldetect2
+from suite2p import utils, register, nonrigid, chan2detect, celldetect2
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
@@ -224,15 +224,20 @@ def tiff_to_binary(ops):
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
     fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
+    for op in ops1:
+        op['first_tiffs'] = ops['first_tiffs']
+        op['frames_per_folder'] = np.zeros((ops['first_tiffs'].sum(),), np.int32)
     batch_size = 2000
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
+    which_folder = -1
     for ik, file in enumerate(fs):
         # size of tiff
         tif = TiffFile(file)
         Ltif = len(tif)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
+            which_folder += 1
             iplane = 0
         ix = 0
         while 1:
@@ -260,6 +265,8 @@ def tiff_to_binary(ops):
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
+                ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
+                print(ops1[j]['frames_per_folder'][which_folder])
                 if nchannels>1:
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
@@ -319,13 +326,19 @@ def mesoscan_to_binary(ops):
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
     fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
+    for op in ops1:
+        op['first_tiffs'] = ops['first_tiffs']
+        op['frames_per_folder'] = np.zeros((ops['first_tiffs'].sum(),), np.int32)
     if nchannels>1:
         nfunc = ops['functional_chan']-1
     else:
         nfunc = 0
     batch_size = 500
     # loop over all tiffs
+    which_folder = -1
     for ik, file in enumerate(fs):
+        if ops['first_tiffs'][ik]:
+            which_folder += 1
         ix = 0
         while 1:
             im = imread(file, pages = range(ix,ix+batch_size))
@@ -348,7 +361,8 @@ def mesoscan_to_binary(ops):
                     #im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                ops1[j]['nframes']+= im2write.shape[0]
+                ops1[j]['nframes'] += im2write.shape[0]
+                ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
             ix+=nframes
     # write ops files
     do_registration = ops['do_registration']
@@ -370,11 +384,16 @@ def mesoscan_to_binary(ops):
     return ops1
 
 def list_tifs(froot, look_one_level_down):
+    first_tiffs = []
     lpath = os.path.join(froot, "*.tif")
     fs  = natsorted(glob.glob(lpath))
     lpath = os.path.join(froot, "*.tiff")
     fs2 = natsorted(glob.glob(lpath))
     fs.extend(fs2)
+    if len(fs) > 0:
+        first_tiffs.extend(np.zeros((len(fs),), 'bool'))
+        first_tiffs[0] = True
+    lfs = len(fs)
     if look_one_level_down:
         fdir = glob.glob(os.path.join(froot, "*", ""))
         for folder_down in fdir:
@@ -384,7 +403,11 @@ def list_tifs(froot, look_one_level_down):
             fs4 = natsorted(glob.glob(lpath))
             fs.extend(fs3)
             fs.extend(fs4)
-    return fs
+            if len(fs3)+len(fs4) > 0:
+                first_tiffs.extend(np.zeros((len(fs3)+len(fs4),), 'bool'))
+                first_tiffs[lfs] = True
+                lfs = len(fs)
+    return fs, first_tiffs
 
 def get_tif_list(ops):
     froot = ops['data_path']
@@ -398,20 +421,20 @@ def get_tif_list(ops):
                 fold_list.append(fold)
     else:
         fold_list = froot
-    fs = []
+    fsall = []
     nfs = 0
-    ix = np.zeros((len(fold_list), 1), 'int32')
+    first_tiffs = []
     for k,fld in enumerate(fold_list):
-        ix[k] = len(fs)
-        fs.extend(list_tifs(fld, ops['look_one_level_down']))
+        fs, ftiffs = list_tifs(fld, ops['look_one_level_down'])
+        fsall.extend(fs)
+        first_tiffs.extend(ftiffs)
     if len(fs)==0:
         print('Could not find any tiffs')
         raise Exception('no tiffs')
     else:
-        ops['first_tiffs'] = np.zeros(len(fs), 'bool_')
-        ops['first_tiffs'][ix] = True
-        print('Found %d tifs'%(len(fs)))
-    return fs, ops
+        ops['first_tiffs'] = np.array(first_tiffs)
+        print('Found %d tifs'%(len(fsall)))
+    return fsall, ops
 
 def get_tif_list_old(ops):
     froot = ops['data_path']
@@ -452,7 +475,7 @@ def get_cells(ops):
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
-        ops, stat = chan2.detect(ops, stat)
+        ops, stat = chan2detect.detect(ops, stat)
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
     # save ops

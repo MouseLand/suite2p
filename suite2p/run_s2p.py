@@ -155,7 +155,7 @@ def run_s2p(ops={},db={}):
         print('found ops1 and binaries')
         print(ops1[0]['reg_file'])
     if flag_binreg:
-        print('foundpre-registered binaries')
+        print('found pre-registered binaries')
         print('skipping registration...')
     if flag_binreg and not files_found_flag:
         print('binary file created, but registration not performed')

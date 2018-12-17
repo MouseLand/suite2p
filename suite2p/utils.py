@@ -266,7 +266,7 @@ def tiff_to_binary(ops):
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
-                print(ops1[j]['frames_per_folder'][which_folder])
+                #print(ops1[j]['frames_per_folder'][which_folder])
                 if nchannels>1:
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
@@ -474,8 +474,9 @@ def get_cells(ops):
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
-    if 'meanImg_chan2' in ops:
-        ops, stat = chan2detect.detect(ops, stat)
+    #if 'meanImg_chan2' in ops:
+        #ops, stat = chan2detect.detect(ops, stat)
+        
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
     # save ops

@@ -170,7 +170,7 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        self.checkBox = QtGui.QCheckBox("&O: ROIs On")
+        self.checkBox = QtGui.QCheckBox("ROIs On [space bar]")
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.checkBox.toggle()
@@ -579,7 +579,7 @@ class MainW(QtGui.QMainWindow):
                     if "meanImg_chan2" in self.ops:
                         self.viewbtns.button(4).setChecked(True)
                         self.viewbtns.button(4).press(self, 4)
-                elif event.key() == QtCore.Qt.Key_O:
+                elif event.key() == QtCore.Qt.Key_Space:
                     self.checkBox.toggle()
                 elif event.key() == QtCore.Qt.Key_A:
                     self.colorbtns.button(0).setChecked(True)

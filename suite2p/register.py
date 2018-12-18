@@ -7,6 +7,8 @@ import multiprocessing
 from multiprocessing import Pool
 import math
 from suite2p import nonrigid, utils
+from scipy.signal import medfilt
+
 
 def tic():
     return time.time()
@@ -455,7 +457,7 @@ def register_binary(ops):
     ops['yrange'] = [int(ymin), int(ymax)]
     ops['xrange'] = [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
-    
+
     #ops['yoff'] = yoff
     #ops['xoff'] = xoff
     #ymin = np.maximum(0, np.ceil(np.amax(yoff)))

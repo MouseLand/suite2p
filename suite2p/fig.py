@@ -101,30 +101,42 @@ def init_range(parent):
     parent.p3.setLimits(xMin=0,xMax=parent.Fcell.shape[1])
     parent.trange = np.arange(0, parent.Fcell.shape[1])
 
+def istat_transform(istat):
+    istat = istat / 1.4
+    istat = istat + (0.4/1.4)
+    icols = 1 - istat
+    return icols
+
 def make_colors(parent):
     parent.clabels = []
     ncells = len(parent.stat)
     allcols = np.random.random((ncells,1))
+    allcols = allcols / 1.4
+    allcols = allcols + 0.1
+    if 'chan2' in parent.stat[0]:
+        for n in range(ncells):
+            if parent.stat[n]['chan2']:
+                allcols[n] = 0
     b=0
     for names in parent.colors[:-1]:
         if b > 0:
             istat = np.zeros((ncells,1))
             if b<len(parent.colors)-2:
-                for n in range(0,ncells):
-                    istat[n] = parent.stat[n][names]
+                if names in parent.stat[0]:
+                    for n in range(0,ncells):
+                        istat[n] = parent.stat[n][names]
+                istat1 = np.percentile(istat,2)
+                istat99 = np.percentile(istat,98)
+                parent.clabels.append([istat1,
+                                    (istat99-istat1)/2 + istat1,
+                                    istat99])
+                istat = istat - istat1
+                istat = istat / (istat99-istat1)
+                istat = np.maximum(0, np.minimum(1, istat))
             else:
                 istat = np.expand_dims(parent.probcell, axis=1)
-            istat1 = np.percentile(istat,2)
-            istat99 = np.percentile(istat,98)
-            parent.clabels.append([istat1,
-                                 (istat99-istat1)/2 + istat1,
-                                 istat99])
-            istat = istat - istat1
-            istat = istat / (istat99-istat1)
-            istat = np.maximum(0, np.minimum(1, istat))
-            istat = istat / 1.3
-            istat = istat + 0.1
-            icols = 1 - istat
+                parent.clabels.append([0.0, .5, 1.0])
+            icols = istat_transform(istat)
             allcols = np.concatenate((allcols, icols), axis=1)
         else:
             parent.clabels.append([0,0.5,1])
@@ -306,16 +318,14 @@ def rastermap_masks(parent):
         parent.clabels[-1] = [0, istat.max()/2, istat.max()]
 
     istat = istat / istat.max()
-    istat = istat / 1.3
-    istat = istat + 0.1
-    cols = 1 - istat
-    cols[parent.isort==-1] = 0
-    parent.ops_plot[6] = cols
+    icols = istat_transform(istat)
+    icols[parent.isort==-1] = 0
+    parent.ops_plot[6] = icols
     if inactive:
         nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
         rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)
     for i in range(2):
-        H = cols[parent.iROI[i,0,:,:]]
+        H = icols[parent.iROI[i,0,:,:]]
         Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
         if k==0:
             S = parent.Sroi[i,:,:]
@@ -358,9 +368,7 @@ def beh_masks(parent):
     istat_max = istat.max()
     istat = istat - istat.min()
     istat = istat / istat.max()
-    istat = istat / 1.3
-    istat = istat + 0.1
-    cols = 1 - istat
+    cols = istat_transform(istat)
     parent.ops_plot[5] = cols
     if len(parent.clabels)==len(parent.colors):
         parent.clabels.append([istat_min,
@@ -413,9 +421,7 @@ def corr_masks(parent):
                          istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
-    istat = istat / 1.3
-    istat = istat + 0.1
-    cols = 1 - istat
+    cols = istat_transform(istat)
     parent.ops_plot[4] = cols
     for i in range(2):
         H = cols[parent.iROI[i,0,:,:]]
@@ -652,10 +658,9 @@ def ROI_index(ops, stat):
     return iROI
 
 def make_colorbar():
-    H = np.arange(0,100).astype(np.float32)
-    H = H / (100*1.3)
-    H = H + 0.1
-    H = 1 - H
+    H = np.linspace(0,1,101).astype(np.float32)
+    H = H[:-1]
+    H = istat_transform(H)
     H = np.expand_dims(H,axis=1)
     S = np.ones((100,1))
     V = np.ones((100,1))

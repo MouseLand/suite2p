@@ -134,9 +134,7 @@ def activate(parent, inactive):
     parent.clabels[-2] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
-    istat = istat / 1.3
-    istat = istat + 0.1
-    icols = 1 - istat
+    icols = fig.istat_transform(istat)
     parent.ops_plot[3][:,-1] = icols
     fig.class_masks(parent)
     M = fig.draw_masks(parent)

@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils
+from suite2p import utils, register
 import time
 #from matplotlib.colors import hsv_to_rgb
 #from matplotlib import pyplot as plt
@@ -84,7 +84,7 @@ def get_mov(ops):
     i0 = tic()
 
     nframes = ops['nframes']
-    bin_min = np.round(nframes / ops['navg_frames_svd']).astype('int32');
+    bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)
@@ -326,7 +326,7 @@ def get_stat(ops, stat, Ucell, codes):
 
         proj  = Ucell[yp, xp, :] @ np.expand_dims(codes[k,:], axis=1)
         inds  = proj.flatten() > proj.max()*frac
-        footprints[k] = np.mean(rs0[inds])
+        footprints[k] = np.nanmean(rs0[inds])
 
         # compute compactness of ROI
         r2 = ((ypix-y0)/d0[0])**2 + ((xpix-x0)/d0[1])**2
@@ -338,9 +338,11 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['xpix'] += ops['xrange'][0]
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
-    mfoot = np.median(footprints)
+    mfoot = np.nanmedian(footprints)
     for n in range(len(stat)):
         stat[n]['footprint'] = footprints[n] / mfoot
+        if np.isnan(stat[n]['footprint']):
+            stat[n]['footprint'] = 0
     return stat
 
 def get_overlaps(stat, ops):

@@ -170,7 +170,7 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
-        self.checkBox = QtGui.QCheckBox("&O: ROIs On")
+        self.checkBox = QtGui.QCheckBox("ROIs On [space bar]")
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.checkBox.toggle()
@@ -289,8 +289,9 @@ class MainW(QtGui.QMainWindow):
             "D: compact",
             "F: footprint",
             "G: aspect_ratio",
-            "H: classifier",
-            "J: correlations, bin=",
+            "H: chan2_prob",
+            "J: classifier",
+            "K: correlations, bin=",
         ]
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
@@ -317,8 +318,8 @@ class MainW(QtGui.QMainWindow):
         b = 0
         # colorbars for different statistics
         colorsAll = self.colors.copy()
-        colorsAll.append("K: corr with 1D var, bin= ^^^")
-        colorsAll.append("L: rastermap")
+        colorsAll.append("L: corr with 1D var, bin= ^^^")
+        colorsAll.append("M: rastermap")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
             self.colorbtns.addButton(btn, b)
@@ -395,7 +396,7 @@ class MainW(QtGui.QMainWindow):
             "skew",
             "compact",
             "footprint",
-            "aspect_ratio",
+            "aspect_ratio"
         ]
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel(self)
@@ -501,7 +502,7 @@ class MainW(QtGui.QMainWindow):
             )
         # initialize merges
         self.merged = []
-
+        self.rastermap = False
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model["keys"]
@@ -548,63 +549,71 @@ class MainW(QtGui.QMainWindow):
             self.show()
 
     def keyPressEvent(self, event):
-        if event.modifiers() != QtCore.Qt.ControlModifier:
-            if event.key() == QtCore.Qt.Key_Return:
-                if 0:
-                    if len(self.imerge) > 1:
-                        self.merge_cells()
-            elif event.key() == QtCore.Qt.Key_Escape:
-                self.zoom_plot(1)
-                self.zoom_plot(3)
-                self.show()
-            elif event.key() == QtCore.Qt.Key_Delete:
-                self.ROI_remove()
-            elif event.key() == QtCore.Qt.Key_Shift:
-                split = 1
-            elif event.key() == QtCore.Qt.Key_Q:
-                self.viewbtns.button(0).setChecked(True)
-                self.viewbtns.button(0).press(self, 0)
-            elif event.key() == QtCore.Qt.Key_W:
-                self.viewbtns.button(1).setChecked(True)
-                self.viewbtns.button(1).press(self, 1)
-            elif event.key() == QtCore.Qt.Key_E:
-                self.viewbtns.button(2).setChecked(True)
-                self.viewbtns.button(2).press(self, 2)
-            elif event.key() == QtCore.Qt.Key_R:
-                self.viewbtns.button(3).setChecked(True)
-                self.viewbtns.button(3).press(self, 3)
-            elif event.key() == QtCore.Qt.Key_T:
-                if self.loaded:
+        if self.loaded:
+            if event.modifiers() != QtCore.Qt.ControlModifier:
+                if event.key() == QtCore.Qt.Key_Return:
+                    if 0:
+                        if len(self.imerge) > 1:
+                            self.merge_cells()
+                elif event.key() == QtCore.Qt.Key_Escape:
+                    self.zoom_plot(1)
+                    self.zoom_plot(3)
+                    self.show()
+                elif event.key() == QtCore.Qt.Key_Delete:
+                    self.ROI_remove()
+                elif event.key() == QtCore.Qt.Key_Shift:
+                    split = 1
+                elif event.key() == QtCore.Qt.Key_Q:
+                    self.viewbtns.button(0).setChecked(True)
+                    self.viewbtns.button(0).press(self, 0)
+                elif event.key() == QtCore.Qt.Key_W:
+                    self.viewbtns.button(1).setChecked(True)
+                    self.viewbtns.button(1).press(self, 1)
+                elif event.key() == QtCore.Qt.Key_E:
+                    self.viewbtns.button(2).setChecked(True)
+                    self.viewbtns.button(2).press(self, 2)
+                elif event.key() == QtCore.Qt.Key_R:
+                    self.viewbtns.button(3).setChecked(True)
+                    self.viewbtns.button(3).press(self, 3)
+                elif event.key() == QtCore.Qt.Key_T:
                     if "meanImg_chan2" in self.ops:
                         self.viewbtns.button(4).setChecked(True)
                         self.viewbtns.button(4).press(self, 4)
-            elif event.key() == QtCore.Qt.Key_O:
-                self.checkBox.toggle()
-            elif event.key() == QtCore.Qt.Key_A:
-                self.colorbtns.button(0).setChecked(True)
-                self.colorbtns.button(0).press(self, 0)
-            elif event.key() == QtCore.Qt.Key_S:
-                self.colorbtns.button(1).setChecked(True)
-                self.colorbtns.button(1).press(self, 1)
-            elif event.key() == QtCore.Qt.Key_D:
-                self.colorbtns.button(2).setChecked(True)
-                self.colorbtns.button(2).press(self, 2)
-            elif event.key() == QtCore.Qt.Key_F:
-                self.colorbtns.button(3).setChecked(True)
-                self.colorbtns.button(3).press(self, 3)
-            elif event.key() == QtCore.Qt.Key_G:
-                self.colorbtns.button(4).setChecked(True)
-                self.colorbtns.button(4).press(self, 4)
-            elif event.key() == QtCore.Qt.Key_H:
-                self.colorbtns.button(5).setChecked(True)
-                self.colorbtns.button(5).press(self, 5)
-            elif event.key() == QtCore.Qt.Key_J:
-                self.colorbtns.button(6).setChecked(True)
-                self.colorbtns.button(6).press(self, 6)
-            elif event.key() == QtCore.Qt.Key_K:
-                if self.bloaded:
+                elif event.key() == QtCore.Qt.Key_Space:
+                    self.checkBox.toggle()
+                elif event.key() == QtCore.Qt.Key_A:
+                    self.colorbtns.button(0).setChecked(True)
+                    self.colorbtns.button(0).press(self, 0)
+                elif event.key() == QtCore.Qt.Key_S:
+                    self.colorbtns.button(1).setChecked(True)
+                    self.colorbtns.button(1).press(self, 1)
+                elif event.key() == QtCore.Qt.Key_D:
+                    self.colorbtns.button(2).setChecked(True)
+                    self.colorbtns.button(2).press(self, 2)
+                elif event.key() == QtCore.Qt.Key_F:
+                    self.colorbtns.button(3).setChecked(True)
+                    self.colorbtns.button(3).press(self, 3)
+                elif event.key() == QtCore.Qt.Key_G:
+                    self.colorbtns.button(4).setChecked(True)
+                    self.colorbtns.button(4).press(self, 4)
+                elif event.key() == QtCore.Qt.Key_H:
+                    if "chan2_prob" in self.stat[0]:
+                        self.colorbtns.button(5).setChecked(True)
+                        self.colorbtns.button(5).press(self, 5)
+                elif event.key() == QtCore.Qt.Key_J:
+                    self.colorbtns.button(6).setChecked(True)
+                    self.colorbtns.button(6).press(self, 6)
+                elif event.key() == QtCore.Qt.Key_K:
                     self.colorbtns.button(7).setChecked(True)
                     self.colorbtns.button(7).press(self, 7)
+                elif event.key() == QtCore.Qt.Key_L:
+                    if self.bloaded:
+                        self.colorbtns.button(8).setChecked(True)
+                        self.colorbtns.button(8).press(self, 8)
+                elif event.key() == QtCore.Qt.Key_M:
+                    if self.rastermap:
+                        self.colorbtns.button(9).setChecked(True)
+                        self.colorbtns.button(9).press(self, 9)
 
     def merge_cells(self):
         dm = QtGui.QMessageBox.question(
@@ -897,11 +906,17 @@ class MainW(QtGui.QMainWindow):
             self.viewbtns.button(b).setEnabled(False)
             self.viewbtns.button(b).setStyleSheet(self.styleInactive)
         for b in range(len(self.colors)):
-            self.colorbtns.button(b).setEnabled(True)
-            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
-            if b == 0:
+            if b==5:
+                if "chan2_prob" in self.stat[0]:
+                    self.colorbtns.button(b).setEnabled(True)
+                    self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            elif b==0:
+                self.colorbtns.button(b).setEnabled(True)
                 self.colorbtns.button(b).setChecked(True)
                 self.colorbtns.button(b).setStyleSheet(self.stylePressed)
+            else:
+                self.colorbtns.button(b).setEnabled(True)
+                self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
         self.applyclass.setStyleSheet(self.styleUnpressed)
         self.applyclass.setEnabled(True)
         b = 0

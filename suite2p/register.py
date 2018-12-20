@@ -7,6 +7,8 @@ import multiprocessing
 from multiprocessing import Pool
 import math
 from suite2p import nonrigid, utils
+from scipy.signal import medfilt
+
 
 def tic():
     return time.time()
@@ -440,15 +442,31 @@ def register_binary(ops):
         if k%5==0:
             print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
     reg_file_align.close()
-    ops['yoff'] = yoff
-    ops['xoff'] = xoff
-    ymin = np.maximum(0, np.ceil(np.amax(yoff)))
-    ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+
+    ops['th_badframes'] = 100
+    dx = xoff - medfilt(xoff, 101)
+    dy = yoff - medfilt(yoff, 101)
+    dxy = (dx**2 + dy**2)**.5
+    cXY = corrXY / medfilt(corrXY, 101)
+    px = dxy/np.mean(dxy) / np.maximum(0, cXY)
+    ops['badframes'] = px > ops['th_badframes']
+    ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(ops['badframes'])])))
+    ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(yoff)))
+    xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(ops['badframes'])])))
+    xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(xoff)))
     ops['yrange'] = [int(ymin), int(ymax)]
-    xmin = np.maximum(0, np.ceil(np.amax(xoff)))
-    xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
     ops['xrange'] = [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
+
+    #ops['yoff'] = yoff
+    #ops['xoff'] = xoff
+    #ymin = np.maximum(0, np.ceil(np.amax(yoff)))
+    #ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    #ops['yrange'] = [int(ymin), int(ymax)]
+    #xmin = np.maximum(0, np.ceil(np.amax(xoff)))
+    #xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    #ops['xrange'] = [int(xmin), int(xmax)]
+    #ops['corrXY'] = corrXY
     if ops['nonrigid']:
         ops['yoff1'] = yoff1
         ops['xoff1'] = xoff1

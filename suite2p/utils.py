@@ -517,6 +517,9 @@ def combined(ops1):
     meanImgE = np.zeros((LY, LX))
     if ops['nchannels']>1:
         meanImg_chan2 = np.zeros((LY, LX))
+    if 'meanImg_chan2_corrected' in ops:
+        meanImg_chan2_corrected = np.zeros((LY, LX))
+
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
@@ -528,6 +531,8 @@ def combined(ops1):
         meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
         if ops['nchannels']>1:
             meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
+        if 'meanImg_chan2_corrected' in ops:
+            meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
@@ -569,6 +574,8 @@ def combined(ops1):
     ops['meanImgE'] = meanImgE
     if ops['nchannels']>1:
         ops['meanImg_chan2'] = meanImg_chan2
+    if 'meanImg_chan2_corrected' in ops:
+        ops['meanImg_chan2_corrected'] = meanImg_chan2_corrected
     ops['Vcorr'] = Vcorr
     ops['Ly'] = LY
     ops['Lx'] = LX
@@ -584,16 +591,19 @@ def combined(ops1):
     np.save(os.path.join(fpath, 'ops.npy'), ops)
     np.save(os.path.join(fpath, 'stat.npy'), stat)
     np.save(os.path.join(fpath, 'iscell.npy'), iscell)
+    if hasred:
+        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
 
     # save as matlab file
     if ('save_mat' in ops) and ops['save_mat']:
         matpath = os.path.join(ops['save_path'],'Fall.mat')
         scipy.io.savemat(matpath, {'stat': stat,
-                                   'ops': ops,
-                                   'F': F,
-                                   'Fneu': Fneu,
-                                   'spks': spks,
-                                   'iscell': iscell})
+                                    'ops': ops,
+                                    'F': F,
+                                    'Fneu': Fneu,
+                                    'spks': spks,
+                                    'iscell': iscell,
+                                    'redcell': redcell})
     return ops
 
 def make_blocks(ops):

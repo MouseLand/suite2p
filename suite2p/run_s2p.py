@@ -40,7 +40,7 @@ def default_ops():
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # registration settings
-        'do_registration': True, # whether to register data
+        'do_registration': 1, # whether to register data (2 forces re-registration)
         'keep_movie_raw': True,
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
@@ -112,9 +112,9 @@ def run_s2p(ops={},db={}):
                 op['reg_file'] = os.path.join(op['save_path'], 'data.bin')
                 flag_reg = os.path.isfile(op['reg_file'])
             files_found_flag &= flag_reg
-            if 'refImg' not in op:
+            if 'refImg' not in op or op['do_registration']>1:
                 flag_binreg = False
-            # use the new options
+            # use the new False
             ops1[i] = {**op, **ops}.copy()
             #ops1[i] = ops1[i].copy()
             print(ops1[i]['save_path'])

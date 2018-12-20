@@ -273,7 +273,8 @@ def tiff_to_binary(ops):
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-            iplane = (iplane - nframes/nchannels) % nplanes
+                ops1[j]['nframes']+= im2write.shape[0]
+            iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
     print(ops1[0]['nframes'])
     # write ops files
@@ -476,9 +477,9 @@ def get_cells(ops):
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
-    if 'meanImg_chan2' in ops:
-        ops, redcell = chan2detect.detect(ops, stat)
-        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
+    #if 'meanImg_chan2' in ops:
+        #ops, redcell = chan2detect.detect(ops, stat)
+        #np.save(os.path.join(fpath, 'redcell.npy'), redcell)
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
@@ -535,6 +536,7 @@ def combined(ops1):
             stat0[j]['ypix'] += ops['dy']
             stat0[j]['med'][0] += ops['dy']
             stat0[j]['med'][1] += ops['dx']
+            stat0[j]['iplane'] = k
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))

@@ -477,6 +477,7 @@ def get_cells(ops):
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
+    fpath = ops['save_path']
     if 'meanImg_chan2' in ops:
         ops, redcell = chan2detect.detect(ops, stat)
         np.save(os.path.join(fpath, 'redcell.npy'), redcell)
@@ -486,7 +487,6 @@ def get_cells(ops):
     # save ops
     np.save(ops['ops_path'], ops)
     # save results
-    fpath = ops['save_path']
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
     np.save(os.path.join(fpath,'stat.npy'), stat)

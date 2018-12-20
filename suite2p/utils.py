@@ -477,9 +477,9 @@ def get_cells(ops):
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
-    #if 'meanImg_chan2' in ops:
-        #ops, redcell = chan2detect.detect(ops, stat)
-        #np.save(os.path.join(fpath, 'redcell.npy'), redcell)
+    if 'meanImg_chan2' in ops:
+        ops, redcell = chan2detect.detect(ops, stat)
+        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
@@ -541,6 +541,12 @@ def combined(ops1):
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))
         iscell0 = np.load(os.path.join(fpath,'iscell.npy'))
+        if os.path.isfile(os.path.join(fpath,'redcell.npy')):
+            redcell0 = np.load(os.path.join(fpath,'redcell.npy'))
+            hasred = True
+        else:
+            redcell0 = []
+            hasred = False
         nn,nt = F0.shape
         if nt<Nfr:
             fcat    = np.zeros((nn,Nfr-nt), 'float32')
@@ -550,13 +556,15 @@ def combined(ops1):
             spks0   = np.concatenate((spks0, fcat), axis=1)
             Fneu0   = np.concatenate((Fneu0, fcat), axis=1)
         if k==0:
-            F, Fneu, spks,stat,iscell = F0, Fneu0, spks0,stat0, iscell0
+            F, Fneu, spks,stat,iscell,redcell = F0, Fneu0, spks0,stat0, iscell0, redcell0
         else:
             F    = np.concatenate((F, F0))
             Fneu = np.concatenate((Fneu, Fneu0))
             spks = np.concatenate((spks, spks0))
             stat = np.concatenate((stat,stat0))
             iscell = np.concatenate((iscell,iscell0))
+            if hasred:
+                redcell = np.concatenate((redcell,redcell0))
     ops['meanImg']  = meanImg
     ops['meanImgE'] = meanImgE
     if ops['nchannels']>1:

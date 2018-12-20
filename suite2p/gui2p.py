@@ -1155,7 +1155,7 @@ class MainW(QtGui.QMainWindow):
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("no manual labels found (iscell.npy)")
                 if goodfolder:
-                    NN = F.shape[0]
+                    NN = Fcell.shape[0]
                     iscell = np.ones((NN,), np.bool)
                     probcell = np.ones((NN,), np.float32)
             try:
@@ -1167,7 +1167,7 @@ class MainW(QtGui.QMainWindow):
                 print("no channel 2 labels found (redcell.npy)")
                 self.hasred = False
                 if goodfolder:
-                    NN = F.shape[0]
+                    NN = Fcell.shape[0]
                     redcell = np.zeros((NN,), np.bool)
                     probredcell = np.zeros((NN,), np.float32)
 

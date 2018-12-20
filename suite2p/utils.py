@@ -505,6 +505,7 @@ def combined(ops1):
             stat0[j]['ypix'] += ops['dy']
             stat0[j]['med'][0] += ops['dy']
             stat0[j]['med'][1] += ops['dx']
+            stat0[j]['iplane'] = k
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))
         spks0 = np.load(os.path.join(fpath,'spks.npy'))

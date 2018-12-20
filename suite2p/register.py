@@ -356,7 +356,7 @@ def get_metrics(ops):
     ops['regDX'] = X
     return ops
 
-def register_binary(ops):
+def register_binary(ops, refImg=None):
     # if ops is a list of dictionaries, each will be registered separately
     if (type(ops) is list) or (type(ops) is np.ndarray):
         for op in ops:
@@ -368,6 +368,9 @@ def register_binary(ops):
         ops['reg_file_raw'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
         print(ops['reg_file_raw'])
         shutil.copyfile(ops['reg_file'], ops['reg_file_raw'])
+        if ops['nchannels'] > 1:
+            ops['reg_file_chan2_raw'] = os.path.splitext(ops['reg_file_chan2'])[0]+'_raw.bin'
+            shutil.copyfile(ops['reg_file_chan2'], ops['reg_file_chan2_raw'])
 
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -376,9 +379,15 @@ def register_binary(ops):
         raise Exception('the total number of frames should be at least 50 ')
     if ops['nframes']<200:
         print('number of frames is below 200, unpredictable behaviors may occur')
-    refImg = pick_init(ops)
+    do_regmetrics = True
+    if refImg is not None:
+        print('using reference frame given')
+        print('will not compute registration metrics')
+        do_regmetrics = False
+    else:
+        refImg = pick_init(ops)
+        print('computed reference frame for registration')
     ops['refImg'] = refImg
-    print('computed reference frame for registration')
     nbatch = ops['batch_size']
     nbytesread = 2 * Ly * Lx * nbatch
     if ops['nchannels']>1:
@@ -458,8 +467,8 @@ def register_binary(ops):
     ops['xrange'] = [int(xmin), int(xmax)]
     ops['corrXY'] = corrXY
 
-    #ops['yoff'] = yoff
-    #ops['xoff'] = xoff
+    ops['yoff'] = yoff
+    ops['xoff'] = xoff
     #ymin = np.maximum(0, np.ceil(np.amax(yoff)))
     #ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
     #ops['yrange'] = [int(ymin), int(ymax)]
@@ -515,8 +524,9 @@ def register_binary(ops):
         print('registered second channel in time %4.2f'%(toc(k0)))
 
     # compute metrics for registration
-    ops = get_metrics(ops)
-    print('computed registration metrics in time %4.2f'%(toc(k0)))
+    if do_regmetrics:
+        ops = get_metrics(ops)
+        print('computed registration metrics in time %4.2f'%(toc(k0)))
 
     np.save(ops['ops_path'], ops)
     return ops

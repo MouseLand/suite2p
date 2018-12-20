@@ -46,35 +46,32 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     return mimg2
 
 def detect(ops, stat):
-    ops2 = ops.copy()
-    mimg = ops['meanImg'].copy()
-    mimg2 = ops['meanImg_chan2'].copy()
+    #ops2 = ops.copy()
+    mimg = ops['meanImg']
+    mimg2 = ops['meanImg_chan2']
 
     # subtract bleedthrough of green into red channel
     # non-rigid regression with nblks x nblks pieces
     nblks = 3
     Ly = ops['Ly']
     Lx = ops['Lx']
-    mimg2 = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
-    ops['meanImg_chan2_corrected'] = mimg2
+    mimg2_corr = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
+    ops['meanImg_chan2_corrected'] = mimg2_corr
 
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
-    ops2['min_neuropil_pixels'] = 80
-    stat2, cell_pix, cell_masks = celldetect2.create_cell_masks(ops2, stat, Ly, Lx, 1)
-    neuropil_masks = celldetect2.create_neuropil_masks(ops2, stat, cell_pix)
-    ncells = len(stat)
+    # ops['min_neuropil_pixels'] = 80
+    _, cell_pix, cell_masks = celldetect2.create_cell_masks(ops, stat, Ly, Lx, allow_overlap=True)
+    neuropil_masks = celldetect2.create_neuropil_masks(ops, stat, cell_pix)
+    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
+    cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
 
-    inpix = (cell_masks * mimg2).sum(axis=-1).sum(axis=-1)
-    extpix = (neuropil_masks * mimg2).sum(axis=-1).sum(axis=-1)
+    inpix = cell_masks @ mimg2.flatten()
+    extpix = neuropil_masks @ mimg2.flatten()
     inpix = np.maximum(1e-3, inpix)
     redprob = inpix / (inpix + extpix)
+    redcell = redprob > ops['chan2_thres']
 
-    redcell = redprob > np.nanmean(redprob) + ops['chan2_thres'] * np.nanstd(redprob)
-    notred = redprob <= np.nanmean(redprob) + ops['chan2_max'] * np.nanstd(redprob)
-    for n in range(ncells):
-        stat[n]['chan2'] = redcell[n]
-        stat[n]['chan2_prob'] = redprob[n]
-        stat[n]['not_chan2']  = notred[n]
+    redcell = np.concatenate((redcell[:,np.newaxis], redprob[:,np.newaxis]), axis=1)
 
-    return ops, stat
+    return ops, redcell

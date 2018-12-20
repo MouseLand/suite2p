@@ -113,10 +113,9 @@ def make_colors(parent):
     allcols = np.random.random((ncells,1))
     allcols = allcols / 1.4
     allcols = allcols + 0.1
-    if 'chan2' in parent.stat[0]:
-        for n in range(ncells):
-            if parent.stat[n]['chan2']:
-                allcols[n] = 0
+    print(parent.redcell.sum())
+    allcols[parent.redcell] = 0
+
     b=0
     for names in parent.colors[:-1]:
         if b > 0:
@@ -246,7 +245,13 @@ def init_masks(parent):
                     ops['xrange'][0]:ops['xrange'][1]] = vcorr
                 mimg = np.maximum(0,np.minimum(1,mimg))
             else:
-                if ops['nchannels']>1:
+                if 'meanImg_chan2_corrected' in ops:
+                    mimg = ops['meanImg_chan2_corrected']
+                    mimg1 = np.percentile(mimg,1)
+                    mimg99 = np.percentile(mimg,99)
+                    mimg     = (mimg - mimg1) / (mimg99 - mimg1)
+                    mimg = np.maximum(0,np.minimum(1,mimg))
+                elif 'meanImg_chan2' in ops:
                     mimg = ops['meanImg_chan2']
                     mimg1 = np.percentile(mimg,1)
                     mimg99 = np.percentile(mimg,99)

@@ -597,7 +597,7 @@ class MainW(QtGui.QMainWindow):
                     self.colorbtns.button(4).setChecked(True)
                     self.colorbtns.button(4).press(self, 4)
                 elif event.key() == QtCore.Qt.Key_H:
-                    if "chan2_prob" in self.stat[0]:
+                    if self.hasred:
                         self.colorbtns.button(5).setChecked(True)
                         self.colorbtns.button(5).press(self, 5)
                 elif event.key() == QtCore.Qt.Key_J:
@@ -907,7 +907,7 @@ class MainW(QtGui.QMainWindow):
             self.viewbtns.button(b).setStyleSheet(self.styleInactive)
         for b in range(len(self.colors)):
             if b==5:
-                if "chan2_prob" in self.stat[0]:
+                if self.hasred:
                     self.colorbtns.button(b).setEnabled(True)
                     self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
             elif b==0:
@@ -1141,18 +1141,36 @@ class MainW(QtGui.QMainWindow):
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("there are no spike deconvolved traces in this folder "
                       "(spks.npy)")
-            try:
-                iscell = np.load(basename + "/iscell.npy")
-                probcell = iscell[:, 1]
-                iscell = iscell[:, 0].astype(np.bool)
-            except (ValueError, OSError, RuntimeError, TypeError, NameError):
-                print("no manual labels found (iscell.npy)")
+                goodfolder = False
             try:
                 ops = np.load(basename + "/ops.npy")
                 ops = ops.item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("ERROR: there is no ops file in this folder (ops.npy)")
                 goodfolder = False
+            try:
+                iscell = np.load(basename + "/iscell.npy")
+                probcell = iscell[:, 1]
+                iscell = iscell[:, 0].astype(np.bool)
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print("no manual labels found (iscell.npy)")
+                if goodfolder:
+                    NN = F.shape[0]
+                    iscell = np.ones((NN,), np.bool)
+                    probcell = np.ones((NN,), np.float32)
+            try:
+                redcell = np.load(basename + "/redcell.npy")
+                probredcell = redcell[:,1]
+                redcell = redcell[:,0].astype(np.bool)
+                self.hasred = True
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                print("no channel 2 labels found (redcell.npy)")
+                self.hasred = False
+                if goodfolder:
+                    NN = F.shape[0]
+                    redcell = np.zeros((NN,), np.bool)
+                    probredcell = np.zeros((NN,), np.float32)
+
             if goodfolder:
                 self.basename = basename
                 self.stat = stat
@@ -1162,6 +1180,10 @@ class MainW(QtGui.QMainWindow):
                 self.Spks = Spks
                 self.iscell = iscell
                 self.probcell = probcell
+                self.redcell = redcell
+                self.probredcell = probredcell
+                for n in range(len(self.stat)):
+                    self.stat[n]['chan2_prob'] = self.probredcell[n]
                 self.make_masks_and_buttons()
                 self.loaded = True
             else:

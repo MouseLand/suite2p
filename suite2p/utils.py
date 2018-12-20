@@ -248,7 +248,7 @@ def tiff_to_binary(ops):
             if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
             if type(im[0,0,0]) == np.uint16:
-                im = im / 2            
+                im = im / 2
             if im.shape[0] > nfr:
                 im = im[:nfr, :, :]
             nframes = im.shape[0]
@@ -476,8 +476,9 @@ def get_cells(ops):
         stat[k]['std']  = sd[k]
         stat[k]['npix_norm'] = npix[k]
     # if second channel, detect bright cells in second channel
-    #if 'meanImg_chan2' in ops:
-        #ops, stat = chan2detect.detect(ops, stat)
+    if 'meanImg_chan2' in ops:
+        ops, redcell = chan2detect.detect(ops, stat)
+        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)

@@ -479,6 +479,8 @@ def get_cells(ops):
     # if second channel, detect bright cells in second channel
     fpath = ops['save_path']
     if 'meanImg_chan2' in ops:
+        if 'chan2_thres' not in ops:
+            ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stat)
         np.save(os.path.join(fpath, 'redcell.npy'), redcell)
 

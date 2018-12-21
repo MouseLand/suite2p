@@ -13,7 +13,7 @@ class MainW(QtGui.QMainWindow):
     def __init__(self):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(25, 25, 1600, 1000)
+        self.setGeometry(10, 10, 1600, 950)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -230,7 +230,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600, 0)
         self.win.resize(1000, 500)
-        self.l0.addWidget(self.win, 1, 2, 38, 30)
+        self.l0.addWidget(self.win, 1, 2, 40, 30)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(
@@ -281,7 +281,9 @@ class MainW(QtGui.QMainWindow):
             "W: mean img",
             "E: mean img (enhanced)",
             "R: correlation map",
-            "T: mean img (non-functional)",
+            "T: mean img (chan2, corrected)",
+            "Y: mean img (chan2)",
+
         ]
         self.colors = [
             "A: random",
@@ -290,7 +292,7 @@ class MainW(QtGui.QMainWindow):
             "F: footprint",
             "G: aspect_ratio",
             "H: chan2_prob",
-            "J: classifier",
+            "J: classifier, cell prob=",
             "K: correlations, bin=",
         ]
         b = 0
@@ -323,7 +325,7 @@ class MainW(QtGui.QMainWindow):
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
             self.colorbtns.addButton(btn, b)
-            if b == len(self.colors) - 1:
+            if b == len(self.colors) - 1 or b==5 or b==6:
                 self.l0.addWidget(btn, nv + b + 1, 0, 1, 1)
             else:
                 self.l0.addWidget(btn, nv + b + 1, 0, 1, 2)
@@ -331,6 +333,30 @@ class MainW(QtGui.QMainWindow):
             if b < len(self.colors):
                 self.colors[b] = self.colors[b][3:]
             b += 1
+        self.chan2edit = QtGui.QLineEdit(self)
+        #self.chan2edit.setValidator(QtGui.QFloatValidator(0, 1.2))
+        self.chan2edit.setText("0.6")
+        self.chan2edit.setFixedWidth(40)
+        self.chan2edit.setAlignment(QtCore.Qt.AlignRight)
+        self.chan2edit.returnPressed.connect(self.chan2_prob)
+        self.l0.addWidget(self.chan2edit, nv + b - 4, 1, 1, 1)
+
+        self.probedit = QtGui.QLineEdit(self)
+        #self.probedit.setDecimals(3)
+        #self.probedit.setMaximum(1.0)
+        #self.probedit.setMinimum(0.0)
+        #self.probedit.setSingleStep(0.01)
+        self.probedit.setText("0.5")
+        self.probedit.setFixedWidth(40)
+        self.probedit.setAlignment(QtCore.Qt.AlignRight)
+        self.probedit.returnPressed.connect(
+            lambda: classgui.apply(self)
+        )
+        self.l0.addWidget(self.probedit, nv + b - 3, 1, 1, 1)
+        #self.applyclass = QtGui.QPushButton(" apply")
+        #self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        #self.applyclass.clicked.connect(lambda: classgui.apply(self))
+
         self.binedit = QtGui.QLineEdit(self)
         self.binedit.setValidator(QtGui.QIntValidator(0, 500))
         self.binedit.setText("0")
@@ -356,40 +382,26 @@ class MainW(QtGui.QMainWindow):
             colorbarW.addLabel("0.5", color=[255, 255, 255], row=1, col=1),
             colorbarW.addLabel("1.0", color=[255, 255, 255], row=1, col=2),
         ]
-        plabel = QtGui.QLabel("\t    cell probability")
-        plabel.setStyleSheet("color: white;")
-        self.l0.addWidget(plabel, self.bend, 0, 1, 2)
-        self.probedit = QtGui.QDoubleSpinBox(self)
-        self.probedit.setDecimals(3)
-        self.probedit.setMaximum(1.0)
-        self.probedit.setMinimum(0.0)
-        self.probedit.setSingleStep(0.01)
-        self.probedit.setValue(0.5)
-        self.probedit.setFixedWidth(55)
-        self.l0.addWidget(self.probedit, self.bend, 0, 1, 1)
-        self.applyclass = QtGui.QPushButton(" apply")
-        self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.applyclass.clicked.connect(lambda: classgui.apply(self))
-        self.applyclass.setEnabled(False)
-        self.applyclass.setStyleSheet(self.styleInactive)
-        self.l0.addWidget(self.applyclass, self.bend + 1, 0, 1, 1)
+        #self.applyclass.setEnabled(False)
+        #self.applyclass.setStyleSheet(self.styleInactive)
+        #self.l0.addWidget(self.applyclass, self.bend + 1, 0, 1, 1)
 
         # ----- CLASSIFIER BUTTONS -------
         cllabel = QtGui.QLabel("")
         cllabel.setFont(boldfont)
         cllabel.setText("<font color='white'>Classifier</font>")
-        self.classLabel = QtGui.QLabel("<font color='white'>not loaded</font>")
+        self.classLabel = QtGui.QLabel("<font color='white'>not loaded (using prob from iscell.npy)</font>")
         self.classLabel.setFont(QtGui.QFont("Arial", 8))
-        self.l0.addWidget(cllabel, self.bend + 2, 0, 1, 2)
-        self.l0.addWidget(self.classLabel, self.bend + 3, 0, 1, 2)
+        self.l0.addWidget(cllabel, self.bend + 1, 0, 1, 2)
+        self.l0.addWidget(self.classLabel, self.bend + 2, 0, 1, 2)
         self.addtoclass = QtGui.QPushButton(" add current data to classifier")
         self.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.addtoclass.clicked.connect(lambda: classgui.add_to(self))
         self.addtoclass.setStyleSheet(self.styleInactive)
-        self.l0.addWidget(self.addtoclass, self.bend + 4, 0, 1, 2)
+        self.l0.addWidget(self.addtoclass, self.bend + 3, 0, 1, 2)
         # ------ CELL STATS --------
         # which stats
-        self.bend = self.bend + 5
+        self.bend = self.bend + 4
         self.stats_to_show = [
             "med",
             "npix",
@@ -496,7 +508,7 @@ class MainW(QtGui.QMainWindow):
             self.traceLabel[n].setFont(boldfont)
             self.l0.addWidget(
                 self.traceLabel[n],
-                self.bend + 8 + k,
+                self.bend + 7 + k,
                 4 + n * 2,
                 1, 2
             )
@@ -575,8 +587,12 @@ class MainW(QtGui.QMainWindow):
                 elif event.key() == QtCore.Qt.Key_R:
                     self.viewbtns.button(3).setChecked(True)
                     self.viewbtns.button(3).press(self, 3)
-                elif event.key() == QtCore.Qt.Key_T:
+                elif event.key() == QtCore.Qt.Key_Y:
                     if "meanImg_chan2" in self.ops:
+                        self.viewbtns.button(5).setChecked(True)
+                        self.viewbtns.button(5).press(self, 5)
+                elif event.key() == QtCore.Qt.Key_T:
+                    if "meanImg_chan2_corrected" in self.ops:
                         self.viewbtns.button(4).setChecked(True)
                         self.viewbtns.button(4).press(self, 4)
                 elif event.key() == QtCore.Qt.Key_Space:
@@ -837,6 +853,8 @@ class MainW(QtGui.QMainWindow):
         # set bin size to be 0.5s by default
         self.bin = int(self.ops["tau"] * self.ops["fs"] / 2)
         self.binedit.setText(str(self.bin))
+        self.chan2prob = self.ops["chan2_thres"]
+        self.chan2edit.setText(str(self.chan2prob))
         # add boundaries to stat for ROI overlays
         ncells = len(self.stat)
         for n in range(0, ncells):
@@ -891,20 +909,21 @@ class MainW(QtGui.QMainWindow):
         classgui.activate(self, False)
 
     def enable_views_and_classifier(self):
-        for b in range(len(self.views) - 1):
+        for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
             # self.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
             if b == 0:
                 self.viewbtns.button(b).setChecked(True)
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
-        b = len(self.views) - 1
-        if "meanImg_chan2" in self.ops:
-            self.viewbtns.button(b).setEnabled(True)
-            self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
-        else:
-            self.viewbtns.button(b).setEnabled(False)
-            self.viewbtns.button(b).setStyleSheet(self.styleInactive)
+        # check for second channel
+        if "meanImg_chan2_corrected" not in self.ops:
+            self.viewbtns.buttons(4).setEnabled(False)
+            self.viewbtns.button(4).setStyleSheet(self.styleInactive)
+            if "meanImg_chan2" not in self.ops:
+                self.viewbtns.button(5).setEnabled(False)
+                self.viewbtns.button(5).setStyleSheet(self.styleInactive)
+
         for b in range(len(self.colors)):
             if b==5:
                 if self.hasred:
@@ -917,8 +936,8 @@ class MainW(QtGui.QMainWindow):
             else:
                 self.colorbtns.button(b).setEnabled(True)
                 self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
-        self.applyclass.setStyleSheet(self.styleUnpressed)
-        self.applyclass.setEnabled(True)
+        #self.applyclass.setStyleSheet(self.styleUnpressed)
+        #self.applyclass.setEnabled(True)
         b = 0
         for btn in self.sizebtns.buttons():
             btn.setStyleSheet(self.styleUnpressed)
@@ -1078,6 +1097,19 @@ class MainW(QtGui.QMainWindow):
         )
         self.lcell0.setText("%d" % (self.iscell.sum()))
         self.lcell1.setText("%d" % (self.iscell.size - self.iscell.sum()))
+
+    def chan2_prob(self):
+        chan2prob = float(self.chan2edit.text())
+        if abs(self.chan2prob - chan2prob) > 1e-3:
+            self.chan2prob = chan2prob
+            self.redcell = self.probredcell > self.chan2prob
+            fig.chan2_masks(self)
+            M = fig.draw_masks(self)
+            fig.plot_masks(self,M)
+            np.save(os.path.join(self.basename, '/redcell.npy'),
+                    np.concatenate((np.expand_dims(parent.redcell,axis=1),
+                    np.expand_dims(parent.probredcell,axis=1)), axis=1))
+
 
     def zoom_plot(self, iplot):
         if iplot == 1 or iplot == 2 or iplot == 4:

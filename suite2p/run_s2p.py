@@ -72,8 +72,7 @@ def default_ops():
         'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
         'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
-        'chan2_thres': 1.75, # minimum for detection of brightness on channel 2
-        'chan2_max': 1, # maximum for NEGATIVE detection of brightness on channel 2
+        'chan2_thres': 0.65, # minimum for detection of brightness on channel 2
         # deconvolution settings
         'baseline': 'maximin', # baselining mode
         'win_baseline': 60., # window for maximin

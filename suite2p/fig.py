@@ -114,6 +114,7 @@ def make_colors(parent):
     allcols = allcols / 1.4
     allcols = allcols + 0.1
     print(parent.redcell.sum())
+    parent.randcols = allcols
     allcols[parent.redcell] = 0
 
     b=0
@@ -218,11 +219,11 @@ def init_masks(parent):
             LamAll[ypix,xpix] = lam
 
     LamMean = LamAll[LamAll>1e-10].mean()
-    RGBall = np.zeros((2,cols.shape[1]+1,5,Ly,Lx,3), np.float32)
-    Vback   = np.zeros((4,Ly,Lx), np.float32)
-    RGBback = np.zeros((4,Ly,Lx,3), np.float32)
+    RGBall = np.zeros((2,cols.shape[1]+1,6,Ly,Lx,3), np.float32)
+    Vback   = np.zeros((5,Ly,Lx), np.float32)
+    RGBback = np.zeros((5,Ly,Lx,3), np.float32)
 
-    for k in range(5):
+    for k in range(6):
         if k>0:
             if k==2:
                 if 'meanImgE' not in ops:
@@ -244,21 +245,22 @@ def init_masks(parent):
                 mimg[ops['yrange'][0]:ops['yrange'][1],
                     ops['xrange'][0]:ops['xrange'][1]] = vcorr
                 mimg = np.maximum(0,np.minimum(1,mimg))
-            else:
+            elif k==4:
                 if 'meanImg_chan2_corrected' in ops:
                     mimg = ops['meanImg_chan2_corrected']
                     mimg1 = np.percentile(mimg,1)
                     mimg99 = np.percentile(mimg,99)
                     mimg     = (mimg - mimg1) / (mimg99 - mimg1)
                     mimg = np.maximum(0,np.minimum(1,mimg))
-                elif 'meanImg_chan2' in ops:
+            elif k==5:
+                if 'meanImg_chan2' in ops:
                     mimg = ops['meanImg_chan2']
                     mimg1 = np.percentile(mimg,1)
                     mimg99 = np.percentile(mimg,99)
                     mimg     = (mimg - mimg1) / (mimg99 - mimg1)
                     mimg = np.maximum(0,np.minimum(1,mimg))
-                else:
-                    mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+            else:
+                mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
 
             Vback[k-1,:,:] = mimg
             V = mimg
@@ -288,7 +290,7 @@ def init_masks(parent):
                     hsv = np.concatenate((H,S,Va),axis=2)
                     RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
-    for k in range(4):
+    for k in range(5):
         H = np.zeros((Ly,Lx,1),np.float32)
         S = np.zeros((Ly,Lx,1),np.float32)
         V = np.expand_dims(Vback[k,:,:],axis=2)
@@ -304,6 +306,34 @@ def init_masks(parent):
     parent.Sext = Sext
     parent.Lam  = Lam
     parent.LamMean = LamMean
+
+
+
+def chan2_masks(parent):
+    c = 0
+    cols = parent.randcols
+    cols[parent.redcell] = 0
+    cols = cols.flatten()
+    parent.ops_plot[3][:,0] = cols
+    for i in range(2):
+        H = cols[parent.iROI[i,0,:,:]]
+        H = np.expand_dims(H,axis=2)
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        for k in range(6):
+            if k==0:
+                S = parent.Sroi[i,:,:]
+                V = Vorig
+            elif k==3:
+                S = parent.Sext[i,:,:]
+                V = parent.Vback[k-1,:,:]
+                V = np.maximum(0,np.minimum(1, V + S))
+            else:
+                S = np.maximum(0,np.minimum(1, Vorig*1.5))
+                V = parent.Vback[k-1,:,:]
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
 def rastermap_masks(parent):
     k = parent.ops_plot[1]
@@ -628,7 +658,7 @@ def flip_cell(parent):
 
     for i in range(2):
         for c in range(cols.shape[1]):
-            for k in range(5):
+            for k in range(6):
                 if k<3 or k==4:
                     H = cols[parent.iROI[i,0,ypix,xpix],c]
                     S = parent.Sroi[i,ypix,xpix]

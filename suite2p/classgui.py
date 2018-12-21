@@ -92,7 +92,7 @@ def add_to(parent):
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')
 
 def apply(parent):
-    classval = parent.probedit.value()
+    classval = float(parent.probedit.text())
     iscell = parent.probcell > classval
     fig.flip_for_class(parent, iscell)
     M = fig.draw_masks(parent)

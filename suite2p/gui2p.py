@@ -1106,9 +1106,9 @@ class MainW(QtGui.QMainWindow):
             fig.chan2_masks(self)
             M = fig.draw_masks(self)
             fig.plot_masks(self,M)
-            np.save(os.path.join(self.basename, '/redcell.npy'),
-                    np.concatenate((np.expand_dims(parent.redcell,axis=1),
-                    np.expand_dims(parent.probredcell,axis=1)), axis=1))
+            np.save(os.path.join(self.basename, 'redcell.npy'),
+                    np.concatenate((np.expand_dims(self.redcell,axis=1),
+                    np.expand_dims(self.probredcell,axis=1)), axis=1))
 
 
     def zoom_plot(self, iplot):

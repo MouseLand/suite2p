@@ -1160,7 +1160,7 @@ class MainW(QtGui.QMainWindow):
                     probcell = np.ones((NN,), np.float32)
             try:
                 redcell = np.load(basename + "/redcell.npy")
-                probredcell = redcell[:,1]
+                probredcell = redcell[:,1].copy()
                 redcell = redcell[:,0].astype(np.bool)
                 self.hasred = True
             except (ValueError, OSError, RuntimeError, TypeError, NameError):

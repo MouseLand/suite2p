@@ -853,6 +853,8 @@ class MainW(QtGui.QMainWindow):
         # set bin size to be 0.5s by default
         self.bin = int(self.ops["tau"] * self.ops["fs"] / 2)
         self.binedit.setText(str(self.bin))
+        if "chan2_thres" not in self.ops:
+            self.ops["chan2_thres"] = 0.6
         self.chan2prob = self.ops["chan2_thres"]
         self.chan2edit.setText(str(self.chan2prob))
         # add boundaries to stat for ROI overlays
@@ -918,7 +920,7 @@ class MainW(QtGui.QMainWindow):
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
         # check for second channel
         if "meanImg_chan2_corrected" not in self.ops:
-            self.viewbtns.buttons(4).setEnabled(False)
+            self.viewbtns.button(4).setEnabled(False)
             self.viewbtns.button(4).setStyleSheet(self.styleInactive)
             if "meanImg_chan2" not in self.ops:
                 self.viewbtns.button(5).setEnabled(False)

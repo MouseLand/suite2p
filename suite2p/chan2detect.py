@@ -47,8 +47,8 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
 
 def detect(ops, stat):
     #ops2 = ops.copy()
-    mimg = ops['meanImg']
-    mimg2 = ops['meanImg_chan2']
+    mimg = ops['meanImg'].copy()
+    mimg2 = ops['meanImg_chan2'].copy()
 
     # subtract bleedthrough of green into red channel
     # non-rigid regression with nblks x nblks pieces

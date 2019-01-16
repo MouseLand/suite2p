@@ -318,7 +318,10 @@ class VisWindow(QtGui.QMainWindow):
         self.sortTime.setChecked(False)
 
     def compute_map(self, parent):
-        self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
+        model = mapping.Rastermap(n_components=1, n_X=30, nPC=200, init='pca')
+        model = model.fit(self.sp, self.u * self.sv)
+        self.isort1 = np.argsort(model.embedding[:,0])
+        #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
         self.raster = True
         ncells = len(parent.stat)
         # cells not in sorting are set to -1

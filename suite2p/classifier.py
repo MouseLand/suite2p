@@ -73,6 +73,18 @@ def get_stat_keys(stat, keys):
 
 def run(classfile,stat):
     model = Classifier(classfile=classfile)
+
+    flag = np.zeros(len(model.keys), 'bool')
+    new_keys = []
+    for j in range(len(model.keys)):
+        key = model.keys[j]
+        if key not in stat[0]:
+            flag[j] = True
+        else:
+            new_keys.append(key)
+    model.keys = new_keys
+    model.stats = np.delete(model.stats, np.nonzero(flag)[0], axis=1)
+    
     # compute cell probability
     probcell = model.apply(stat)
     iscell = probcell > 0.5

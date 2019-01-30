@@ -3,7 +3,7 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import utils, register, nonrigid, chan2detect, celldetect2
+from suite2p import register, nonrigid, chan2detect, celldetect2, sparsedetect
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
@@ -123,7 +123,7 @@ def list_h5(ops):
 
 def h5py_to_binary(ops):
     # copy ops to list where each element is ops for each plane
-    ops1 = utils.init_ops(ops)
+    ops1 = init_ops(ops)
 
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
@@ -213,7 +213,7 @@ def h5py_to_binary(ops):
 
 def tiff_to_binary(ops):
     # copy ops to list where each element is ops for each plane
-    ops1 = utils.init_ops(ops)
+    ops1 = init_ops(ops)
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
@@ -273,7 +273,7 @@ def tiff_to_binary(ops):
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                ops1[j]['nframes']+= im2write.shape[0]
+                #ops1[j]['nframes']+= im2write.shape[0]
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
     print(ops1[0]['nframes'])
@@ -314,7 +314,7 @@ def mesoscan_to_binary(ops):
         ops['nplanes'] = len(opsj)
     else:
         ops['nplanes'] = len(ops['lines'])
-    ops1 = utils.init_ops(ops)
+    ops1 = init_ops(ops)
     if 'lines' not in ops:
         for j in range(len(ops1)):
             ops1[j] = {**ops1[j], **opsj[j]}.copy()
@@ -460,7 +460,8 @@ def get_cells(ops):
         ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
     print(ops['diameter'])
-    ops, stat = celldetect2.sourcery(ops)
+    #ops, stat = celldetect2.sourcery(ops)
+    ops, stat = sparsedetect.sparsery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil
     F, Fneu, ops = celldetect2.extractF(ops, stat)
@@ -471,7 +472,7 @@ def get_cells(ops):
     sk = stats.skew(dF, axis=1)
     sd = np.std(dF, axis=1)
     npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
-    npix /= np.mean(npix)
+    npix /= np.mean(npix[:1000])
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std']  = sd[k]

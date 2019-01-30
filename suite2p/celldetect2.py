@@ -16,7 +16,11 @@ def toc(i0):
 def get_sdmov(mov, ops):
     ix = 0
     batch_size = 500
-    nbins, npix = mov.shape
+    if len(mov.shape)>2:
+        nbins,Ly, Lx = mov.shape
+        npix = (Ly , Lx)
+    else:
+        nbins, npix = mov.shape
     sdmov = np.zeros(npix, 'float32')
     while 1:
         inds = ix + np.arange(0,batch_size)
@@ -146,7 +150,7 @@ def getStU(ops, U):
     # compute covariance of neuropil masks with spatial masks
     StU = S.reshape((Lyc*Lxc,-1)).transpose() @ U.reshape((Lyc*Lxc,-1))
     StS = S.reshape((Lyc*Lxc,-1)).transpose() @ S.reshape((Lyc*Lxc,-1))
-    U = np.reshape(U, (-1,Lyc,Lxc))
+    #U = np.reshape(U, (-1,Lyc,Lxc))
     return S, StU , StS
 
 def drawClusters(stat, ops):

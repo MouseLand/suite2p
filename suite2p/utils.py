@@ -174,6 +174,8 @@ def h5py_to_binary(ops):
                     im = f[key][irange,:,:,:]
                     im = np.reshape(im, (im.shape[0]*nplanes,im.shape[2],im.shape[3]))
                 nframes = im.shape[0]
+                if type(im[0,0,0]) == np.uint16:
+                    im = im / 2
                 for j in range(0,nplanes):
                     if iall==0:
                         ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
@@ -273,7 +275,7 @@ def tiff_to_binary(ops):
                     im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                
+
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
     print(ops1[0]['nframes'])

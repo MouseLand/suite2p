@@ -1,18 +1,10 @@
 from scipy.ndimage import maximum_filter
 from scipy.stats import mode
 from scipy.interpolate import RectBivariateSpline
-import numpy as np
-import math, time
-from multiprocessing import Pool
-from scipy.fftpack import next_fast_len, fftshift
-#from scipy.fftpack import fft, ifft
-#from numpy.fft import fft, ifft
-from pyfftw.interfaces.scipy_fftpack import fft, ifft
-from multiprocessing import Pool
-import numba
 from scipy.ndimage.filters import uniform_filter
+import numpy as np
+import time
 from suite2p import celldetect2
-
 
 def two_comps(mpix0, lam, Th2):
     mpix = mpix0.copy()

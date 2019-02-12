@@ -56,6 +56,12 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. 
 
+To export views in the GUI, you can right-click. Exporting to 'svg' will work with the latest release of pyqtgraph. However, to export to different file types (like png or tiff, see [issue](https://github.com/MouseLand/suite2p/issues/44)), you will need to install the development version of pyqtgraph yourself by
+~~~
+pip install git+https://github.com/pyqtgraph/pyqtgraph
+~~~
+
+
 ## Examples
 
 An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1R3ota25jdUthSzQ). It's a single-plane, single-channel recording.

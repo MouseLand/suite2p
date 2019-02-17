@@ -235,7 +235,7 @@ def tiff_to_binary(ops):
     which_folder = -1
     for ik, file in enumerate(fs):
         # size of tiff
-        tif = TiffFile(file)
+        tif = TiffFile(file, fastij = True)
         Ltif = len(tif)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
@@ -416,29 +416,38 @@ def list_tifs(froot, look_one_level_down):
 
 def get_tif_list(ops):
     froot = ops['data_path']
-    if len(froot)==1:
-        if len(ops['subfolders'])==0:
-            fold_list = ops['data_path']
-        else:
-            fold_list = []
-            for folder_down in ops['subfolders']:
-                fold = os.path.join(froot[0], folder_down)
-                fold_list.append(fold)
-    else:
-        fold_list = froot
-    fsall = []
-    nfs = 0
-    first_tiffs = []
-    for k,fld in enumerate(fold_list):
-        fs, ftiffs = list_tifs(fld, ops['look_one_level_down'])
-        fsall.extend(fs)
-        first_tiffs.extend(ftiffs)
-    if len(fs)==0:
-        print('Could not find any tiffs')
-        raise Exception('no tiffs')
-    else:
-        ops['first_tiffs'] = np.array(first_tiffs)
+    # use a user-specified list of tiffs
+    if 'tiff_list' in ops:
+        fsall = []
+        for tif in ops['tiff_list']:
+            fsall.append(os.path.join(froot[0], tif))
+        ops['first_tiffs'] = np.zeros((len(fsall),), dtype=np.bool)
+        ops['first_tiffs'][0] = True
         print('Found %d tifs'%(len(fsall)))
+    else:
+        if len(froot)==1:
+            if len(ops['subfolders'])==0:
+                fold_list = ops['data_path']
+            else:
+                fold_list = []
+                for folder_down in ops['subfolders']:
+                    fold = os.path.join(froot[0], folder_down)
+                    fold_list.append(fold)
+        else:
+            fold_list = froot
+        fsall = []
+        nfs = 0
+        first_tiffs = []
+        for k,fld in enumerate(fold_list):
+            fs, ftiffs = list_tifs(fld, ops['look_one_level_down'])
+            fsall.extend(fs)
+            first_tiffs.extend(ftiffs)
+        if len(fs)==0:
+            print('Could not find any tiffs')
+            raise Exception('no tiffs')
+        else:
+            ops['first_tiffs'] = np.array(first_tiffs)
+            print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
 def get_tif_list_old(ops):

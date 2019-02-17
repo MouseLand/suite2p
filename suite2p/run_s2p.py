@@ -1,5 +1,5 @@
 import numpy as np
-import time, os
+import time, os, shutil
 from suite2p import register, dcnv, classifier, utils
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, io, signal
@@ -187,8 +187,15 @@ def run_s2p(ops={},db={}):
             stat = np.load(os.path.join(fpath,'stat.npy'))
             # apply default classifier
             classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             'classifiers/classifier_user.npy')
+                "classifiers/classifier_user.npy",
+            )
+            if not os.path.isfile(classfile):
+                classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                    "classifiers/classifier.npy"
+                )
+                shutil.copy(classorig, classfile)
             print(classfile)
+
             iscell = classifier.run(classfile, stat)
             np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
             # save as matlab file

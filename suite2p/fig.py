@@ -335,6 +335,62 @@ def chan2_masks(parent):
             hsv = np.concatenate((H,S,V),axis=2)
             parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
+def custom_masks(parent):
+    k = parent.ops_plot[1]
+    c = parent.ops_plot[3].shape[1]+2
+    n = np.array(parent.imerge)
+    inactive=False
+    no_1d = False
+    istat = parent.custom_mask
+    istat1 = istat.min()
+    istat99 = istat.max()
+    cl = [istat1, (istat99-istat1)/2 + istat1, istat99]
+    istat = istat - istat1
+    istat = istat / (istat99-istat1)
+    istat = np.maximum(0, np.minimum(1, istat))
+
+    # no 1D variable loaded -- leave blank
+    if len(parent.clabels)==len(parent.colors):
+        parent.clabels.append(cl)
+        no_1d = True
+    if len(parent.clabels)==len(parent.colors)+1:
+        parent.clabels.append(cl)
+        inactive=True
+    else:
+        parent.clabels[-1] = cl
+
+    istat = istat / istat.max()
+    icols = istat_transform(istat)
+    parent.ops_plot[6] = icols
+    if inactive:
+        nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
+        rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)
+    for i in range(2):
+        H = icols[parent.iROI[i,0,:,:]]
+        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+        if k==0:
+            S = parent.Sroi[i,:,:]
+            V = Vorig
+        elif k==3:
+            S = parent.Sext[i,:,:]
+            V = parent.Vback[k-1,:,:]
+            V = np.maximum(0,np.minimum(1, V + S))
+        else:
+            S = np.maximum(0,np.minimum(1, Vorig*1.5))
+            V = parent.Vback[k-1,:,:]
+        H = np.expand_dims(H,axis=2)
+        S = np.expand_dims(S,axis=2)
+        V = np.expand_dims(V,axis=2)
+        hsv = np.concatenate((H,S,V),axis=2)
+        if inactive:
+            rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
+        else:
+            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    if inactive:
+        if no_1d:
+            parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
+        parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
+
 def rastermap_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+2
@@ -384,7 +440,6 @@ def rastermap_masks(parent):
         if no_1d:
             parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
         parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
-
 
 def beh_masks(parent):
     k = parent.ops_plot[1]

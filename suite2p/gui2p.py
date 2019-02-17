@@ -130,12 +130,17 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveDefault)
 
         # visualizations menuBar
+        vis_menu = main_menu.addMenu("&Visualizations")
         self.visualizations = QtGui.QAction("&Visualize selected cells", self)
         self.visualizations.triggered.connect(self.vis_window)
         self.visualizations.setEnabled(False)
-        vis_menu = main_menu.addMenu("&Visualizations")
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut("Ctrl+V")
+        self.custommask = QtGui.QAction("Load custom hue for ROIs (*.npy)", self)
+        self.custommask.triggered.connect(self.load_custom_mask)
+        self.custommask.setEnabled(False)
+        vis_menu.addAction(self.custommask)
+
         # registration menuBar
         reg_menu = main_menu.addMenu("&Registration")
         self.reg = QtGui.QAction("View registered &binary", self)
@@ -321,7 +326,7 @@ class MainW(QtGui.QMainWindow):
         # colorbars for different statistics
         colorsAll = self.colors.copy()
         colorsAll.append("L: corr with 1D var, bin= ^^^")
-        colorsAll.append("M: rastermap")
+        colorsAll.append("M: rastermap / custom")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
             self.colorbtns.addButton(btn, b)
@@ -958,7 +963,7 @@ class MainW(QtGui.QMainWindow):
         self.loadSClass.setEnabled(True)
         self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
-
+        self.custommask.setEnabled(True)
         # self.p1.scene().showExportDialog()
 
     def ROIs_on(self, state):
@@ -1255,6 +1260,36 @@ class MainW(QtGui.QMainWindow):
             self.show()
         else:
             print("ERROR: this is not a 1D array with length of data")
+
+    def load_custom_mask(self):
+        name = QtGui.QFileDialog.getOpenFileName(
+            self, "Open *.npy", filter="*.npy"
+        )
+        name = name[0]
+        cloaded = False
+        try:
+            mask = np.load(name)
+            mask = mask.flatten()
+            if mask.size == self.Fcell.shape[0]:
+                self.cloaded = True
+        except (ValueError, KeyError, OSError,
+                RuntimeError, TypeError, NameError):
+            print("ERROR: this is not a 1D array with length of data")
+        if self.cloaded:
+            self.custom_mask = mask
+            fig.custom_masks(self)
+            M = fig.draw_masks(self)
+            b = len(self.colors)+1
+            self.colorbtns.button(b).setEnabled(True)
+            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            self.colorbtns.button(b).setChecked(True)
+            self.colorbtns.button(b).press(self,b)
+            #fig.plot_masks(self,M)
+            #fig.plot_colorbar(self,bid)
+            self.show()
+        else:
+            print("ERROR: this is not a 1D array with length of # of ROIs")
+
 
     def load_again(self, Text):
         tryagain = QtGui.QMessageBox.question(

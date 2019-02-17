@@ -214,6 +214,9 @@ def h5py_to_binary(ops):
     return ops1
 
 def tiff_to_binary(ops):
+    '''
+    convert tiffs to binary file
+    '''
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
@@ -305,6 +308,7 @@ def split_multiops(ops1):
             ops1[j]['dx'] = ops1[j]['dx'][j]
             ops1[j]['dy'] = ops1[j]['dy'][j]
     return ops1
+
 def mesoscan_to_binary(ops):
     # copy ops to list where each element is ops for each plane
     # load json file with line start stops
@@ -389,6 +393,9 @@ def mesoscan_to_binary(ops):
     return ops1
 
 def list_tifs(froot, look_one_level_down):
+    '''
+    list of tiffs in folder froot + one level down maybe
+    '''
     first_tiffs = []
     lpath = os.path.join(froot, "*.tif")
     fs  = natsorted(glob.glob(lpath))
@@ -415,6 +422,12 @@ def list_tifs(froot, look_one_level_down):
     return fs, first_tiffs
 
 def get_tif_list(ops):
+    '''
+    make list of tiffs to process
+    if ops['subfolders'], then all tiffs ops['data_path'][0] / ops['subfolders'] / *.tif
+    if ops['look_one_level_down'], then all tiffs in all folders + one level down
+    if ops['tiff_list'], then ops['data_path'][0] / ops['tiff_list'] ONLY
+    '''
     froot = ops['data_path']
     # use a user-specified list of tiffs
     if 'tiff_list' in ops:

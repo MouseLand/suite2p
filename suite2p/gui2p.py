@@ -8,6 +8,16 @@ import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
 from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
+from scipy.ndimage import gaussian_filter1d
+from scipy.interpolate import interp1d
+
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -524,9 +534,9 @@ class MainW(QtGui.QMainWindow):
         model = model.item()
         self.default_keys = model["keys"]
         #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
-        #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
-        # self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
+        #self.load_behavior('C:/Users/carse/github/data/beht.npy')
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
@@ -1242,9 +1252,22 @@ class MainW(QtGui.QMainWindow):
         bloaded = False
         try:
             beh = np.load(name)
-            beh = beh.flatten()
-            if beh.size == self.Fcell.shape[1]:
-                self.bloaded = True
+            bresample=False
+            if beh.ndim>1:
+                if beh.shape[1] < 2:
+                    beh = beh.flatten()
+                    if beh.shape[0] == self.Fcell.shape[1]:
+                        self.bloaded = True
+                        beh_time = np.arange(0, self.Fcell.shape[1])
+                else:
+                    self.bloaded = True
+                    beh_time = beh[:,1]
+                    beh = beh[:,0]
+                    bresample=True
+            else:
+                if beh.shape[0] == self.Fcell.shape[1]:
+                    self.bloaded = True
+                    beh_time = np.arange(0, self.Fcell.shape[1])
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
             print("ERROR: this is not a 1D array with length of data")
@@ -1252,6 +1275,11 @@ class MainW(QtGui.QMainWindow):
             beh -= beh.min()
             beh /= beh.max()
             self.beh = beh
+            self.beh_time = beh_time
+            if bresample:
+                self.beh_resampled = resample_frames(self.beh, self.beh_time, np.arange(0,self.Fcell.shape[1]))
+            else:
+                self.beh_resampled = self.beh
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
@@ -1260,6 +1288,8 @@ class MainW(QtGui.QMainWindow):
             self.show()
         else:
             print("ERROR: this is not a 1D array with length of data")
+
+
 
     def load_custom_mask(self):
         name = QtGui.QFileDialog.getOpenFileName(

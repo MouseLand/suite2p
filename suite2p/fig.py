@@ -70,7 +70,7 @@ def plot_trace(parent):
         if parent.bloaded:
             favg -= favg.min()
             favg /= favg.max()
-            parent.p3.plot(parent.trange,-1*bsc+parent.beh*bsc,pen='w')
+            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
@@ -446,8 +446,8 @@ def beh_masks(parent):
     c = parent.ops_plot[3].shape[1]+1
     print(c)
     n = np.array(parent.imerge)
-    nb = int(np.floor(parent.beh.size/parent.bin))
-    sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    nb = int(np.floor(parent.beh_resampled.size/parent.bin))
+    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))

@@ -151,7 +151,7 @@ class RunWindow(QtGui.QDialog):
                     'window for maximin',
                     'smoothing constant for gaussian filter',
                     'smoothing constant for gaussian filter',
-                    'neuropil coefficient']
+                    'neuropil coefficient (constant across all neurons)']
 
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel = QtGui.QLabel('File paths')

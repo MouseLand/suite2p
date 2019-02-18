@@ -185,7 +185,7 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
         'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
-        'neucoeff': .7,  # neuropil coefficient
+        'neucoeff': .7,  # neuropil coefficient, constant across all neurons
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),

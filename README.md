@@ -17,6 +17,8 @@ The deconvolution algorithm is based on [this paper](https://journals.plos.org/p
 
 **More in depth documentation is available on the [wiki](https://github.com/MouseLand/suite2p/wiki).**
 
+The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
+
 ## Installation
 From a command line terminal, type:
 ~~~~
@@ -53,6 +55,12 @@ pip install matplotlib --upgrade
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine. 
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. 
+
+To export views in the GUI, you can right-click. Exporting to 'svg' will work with the latest release of pyqtgraph. However, to export to different file types (like png or tiff, see [issue](https://github.com/MouseLand/suite2p/issues/44)), you will need to install the development version of pyqtgraph yourself by
+~~~
+pip install git+https://github.com/pyqtgraph/pyqtgraph
+~~~
+
 
 ## Examples
 
@@ -177,7 +185,7 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
         'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
-        'neucoeff': .7,  # neuropil coefficient
+        'neucoeff': .7,  # neuropil coefficient, constant across all neurons
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),

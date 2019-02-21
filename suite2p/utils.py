@@ -9,6 +9,7 @@ from scipy.sparse import linalg
 import scipy.io
 from skimage.external.tifffile import imread, TiffFile
 from skimage import io
+from ScanImageTiffReader import ScanImageTiffReader
 
 def tic():
     return time.time()
@@ -214,10 +215,15 @@ def h5py_to_binary(ops):
     return ops1
 
 def tiff_to_binary(ops):
+    ''' converts tiff to *.bin file '''
+    ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
+    ''' assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2'''
+
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
+
     # open all binary files for writing
     reg_file = []
     reg_file_chan2=[]
@@ -225,17 +231,21 @@ def tiff_to_binary(ops):
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
+
+    # look for tiffs in all requested folders
+    fs, ops = get_tif_list(ops1[0])
     for op in ops1:
         op['first_tiffs'] = ops['first_tiffs']
         op['frames_per_folder'] = np.zeros((ops['first_tiffs'].sum(),), np.int32)
+
     batch_size = 2000
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     which_folder = -1
     for ik, file in enumerate(fs):
-        # size of tiff
         tif = TiffFile(file)
+
+
         Ltif = len(tif)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
@@ -415,6 +425,7 @@ def list_tifs(froot, look_one_level_down):
     return fs, first_tiffs
 
 def get_tif_list(ops):
+    ''' get tiffs in folder  '''
     froot = ops['data_path']
     if len(froot)==1:
         if len(ops['subfolders'])==0:
@@ -440,18 +451,6 @@ def get_tif_list(ops):
         ops['first_tiffs'] = np.array(first_tiffs)
         print('Found %d tifs'%(len(fsall)))
     return fsall, ops
-
-def get_tif_list_old(ops):
-    froot = ops['data_path']
-    if len(ops['subfolders'])==0:
-        fs = list_tifs(ops, froot)
-    else:
-        fs = []
-        for folder_down in ops['subfolders']:
-            fold = os.path.join(froot, folder_down)
-            fs.extend(list_tifs(ops, fold))
-    if fs is None:
-        raise Exception('Could not find any tifs')
 
 
 def get_cells(ops):

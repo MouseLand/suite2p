@@ -8,6 +8,16 @@ import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
 from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
+from scipy.ndimage import gaussian_filter1d
+from scipy.interpolate import interp1d
+
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
 
 class MainW(QtGui.QMainWindow):
     def __init__(self):
@@ -130,12 +140,17 @@ class MainW(QtGui.QMainWindow):
         class_menu.addAction(self.saveDefault)
 
         # visualizations menuBar
+        vis_menu = main_menu.addMenu("&Visualizations")
         self.visualizations = QtGui.QAction("&Visualize selected cells", self)
         self.visualizations.triggered.connect(self.vis_window)
         self.visualizations.setEnabled(False)
-        vis_menu = main_menu.addMenu("&Visualizations")
         vis_menu.addAction(self.visualizations)
         self.visualizations.setShortcut("Ctrl+V")
+        self.custommask = QtGui.QAction("Load custom hue for ROIs (*.npy)", self)
+        self.custommask.triggered.connect(self.load_custom_mask)
+        self.custommask.setEnabled(False)
+        vis_menu.addAction(self.custommask)
+
         # registration menuBar
         reg_menu = main_menu.addMenu("&Registration")
         self.reg = QtGui.QAction("View registered &binary", self)
@@ -321,7 +336,7 @@ class MainW(QtGui.QMainWindow):
         # colorbars for different statistics
         colorsAll = self.colors.copy()
         colorsAll.append("L: corr with 1D var, bin= ^^^")
-        colorsAll.append("M: rastermap")
+        colorsAll.append("M: rastermap / custom")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
             self.colorbtns.addButton(btn, b)
@@ -519,9 +534,9 @@ class MainW(QtGui.QMainWindow):
         model = model.item()
         self.default_keys = model["keys"]
         #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
-        #self.fname = 'C:/Users/carse/github/TX4/stat.npy'
+        #self.fname = 'C:/Users/carse/github/data/stat.npy'
         #self.load_proc()
-        # self.load_behavior('C:/Users/carse/github/TX4/beh.npy')
+        #self.load_behavior('C:/Users/carse/github/data/beht.npy')
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
@@ -958,7 +973,7 @@ class MainW(QtGui.QMainWindow):
         self.loadSClass.setEnabled(True)
         self.resetDefault.setEnabled(True)
         self.visualizations.setEnabled(True)
-
+        self.custommask.setEnabled(True)
         # self.p1.scene().showExportDialog()
 
     def ROIs_on(self, state):
@@ -1237,9 +1252,22 @@ class MainW(QtGui.QMainWindow):
         bloaded = False
         try:
             beh = np.load(name)
-            beh = beh.flatten()
-            if beh.size == self.Fcell.shape[1]:
-                self.bloaded = True
+            bresample=False
+            if beh.ndim>1:
+                if beh.shape[1] < 2:
+                    beh = beh.flatten()
+                    if beh.shape[0] == self.Fcell.shape[1]:
+                        self.bloaded = True
+                        beh_time = np.arange(0, self.Fcell.shape[1])
+                else:
+                    self.bloaded = True
+                    beh_time = beh[:,1]
+                    beh = beh[:,0]
+                    bresample=True
+            else:
+                if beh.shape[0] == self.Fcell.shape[1]:
+                    self.bloaded = True
+                    beh_time = np.arange(0, self.Fcell.shape[1])
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
             print("ERROR: this is not a 1D array with length of data")
@@ -1247,6 +1275,11 @@ class MainW(QtGui.QMainWindow):
             beh -= beh.min()
             beh /= beh.max()
             self.beh = beh
+            self.beh_time = beh_time
+            if bresample:
+                self.beh_resampled = resample_frames(self.beh, self.beh_time, np.arange(0,self.Fcell.shape[1]))
+            else:
+                self.beh_resampled = self.beh
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
@@ -1255,6 +1288,38 @@ class MainW(QtGui.QMainWindow):
             self.show()
         else:
             print("ERROR: this is not a 1D array with length of data")
+
+
+
+    def load_custom_mask(self):
+        name = QtGui.QFileDialog.getOpenFileName(
+            self, "Open *.npy", filter="*.npy"
+        )
+        name = name[0]
+        cloaded = False
+        try:
+            mask = np.load(name)
+            mask = mask.flatten()
+            if mask.size == self.Fcell.shape[0]:
+                self.cloaded = True
+        except (ValueError, KeyError, OSError,
+                RuntimeError, TypeError, NameError):
+            print("ERROR: this is not a 1D array with length of data")
+        if self.cloaded:
+            self.custom_mask = mask
+            fig.custom_masks(self)
+            M = fig.draw_masks(self)
+            b = len(self.colors)+1
+            self.colorbtns.button(b).setEnabled(True)
+            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            self.colorbtns.button(b).setChecked(True)
+            self.colorbtns.button(b).press(self,b)
+            #fig.plot_masks(self,M)
+            #fig.plot_colorbar(self,bid)
+            self.show()
+        else:
+            print("ERROR: this is not a 1D array with length of # of ROIs")
+
 
     def load_again(self, Text):
         tryagain = QtGui.QMessageBox.question(

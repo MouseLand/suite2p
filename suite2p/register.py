@@ -40,7 +40,7 @@ def mat_upsample(lpad, ops):
     return Kmat, nup
 
 def prepare_masks(refImg, ops):
-    maskSlope   = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
+    maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
@@ -54,16 +54,28 @@ def prepare_masks(refImg, ops):
     maskMul = maskY * maskX
     maskOffset = refImg.mean() * (1. - maskMul);
 
-    hgx = np.exp(-np.square(xx/ops['smooth_sigma']))
-    hgy = np.exp(-np.square(yy/ops['smooth_sigma']))
-    hgg = hgy * hgx
-    hgg /= hgg.sum()
-    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
-
+    # reference image in fourier domain
     cfRefImg   = np.conj(fft.fft2(refImg));
     if ops['do_phasecorr']:
         absRef     = np.absolute(cfRefImg);
         cfRefImg   = cfRefImg / (eps0 + absRef)
+
+    # laplacian of a gaussian
+    hgx = np.exp(-np.square(xx/ops['smooth_sigma']) / 2)
+    hgy = np.exp(-np.square(yy/ops['smooth_sigma']) / 2)
+    hgg = hgy * hgx
+    hgg = -1 * hgg * (1 - (xx**2 + yy**2) / (2 * ops['smooth_sigma']**2))
+    hgg /= hgg.sum()
+
+    if ops['1Preg']:
+        hgx = np.exp(-np.square(xx/(8*ops['smooth_sigma'])) / 2)
+        hgy = np.exp(-np.square(yy/(8*ops['smooth_sigma'])) / 2)
+        hgg2 = hgy * hgx
+        hgg2 /= hgg2.sum()
+        hgg  -= hgg2
+
+    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+
     cfRefImg *= fhg
 
     maskMul = maskMul.astype('float32')
@@ -351,7 +363,7 @@ def get_metrics(ops):
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = utils.metric_register(pclow, pchigh, ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'])
+    X    = utils.metric_register(pclow, pchigh, ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
     return ops

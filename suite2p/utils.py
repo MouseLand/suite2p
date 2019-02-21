@@ -249,15 +249,15 @@ def tiff_to_binary(ops):
     # try tiff readers
     try:
         tif = ScanImageTiffReader(fs[0])
-        im = tif.data(beg=0, end=np.minimum(1500, tif.shape()[0]))
+        im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]))
         im.close()
         sktiff=False
     except:
         sktiff = True
         print('ScanImageTiffReader not working for this tiff type, using scikit-image')
 
-    batch_size = 2000
-    batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
+    batch_size = 500
+    batch_size = nplanes*nchannels*math.floor(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     which_folder = -1
     for ik, file in enumerate(fs):
@@ -730,7 +730,7 @@ def pclowhigh(mov, nlowhigh, nPC):
         pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
     return pclow, pchigh, w
 
-def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5):
+def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
     ops = {
         'num_workers': -1,
         'snr_thresh': 1.25,
@@ -741,7 +741,8 @@ def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_s
         'maxregshift': np.array(maxregshift),
         'subpixel': 10,
         'do_phasecorr': do_phasecorr,
-        'smooth_sigma': smooth_sigma
+        'smooth_sigma': smooth_sigma,
+        '1Preg': False
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
 

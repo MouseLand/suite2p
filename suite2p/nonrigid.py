@@ -44,10 +44,18 @@ def prepare_masks(refImg0, ops):
         maskMul = maskY * maskX
         maskOffset = refImg.mean() * (1. - maskMul);
 
-        hgx = np.exp(-np.square(xx/ops['smooth_sigma']))
-        hgy = np.exp(-np.square(yy/ops['smooth_sigma']))
+        hgx = np.exp(-np.square(xx/ops['smooth_sigma']) / 2)
+        hgy = np.exp(-np.square(yy/ops['smooth_sigma']) / 2)
         hgg = hgy * hgx
         hgg = hgg/hgg.sum()
+
+        if ops['1Preg']:
+            hgx = np.exp(-np.square(xx/(8*ops['smooth_sigma'])) / 2)
+            hgy = np.exp(-np.square(yy/(8*ops['smooth_sigma'])) / 2)
+            hgg2 = hgy * hgx
+            hgg2 /= hgg2.sum()
+            hgg  -= hgg2
+
         fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
 
         cfRefImg   = np.conj(fft.fft2(refImg));

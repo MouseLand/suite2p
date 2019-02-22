@@ -249,14 +249,14 @@ def tiff_to_binary(ops):
     # try tiff readers
     try:
         tif = ScanImageTiffReader(fs[0])
-        im = tif.data(beg=0, end=np.minimum(1500, tif.shape()[0]))
-        im.close()
+        im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]-1))
+        tif.close()
         sktiff=False
     except:
         sktiff = True
         print('ScanImageTiffReader not working for this tiff type, using scikit-image')
 
-    batch_size = 2000
+    batch_size = 500
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     which_folder = -1

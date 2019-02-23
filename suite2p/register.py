@@ -18,6 +18,21 @@ def toc(i0):
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
+hp = 50
+
+def spatial_smooth(data,N):
+    ''' spatially smooth data using cumsum over axis=1,2 with window N'''
+    pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
+    dsmooth = np.concatenate((pad, data, pad), axis=1)
+    pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
+    dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
+    # in X
+    cumsum = np.cumsum(dsmooth, axis=1)
+    dsmooth = (cumsum[:, N:, :] - cumsum[:, :-N, :]) / float(N)
+    # in Y
+    cumsum = np.cumsum(dsmooth, axis=2)
+    dsmooth = (cumsum[:, :, N:] - cumsum[:, :, :-N]) / float(N)
+    return dsmooth
 
 # smoothing kernel
 def kernelD(a, b):
@@ -39,9 +54,15 @@ def mat_upsample(lpad, ops):
     nup = larUP.shape[0]
     return Kmat, nup
 
-def prepare_masks(refImg, ops):
-    maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
+def prepare_masks(refImg0, ops):
+    refImg = refImg0.copy()
+    if ops['1Preg']:
+        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
+    else:
+        maskSlope    = 15 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
+    if ops['1Preg']:
+        refImg -= spatial_smooth(refImg[np.newaxis,:,:], hp).squeeze()
     x = np.arange(0, Lx)
     y = np.arange(0, Ly)
     x = np.abs(x - x.mean())
@@ -54,6 +75,7 @@ def prepare_masks(refImg, ops):
     maskMul = maskY * maskX
     maskOffset = refImg.mean() * (1. - maskMul);
 
+    #refImg = refImg0.copy() * maskMul + maskOffset
     # reference image in fourier domain
     cfRefImg   = np.conj(fft.fft2(refImg));
     if ops['do_phasecorr']:
@@ -64,15 +86,8 @@ def prepare_masks(refImg, ops):
     hgx = np.exp(-np.square(xx/ops['smooth_sigma']) / 2)
     hgy = np.exp(-np.square(yy/ops['smooth_sigma']) / 2)
     hgg = hgy * hgx
-    hgg = -1 * hgg * (1 - (xx**2 + yy**2) / (2 * ops['smooth_sigma']**2))
+    #hgg = -1 * hgg * (1 - (xx**2 + yy**2) / (2 * ops['smooth_sigma']**2))
     hgg /= hgg.sum()
-
-    if ops['1Preg']:
-        hgx = np.exp(-np.square(xx/(8*ops['smooth_sigma'])) / 2)
-        hgy = np.exp(-np.square(yy/(8*ops['smooth_sigma'])) / 2)
-        hgg2 = hgy * hgx
-        hgg2 /= hgg2.sum()
-        hgg  -= hgg2
 
     fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
 
@@ -89,14 +104,14 @@ def correlation_map(data, refAndMasks, do_phasecorr):
     cfRefImg   = refAndMasks[2]
     nimg, Ly, Lx = data.shape
     cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
-    data = data.astype('float32') * maskMul + maskOffset
-    X = fft.fft2(data)
+    X = data.astype('float32')
+    X -= spatial_smooth(X, hp)
+    X = X * maskMul + maskOffset
+    X = fft.fft2(X)
     if do_phasecorr:
-        J = X / (eps0 + np.absolute(X))
-    else:
-        J = X
-    J = J * cfRefImg
-    cc = np.real(fft.ifft2(J))
+        X = X / (eps0 + np.absolute(X))
+    X *= cfRefImg
+    cc = np.real(fft.ifft2(X))
     cc = fft.fftshift(cc, axes=(1,2))
     return cc
 

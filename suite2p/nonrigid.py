@@ -16,9 +16,9 @@ hp = 50
 def prepare_masks(refImg1, ops):
     refImg0=refImg1.copy()
     if ops['1Preg']:
-        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
-    else:
         maskSlope    = 15 * ops['smooth_sigma'] # slope of taper mask at the edges
+    else:
+        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg0.shape
     maskMul = register.spatial_taper(maskSlope, Ly, Lx)
 

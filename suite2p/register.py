@@ -8,6 +8,7 @@ from multiprocessing import Pool
 import math
 from suite2p import nonrigid, utils
 from scipy.signal import medfilt
+from scipy.ndimage import laplace
 
 
 def tic():
@@ -68,6 +69,16 @@ def spatial_high_pass(data, N):
     data -= spatial_smooth(data, N) / norm
     return data
 
+def one_photon_preprocess(data, ops):
+    ''' pre filtering for one-photon data '''
+    if ops['pre_smooth'] > 0:
+        data = spatial_smooth(data, ops['pre_smooth'])
+
+    for n in range(data.shape[0]):
+        data[n,:,:] = laplace(data[n,:,:])
+    #data = spatial_high_pass(data, ops['spatial_hp'])
+    return data
+
 # smoothing kernel
 def kernelD(a, b):
     dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
@@ -91,14 +102,14 @@ def mat_upsample(lpad, ops):
 def prepare_masks(refImg0, ops):
     refImg = refImg0.copy()
     if ops['1Preg']:
-        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
+        maskSlope    = 60 # slope of taper mask at the edges
     else:
-        maskSlope    = 14 * ops['smooth_sigma'] # slope of taper mask at the edges
+        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
     maskMul = spatial_taper(maskSlope, Ly, Lx)
 
     if ops['1Preg']:
-        refImg = spatial_high_pass(refImg[np.newaxis,:,:], ops['spatial_hp']).squeeze()
+        refImg = one_photon_preprocess(refImg[np.newaxis,:,:], ops).squeeze()
     maskOffset = refImg.mean() * (1. - maskMul);
 
     # reference image in fourier domain
@@ -234,7 +245,8 @@ def phasecorr_worker(inputs):
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
     data1 = data.copy().astype(np.float32)
     if ops['1Preg']:
-        data1 = spatial_high_pass(data1, ops['spatial_hp'])
+        data1 = one_photon_preprocess(data1, ops)
+
     cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
     del data1
     ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)

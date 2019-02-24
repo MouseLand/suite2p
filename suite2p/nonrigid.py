@@ -11,24 +11,7 @@ from multiprocessing import Pool
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
-smoothSigma = 1.15 # smoothing constant
-maskSlope   = 2. # slope of taper mask at the edges
 hp = 50
-
-def spatial_smooth(data,N):
-    ''' spatially smooth data using cumsum over axis=2,3 with window N'''
-    pad = np.zeros((data.shape[0], data.shape[1], int(N/2), data.shape[-1]))
-    dsmooth = np.concatenate((pad, data, pad), axis=-2)
-    pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], dsmooth.shape[2], int(N/2)))
-    dsmooth = np.concatenate((pad, dsmooth, pad), axis=-1)
-    # in X
-    cumsum = np.cumsum(dsmooth, axis=-2)
-    dsmooth = (cumsum[:, :, N:, :] - cumsum[:, :, :-N, :]) / float(N)
-    # in Y
-    cumsum = np.cumsum(dsmooth, axis=-1)
-    dsmooth = (cumsum[:, :, :, N:] - cumsum[:, :, :, :-N]) / float(N)
-    return dsmooth
-
 
 def prepare_masks(refImg1, ops):
     refImg0=refImg1.copy()
@@ -36,85 +19,46 @@ def prepare_masks(refImg1, ops):
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     else:
         maskSlope    = 15 * ops['smooth_sigma'] # slope of taper mask at the edges
-
     Ly,Lx = refImg0.shape
+    maskMul = register.spatial_taper(maskSlope, Ly, Lx)
+
     if ops['1Preg']:
-        refImg0 -= register.spatial_smooth(refImg0[np.newaxis,:,:], hp).squeeze()
+        refImg0 = register.spatial_high_pass(refImg0[np.newaxis,:,:], hp).squeeze()
 
-    x = np.arange(0, Lx)
-    y = np.arange(0, Ly)
-    x = np.abs(x - x.mean())
-    y = np.abs(y - y.mean())
-    xx, yy = np.meshgrid(x, y)
-    mY = y.max() - 2*maskSlope
-    mX = x.max() - 2*maskSlope
-    maskY = 1./(1.+np.exp((yy-mY)/maskSlope))
-    maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
-    maskMul = maskY * maskX
-    maskOffset = refImg0.mean() * (1. - maskMul);
-
-    #maskSlope   = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     # split refImg0 into multiple parts
     cfRefImg1 = []
     maskMul1 = []
     maskOffset1 = []
     nb = len(ops['yblock'])
+
+    #patch taper
+    Ly = ops['yblock'][0][1] - ops['yblock'][0][0]
+    Lx = ops['xblock'][0][1] - ops['xblock'][0][0]
+    cfRefImg1 = np.zeros((nb,1,Ly,Lx),'complex64')
+    maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
+    maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
     for n in range(nb):
         yind = ops['yblock'][n]
         yind = np.arange(yind[0],yind[-1]).astype('int')
         xind = ops['xblock'][n]
         xind = np.arange(xind[0],xind[-1]).astype('int')
+
         refImg = refImg0[np.ix_(yind,xind)]
-        Ly,Lx = refImg.shape
-        if n==0:
-            cfRefImg1 = np.zeros((nb,1,Ly,Lx),'complex64')
-            maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
-            maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
+        maskMul2 = register.spatial_taper(2, Ly, Lx)
+        maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
+        maskMul1[n,0,:,:] *= maskMul2.astype('float32')
+        maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
 
-        x = np.arange(0, Lx)
-        y = np.arange(0, Ly)
-        x = np.abs(x - x.mean())
-        y = np.abs(y - y.mean())
-        xx, yy = np.meshgrid(x, y)
-        mY = y.max() - 2*maskSlope
-        mX = x.max() - 2*maskSlope
-        maskY = 1./(1.+np.exp((yy-mY)/maskSlope))
-        maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
-        maskMul2 = maskY * maskX
-
-        maskMul1[n,0,:,:] = (maskMul[np.ix_(yind,xind)].astype('float32'))
-        maskMul1[n,0,:,:] *= (maskMul2.astype('float32'))
-        
-        maskOffset1[n,0,:,:] = (maskOffset[np.ix_(yind,xind)].astype('float32'))
-        #maskMul1 = maskMul[np.ix_(yind,xind)]
-        #maskOffset1 = maskOffset[np.ix_(yind,xind)]
-        #refImg = refImg * maskMul + maskOffset
-
-        x = np.arange(0, Lx)
-        y = np.arange(0, Ly)
-        x = np.abs(x - x.mean())
-        y = np.abs(y - y.mean())
-        xx, yy = np.meshgrid(x, y)
-
-        hgx = np.exp(-np.square(xx/ops['smooth_sigma']) / 2)
-        hgy = np.exp(-np.square(yy/ops['smooth_sigma']) / 2)
-        hgg = hgy * hgx
-        hgg = hgg/hgg.sum()
-
-        #if ops['1Preg']:
-        #    hgx = np.exp(-np.square(xx/(25*ops['smooth_sigma'])) / 2)
-        #    hgy = np.exp(-np.square(yy/(25*ops['smooth_sigma'])) / 2)
-        #    hgg2 = hgy * hgx
-        #    hgg2 /= hgg2.sum()
-        #    hgg  -= hgg2
-
-        fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
-
+        # put reference in fft domain
         cfRefImg   = np.conj(fft.fft2(refImg));
         if ops['do_phasecorr']:
             absRef     = np.absolute(cfRefImg);
             cfRefImg   = cfRefImg / (eps0 + absRef);
+
+        # gaussian filter
+        fhg = register.gaussian_fft(ops['smooth_sigma'], Ly, Lx)
         cfRefImg *= fhg
+
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
 
@@ -124,14 +68,15 @@ def correlation_map(data, refAndMasks, do_phasecorr):
     cfRefImg   = refAndMasks[2]
     nb, nimg, Ly, Lx = data.shape
     X = data.astype('float32')
-    X -= spatial_smooth(X, hp)
+    #if oneP:
+    #    X = np.reshape(register.spatial_high_pass(np.reshape(X, (-1,Ly,Lx)), hp), (nb,nimg,Ly,Lx))
     X = X * maskMul + maskOffset
     X = fft.fft2(X)
     if do_phasecorr:
         X = X / (eps0 + np.absolute(X))
     X *= cfRefImg
     cc = np.real(fft.ifft2(X))
-    cc = fft.fftshift(cc, axes=(1,2))
+    cc = fft.fftshift(cc, axes=(2,3))
     return cc
 
 def phasecorr_worker(inputs):
@@ -155,13 +100,18 @@ def phasecorr_worker(inputs):
     snr1  = np.zeros((nimg,nb),np.float32)
     xmax1 = np.zeros((nimg,nb),np.float32)
     data_block = np.zeros((nb,nimg,ly,lx),np.float32)
+    if ops['1Preg']:
+        data1 = register.spatial_high_pass(data.copy(), hp)
+    else:
+        data1 = data.copy()
     # compute phase-correlation of blocks
     for n in range(nb):
         yind = ops['yblock'][n]
         yind = np.arange(yind[0],yind[-1]).astype(int)
         xind = ops['xblock'][n]
         xind = np.arange(xind[0],xind[-1]).astype(int)
-        data_block[n,:,:,:] = data[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
+        data_block[n,:,:,:] = data1[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
+    del data1
     cc1 = correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
 
     cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]

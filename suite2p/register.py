@@ -18,7 +18,35 @@ def toc(i0):
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
-hp = 50
+hp = 60
+
+def gaussian_fft(sig, Ly, Lx):
+    ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
+    x = np.arange(0, Lx)
+    y = np.arange(0, Ly)
+    x = np.abs(x - x.mean())
+    y = np.abs(y - y.mean())
+    xx, yy = np.meshgrid(x, y)
+    hgx = np.exp(-np.square(xx/sig) / 2)
+    hgy = np.exp(-np.square(yy/sig) / 2)
+    hgg = hgy * hgx
+    hgg /= hgg.sum()
+    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+    return fhg
+
+def spatial_taper(sig, Ly, Lx):
+    ''' spatial taper  on edges with gaussian of std sig '''
+    x = np.arange(0, Lx)
+    y = np.arange(0, Ly)
+    x = np.abs(x - x.mean())
+    y = np.abs(y - y.mean())
+    xx, yy = np.meshgrid(x, y)
+    mY = y.max() - 2*sig
+    mX = x.max() - 2*sig
+    maskY = 1./(1.+np.exp((yy-mY)/sig))
+    maskX = 1./(1.+np.exp((xx-mX)/sig))
+    maskMul = maskY * maskX
+    return maskMul
 
 def spatial_smooth(data,N):
     ''' spatially smooth data using cumsum over axis=1,2 with window N'''
@@ -33,6 +61,12 @@ def spatial_smooth(data,N):
     cumsum = np.cumsum(dsmooth, axis=2)
     dsmooth = (cumsum[:, :, N:] - cumsum[:, :, :-N]) / float(N)
     return dsmooth
+
+def spatial_high_pass(data, N):
+    ''' high pass filters data over axis=1,2 with window N'''
+    norm = spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N).squeeze()
+    data -= spatial_smooth(data, N) / norm
+    return data
 
 # smoothing kernel
 def kernelD(a, b):
@@ -59,38 +93,22 @@ def prepare_masks(refImg0, ops):
     if ops['1Preg']:
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     else:
-        maskSlope    = 15 * ops['smooth_sigma'] # slope of taper mask at the edges
+        maskSlope    = 14 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
+    maskMul = spatial_taper(maskSlope, Ly, Lx)
+
     if ops['1Preg']:
-        refImg -= spatial_smooth(refImg[np.newaxis,:,:], hp).squeeze()
-    x = np.arange(0, Lx)
-    y = np.arange(0, Ly)
-    x = np.abs(x - x.mean())
-    y = np.abs(y - y.mean())
-    xx, yy = np.meshgrid(x, y)
-    mY = y.max() - 2*maskSlope
-    mX = x.max() - 2*maskSlope
-    maskY = 1./(1.+np.exp((yy-mY)/maskSlope))
-    maskX = 1./(1.+np.exp((xx-mX)/maskSlope))
-    maskMul = maskY * maskX
+        refImg = spatial_high_pass(refImg[np.newaxis,:,:], ops['spatial_hp']).squeeze()
     maskOffset = refImg.mean() * (1. - maskMul);
 
-    #refImg = refImg0.copy() * maskMul + maskOffset
     # reference image in fourier domain
     cfRefImg   = np.conj(fft.fft2(refImg));
     if ops['do_phasecorr']:
         absRef     = np.absolute(cfRefImg);
         cfRefImg   = cfRefImg / (eps0 + absRef)
 
-    # laplacian of a gaussian
-    hgx = np.exp(-np.square(xx/ops['smooth_sigma']) / 2)
-    hgy = np.exp(-np.square(yy/ops['smooth_sigma']) / 2)
-    hgg = hgy * hgx
-    #hgg = -1 * hgg * (1 - (xx**2 + yy**2) / (2 * ops['smooth_sigma']**2))
-    hgg /= hgg.sum()
-
-    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
-
+    # gaussian filter in space
+    fhg = gaussian_fft(ops['smooth_sigma'], Ly, Lx)
     cfRefImg *= fhg
 
     maskMul = maskMul.astype('float32')
@@ -98,14 +116,13 @@ def prepare_masks(refImg0, ops):
     cfRefImg = cfRefImg.astype('complex64')
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(data, refAndMasks, do_phasecorr):
+def correlation_map(X, refAndMasks, do_phasecorr,):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2]
-    nimg, Ly, Lx = data.shape
+    nimg, Ly, Lx = X.shape
     cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
-    X = data.astype('float32')
-    X -= spatial_smooth(X, hp)
+    #X = data.astype('float32')
     X = X * maskMul + maskOffset
     X = fft.fft2(X)
     if do_phasecorr:
@@ -215,7 +232,11 @@ def phasecorr_worker(inputs):
     Lxhalf = int(np.floor(Lx/2))
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    cc = correlation_map(data, refAndMasks, ops['do_phasecorr'])
+    data1 = data.copy().astype(np.float32)
+    if ops['1Preg']:
+        data1 = spatial_high_pass(data1, ops['spatial_hp'])
+    cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
+    del data1
     ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
     Y = shift_data((data, ymax, xmax))
     yxnr = []

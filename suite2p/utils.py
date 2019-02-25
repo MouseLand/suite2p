@@ -220,7 +220,12 @@ def open_tiff(file, sktiff):
         Ltif = len(tif)
     else:
         tif = ScanImageTiffReader(file)
-        Ltif = tif.shape()[0]
+        tsize = tif.shape()
+        if len(tsize) < 3:
+            # single page tiffs
+            Ltif = 1
+        else:
+            Ltif = tif.shape()[0]
     return tif, Ltif
 
 def tiff_to_binary(ops):
@@ -247,9 +252,15 @@ def tiff_to_binary(ops):
         ops['filelist'] = fs
 
     # try tiff readers
+    single_page = False
     try:
         tif = ScanImageTiffReader(fs[0])
-        im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]-1))
+        tsize = tif.shape()
+        if len(tsize) < 3:
+            # single page tiffs
+            im = tif.data()
+        else:
+            im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]-1))
         tif.close()
         sktiff=False
     except:
@@ -268,6 +279,7 @@ def tiff_to_binary(ops):
             which_folder += 1
             iplane = 0
         ix = 0
+
         while 1:
             if ix >= Ltif:
                 break
@@ -276,7 +288,12 @@ def tiff_to_binary(ops):
             if sktiff:
                 im = imread(file, pages = range(ix, ix + nfr), fastij = False)
             else:
-                im = tif.data(beg=ix, end=ix+nfr)
+                if Ltif==1:
+                    im = tif.data()
+                    #im = np.expand_dims(im, axis=0)
+                    #print(im.shape)
+                else:
+                    im = tif.data(beg=ix, end=ix+nfr)
 
             # for single-page tiffs, add 1st dim
             if len(im.shape) < 3:

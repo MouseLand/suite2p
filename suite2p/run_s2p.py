@@ -130,7 +130,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-
+    
     # if not set up files and copy tiffs/h5py to binary
     if not files_found_flag:
         # get default options

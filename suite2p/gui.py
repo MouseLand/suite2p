@@ -107,11 +107,11 @@ class RunWindow(QtGui.QDialog):
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
-        nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
+        nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
-        labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
+        labels = ['Main settings',['Output settings','Parallel'],'Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -128,7 +128,7 @@ class RunWindow(QtGui.QDialog):
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
-                    '1.15 good for 2P recordings, recommend >5 for 1P recordings',
+                    '1.15 good for 2P recordings, recommend 2-5 for 1P recordings',
                     'if 1, unregistered binary is kept in a separate file data_raw.bin',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
@@ -136,6 +136,10 @@ class RunWindow(QtGui.QDialog):
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',
                     'maximum *pixel* shift allowed for nonrigid, relative to rigid',
+                    'whether to perform high-pass filtering and tapering for registration (necessary for 1P recordings)',
+                    'window for spatial high-pass filtering before registration',
+                    'whether to smooth before high-pass filtering before registration',
+                    "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',

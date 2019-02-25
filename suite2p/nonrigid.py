@@ -16,14 +16,14 @@ hp = 50
 def prepare_masks(refImg1, ops):
     refImg0=refImg1.copy()
     if ops['1Preg']:
-        maskSlope    = 15 * ops['smooth_sigma'] # slope of taper mask at the edges
+        maskSlope    = ops['spatial_taper']
     else:
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg0.shape
     maskMul = register.spatial_taper(maskSlope, Ly, Lx)
 
     if ops['1Preg']:
-        refImg0 = register.spatial_high_pass(refImg0[np.newaxis,:,:], hp).squeeze()
+        refImg0 = register.one_photon_preprocess(refImg0[np.newaxis,:,:], ops).squeeze()
 
     # split refImg0 into multiple parts
     cfRefImg1 = []
@@ -44,7 +44,7 @@ def prepare_masks(refImg1, ops):
         xind = np.arange(xind[0],xind[-1]).astype('int')
 
         refImg = refImg0[np.ix_(yind,xind)]
-        maskMul2 = register.spatial_taper(2, Ly, Lx)
+        maskMul2 = register.spatial_taper(2 * ops['smooth_sigma'], Ly, Lx)
         maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
         maskMul1[n,0,:,:] *= maskMul2.astype('float32')
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
@@ -62,14 +62,12 @@ def prepare_masks(refImg1, ops):
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
 
-def correlation_map(data, refAndMasks, do_phasecorr):
+def correlation_map(X, refAndMasks, do_phasecorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2]
-    nb, nimg, Ly, Lx = data.shape
+    #nb, nimg, Ly, Lx = data.shape
     X = data.astype('float32')
-    #if oneP:
-    #    X = np.reshape(register.spatial_high_pass(np.reshape(X, (-1,Ly,Lx)), hp), (nb,nimg,Ly,Lx))
     X = X * maskMul + maskOffset
     X = fft.fft2(X)
     if do_phasecorr:
@@ -82,9 +80,6 @@ def correlation_map(data, refAndMasks, do_phasecorr):
 def phasecorr_worker(inputs):
     ''' loop through blocks and compute phase correlations'''
     data, refAndMasks, ops = inputs
-    maskMul1    = refAndMasks[0]
-    maskOffset1 = refAndMasks[1]
-    cfRefImg1   = refAndMasks[2]
     nimg, Ly, Lx = data.shape
     maxregshift = np.round(ops['maxregshiftNR'])
     LyMax = np.diff(np.array(ops['yblock']))
@@ -101,7 +96,7 @@ def phasecorr_worker(inputs):
     xmax1 = np.zeros((nimg,nb),np.float32)
     data_block = np.zeros((nb,nimg,ly,lx),np.float32)
     if ops['1Preg']:
-        data1 = register.spatial_high_pass(data.copy(), hp)
+        data1 = register.one_photon_preprocess(data.copy(), ops)
     else:
         data1 = data.copy()
     # compute phase-correlation of blocks
@@ -112,7 +107,7 @@ def phasecorr_worker(inputs):
         xind = np.arange(xind[0],xind[-1]).astype(int)
         data_block[n,:,:,:] = data1[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
     del data1
-    cc1 = correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
+    cc1 = register.correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
 
     cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
     cc0 = cc0.reshape((cc0.shape[0], -1))
@@ -145,7 +140,9 @@ def phasecorr_worker(inputs):
         xmax1[:,n] = xmax
         cmax1[:,n] = cmax
         snr1[:,n] = snr
+
     # smooth cc across blocks if sig>0
+    # currently not used
     sig = 0
     if sig>0:
         cc1 = np.reshape(cc1,(nimg,ly,lx,nblocks[0],nblocks[1]))
@@ -170,6 +167,7 @@ def shift_data(inputs):
     nb = ymax.shape[1]
     ymax = np.reshape(ymax, (nimg,nblocks[0], nblocks[1]))
     xmax = np.reshape(xmax, (nimg,nblocks[0], nblocks[1]))
+
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
@@ -194,6 +192,7 @@ def shift_data(inputs):
     return Y
 
 def register_myshifts(ops, data, ymax, xmax):
+    ''' non-rigid shifting of other channel data by ymax and xmax '''
     if ops['num_workers']<0:
         dreg = shift_data((data, ymax, xmax, ops))
     else:

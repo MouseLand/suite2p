@@ -57,6 +57,11 @@ def default_ops():
         'block_size': [128, 128], # block size to register
         'snr_thresh': 1.2, # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
+        # 1P settings
+        '1Preg': False, # whether to perform high-pass filtering and tapering
+        'spatial_hp': 50, # window for spatial high-pass filtering before registration
+        'pre_smooth': 2, # whether to smooth before high-pass filtering before registration
+        'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'navg_frames_svd': 5000, # max number of binned frames for the SVD

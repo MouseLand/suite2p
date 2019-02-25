@@ -72,11 +72,13 @@ def spatial_high_pass(data, N):
 def one_photon_preprocess(data, ops):
     ''' pre filtering for one-photon data '''
     if ops['pre_smooth'] > 0:
+        ops['pre_smooth'] = int(np.ceil(ops['pre_smooth']/2) * 2)
         data = spatial_smooth(data, ops['pre_smooth'])
 
-    for n in range(data.shape[0]):
-        data[n,:,:] = laplace(data[n,:,:])
-    #data = spatial_high_pass(data, ops['spatial_hp'])
+    #for n in range(data.shape[0]):
+    #    data[n,:,:] = laplace(data[n,:,:])
+    ops['spatial_hp'] = int(np.ceil(ops['spatial_hp']/2) * 2)
+    data = spatial_high_pass(data, ops['spatial_hp'])
     return data
 
 # smoothing kernel
@@ -102,7 +104,7 @@ def mat_upsample(lpad, ops):
 def prepare_masks(refImg0, ops):
     refImg = refImg0.copy()
     if ops['1Preg']:
-        maskSlope    = 60 # slope of taper mask at the edges
+        maskSlope    = ops['spatial_taper'] # slope of taper mask at the edges
     else:
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg.shape
@@ -125,22 +127,21 @@ def prepare_masks(refImg0, ops):
     maskMul = maskMul.astype('float32')
     maskOffset = maskOffset.astype('float32')
     cfRefImg = cfRefImg.astype('complex64')
+    cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
     return maskMul, maskOffset, cfRefImg
 
-def correlation_map(X, refAndMasks, do_phasecorr,):
+def correlation_map(X, refAndMasks, do_phasecorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2]
-    nimg, Ly, Lx = X.shape
-    cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
-    #X = data.astype('float32')
+    #nimg, Ly, Lx = X.shape
     X = X * maskMul + maskOffset
     X = fft.fft2(X)
     if do_phasecorr:
         X = X / (eps0 + np.absolute(X))
     X *= cfRefImg
     cc = np.real(fft.ifft2(X))
-    cc = fft.fftshift(cc, axes=(1,2))
+    cc = fft.fftshift(cc, axes=(-2,-1))
     return cc
 
 def getSNR(cc, Ls, ops):
@@ -214,6 +215,7 @@ def getXYup2(cc, Ls, ops):
     return ymax, xmax, cmax
 
 def shift_data(inputs):
+    ''' rigid shift of X by ymax and xmax '''
     X, ymax, xmax = inputs
     ymax = ymax.flatten()
     xmax = xmax.flatten()
@@ -231,6 +233,7 @@ def shift_data(inputs):
     return Y
 
 def phasecorr_worker(inputs):
+    ''' compute registration offsets and shift data '''
     data, refAndMasks, ops = inputs
     if ops['nonrigid'] and len(refAndMasks)>3:
         refAndMasksNR = refAndMasks[3:]
@@ -246,7 +249,6 @@ def phasecorr_worker(inputs):
     data1 = data.copy().astype(np.float32)
     if ops['1Preg']:
         data1 = one_photon_preprocess(data1, ops)
-
     cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
     del data1
     ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
@@ -258,6 +260,7 @@ def phasecorr_worker(inputs):
     return Y, ymax, xmax, cmax, yxnr
 
 def phasecorr(data, refAndMasks, ops):
+    ''' master phasecorr, calls phasecorr_worker '''
     nr=False
     yxnr = []
     if ops['nonrigid'] and len(refAndMasks)>3:
@@ -266,6 +269,7 @@ def phasecorr(data, refAndMasks, ops):
     if ops['num_workers']<0:
         Y, ymax, xmax, cmax, yxnr = phasecorr_worker((data, refAndMasks, ops))
     else:
+        # run phasecorr_worker over multiple cores
         nimg = data.shape[0]
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)
@@ -311,6 +315,7 @@ def get_nFrames(ops):
     return nFrames
 
 def register_myshifts(ops, data, ymax, xmax):
+    ''' rigid shifting of other channel data by ymax and xmax '''
     if ops['num_workers']<0:
         dreg = shift_data((data, ymax, xmax))
     else:
@@ -336,7 +341,8 @@ def register_myshifts(ops, data, ymax, xmax):
     return dreg
 
 def subsample_frames(ops, nsamps):
-    nFrames = get_nFrames(ops)
+    ''' get nsamps frames from binary file for initial reference image'''
+    nFrames = ops['nframes']
     Ly = ops['Ly']
     Lx = ops['Lx']
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
@@ -399,6 +405,7 @@ def pick_init(ops):
     return refImg
 
 def get_metrics(ops):
+    ''' computes registration metrics '''
     nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
     nPC      = 50 # n PCs to compute motion for
     nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
@@ -417,6 +424,7 @@ def get_metrics(ops):
     return ops
 
 def register_binary(ops, refImg=None):
+    ''' registration of binary files '''
     # if ops is a list of dictionaries, each will be registered separately
     if (type(ops) is list) or (type(ops) is np.ndarray):
         for op in ops:
@@ -484,6 +492,7 @@ def register_binary(ops, refImg=None):
             break
         data = np.reshape(data, (-1, Ly, Lx))
         dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
+        dwrite = np.minimum(dwrite, 2**15 - 2)
         dwrite = dwrite.astype('int16')
         reg_file_align.seek(-2*dwrite.size,1)
         reg_file_align.write(bytearray(dwrite))

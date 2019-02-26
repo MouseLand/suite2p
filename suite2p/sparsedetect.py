@@ -219,7 +219,7 @@ def sparsery(ops):
 
     if im==0:
         print('best scale was 0, everything should break now')
-    Th2 = 5*max(1,im)
+    Th2 = ops['threshold_scaling']*max(1,im)
     vmultiplier = max(1, np.float32(rez.shape[0])/1200)
     print('spatial scale %d, time epochs %2.2f, threshold %2.2f '%(im, vmultiplier, vmultiplier*Th2))
 

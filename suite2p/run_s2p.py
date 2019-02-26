@@ -68,7 +68,7 @@ def default_ops():
         'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
         'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
-        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
+        'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
         'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
@@ -130,7 +130,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-    
+
     # if not set up files and copy tiffs/h5py to binary
     if not files_found_flag:
         # get default options

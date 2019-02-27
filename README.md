@@ -143,6 +143,8 @@ ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
+See this wiki [page](https://github.com/MouseLand/suite2p/wiki/Outputs) for more info.
+
 ## Dependencies
 suite2p relies on these awesome packages (which are automatically installed with pip if missing):
 - [rastermap](https://github.com/MouseLand/rastermap)

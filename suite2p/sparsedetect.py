@@ -177,7 +177,7 @@ def sparsery(ops):
     sdmov = celldetect2.get_sdmov(rez, ops)
     rez /= np.reshape(sdmov, (Ly,Lx))
 
-    lx = [51]
+    lx = [ops['spatial_hp']]
     c1 = square_conv2(np.ones((Ly,Lx)), lx)
     movu = square_conv2(rez, lx)
 
@@ -309,6 +309,7 @@ def sparsery(ops):
 
     stat = get_stat(ops, stat)
     stat = celldetect2.get_overlaps(stat,ops)
+    stat, ix = celldetect2.remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])
     return ops,stat
 
 def circleMask(d0):

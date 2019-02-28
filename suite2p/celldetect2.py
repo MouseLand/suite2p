@@ -390,8 +390,10 @@ def remove_overlaps(stat, ops, Ly, Lx):
             ypix = stat[n]['ypix']
             xpix = stat[n]['xpix']
             O[n] = np.mean(mask[ypix,xpix] > 1.5)
-        i = np.argmax(O)
-        if O[i]>ops['max_overlap']:
+        #i = np.argmax(O)
+        inds = (O > ops['max_overlap']).nonzero()[0]
+        if len(inds) > 0:
+            i = np.max(inds)
             ypix = stat[i]['ypix']
             xpix = stat[i]['xpix']
             mask[ypix,xpix] -= 1

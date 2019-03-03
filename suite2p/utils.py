@@ -378,7 +378,6 @@ def mesoscan_to_binary(ops):
         for j in range(len(ops1)):
             ops1[j] = {**ops1[j], **opsj[j]}.copy()
     nplanes = ops['nplanes']
-    print(nplanes)
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
     reg_file = []
@@ -416,11 +415,17 @@ def mesoscan_to_binary(ops):
                     if nchannels>1:
                         ops1[j]['meanImg_chan2'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
                     ops1[j]['nframes'] = 0
-                im2write = im[:,ops1[j]['lines'],:].astype(np.int16)
+                imj = im[:,ops1[j]['lines'],:].astype(np.int16)
+                i0 = nchannels
+                if nchannels>1:
+                    nfunc = ops['functional_chan'] - 1
+                else:
+                    nfunc = 0
+                im2write = imj[np.arange(int(i0)+nfunc, nframes, nchannels, int), :, :]
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 if nchannels>1:
-                    #im2write = im[np.arange(1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                    im2write = imj[np.arange(int(i0)+1-nfunc, nframes, nchannels, int), :, :]
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]

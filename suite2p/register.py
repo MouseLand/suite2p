@@ -364,6 +364,49 @@ def subsample_frames(ops, nsamps):
     reg_file.close()
     return frames
 
+def get_bidiphase(frames):
+    ''' computes the bidirectional phase offset
+        sometimes in line scanning there will be offsets between lines
+        if ops['do_bidiphase'], then bidiphase is computed and applied
+    '''
+    Ly = frames.shape[1]
+    Lx = frames.shape[2]
+    # lines scanned in 1 direction
+    yr1 = np.arange(1, np.floor(Ly/2)*2, 2, int)
+    # lines scanned in the other direction
+    yr2 = np.arange(0, np.floor(Ly/2)*2, 2, int)
+
+    # compute phase-correlation between lines in x-direction
+    d1 = fft.fft(frames[:, yr1, :], axis=2)
+    d2 = np.conj(fft.fft(frames[:, yr2, :], axis=2))
+    d1 = d1 / (np.abs(d1) + eps0)
+    d2 = d2 / (np.abs(d2) + eps0)
+
+    fhg =  gaussian_fft(1, int(np.floor(Ly/2)), Lx)
+    cc = np.real(fft.ifft(d1 * d2 * fhg[np.newaxis, :, :], axis=2))
+    cc = cc.mean(axis=1).mean(axis=0)
+    ix = np.argmax(cc[(np.arange(-5,6,1) + np.floor(Lx/2)).astype(int)])
+    ix -= 6
+    bidiphase = -1 * ix
+
+    return bidiphase
+
+def shift_bidiphase(frames, bidiphase):
+    ''' shift frames by bidirectional phase offset, bidiphase '''
+    nt, Ly, Lx = frames.shape
+    yr = np.arange(1, np.floor(Ly/2)*2, 2, int)
+    ntr = np.arange(0, nt, 1, int)
+    if bidiphase > 0:
+        xr = np.arange(bidiphase, Lx, 1, int)
+        xrout = np.arange(0, Lx-bidiphase, 1, int)
+        frames[np.ix_(ntr, yr, xr)] = frames[np.ix_(ntr, yr, xrout)]
+    else:
+        xr = np.arange(0, bidiphase+Lx, 1, int)
+        xrout = np.arange(-bidiphase, Lx, 1, int)
+        frames[np.ix_(ntr, yr, xr)] = frames[np.ix_(ntr, yr, xrout)]
+    return frames
+
+
 def pick_init_init(ops, frames):
     nimg = frames.shape[0]
     frames = np.reshape(frames, (nimg,-1)).astype('float32')
@@ -394,12 +437,18 @@ def refine_init_init(ops, frames, refImg):
     return refImg
 
 def pick_init(ops):
+    ''' compute initial reference image from ops['nimg_init'] frames '''
     nbytes = os.path.getsize(ops['reg_file'])
     Ly = ops['Ly']
     Lx = ops['Lx']
     nFrames = int(nbytes/(2*Ly*Lx))
     nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
+    if ops['do_bidiphase'] and ops['bidiphase']==0:
+        ops['bidiphase'] = get_bidiphase(frames)
+        print('computed bidiphase %d'%ops['bidiphase'])
+        if ops['bidiphase'] != 0:
+            frames = shift_bidiphase(frames.copy(), ops['bidiphase'])
     refImg = pick_init_init(ops, frames)
     refImg = refine_init_init(ops, frames, refImg)
     return refImg
@@ -491,6 +540,8 @@ def register_binary(ops, refImg=None):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
+        if ops['do_bidiphase'] and ops['bidiphase']!=0:
+            data = shift_bidiphase(data.copy(), ops['bidiphase'])
         dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
         dwrite = np.minimum(dwrite, 2**15 - 2)
         dwrite = dwrite.astype('int16')

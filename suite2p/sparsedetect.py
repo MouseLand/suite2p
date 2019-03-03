@@ -154,7 +154,6 @@ def iter_extend(ypix, xpix, Ucell, Lyc,Lxc, iframes):
     lam = lam/np.sum(lam**2)**.5
     return ypix, xpix, lam
 
-
 def square_conv2(mov,lx):
     if len(mov.shape)<3:
         mov = mov[np.newaxis, :, :]
@@ -176,6 +175,8 @@ def sparsery(ops):
     ops['Lxc'] = Lx
     sdmov = celldetect2.get_sdmov(rez, ops)
     rez /= np.reshape(sdmov, (Ly,Lx))
+
+    #rez *= -1
 
     lx = [ops['spatial_hp']]
     c1 = square_conv2(np.ones((Ly,Lx)), lx)

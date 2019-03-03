@@ -39,8 +39,10 @@ def default_ops():
         # parallel settings
         'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
+        # bidirectional phase offset
+        'do_bidiphase': False,
+        'bidiphase': 0,
         # registration settings
-        '1Preg': 0,
         'do_registration': 1, # whether to register data (2 forces re-registration)
         'keep_movie_raw': True,
         'nimg_init': 200, # subsampled frames for finding reference image

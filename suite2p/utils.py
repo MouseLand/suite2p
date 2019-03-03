@@ -54,6 +54,7 @@ def fitMVGaus(y,x,lam,thres=2.5):
     return mu, cov, radii, ellipse, area
 
 def enhanced_mean_image(ops):
+    ''' computes enhanced mean image for GUI '''
     if 1:
         I = ops['meanImg']
         Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
@@ -215,6 +216,8 @@ def h5py_to_binary(ops):
     return ops1
 
 def open_tiff(file, sktiff):
+    ''' opens tiff with either ScanImageTiffReader or skimage
+    returns tiff and its length '''
     if sktiff:
         tif = TiffFile(file, fastij = False)
         Ltif = len(tif)
@@ -359,6 +362,7 @@ def split_multiops(ops1):
     return ops1
 
 def mesoscan_to_binary(ops):
+    print(ops['data_path'])
     # copy ops to list where each element is ops for each plane
     # load json file with line start stops
     if 'lines' not in ops:

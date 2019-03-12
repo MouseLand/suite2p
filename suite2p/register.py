@@ -407,6 +407,7 @@ def get_bidiphase(frames):
 
 def shift_bidiphase(frames, bidiphase):
     ''' shift frames by bidirectional phase offset, bidiphase '''
+    bidiphase = int(bidiphase)
     nt, Ly, Lx = frames.shape
     yr = np.arange(1, np.floor(Ly/2)*2, 2, int)
     ntr = np.arange(0, nt, 1, int)

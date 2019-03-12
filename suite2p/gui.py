@@ -104,7 +104,7 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         self.opslist = []
         self.batch = False
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
+        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
@@ -119,6 +119,8 @@ class RunWindow(QtGui.QDialog):
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
                     'if 1, binary file is deleted after processing is complete',
+                    'whether or not to compute bidirectional phase offset of recording (from line scanning)',
+                    'set a fixed number (in pixels) for the bidirectional phase offset',
                     'save output also as mat file "Fall.mat"',
                     'combine results across planes in separate folder "combined" at end of processing',
                     '0 to select num_cores, -1 to disable parallelism, N to enforce value',

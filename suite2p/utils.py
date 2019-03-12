@@ -269,7 +269,9 @@ def tiff_to_binary(ops):
     except:
         sktiff = True
         print('ScanImageTiffReader not working for this tiff type, using scikit-image')
-
+    if 'force_sktiff' in ops and ops['force_sktiff']:
+        sktiff=True
+        print('user chose scikit-image for tiff reading')
     batch_size = 500
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
@@ -302,6 +304,7 @@ def tiff_to_binary(ops):
             if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
 
+
             # check if uint16
             if type(im[0,0,0]) == np.uint16:
                 im = im / 2
@@ -321,6 +324,8 @@ def tiff_to_binary(ops):
                 else:
                     nfunc = 0
                 im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                #im2write -= int(109.3381/2)
+
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
@@ -720,7 +725,7 @@ def make_blocks(ops):
 
     return ops
 
-def sample_frames(ops, ix):
+def sample_frames(ops, ix, reg_file):
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
@@ -728,7 +733,7 @@ def sample_frames(ops, ix):
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
     mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
     # load and bin data
-    with open(ops['reg_file'], 'rb') as reg_file:
+    with open(reg_file, 'rb') as reg_file:
         for i in range(len(ix)):
             reg_file.seek(nbytesread*ix[i], 0)
             buff = reg_file.read(nbytesread)

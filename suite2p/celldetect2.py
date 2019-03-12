@@ -406,7 +406,7 @@ def create_cell_masks(ops, stat, Ly, Lx, allow_overlap=False):
     '''creates cell masks for ROIs in stat and computes radii
     inputs:
         stat, Ly, Lx, allow_overlap
-            from stat: ipix, ypix, xpix, lam
+            from stat: ypix, xpix, lam
             allow_overlap: boolean whether or not to include overlapping pixels in cell masks (default: False)
     outputs:
         stat, cell_pix (Ly,Lx), cell_masks (ncells,Ly,Lx)

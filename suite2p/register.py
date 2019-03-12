@@ -272,7 +272,7 @@ def phasecorr(data, refAndMasks, ops):
         # run phasecorr_worker over multiple cores
         nimg = data.shape[0]
         if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
+            ops['num_workers'] = int(multiprocessing.cpu_count())
         num_cores = ops['num_workers']
 
         nbatch = int(np.ceil(nimg/float(num_cores)))
@@ -310,7 +310,11 @@ def phasecorr(data, refAndMasks, ops):
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
-    nbytes = os.path.getsize(ops['reg_file'])
+    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+        nbytes = os.path.getsize(ops['raw_file'])
+    else:
+        nbytes = os.path.getsize(ops['reg_file'])
+
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
 
@@ -348,13 +352,22 @@ def subsample_frames(ops, nsamps):
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            reg_file = open(ops['reg_file'], 'rb')
+    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                reg_file = open(ops['raw_file'], 'rb')
+            else:
+                reg_file = open(ops['raw_file_chan2'], 'rb')
         else:
-            reg_file = open(ops['reg_file_chan2'], 'rb')
+            reg_file = open(ops['raw_file'], 'rb')
     else:
-        reg_file = open(ops['reg_file'], 'rb')
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                reg_file = open(ops['reg_file'], 'rb')
+            else:
+                reg_file = open(ops['reg_file_chan2'], 'rb')
+        else:
+            reg_file = open(ops['reg_file'], 'rb')
     for j in range(0,nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
         buff = reg_file.read(nbytesread)
@@ -386,7 +399,7 @@ def get_bidiphase(frames):
     cc = np.real(fft.ifft(d1 * d2 * fhg[np.newaxis, :, :], axis=2))
     cc = cc.mean(axis=1).mean(axis=0)
     ix = np.argmax(cc[(np.arange(-5,6,1) + np.floor(Lx/2)).astype(int)])
-    ix -= 6
+    ix -= 5
     bidiphase = -1 * ix
 
     return bidiphase
@@ -438,17 +451,16 @@ def refine_init_init(ops, frames, refImg):
 
 def pick_init(ops):
     ''' compute initial reference image from ops['nimg_init'] frames '''
-    nbytes = os.path.getsize(ops['reg_file'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    nFrames = int(nbytes/(2*Ly*Lx))
+    nFrames = ops['nframes']
     nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
     if ops['do_bidiphase'] and ops['bidiphase']==0:
         ops['bidiphase'] = get_bidiphase(frames)
         print('computed bidiphase %d'%ops['bidiphase'])
-        if ops['bidiphase'] != 0:
-            frames = shift_bidiphase(frames.copy(), ops['bidiphase'])
+    if ops['bidiphase'] != 0:
+        frames = shift_bidiphase(frames.copy(), ops['bidiphase'])
     refImg = pick_init_init(ops, frames)
     refImg = refine_init_init(ops, frames, refImg)
     return refImg
@@ -456,10 +468,12 @@ def pick_init(ops):
 def get_metrics(ops):
     ''' computes registration metrics '''
     nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
+    if ops['Ly'] > 700:
+        nsamp = min(5000, nsamp)
     nPC      = 50 # n PCs to compute motion for
     nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    mov  = utils.sample_frames(ops, ix)
+    mov  = utils.sample_frames(ops, ix, ops['reg_file'])
     #mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
     pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
@@ -472,6 +486,259 @@ def get_metrics(ops):
     ops['regDX'] = X
     return ops
 
+def prepare_refAndMasks(refImg,ops):
+    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
+    if ops['nonrigid']:
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
+        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
+    else:
+        refAndMasks = [maskMul, maskOffset, cfRefImg]
+    return refAndMasks
+
+def init_offsets(ops):
+    yoff = np.zeros((0,),np.float32)
+    xoff = np.zeros((0,),np.float32)
+    corrXY = np.zeros((0,),np.float32)
+    if ops['nonrigid']:
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        yoff1 = np.zeros((0,nb),np.float32)
+        xoff1 = np.zeros((0,nb),np.float32)
+        corrXY1 = np.zeros((0,nb),np.float32)
+        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
+    else:
+        offsets = [yoff,xoff,corrXY]
+
+    return offsets
+
+def compute_crop(ops):
+    ''' determines ops['badframes'] (using ops['th_badframes'])
+        and excludes these ops['badframes'] when computing valid ranges
+        from registration in y and x
+    '''
+    dx = ops['xoff'] - medfilt(ops['xoff'], 101)
+    dy = ops['yoff'] - medfilt(ops['yoff'], 101)
+    dxy = (dx**2 + dy**2)**.5
+    cXY = ops['corrXY'] / medfilt(ops['corrXY'], 101)
+    px = dxy/np.mean(dxy) / np.maximum(0, cXY)
+    ops['badframes'] = px > ops['th_badframes']
+    ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
+    ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
+    xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
+    xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(ops['xoff'])))
+    ops['yrange'] = [int(ymin), int(ymax)]
+    ops['xrange'] = [int(xmin), int(xmax)]
+    return ops
+
+def register_data(data, ops, refAndMasks):
+    ''' register data matrix to reference image '''
+    ''' need reference image ops['refImg']'''
+    ''' and to run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
+
+    if ops['bidiphase']!=0:
+        data = shift_bidiphase(data.copy(), ops['bidiphase'])
+    dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
+
+    offsets = []
+    offsets.append(ymax)
+    offsets.append(xmax)
+    offsets.append(cmax)
+    if ops['nonrigid']:
+        for n in range(len(yxnr)):
+            offsets.append(yxnr[n])
+    return dwrite, offsets
+
+def apply_reg_shifts(data, ops, offsets, iframes=None):
+    ''' apply shifts from register_data to data matrix '''
+    if iframes is None:
+        iframes = np.arange(0, data.shape[0], 1, int)
+    if ops['bidiphase']!=0:
+        data = shift_bidiphase(data.copy(), ops['bidiphase'])
+    data = register_myshifts(ops, data, offsets[0][iframes], offsets[1][iframes])
+    if ops['nonrigid']==True:
+        data = nonrigid.register_myshifts(ops, data, offsets[3][iframes], offsets[4][iframes])
+    return data
+
+def write_tiffs(data, ops, k, ichan):
+    if k==0:
+        if ichan==0:
+            if ops['functional_chan']==ops['align_by_chan']:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            else:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+        else:
+            if ops['functional_chan']==ops['align_by_chan']:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            else:
+                tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+        if not os.path.isdir(tifroot):
+            os.makedirs(tifroot)
+        print(tifroot)
+    fname = 'file_chan%0.3d.tif'%k
+    io.imsave(os.path.join(tifroot, fname), data)
+
+def bin_paths(ops, raw):
+    raw_file_align = []
+    raw_file_alt = []
+    reg_file_align = []
+    reg_file_alt = []
+    if raw:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                raw_file_align = ops['raw_file']
+                raw_file_alt = ops['raw_file_chan2']
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                raw_file_align = ops['raw_file_chan2']
+                raw_file_alt = ops['raw_file']
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            raw_file_align = ops['raw_file']
+            reg_file_align = ops['reg_file']
+    else:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            reg_file_align = ops['reg_file']
+    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt
+
+def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
+    ''' register binary data to reference image refImg '''
+    offsets = init_offsets(ops)
+    refAndMasks = prepare_refAndMasks(refImg,ops)
+
+    nbatch = ops['batch_size']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread = 2 * Ly * Lx * nbatch
+    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
+    if raw:
+        reg_file_align = open(reg_file_align, 'wb')
+        raw_file_align = open(raw_file_align, 'rb')
+    else:
+        reg_file_align = open(reg_file_align, 'r+b')
+
+    meanImg = np.zeros((Ly, Lx))
+    k=0
+    nfr=0
+    k0 = tic()
+    while True:
+        if raw:
+            buff = raw_file_align.read(nbytesread)
+        else:
+            buff = reg_file_align.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        if data.size==0:
+            break
+        data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
+
+        data, offsets0 = register_data(data, ops, refAndMasks)
+
+        data = np.minimum(data, 2**15 - 2)
+        meanImg += data.sum(axis=0)
+        data = data.astype('int16')
+
+        # write to reg_file_align
+        if not raw:
+            reg_file_align.seek(-2*data.size,1)
+        reg_file_align.write(bytearray(data))
+
+        # compile offsets
+        for n in range(len(offsets0)):
+            if n < 3:
+                offsets[n] = np.hstack((offsets[n], offsets0[n]))
+            else:
+                offsets[n] = np.vstack((offsets[n], offsets0[n]))
+
+        # write registered tiffs
+        if ops['reg_tif']:
+            write_tiffs(data, ops, k, 0)
+
+        nfr += data.shape[0]
+        k += 1
+        if k%5==0:
+            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+
+    print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+
+    # mean image across all frames
+    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
+        ops['meanImg'] = meanImg/ops['nframes']
+    else:
+        ops['meanImg_chan2'] = meanImg/ops['nframes']
+
+    reg_file_align.close()
+    if raw:
+        raw_file_align.close()
+    return ops, offsets
+
+def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
+    ''' apply registration shifts to binary data'''
+
+    nbatch = ops['batch_size']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread = 2 * Ly * Lx * nbatch
+    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
+    ix = 0
+    meanImg = np.zeros((Ly, Lx))
+    k=0
+    k0 = tic()
+    if raw:
+        reg_file_alt = open(reg_file_alt, 'wb')
+        raw_file_alt = open(raw_file_alt, 'rb')
+    else:
+        reg_file_alt = open(reg_file_alt, 'r+b')
+    while True:
+        if raw:
+            buff = raw_file_alt.read(nbytesread)
+        else:
+            buff = reg_file_alt.read(nbytesread)
+
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        if data.size==0:
+            break
+        data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
+        nframes = data.shape[0]
+
+        # register by pre-determined amount
+        iframes = ix + np.arange(0,nframes,1,int)
+        data = apply_reg_shifts(data, ops, offsets, iframes)
+        meanImg += data.sum(axis=0)
+
+        ix += nframes
+        data = data.astype('int16')
+
+        # write to binary
+        if not raw:
+            reg_file_alt.seek(-2*data.size,1)
+        reg_file_alt.write(bytearray(data))
+
+        # write registered tiffs
+        if ops['reg_tif_chan2']:
+            write_tiffs(data, ops, k, 1)
+        k+=1
+    if ops['functional_chan']!=ops['align_by_chan']:
+        ops['meanImg'] = meanImg/ops['nframes']
+    else:
+        ops['meanImg_chan2'] = meanImg/ops['nframes']
+    print('registered second channel in time %4.2f'%(toc(k0)))
+
+    reg_file_alt.close()
+    if raw:
+        raw_file_alt.close()
+
+    return ops
+
+
 def register_binary(ops, refImg=None):
     ''' registration of binary files '''
     # if ops is a list of dictionaries, each will be registered separately
@@ -479,177 +746,73 @@ def register_binary(ops, refImg=None):
         for op in ops:
             op = register_binary(op)
         return ops
+
+    # make blocks for nonrigid
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
-    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-        ops['reg_file_raw'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
-        print(ops['reg_file_raw'])
-        shutil.copyfile(ops['reg_file'], ops['reg_file_raw'])
-        if ops['nchannels'] > 1:
-            ops['reg_file_chan2_raw'] = os.path.splitext(ops['reg_file_chan2'])[0]+'_raw.bin'
-            shutil.copyfile(ops['reg_file_chan2'], ops['reg_file_chan2_raw'])
 
-    Ly = ops['Ly']
-    Lx = ops['Lx']
     ops['nframes'] = get_nFrames(ops)
+
+    # check number of frames and print warnings
     if ops['nframes']<50:
         raise Exception('the total number of frames should be at least 50 ')
     if ops['nframes']<200:
         print('number of frames is below 200, unpredictable behaviors may occur')
-    do_regmetrics = True
+
+    if 'do_regmetrics' in ops:
+        do_regmetrics = ops['do_regmetrics']
+    else:
+        do_regmetrics = True
+
+    k0 = tic()
+
+    # compute reference image
     if refImg is not None:
         print('using reference frame given')
         print('will not compute registration metrics')
         do_regmetrics = False
     else:
         refImg = pick_init(ops)
-        print('computed reference frame for registration')
+        print('computed reference frame for registration in time %4.2f'%(toc(k0)))
     ops['refImg'] = refImg
-    nbatch = ops['batch_size']
-    nbytesread = 2 * Ly * Lx * nbatch
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            reg_file_align = open(ops['reg_file'], 'r+b')
-            reg_file_alt = open(ops['reg_file_chan2'], 'r+b')
-        else:
-            reg_file_align = open(ops['reg_file_chan2'], 'r+b')
-            reg_file_alt = open(ops['reg_file'], 'r+b')
-    else:
-        reg_file_align = open(ops['reg_file'], 'r+b')
-    meanImg = np.zeros((Ly, Lx))
+
+    # get binary file paths
+    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
+    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
+
     k = 0
     nfr = 0
-    k0 = tic()
-    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
-    yoff = np.zeros((0,),np.float32)
-    xoff = np.zeros((0,),np.float32)
-    corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
-    else:
-        refAndMasks = [maskMul, maskOffset, cfRefImg]
-    while True:
-        buff = reg_file_align.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        buff = []
-        if data.size==0:
-            break
-        data = np.reshape(data, (-1, Ly, Lx))
-        if ops['do_bidiphase'] and ops['bidiphase']!=0:
-            data = shift_bidiphase(data.copy(), ops['bidiphase'])
-        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
-        dwrite = np.minimum(dwrite, 2**15 - 2)
-        dwrite = dwrite.astype('int16')
-        reg_file_align.seek(-2*dwrite.size,1)
-        reg_file_align.write(bytearray(dwrite))
-        meanImg += dwrite.sum(axis=0)
-        yoff = np.hstack((yoff, ymax))
-        xoff = np.hstack((xoff, xmax))
-        corrXY = np.hstack((corrXY, cmax))
-        if ops['nonrigid']:
-            yoff1 = np.vstack((yoff1, yxnr[0]))
-            xoff1 = np.vstack((xoff1, yxnr[1]))
-            corrXY1 = np.vstack((corrXY1, yxnr[2]))
-        if ops['reg_tif']:
-            if k==0:
-                if ops['functional_chan']==ops['align_by_chan']:
-                    tifroot = os.path.join(ops['save_path'], 'reg_tif')
-                else:
-                    tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
-                if not os.path.isdir(tifroot):
-                    os.makedirs(tifroot)
-                print(tifroot)
-            fname = 'file_chan%0.3d.tif'%k
-            io.imsave(os.path.join(tifroot, fname), dwrite)
-        nfr += dwrite.shape[0]
-        k += 1
-        if k%5==0:
-            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
-    reg_file_align.close()
+
+    # register binary to reference image
+    ops, offsets = register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align)
+
+    if ops['nchannels']>1:
+        ops = apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
 
     ops['th_badframes'] = 100
-    dx = xoff - medfilt(xoff, 101)
-    dy = yoff - medfilt(yoff, 101)
-    dxy = (dx**2 + dy**2)**.5
-    cXY = corrXY / medfilt(corrXY, 101)
-    px = dxy/np.mean(dxy) / np.maximum(0, cXY)
-    ops['badframes'] = px > ops['th_badframes']
-    ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(ops['badframes'])])))
-    ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(yoff)))
-    xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(ops['badframes'])])))
-    xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['yrange'] = [int(ymin), int(ymax)]
-    ops['xrange'] = [int(xmin), int(xmax)]
-    ops['corrXY'] = corrXY
-
-    ops['yoff'] = yoff
-    ops['xoff'] = xoff
-    #ymin = np.maximum(0, np.ceil(np.amax(yoff)))
-    #ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    #ops['yrange'] = [int(ymin), int(ymax)]
-    #xmin = np.maximum(0, np.ceil(np.amax(xoff)))
-    #xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
-    #ops['xrange'] = [int(xmin), int(xmax)]
-    #ops['corrXY'] = corrXY
+    ops['yoff'] = offsets[0]
+    ops['xoff'] = offsets[1]
+    ops['corrXY'] = offsets[2]
     if ops['nonrigid']:
-        ops['yoff1'] = yoff1
-        ops['xoff1'] = xoff1
-        ops['corrXY1'] = corrXY1
-    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
-        ops['meanImg'] = meanImg/ops['nframes']
-    else:
-        ops['meanImg_chan2'] = meanImg/ops['nframes']
-    k=0
-    if ops['nchannels']>1:
-        ix = 0
-        meanImg = np.zeros((Ly, Lx))
-        while True:
-            buff = reg_file_alt.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            buff = []
-            if data.size==0:
-                break
-            data = np.reshape(data, (-1, Ly, Lx))
-            nframes = data.shape[0]
-            # register by pre-determined amount
-            dwrite = register_myshifts(ops, data, yoff[ix + np.arange(0,nframes)], xoff[ix + np.arange(0,nframes)])
-            if ops['nonrigid']==True:
-                dwrite = nonrigid.register_myshifts(ops, dwrite, yoff1[ix + np.arange(0,nframes),:], xoff1[ix + np.arange(0,nframes),:])
-            ix += nframes
-            dwrite = dwrite.astype('int16')
-            reg_file_alt.seek(-2*dwrite.size,1)
-            reg_file_alt.write(bytearray(dwrite))
-            meanImg += dwrite.sum(axis=0)
-            if ops['reg_tif_chan2']:
-                if k==0:
-                    if ops['functional_chan']!=ops['align_by_chan']:
-                        tifroot = os.path.join(ops['save_path'], 'reg_tif')
-                    else:
-                        tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
-                    print(tifroot)
-                    if not os.path.isdir(tifroot):
-                        os.makedirs(tifroot)
-                fname = 'file_chan%0.3d.tif'%k
-                io.imsave(os.path.join(tifroot, fname), dwrite)
-            k+=1
-        if ops['functional_chan']!=ops['align_by_chan']:
-            ops['meanImg'] = meanImg/ops['nframes']
-        else:
-            ops['meanImg_chan2'] = meanImg/ops['nframes']
-        print('registered second channel in time %4.2f'%(toc(k0)))
+        ops['yoff1'] = offsets[3]
+        ops['xoff1'] = offsets[4]
+        ops['corrXY1'] = offsets[5]
+
+    # compute valid region
+    ops = compute_crop(ops)
+
+    if 'ops_path' in ops:
+        np.save(ops['ops_path'], ops)
 
     # compute metrics for registration
     if do_regmetrics:
         ops = get_metrics(ops)
         print('computed registration metrics in time %4.2f'%(toc(k0)))
 
-    np.save(ops['ops_path'], ops)
+    if 'ops_path' in ops:
+        np.save(ops['ops_path'], ops)
     return ops
+
 
 
 def register_npy(Z, ops):

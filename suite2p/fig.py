@@ -722,7 +722,7 @@ def flip_cell(parent):
                     S = parent.Sext[i,ypix,xpix]
                 if k==0:
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
-                elif k==1 or k==2 or k==4:
+                elif k==1 or k==2 or k==4 or k==5:
                     V = parent.Vback[k-1,ypix,xpix]
                     S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
                 elif k==3:

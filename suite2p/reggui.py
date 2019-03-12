@@ -430,9 +430,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
             self.wraw = False
-            if 'reg_file_raw' in ops:
+            if 'reg_file_raw' in ops or 'raw_file' in ops:
                 if self.reg_loc == ops['reg_file']:
-                    self.reg_loc_raw = ops['reg_file_raw']
+                    if 'reg_file_raw' in ops:
+                        self.reg_loc_raw = ops['reg_file_raw']
+                    else:
+                        self.reg_loc_raw = ops['raw_file']
                 else:
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
                 self.reg_file_raw = open(self.reg_loc_raw,'rb')

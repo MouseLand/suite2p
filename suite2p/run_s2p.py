@@ -33,6 +33,7 @@ def default_ops():
         'diameter':12, # this is the main parameter for cell detection, 2-dimensional if Y and X are different (e.g. [6 12])
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)
+        'force_sktiff': False,
         # output settings
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
@@ -155,6 +156,16 @@ def run_s2p(ops={},db={}):
             else:
                 ops1 = utils.tiff_to_binary(ops)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+
+        # if keeping both the raw binary and the registered binary
+        if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+            for ops in ops1:
+                ops['raw_file'] = os.path.splitext(ops['reg_file'])[0]+'_raw.bin'
+                print('saving raw binary in %s'%ops['raw_file'])
+                shutil.copyfile(ops['reg_file'], ops['raw_file'])
+                if ops['nchannels'] > 1:
+                    ops['raw_file_chan2'] = os.path.splitext(ops['reg_file_chan2'])[0]+'_raw.bin'
+                    shutil.copyfile(ops['reg_file_chan2'], ops['raw_file_chan2'])
         np.save(fpathops1, ops1) # save ops1
     else:
         print('found binaries')

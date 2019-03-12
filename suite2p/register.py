@@ -395,8 +395,8 @@ def get_bidiphase(frames):
     d1 = d1 / (np.abs(d1) + eps0)
     d2 = d2 / (np.abs(d2) + eps0)
 
-    fhg =  gaussian_fft(1, int(np.floor(Ly/2)), Lx)
-    cc = np.real(fft.ifft(d1 * d2 * fhg[np.newaxis, :, :], axis=2))
+    #fhg =  gaussian_fft(1, int(np.floor(Ly/2)), Lx)
+    cc = np.real(fft.ifft(d1 * d2 , axis=2))#* fhg[np.newaxis, :, :], axis=2))
     cc = cc.mean(axis=1).mean(axis=0)
     ix = np.argmax(cc[(np.arange(-5,6,1) + np.floor(Lx/2)).astype(int)])
     ix -= 5

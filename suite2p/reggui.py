@@ -76,6 +76,8 @@ class PCViewer(QtGui.QMainWindow):
             self.titles.append(t1)
         self.loaded = False
         self.wraw = False
+        self.wred = False
+        self.wraw_wred = False
         self.l0.addWidget(QtGui.QLabel(''),7,0,1,1)
         self.l0.setRowStretch(7,1)
         self.cframe = 0
@@ -358,6 +360,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.loaded = False
         self.Floaded = False
         self.wraw = False
+        self.wred = False
+        self.wraw_wred = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -374,7 +378,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,
-                            "Open single-plane ops.npy file",filter="ops.npy")
+                            "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
         if fileName:
             print(fileName[0])
@@ -426,10 +430,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ROIedit.setText('0')
             # get scaling from 100 random frames
             frames = subsample_frames(ops, np.minimum(ops['nframes'],100), self.reg_loc)
-            self.srange = frames.mean() + frames.std()*np.array([-3,3])
+            self.srange = frames.mean() + frames.std()*np.array([-2,5])
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
             self.wraw = False
+            self.wred = False
+            self.wraw_wred = False
             if 'reg_file_raw' in ops or 'raw_file' in ops:
                 if self.reg_loc == ops['reg_file']:
                     if 'reg_file_raw' in ops:
@@ -440,6 +446,23 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
                 self.reg_file_raw = open(self.reg_loc_raw,'rb')
                 self.wraw=True
+            if 'reg_file_chan2' in ops:
+                if self.reg_loc == ops['reg_file']:
+                    self.reg_loc_red = ops['reg_file_chan2']
+                else:
+                    self.reg_loc_red = os.path.join(os.path.dirname(fileName),'data_chan2.bin')
+                self.reg_file_chan2 = open(self.reg_loc_red,'rb')
+                self.wred=True
+            if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
+                if self.reg_loc == ops['reg_file']:
+                    if 'reg_file_raw_chan2' in ops:
+                        self.reg_loc_raw_chan2 = ops['reg_file_raw_chan2']
+                    else:
+                        self.reg_loc_raw_chan2 = ops['raw_file_chan2']
+                else:
+                    self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
+                self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
+                self.wraw_wred=True
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
             self.nframes = ops['nframes']
@@ -637,6 +660,10 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.reg_file.seek(self.nbytesread * self.cframe, 0)
             if self.wraw:
                 self.reg_file_raw.seek(self.nbytesread * self.cframe, 0)
+            if self.wred:
+                self.reg_file_chan2.seek(self.nbytesread * self.cframe, 0)
+            if self.wraw_wred:
+                self.reg_file_raw_chan2.seek(self.nbytesread * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 
@@ -648,6 +675,10 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.reg_file.seek(0, 0)
             if self.wraw:
                 self.reg_file_raw.seek(0, 0)
+            if self.wred:
+                self.reg_file_chan2.seek(0, 0)
+            if self.wraw_wred:
+                self.reg_file_raw_chan2.seek(0, 0)
         buff = self.reg_file.read(self.nbytesread)
         self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
         self.img = np.tile(self.img,(1,1,3))
@@ -661,6 +692,27 @@ class BinaryPlayer(QtGui.QMainWindow):
             imgraw = np.tile(imgraw,(1,1,3))
             blk = self.srange[0]*np.ones((imgraw.shape[0],max(10,int(imgraw.shape[1]*0.05)),3),dtype=np.int16)
             self.img = np.concatenate((imgraw,blk,self.img),axis=1)
+        if self.wred:
+            buff = self.reg_file_chan2.read(self.nbytesread)
+            imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            if self.wraw:
+                self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                np.arange(0,self.Lx,1,int)+self.img.shape[1]-self.Lx, [0])] = imgred
+                self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                np.arange(0,self.Lx,1,int)+self.img.shape[1]-self.Lx, [2])] = 0
+            else:
+                self.img[:,:,0] = imgred
+                self.img[:,:,2] = 0
+        if self.wraw_wred:
+            buff = self.reg_file_raw_chan2.read(self.nbytesread)
+            imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                            np.arange(0,self.Lx,1,int), [0])] = imgred_raw
+            self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                            np.arange(0,self.Lx,1,int), [2])] = 0
+            #imgred = np.tile(imgred,(1,1,3))
+            #blk = self.srange[0]*np.ones((imgred.shape[0],max(10,int(imgred.shape[1]*0.05)),3),dtype=np.int16)
+            #self.img = np.concatenate((self.img,blk,imgred),axis=1)
         self.pimg.setImage(self.img)
         self.pimg.setLevels(self.srange)
         self.frameSlider.setValue(self.cframe)

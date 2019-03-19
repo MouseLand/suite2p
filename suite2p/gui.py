@@ -83,7 +83,7 @@ class ListChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,900)
+        self.setGeometry(50,50,1200,950)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -106,7 +106,7 @@ class RunWindow(QtGui.QDialog):
         self.batch = False
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
+        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw', 'reg_tif','reg_tif_chan2']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
@@ -129,8 +129,9 @@ class RunWindow(QtGui.QDialog):
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
+                    'gaussian smoothing after phase corr: 1.15 good for 2P recordings, recommend 2-5 for 1P recordings',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
-                    '1.15 good for 2P recordings, recommend 2-5 for 1P recordings',
+                    'this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames',
                     'if 1, unregistered binary is kept in a separate file data_raw.bin',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
@@ -266,10 +267,11 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,19,0,1,1)
+        n0 = 21
+        self.layout.addWidget(self.runButton,n0,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 20,0,30,2*l)
+        self.layout.addWidget(self.textEdit, n0+1,0,30,2*l)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -279,30 +281,30 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 19,1,1,1)
+        self.layout.addWidget(self.stopButton, n0,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
         self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
         self.cleanButton.setToolTip('will run at end of processing')
         self.cleanButton.setEnabled(True)
-        self.layout.addWidget(self.cleanButton, 19,2,1,2)
+        self.layout.addWidget(self.cleanButton, n0,2,1,2)
         self.cleanup = False
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
-        self.layout.addWidget(self.cleanLabel,19,4,1,12)
+        self.layout.addWidget(self.cleanLabel,n0,4,1,12)
         self.listOps = QtGui.QPushButton('save settings and\n add more (batch)')
         self.listOps.clicked.connect(self.list_ops)
-        self.layout.addWidget(self.listOps,19,14,1,2)
+        self.layout.addWidget(self.listOps,n0,12,1,2)
         self.listOps.setEnabled(False)
         self.removeOps = QtGui.QPushButton('remove last added')
         self.removeOps.clicked.connect(self.remove_ops)
-        self.layout.addWidget(self.removeOps,19,16,1,2)
+        self.layout.addWidget(self.removeOps,n0,14,1,2)
         self.removeOps.setEnabled(False)
         self.odata = []
         for n in range(10):
             self.odata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.odata[n],
-                                  20+n,14,1,4)
+                                  n0+1+n,12,1,4)
         self.f = 0
 
     def remove_ops(self):

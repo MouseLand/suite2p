@@ -72,7 +72,7 @@ class MainW(QtGui.QMainWindow):
         for k in range(6):
             self.ops_plot.append(0)
 
-        # ------ MENU BAR -----------------
+        # --------------- MENU BAR --------------------------
         # run suite2p from scratch
         runS2P = QtGui.QAction("&Run suite2p ", self)
         runS2P.setShortcut("Ctrl+R")
@@ -95,12 +95,7 @@ class MainW(QtGui.QMainWindow):
         exportFig.triggered.connect(self.export_fig)
         exportFig.setEnabled(True)
         self.addAction(exportFig)
-        # load masks
-        # loadMask = QtGui.QAction(
-        #     "&Load masks (stat.npy) and extract traces", self
-        # )
-        # loadMask.setShortcut('Ctrl+M')
-        # self.addAction(loadMask)
+
         # make mainmenu!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
@@ -164,11 +159,7 @@ class MainW(QtGui.QMainWindow):
         reg_menu.addAction(self.reg)
         reg_menu.addAction(self.regPC)
 
-        # self.reg.setShortcut('Ctrl+V')
-        # --------- MAIN WIDGET LAYOUT ---------
-        # pg.setConfigOption('background', 'w')
-        # cwidget = EventWidget(self)
-        # plugins menuBar
+        # plugin menu
         self.plugins = {}
         plugin_menu = main_menu.addMenu('&Plugins')
         for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
@@ -176,10 +167,7 @@ class MainW(QtGui.QMainWindow):
             self.plugins[entry_pt.name].triggered.connect(entry_pt.window)
             plugin_menu.addAction(self.plugins[entry_pt.name])
 
-        #self.reg.setShortcut('Ctrl+V')
-        #### --------- MAIN WIDGET LAYOUT --------- ####
-        #pg.setConfigOption('background', 'w')
-        #cwidget = EventWidget(self)
+        # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QtGui.QWidget()
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
@@ -241,7 +229,8 @@ class MainW(QtGui.QMainWindow):
                 btn.setEnabled(True)
             b += 1
         self.sizebtns.setExclusive(True)
-        # -------- MAIN PLOTTING AREA ----------
+
+        ##### -------- MAIN PLOTTING AREA ---------- ####################
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600, 0)
         self.win.resize(1000, 500)
@@ -290,7 +279,8 @@ class MainW(QtGui.QMainWindow):
         # self.key_on(self.win.scene().keyPressEvent)
         self.show()
         self.win.show()
-        # --------- VIEW AND COLOR BUTTONS ----------
+
+        ###### --------- VIEW AND COLOR BUTTONS ---------- #############
         self.views = [
             "Q: ROIs",
             "W: mean img",
@@ -349,7 +339,6 @@ class MainW(QtGui.QMainWindow):
                 self.colors[b] = self.colors[b][3:]
             b += 1
         self.chan2edit = QtGui.QLineEdit(self)
-        #self.chan2edit.setValidator(QtGui.QFloatValidator(0, 1.2))
         self.chan2edit.setText("0.6")
         self.chan2edit.setFixedWidth(40)
         self.chan2edit.setAlignment(QtCore.Qt.AlignRight)
@@ -357,10 +346,6 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.chan2edit, nv + b - 4, 1, 1, 1)
 
         self.probedit = QtGui.QLineEdit(self)
-        #self.probedit.setDecimals(3)
-        #self.probedit.setMaximum(1.0)
-        #self.probedit.setMinimum(0.0)
-        #self.probedit.setSingleStep(0.01)
         self.probedit.setText("0.5")
         self.probedit.setFixedWidth(40)
         self.probedit.setAlignment(QtCore.Qt.AlignRight)
@@ -368,9 +353,7 @@ class MainW(QtGui.QMainWindow):
             lambda: classgui.apply(self)
         )
         self.l0.addWidget(self.probedit, nv + b - 3, 1, 1, 1)
-        #self.applyclass = QtGui.QPushButton(" apply")
-        #self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        #self.applyclass.clicked.connect(lambda: classgui.apply(self))
+
 
         self.binedit = QtGui.QLineEdit(self)
         self.binedit.setValidator(QtGui.QIntValidator(0, 500))
@@ -397,9 +380,6 @@ class MainW(QtGui.QMainWindow):
             colorbarW.addLabel("0.5", color=[255, 255, 255], row=1, col=1),
             colorbarW.addLabel("1.0", color=[255, 255, 255], row=1, col=2),
         ]
-        #self.applyclass.setEnabled(False)
-        #self.applyclass.setStyleSheet(self.styleInactive)
-        #self.l0.addWidget(self.applyclass, self.bend + 1, 0, 1, 1)
 
         # ----- CLASSIFIER BUTTONS -------
         cllabel = QtGui.QLabel("")
@@ -533,16 +513,24 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model["keys"]
-        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
-        #self.load_behavior('C:/Users/carse/github/data/beht.npy')
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
         self.win.scene().showExportDialog()
 
     def mode_change(self, i):
+        '''
+            changes the activity mode that is used when multiple neurons are selected
+            or in visualization windows like rastermap or for correlation computation!
+
+            activityMode =
+            0 : F
+            1 : Fneu
+            2 : F - 0.7 * Fneu (default)
+            3 : spks
+
+            uses binning set by self.bin
+        '''
         self.activityMode = i
         if self.loaded:
             # activity used for correlations

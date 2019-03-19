@@ -6,7 +6,7 @@ from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
 import math
-from suite2p import nonrigid, utils
+from suite2p import nonrigid, utils, regmetrics
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
 
@@ -467,27 +467,6 @@ def pick_init(ops):
     refImg = refine_init_init(ops, frames, refImg)
     return refImg
 
-def get_metrics(ops):
-    ''' computes registration metrics '''
-    nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
-    if ops['Ly'] > 700:
-        nsamp = min(5000, nsamp)
-    nPC      = 50 # n PCs to compute motion for
-    nlowhigh = 500 # n frames to average at ends of PC coefficient sortings
-    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    mov  = utils.sample_frames(ops, ix, ops['reg_file'])
-    #mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-
-    pclow, pchigh,sv = utils.pclowhigh(mov, nlowhigh, nPC)
-    if 'block_size' not in ops:
-        ops['block_size']   = [128, 128]
-    if 'maxregshiftNR' not in ops:
-        ops['maxregshiftNR'] = 5
-    X    = utils.metric_register(pclow, pchigh, ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
-    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
-    ops['regDX'] = X
-    return ops
-
 def prepare_refAndMasks(refImg,ops):
     maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
     if ops['nonrigid']:
@@ -519,10 +498,14 @@ def compute_crop(ops):
     '''
     dx = ops['xoff'] - medfilt(ops['xoff'], 101)
     dy = ops['yoff'] - medfilt(ops['yoff'], 101)
+    # offset in x and y (normed by mean offset)
     dxy = (dx**2 + dy**2)**.5
+    dxy /= dxy.mean()
+    # phase-corr of each frame with reference (normed by median phase-corr)
     cXY = ops['corrXY'] / medfilt(ops['corrXY'], 101)
-    px = dxy/np.mean(dxy) / np.maximum(0, cXY)
-    ops['badframes'] = px > ops['th_badframes']
+    # exclude frames which have a large deviation and/or low correlation
+    px = dxy / np.maximum(0, cXY)
+    ops['badframes'] = px > ops['th_badframes'] * 100
     ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
     ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
     xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
@@ -791,7 +774,6 @@ def register_binary(ops, refImg=None):
     if ops['nchannels']>1:
         ops = apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
 
-    ops['th_badframes'] = 100
     ops['yoff'] = offsets[0]
     ops['xoff'] = offsets[1]
     ops['corrXY'] = offsets[2]
@@ -801,6 +783,7 @@ def register_binary(ops, refImg=None):
         ops['corrXY1'] = offsets[5]
 
     # compute valid region
+    # return frames which fall outside range
     ops = compute_crop(ops)
 
     if 'ops_path' in ops:
@@ -808,7 +791,7 @@ def register_binary(ops, refImg=None):
 
     # compute metrics for registration
     if do_regmetrics:
-        ops = get_metrics(ops)
+        ops = regmetrics.get_pc_metrics(ops)
         print('computed registration metrics in time %4.2f'%(toc(k0)))
 
     if 'ops_path' in ops:

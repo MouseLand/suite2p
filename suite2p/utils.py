@@ -32,7 +32,7 @@ def fitMVGaus(y,x,lam,thres=2.5):
             area: area of ellipse
     '''
     # normalize pixel weights
-    lam = lam / lam.sum()
+    lam /= lam.sum()
     # mean of gaussian
     yx = np.stack((y,x))
     mu  = (lam*yx).sum(axis=-1)
@@ -726,6 +726,9 @@ def make_blocks(ops):
     return ops
 
 def sample_frames(ops, ix, reg_file):
+    ''' get frames ix from reg_file
+        frames are cropped by ops['yrange'] and ops['xrange']
+    '''
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
@@ -741,54 +744,3 @@ def sample_frames(ops, ix, reg_file):
             data = np.reshape(data, (Ly, Lx))
             mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
     return mov
-
-def pclowhigh(mov, nlowhigh, nPC):
-    nframes, Ly, Lx = mov.shape
-    mov = mov.reshape((nframes, -1))
-    mov = mov.astype('float32')
-    mimg = np.mean(mov, axis=0)
-    mov -= mimg
-    COV = mov @ mov.T
-    w,v = linalg.eigsh(COV, k = nPC)
-    v = v[:, ::-1]
-    mov += mimg
-    mov = mov.reshape((nframes, Ly, Lx))
-    pclow  = np.zeros((nPC, Ly, Lx), 'float32')
-    pchigh = np.zeros((nPC, Ly, Lx), 'float32')
-    for i in range(nPC):
-        isort = np.argsort(v[:,i])
-        pclow[i,:,:] = np.mean(mov[isort[:nlowhigh],:,:], axis=0)
-        pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
-    return pclow, pchigh, w
-
-def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
-    ops = {
-        'num_workers': -1,
-        'snr_thresh': 1.25,
-        'nonrigid': True,
-        'num_workers': -1,
-        'block_size': np.array(block_size),
-        'maxregshiftNR': np.array(maxregshiftNR),
-        'maxregshift': np.array(maxregshift),
-        'subpixel': 10,
-        'do_phasecorr': do_phasecorr,
-        'smooth_sigma': smooth_sigma,
-        '1Preg': False
-        }
-    nPC, ops['Ly'], ops['Lx'] = pclow.shape
-
-    X = np.zeros((nPC,3))
-    ops = make_blocks(ops)
-    for i in range(nPC):
-        refImg = pclow[i]
-        Img = pchigh[i][np.newaxis, :, :]
-        #Img = np.tile(Img, (1,1,1))
-        maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        dwrite, ymax, xmax, cmax, yxnr = register.phasecorr(Img, refAndMasks, ops)
-        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
-        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
-
-    return X

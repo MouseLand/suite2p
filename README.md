@@ -64,7 +64,7 @@ pip install git+https://github.com/pyqtgraph/pyqtgraph
 
 ## Examples
 
-An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1R3ota25jdUthSzQ). It's a single-plane, single-channel recording.
+An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265NHRWYXUz7CRhbJHtd6B-zJs8f). It's a single-plane, single-channel recording.
 
 ## Getting started
 

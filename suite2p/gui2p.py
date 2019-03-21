@@ -20,7 +20,7 @@ def resample_frames(y, x, xt):
     return yt
 
 class MainW(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
         self.setGeometry(10, 10, 1600, 950)
@@ -513,6 +513,11 @@ class MainW(QtGui.QMainWindow):
         model = np.load(self.classorig)
         model = model.item()
         self.default_keys = model["keys"]
+
+        # load initial file
+        if statfile is not None:
+            self.fname = statfile
+            self.load_proc()
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
@@ -1406,7 +1411,7 @@ class MainW(QtGui.QMainWindow):
     #    np.save(self.basename+'/gui_data.npy', gui_data)
 
 
-def run():
+def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(
@@ -1420,7 +1425,7 @@ def run():
     app_icon.addFile(icon_path, QtCore.QSize(96, 96))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
-    GUI = MainW()
+    GUI = MainW(statfile=statfile)
     ret = app.exec_()
     # GUI.save_gui_data()
     sys.exit(ret)

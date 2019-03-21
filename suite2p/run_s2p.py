@@ -45,7 +45,7 @@ def default_ops():
         'bidiphase': 0,
         # registration settings
         'do_registration': 1, # whether to register data (2 forces re-registration)
-        'keep_movie_raw': True,
+        'keep_movie_raw': False,
         'nimg_init': 200, # subsampled frames for finding reference image
         'batch_size': 200, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)

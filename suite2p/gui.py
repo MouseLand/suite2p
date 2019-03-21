@@ -95,6 +95,8 @@ class RunWindow(QtGui.QDialog):
         try:
             self.ops = np.load(self.opsfile)
             self.ops = self.ops.item()
+            ops0 = run_s2p.default_ops()
+            self.ops = {**ops0, **self.ops}
             print('loaded default ops')
         except Exception as e:
             print('could not load default ops, using built-in ops settings')
@@ -461,6 +463,8 @@ class RunWindow(QtGui.QDialog):
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
+                ops0 = run_s2p.default_ops()
+                ops = {**ops0, **ops}
                 for key in ops:
                     if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0' and key!='h5py':
                         if key in self.keylist:
@@ -697,13 +701,12 @@ class ColorButton(QtGui.QPushButton):
             for b in range(3):
                 parent.topbtns.button(b).setEnabled(False)
                 parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
-        if bid==6:
+        if bid==7:
             fig.corr_masks(parent)
-        #elif bid==7:
-        #    fig.beh_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)
+        parent.show()
 
 # size of view
 class SizeButton(QtGui.QPushButton):

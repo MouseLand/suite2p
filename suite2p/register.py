@@ -272,7 +272,7 @@ def phasecorr(data, refAndMasks, ops):
         # run phasecorr_worker over multiple cores
         nimg = data.shape[0]
         if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count())
+            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
         num_cores = ops['num_workers']
 
         nbatch = int(np.ceil(nimg/float(num_cores)))

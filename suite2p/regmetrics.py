@@ -49,7 +49,8 @@ def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_s
         'subpixel': 10,
         'do_phasecorr': do_phasecorr,
         'smooth_sigma': smooth_sigma,
-        '1Preg': False
+        '1Preg': False,
+        'pad_fft': True
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
 

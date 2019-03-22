@@ -1,5 +1,7 @@
 import numpy as np
-from numpy import fft
+import scipy.fftpack as fft
+from scipy.fftpack import next_fast_len
+#from numpy import fft
 from scipy.ndimage import gaussian_filter
 from skimage.transform import warp#, PiecewiseAffineTransform
 from scipy.interpolate import interp2d
@@ -34,7 +36,10 @@ def prepare_masks(refImg1, ops):
     #patch taper
     Ly = ops['yblock'][0][1] - ops['yblock'][0][0]
     Lx = ops['xblock'][0][1] - ops['xblock'][0][0]
-    cfRefImg1 = np.zeros((nb,1,Ly,Lx),'complex64')
+    if ops['pad_fft']:
+        cfRefImg1 = np.zeros((nb,1,next_fast_len(Ly), next_fast_len(Lx)),'complex64')
+    else:
+        cfRefImg1 = np.zeros((nb,1,Ly,Lx),'complex64')
     maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
     maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
     for n in range(nb):
@@ -50,32 +55,21 @@ def prepare_masks(refImg1, ops):
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
 
         # put reference in fft domain
-        cfRefImg   = np.conj(fft.fft2(refImg));
+        if ops['pad_fft']:
+            cfRefImg   = np.conj(fft.fft2(refImg,
+                                [next_fast_len(Ly), next_fast_len(Lx)]))
+        else:
+            cfRefImg   = np.conj(fft.fft2(refImg))
         if ops['do_phasecorr']:
-            absRef     = np.absolute(cfRefImg);
-            cfRefImg   = cfRefImg / (eps0 + absRef);
+            absRef     = np.absolute(cfRefImg)
+            cfRefImg   = cfRefImg / (eps0 + absRef)
 
         # gaussian filter
-        fhg = register.gaussian_fft(ops['smooth_sigma'], Ly, Lx)
+        fhg = register.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
         cfRefImg *= fhg
 
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
-
-def correlation_map(X, refAndMasks, do_phasecorr):
-    maskMul    = refAndMasks[0]
-    maskOffset = refAndMasks[1]
-    cfRefImg   = refAndMasks[2]
-    #nb, nimg, Ly, Lx = data.shape
-    X = data.astype('float32')
-    X = X * maskMul + maskOffset
-    X = fft.fft2(X)
-    if do_phasecorr:
-        X = X / (eps0 + np.absolute(X))
-    X *= cfRefImg
-    cc = np.real(fft.ifft2(X))
-    cc = fft.fftshift(cc, axes=(2,3))
-    return cc
 
 def phasecorr_worker(inputs):
     ''' loop through blocks and compute phase correlations'''
@@ -85,20 +79,18 @@ def phasecorr_worker(inputs):
     LyMax = np.diff(np.array(ops['yblock']))
     ly = int(np.diff(ops['yblock'][0]))
     lx = int(np.diff(ops['xblock'][0]))
-    lyhalf = int(np.floor(ly/2))
-    lxhalf = int(np.floor(lx/2))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly,lx)/2.)-lpad))
     nb = len(ops['yblock'])
     nblocks = ops['nblocks']
     ymax1 = np.zeros((nimg,nb),np.float32)
     cmax1 = np.zeros((nimg,nb),np.float32)
-    snr1  = np.zeros((nimg,nb),np.float32)
+    #snr1  = np.zeros((nimg,nb),np.float32)
     xmax1 = np.zeros((nimg,nb),np.float32)
     data_block = np.zeros((nb,nimg,ly,lx),np.float32)
     if ops['1Preg']:
         data1 = register.one_photon_preprocess(data.copy(), ops)
     else:
-        data1 = data.copy()
+        data1 = data
     # compute phase-correlation of blocks
     for n in range(nb):
         yind = ops['yblock'][n]
@@ -108,7 +100,8 @@ def phasecorr_worker(inputs):
         data_block[n,:,:,:] = data1[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
     del data1
     cc1 = register.correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
-
+    lyhalf = int(np.floor(cc1.shape[-2]/2))
+    lxhalf = int(np.floor(cc1.shape[-1]/2))
     cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
     cc0 = cc0.reshape((cc0.shape[0], -1))
     cc2 = []
@@ -139,7 +132,7 @@ def phasecorr_worker(inputs):
         ymax1[:,n] = ymax
         xmax1[:,n] = xmax
         cmax1[:,n] = cmax
-        snr1[:,n] = snr
+        #snr1[:,n] = snr
 
     # smooth cc across blocks if sig>0
     # currently not used
@@ -154,7 +147,7 @@ def phasecorr_worker(inputs):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
     Y = shift_data((data, ymax1, xmax1, ops))
-    return Y, ymax1, xmax1, cmax1, snr1
+    return Y, ymax1, xmax1, cmax1
 
 def shift_data(inputs):
     ''' piecewise affine transformation of data using shifts from phasecorr_worker '''

@@ -1,7 +1,9 @@
 from skimage import io
 import glob, h5py, time, os, shutil
 import numpy as np
-from numpy import fft
+#from numpy import fft
+from scipy.fftpack import next_fast_len
+import scipy.fftpack as fft
 from numpy import random as rnd
 import multiprocessing
 from multiprocessing import Pool
@@ -115,19 +117,24 @@ def prepare_masks(refImg0, ops):
     maskOffset = refImg.mean() * (1. - maskMul);
 
     # reference image in fourier domain
-    cfRefImg   = np.conj(fft.fft2(refImg));
+    if ops['pad_fft']:
+        cfRefImg   = np.conj(fft.fft2(refImg,
+                            [next_fast_len(ops['Ly']), next_fast_len(ops['Lx'])]))
+    else:
+        cfRefImg   = np.conj(fft.fft2(refImg))
+
     if ops['do_phasecorr']:
         absRef     = np.absolute(cfRefImg);
         cfRefImg   = cfRefImg / (eps0 + absRef)
 
     # gaussian filter in space
-    fhg = gaussian_fft(ops['smooth_sigma'], Ly, Lx)
+    fhg = gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
     cfRefImg *= fhg
 
     maskMul = maskMul.astype('float32')
     maskOffset = maskOffset.astype('float32')
     cfRefImg = cfRefImg.astype('complex64')
-    cfRefImg = np.reshape(cfRefImg, (1, Ly, Lx))
+    cfRefImg = np.reshape(cfRefImg, (1, cfRefImg.shape[0], cfRefImg.shape[1]))
     return maskMul, maskOffset, cfRefImg
 
 def correlation_map(X, refAndMasks, do_phasecorr):
@@ -136,7 +143,10 @@ def correlation_map(X, refAndMasks, do_phasecorr):
     cfRefImg   = refAndMasks[2]
     #nimg, Ly, Lx = X.shape
     X = X * maskMul + maskOffset
-    X = fft.fft2(X)
+    if cfRefImg.shape[-2]!=X.shape[-2] or cfRefImg.shape[-1]!=X.shape[-1]:
+        X = fft.fft2(X, [cfRefImg.shape[-2], cfRefImg.shape[-1]])
+    else:
+        X = fft.fft2(X)
     if do_phasecorr:
         X = X / (eps0 + np.absolute(X))
     X *= cfRefImg
@@ -221,7 +231,9 @@ def shift_data(inputs):
     xmax = xmax.flatten()
     if X.ndim<3:
         X = X[np.newaxis,:,:]
-    X = fft.fft2(X.astype('float32'))
+
+    nimg, Ly0, Lx0 = X.shape
+    X = fft.fft2(X.astype('float32'), [next_fast_len(Ly0), next_fast_len(Lx0)])
     nimg, Ly, Lx = X.shape
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
     Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
@@ -230,6 +242,13 @@ def shift_data(inputs):
     Ny = Ny.astype('float32') / Ly
     dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
     Y = np.real(fft.ifft2(X * np.exp((2j * np.pi) * dph)))
+    # crop back to original size
+    if Ly0<Ly or Lx0<Lx:
+        Lyhalf = int(np.floor(Ly/2))
+        Lxhalf = int(np.floor(Lx/2))
+        Y = Y[np.ix_(np.arange(0,nimg,1,int),
+                     np.arange(-np.fix(Ly0/2), np.ceil(Ly0/2),1,int) + Lyhalf,
+                     np.arange(-np.fix(Lx0/2), np.ceil(Lx0/2),1,int) + Lxhalf)]
     return Y
 
 def phasecorr_worker(inputs):
@@ -242,25 +261,34 @@ def phasecorr_worker(inputs):
     else:
         nr = False
     nimg, Ly, Lx = data.shape
-    Lyhalf = int(np.floor(Ly/2))
-    Lxhalf = int(np.floor(Lx/2))
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
-    data1 = data.copy().astype(np.float32)
     if ops['1Preg']:
+        data1 = data.copy().astype(np.float32)
         data1 = one_photon_preprocess(data1, ops)
-    cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
-    del data1
+        cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
+        del data1
+    else:
+        cc = correlation_map(data, refAndMasks, ops['do_phasecorr'])
+    Lyhalf = int(np.floor(cc.shape[1]/2))
+    Lxhalf = int(np.floor(cc.shape[2]/2))
     ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
     Y = shift_data((data, ymax, xmax))
     yxnr = []
     if nr:
-        Y, ymax1, xmax1, cmax1, snr1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
-        yxnr = [ymax1,xmax1,cmax1, snr1]
+        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
+        yxnr = [ymax1,xmax1,cmax1]
     return Y, ymax, xmax, cmax, yxnr
 
-def phasecorr(data, refAndMasks, ops):
-    ''' master phasecorr, calls phasecorr_worker '''
+def register_data(data, refAndMasks, ops):
+    ''' register data matrix to reference image and shift '''
+    ''' need reference image ops['refImg']'''
+    ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
+    ''' calls phasecorr_worker '''
+
+    if ops['bidiphase']!=0:
+        data = shift_bidiphase(data.copy(), ops['bidiphase'])
+
     nr=False
     yxnr = []
     if ops['nonrigid'] and len(refAndMasks)>3:
@@ -514,23 +542,21 @@ def compute_crop(ops):
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops
 
-def register_data(data, ops, refAndMasks):
-    ''' register data matrix to reference image '''
-    ''' need reference image ops['refImg']'''
-    ''' and to run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
-
-    if ops['bidiphase']!=0:
-        data = shift_bidiphase(data.copy(), ops['bidiphase'])
-    dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
-
-    offsets = []
-    offsets.append(ymax)
-    offsets.append(xmax)
-    offsets.append(cmax)
-    if ops['nonrigid']:
-        for n in range(len(yxnr)):
-            offsets.append(yxnr[n])
-    return dwrite, offsets
+#def register_data(data, ops, refAndMasks):
+#    ''' register data matrix to reference image '''
+#    ''' need reference image ops['refImg']'''
+#    ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
+#
+#    dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
+#
+#    offsets = []
+#    offsets.append(ymax)
+#    offsets.append(xmax)
+#    offsets.append(cmax)
+#    if ops['nonrigid']:
+#        for n in range(len(yxnr)):
+#            offsets.append(yxnr[n])
+#    return dwrite, offsets
 
 def apply_reg_shifts(data, ops, offsets, iframes=None):
     ''' apply shifts from register_data to data matrix '''
@@ -622,11 +648,11 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         buff = []
         if data.size==0:
             break
-        data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
+        data = np.reshape(data, (-1, Ly, Lx))
+        print(data.shape)
 
-        data, offsets0 = register_data(data, ops, refAndMasks)
-
-        data = np.minimum(data, 2**15 - 2)
+        dout = register_data(data, refAndMasks, ops)
+        data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
         data = data.astype('int16')
 
@@ -635,12 +661,14 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
             reg_file_align.seek(-2*data.size,1)
         reg_file_align.write(bytearray(data))
 
-        # compile offsets
-        for n in range(len(offsets0)):
+        # compile offsets (dout[1:])
+        for n in range(len(dout)-1):
             if n < 3:
-                offsets[n] = np.hstack((offsets[n], offsets0[n]))
+                offsets[n] = np.hstack((offsets[n], dout[n+1]))
             else:
-                offsets[n] = np.vstack((offsets[n], offsets0[n]))
+                # add on nonrigid stats
+                for m in range(len(dout[-1])):
+                    offsets[n+m] = np.vstack((offsets[n+m], dout[-1][m]))
 
         # write registered tiffs
         if ops['reg_tif']:
@@ -648,8 +676,8 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         nfr += data.shape[0]
         k += 1
-        if k%5==0:
-            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+        #if k%5==0:
+        print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
 
     print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
 

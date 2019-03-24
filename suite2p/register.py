@@ -1,4 +1,3 @@
-from skimage import io
 import glob, h5py, time, os, shutil
 import numpy as np
 #from numpy import fft
@@ -21,11 +20,13 @@ from scipy.ndimage import laplace
 HAS_FFTW=False
 
 try:
+    #os.environ["MKL_NUM_THREADS"] = "1"
     import mkl_fft
     HAS_MKL=True
 except ImportError:
     HAS_MKL=False
 #HAS_MKL=False
+from skimage import io
 
 def fft2(data, s=None):
     if s==None:
@@ -166,7 +167,7 @@ def prepare_masks(refImg0, ops):
     # reference image in fourier domain
     if ops['pad_fft']:
         cfRefImg   = np.conj(fft.fft2(refImg,
-                            [next_fast_len(ops['Ly']), next_fast_len(ops['Lx'])]))
+                            (next_fast_len(ops['Ly']), next_fast_len(ops['Lx']))))
     else:
         cfRefImg   = np.conj(fft.fft2(refImg))
 
@@ -190,7 +191,7 @@ def correlation_map(X, refAndMasks, do_phasecorr):
     cfRefImg   = refAndMasks[2]
     #nimg, Ly, Lx = X.shape
     X = X * maskMul + maskOffset
-    X = fft2(X, [cfRefImg.shape[-2], cfRefImg.shape[-1]])
+    X = fft2(X, (cfRefImg.shape[-2], cfRefImg.shape[-1]))
     if do_phasecorr:
         X = X / (eps0 + np.absolute(X))
     X *= cfRefImg
@@ -240,11 +241,11 @@ def getXYup(cc, Ls, ops):
     mdpt = np.floor(nup/2)
     ymax,xmax = (ymax-mdpt)/subpixel, (xmax-mdpt)/subpixel
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
-    return ymax, xmax, cmax 
+    return ymax, xmax, cmax
 
 def shift_data_subpixel(inputs):
     ''' rigid shift of X by ymax and xmax '''
-    ''' no longer used '''    
+    ''' no longer used '''
     X, ymax, xmax = inputs
     ymax = ymax.flatten()
     xmax = xmax.flatten()
@@ -252,7 +253,7 @@ def shift_data_subpixel(inputs):
         X = X[np.newaxis,:,:]
 
     nimg, Ly0, Lx0 = X.shape
-    X = fft2(X.astype('float32'), [next_fast_len(Ly0), next_fast_len(Lx0)])
+    X = fft2(X.astype('float32'), (next_fast_len(Ly0), next_fast_len(Lx0)))
     nimg, Ly, Lx = X.shape
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
     Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
@@ -395,8 +396,8 @@ def register_data(data, refAndMasks, ops):
             yxnr = [ymax1,xmax1,cmax1]
     # perform nonrigid shift with no pool
     #if nr:
-    
-    
+
+
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -702,7 +703,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
         data = data.astype('int16')
-        
+
         # write to reg_file_align
         if not raw:
             reg_file_align.seek(-2*data.size,1)

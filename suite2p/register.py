@@ -4,13 +4,56 @@ import numpy as np
 #from numpy import fft
 from scipy.fftpack import next_fast_len
 import scipy.fftpack as fft
+#import mkl_fft as fft
 from numpy import random as rnd
 import multiprocessing
+
 from multiprocessing import Pool
 import math
 from suite2p import nonrigid, utils, regmetrics
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
+#try:
+#    import pyfftw
+#    HAS_FFTW=True
+#except ImportError:
+#    HAS_FFTW=False
+HAS_FFTW=False
+
+try:
+    import mkl_fft
+    HAS_MKL=True
+except ImportError:
+    HAS_MKL=False
+#HAS_MKL=False
+
+def fft2(data, s=None):
+    if s==None:
+        s=(data.shape[-2], data.shape[-1])
+    if HAS_FFTW:
+        x = pyfftw.empty_aligned(data.shape, dtype=np.float32)
+        x[:] = data
+        fft_object = pyfftw.builders.fftn(x, s=s, axes=(-2,-1),threads=2)
+        data = fft_object()
+    elif HAS_MKL:
+        data = mkl_fft.fft2(data,shape=s,axes=(-2,-1))
+    else:
+        data = fft.fft2(data, s, axes=(-2,-1))
+    return data
+
+def ifft2(data, s=None):
+    if s==None:
+        s=(data.shape[-2], data.shape[-1])
+    if HAS_FFTW:
+        x = pyfftw.empty_aligned(data.shape, dtype=np.complex64)
+        x[:] = data
+        fft_object = pyfftw.builders.ifftn(data, s=s, axes=(-2,-1),threads=2)
+        data = fft_object()
+    elif HAS_MKL:
+        data = mkl_fft.ifft2(data, shape=s, axes=(-2,-1))
+    else:
+        data = fft.ifft2(data, s, axes=(-2,-1))
+    return data
 
 
 def tic():
@@ -22,6 +65,30 @@ eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
 hp = 60
+subpixel = 10
+
+
+# smoothing kernel
+def kernelD(a, b):
+    dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
+    dys = np.reshape(a[1], (-1,1)) - np.reshape(b[1], (1,-1))
+    ds = np.square(dxs) + np.square(dys)
+    K = np.exp(-ds/(2*np.square(sigL)))
+    return K
+
+def mat_upsample(lpad):
+    lar    = np.arange(-lpad, lpad+1)
+    larUP  = np.arange(-lpad, lpad+.001, 1./subpixel)
+    x, y   = np.meshgrid(lar, lar)
+    xU, yU = np.meshgrid(larUP, larUP)
+    Kx = kernelD((x,y),(x,y))
+    Kx = np.linalg.inv(Kx)
+    Kg = kernelD((x,y),(xU,yU))
+    Kmat = np.dot(Kx, Kg)
+    nup = larUP.shape[0]
+    return Kmat, nup
+
+Kmat, nup = mat_upsample(lpad)
 
 def gaussian_fft(sig, Ly, Lx):
     ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
@@ -83,26 +150,6 @@ def one_photon_preprocess(data, ops):
     data = spatial_high_pass(data, ops['spatial_hp'])
     return data
 
-# smoothing kernel
-def kernelD(a, b):
-    dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
-    dys = np.reshape(a[1], (-1,1)) - np.reshape(b[1], (1,-1))
-    ds = np.square(dxs) + np.square(dys)
-    K = np.exp(-ds/(2*np.square(sigL)))
-    return K
-
-def mat_upsample(lpad, ops):
-    lar    = np.arange(-lpad, lpad+1)
-    larUP  = np.arange(-lpad, lpad+.001, 1./ops['subpixel'])
-    x, y   = np.meshgrid(lar, lar)
-    xU, yU = np.meshgrid(larUP, larUP)
-    Kx = kernelD((x,y),(x,y))
-    Kx = np.linalg.inv(Kx)
-    Kg = kernelD((x,y),(xU,yU))
-    Kmat = np.dot(Kx, Kg)
-    nup = larUP.shape[0]
-    return Kmat, nup
-
 def prepare_masks(refImg0, ops):
     refImg = refImg0.copy()
     if ops['1Preg']:
@@ -143,14 +190,11 @@ def correlation_map(X, refAndMasks, do_phasecorr):
     cfRefImg   = refAndMasks[2]
     #nimg, Ly, Lx = X.shape
     X = X * maskMul + maskOffset
-    if cfRefImg.shape[-2]!=X.shape[-2] or cfRefImg.shape[-1]!=X.shape[-1]:
-        X = fft.fft2(X, [cfRefImg.shape[-2], cfRefImg.shape[-1]])
-    else:
-        X = fft.fft2(X)
+    X = fft2(X, [cfRefImg.shape[-2], cfRefImg.shape[-1]])
     if do_phasecorr:
         X = X / (eps0 + np.absolute(X))
     X *= cfRefImg
-    cc = np.real(fft.ifft2(X))
+    cc = np.real(ifft2(X))
     cc = fft.fftshift(cc, axes=(-2,-1))
     return cc
 
@@ -178,54 +222,29 @@ def getXYup(cc, Ls, ops):
     cc0 = np.reshape(cc0, (nimg, -1))
     ix  = np.argmax(cc0, axis = 1)
     ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    X1max  = np.amax(cc0, axis = 1)
+    #X1max  = np.amax(cc0, axis = 1)
     # set to 0 all pts +-lpad from ymax,xmax
     cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)].copy()
     for j in range(nimg):
         cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
     cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
-    snr = X1max / Xmax # computes snr
     mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
     ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
     for j in range(0, nimg):
         ccmat[j,:,:] = cc[j, (mxpt[0][j] -lpad):(mxpt[0][j] +lpad+1), (mxpt[1][j] -lpad):(mxpt[1][j] +lpad+1)]
     ccmat = np.reshape(ccmat, (nimg,-1))
-    Kmat, nup = mat_upsample(lpad, ops)
     ccb = np.dot(ccmat, Kmat)
     imax = np.argmax(ccb, axis=1)
     cmax = np.amax(ccb, axis=1)
     ymax, xmax = np.unravel_index(imax, (nup,nup))
     mdpt = np.floor(nup/2)
-    ymax,xmax = (ymax-mdpt)/ops['subpixel'], (xmax-mdpt)/ops['subpixel']
+    ymax,xmax = (ymax-mdpt)/subpixel, (xmax-mdpt)/subpixel
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
-    return ymax, xmax, cmax, snr
+    return ymax, xmax, cmax 
 
-def getXYup2(cc, Ls, ops):
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-
-    mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
-    ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
-    for j in range(0, nimg):
-        ccmat[j,:,:] = cc[j, (mxpt[0][j] -lpad):(mxpt[0][j] +lpad+1), (mxpt[1][j] -lpad):(mxpt[1][j] +lpad+1)]
-    ccmat = np.reshape(ccmat, (nimg,-1))
-    Kmat, nup = mat_upsample(lpad, ops)
-    ccb = np.dot(ccmat, Kmat)
-    imax = np.argmax(ccb, axis=1)
-    cmax = np.amax(ccb, axis=1)
-    ymax, xmax = np.unravel_index(imax, (nup,nup))
-    mdpt = np.floor(nup/2)
-    ymax,xmax = (ymax-mdpt)/ops['subpixel'], (xmax-mdpt)/ops['subpixel']
-    ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
-    return ymax, xmax, cmax
-
-def shift_data(inputs):
+def shift_data_subpixel(inputs):
     ''' rigid shift of X by ymax and xmax '''
+    ''' no longer used '''    
     X, ymax, xmax = inputs
     ymax = ymax.flatten()
     xmax = xmax.flatten()
@@ -233,7 +252,7 @@ def shift_data(inputs):
         X = X[np.newaxis,:,:]
 
     nimg, Ly0, Lx0 = X.shape
-    X = fft.fft2(X.astype('float32'), [next_fast_len(Ly0), next_fast_len(Lx0)])
+    X = fft2(X.astype('float32'), [next_fast_len(Ly0), next_fast_len(Lx0)])
     nimg, Ly, Lx = X.shape
     Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
     Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
@@ -241,7 +260,7 @@ def shift_data(inputs):
     Nx = Nx.astype('float32') / Lx
     Ny = Ny.astype('float32') / Ly
     dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
-    Y = np.real(fft.ifft2(X * np.exp((2j * np.pi) * dph)))
+    Y = np.real(ifft2(X * np.exp((2j * np.pi) * dph)))
     # crop back to original size
     if Ly0<Ly or Lx0<Lx:
         Lyhalf = int(np.floor(Ly/2))
@@ -251,9 +270,43 @@ def shift_data(inputs):
                      np.arange(-np.fix(Lx0/2), np.ceil(Lx0/2),1,int) + Lxhalf)]
     return Y
 
+def shift_data(inputs):
+    ''' rigid shift of X by ymax and xmax '''
+    X, ymax, xmax, m0 = inputs
+    ymax = ymax.flatten()
+    xmax = xmax.flatten()
+    if X.ndim<3:
+        X = X[np.newaxis,:,:]
+
+    nimg, Ly, Lx = X.shape
+
+    for n in range(nimg):
+        X[n] = np.roll(X[n], (-ymax[n], -xmax[n]), axis=(0,1))
+        yrange = np.arange(0, Ly,1,int) + ymax[n]
+        xrange = np.arange(0, Lx,1,int) + xmax[n]
+        yrange = yrange[np.logical_or(yrange<0, yrange>Ly-1)] - ymax[n]
+        xrange = xrange[np.logical_or(xrange<0, xrange>Lx-1)] - xmax[n]
+        X[n][yrange, :] = m0
+        X[n][:, xrange] = m0
+    return X
+
+
+def getCCmax(cc, lcorr):
+    Lyhalf = int(np.floor(cc.shape[1]/2))
+    Lxhalf = int(np.floor(cc.shape[2]/2))
+    nimg = cc.shape[0]
+    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    ix  = np.argmax(cc0, axis = 1)
+    cmax = cc0[np.arange(0,nimg,1,int), ix]
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    ymax, xmax = ymax-lcorr, xmax-lcorr
+    return ymax,xmax,cmax
+
 def phasecorr_worker(inputs):
     ''' compute registration offsets and shift data '''
     data, refAndMasks, ops = inputs
+    k=tic()
     if ops['nonrigid'] and len(refAndMasks)>3:
         refAndMasksNR = refAndMasks[3:]
         refAndMasks = refAndMasks[:3]
@@ -261,6 +314,7 @@ def phasecorr_worker(inputs):
     else:
         nr = False
     nimg, Ly, Lx = data.shape
+    k=tic()
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
     if ops['1Preg']:
@@ -270,14 +324,19 @@ def phasecorr_worker(inputs):
         del data1
     else:
         cc = correlation_map(data, refAndMasks, ops['do_phasecorr'])
-    Lyhalf = int(np.floor(cc.shape[1]/2))
-    Lxhalf = int(np.floor(cc.shape[2]/2))
-    ymax, xmax, cmax,snr = getXYup(cc, (lcorr,lpad, Lyhalf, Lxhalf), ops)
-    Y = shift_data((data, ymax, xmax))
+    #print(toc(k))
+    # get ymax,xmax, cmax not upsampled
+    ymax, xmax, cmax = getCCmax(cc, lcorr)
+    #print(toc(k))
+    Y = shift_data((data, ymax, xmax, ops['refImg'].mean()))
+    #Y = data
+    #print(toc(k))
     yxnr = []
     if nr:
         Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
+        #Y = nonrigid.shift_data((Y,ymax1,xmax1,ops))
         yxnr = [ymax1,xmax1,cmax1]
+    #print(toc(k))
     return Y, ymax, xmax, cmax, yxnr
 
 def register_data(data, refAndMasks, ops):
@@ -312,6 +371,7 @@ def register_data(data, refAndMasks, ops):
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(ilist)
             dsplit.append([data[ilist,:, :], refAndMasks, ops])
+
         with Pool(num_cores) as p:
             results = p.map(phasecorr_worker, dsplit)
         Y = np.zeros_like(data)
@@ -333,8 +393,10 @@ def register_data(data, refAndMasks, ops):
                 cmax1[irange[i],:] = results[i][4][2]
         if nr:
             yxnr = [ymax1,xmax1,cmax1]
+    # perform nonrigid shift with no pool
     #if nr:
-        #print(yxnr[0].max(),yxnr[1].max())
+    
+    
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -542,22 +604,6 @@ def compute_crop(ops):
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops
 
-#def register_data(data, ops, refAndMasks):
-#    ''' register data matrix to reference image '''
-#    ''' need reference image ops['refImg']'''
-#    ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
-#
-#    dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
-#
-#    offsets = []
-#    offsets.append(ymax)
-#    offsets.append(xmax)
-#    offsets.append(cmax)
-#    if ops['nonrigid']:
-#        for n in range(len(yxnr)):
-#            offsets.append(yxnr[n])
-#    return dwrite, offsets
-
 def apply_reg_shifts(data, ops, offsets, iframes=None):
     ''' apply shifts from register_data to data matrix '''
     if iframes is None:
@@ -652,10 +698,11 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         print(data.shape)
 
         dout = register_data(data, refAndMasks, ops)
+        print(toc(k0))
         data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
         data = data.astype('int16')
-
+        
         # write to reg_file_align
         if not raw:
             reg_file_align.seek(-2*data.size,1)

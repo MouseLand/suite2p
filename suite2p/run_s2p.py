@@ -57,7 +57,7 @@ def default_ops():
         'do_phasecorr': True, # whether to do cross-correlation or phase-correlation (recommend PHASE-CORR)
         'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         'th_badframes': 1.0, # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
-        'pad_fft': True,
+        'pad_fft': False,
         # non rigid registration settings
         'nonrigid': True, # whether to use nonrigid registration
         'block_size': [128, 128], # block size to register

@@ -534,7 +534,7 @@ def refine_init_init(ops, frames, refImg):
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
         maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
-        freg, ymax, xmax, cmax, yxnr = phasecorr(frames, [maskMul, maskOffset, cfRefImg], ops)
+        freg, ymax, xmax, cmax, yxnr = register_data(frames, [maskMul, maskOffset, cfRefImg], ops)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
         refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze()

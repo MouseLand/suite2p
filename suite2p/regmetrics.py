@@ -6,7 +6,7 @@ import sys
 from suite2p import register, utils, nonrigid
 from scipy.signal import convolve2d
 from scipy.sparse import linalg
-
+from sklearn.decomposition import PCA
 try:
     import cv2
     HAS_CV2 = True
@@ -22,9 +22,12 @@ def pclowhigh(mov, nlowhigh, nPC):
     mov = mov.astype('float32')
     mimg = np.mean(mov, axis=0)
     mov -= mimg
-    COV = mov @ mov.T
-    w,v = linalg.eigsh(COV, k = nPC)
-    v = v[:, ::-1]
+    #    COV = mov @ mov.T
+    #w,v = linalg.eigsh(COV, k = nPC)
+    pca = PCA(n_components=nPC).fit(mov.T)
+    v = pca.components_.T
+    w = pca.singular_values_
+    #print(v.shape,w.shape)
     mov += mimg
     mov = mov.reshape((nframes, Ly, Lx))
     pclow  = np.zeros((nPC, Ly, Lx), 'float32')
@@ -35,7 +38,7 @@ def pclowhigh(mov, nlowhigh, nPC):
         pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
     return pclow, pchigh, w
 
-def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
+def metric_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
     ''' register top and bottom of PCs to each other '''
     # registration settings
     ops = {
@@ -50,7 +53,9 @@ def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_s
         'do_phasecorr': do_phasecorr,
         'smooth_sigma': smooth_sigma,
         '1Preg': False,
-        'pad_fft': True
+        'pad_fft': True,
+        'bidiphase': 0,
+        'refImg': refImg
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
 
@@ -63,7 +68,7 @@ def metric_register(pclow, pchigh, do_phasecorr=True, smooth_sigma=1.15, block_s
         maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        dwrite, ymax, xmax, cmax, yxnr = register.phasecorr(Img, refAndMasks, ops)
+        dwrite, ymax, xmax, cmax, yxnr = register.register_data(Img, refAndMasks, ops)
         X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
         X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
         X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
@@ -88,7 +93,7 @@ def get_pc_metrics(ops):
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = metric_register(pclow, pchigh, ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
+    X    = metric_register(pclow, pchigh, ops['refImg'], ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
 

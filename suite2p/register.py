@@ -697,10 +697,8 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        print(data.shape)
-
+    
         dout = register_data(data, refAndMasks, ops)
-        print(toc(k0))
         data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
         data = data.astype('int16')
@@ -725,8 +723,8 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         nfr += data.shape[0]
         k += 1
-        #if k%5==0:
-        print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+        if k%5==0:
+            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
 
     print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
 

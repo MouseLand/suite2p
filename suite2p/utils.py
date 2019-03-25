@@ -3,7 +3,7 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import register, nonrigid, chan2detect, celldetect2, sparsedetect
+from suite2p import register, nonrigid, chan2detect, celldetect2, sparsedetect, roiextract
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
@@ -526,6 +526,9 @@ def get_tif_list(ops):
             print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
+def sub2ind(array_shape, rows, cols):
+    inds = rows * array_shape[1] + cols
+    return inds
 
 def get_cells(ops):
     i0 = tic()
@@ -539,7 +542,7 @@ def get_cells(ops):
     ops, stat = sparsedetect.sparsery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil
-    F, Fneu, ops = celldetect2.extractF(ops, stat)
+    F, Fneu, ops, stat = roiextract.masks_and_traces(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu

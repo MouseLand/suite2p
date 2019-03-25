@@ -8,7 +8,6 @@ import multiprocessing
 from multiprocessing import Pool
 import scipy.fftpack as fft
 import math
-from suite2p import nonrigid, utils, regmetrics
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
 #try:
@@ -18,14 +17,15 @@ from scipy.ndimage import laplace
 #    HAS_FFTW=False
 HAS_FFTW=False
 
-try:
-    #os.environ["MKL_NUM_THREADS"] = "1"
+try:    
     import mkl_fft
     HAS_MKL=True
 except ImportError:
     HAS_MKL=False
 #HAS_MKL=False
 from skimage import io
+
+from suite2p import nonrigid, utils, regmetrics
 
 def fft2(data, s=None):
     if s==None:

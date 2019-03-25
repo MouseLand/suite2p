@@ -446,23 +446,24 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
                 self.reg_file_raw = open(self.reg_loc_raw,'rb')
                 self.wraw=True
-            if 'reg_file_chan2' in ops:
-                if self.reg_loc == ops['reg_file']:
-                    self.reg_loc_red = ops['reg_file_chan2']
-                else:
-                    self.reg_loc_red = os.path.join(os.path.dirname(fileName),'data_chan2.bin')
-                self.reg_file_chan2 = open(self.reg_loc_red,'rb')
-                self.wred=True
-            if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
-                if self.reg_loc == ops['reg_file']:
-                    if 'reg_file_raw_chan2' in ops:
-                        self.reg_loc_raw_chan2 = ops['reg_file_raw_chan2']
+            if 0:
+                if 'reg_file_chan2' in ops:
+                    if self.reg_loc == ops['reg_file']:
+                        self.reg_loc_red = ops['reg_file_chan2']
                     else:
-                        self.reg_loc_raw_chan2 = ops['raw_file_chan2']
-                else:
-                    self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
-                self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
-                self.wraw_wred=True
+                        self.reg_loc_red = os.path.join(os.path.dirname(fileName),'data_chan2.bin')
+                    self.reg_file_chan2 = open(self.reg_loc_red,'rb')
+                    self.wred=True
+                if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
+                    if self.reg_loc == ops['reg_file']:
+                        if 'reg_file_raw_chan2' in ops:
+                            self.reg_loc_raw_chan2 = ops['reg_file_raw_chan2']
+                        else:
+                            self.reg_loc_raw_chan2 = ops['raw_file_chan2']
+                    else:
+                        self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
+                    self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
+                    self.wraw_wred=True
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
             self.nframes = ops['nframes']

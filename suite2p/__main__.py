@@ -21,6 +21,10 @@ if __name__ == '__main__':
     parser.add_argument('--db', default=[], type=str, help='options')
     args = parser.parse_args()
 
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1" 
+
     ops = {}
     db= {}
     if len(args.ops)>0:

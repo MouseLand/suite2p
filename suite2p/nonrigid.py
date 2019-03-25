@@ -4,7 +4,6 @@ from scipy.fftpack import next_fast_len
 #from numpy import fft
 from scipy.ndimage import gaussian_filter
 from skimage.transform import warp#, PiecewiseAffineTransform
-from scipy.interpolate import interp2d
 from suite2p import register
 import time
 import multiprocessing
@@ -13,7 +12,30 @@ from multiprocessing import Pool
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
-hp = 50
+
+def linear_interp(iy, ix, yb, xb, f):
+    ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
+    ''' assumes f is 3D and last two dimensions are yb,xb '''
+    fup = f.copy().astype(np.float32)
+    Lax = [iy.size, ix.size]
+    for n in range(2):
+        fup = np.transpose(fup,(1,2,0)).copy()
+        if n==0:
+            ds  = np.abs(iy[:,np.newaxis] - yb[:,np.newaxis].T)
+        else:
+            ds  = np.abs(ix[:,np.newaxis] - xb[:,np.newaxis].T)
+        im1 = np.argmin(ds, axis=1)
+        w1  = ds[np.arange(0,Lax[n],1,int),im1]
+        ds[np.arange(0,Lax[n],1,int),im1] = np.inf
+        im2 = np.argmin(ds, axis=1)
+        w2  = ds[np.arange(0,Lax[n],1,int),im2]
+        wnorm = w1+w2
+        w1 /= wnorm
+        w2 /= wnorm
+        fup = (1-w1[:,np.newaxis,np.newaxis]) * fup[im1] + (1-w2[:,np.newaxis,np.newaxis]) * fup[im2]
+    fup = np.transpose(fup, (1,2,0))
+    return fup
+
 
 def prepare_masks(refImg1, ops):
     refImg0=refImg1.copy()
@@ -125,7 +147,7 @@ def phasecorr_worker(inputs):
 
     for n in range(nb):
         cc = ccsm[n,:,:,:]
-        ymax, xmax, cmax, snr = register.getXYup(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+        ymax, xmax, cmax = register.getXYup(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
         #cc = cc1[n,:,:,:]
         #ymax, xmax, cmax, snr = register.getXYup(cc, (lcorr,lpad, lyhalf, lxhalf), ops)
         # here cc1 should be smooth if the SNR is insufficient
@@ -147,6 +169,7 @@ def phasecorr_worker(inputs):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
     Y = shift_data((data, ymax1, xmax1, ops))
+    #Y=data
     return Y, ymax1, xmax1, cmax1
 
 def shift_data(inputs):
@@ -156,32 +179,51 @@ def shift_data(inputs):
     if data.ndim<3:
         data = data[np.newaxis,:,:]
     nimg,Ly,Lx = data.shape
-    Y = np.zeros(data.shape, np.float32)
-    nb = ymax.shape[1]
     ymax = np.reshape(ymax, (nimg,nblocks[0], nblocks[1]))
     xmax = np.reshape(xmax, (nimg,nblocks[0], nblocks[1]))
+    # replicate first and last row and column for padded interpolation
+    ymax = np.pad(ymax, ((0,0), (1,1), (1,1)), 'edge')
+    xmax = np.pad(xmax, ((0,0), (1,1), (1,1)), 'edge')
 
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    y = np.round(np.unique(np.array(ops['yblock']).mean(axis=1)))
-    y = np.hstack((0,y,Ly-1))
-    x = np.round(np.unique(np.array(ops['xblock']).mean(axis=1)))
-    x = np.hstack((0,x,Lx-1))
-    mshx,mshy = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))
-    # loop over frames
+    iy = np.arange(0,Ly,1,int)
+    ix = np.arange(0,Lx,1,int)
+    yb = np.array(ops['yblock'][::ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
+    xb = np.array(ops['xblock'][:ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
+    yb = np.hstack((0, yb, Ly-1))
+    xb = np.hstack((0, xb, Lx-1))
+    yup = linear_interp(iy, ix, yb, xb, ymax)
+    xup = linear_interp(iy, ix, yb, xb, xmax)
+    mshx,mshy = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly))
+    Y = np.zeros((nimg,Ly,Lx), np.float32)
     for t in range(nimg):
-        I = data[t,:,:]
-        ymax0 = np.pad(ymax[t,:,:],((1,),(1,)),mode='edge')
-        xmax0 = np.pad(xmax[t,:,:],((1,),(1,)),mode='edge')
-        fy = interp2d(x,y,ymax0,kind='linear')
-        fx = interp2d(x,y,xmax0,kind='linear')
-        # interpolated values on grid with all points
-        fyout = mshy + fy(np.arange(0,Lx),np.arange(0,Ly))
-        fxout = mshx + fx(np.arange(0,Lx),np.arange(0,Ly))
-        coords = np.concatenate((fyout[np.newaxis,:], fxout[np.newaxis,:]))
-        Y[t,:,:] = warp(I,coords, order=1, clip=False, preserve_range=True)
+        ycoor = (mshy + yup[t])#.flatten()
+        xcoor = (mshx + xup[t])#.flatten()
+
+        coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
+        Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
+
+        #xf = xcoor.astype(np.int16)
+        #yf = ycoor.astype(np.int16)
+        #xc = xf + 1
+        #yc = yf + 1
+
+        #dy = ycoor-yf
+        #dx = xcoor-xf
+
+        #xf = np.maximum(0, np.minimum(Lx-1, xf))
+        #yf = np.maximum(0, np.minimum(Ly-1, yf))
+        #yc = np.maximum(0, np.minimum(Ly-1, yc))
+        #xc = np.maximum(0, np.minimum(Lx-1, xc))
+
+        #Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
+        #Y[t] += data[t][yf, xc] * (1 - dy) * dx
+        #Y[t] += data[t][yc, xf] * dy * (1 - dx)
+        #Y[t] += data[t][yc, xc] * dy * dx
+    #Y = np.reshape(Y, (nimg, Ly, Lx))
     return Y
 
 def register_myshifts(ops, data, ymax, xmax):

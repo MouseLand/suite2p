@@ -533,7 +533,9 @@ def refine_init_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
+        ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
+        
         freg, ymax, xmax, cmax, yxnr = register_data(frames, [maskMul, maskOffset, cfRefImg], ops)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))

@@ -77,11 +77,11 @@ def prepare_masks(refImg1, ops):
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
 
         # put reference in fft domain
-        if ops['pad_fft']:
-            cfRefImg   = np.conj(fft.fft2(refImg,
-                                [next_fast_len(Ly), next_fast_len(Lx)]))
-        else:
-            cfRefImg   = np.conj(fft.fft2(refImg))
+        #if ops['pad_fft']:
+        #    cfRefImg   = np.conj(fft.fft2(refImg,
+        #                        [next_fast_len(Ly), next_fast_len(Lx)]))
+        #else:
+        cfRefImg   = np.conj(fft.fft2(refImg))
         if ops['do_phasecorr']:
             absRef     = np.absolute(cfRefImg)
             cfRefImg   = cfRefImg / (eps0 + absRef)
@@ -168,22 +168,27 @@ def phasecorr_worker(inputs):
             ymax1[:,n] = ymax
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
-    Y = shift_data((data, ymax1, xmax1, ops))
+    Y = shift_data_worker((data, ops, ymax1, xmax1))
     #Y=data
     return Y, ymax1, xmax1, cmax1
 
-def shift_data(inputs):
+def shift_data_worker(inputs):
     ''' piecewise affine transformation of data using shifts from phasecorr_worker '''
-    data,ymax,xmax,ops = inputs
+    if len(inputs)==4:
+        data,ops,ymax1,xmax1 = inputs
+    else:
+        data,ops,ymax1,xmax1,ymax,xmax = inputs
+        data = register.shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
+
     nblocks = ops['nblocks']
     if data.ndim<3:
         data = data[np.newaxis,:,:]
     nimg,Ly,Lx = data.shape
-    ymax = np.reshape(ymax, (nimg,nblocks[0], nblocks[1]))
-    xmax = np.reshape(xmax, (nimg,nblocks[0], nblocks[1]))
+    ymax1 = np.reshape(ymax1, (nimg,nblocks[0], nblocks[1]))
+    xmax1 = np.reshape(xmax1, (nimg,nblocks[0], nblocks[1]))
     # replicate first and last row and column for padded interpolation
-    ymax = np.pad(ymax, ((0,0), (1,1), (1,1)), 'edge')
-    xmax = np.pad(xmax, ((0,0), (1,1), (1,1)), 'edge')
+    ymax1 = np.pad(ymax1, ((0,0), (1,1), (1,1)), 'edge')
+    xmax1 = np.pad(xmax1, ((0,0), (1,1), (1,1)), 'edge')
 
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
@@ -195,8 +200,8 @@ def shift_data(inputs):
     xb = np.array(ops['xblock'][:ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
     yb = np.hstack((0, yb, Ly-1))
     xb = np.hstack((0, xb, Lx-1))
-    yup = linear_interp(iy, ix, yb, xb, ymax)
-    xup = linear_interp(iy, ix, yb, xb, xmax)
+    yup = linear_interp(iy, ix, yb, xb, ymax1)
+    xup = linear_interp(iy, ix, yb, xb, xmax1)
     mshx,mshy = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly))
     Y = np.zeros((nimg,Ly,Lx), np.float32)
     for t in range(nimg):
@@ -226,10 +231,11 @@ def shift_data(inputs):
     #Y = np.reshape(Y, (nimg, Ly, Lx))
     return Y
 
-def register_myshifts(ops, data, ymax, xmax):
-    ''' non-rigid shifting of other channel data by ymax and xmax '''
+def shift_data(ops, data, ymax, xmax, ymax1, xmax1):
+    ''' first shift rigid by ymax and xmax'''
+    ''' then non-rigid shift of other channel data by ymax1 and xmax1 '''
     if ops['num_workers']<0:
-        dreg = shift_data((data, ymax, xmax, ops))
+        dreg = shift_data_woker((data, ops, ymax1, xmax1, ymax, xmax))
     else:
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)
@@ -243,10 +249,10 @@ def register_myshifts(ops, data, ymax, xmax):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist,:], xmax[ilist,:], ops])
+            dsplit.append([data[ilist,:, :], ops, ymax1[ilist], xmax1[ilist],
+                                                  ymax[ilist], xmax[ilist]])
         with Pool(num_cores) as p:
-            results = p.map(shift_data, dsplit)
-
+            results = p.map(shift_data_worker, dsplit)
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]

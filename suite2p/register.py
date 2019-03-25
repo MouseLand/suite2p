@@ -10,6 +10,8 @@ import scipy.fftpack as fft
 import math
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
+from skimage import io
+from suite2p import nonrigid, utils, regmetrics
 #try:
 #    import pyfftw
 #    HAS_FFTW=True
@@ -17,15 +19,12 @@ from scipy.ndimage import laplace
 #    HAS_FFTW=False
 HAS_FFTW=False
 
-try:    
+try:
     import mkl_fft
     HAS_MKL=True
 except ImportError:
     HAS_MKL=False
-#HAS_MKL=False
-from skimage import io
 
-from suite2p import nonrigid, utils, regmetrics
 
 def fft2(data, s=None):
     if s==None:
@@ -216,6 +215,7 @@ def getSNR(cc, Ls, ops):
     return snr
 
 def getXYup(cc, Ls, ops):
+    ''' get subpixel registration shifts from phase-correlation matrix cc '''
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
     nimg = cc.shape[0]
     cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
@@ -242,35 +242,47 @@ def getXYup(cc, Ls, ops):
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
     return ymax, xmax, cmax
 
-def shift_data_subpixel(inputs):
-    ''' rigid shift of X by ymax and xmax '''
-    ''' no longer used '''
-    X, ymax, xmax = inputs
-    ymax = ymax.flatten()
-    xmax = xmax.flatten()
-    if X.ndim<3:
-        X = X[np.newaxis,:,:]
+def getCCmax(cc, lcorr):
+    ''' get integer registration shifts from phase-correlation matrix cc '''
+    ''' max shift of +/-lcorr '''
+    Lyhalf = int(np.floor(cc.shape[1]/2))
+    Lxhalf = int(np.floor(cc.shape[2]/2))
+    nimg = cc.shape[0]
+    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    ix  = np.argmax(cc0, axis = 1)
+    cmax = cc0[np.arange(0,nimg,1,int), ix]
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    ymax, xmax = ymax-lcorr, xmax-lcorr
+    return ymax,xmax,cmax
 
-    nimg, Ly0, Lx0 = X.shape
-    X = fft2(X.astype('float32'), (next_fast_len(Ly0), next_fast_len(Lx0)))
-    nimg, Ly, Lx = X.shape
-    Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
-    Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
-    [Nx,Ny] = np.meshgrid(Nx,Ny)
-    Nx = Nx.astype('float32') / Lx
-    Ny = Ny.astype('float32') / Ly
-    dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
-    Y = np.real(ifft2(X * np.exp((2j * np.pi) * dph)))
-    # crop back to original size
-    if Ly0<Ly or Lx0<Lx:
-        Lyhalf = int(np.floor(Ly/2))
-        Lxhalf = int(np.floor(Lx/2))
-        Y = Y[np.ix_(np.arange(0,nimg,1,int),
-                     np.arange(-np.fix(Ly0/2), np.ceil(Ly0/2),1,int) + Lyhalf,
-                     np.arange(-np.fix(Lx0/2), np.ceil(Lx0/2),1,int) + Lxhalf)]
-    return Y
+def shift_data(ops, data, ymax, xmax):
+    ''' rigid shifting of other channel data by ymax and xmax '''
+    ''' multi-processing shifting '''
+    if ops['num_workers']<0:
+        dreg = shift_data((data, ymax, xmax))
+    else:
+        if ops['num_workers']<1:
+            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
+        num_cores = ops['num_workers']
+        nimg = data.shape[0]
+        nbatch = int(np.ceil(nimg/float(num_cores)))
+        #nbatch = 50
+        inputs = np.arange(0, nimg, nbatch)
+        irange = []
+        dsplit = []
+        for i in inputs:
+            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
+            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
+            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist]])
+        with Pool(num_cores) as p:
+            results = p.map(shift_data_worker, dsplit)
+        dreg = np.zeros_like(data)
+        for i in range(0,len(results)):
+            dreg[irange[i], :, :] = results[i]
+    return dreg
 
-def shift_data(inputs):
+def shift_data_worker(inputs):
     ''' rigid shift of X by ymax and xmax '''
     X, ymax, xmax, m0 = inputs
     ymax = ymax.flatten()
@@ -289,19 +301,6 @@ def shift_data(inputs):
         X[n][yrange, :] = m0
         X[n][:, xrange] = m0
     return X
-
-
-def getCCmax(cc, lcorr):
-    Lyhalf = int(np.floor(cc.shape[1]/2))
-    Lxhalf = int(np.floor(cc.shape[2]/2))
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    ix  = np.argmax(cc0, axis = 1)
-    cmax = cc0[np.arange(0,nimg,1,int), ix]
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    ymax, xmax = ymax-lcorr, xmax-lcorr
-    return ymax,xmax,cmax
 
 def phasecorr_worker(inputs):
     ''' compute registration offsets and shift data '''
@@ -328,7 +327,7 @@ def phasecorr_worker(inputs):
     # get ymax,xmax, cmax not upsampled
     ymax, xmax, cmax = getCCmax(cc, lcorr)
     #print(toc(k))
-    Y = shift_data((data, ymax, xmax, ops['refImg'].mean()))
+    Y = shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
     #Y = data
     #print(toc(k))
     yxnr = []
@@ -395,8 +394,6 @@ def register_data(data, refAndMasks, ops):
             yxnr = [ymax1,xmax1,cmax1]
     # perform nonrigid shift with no pool
     #if nr:
-
-
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -407,32 +404,6 @@ def get_nFrames(ops):
 
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
-
-def register_myshifts(ops, data, ymax, xmax):
-    ''' rigid shifting of other channel data by ymax and xmax '''
-    if ops['num_workers']<0:
-        dreg = shift_data((data, ymax, xmax))
-    else:
-        if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        num_cores = ops['num_workers']
-        nimg = data.shape[0]
-        nbatch = int(np.ceil(nimg/float(num_cores)))
-        #nbatch = 50
-        inputs = np.arange(0, nimg, nbatch)
-        irange = []
-        dsplit = []
-        for i in inputs:
-            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist]])
-        with Pool(num_cores) as p:
-            results = p.map(shift_data, dsplit)
-
-        dreg = np.zeros_like(data)
-        for i in range(0,len(results)):
-            dreg[irange[i], :, :] = results[i]
-    return dreg
 
 def subsample_frames(ops, nsamps):
     ''' get nsamps frames from binary file for initial reference image'''
@@ -527,19 +498,23 @@ def pick_init_init(ops, frames):
     refImg = np.reshape(refImg, (ops['Ly'], ops['Lx']))
     return refImg
 
-def refine_init_init(ops, frames, refImg):
+def refine_init(ops, frames, refImg):
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
         ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
-        
         freg, ymax, xmax, cmax, yxnr = register_data(frames, [maskMul, maskOffset, cfRefImg], ops)
+        ymax = ymax.astype(np.float32)
+        xmax = xmax.astype(np.float32)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
         refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze()
-        dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
-        refImg = shift_data_subpixel((refImg, dy, dx)).squeeze()
+        dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
+        # shift data requires an array of shifts
+        dy = np.array([int(np.round(dy))])
+        dx = np.array([int(np.round(dx))])
+        refImg = shift_data_worker((refImg, dy, dx, refImg.mean())).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
@@ -556,7 +531,7 @@ def pick_init(ops):
     if ops['bidiphase'] != 0:
         frames = shift_bidiphase(frames.copy(), ops['bidiphase'])
     refImg = pick_init_init(ops, frames)
-    refImg = refine_init_init(ops, frames, refImg)
+    refImg = refine_init(ops, frames, refImg)
     return refImg
 
 def prepare_refAndMasks(refImg,ops):
@@ -605,17 +580,6 @@ def compute_crop(ops):
     ops['yrange'] = [int(ymin), int(ymax)]
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops
-
-def apply_reg_shifts(data, ops, offsets, iframes=None):
-    ''' apply shifts from register_data to data matrix '''
-    if iframes is None:
-        iframes = np.arange(0, data.shape[0], 1, int)
-    if ops['bidiphase']!=0:
-        data = shift_bidiphase(data.copy(), ops['bidiphase'])
-    data = register_myshifts(ops, data, offsets[0][iframes], offsets[1][iframes])
-    if ops['nonrigid']==True:
-        data = nonrigid.register_myshifts(ops, data, offsets[3][iframes], offsets[4][iframes])
-    return data
 
 def write_tiffs(data, ops, k, ichan):
     if k==0:
@@ -697,7 +661,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-    
+
         dout = register_data(data, refAndMasks, ops)
         data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
@@ -771,10 +735,17 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         # register by pre-determined amount
         iframes = ix + np.arange(0,nframes,1,int)
-        data = apply_reg_shifts(data, ops, offsets, iframes)
-        meanImg += data.sum(axis=0)
-
-        ix += nframes
+        if ops['bidiphase']!=0:
+            data = shift_bidiphase(data.copy(), ops['bidiphase'])
+        if ops['nonrigid']==True:
+            data = nonrigid.shift_data(ops, data,
+                                       offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32),
+                                       offsets[3][iframes], offsets[4][iframes])
+        else:
+            data = shift_data(ops, data,
+                              offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32))
+        data = np.minimum(data, 2**15 - 2)
+        meanImg += data.mean(axis=0)
         data = data.astype('int16')
 
         # write to binary
@@ -785,11 +756,12 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         # write registered tiffs
         if ops['reg_tif_chan2']:
             write_tiffs(data, ops, k, 1)
+        ix += nframes
         k+=1
     if ops['functional_chan']!=ops['align_by_chan']:
-        ops['meanImg'] = meanImg/ops['nframes']
+        ops['meanImg'] = meanImg/k
     else:
-        ops['meanImg_chan2'] = meanImg/ops['nframes']
+        ops['meanImg_chan2'] = meanImg/k
     print('registered second channel in time %4.2f'%(toc(k0)))
 
     reg_file_alt.close()
@@ -960,3 +932,35 @@ def register_npy(Z, ops):
     ops['meanImg'] = meanImg/ops['nframes']
 
     return Zreg, ops
+
+def shift_data_subpixel(inputs):
+    ''' rigid shift of X by ymax and xmax '''
+    ''' allows subpixel shifts '''
+    ''' ** not being used ** '''
+    X, ymax, xmax, pad_fft = inputs
+    ymax = ymax.flatten()
+    xmax = xmax.flatten()
+    if X.ndim<3:
+        X = X[np.newaxis,:,:]
+
+    nimg, Ly0, Lx0 = X.shape
+    if pad_fft:
+        X = fft2(X.astype('float32'), (next_fast_len(Ly0), next_fast_len(Lx0)))
+    else:
+        X = fft2(X.astype('float32'))
+    nimg, Ly, Lx = X.shape
+    Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
+    Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
+    [Nx,Ny] = np.meshgrid(Nx,Ny)
+    Nx = Nx.astype('float32') / Lx
+    Ny = Ny.astype('float32') / Ly
+    dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
+    Y = np.real(ifft2(X * np.exp((2j * np.pi) * dph)))
+    # crop back to original size
+    if Ly0<Ly or Lx0<Lx:
+        Lyhalf = int(np.floor(Ly/2))
+        Lxhalf = int(np.floor(Lx/2))
+        Y = Y[np.ix_(np.arange(0,nimg,1,int),
+                     np.arange(-np.fix(Ly0/2), np.ceil(Ly0/2),1,int) + Lyhalf,
+                     np.arange(-np.fix(Lx0/2), np.ceil(Lx0/2),1,int) + Lxhalf)]
+    return Y

@@ -255,7 +255,8 @@ def tiff_to_binary(ops):
         ops['filelist'] = fs
 
     # try tiff readers
-    single_page = False
+    batch_size = 500
+    batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     try:
         tif = ScanImageTiffReader(fs[0])
         tsize = tif.shape()
@@ -263,7 +264,7 @@ def tiff_to_binary(ops):
             # single page tiffs
             im = tif.data()
         else:
-            im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]-1))
+            im = tif.data(beg=0, end=np.minimum(batch_size, tif.shape()[0]-1))
         tif.close()
         sktiff=False
     except:
@@ -272,8 +273,7 @@ def tiff_to_binary(ops):
     if 'force_sktiff' in ops and ops['force_sktiff']:
         sktiff=True
         print('user chose scikit-image for tiff reading')
-    batch_size = 500
-    batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
+
     # loop over all tiffs
     which_folder = -1
     for ik, file in enumerate(fs):

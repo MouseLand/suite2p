@@ -198,32 +198,32 @@ def shift_data(inputs):
     yup = linear_interp(iy, ix, yb, xb, ymax)
     xup = linear_interp(iy, ix, yb, xb, xmax)
     mshx,mshy = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly))
-    Y = np.zeros((nimg,Ly*Lx), np.float32)
+    Y = np.zeros((nimg,Ly,Lx), np.float32)
     for t in range(nimg):
-        ycoor = (mshy + yup[t]).flatten()
-        xcoor = (mshx + xup[t]).flatten()
+        ycoor = (mshy + yup[t])#.flatten()
+        xcoor = (mshx + xup[t])#.flatten()
 
-        #coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
-        #Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
+        coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
+        Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
     
-        xf = xcoor.astype(np.int16)
-        yf = ycoor.astype(np.int16)
-        xc = xf + 1
-        yc = yf + 1
+        #xf = xcoor.astype(np.int16)
+        #yf = ycoor.astype(np.int16)
+        #xc = xf + 1
+        #yc = yf + 1
         
-        dy = ycoor-yf
-        dx = xcoor-xf
+        #dy = ycoor-yf
+        #dx = xcoor-xf
     
-        xf = np.maximum(0, np.minimum(Lx-1, xf))
-        yf = np.maximum(0, np.minimum(Ly-1, yf))
-        yc = np.maximum(0, np.minimum(Ly-1, yc))
-        xc = np.maximum(0, np.minimum(Lx-1, xc))
+        #xf = np.maximum(0, np.minimum(Lx-1, xf))
+        #yf = np.maximum(0, np.minimum(Ly-1, yf))
+        #yc = np.maximum(0, np.minimum(Ly-1, yc))
+        #xc = np.maximum(0, np.minimum(Lx-1, xc))
         
-        Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
-        Y[t] += data[t][yf, xc] * (1 - dy) * dx
-        Y[t] += data[t][yc, xf] * dy * (1 - dx)
-        Y[t] += data[t][yc, xc] * dy * dx
-    Y = np.reshape(Y, (nimg, Ly, Lx))
+        #Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
+        #Y[t] += data[t][yf, xc] * (1 - dy) * dx
+        #Y[t] += data[t][yc, xf] * dy * (1 - dx)
+        #Y[t] += data[t][yc, xc] * dy * dx
+    #Y = np.reshape(Y, (nimg, Ly, Lx))
     return Y
 
 def register_myshifts(ops, data, ymax, xmax):

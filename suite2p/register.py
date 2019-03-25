@@ -1,4 +1,4 @@
-from skimage import io
+
 import glob, h5py, time, os, shutil
 import numpy as np
 #from numpy import fft
@@ -7,10 +7,8 @@ import scipy.fftpack as fft
 #import mkl_fft as fft
 from numpy import random as rnd
 import multiprocessing
-
 from multiprocessing import Pool
 import math
-from suite2p import nonrigid, utils, regmetrics
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
 #try:
@@ -21,11 +19,15 @@ from scipy.ndimage import laplace
 HAS_FFTW=False
 
 try:
+    #os.environ["MKL_NUM_THREADS"] = "1"
+    from skimage import io
     import mkl_fft
     HAS_MKL=True
 except ImportError:
     HAS_MKL=False
 #HAS_MKL=False
+
+from suite2p import nonrigid, utils, regmetrics
 
 def fft2(data, s=None):
     if s==None:

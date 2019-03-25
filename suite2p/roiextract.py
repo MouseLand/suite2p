@@ -81,7 +81,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
             ypix1, xpix1 = sparsedetect.extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
             if np.sum(cell_pix[ypix1,xpix1]<.5)-nring>ops['min_neuropil_pixels']:
                 break # break if there are at least a minimum number of valid pixels
-        
+
         ix = cell_pix[ypix1,xpix1]<.5
         ypix1, xpix1 = ypix1[ix], xpix1[ix]
         neuropil_masks[n,ypix1,xpix1] = 1.
@@ -90,7 +90,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
 
     #stat[n]['ipix_neuropil'] = utils.sub2ind((Ly,Lx), ypix1,xpix1)
-        
+
     return neuropil_masks
 
 def masks_and_traces(ops, stat):
@@ -126,10 +126,10 @@ def extractF(ops, stat, neuropil_masks):
 
     if ops['num_workers']==0:
         ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        ops['num_workers'] = min(5, ops['num_workers'])
+        ops['num_workers'] = min(4, ops['num_workers'])
     num_cores = ops['num_workers']
     nbatch = int(np.ceil(nimgbatch/float(num_cores)))
-    
+
     ops['meanImg'] = np.zeros((Ly,Lx))
     k=0
     while data is not None:
@@ -141,7 +141,7 @@ def extractF(ops, stat, neuropil_masks):
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
         ops['meanImg'] += data.mean(axis=0)
         data = np.reshape(data, (nimg,-1)).transpose()
-            
+
         if ops['num_workers']>0:
             # divide data across workers
             inputs = np.arange(0, nimg, nbatch)
@@ -150,17 +150,17 @@ def extractF(ops, stat, neuropil_masks):
                 ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
                 irange.append(ilist)
                 dsplit.append([data[:, ilist], stat, neuropil_masks])
-                
+
             with Pool(num_cores) as p:
                 results = p.map(F_worker, dsplit)
-        
+
             for i in range(0,len(results)):
                 F[:, irange[i]] = results[i][0]
                 Fneu[:, irange[i]] = results[i][1]
         else:
             inds = ix+np.arange(0,nimg,1,int)
             F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])
-        
+
         if ix%(5*nimg)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
         ix += nimg

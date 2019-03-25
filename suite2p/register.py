@@ -2,12 +2,11 @@ import glob, h5py, time, os, shutil
 import numpy as np
 #from numpy import fft
 from scipy.fftpack import next_fast_len
-import scipy.fftpack as fft
 #import mkl_fft as fft
 from numpy import random as rnd
 import multiprocessing
-
 from multiprocessing import Pool
+import scipy.fftpack as fft
 import math
 from suite2p import nonrigid, utils, regmetrics
 from scipy.signal import medfilt

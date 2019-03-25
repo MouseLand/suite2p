@@ -88,9 +88,6 @@ def create_neuropil_masks(ops, stat, cell_pix):
         neuropil_masks[n,ypix,xpix] = 0
     S = np.sum(neuropil_masks, axis=(1,2))
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
-
-    #stat[n]['ipix_neuropil'] = utils.sub2ind((Ly,Lx), ypix1,xpix1)
-
     return neuropil_masks
 
 def masks_and_traces(ops, stat):
@@ -102,9 +99,9 @@ def masks_and_traces(ops, stat):
 
     stat0 = []
     for n in range(len(stat)):
-        stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']})
+        stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
     F,Fneu,ops=extractF(ops, stat0, neuropil_masks)
-    return Fneu, F, ops, stat
+    return F, Fneu, ops, stat
 
 
 def extractF(ops, stat, neuropil_masks):
@@ -155,8 +152,8 @@ def extractF(ops, stat, neuropil_masks):
                 results = p.map(F_worker, dsplit)
 
             for i in range(0,len(results)):
-                F[:, irange[i]] = results[i][0]
-                Fneu[:, irange[i]] = results[i][1]
+                F[:, irange[i]+ix] = results[i][0]
+                Fneu[:, irange[i]+ix] = results[i][1]
         else:
             inds = ix+np.arange(0,nimg,1,int)
             F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])

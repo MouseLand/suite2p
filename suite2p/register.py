@@ -539,7 +539,7 @@ def refine_init_init(ops, frames, refImg):
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
         refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze()
         dy, dx = -np.mean(ymax[isort[1:nmax]]), -np.mean(xmax[isort[1:nmax]])
-        refImg = shift_data((refImg, dy, dx)).squeeze()
+        refImg = shift_data((refImg, dy, dx, refImg.mean())).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 

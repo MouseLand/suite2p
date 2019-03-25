@@ -205,45 +205,24 @@ def shift_data(inputs):
 
         coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
         Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
-<<<<<<< HEAD
-        if 0:
-            xf = xcoor.astype(np.int16)
-            yf = ycoor.astype(np.int16)
-            xc = xf + 1
-            yc = yf + 1
 
-            dy = ycoor-yf
-            dx = xcoor-xf
-
-            xf = np.maximum(0, np.minimum(Lx-1, xf))
-            yf = np.maximum(0, np.minimum(Ly-1, yf))
-            yc = np.maximum(0, np.minimum(Ly-1, yc))
-            xc = np.maximum(0, np.minimum(Lx-1, xc))
-
-            Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
-            Y[t] += data[t][yf, xc] * (1 - dy) * dx
-            Y[t] += data[t][yc, xf] * dy * (1 - dx)
-            Y[t] += data[t][yc, xc] * dy * dx
-=======
-    
         #xf = xcoor.astype(np.int16)
         #yf = ycoor.astype(np.int16)
         #xc = xf + 1
         #yc = yf + 1
-        
+
         #dy = ycoor-yf
         #dx = xcoor-xf
-    
+
         #xf = np.maximum(0, np.minimum(Lx-1, xf))
         #yf = np.maximum(0, np.minimum(Ly-1, yf))
         #yc = np.maximum(0, np.minimum(Ly-1, yc))
         #xc = np.maximum(0, np.minimum(Lx-1, xc))
-        
+
         #Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
         #Y[t] += data[t][yf, xc] * (1 - dy) * dx
         #Y[t] += data[t][yc, xf] * dy * (1 - dx)
         #Y[t] += data[t][yc, xc] * dy * dx
->>>>>>> 57c9b09d3c3d7b0abed634ccfde9c210509c2e1a
     #Y = np.reshape(Y, (nimg, Ly, Lx))
     return Y
 

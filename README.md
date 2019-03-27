@@ -26,7 +26,7 @@ pip install suite2p
 ~~~~
 If this fails, you might not have Python 3 (or pip, or a recent enough version of pip). You'll need to install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. Try "pip install suite2p" again. If it still fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is 
 ~~~~
-python -m pip install --upgrade pip
+pip install --upgrade pip
 ~~~~
 And try "pip install suite2p" again. If it still fails, install Anaconda, and use the Anaconda command prompt to have a clean environment. Alternatively, if you already have Anaconda, create a clean conda environment just for suite2p with 
 ~~~~

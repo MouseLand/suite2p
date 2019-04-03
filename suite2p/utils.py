@@ -305,7 +305,7 @@ def tiff_to_binary(ops):
     # open all binary files for writing
     # look for tiffs in all requested folders
     ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
-
+    ops = ops1[0]
     # try tiff readers
     sktiff = choose_tiff_reader(fs[0], ops1[0])
 

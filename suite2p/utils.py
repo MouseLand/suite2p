@@ -103,10 +103,14 @@ def init_ops(ops):
         ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
         ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
+        if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+            ops['raw_file'] = os.path.join(ops['fast_disk'], 'data_raw.bin')
         if 'lines' in ops:
             ops['lines'] = lines[j]
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+            if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+                ops['raw_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2_raw.bin')
         if 'dy' in ops and ops['dy']!='':
             ops['dy'] = dy[j]
             ops['dx'] = dx[j]
@@ -122,6 +126,40 @@ def list_h5(ops):
     lpath = os.path.join(froot, "*.h5")
     fs = natsorted(glob.glob(lpath))
     return fs
+
+def find_files_open_binaries(ops1, ish5):
+    ''' find tiffs or h5 files, and open binaries to write to
+        inputs ops1 (list over planes), ish5 (whether or not h5)
+        returns ops1, fs (filelist), reg_file, reg_file_chan2 '''
+    reg_file = []
+    reg_file_chan2=[]
+
+    for ops in ops1:
+        if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+            reg_file.append(open(ops['raw_file'], 'wb'))
+            if nchannels>1:
+                reg_file_chan2.append(open(ops['raw_file_chan2'], 'wb'))
+        else:
+            reg_file.append(open(ops['reg_file'], 'wb'))
+            if nchannels>1:
+                reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
+
+    if ish5:
+        # find h5's
+        if ops1[0]['look_one_level_down']:
+            fs = list_h5(ops1[0])
+            print('using a list of h5 files:')
+            print(fs)
+        else:
+            fs = [ops1[0]['h5py']]
+    else:
+        # find tiffs
+        fs, ops2 = get_tif_list(ops1[0])
+        for ops in ops1:
+            ops['first_tiffs'] = ops2['first_tiffs']
+            ops['frames_per_folder'] = np.zeros((ops2['first_tiffs'].sum(),), np.int32)
+            ops['filelist'] = fs
+    return ops1, fs, reg_file, reg_file_chan2
 
 def h5py_to_binary(ops):
     # copy ops to list where each element is ops for each plane
@@ -144,6 +182,8 @@ def h5py_to_binary(ops):
         print(h5list)
     else:
         h5list = [ops1[0]['h5py']]
+
+    key = ops1[0]['h5py_key']
     iall = 0
     for h5 in h5list:
         with h5py.File(h5, 'r') as f:
@@ -231,6 +271,25 @@ def open_tiff(file, sktiff):
             Ltif = tif.shape()[0]
     return tif, Ltif
 
+def choose_tiff_reader(fs0, ops):
+    try:
+        tif = ScanImageTiffReader(fs0)
+        tsize = tif.shape()
+        if len(tsize) < 3:
+            # single page tiffs
+            im = tif.data()
+        else:
+            im = tif.data(beg=0, end=np.minimum(ops['batch_size'], tif.shape()[0]-1))
+        tif.close()
+        sktiff=False
+    except:
+        sktiff = True
+        print('ScanImageTiffReader not working for this tiff type, using scikit-image')
+    if 'force_sktiff' in ops and ops['force_sktiff']:
+        sktiff=True
+        print('user chose scikit-image for tiff reading')
+    return sktiff
+
 def tiff_to_binary(ops):
     ''' converts tiff to *.bin file '''
     ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
@@ -243,36 +302,13 @@ def tiff_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    fs, ops2 = get_tif_list(ops1[0])
-    reg_file = []
-    reg_file_chan2=[]
-    for ops in ops1:
-        reg_file.append(open(ops['reg_file'], 'wb'))
-        if nchannels>1:
-            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-        ops['first_tiffs'] = ops2['first_tiffs']
-        ops['frames_per_folder'] = np.zeros((ops2['first_tiffs'].sum(),), np.int32)
-        ops['filelist'] = fs
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
 
     # try tiff readers
-    batch_size = 500
+    sktiff = choose_tiff_reader(fs[0], ops1[0])
+
+    batch_size = ops['batch_size']
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
-    try:
-        tif = ScanImageTiffReader(fs[0])
-        tsize = tif.shape()
-        if len(tsize) < 3:
-            # single page tiffs
-            im = tif.data()
-        else:
-            im = tif.data(beg=0, end=np.minimum(batch_size, tif.shape()[0]-1))
-        tif.close()
-        sktiff=False
-    except:
-        sktiff = True
-        print('ScanImageTiffReader not working for this tiff type, using scikit-image')
-    if 'force_sktiff' in ops and ops['force_sktiff']:
-        sktiff=True
-        print('user chose scikit-image for tiff reading')
 
     # loop over all tiffs
     which_folder = -1
@@ -295,15 +331,12 @@ def tiff_to_binary(ops):
             else:
                 if Ltif==1:
                     im = tif.data()
-                    #im = np.expand_dims(im, axis=0)
-                    #print(im.shape)
                 else:
                     im = tif.data(beg=ix, end=ix+nfr)
 
             # for single-page tiffs, add 1st dim
             if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
-
 
             # check if uint16
             if type(im[0,0,0]) == np.uint16:
@@ -379,35 +412,45 @@ def mesoscan_to_binary(ops):
     else:
         ops['nplanes'] = len(ops['lines'])
     ops1 = init_ops(ops)
+
     if 'lines' not in ops:
         for j in range(len(ops1)):
             ops1[j] = {**ops1[j], **opsj[j]}.copy()
-    nplanes = ops['nplanes']
-    nchannels = ops1[0]['nchannels']
+
     # open all binary files for writing
-    reg_file = []
-    reg_file_chan2=[]
-    for ops in ops1:
-        reg_file.append(open(ops['reg_file'], 'wb'))
-        if nchannels>1:
-            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
-    for op in ops1:
-        op['first_tiffs'] = ops['first_tiffs']
-        op['frames_per_folder'] = np.zeros((ops['first_tiffs'].sum(),), np.int32)
+    # look for tiffs in all requested folders
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
     if nchannels>1:
         nfunc = ops['functional_chan']-1
     else:
         nfunc = 0
-    batch_size = 500
+    batch_size = ops['batch_size']
+
+    # which tiff reader works for user's tiffs
+    sktiff = choose_tiff_reader(fs[0], ops1[0])
+
     # loop over all tiffs
     which_folder = -1
     for ik, file in enumerate(fs):
+        # open tiff
+        tif, Ltif = open_tiff(file, sktiff)
         if ops['first_tiffs'][ik]:
             which_folder += 1
         ix = 0
         while 1:
-            im = imread(file, pages = range(ix,ix+batch_size))
+            if ix >= Ltif:
+                break
+            nfr = min(Ltif - ix, batch_size)
+            if sktiff:
+                im = imread(file, pages = range(ix, ix + nfr), fastij = False)
+            else:
+                if Ltif==1:
+                    im = tif.data()
+                else:
+                    im = tif.data(beg=ix, end=ix+nfr)
             if im.size==0:
                 break
             #im = io.imread(file)

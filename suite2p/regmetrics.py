@@ -13,32 +13,55 @@ try:
 except ImportError:
     HAS_CV2 = False
 
+import time
 
-
-def pclowhigh(mov, nlowhigh, nPC):
+def pclowhigh(mov, nlowhigh, nPC, num_cores):
     ''' get mean of top and bottom PC weights for nPC's of mov '''
     nframes, Ly, Lx = mov.shape
+    tic=time.time()
     mov = mov.reshape((nframes, -1))
-    mov = mov.astype('float32')
-    mimg = np.mean(mov, axis=0)
+    mov = mov.astype(np.float32)
+    mimg = mov.mean(axis=0)
     mov -= mimg
-    #    COV = mov @ mov.T
-    #w,v = linalg.eigsh(COV, k = nPC)
-    pca = PCA(n_components=nPC).fit(mov.T)
-    v = pca.components_.T
-    w = pca.singular_values_
-    #print(v.shape,w.shape)
+    tic=time.time()
+    if num_cores > 0:
+        COV = np.zeros((nframes, nframes), np.float32)
+        ipix = int(np.ceil(Ly*Lx / num_cores))
+        dsplit = []
+        ix=0
+        for i in range(num_cores):
+            dsplit.append(mov[:, ix:min(ix+ipix, Ly*Lx)])
+            ix += ipix
+        with Pool(num_cores) as p:
+            results = p.map(cov_worker, dsplit)
+        for i in range(len(results)):
+            COV += results[i]
+        w,v = linalg.eigsh(COV, k = nPC)
+        w = w[::-1]
+        v = v[:, ::-1]
+    else:
+        pca = PCA(n_components=nPC).fit(mov.T)
+        v = pca.components_.T
+        w = pca.singular_values_
+
+    #print(time.time()-tic)
     mov += mimg
-    mov = mov.reshape((nframes, Ly, Lx))
-    pclow  = np.zeros((nPC, Ly, Lx), 'float32')
-    pchigh = np.zeros((nPC, Ly, Lx), 'float32')
+    mov = np.transpose(np.reshape(mov, (-1, Ly, Lx)), (1,2,0))
+    pclow  = np.zeros((nPC, Ly, Lx), np.float32)
+    pchigh = np.zeros((nPC, Ly, Lx), np.float32)
+    isort = np.argsort(v, axis=0)
     for i in range(nPC):
-        isort = np.argsort(v[:,i])
-        pclow[i,:,:] = np.mean(mov[isort[:nlowhigh],:,:], axis=0)
-        pchigh[i,:,:] = np.mean(mov[isort[-nlowhigh:],:,:], axis=0)
+        #pclow[i]  = mov[isort[:nlowhigh, i]].mean(axis=0)
+        pclow[i] = mov[:,:,isort[:nlowhigh, i]].mean(axis=-1)
+        pchigh[i]=mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
+        #pchigh[i] = mov[isort[-nlowhigh:, i]].mean(axis=0)
+        #print(time.time()-tic)
     return pclow, pchigh, w
 
-def metric_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
+def cov_worker(mov):
+    return mov @ mov.T
+
+def pc_register(pclow, pchigh, refImg, num_cores=-1, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
     ''' register top and bottom of PCs to each other '''
     # registration settings
     ops = {
@@ -59,41 +82,73 @@ def metric_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15,
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
 
-    X = np.zeros((nPC,3))
     ops = utils.make_blocks(ops)
-    for i in range(nPC):
-        refImg = pclow[i]
-        Img = pchigh[i][np.newaxis, :, :]
-        #Img = np.tile(Img, (1,1,1))
-        maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        dwrite, ymax, xmax, cmax, yxnr = register.register_data(Img, refAndMasks, ops)
-        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
-        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+    X = np.zeros((nPC,3))
+    if num_cores>0:
+        dsplit = []
+        for i in range(nPC):
+            refImg = pclow[i]
+            Img = pchigh[i][np.newaxis, :, :]
+            dsplit.append([ops, refImg, Img])
+
+        ix=0
+        for k in range(int(np.ceil(nPC/num_cores))):
+            nc = min(num_cores, nPC - ix)
+            with Pool(nc) as p:
+                results = p.map(pc_register_worker, dsplit[ix:ix+nc])
+            for i in range(len(results)):
+                X[i+ix,:] = results[i]
+            ix += len(results)
+    else:
+        for i in range(nPC):
+            refImg = pclow[i]
+            Img = pchigh[i][np.newaxis, :, :]
+            X[i,:] = pc_register_worker([ops, refImg, Img])
+
+    return X
+
+def pc_register_worker(inputs):
+    ops, refImg, Img = inputs
+    maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
+    maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
+    refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
+    dwrite, ymax, xmax, cmax, yxnr = register.register_data(Img, refAndMasks, ops)
+    X = np.zeros((3,))
+    X[1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
+    X[0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
+    X[2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
     return X
 
 
-def get_pc_metrics(ops):
+
+def get_pc_metrics(ops, use_red=False):
     ''' computes registration metrics using top PCs of registered movie
         movie saved as binary file ops['reg_file']
         metrics saved to ops['regPC'] and ops['X']
     '''
-    nsamp    = min(10000, ops['nframes']) # n frames to pick from full movie
+    nsamp    = min(8000, ops['nframes']) # n frames to pick from full movie
     if ops['Ly'] > 700:
         nsamp = min(5000, nsamp)
-    nPC      = 50 # n PCs to compute motion for
-    nlowhigh = np.minimum(500, int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
+    nPC      = 30 # n PCs to compute motion for
+    nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    mov  = utils.sample_frames(ops, ix, ops['reg_file'])
+    if use_red and 'reg_file_chan2' in ops:
+        mov  = utils.sample_frames(ops, ix, ops['reg_file_chan2'])
+    else:
+        mov  = utils.sample_frames(ops, ix, ops['reg_file'])
 
-    pclow, pchigh,sv = pclowhigh(mov, nlowhigh, nPC)
+    num_workers = ops['num_workers']
+    if num_workers == 0:
+        num_workers = int(multiprocessing.cpu_count()/2)
+    num_cores = int(num_workers)
+
+    pclow, pchigh,sv = pclowhigh(mov, nlowhigh, nPC, num_cores)
     if 'block_size' not in ops:
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = metric_register(pclow, pchigh, ops['refImg'], ops['do_phasecorr'], ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
+    X    = pc_register(pclow, pchigh, ops['refImg'], num_cores, ops['do_phasecorr'],
+                       ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
 
@@ -211,7 +266,7 @@ def optic_flow(mov, tmpl, nflows):
 
 
 def get_flow_metrics(ops):
-    ''' get farneback optical flow and some other stats from normcorre '''
+    ''' get farneback optical flow and some other stats from normcorre paper'''
     # done in batches for memory reasons
     Ly = ops['Ly']
     Lx = ops['Lx']

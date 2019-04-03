@@ -159,7 +159,7 @@ def run_s2p(ops={},db={}):
             else:
                 ops1 = utils.tiff_to_binary(ops)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
-                
+
         np.save(fpathops1, ops1) # save ops1
     else:
         print('found binaries')
@@ -185,44 +185,44 @@ def run_s2p(ops={},db={}):
 
     ######### REGISTRATION #########
     while ik<len(ops1):
-        ipl = np.array(ik) # + np.arange(0, min(ni, len(ops1)-ik))
+        ipl = ik # + np.arange(0, min(ni, len(ops1)-ik))
         if not flag_binreg:
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
 
-        ops1[ipl[0]] = utils.get_cells(ops1[ipl[0]])
-        for ops in ops1[ipl]:
-            fpath = ops['save_path']
-            F = np.load(os.path.join(fpath,'F.npy'))
-            Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-            dF = F - ops['neucoeff']*Fneu
-            spks = dcnv.oasis(dF, ops)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
-            stat = np.load(os.path.join(fpath,'stat.npy'))
-            # apply default classifier
-            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                "classifiers/classifier_user.npy",
+        ops1[ipl] = utils.get_cells(ops1[ipl])
+        ops = ops1[ipl]
+        fpath = ops['save_path']
+        F = np.load(os.path.join(fpath,'F.npy'))
+        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
+        dF = F - ops['neucoeff']*Fneu
+        spks = dcnv.oasis(dF, ops)
+        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+        stat = np.load(os.path.join(fpath,'stat.npy'))
+        # apply default classifier
+        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier_user.npy",
+        )
+        if not os.path.isfile(classfile):
+            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                "classifiers/classifier.npy"
             )
-            if not os.path.isfile(classfile):
-                classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                    "classifiers/classifier.npy"
-                )
-                shutil.copy(classorig, classfile)
-            print(classfile)
+            shutil.copy(classorig, classfile)
+        print(classfile)
 
-            iscell = classifier.run(classfile, stat)
-            np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
-            # save as matlab file
-            if ('save_mat' in ops) and ops['save_mat']:
-                matpath = os.path.join(ops['save_path'],'Fall.mat')
-                io.savemat(matpath, {'stat': stat,
-                                     'ops': ops,
-                                     'F': F,
-                                     'Fneu': Fneu,
-                                     'spks': spks,
-                                     'iscell': iscell})
+        iscell = classifier.run(classfile, stat)
+        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+        # save as matlab file
+        if ('save_mat' in ops) and ops['save_mat']:
+            matpath = os.path.join(ops['save_path'],'Fall.mat')
+            io.savemat(matpath, {'stat': stat,
+                                 'ops': ops,
+                                 'F': F,
+                                 'Fneu': Fneu,
+                                 'spks': spks,
+                                 'iscell': iscell})
         ik += 1 #len(ipl)
 
     # save final ops1 with all planes

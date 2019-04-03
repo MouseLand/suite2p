@@ -404,6 +404,9 @@ def get_nFrames(ops):
         except:
             print('no raw')
             nbytes = os.path.getsize(ops['reg_file'])
+    else:
+        nbytes = os.path.getsize(ops['reg_file'])
+            
 
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames

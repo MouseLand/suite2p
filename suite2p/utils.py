@@ -134,7 +134,9 @@ def find_files_open_binaries(ops1, ish5):
     reg_file = []
     reg_file_chan2=[]
 
+
     for ops in ops1:
+        nchannels = ops['nchannels']
         if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
             reg_file.append(open(ops['raw_file'], 'wb'))
             if nchannels>1:

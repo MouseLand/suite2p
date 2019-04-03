@@ -815,7 +815,7 @@ def register_binary(ops, refImg=None):
     ops['refImg'] = refImg
 
     # get binary file paths
-    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
+    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file'])
     reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
 
     k = 0

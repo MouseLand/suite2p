@@ -260,7 +260,7 @@ def shift_data(ops, data, ymax, xmax):
     ''' rigid shifting of other channel data by ymax and xmax '''
     ''' multi-processing shifting '''
     if ops['num_workers']<0:
-        dreg = shift_data((data, ymax, xmax))
+        dreg = shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
     else:
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)
@@ -274,7 +274,7 @@ def shift_data(ops, data, ymax, xmax):
         for i in inputs:
             ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist]])
+            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist], ops['refImg'].mean()])
         with Pool(num_cores) as p:
             results = p.map(shift_data_worker, dsplit)
         dreg = np.zeros_like(data)
@@ -327,6 +327,7 @@ def phasecorr_worker(inputs):
     # get ymax,xmax, cmax not upsampled
     ymax, xmax, cmax = getCCmax(cc, lcorr)
     #print(toc(k))
+    #print(ymax)
     Y = shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
     #Y = data
     #print(toc(k))

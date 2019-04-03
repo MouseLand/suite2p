@@ -399,9 +399,11 @@ def register_data(data, refAndMasks, ops):
 
 def get_nFrames(ops):
     if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-        nbytes = os.path.getsize(ops['raw_file'])
-    else:
-        nbytes = os.path.getsize(ops['reg_file'])
+        try:
+            nbytes = os.path.getsize(ops['raw_file'])
+        except:
+            print('no raw')
+            nbytes = os.path.getsize(ops['reg_file'])
 
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
@@ -414,7 +416,7 @@ def subsample_frames(ops, nsamps):
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
-    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
+    if 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file']):
         if ops['nchannels']>1:
             if ops['functional_chan'] == ops['align_by_chan']:
                 reg_file = open(ops['raw_file'], 'rb')
@@ -641,7 +643,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread = 2 * Ly * Lx * nbatch
-    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
+    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file'])
     if raw:
         reg_file_align = open(reg_file_align, 'wb')
         raw_file_align = open(raw_file_align, 'rb')

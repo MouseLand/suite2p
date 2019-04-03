@@ -194,16 +194,13 @@ def run_s2p(ops={},db={}):
 
     ######### REGISTRATION #########
     while ik<len(ops1):
-        ipl = ik + np.arange(0, min(ni, len(ops1)-ik))
+        ipl = np.array(ik) # + np.arange(0, min(ni, len(ops1)-ik))
         if not flag_binreg:
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
-        if ni>1:
-            with Pool(len(ipl)) as p:
-                ops1[ipl] = p.map(utils.get_cells, ops1[ipl])
-        else:
-            ops1[ipl[0]] = utils.get_cells(ops1[ipl[0]])
+
+        ops1[ipl[0]] = utils.get_cells(ops1[ipl[0]])
         for ops in ops1[ipl]:
             fpath = ops['save_path']
             F = np.load(os.path.join(fpath,'F.npy'))
@@ -235,7 +232,7 @@ def run_s2p(ops={},db={}):
                                      'Fneu': Fneu,
                                      'spks': spks,
                                      'iscell': iscell})
-        ik += len(ipl)
+        ik += 1 #len(ipl)
 
     # save final ops1 with all planes
     np.save(fpathops1, ops1)

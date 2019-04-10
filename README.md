@@ -68,7 +68,7 @@ An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265N
 
 ## Getting started
 
-The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. 
+The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. Make sure to run this from a directory in which you have **WRITE** access (suite2p saves a couple temporary files in your current directory):
 ~~~~
 python -m suite2p
 ~~~~

@@ -53,7 +53,7 @@ def pclowhigh(mov, nlowhigh, nPC, num_cores):
     for i in range(nPC):
         #pclow[i]  = mov[isort[:nlowhigh, i]].mean(axis=0)
         pclow[i] = mov[:,:,isort[:nlowhigh, i]].mean(axis=-1)
-        pchigh[i]=mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
+        pchigh[i] = mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
         #pchigh[i] = mov[isort[-nlowhigh:, i]].mean(axis=0)
         #print(time.time()-tic)
     return pclow, pchigh, w
@@ -126,9 +126,9 @@ def get_pc_metrics(ops, use_red=False):
         movie saved as binary file ops['reg_file']
         metrics saved to ops['regPC'] and ops['X']
     '''
-    nsamp    = min(8000, ops['nframes']) # n frames to pick from full movie
+    nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
     if ops['Ly'] > 700:
-        nsamp = min(5000, nsamp)
+        nsamp = min(2500, nsamp)
     nPC      = 30 # n PCs to compute motion for
     nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')

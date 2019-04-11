@@ -2,7 +2,6 @@ import suite2p
 import numpy as np
 import time, os
 from suite2p import register, dcnv, celldetect, run_s2p, gui2p
-from scipy import stats
 import argparse
 
 def tic():
@@ -23,7 +22,7 @@ if __name__ == '__main__':
 
     os.environ["MKL_NUM_THREADS"] = "1"
     os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ["OPENBLAS_NUM_THREADS"] = "1" 
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
     ops = {}
     db= {}

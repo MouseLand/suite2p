@@ -61,6 +61,8 @@ To export views in the GUI, you can right-click. Exporting to 'svg' will work wi
 pip install git+https://github.com/pyqtgraph/pyqtgraph
 ~~~
 
+(+ more info on the [wiki](https://github.com/MouseLand/suite2p/wiki/Installation))
+
 
 ## Examples
 

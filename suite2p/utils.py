@@ -414,7 +414,8 @@ def mesoscan_to_binary(ops):
     else:
         ops['nplanes'] = len(ops['lines'])
     ops1 = init_ops(ops)
-
+    ops = ops1[0]
+    
     if 'lines' not in ops:
         for j in range(len(ops1)):
             ops1[j] = {**ops1[j], **opsj[j]}.copy()

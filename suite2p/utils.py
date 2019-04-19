@@ -414,7 +414,6 @@ def mesoscan_to_binary(ops):
     else:
         ops['nplanes'] = len(ops['lines'])
     ops1 = init_ops(ops)
-    ops = ops1[0]
 
     if 'lines' not in ops:
         for j in range(len(ops1)):
@@ -423,6 +422,7 @@ def mesoscan_to_binary(ops):
     # open all binary files for writing
     # look for tiffs in all requested folders
     ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops = ops1[0]
 
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
@@ -482,6 +482,7 @@ def mesoscan_to_binary(ops):
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
             ix+=nframes
+    print(ops1[0]['nframes'])
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']

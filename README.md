@@ -52,6 +52,11 @@ If when running `python -m suite2p`, you receive an error associated with **matp
 pip install matplotlib --upgrade
 ~~~
 
+If you receive an error about "pickling" or in "skimage", then try
+~~~
+pip install numpy==1.14
+~~~
+
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine. 
 
 (+ more info on the [wiki](https://github.com/MouseLand/suite2p/wiki/Installation) for running the latest github code and for mac users)

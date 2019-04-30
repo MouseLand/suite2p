@@ -589,7 +589,7 @@ def get_cells(ops):
     ops, stat = sparsedetect.sparsery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil
-    F, Fneu, ops, stat = roiextract.masks_and_traces(ops, stat)
+    F, Fneu, F_chan2, Fneu_chan2, ops, stat = roiextract.masks_and_traces(ops, stat)
     print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
@@ -609,6 +609,8 @@ def get_cells(ops):
             ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stat)
         np.save(os.path.join(fpath, 'redcell.npy'), redcell)
+        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)

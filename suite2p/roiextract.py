@@ -100,11 +100,16 @@ def masks_and_traces(ops, stat):
     stat0 = []
     for n in range(len(stat)):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
-    F,Fneu,ops=extractF(ops, stat0, neuropil_masks)
-    return F, Fneu, ops, stat
+    F,Fneu,ops=extractF(ops, stat0, neuropil_masks, ops['reg_file'])
+    if 'reg_file_chan2' in ops:
+        F_chan2, Fneu_chan2, _ = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+    else:
+        F_chan2, Fneu_chan2 = [], []
+
+    return F, Fneu, F_chan2, Fneu_chan2, ops, stat
 
 
-def extractF(ops, stat, neuropil_masks):
+def extractF(ops, stat, neuropil_masks, reg_file):
     nimgbatch = 1000
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
@@ -115,7 +120,7 @@ def extractF(ops, stat, neuropil_masks):
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
 
-    reg_file = open(ops['reg_file'], 'rb')
+    reg_file = open(reg_file, 'rb')
     nimgbatch = int(nimgbatch)
     block_size = Ly*Lx*nimgbatch*2
     ix = 0

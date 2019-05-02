@@ -406,7 +406,7 @@ def get_nFrames(ops):
             nbytes = os.path.getsize(ops['reg_file'])
     else:
         nbytes = os.path.getsize(ops['reg_file'])
-            
+
 
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
@@ -588,20 +588,18 @@ def compute_crop(ops):
     return ops
 
 def write_tiffs(data, ops, k, ichan):
-    if k==0:
-        if ichan==0:
-            if ops['functional_chan']==ops['align_by_chan']:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif')
-            else:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+    if ichan==0:
+        if ops['functional_chan']==ops['align_by_chan']:
+            tifroot = os.path.join(ops['save_path'], 'reg_tif')
         else:
-            if ops['functional_chan']==ops['align_by_chan']:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif')
-            else:
-                tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
-        if not os.path.isdir(tifroot):
-            os.makedirs(tifroot)
-        print(tifroot)
+            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+    else:
+        if ops['functional_chan']==ops['align_by_chan']:
+            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+        else:
+            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+    if not os.path.isdir(tifroot):
+        os.makedirs(tifroot)
     fname = 'file_chan%0.3d.tif'%k
     io.imsave(os.path.join(tifroot, fname), data)
 

@@ -575,7 +575,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ichosen = 0
             self.ROIedit.setText('0')
             # get scaling from 100 random frames
-            frames = subsample_frames(ops, np.minimum(ops['nframes'],100), self.reg_loc)
+            frames = subsample_frames(ops, np.minimum(ops['nframes']-1,100), self.reg_loc)
             self.srange = frames.mean() + frames.std()*np.array([-2,5])
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')

@@ -82,11 +82,13 @@ def enhanced_mean_image(ops):
     return ops
 
 def init_ops(ops):
-    if 'lines' in ops:
-        lines = ops['lines']
-        ops['nplanes'] = len(ops['lines'])
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
+    if 'lines' in ops:
+        lines = ops['lines']
+    if 'iplane' in ops:
+        iplane = ops['iplane']
+        #ops['nplanes'] = len(ops['lines'])
     ops1 = []
     if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
         ops['fast_disk'] = ops['save_path0']
@@ -107,6 +109,8 @@ def init_ops(ops):
             ops['raw_file'] = os.path.join(ops['fast_disk'], 'data_raw.bin')
         if 'lines' in ops:
             ops['lines'] = lines[j]
+        if 'iplane' in ops:
+            ops['iplane'] = iplane[j]
         if nchannels>1:
             ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
             if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
@@ -410,11 +414,34 @@ def mesoscan_to_binary(ops):
         fs = glob.glob(fpath)
         with open(fs[0], 'r') as f:
             opsj = json.load(f)
-        ops['nplanes'] = len(opsj)
+        if 'nrois' in opsj:
+            ops['nrois'] = opsj['nrois']
+        elif 'nplanes' in opsj and 'lines' in opsj:
+            ops['nrois'] = opsj['nplanes']
+            ops['nplanes'] = 1
+        else:
+            ops['nplanes'] = len(opsj)
     else:
-        ops['nplanes'] = len(ops['lines'])
-    ops1 = init_ops(ops)
+        ops['nrois'] = len(ops['lines'])
+    nplanes = ops['nplanes']
 
+    # multiply lines across planes
+    lines = ops['lines'].copy()
+    dy = ops['dy'].copy()
+    dx = ops['dx'].copy()
+    ops['lines'] = [None] * nplanes * ops['nrois']
+    ops['dy'] = [None] * nplanes * ops['nrois']
+    ops['dx'] = [None] * nplanes * ops['nrois']
+    ops['iplane'] = np.zeros((nplanes * ops['nrois'],), np.int32)
+    for n in range(ops['nrois']):
+        ops['lines'][n::ops['nrois']] = [lines[n]] * nplanes
+        ops['dy'][n::ops['nrois']] = [dy[n]] * nplanes
+        ops['dx'][n::ops['nrois']] = [dx[n]] * nplanes
+        ops['iplane'][n::ops['nrois']] = np.arange(0, nplanes, 1, int)
+    ops['nplanes'] = nplanes * ops['nrois']
+    ops1 = init_ops(ops)
+    print('nplanes %d nrois %d'%(nplanes,ops['nrois']))
+    # this shouldn't make it here
     if 'lines' not in ops:
         for j in range(len(ops1)):
             ops1[j] = {**ops1[j], **opsj[j]}.copy()
@@ -424,7 +451,9 @@ def mesoscan_to_binary(ops):
     ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
     ops = ops1[0]
 
-    nplanes = ops1[0]['nplanes']
+    #nplanes = ops1[0]['nplanes']
+    print(nplanes)
+    print(ops1[0]['nplanes'])
     nchannels = ops1[0]['nchannels']
     if nchannels>1:
         nfunc = ops['functional_chan']-1
@@ -442,6 +471,7 @@ def mesoscan_to_binary(ops):
         tif, Ltif = open_tiff(file, sktiff)
         if ops['first_tiffs'][ik]:
             which_folder += 1
+            iplane = 0
         ix = 0
         while 1:
             if ix >= Ltif:
@@ -459,27 +489,37 @@ def mesoscan_to_binary(ops):
             #im = io.imread(file)
             if len(im.shape)<3:
                 im = np.expand_dims(im, axis=0)
+
+            if im.shape[0] > nfr:
+                im = im[:nfr, :, :]
             nframes = im.shape[0]
-            for j in range(0,nplanes):
-                if ik==0:
-                    ops1[j]['meanImg'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
+
+            for j in range(0, ops['nplanes']):
+                jlines = np.array(ops1[j]['lines']).astype(np.int32)
+                jplane = ops1[j]['iplane']
+                if ik==0 and ix==0:
+                    ops1[j]['meanImg'] = np.zeros((len(jlines), im.shape[2]), np.float32)
                     if nchannels>1:
-                        ops1[j]['meanImg_chan2'] = np.zeros((len(ops1[j]['lines']),im.shape[2]),np.float32)
+                        ops1[j]['meanImg_chan2'] = np.zeros((len(jlines), im.shape[2]), np.float32)
                     ops1[j]['nframes'] = 0
-                imj = im[:,ops1[j]['lines'],:].astype(np.int16)
+                i0 = nchannels * ((iplane+jplane)%nplanes)
                 if nchannels>1:
-                    nfunc = ops['functional_chan'] - 1
+                    nfunc = ops['functional_chan']-1
                 else:
                     nfunc = 0
-                im2write = imj[np.arange(nfunc, nframes, nchannels, int), :, :]
+                # take iplanes
+                frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
+                im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
                 ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
-                if nchannels>1:
-                    im2write = imj[np.arange(1-nfunc, nframes, nchannels, int), :, :]
-                    reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
+                if nchannels>1:
+                    frange = np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels)
+                    im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
+                    reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+            iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
     print(ops1[0]['nframes'])
     # write ops files
@@ -495,7 +535,7 @@ def mesoscan_to_binary(ops):
             ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
-    for j in range(0,nplanes):
+    for j in range(0,ops['nplanes']):
         reg_file[j].close()
         if nchannels>1:
             reg_file_chan2[j].close()

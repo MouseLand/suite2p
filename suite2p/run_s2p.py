@@ -128,6 +128,15 @@ def run_s2p(ops={},db={}):
                 flag_binreg = False
             # use the new False
             ops1[i] = {**op, **ops}.copy()
+            # for mesoscope tiffs, preserve original lines, etc
+            if 'lines' in op:
+                ops1[i]['nrois'] = op['nrois']
+                ops1[i]['nplanes'] = op['nplanes']
+                ops1[i]['lines'] = op['lines']
+                ops1[i]['dy'] = op['dy']
+                ops1[i]['dx'] = op['dx']
+                ops1[i]['iplane'] = op['iplane']
+
             #ops1[i] = ops1[i].copy()
             print(ops1[i]['save_path'])
             # except for registration results
@@ -166,7 +175,7 @@ def run_s2p(ops={},db={}):
         print(ops1[0]['reg_file'])
 
     ops1 = np.array(ops1)
-    ops1 = utils.split_multiops(ops1)
+    #ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
     if flag_binreg:

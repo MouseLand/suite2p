@@ -641,6 +641,35 @@ class VerticalLabel(QtGui.QWidget):
         painter.end()
 
 
+### custom QPushButton class for quadrant plotting
+# requires buttons to put into a QButtonGroup (parent.viewbtns)
+# allows only 1 button to pressed at a time
+class QuadButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, parent=None):
+        super(QuadButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.resize(self.minimumSizeHint())
+        self.setMaximumWidth(22)
+        self.xpos = bid%3
+        self.ypos = int(np.floor(bid/3))
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        for b in range(9):
+            if parent.quadbtns.button(b).isEnabled():
+                parent.quadbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        self.xrange = np.array([self.xpos-.15, self.xpos+1.15]) * parent.ops['Lx']/3
+        self.yrange = np.array([self.ypos-.15, self.ypos+1.15]) * parent.ops['Ly']/3
+        # change the zoom
+        parent.p1.setXRange(self.xrange[0], self.xrange[1])
+        parent.p1.setYRange(self.yrange[0], self.yrange[1])
+        parent.p2.setXRange(self.xrange[0], self.xrange[1])
+        parent.p2.setYRange(self.yrange[0], self.yrange[1])
+        parent.show()
 
 ### custom QPushButton class that plots image when clicked
 # requires buttons to put into a QButtonGroup (parent.viewbtns)

@@ -235,7 +235,7 @@ class MainW(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600, 0)
         self.win.resize(1000, 500)
-        self.l0.addWidget(self.win, 1, 2, 40, 30)
+        self.l0.addWidget(self.win, 1, 2, 41, 30)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(
@@ -281,7 +281,7 @@ class MainW(QtGui.QMainWindow):
         self.show()
         self.win.show()
 
-        ###### --------- VIEW AND COLOR BUTTONS ---------- #############
+        ###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############
         self.views = [
             "Q: ROIs",
             "W: mean img",
@@ -302,6 +302,23 @@ class MainW(QtGui.QMainWindow):
             "J: classifier, cell prob=",
             "K: correlations, bin=",
         ]
+
+        # quadrant buttons
+        self.quadbtns = QtGui.QButtonGroup(self)
+        #vlabel = QtGui.QLabel(self)
+        #vlabel.setText("<font color='white'>Background</font>")
+        #vlabel.setFont(boldfont)
+        #vlabel.resize(vlabel.minimumSizeHint())
+        #self.l0.addWidget(vlabel, 1, 0, 1, 1)
+        for b in range(9):
+            btn = gui.QuadButton(b, ' '+str(b+1), self)
+            self.quadbtns.addButton(btn, b)
+            self.l0.addWidget(btn, 0 + self.quadbtns.button(b).ypos, 29 + self.quadbtns.button(b).xpos, 1, 1)
+            btn.setEnabled(False)
+            b += 1
+        self.quadbtns.setExclusive(True)
+
+        # view buttons
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -923,6 +940,9 @@ class MainW(QtGui.QMainWindow):
         classgui.activate(self, False)
 
     def enable_views_and_classifier(self):
+        for b in range(9):
+            self.quadbtns.button(b).setEnabled(True)
+            self.quadbtns.button(b).setStyleSheet(self.styleUnpressed)
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)

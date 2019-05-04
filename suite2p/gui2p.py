@@ -287,8 +287,9 @@ class MainW(QtGui.QMainWindow):
             "W: mean img",
             "E: mean img (enhanced)",
             "R: correlation map",
-            "T: mean img (chan2, corrected)",
-            "Y: mean img (chan2)",
+            "T: max projection",
+            "Y: mean img (chan2, corrected)",
+            "U: mean img (chan2)",
 
         ]
         self.colors = [
@@ -595,14 +596,17 @@ class MainW(QtGui.QMainWindow):
                 elif event.key() == QtCore.Qt.Key_R:
                     self.viewbtns.button(3).setChecked(True)
                     self.viewbtns.button(3).press(self, 3)
-                elif event.key() == QtCore.Qt.Key_Y:
+                elif event.key() == QtCore.Qt.Key_T:
+                    self.viewbtns.button(4).setChecked(True)
+                    self.viewbtns.button(4).press(self, 4)
+                elif event.key() == QtCore.Qt.Key_U:
                     if "meanImg_chan2" in self.ops:
+                        self.viewbtns.button(6).setChecked(True)
+                        self.viewbtns.button(6).press(self, 6)
+                elif event.key() == QtCore.Qt.Key_Y:
+                    if "meanImg_chan2_corrected" in self.ops:
                         self.viewbtns.button(5).setChecked(True)
                         self.viewbtns.button(5).press(self, 5)
-                elif event.key() == QtCore.Qt.Key_T:
-                    if "meanImg_chan2_corrected" in self.ops:
-                        self.viewbtns.button(4).setChecked(True)
-                        self.viewbtns.button(4).press(self, 4)
                 elif event.key() == QtCore.Qt.Key_Space:
                     self.checkBox.toggle()
                 elif event.key() == QtCore.Qt.Key_A:
@@ -928,11 +932,11 @@ class MainW(QtGui.QMainWindow):
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
         # check for second channel
         if "meanImg_chan2_corrected" not in self.ops:
-            self.viewbtns.button(4).setEnabled(False)
-            self.viewbtns.button(4).setStyleSheet(self.styleInactive)
+            self.viewbtns.button(5).setEnabled(False)
+            self.viewbtns.button(5).setStyleSheet(self.styleInactive)
             if "meanImg_chan2" not in self.ops:
-                self.viewbtns.button(5).setEnabled(False)
-                self.viewbtns.button(5).setStyleSheet(self.styleInactive)
+                self.viewbtns.button(6).setEnabled(False)
+                self.viewbtns.button(6).setStyleSheet(self.styleInactive)
 
         for b in range(len(self.colors)):
             if b==5:

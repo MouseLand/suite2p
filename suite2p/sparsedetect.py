@@ -169,13 +169,13 @@ def square_conv2(mov,lx):
     return movt
 
 def sparsery(ops):
-    rez = celldetect2.get_mov(ops)
+    rez, max_proj = celldetect2.get_mov(ops)
+    ops['max_proj'] = max_proj
     nframes, Ly, Lx = rez.shape
     ops['Lyc'] = Ly
     ops['Lxc'] = Lx
     sdmov = celldetect2.get_sdmov(rez, ops)
     rez /= np.reshape(sdmov, (Ly,Lx))
-
     #rez *= -1
 
     lx = [ops['spatial_hp']]

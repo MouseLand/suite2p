@@ -104,6 +104,7 @@ def get_mov(ops):
     nimgbatch = nt0 * np.floor(nimgbatch/nt0)
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
+    max_proj = np.zeros((Lyc, Lxc), np.float32)
     print(mov.shape)
     ix = 0
     # load and bin data
@@ -126,7 +127,9 @@ def get_mov(ops):
             #dbin -= dbin.mean(axis=0)
             inds = ix + np.arange(0,dbin.shape[0])
             # crop into valid area
-            mov[inds,:,:] = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            dbin = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            mov[inds,:,:] = dbin
+            max_proj = np.maximum(max_proj, dbin.max(axis=0))
             ix += dbin.shape[0]
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
@@ -142,7 +145,7 @@ def get_mov(ops):
                 i0 += len(irange)
             else:
                 break
-    return mov
+    return mov, max_proj
 
 def getStU(ops, U):
     Lyc, Lxc, nbins = np.shape(U)

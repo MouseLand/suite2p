@@ -510,8 +510,7 @@ class MainW(QtGui.QMainWindow):
         # initialize merges
         self.merged = []
         self.rastermap = False
-        model = np.load(self.classorig)
-        model = model.item()
+        model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]
 
         # load initial file
@@ -1185,8 +1184,7 @@ class MainW(QtGui.QMainWindow):
                       "(spks.npy)")
                 goodfolder = False
             try:
-                ops = np.load(basename + "/ops.npy")
-                ops = ops.item()
+                ops = np.load(basename + "/ops.npy", allow_pickle=True).item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("ERROR: there is no ops file in this folder (ops.npy)")
                 goodfolder = False

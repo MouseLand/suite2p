@@ -113,7 +113,7 @@ def run_s2p(ops={},db={}):
     if os.path.isfile(fpathops1):
         files_found_flag = True
         flag_binreg = True
-        ops1 = np.load(fpathops1)
+        ops1 = np.load(fpathops1, allow_pickle=True)
         for i,op in enumerate(ops1):
             # default behavior is to look in the ops
             flag_reg = os.path.isfile(op['reg_file'])

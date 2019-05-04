@@ -7,9 +7,9 @@ from suite2p import register, nonrigid, chan2detect, celldetect2, sparsedetect, 
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
-from skimage.external.tifffile import imread, TiffFile
-from skimage import io
+#from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
+from skimage.external.tifffile import imread, TiffFile
 
 def tic():
     return time.time()

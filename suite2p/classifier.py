@@ -17,8 +17,7 @@ class Classifier:
 
     def load(self):
         try:
-            model = np.load(self.classfile)
-            model = model.item()
+            model = np.load(self.classfile, allow_pickle=True).item()
             self.stats = model['stats']
             self.iscell = model['iscell']
             self.keys = model['keys']
@@ -84,7 +83,7 @@ def run(classfile,stat):
             new_keys.append(key)
     model.keys = new_keys
     model.stats = np.delete(model.stats, np.nonzero(flag)[0], axis=1)
-    
+
     # compute cell probability
     probcell = model.apply(stat)
     iscell = probcell > 0.5

@@ -57,9 +57,8 @@ class ListChooser(QtGui.QDialog):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops.npy / db.npy file',filter='*.npy')
         if name:
             try:
-                ops = np.load(name[0])
+                ops = np.load(name[0], allow_pickle=True).item()
                 badfile = True
-                ops = ops.item()
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     badfile = False
                 elif 'h5py' in ops and len(ops['h5py']) > 0:
@@ -93,8 +92,7 @@ class RunWindow(QtGui.QDialog):
         self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                           'ops/ops_user.npy')
         try:
-            self.ops = np.load(self.opsfile)
-            self.ops = self.ops.item()
+            self.ops = np.load(self.opsfile, allow_pickle=True).item()
             ops0 = run_s2p.default_ops()
             self.ops = {**ops0, **self.ops}
             print('loaded default ops')
@@ -342,8 +340,7 @@ class RunWindow(QtGui.QDialog):
         self.binlabel.setText('')
         self.h5text.setText('')
         # clear ops not in GUI
-        self.ops = np.load(self.opsfile)
-        self.ops = self.ops.item()
+        self.ops = np.load(self.opsfile, allow_pickle=True).item()
         self.save_text() # grab ops in GUI
         # enable all the file loaders again
         self.bh5py.setEnabled(True)
@@ -385,8 +382,7 @@ class RunWindow(QtGui.QDialog):
         if self.batch:
             shutil.copy('ops%d.npy'%self.f, 'ops.npy')
             shutil.copy('db%d.npy'%self.f, 'db.npy')
-            self.db = np.load('db.npy')
-            self.db = self.db.item()
+            self.db = np.load('db.npy', allow_pickle=True).item()
         else:
             self.compile_ops_db()
             np.save('ops.npy', self.ops)
@@ -458,8 +454,7 @@ class RunWindow(QtGui.QDialog):
             ext = os.path.splitext(name)[1]
             try:
                 if ext == '.npy':
-                    ops = np.load(name)
-                    ops = ops.item()
+                    ops = np.load(name, allow_pickle=True).item()
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
@@ -618,8 +613,7 @@ class OpsButton(QtGui.QPushButton):
         try:
             opsdef = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                               'ops/ops_%s.npy'%parent.opsname[bid])
-            ops = np.load(opsdef)
-            ops = ops.item()
+            ops = np.load(opsdef, allow_pickle=True).item()
             for key in ops:
                 if key in parent.keylist:
                     parent.editlist[parent.keylist.index(key)].set_text(ops)

@@ -10,8 +10,9 @@ import scipy.fftpack as fft
 import math
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
-from skimage import io
 from suite2p import nonrigid, utils, regmetrics
+from skimage.external.tifffile import TiffWriter
+
 #try:
 #    import pyfftw
 #    HAS_FFTW=True
@@ -601,7 +602,10 @@ def write_tiffs(data, ops, k, ichan):
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
     fname = 'file_chan%0.3d.tif'%k
-    io.imsave(os.path.join(tifroot, fname), data)
+    with TiffWriter(os.path.join(tifroot, fname)) as tif:
+        for i in range(data.shape[0]):
+            tif.save(data[i])
+    #io.imsave(, data)
 
 def bin_paths(ops, raw):
     raw_file_align = []

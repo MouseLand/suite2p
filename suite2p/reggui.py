@@ -152,8 +152,7 @@ class PCViewer(QtGui.QMainWindow):
 
     def openFile(self, fileName):
         try:
-            ops = np.load(fileName)
-            ops = ops.item()
+            ops = np.load(fileName, allow_pickle=True).item()
             self.Ly = ops['Ly']
             self.Lx = ops['Lx']
             self.PC = ops['regPC']
@@ -396,7 +395,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         try:
             ops1 = np.load(fileName)
             basefolder = ops1[0]['save_path0']
-            opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy')).item()
+            opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
             self.LY = opsCombined['Ly']
             self.LX = opsCombined['Lx']
             self.reg_loc = []
@@ -530,8 +529,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def openFile(self, fileName, fromgui):
         try:
-            ops = np.load(fileName)
-            ops = ops.item()
+            ops = np.load(fileName, allow_pickle=True).item()
             self.LY = 0
             self.LX = 0
             self.Ly = ops['Ly']

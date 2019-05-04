@@ -598,8 +598,8 @@ def flip_for_class(parent, iscell):
         parent.iscell = iscell
         init_masks(parent)
 
-def make_chosen_ROI(M0, ypix, xpix):
-    M0[ypix,xpix,:] = np.ones((ypix.size,3), np.float32)
+def make_chosen_ROI(M0, ypix, xpix, v):
+    M0[ypix,xpix,:] = np.tile(v[:,np.newaxis], (1,3))# * np.ones((ypix.size,3), np.float32)
     return M0
 
 def make_chosen_circle(M0, ycirc, xcirc, col, sat):
@@ -640,7 +640,9 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             for n in parent.imerge:
                 ypix = parent.stat[n]['ypix'].flatten()
                 xpix = parent.stat[n]['xpix'].flatten()
-                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix)
+                v = (parent.iROI[wplot][:,ypix,xpix]>0).sum(axis=0) - 1
+                v = 1 - v/3
+                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, v)
         else:
             for n in parent.imerge:
                 ypix = parent.stat[n]['ypix'].flatten()

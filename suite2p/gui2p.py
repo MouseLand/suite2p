@@ -23,7 +23,7 @@ class MainW(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(10, 10, 1600, 950)
+        self.setGeometry(0, 0, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -173,6 +173,7 @@ class MainW(QtGui.QMainWindow):
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
+        self.l0.setVerticalSpacing(4)
         self.checkBox = QtGui.QCheckBox("ROIs On [space bar]")
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)

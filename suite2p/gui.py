@@ -82,10 +82,11 @@ class ListChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,950)
+        self.setGeometry(0,0,1300,900)
         self.setWindowTitle('Choose run options')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
+        self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
@@ -272,6 +273,7 @@ class RunWindow(QtGui.QDialog):
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
         self.layout.addWidget(self.textEdit, n0+1,0,30,2*l)
+        self.textEdit.setFixedHeight(300)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)

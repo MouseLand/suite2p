@@ -49,9 +49,52 @@ def create_cell_masks(ops, stat):
     cell_pix = np.minimum(1, cell_pix)
     return stat, cell_pix
 
+def circle_neuropil_masks(ops, stat, cell_pix):
+    '''creates surround neuropil masks for ROIs in stat using gradually extending circles
+    inputs:
+        ops, stat, cell_pix
+            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
+            from stat: med, radius
+            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
+    outputs:
+        neuropil_masks (ncells,Ly,Lx)
+    '''
+    inner_radius = int(ops['inner_neuropil_radius'])
+    outer_radius = ops['outer_neuropil_radius']
+    # if outer_radius is infinite, define outer radius as a multiple of the cell radius
+    if np.isinf(ops['outer_neuropil_radius']):
+        min_pixels = ops['min_neuropil_pixels']
+        ratio      = ops['ratio_neuropil_to_cell']
+    # dilate the cell pixels by inner_radius to create ring around cells
+    expanded_cell_pix = ndimage.grey_dilation(cell_pix, (inner_radius,inner_radius))
+
+    ncells = len(stat)
+    Ly = cell_pix.shape[0]
+    Lx = cell_pix.shape[1]
+    neuropil_masks = np.zeros((ncells,Ly,Lx),np.float32)
+    x,y = np.meshgrid(np.arange(0,Lx),np.arange(0,Ly))
+    for n in range(0,ncells):
+        cell_center = stat[n]['med']
+        if stat[n]['radius'] > 0:
+            if np.isinf(ops['outer_neuropil_radius']):
+                cell_radius  = stat[n]['radius']
+                outer_radius = ratio * cell_radius
+                npixels = 0
+                # continue increasing outer_radius until minimum pixel value reached
+                while npixels < min_pixels:
+                    neuropil_on       = (((y - cell_center[1])**2 + (x - cell_center[0])**2)**0.5) <= outer_radius
+                    neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
+                    npixels = neuropil_no_cells.astype(np.int32).sum()
+                    outer_radius *= 1.25
+            else:
+                neuropil_on       = ((y - cell_center[0])**2 + (x - cell_center[1])**2)**0.5 <= outer_radius
+                neuropil_no_cells = neuropil_on - expanded_cell_pix > 0
+            npixels = neuropil_no_cells.astype(np.int32).sum()
+            neuropil_masks[n,:,:] = neuropil_no_cells.astype(np.float32) / npixels
+    return neuropil_masks
 
 def create_neuropil_masks(ops, stat, cell_pix):
-    '''creates surround neuropil masks for ROIs in stat
+    '''creates surround neuropil masks for ROIs in stat by EXTENDING ROI (SLOW!!)
     inputs:
         ops, stat, cell_pix
             from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
@@ -89,25 +132,6 @@ def create_neuropil_masks(ops, stat, cell_pix):
     S = np.sum(neuropil_masks, axis=(1,2))
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
     return neuropil_masks
-
-def masks_and_traces(ops, stat):
-    stat,cell_pix  = create_cell_masks(ops, stat)
-    neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
-    Ly=ops['Ly']
-    Lx=ops['Lx']
-    neuropil_masks = csr_matrix(np.reshape(neuropil_masks, (-1,Ly*Lx)))
-
-    stat0 = []
-    for n in range(len(stat)):
-        stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
-    F,Fneu,ops=extractF(ops, stat0, neuropil_masks, ops['reg_file'])
-    if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, _ = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
-    else:
-        F_chan2, Fneu_chan2 = [], []
-
-    return F, Fneu, F_chan2, Fneu_chan2, ops, stat
-
 
 def extractF(ops, stat, neuropil_masks, reg_file):
     nimgbatch = 1000
@@ -181,3 +205,27 @@ def F_worker(inputs):
     #Fneu = np.zeros((len(stat),data.shape[1]),np.float32)
     Fneu = neuropil_masks.dot(data)
     return F,Fneu
+
+def masks_and_traces(ops, stat):
+    ''' main extraction function
+        inputs: ops and stat
+        creates cell and neuropil masks and extracts traces
+        returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
+        F_chan2 and Fneu_chan2 will be empty if no second channel
+    '''
+    stat,cell_pix  = create_cell_masks(ops, stat)
+    neuropil_masks = circle_neuropil_masks(ops,stat,cell_pix)
+    Ly=ops['Ly']
+    Lx=ops['Lx']
+    neuropil_masks = csr_matrix(np.reshape(neuropil_masks, (-1,Ly*Lx)))
+
+    stat0 = []
+    for n in range(len(stat)):
+        stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
+    F,Fneu,ops=extractF(ops, stat0, neuropil_masks, ops['reg_file'])
+    if 'reg_file_chan2' in ops:
+        F_chan2, Fneu_chan2, _ = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+    else:
+        F_chan2, Fneu_chan2 = [], []
+
+    return F, Fneu, F_chan2, Fneu_chan2, ops, stat

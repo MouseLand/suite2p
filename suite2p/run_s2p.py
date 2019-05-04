@@ -209,7 +209,7 @@ def run_s2p(ops={},db={}):
         spks = dcnv.oasis(dF, ops)
         np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
         print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
-        stat = np.load(os.path.join(fpath,'stat.npy'))
+        stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
         # apply default classifier
         classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
             "classifiers/classifier_user.npy",

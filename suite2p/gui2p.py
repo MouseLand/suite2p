@@ -1158,7 +1158,7 @@ class MainW(QtGui.QMainWindow):
         name = self.fname
         print(name)
         try:
-            stat = np.load(name)
+            stat = np.load(name, allow_pickle=True)
             ypix = stat[0]["ypix"]
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):

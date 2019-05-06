@@ -249,14 +249,17 @@ def init_masks(parent):
                     ops['xrange'][0]:ops['xrange'][1]] = vcorr
                 mimg = np.maximum(0,np.minimum(1,mimg))
             elif k==4:
-                mproj = ops['max_proj']
-                mimg1 = np.percentile(mproj,1)
-                mimg99 = np.percentile(mproj,99)
-                mproj = (mproj - mimg1) / (mimg99 - mimg1)
-                mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
-                mimg[ops['yrange'][0]:ops['yrange'][1],
-                    ops['xrange'][0]:ops['xrange'][1]] = mproj
-                mimg = np.maximum(0,np.minimum(1,mimg))
+                if 'max_proj' in ops:
+                    mproj = ops['max_proj']
+                    mimg1 = np.percentile(mproj,1)
+                    mimg99 = np.percentile(mproj,99)
+                    mproj = (mproj - mimg1) / (mimg99 - mimg1)
+                    mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+                    mimg[ops['yrange'][0]:ops['yrange'][1],
+                        ops['xrange'][0]:ops['xrange'][1]] = mproj
+                    mimg = np.maximum(0,np.minimum(1,mimg))
+                else:
+                    mimg = 0.5 * np.ones((ops['Ly'], ops['Lx']), np.float32)
             elif k==5:
                 if 'meanImg_chan2_corrected' in ops:
                     mimg = ops['meanImg_chan2_corrected']

@@ -87,7 +87,7 @@ def getSVDproj(ops, u):
 def get_mov(ops):
     i0 = tic()
 
-    nframes = ops['nframes']
+    nframes = ops['nframes'] - ops['badframes'].sum()
     bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
@@ -107,6 +107,7 @@ def get_mov(ops):
     max_proj = np.zeros((Lyc, Lxc), np.float32)
     print(mov.shape)
     ix = 0
+    idata = 0
     # load and bin data
     with open(ops['reg_file'], 'rb') as reg_file:
         while True:
@@ -117,7 +118,11 @@ def get_mov(ops):
             if nimgd < nt0:
                 break
             data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+            dinds = idata + np.arange(0,data.shape[0],1,int)
+            idata+=data.shape[0]
+            data = data[~ops['badframes'][dinds],:,:]
             # bin data
+            nimgd = data.shape[0]
             if nimgd < nimgbatch:
                 nmax = int(np.floor(nimgd / nt0) * nt0)
                 data = data[:nmax,:,:]
@@ -131,6 +136,7 @@ def get_mov(ops):
             mov[inds,:,:] = dbin
             max_proj = np.maximum(max_proj, dbin.max(axis=0))
             ix += dbin.shape[0]
+    mov = mov[:ix,:,:]
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
         for j in range(mov.shape[1]):

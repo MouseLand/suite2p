@@ -579,7 +579,7 @@ def compute_crop(ops):
     cXY = ops['corrXY'] / medfilt(ops['corrXY'], 101)
     # exclude frames which have a large deviation and/or low correlation
     px = dxy / np.maximum(0, cXY)
-    ops['badframes'] = px > ops['th_badframes'] * 100
+    ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
     ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
     ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
     xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
@@ -775,9 +775,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     reg_file_alt.close()
     if raw:
         raw_file_alt.close()
-
     return ops
-
 
 def register_binary(ops, refImg=None):
     ''' registration of binary files '''
@@ -838,6 +836,15 @@ def register_binary(ops, refImg=None):
         ops['corrXY1'] = offsets[5]
 
     # compute valid region
+    # ignore user-specified bad_frames.npy
+    ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
+    if os.path.isfile(os.path.join(ops['data_path'][0], 'bad_frames.npy')):
+        badframes = np.load(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
+        badframes = badframes.flatten().astype(int)
+        if badframes.max() >= ops['nframes']:
+            badframes -= 1
+        ops['badframes'][badframes] = True
+        print(ops['badframes'].sum())
     # return frames which fall outside range
     ops = compute_crop(ops)
 

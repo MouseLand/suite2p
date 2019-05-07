@@ -56,7 +56,7 @@ def pclowhigh(mov, nlowhigh, nPC, num_cores):
         pchigh[i] = mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
         #pchigh[i] = mov[isort[-nlowhigh:, i]].mean(axis=0)
         #print(time.time()-tic)
-    return pclow, pchigh, w
+    return pclow, pchigh, w, v
 
 def cov_worker(mov):
     return mov @ mov.T
@@ -142,7 +142,7 @@ def get_pc_metrics(ops, use_red=False):
         num_workers = int(multiprocessing.cpu_count()/2)
     num_cores = int(num_workers)
 
-    pclow, pchigh,sv = pclowhigh(mov, nlowhigh, nPC, num_cores)
+    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC, num_cores)
     if 'block_size' not in ops:
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
@@ -151,6 +151,7 @@ def get_pc_metrics(ops, use_red=False):
                        ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
+    ops['tPC'] = v
 
     return ops
 

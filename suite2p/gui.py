@@ -392,6 +392,8 @@ class RunWindow(QtGui.QDialog):
         print('Running suite2p!')
         print('starting process')
         print(self.db)
+        self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'w')
+        self.logfile.close()
         self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 
     def stop(self):
@@ -512,16 +514,25 @@ class RunWindow(QtGui.QDialog):
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
-        cursor.insertText(str(self.process.readAllStandardOutput(), 'utf-8'))
+        output = str(self.process.readAllStandardOutput(), 'utf-8')
+        cursor.insertText(output)
         self.textEdit.ensureCursorVisible()
+        self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        self.logfile.write(output)
+        self.logfile.close()
 
     def stderr_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         cursor.insertText('>>>ERROR<<<\n')
-        cursor.insertText(str(self.process.readAllStandardError(), 'utf-8'))
+        output = str(self.process.readAllStandardError(), 'utf-8')
+        cursor.insertText(output)
         self.textEdit.ensureCursorVisible()
         self.error = True
+        self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        self.logfile.write('>>>ERROR<<<\n')
+        self.logfile.write(output)
+        self.logfile.close()
 
     def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')

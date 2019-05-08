@@ -165,7 +165,8 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         if nimg == 0:
             break
         data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
-        ops['meanImg'] += data.mean(axis=0)
+        inds = ix+np.arange(0,nimg,1,int)
+        ops['meanImg'] += data[~ops['badframes'][inds],:,:].mean(axis=0)
         data = np.reshape(data, (nimg,-1)).transpose()
 
         if ops['num_workers']>0:
@@ -184,7 +185,6 @@ def extractF(ops, stat, neuropil_masks, reg_file):
                 F[:, irange[i]+ix] = results[i][0]
                 Fneu[:, irange[i]+ix] = results[i][1]
         else:
-            inds = ix+np.arange(0,nimg,1,int)
             F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])
 
         if ix%(5*nimg)==0:
@@ -224,7 +224,8 @@ def masks_and_traces(ops, stat):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
     F,Fneu,ops=extractF(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, _ = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
 

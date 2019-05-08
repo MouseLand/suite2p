@@ -841,8 +841,6 @@ def register_binary(ops, refImg=None):
     if os.path.isfile(os.path.join(ops['data_path'][0], 'bad_frames.npy')):
         badframes = np.load(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
         badframes = badframes.flatten().astype(int)
-        if badframes.max() >= ops['nframes']:
-            badframes -= 1
         ops['badframes'][badframes] = True
         print(ops['badframes'].sum())
     # return frames which fall outside range

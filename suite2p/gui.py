@@ -406,6 +406,7 @@ class RunWindow(QtGui.QDialog):
         self.cleanButton.setEnabled(False)
 
     def finished(self, parent):
+        self.logfile.close()
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         if self.finish and not self.error:
@@ -532,7 +533,6 @@ class RunWindow(QtGui.QDialog):
         #self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
         self.logfile.write('>>>ERROR<<<\n')
         self.logfile.write(output)
-        self.logfile.close()
 
     def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')

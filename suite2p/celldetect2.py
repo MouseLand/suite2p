@@ -86,7 +86,8 @@ def getSVDproj(ops, u):
 
 def get_mov(ops):
     i0 = tic()
-
+    if 'badframes' not in ops:
+        ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
     nframes = ops['nframes'] - ops['badframes'].sum()
     bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
     bin_min = max(bin_min, 1)

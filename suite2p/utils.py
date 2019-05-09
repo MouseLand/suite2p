@@ -693,7 +693,7 @@ def combined(ops1):
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
     for k,ops in enumerate(ops1):
         fpath = ops['save_path']
-        stat0 = np.load(os.path.join(fpath,'stat.npy'))
+        stat0 = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
         xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
         yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']

@@ -392,7 +392,16 @@ class RunWindow(QtGui.QDialog):
         print('Running suite2p!')
         print('starting process')
         print(self.db)
-        self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'w')
+        if len(self.save_path)==0:
+            if len(self.db['data_path'])>0:
+                fpath = self.db['data_path'][0]
+            else:
+                fpath = os.path.dirname(self.db['h5py'])
+            self.save_path = fpath
+        save_folder = os.path.join(self.save_path, 'suite2p/')
+        if not os.path.isdir(save_folder):
+            os.makedirs(save_folder)
+        self.logfile = open(os.path.join(save_folder, 'run.log'), 'w')
         #self.logfile.close()
         self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 

@@ -393,7 +393,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def openCombined(self, fileName):
         try:
-            ops1 = np.load(fileName)
+            ops1 = np.load(fileName, allow_pickle=True)
             basefolder = ops1[0]['save_path0']
             #opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
             #self.LY = opsCombined['Ly']

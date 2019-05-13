@@ -395,9 +395,11 @@ class BinaryPlayer(QtGui.QMainWindow):
         try:
             ops1 = np.load(fileName)
             basefolder = ops1[0]['save_path0']
-            opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
-            self.LY = opsCombined['Ly']
-            self.LX = opsCombined['Lx']
+            #opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
+            #self.LY = opsCombined['Ly']
+            #self.LX = opsCombined['Lx']
+            self.LY = 0
+            self.LX = 0
             self.reg_loc = []
             self.reg_file = []
             self.Ly = []
@@ -409,9 +411,14 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ycrop  = []
             self.xcrop  = []
             # check that all binaries still exist
-            for ops in ops1:
+            for ipl,ops in enumerate(ops1):
                 #if os.path.isfile(ops['reg_file']):
-                self.reg_loc.append(ops['reg_file'])
+                if os.path.isfile(ops['reg_file']):
+                    reg_file = ops['reg_file']
+                else:
+                    reg_file = os.path.join(os.path.dirname(fileName),'plane%d'%ipl, 'data.bin')
+                print(reg_file, os.path.isfile(reg_file))
+                self.reg_loc.append(reg_file)
                 self.reg_file = open(self.reg_loc[-1], 'rb')
                 self.reg_file.close()
                 self.Ly.append(ops['Ly'])
@@ -430,7 +437,8 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.ycrop.append(ycrop.nonzero()[0])
                 self.xrange[-1] = self.xrange[-1][xcrop]
                 self.yrange[-1] = self.yrange[-1][ycrop]
-
+                self.LY = np.maximum(self.LY, self.Ly[-1]+self.dy[-1])
+                self.LX = np.maximum(self.LX, self.Lx[-1]+self.dx[-1])
             #if os.path.isfile(os.path.join(basefolder, 'suite2p/combined/','F.npy')):
             #    self.Fcell = np.load(os.path.join(basefolder, 'suite2p/combined/','F.npy'))
             #    self.stat =  np.load(os.path.join(basefolder, 'suite2p/combined/','stat.npy'))

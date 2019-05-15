@@ -416,11 +416,16 @@ def mesoscan_to_binary(ops):
             opsj = json.load(f)
         if 'nrois' in opsj:
             ops['nrois'] = opsj['nrois']
+            ops['nplanes'] = opsj['nplanes']
+            ops['dy'] = opsj['dy']
+            ops['dx'] = opsj['dx']
+            ops['fs'] = opsj['fs']
         elif 'nplanes' in opsj and 'lines' in opsj:
             ops['nrois'] = opsj['nplanes']
             ops['nplanes'] = 1
         else:
             ops['nplanes'] = len(opsj)
+        ops['lines'] = opsj['lines']
     else:
         ops['nrois'] = len(ops['lines'])
     nplanes = ops['nplanes']

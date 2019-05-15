@@ -850,7 +850,7 @@ def register_binary(ops, refImg=None):
         np.save(ops['ops_path'], ops)
 
     # compute metrics for registration
-    if do_regmetrics:
+    if do_regmetrics and ops['nframes']>=1000:
         ops = regmetrics.get_pc_metrics(ops)
         print('computed registration metrics in time %4.2f'%(toc(k0)))
 

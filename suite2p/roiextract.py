@@ -214,7 +214,7 @@ def masks_and_traces(ops, stat):
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
     stat,cell_pix  = create_cell_masks(ops, stat)
-    neuropil_masks = circle_neuropil_masks(ops,stat,cell_pix)
+    neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
     Ly=ops['Ly']
     Lx=ops['Lx']
     neuropil_masks = csr_matrix(np.reshape(neuropil_masks, (-1,Ly*Lx)))

@@ -119,8 +119,6 @@ def pc_register_worker(inputs):
     X[2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
     return X
 
-
-
 def get_pc_metrics(ops, use_red=False):
     ''' computes registration metrics using top PCs of registered movie
         movie saved as binary file ops['reg_file']

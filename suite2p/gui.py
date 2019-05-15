@@ -109,7 +109,7 @@ class RunWindow(QtGui.QDialog):
         outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw', 'reg_tif','reg_tif_chan2']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
+        cellkeys = ['roidetect','connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings',['Output settings','Parallel'],'Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
@@ -144,10 +144,10 @@ class RunWindow(QtGui.QDialog):
                     'window for spatial high-pass filtering before registration',
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
+                    'whether or not to run cell (ROI) detection',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',
-                    'whether to smooth masks in final pass of cell detection',
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
                     'max number of SVD components to keep for ROI detection',

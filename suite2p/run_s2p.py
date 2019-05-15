@@ -77,7 +77,7 @@ def default_ops():
         'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
-        'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
+        'ratio_neuropil_to_cell': 3., # minimum ratio between neuropil radius and cell radius
         'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation during cell detection
         'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
         'outer_neuropil_radius': np.inf, # maximum neuropil radius
@@ -94,6 +94,7 @@ def default_ops():
         'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
+        'roidetect': True
       }
     return ops
 
@@ -199,46 +200,54 @@ def run_s2p(ops={},db={}):
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
-
-        ops1[ipl] = utils.get_cells(ops1[ipl])
-        ops = ops1[ipl]
-        fpath = ops['save_path']
-        F = np.load(os.path.join(fpath,'F.npy'))
-        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-        dF = F - ops['neucoeff']*Fneu
-        spks = dcnv.oasis(dF, ops)
-        np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-        print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
-        stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-        # apply default classifier
-        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-            "classifiers/classifier_user.npy",
-        )
-        if not os.path.isfile(classfile):
-            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                "classifiers/classifier.npy"
+        if 'roidetect' in ops1[ipl]:
+            roidetect = ops['roidetect']
+        else:
+            roidetect = True
+        if roidetect:
+            ops1[ipl] = utils.get_cells(ops1[ipl])
+            ops = ops1[ipl]
+            fpath = ops['save_path']
+            F = np.load(os.path.join(fpath,'F.npy'))
+            Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
+            dF = F - ops['neucoeff']*Fneu
+            spks = dcnv.oasis(dF, ops)
+            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+            print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+            stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
+            # apply default classifier
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                "classifiers/classifier_user.npy",
             )
-            shutil.copy(classorig, classfile)
-        print(classfile)
-
-        iscell = classifier.run(classfile, stat)
-        np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
-        # save as matlab file
-        if ('save_mat' in ops) and ops['save_mat']:
-            matpath = os.path.join(ops['save_path'],'Fall.mat')
-            io.savemat(matpath, {'stat': stat,
-                                 'ops': ops,
-                                 'F': F,
-                                 'Fneu': Fneu,
-                                 'spks': spks,
-                                 'iscell': iscell})
+            if not os.path.isfile(classfile):
+                classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                    "classifiers/classifier.npy"
+                )
+                shutil.copy(classorig, classfile)
+            print(classfile)
+            if len(stat) > 0:
+                iscell = classifier.run(classfile, stat)
+            else:
+                iscell = np.zeros((0,2))
+            np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+            # save as matlab file
+            if ('save_mat' in ops) and ops['save_mat']:
+                matpath = os.path.join(ops['save_path'],'Fall.mat')
+                io.savemat(matpath, {'stat': stat,
+                                     'ops': ops,
+                                     'F': F,
+                                     'Fneu': Fneu,
+                                     'spks': spks,
+                                     'iscell': iscell})
+        else:
+            print("skipping cell detection (ops['roidetect']=False)")
         ik += 1 #len(ipl)
 
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
-    if len(ops1)>1 and ops1[0]['combined']:
+    if len(ops1)>1 and ops1[0]['combined'] and roidetect:
         utils.combined(ops1)
 
     # running a clean up script

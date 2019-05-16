@@ -255,8 +255,11 @@ def init_masks(parent):
                     mimg99 = np.percentile(mproj,99)
                     mproj = (mproj - mimg1) / (mimg99 - mimg1)
                     mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
-                    mimg[ops['yrange'][0]:ops['yrange'][1],
-                        ops['xrange'][0]:ops['xrange'][1]] = mproj
+                    try:
+                        mimg[ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]] = mproj
+                    except:
+                        print('maxproj not in combined view')
                     mimg = np.maximum(0,np.minimum(1,mimg))
                 else:
                     mimg = 0.5 * np.ones((ops['Ly'], ops['Lx']), np.float32)

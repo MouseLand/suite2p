@@ -693,6 +693,8 @@ def combined(ops1):
         meanImg_chan2 = np.zeros((LY, LX))
     if 'meanImg_chan2_corrected' in ops:
         meanImg_chan2_corrected = np.zeros((LY, LX))
+    if 'max_proj' in ops:
+        max_proj = np.zeros((LY, LX))
 
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
@@ -707,9 +709,12 @@ def combined(ops1):
             meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
         if 'meanImg_chan2_corrected' in ops:
             meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
+        if 'max_proj' in ops:
+            max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
+
         for j in range(len(stat0)):
             stat0[j]['xpix'] += ops['dx']
             stat0[j]['ypix'] += ops['dy']
@@ -750,6 +755,8 @@ def combined(ops1):
         ops['meanImg_chan2'] = meanImg_chan2
     if 'meanImg_chan2_corrected' in ops:
         ops['meanImg_chan2_corrected'] = meanImg_chan2_corrected
+    if 'max_proj' in ops:
+        ops['max_proj'] = max_proj
     ops['Vcorr'] = Vcorr
     ops['Ly'] = LY
     ops['Lx'] = LX

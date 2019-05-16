@@ -7,7 +7,7 @@ from scipy.stats import zscore
 from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
-import sys
+import sys,os
 #sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap import mapping
 from suite2p import gui,fig
@@ -135,27 +135,32 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
         self.neural_sorting(2)
         # buttons for computations
-        self.PCOn = QtGui.QPushButton('compute PCs')
-        self.PCOn.clicked.connect(lambda: self.PC_on(True))
-        self.l0.addWidget(self.PCOn,0,0,1,2)
-        self.mapOn = QtGui.QPushButton('compute raster map')
-        self.mapOn.clicked.connect(lambda: self.map_on(parent))
-        self.l0.addWidget(self.mapOn,1,0,1,2)
+        self.mapOn = QtGui.QPushButton('compute rastermap + PCs')
+        self.mapOn.clicked.connect(lambda: self.compute_map(parent))
+        self.l0.addWidget(self.mapOn,0,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
-        self.l0.addWidget(self.comboBox,2,0,1,2)
-        self.l0.addWidget(QtGui.QLabel(''),3,0,1,1)
+        self.l0.addWidget(self.comboBox,1,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),2,0,1,1)
         #self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
         self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
         self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
         self.selectBtn.setEnabled(True)
-        self.l0.addWidget(self.selectBtn,4,0,1,2)
+        self.l0.addWidget(self.selectBtn,3,0,1,2)
         self.sortTime = QtGui.QCheckBox('&Time sort')
         self.sortTime.setStyleSheet("color: white;")
         self.sortTime.stateChanged.connect(self.sort_time)
-        self.l0.addWidget(self.sortTime,5,0,1,2)
-        self.l0.addWidget(QtGui.QLabel(''),6,0,1,1)
+        self.l0.addWidget(self.sortTime,4,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
         self.l0.setRowStretch(6, 1)
         self.raster = False
+
+        self.process = QtCore.QProcess(self)
+        self.process.readyReadStandardOutput.connect(self.stdout_write)
+        self.process.readyReadStandardError.connect(self.stderr_write)
+        # disable the button when running the s2p process
+        #self.process.started.connect(self.started)
+        self.process.finished.connect(lambda: self.finished(parent))
+
         self.win.show()
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         self.show()
@@ -306,25 +311,27 @@ class VisWindow(QtGui.QMainWindow):
         self.comboBox.setCurrentIndex(0)
         self.neural_sorting(0)
 
-    def map_on(self, parent):
-        if not hasattr(self,'u'):
-            self.PC_on(False)
-        self.comboBox.addItem('raster map')
-        tic = time.time()
-        self.compute_map(parent)
-        print('raster map computed in %3.2f s'%(time.time()-tic))
-        self.comboBox.setCurrentIndex(1)
-        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
-        self.neural_sorting(1)
-        self.PCOn.setEnabled(False)
-        self.mapOn.setEnabled(False)
-        self.sortTime.setChecked(False)
+    def activate(self, parent):
+        # activate buttons
+        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
+        self.PCedit.setText('1')
+        self.PCedit.setFixedWidth(60)
+        self.PCedit.setAlignment(QtCore.Qt.AlignRight)
+        qlabel = QtGui.QLabel('PC: ')
+        qlabel.setStyleSheet('color: white;')
+        self.l0.addWidget(qlabel,2,0,1,1)
+        self.l0.addWidget(self.PCedit,2,1,1,1)
+        self.comboBox.addItem("PC")
+        self.PCedit.returnPressed.connect(self.PCreturn)
 
-    def compute_map(self, parent):
-        model = mapping.Rastermap(n_components=1, n_X=30, nPC=200, init='pca')
-        model = model.fit(self.sp, self.u * self.sv)
-        self.isort1 = np.argsort(model.embedding[:,0])
+        #model = np.load(os.path.join(parent.ops['save_path0'], 'embedding.npy'))
+        model = np.load('embedding.npy', allow_pickle=True).item()
+        self.isort1 = np.argsort(model['embedding'][:,0])
+        self.u = model['uv'][0]
+        self.comboBox.addItem("rastermap")
         #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
+
         self.raster = True
         ncells = len(parent.stat)
         # cells not in sorting are set to -1
@@ -340,22 +347,50 @@ class VisWindow(QtGui.QMainWindow):
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         parent.rastermap = True
 
-    def compute_svd(self,bin):
-        sp = self.sp[:,:int(np.floor(self.sp.shape[1]/bin)*bin)]
-        spbin = sp.reshape((sp.shape[0],bin,int(sp.shape[1]/bin)))
-        spbin = np.squeeze(spbin.mean(axis=1))
-        tic=time.time()
-        nmin = min([spbin.shape[0],spbin.shape[1]])
-        nmin = np.minimum(nmin-1, 200)
-        spbin -= spbin.mean(axis=1)[:,np.newaxis]
-        self.sv,self.u = eigsh(np.dot(spbin,spbin.T), k=nmin)
-        # these eigenvectors are in the opposite order
-        self.sv = self.sv[::-1]
-        self.u  = self.u[:,::-1]
-        self.sv = self.sv ** 0.5
-        self.v = (self.sp-self.sp.mean(axis=1)[:,np.newaxis]).T @ self.u
-        print('svd computed in %3.2f s'%(time.time()-tic))
+        self.comboBox.setCurrentIndex(1)
+        self.comboBox.currentIndexChanged.connect(self.neural_sorting)
+        self.neural_sorting(1)
+        self.mapOn.setEnabled(False)
+        self.sortTime.setChecked(False)
 
+    def compute_map(self, parent):
+        ops = {'n_components': 1, 'n_X': 100, 'alpha': 1., 'K': 1.,
+                    'nPC': 200, 'constraints': 2, 'annealing': True, 'init': 'pca',
+                    'start_time': 0, 'end_time': -1}
+        #opspath = os.path.join(parent.ops['save_path0'], 'rasterops.npy')
+        opspath = 'rasterops.npy'
+        np.save(opspath, ops)
+
+        #spath = os.path.join(parent.ops['save_path0'], 'rastersp.npy')
+        spath = 'rastersp.npy'
+        np.save(spath, self.sp)
+
+        self.error=False
+        self.finish=True
+        self.mapOn.setEnabled(False)
+        self.tic=time.time()
+        self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
+                            (spath, opspath))
+
+    def finished(self, parent):
+        if self.finish and not self.error:
+            print('raster map computed in %3.2f s'%(time.time()-self.tic))
+            self.activate(parent)
+        else:
+            sys.stdout.write('Interrupted by error (not finished)\n')
+
+    def stdout_write(self):
+        output = str(self.process.readAllStandardOutput(), 'utf-8')
+        #self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        sys.stdout.write(output)
+        #self.logfile.close()
+
+    def stderr_write(self):
+        sys.stdout.write('>>>ERROR<<<\n')
+        output = str(self.process.readAllStandardError(), 'utf-8')
+        sys.stdout.write(output)
+        self.error = True
+        self.finish = False
 
     def select_cells(self,parent):
         parent.imerge = []

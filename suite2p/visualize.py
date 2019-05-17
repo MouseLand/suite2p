@@ -369,6 +369,7 @@ class VisWindow(QtGui.QMainWindow):
         self.finish=True
         self.mapOn.setEnabled(False)
         self.tic=time.time()
+
         self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
                             (spath, opspath))
 

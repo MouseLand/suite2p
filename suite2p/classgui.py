@@ -43,7 +43,7 @@ def load_data(parent,keys,trainfiles):
                 basename, bname = os.path.split(fname)
                 lstat = 0
                 try:
-                    stat = np.load(basename+'/stat.npy')
+                    stat = np.load(basename+'/stat.npy', allow_pickle=True)
                     ypix = stat[0]['ypix']
                     lstat = len(stat)
                 except (KeyError, OSError, RuntimeError, TypeError, NameError):

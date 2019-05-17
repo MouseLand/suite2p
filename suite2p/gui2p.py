@@ -530,7 +530,7 @@ class MainW(QtGui.QMainWindow):
         # initialize merges
         self.merged = []
         self.rastermap = False
-        model = np.load(self.classorig)
+        model = np.load(self.classorig, allow_pickle=True)
         model = model.item()
         self.default_keys = model["keys"]
         #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
@@ -1166,7 +1166,7 @@ class MainW(QtGui.QMainWindow):
         name = self.fname
         print(name)
         try:
-            stat = np.load(name)
+            stat = np.load(name, allow_pickle=True)
             ypix = stat[0]["ypix"]
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
@@ -1177,8 +1177,8 @@ class MainW(QtGui.QMainWindow):
             basename, fname = os.path.split(name)
             goodfolder = True
             try:
-                Fcell = np.load(basename + "/F.npy")
-                Fneu = np.load(basename + "/Fneu.npy")
+                Fcell = np.load(basename + "/F.npy", allow_pickle=True)
+                Fneu = np.load(basename + "/Fneu.npy", allow_pickle=True)
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print(
                     "ERROR: there are no fluorescence traces in this folder "
@@ -1186,19 +1186,19 @@ class MainW(QtGui.QMainWindow):
                 )
                 goodfolder = False
             try:
-                Spks = np.load(basename + "/spks.npy")
+                Spks = np.load(basename + "/spks.npy", allow_pickle=True)
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("there are no spike deconvolved traces in this folder "
                       "(spks.npy)")
                 goodfolder = False
             try:
-                ops = np.load(basename + "/ops.npy")
+                ops = np.load(basename + "/ops.npy", allow_pickle=True)
                 ops = ops.item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("ERROR: there is no ops file in this folder (ops.npy)")
                 goodfolder = False
             try:
-                iscell = np.load(basename + "/iscell.npy")
+                iscell = np.load(basename + "/iscell.npy", allow_pickle=True)
                 probcell = iscell[:, 1]
                 iscell = iscell[:, 0].astype(np.bool)
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
@@ -1208,7 +1208,7 @@ class MainW(QtGui.QMainWindow):
                     iscell = np.ones((NN,), np.bool)
                     probcell = np.ones((NN,), np.float32)
             try:
-                redcell = np.load(basename + "/redcell.npy")
+                redcell = np.load(basename + "/redcell.npy", allow_pickle=True)
                 probredcell = redcell[:,1].copy()
                 redcell = redcell[:,0].astype(np.bool)
                 self.hasred = True

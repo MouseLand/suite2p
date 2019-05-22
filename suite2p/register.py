@@ -22,9 +22,11 @@ HAS_FFTW=False
 
 try:
     import mkl_fft
+    print('imported mkl_fft successfully')
     HAS_MKL=True
 except ImportError:
     HAS_MKL=False
+    print('failed to import mkl_fft - please see issue #182 to fix')
 
 
 def fft2(data, s=None):

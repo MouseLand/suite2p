@@ -86,9 +86,12 @@ def getSVDproj(ops, u):
 
 def get_mov(ops):
     i0 = tic()
-    if 'badframes' not in ops:
-        ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
-    nframes = ops['nframes'] - ops['badframes'].sum()
+    badframes = False
+    if 'badframes' in ops:
+        badframes = True
+        nframes = ops['nframes'] - ops['badframes'].sum()
+    else:
+        nframes = ops['nframes']
     bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
@@ -121,7 +124,8 @@ def get_mov(ops):
             data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
             dinds = idata + np.arange(0,data.shape[0],1,int)
             idata+=data.shape[0]
-            data = data[~ops['badframes'][dinds],:,:]
+            if badframes:
+                data = data[~ops['badframes'][dinds],:,:]
             # bin data
             nimgd = data.shape[0]
             if nimgd < nimgbatch:

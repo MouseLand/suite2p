@@ -1,11 +1,8 @@
 import glob, h5py, time, os, shutil
 import numpy as np
-#from numpy import fft
 from scipy.fftpack import next_fast_len
-#import mkl_fft as fft
 from numpy import random as rnd
 import multiprocessing
-from multiprocessing import Pool
 import scipy.fftpack as fft
 import math
 from scipy.signal import medfilt
@@ -13,13 +10,7 @@ from scipy.ndimage import laplace
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
 
-#try:
-#    import pyfftw
-#    HAS_FFTW=True
-#except ImportError:
-#    HAS_FFTW=False
 HAS_FFTW=False
-
 try:
     import mkl_fft
     #print('imported mkl_fft successfully')
@@ -27,7 +18,6 @@ try:
 except ImportError:
     HAS_MKL=False
     #print('failed to import mkl_fft - please see issue #182 to fix')
-
 
 def fft2(data, s=None):
     if s==None:
@@ -259,32 +249,6 @@ def getCCmax(cc, lcorr):
     ymax, xmax = ymax-lcorr, xmax-lcorr
     return ymax,xmax,cmax
 
-def shift_data(ops, data, ymax, xmax):
-    ''' rigid shifting of other channel data by ymax and xmax '''
-    ''' multi-processing shifting '''
-    if ops['num_workers']<0:
-        dreg = shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
-    else:
-        if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        num_cores = ops['num_workers']
-        nimg = data.shape[0]
-        nbatch = int(np.ceil(nimg/float(num_cores)))
-        #nbatch = 50
-        inputs = np.arange(0, nimg, nbatch)
-        irange = []
-        dsplit = []
-        for i in inputs:
-            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ymax[ilist], xmax[ilist], ops['refImg'].mean()])
-        with Pool(num_cores) as p:
-            results = p.map(shift_data_worker, dsplit)
-        dreg = np.zeros_like(data)
-        for i in range(0,len(results)):
-            dreg[irange[i], :, :] = results[i]
-    return dreg
-
 def shift_data_worker(inputs):
     ''' rigid shift of X by ymax and xmax '''
     X, ymax, xmax, m0 = inputs
@@ -292,9 +256,7 @@ def shift_data_worker(inputs):
     xmax = xmax.flatten()
     if X.ndim<3:
         X = X[np.newaxis,:,:]
-
     nimg, Ly, Lx = X.shape
-
     for n in range(nimg):
         X[n] = np.roll(X[n], (-ymax[n], -xmax[n]), axis=(0,1))
         yrange = np.arange(0, Ly,1,int) + ymax[n]
@@ -331,15 +293,13 @@ def phasecorr_worker(inputs):
     ymax, xmax, cmax = getCCmax(cc, lcorr)
     #print(toc(k))
     #print(ymax)
-    Y = shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
+    Y = shift_data_worker((data.copy(), ymax, xmax, ops['refImg'].mean()))
     #Y = data
     #print(toc(k))
     yxnr = []
     if nr:
         Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
-        #Y = nonrigid.shift_data((Y,ymax1,xmax1,ops))
         yxnr = [ymax1,xmax1,cmax1]
-    #print(toc(k))
     return Y, ymax, xmax, cmax, yxnr
 
 def register_data(data, refAndMasks, ops):
@@ -347,57 +307,14 @@ def register_data(data, refAndMasks, ops):
     ''' need reference image ops['refImg']'''
     ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
     ''' calls phasecorr_worker '''
-
     if ops['bidiphase']!=0:
         data = shift_bidiphase(data.copy(), ops['bidiphase'])
-
     nr=False
     yxnr = []
     if ops['nonrigid'] and len(refAndMasks)>3:
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
-    if ops['num_workers']<0:
-        Y, ymax, xmax, cmax, yxnr = phasecorr_worker((data, refAndMasks, ops))
-    else:
-        # run phasecorr_worker over multiple cores
-        nimg = data.shape[0]
-        if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        num_cores = ops['num_workers']
-
-        nbatch = int(np.ceil(nimg/float(num_cores)))
-        #nbatch = 50
-        inputs = np.arange(0, nimg, nbatch)
-        irange = []
-        dsplit = []
-        for i in inputs:
-            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-            irange.append(ilist)
-            dsplit.append([data[ilist,:, :], refAndMasks, ops])
-
-        with Pool(num_cores) as p:
-            results = p.map(phasecorr_worker, dsplit)
-        Y = np.zeros_like(data)
-        ymax = np.zeros((nimg,))
-        xmax = np.zeros((nimg,))
-        cmax = np.zeros((nimg,))
-        if nr:
-            ymax1 = np.zeros((nimg,nb))
-            xmax1 = np.zeros((nimg,nb))
-            cmax1 = np.zeros((nimg,nb))
-        for i in range(0,len(results)):
-            Y[irange[i], :, :] = results[i][0]
-            ymax[irange[i]] = results[i][1]
-            xmax[irange[i]] = results[i][2]
-            cmax[irange[i]] = results[i][3]
-            if nr:
-                ymax1[irange[i],:] = results[i][4][0]
-                xmax1[irange[i],:] = results[i][4][1]
-                cmax1[irange[i],:] = results[i][4][2]
-        if nr:
-            yxnr = [ymax1,xmax1,cmax1]
-    # perform nonrigid shift with no pool
-    #if nr:
+    Y, ymax, xmax, cmax, yxnr = phasecorr_worker((data, refAndMasks, ops))
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -715,7 +632,6 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
 def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     ''' apply registration shifts to binary data'''
-
     nbatch = ops['batch_size']
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -747,17 +663,14 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         iframes = ix + np.arange(0,nframes,1,int)
         if ops['bidiphase']!=0:
             data = shift_bidiphase(data.copy(), ops['bidiphase'])
+        ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
+        data = shift_data_worker((data.copy(), ymax, xmax, ops['refImg'].mean()))
         if ops['nonrigid']==True:
-            data = nonrigid.shift_data(ops, data,
-                                       offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32),
-                                       offsets[3][iframes], offsets[4][iframes])
-        else:
-            data = shift_data(ops, data,
-                              offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32))
+            ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
+            data = nonrigid.shift_data_worker((data, ops, ymax1, xmax1))
         data = np.minimum(data, 2**15 - 2)
         meanImg += data.mean(axis=0)
         data = data.astype('int16')
-
         # write to binary
         if not raw:
             reg_file_alt.seek(-2*data.size,1)

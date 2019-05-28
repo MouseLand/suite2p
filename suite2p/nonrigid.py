@@ -6,8 +6,6 @@ from scipy.ndimage import gaussian_filter
 from skimage.transform import warp#, PiecewiseAffineTransform
 from suite2p import register
 import time
-import multiprocessing
-from multiprocessing import Pool
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -75,12 +73,6 @@ def prepare_masks(refImg1, ops):
         maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
         maskMul1[n,0,:,:] *= maskMul2.astype('float32')
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
-
-        # put reference in fft domain
-        #if ops['pad_fft']:
-        #    cfRefImg   = np.conj(fft.fft2(refImg,
-        #                        [next_fast_len(Ly), next_fast_len(Lx)]))
-        #else:
         cfRefImg   = np.conj(fft.fft2(refImg))
         if ops['do_phasecorr']:
             absRef     = np.absolute(cfRefImg)
@@ -174,12 +166,7 @@ def phasecorr_worker(inputs):
 
 def shift_data_worker(inputs):
     ''' piecewise affine transformation of data using shifts from phasecorr_worker '''
-    if len(inputs)==4:
-        data,ops,ymax1,xmax1 = inputs
-    else:
-        data,ops,ymax1,xmax1,ymax,xmax = inputs
-        data = register.shift_data_worker((data, ymax, xmax, ops['refImg'].mean()))
-
+    data,ops,ymax1,xmax1 = inputs
     nblocks = ops['nblocks']
     if data.ndim<3:
         data = data[np.newaxis,:,:]
@@ -207,53 +194,6 @@ def shift_data_worker(inputs):
     for t in range(nimg):
         ycoor = (mshy + yup[t])#.flatten()
         xcoor = (mshx + xup[t])#.flatten()
-
         coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
         Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
-
-        #xf = xcoor.astype(np.int16)
-        #yf = ycoor.astype(np.int16)
-        #xc = xf + 1
-        #yc = yf + 1
-
-        #dy = ycoor-yf
-        #dx = xcoor-xf
-
-        #xf = np.maximum(0, np.minimum(Lx-1, xf))
-        #yf = np.maximum(0, np.minimum(Ly-1, yf))
-        #yc = np.maximum(0, np.minimum(Ly-1, yc))
-        #xc = np.maximum(0, np.minimum(Lx-1, xc))
-
-        #Y[t] += data[t][yf, xf] * (1 - dy) * (1 - dx)
-        #Y[t] += data[t][yf, xc] * (1 - dy) * dx
-        #Y[t] += data[t][yc, xf] * dy * (1 - dx)
-        #Y[t] += data[t][yc, xc] * dy * dx
-    #Y = np.reshape(Y, (nimg, Ly, Lx))
     return Y
-
-def shift_data(ops, data, ymax, xmax, ymax1, xmax1):
-    ''' first shift rigid by ymax and xmax'''
-    ''' then non-rigid shift of other channel data by ymax1 and xmax1 '''
-    if ops['num_workers']<0:
-        dreg = shift_data_woker((data, ops, ymax1, xmax1, ymax, xmax))
-    else:
-        if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        num_cores = ops['num_workers']
-        nimg = data.shape[0]
-        nbatch = int(np.ceil(nimg/float(num_cores)))
-        #nbatch = 50
-        inputs = np.arange(0, nimg, nbatch)
-        irange = []
-        dsplit = []
-        for i in inputs:
-            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ops, ymax1[ilist], xmax1[ilist],
-                                                  ymax[ilist], xmax[ilist]])
-        with Pool(num_cores) as p:
-            results = p.map(shift_data_worker, dsplit)
-        dreg = np.zeros_like(data)
-        for i in range(0,len(results)):
-            dreg[irange[i], :, :] = results[i]
-    return dreg

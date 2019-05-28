@@ -4,7 +4,6 @@ import time, os, shutil
 from suite2p import register, dcnv, classifier, utils
 from suite2p import celldetect2 as celldetect2
 from scipy import stats, io, signal
-from multiprocessing import Pool
 try:
     from haussmeister import haussio
     HAS_HAUS = True
@@ -39,7 +38,7 @@ def default_ops():
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
         # parallel settings
-        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
+        'num_workers': -1, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
         'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # bidirectional phase offset
         'do_bidiphase': False,

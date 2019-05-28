@@ -106,13 +106,13 @@ class RunWindow(QtGui.QDialog):
         self.opslist = []
         self.batch = False
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw', 'reg_tif','reg_tif_chan2']
+        outkeys = ['save_mat','combined','reg_tif','reg_tif_chan2']
+        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
-        labels = ['Main settings',['Output settings','Parallel'],'Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
+        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -124,8 +124,10 @@ class RunWindow(QtGui.QDialog):
                     'set a fixed number (in pixels) for the bidirectional phase offset',
                     'save output also as mat file "Fall.mat"',
                     'combine results across planes in separate folder "combined" at end of processing',
-                    '0 to select num_cores, -1 to disable parallelism, N to enforce value',
-                    'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    'if 1, registered tiffs are saved',
+                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
+                    #'0 to select num_cores, -1 to disable parallelism, N to enforce value',
+                    #'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
                     'if 1, registration is performed',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
@@ -134,8 +136,6 @@ class RunWindow(QtGui.QDialog):
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames',
                     'if 1, unregistered binary is kept in a separate file data_raw.bin',
-                    'if 1, registered tiffs are saved',
-                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',

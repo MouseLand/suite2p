@@ -15,7 +15,7 @@ except ImportError:
 
 import time
 
-def pclowhigh(mov, nlowhigh, nPC, num_cores):
+def pclowhigh(mov, nlowhigh, nPC):
     ''' get mean of top and bottom PC weights for nPC's of mov '''
     nframes, Ly, Lx = mov.shape
     tic=time.time()
@@ -24,44 +24,23 @@ def pclowhigh(mov, nlowhigh, nPC, num_cores):
     mimg = mov.mean(axis=0)
     mov -= mimg
     tic=time.time()
-    if num_cores > 0:
-        COV = np.zeros((nframes, nframes), np.float32)
-        ipix = int(np.ceil(Ly*Lx / num_cores))
-        dsplit = []
-        ix=0
-        for i in range(num_cores):
-            dsplit.append(mov[:, ix:min(ix+ipix, Ly*Lx)])
-            ix += ipix
-        with Pool(num_cores) as p:
-            results = p.map(cov_worker, dsplit)
-        for i in range(len(results)):
-            COV += results[i]
-        w,v = linalg.eigsh(COV, k = nPC)
-        w = w[::-1]
-        v = v[:, ::-1]
-    else:
-        pca = PCA(n_components=nPC).fit(mov.T)
-        v = pca.components_.T
-        w = pca.singular_values_
-
-    #print(time.time()-tic)
+    pca = PCA(n_components=nPC).fit(mov.T)
+    v = pca.components_.T
+    w = pca.singular_values_
     mov += mimg
     mov = np.transpose(np.reshape(mov, (-1, Ly, Lx)), (1,2,0))
     pclow  = np.zeros((nPC, Ly, Lx), np.float32)
     pchigh = np.zeros((nPC, Ly, Lx), np.float32)
     isort = np.argsort(v, axis=0)
     for i in range(nPC):
-        #pclow[i]  = mov[isort[:nlowhigh, i]].mean(axis=0)
         pclow[i] = mov[:,:,isort[:nlowhigh, i]].mean(axis=-1)
         pchigh[i] = mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
-        #pchigh[i] = mov[isort[-nlowhigh:, i]].mean(axis=0)
-        #print(time.time()-tic)
     return pclow, pchigh, w, v
 
 def cov_worker(mov):
     return mov @ mov.T
 
-def pc_register(pclow, pchigh, refImg, num_cores=-1, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
+def pc_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
     ''' register top and bottom of PCs to each other '''
     # registration settings
     ops = {
@@ -81,29 +60,12 @@ def pc_register(pclow, pchigh, refImg, num_cores=-1, do_phasecorr=True, smooth_s
         'refImg': refImg
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
-
     ops = utils.make_blocks(ops)
     X = np.zeros((nPC,3))
-    if num_cores>0:
-        dsplit = []
-        for i in range(nPC):
-            refImg = pclow[i]
-            Img = pchigh[i][np.newaxis, :, :]
-            dsplit.append([ops, refImg, Img])
-
-        ix=0
-        for k in range(int(np.ceil(nPC/num_cores))):
-            nc = min(num_cores, nPC - ix)
-            with Pool(nc) as p:
-                results = p.map(pc_register_worker, dsplit[ix:ix+nc])
-            for i in range(len(results)):
-                X[i+ix,:] = results[i]
-            ix += len(results)
-    else:
-        for i in range(nPC):
-            refImg = pclow[i]
-            Img = pchigh[i][np.newaxis, :, :]
-            X[i,:] = pc_register_worker([ops, refImg, Img])
+    for i in range(nPC):
+        refImg = pclow[i]
+        Img = pchigh[i][np.newaxis, :, :]
+        X[i,:] = pc_register_worker([ops, refImg, Img])
 
     return X
 
@@ -138,14 +100,13 @@ def get_pc_metrics(ops, use_red=False):
     num_workers = ops['num_workers']
     if num_workers == 0:
         num_workers = int(multiprocessing.cpu_count()/2)
-    num_cores = int(num_workers)
 
-    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC, num_cores)
+    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = pc_register(pclow, pchigh, ops['refImg'], num_cores, ops['do_phasecorr'],
+    X    = pc_register(pclow, pchigh, ops['refImg'], ops['do_phasecorr'],
                        ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X

@@ -5,8 +5,6 @@ from scipy import ndimage
 import math
 from suite2p import utils, register, sparsedetect
 import time
-import multiprocessing
-from multiprocessing import Pool
 from scipy.sparse import csr_matrix
 
 def tic():
@@ -150,12 +148,6 @@ def extractF(ops, stat, neuropil_masks, reg_file):
     ix = 0
     data = 1
 
-    if ops['num_workers']==0:
-        ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        ops['num_workers'] = min(4, ops['num_workers'])
-    num_cores = ops['num_workers']
-    nbatch = int(np.ceil(nimgbatch/float(num_cores)))
-
     ops['meanImg'] = np.zeros((Ly,Lx))
     k=0
     while data is not None:
@@ -168,25 +160,7 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         inds = ix+np.arange(0,nimg,1,int)
         ops['meanImg'] += data[~ops['badframes'][inds],:,:].mean(axis=0)
         data = np.reshape(data, (nimg,-1)).transpose()
-
-        if ops['num_workers']>0:
-            # divide data across workers
-            inputs = np.arange(0, nimg, nbatch)
-            irange,dsplit = [],[]
-            for i in inputs:
-                ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-                irange.append(ilist)
-                dsplit.append([data[:, ilist], stat, neuropil_masks])
-
-            with Pool(num_cores) as p:
-                results = p.map(F_worker, dsplit)
-
-            for i in range(0,len(results)):
-                F[:, irange[i]+ix] = results[i][0]
-                Fneu[:, irange[i]+ix] = results[i][1]
-        else:
-            F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])
-
+        F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])
         if ix%(5*nimg)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
         ix += nimg

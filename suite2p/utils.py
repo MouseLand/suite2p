@@ -629,7 +629,6 @@ def get_cells(ops):
         ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
     print(ops['diameter'])
-    #ops, stat = celldetect2.sourcery(ops)
     ops, stat = sparsedetect.sparsery(ops)
     print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
     # extract fluorescence and neuropil

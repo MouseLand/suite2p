@@ -105,11 +105,17 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         self.opslist = []
         self.batch = False
+        self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
+                   'batch_size', 'max_iterations', 'navg_frames_svd','inner_neuropil_radius',
+                   'outer_neuropil_radius']
+        self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
+                    'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
+                    'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap']
         tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = ['save_mat','combined','reg_tif','reg_tif_chan2']
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
+        cellkeys = ['roidetect','connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','ratio_neuropil','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
@@ -150,7 +156,6 @@ class RunWindow(QtGui.QDialog):
                     'adjust the automatically determined threshold by this scalar multiplier',
                     'maximum number of iterations for ROI detection',
                     'max number of binned frames for the SVD',
-                    'max number of SVD components to keep for ROI detection',
                     'ratio between neuropil basis size and cell radius',
                     'running mean subtraction with window of size "high_pass" (use low values for 1P)',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
@@ -356,7 +361,7 @@ class RunWindow(QtGui.QDialog):
 
     def compile_ops_db(self):
         for k,key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
@@ -458,7 +463,7 @@ class RunWindow(QtGui.QDialog):
     def save_text(self):
         for k in range(len(self.editlist)):
             key = self.keylist[k]
-            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
 
     def load_ops(self):
         print('loading ops')
@@ -596,7 +601,7 @@ class LineEdit(QtGui.QLineEdit):
         self.key = key
         #self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))
 
-    def get_text(self,okey):
+    def get_text(self,intkeys,boolkeys):
         key = self.key
         if key=='diameter' or key=='block_size':
             diams = self.text().replace(' ','').split(',')
@@ -605,10 +610,12 @@ class LineEdit(QtGui.QLineEdit):
             else:
                 okey = int(diams[0])
         else:
-            if type(okey) is float:
-                okey = float(self.text())
-            elif type(okey) is int or bool:
+            if key in intkeys:
                 okey = int(self.text())
+            elif key in boolkeys:
+                okey = bool(int(self.text()))
+            else:
+                okey = float(self.text())
         return okey
 
     def set_text(self,ops):

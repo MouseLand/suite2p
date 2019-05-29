@@ -19,13 +19,14 @@ def create_cell_masks(ops, stat):
             from stat: ypix, xpix, lam
             allow_overlap: boolean whether or not to include overlapping pixels in cell masks (default: False)
     outputs:
-        stat, cell_pix (Ly,Lx)
+        stat, cell_pix (Ly,Lx), cell_masks (ncells, Ly, Lx)
             assigned to stat: ipix (non-overlapping if chosen), radius (minimum of 3 pixels)
     '''
     Ly=ops['Ly']
     Lx=ops['Lx']
     ncells = len(stat)
     cell_pix = np.zeros((Ly,Lx))
+    cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
     for n in range(ncells):
         #if allow_overlap:
         overlap = np.zeros((stat[n]['npix'],), bool)
@@ -41,11 +42,12 @@ def create_cell_masks(ops, stat):
             stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
+            cell_masks[n, ypix, xpix] = lam / lam.sum()
         else:
             stat[n]['radius'] = 0
             stat[n]['aspect_ratio'] = 1
     cell_pix = np.minimum(1, cell_pix)
-    return stat, cell_pix
+    return stat, cell_pix, cell_masks
 
 def circle_neuropil_masks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat using gradually extending circles
@@ -131,12 +133,12 @@ def create_neuropil_masks(ops, stat, cell_pix):
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
     return neuropil_masks
 
-def extractF(ops, stat, neuropil_masks, reg_file):
+def extractF(ops, cell_masks, neuropil_masks, reg_file):
     nimgbatch = 1000
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = len(stat)
+    ncells = cell_masks.shape[0]
     k0 = time.time()
 
     F    = np.zeros((ncells, nframes),np.float32)
@@ -160,7 +162,10 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         inds = ix+np.arange(0,nimg,1,int)
         ops['meanImg'] += data[~ops['badframes'][inds],:,:].mean(axis=0)
         data = np.reshape(data, (nimg,-1)).transpose()
-        F[:,inds], Fneu[:,inds] = F_worker([data, stat, neuropil_masks])
+        #F[:,inds] = cell_masks.dot(data)
+        #Fneu[:,inds] = neuropil_masks.dot(data)
+        F[:,inds] = cell_masks @ data
+        Fneu[:,inds] = neuropil_masks @ data
         if ix%(5*nimg)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
         ix += nimg
@@ -171,15 +176,6 @@ def extractF(ops, stat, neuropil_masks, reg_file):
     reg_file.close()
     return F, Fneu, ops
 
-def F_worker(inputs):
-    data, stat, neuropil_masks = inputs
-    F = np.zeros((len(stat),data.shape[1]),np.float32)
-    for k in range(len(stat)):
-        F[k,:] = (data[stat[k]['ipix'],:] * stat[k]['lam'][:,np.newaxis]).sum(axis=0)
-    #Fneu = np.zeros((len(stat),data.shape[1]),np.float32)
-    Fneu = neuropil_masks.dot(data)
-    return F,Fneu
-
 def masks_and_traces(ops, stat):
     ''' main extraction function
         inputs: ops and stat
@@ -187,16 +183,17 @@ def masks_and_traces(ops, stat):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
-    stat,cell_pix  = create_cell_masks(ops, stat)
+    stat,cell_pix,cell_masks  = create_cell_masks(ops, stat)
     neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
     Ly=ops['Ly']
     Lx=ops['Lx']
-    neuropil_masks = csr_matrix(np.reshape(neuropil_masks, (-1,Ly*Lx)))
+    neuropil_masks = np.reshape(neuropil_masks, (-1,Ly*Lx))
+    cell_masks = np.reshape(cell_masks, (-1,Ly*Lx))
 
     stat0 = []
     for n in range(len(stat)):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
-    F,Fneu,ops=extractF(ops, stat0, neuropil_masks, ops['reg_file'])
+    F,Fneu,ops=extractF(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, ops2 = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']

@@ -225,7 +225,7 @@ def roi_detect_and_extract(ops):
         shutil.copy(classorig, classfile)
     print(classfile)
     if len(stat) > 0:
-        iscell = classifier.run(classfile, stat, keys=['npix_norm', 'compact', 'aspect_ratio', 'footprint'])
+        iscell = classifier.run(classfile, stat, keys=['npix_norm', 'compact'])
         ic = (iscell[:,0]>0.5).flatten().astype(np.bool)
         stat = stat[ic]
         iscell = iscell[ic, :]

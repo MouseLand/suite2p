@@ -18,12 +18,16 @@ class Classifier:
     def load(self, keys=None):
         try:
             model = np.load(self.classfile, allow_pickle=True).item()
-            self.stats = model['stats']
-            self.iscell = model['iscell']
             if keys is None:
                 self.keys = model['keys']
+                self.stats = model['stats']
             else:
-                self.keys = keys
+                model['keys'] = np.array(model['keys'])
+                ikey = np.isin(model['keys'], keys)
+                self.keys = model['keys'][ikey].tolist()
+                self.stats = model['stats'][:,ikey]
+            self.iscell = model['iscell']
+            print(self.keys)
             self.loaded = True
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: incorrect classifier file')

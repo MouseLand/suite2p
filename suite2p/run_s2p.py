@@ -1,8 +1,7 @@
 import os
 import numpy as np
 import time, os, shutil
-from suite2p import register, dcnv, classifier, utils
-from suite2p import celldetect2 as celldetect2
+from suite2p import register, dcnv, classifier, utils, roiextract
 from scipy import stats, io, signal
 try:
     from haussmeister import haussio
@@ -203,32 +202,20 @@ def run_s2p(ops={},db={}):
             roidetect = ops['roidetect']
         else:
             roidetect = True
+        ######## CELL DETECTION AND ROI EXTRACTION ##############
         if roidetect:
-            ops1[ipl] = utils.get_cells(ops1[ipl])
+            ops1[ipl] = roiextract.roi_detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
+
+            ######### SPIKE DECONVOLUTION ###############
             F = np.load(os.path.join(fpath,'F.npy'))
             Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
             dF = F - ops['neucoeff']*Fneu
             spks = dcnv.oasis(dF, ops)
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
             print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
-            stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-            # apply default classifier
-            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                "classifiers/classifier_user.npy",
-            )
-            if not os.path.isfile(classfile):
-                classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                    "classifiers/classifier.npy"
-                )
-                shutil.copy(classorig, classfile)
-            print(classfile)
-            if len(stat) > 0:
-                iscell = classifier.run(classfile, stat)
-            else:
-                iscell = np.zeros((0,2))
-            np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:
                 matpath = os.path.join(ops['save_path'],'Fall.mat')

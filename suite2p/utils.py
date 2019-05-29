@@ -621,53 +621,6 @@ def sub2ind(array_shape, rows, cols):
     inds = rows * array_shape[1] + cols
     return inds
 
-def get_cells(ops):
-    i0 = tic()
-    ops['diameter'] = np.array(ops['diameter'])
-    if ops['diameter'].size<2:
-        ops['diameter'] = int(np.array(ops['diameter']))
-        ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
-    ops['diameter'] = np.array(ops['diameter']).astype('int32')
-    print(ops['diameter'])
-    ops, stat = sparsedetect.sparsery(ops)
-    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
-    # extract fluorescence and neuropil
-    F, Fneu, F_chan2, Fneu_chan2, ops, stat = roiextract.masks_and_traces(ops, stat)
-    print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
-    # subtract neuropil
-    dF = F - ops['neucoeff'] * Fneu
-    # compute activity statistics for classifier
-    sk = stats.skew(dF, axis=1)
-    sd = np.std(dF, axis=1)
-    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
-    npix /= np.mean(npix[:1000])
-    for k in range(F.shape[0]):
-        stat[k]['skew'] = sk[k]
-        stat[k]['std']  = sd[k]
-        stat[k]['npix_norm'] = npix[k]
-    # if second channel, detect bright cells in second channel
-    fpath = ops['save_path']
-    if 'meanImg_chan2' in ops:
-        if 'chan2_thres' not in ops:
-            ops['chan2_thres'] = 0.65
-        ops, redcell = chan2detect.detect(ops, stat)
-        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
-        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
-        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
-
-    # add enhanced mean image
-    ops = enhanced_mean_image(ops)
-    # save ops
-    np.save(ops['ops_path'], ops)
-    # save results
-    np.save(os.path.join(fpath,'F.npy'), F)
-    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
-    np.save(os.path.join(fpath,'stat.npy'), stat)
-    iscell = np.ones((len(stat),2))
-    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
-    print('results saved to %s'%ops['save_path'])
-    return ops
-
 def combined(ops1):
     '''
     Combines all the entries in ops1 into a single result file.

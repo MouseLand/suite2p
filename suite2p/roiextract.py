@@ -3,9 +3,11 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, register, sparsedetect
+from suite2p import utils, register, sparsedetect, classifier
 import time
 from scipy.sparse import csr_matrix
+from scipy import stats
+import os
 
 def tic():
     return time.time()
@@ -26,7 +28,7 @@ def create_cell_masks(ops, stat):
     Lx=ops['Lx']
     ncells = len(stat)
     cell_pix = np.zeros((Ly,Lx))
-    cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
+    #cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
     for n in range(ncells):
         #if allow_overlap:
         overlap = np.zeros((stat[n]['npix'],), bool)
@@ -42,12 +44,12 @@ def create_cell_masks(ops, stat):
             stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
-            cell_masks[n, ypix, xpix] = lam / lam.sum()
+            #cell_masks[n, ypix, xpix] = lam / lam.sum()
         else:
             stat[n]['radius'] = 0
             stat[n]['aspect_ratio'] = 1
     cell_pix = np.minimum(1, cell_pix)
-    return stat, cell_pix, cell_masks
+    return stat, cell_pix#, cell_masks
 
 def circle_neuropil_masks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat using gradually extending circles
@@ -133,12 +135,12 @@ def create_neuropil_masks(ops, stat, cell_pix):
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
     return neuropil_masks
 
-def extractF(ops, cell_masks, neuropil_masks, reg_file):
+def extractF(ops, stat, neuropil_masks, reg_file):
     nimgbatch = 1000
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = cell_masks.shape[0]
+    ncells = neuropil_masks.shape[0]
     k0 = time.time()
 
     F    = np.zeros((ncells, nframes),np.float32)
@@ -162,9 +164,9 @@ def extractF(ops, cell_masks, neuropil_masks, reg_file):
         inds = ix+np.arange(0,nimg,1,int)
         ops['meanImg'] += data[~ops['badframes'][inds],:,:].mean(axis=0)
         data = np.reshape(data, (nimg,-1)).transpose()
-        #F[:,inds] = cell_masks.dot(data)
-        #Fneu[:,inds] = neuropil_masks.dot(data)
-        F[:,inds] = cell_masks @ data
+        # extract traces and neuropil
+        for n in range(ncells):
+            F[n,inds] = (data[stat[n]['ipix'],:] * stat[n]['lam'][:,np.newaxis]).sum(axis=0)
         Fneu[:,inds] = neuropil_masks @ data
         if ix%(5*nimg)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
@@ -183,17 +185,16 @@ def masks_and_traces(ops, stat):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
-    stat,cell_pix,cell_masks  = create_cell_masks(ops, stat)
+    stat,cell_pix  = create_cell_masks(ops, stat)
     neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
     Ly=ops['Ly']
     Lx=ops['Lx']
     neuropil_masks = np.reshape(neuropil_masks, (-1,Ly*Lx))
-    cell_masks = np.reshape(cell_masks, (-1,Ly*Lx))
 
     stat0 = []
     for n in range(len(stat)):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
-    F,Fneu,ops=extractF(ops, cell_masks, neuropil_masks, ops['reg_file'])
+    F,Fneu,ops = extractF(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, ops2 = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
@@ -201,3 +202,72 @@ def masks_and_traces(ops, stat):
         F_chan2, Fneu_chan2 = [], []
 
     return F, Fneu, F_chan2, Fneu_chan2, ops, stat
+
+def roi_detect_and_extract(ops):
+    i0 = tic()
+    ops['diameter'] = np.array(ops['diameter'])
+    if ops['diameter'].size<2:
+        ops['diameter'] = int(np.array(ops['diameter']))
+        ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
+    ops['diameter'] = np.array(ops['diameter']).astype('int32')
+    print(ops['diameter'])
+    ops, stat = sparsedetect.sparsery(ops)
+    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
+
+    ### apply default classifier ###
+    classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+        "classifiers/classifier_user.npy",
+    )
+    if not os.path.isfile(classfile):
+        classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier.npy"
+        )
+        shutil.copy(classorig, classfile)
+    print(classfile)
+    if len(stat) > 0:
+        iscell = classifier.run(classfile, stat, keys=['npix_norm', 'compact', 'aspect_ratio', 'footprint'])
+        ic = (iscell[:,0]>0.5).flatten().astype(np.bool)
+        stat = stat[ic]
+        iscell = iscell[ic, :]
+    else:
+        iscell = np.zeros((0,2))
+    np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+
+    stat = sparsedetect.get_overlaps(stat,ops)
+    #stat, ix = remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])
+
+    # extract fluorescence and neuropil
+    F, Fneu, F_chan2, Fneu_chan2, ops, stat = masks_and_traces(ops, stat)
+    print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
+    # subtract neuropil
+    dF = F - ops['neucoeff'] * Fneu
+
+    # compute activity statistics for classifier
+    sk = stats.skew(dF, axis=1)
+    sd = np.std(dF, axis=1)
+    for k in range(F.shape[0]):
+        stat[k]['skew'] = sk[k]
+        stat[k]['std']  = sd[k]
+
+    # if second channel, detect bright cells in second channel
+    fpath = ops['save_path']
+    if 'meanImg_chan2' in ops:
+        if 'chan2_thres' not in ops:
+            ops['chan2_thres'] = 0.65
+        ops, redcell = chan2detect.detect(ops, stat)
+        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
+        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+
+    # add enhanced mean image
+    ops = utils.enhanced_mean_image(ops)
+    # save ops
+    np.save(ops['ops_path'], ops)
+    # save results
+    np.save(os.path.join(fpath,'F.npy'), F)
+    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+    np.save(os.path.join(fpath,'stat.npy'), stat)
+    iscell = np.ones((len(stat),2))
+    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
+    print('results saved to %s'%ops['save_path'])
+    return ops

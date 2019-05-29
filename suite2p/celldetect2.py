@@ -13,27 +13,6 @@ def tic():
 def toc(i0):
     return time.time() - i0
 
-def get_sdmov(mov, ops):
-    ix = 0
-    batch_size = 500
-    if len(mov.shape)>2:
-        nbins,Ly, Lx = mov.shape
-        npix = (Ly , Lx)
-    else:
-        nbins, npix = mov.shape
-    sdmov = np.zeros(npix, 'float32')
-    while 1:
-        inds = ix + np.arange(0,batch_size)
-        inds = inds[inds<nbins]
-        if inds.size==0:
-            break
-        sdmov += np.sum(np.diff(mov[inds, :], axis = 0)**2, axis = 0)
-        ix = ix + batch_size
-    sdmov = (sdmov/nbins)**0.5
-    sdmov = np.maximum(1e-10,sdmov)
-    #sdmov = np.mean(np.diff(mov, axis = 0)**2, axis = 0)**.5
-    return sdmov
-
 def getSVDdata(ops):
     mov = get_mov(ops)
     nbins, Lyc, Lxc = np.shape(mov)
@@ -84,79 +63,6 @@ def getSVDproj(ops, u):
         U = np.transpose(mov, (1, 2, 0)).copy()
     return U, sdmov
 
-def get_mov(ops):
-    i0 = tic()
-    badframes = False
-    if 'badframes' in ops:
-        badframes = True
-        nframes = ops['nframes'] - ops['badframes'].sum()
-    else:
-        nframes = ops['nframes']
-    bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
-    bin_min = max(bin_min, 1)
-    bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
-    nt0 = max(bin_min, bin_tau)
-    ops['navg_frames_svd'] = np.floor(nframes/nt0).astype('int32')
-    print('nt0=%2.2d'%nt0)
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    Lyc = ops['yrange'][-1] - ops['yrange'][0]
-    Lxc = ops['xrange'][-1] - ops['xrange'][0]
-
-    nimgbatch = 500
-    nimgbatch = min(nframes, nimgbatch)
-    nimgbatch = nt0 * np.floor(nimgbatch/nt0)
-    nbytesread = np.int64(Ly*Lx*nimgbatch*2)
-    mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
-    max_proj = np.zeros((Lyc, Lxc), np.float32)
-    print(mov.shape)
-    ix = 0
-    idata = 0
-    # load and bin data
-    with open(ops['reg_file'], 'rb') as reg_file:
-        while True:
-            buff = reg_file.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            buff = []
-            nimgd = int(np.floor(data.size / (Ly*Lx)))
-            if nimgd < nt0:
-                break
-            data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
-            dinds = idata + np.arange(0,data.shape[0],1,int)
-            idata+=data.shape[0]
-            if badframes:
-                data = data[~ops['badframes'][dinds],:,:]
-            # bin data
-            nimgd = data.shape[0]
-            if nimgd < nimgbatch:
-                nmax = int(np.floor(nimgd / nt0) * nt0)
-                data = data[:nmax,:,:]
-            dbin = np.reshape(data, (-1,nt0,Ly,Lx))
-            dbin = dbin.mean(axis=1)
-            #dbin = np.squeeze(dbin, axis=1)
-            #dbin -= dbin.mean(axis=0)
-            inds = ix + np.arange(0,dbin.shape[0])
-            # crop into valid area
-            dbin = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-            mov[inds,:,:] = dbin
-            max_proj = np.maximum(max_proj, dbin.max(axis=0))
-            ix += dbin.shape[0]
-    mov = mov[:ix,:,:]
-    #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
-    if ops['high_pass']<10:
-        for j in range(mov.shape[1]):
-            mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
-    else:
-        i0 = 0
-        while 1:
-            irange = i0 + np.arange(0,int(ops['high_pass']))
-            irange = irange[irange<mov.shape[0]]
-            if len(irange)>0:
-                mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
-                i0 += len(irange)
-            else:
-                break
-    return mov, max_proj
 
 def getStU(ops, U):
     Lyc, Lxc, nbins = np.shape(U)
@@ -362,59 +268,6 @@ def get_stat(ops, stat, Ucell, codes):
         if np.isnan(stat[n]['footprint']):
             stat[n]['footprint'] = 0
     return stat
-
-def get_overlaps(stat, ops):
-    '''computes overlapping pixels from ROIs in stat
-    inputs:
-        stat, Ly, Lx
-    outputs:
-        stat
-        assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
-    '''
-    Ly, Lx = ops['Ly'], ops['Lx']
-    stat2 = []
-    ncells = len(stat)
-    mask = np.zeros((Ly,Lx))
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        stat[n]['overlap'] = mask[ypix,xpix] > 1.5
-        ypix = stat[n]['ypix'][~stat[n]['overlap']]
-        xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        stat2.append(stat[n])
-    return stat2
-
-def remove_overlaps(stat, ops, Ly, Lx):
-    '''removes overlaps iteratively
-    '''
-    ncells = len(stat)
-    mask = np.zeros((Ly,Lx))
-    ix = [k for k in range(ncells)]
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
-    while 1:
-        O = np.zeros((len(stat),1))
-        for n in range(len(stat)):
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
-            O[n] = np.mean(mask[ypix,xpix] > 1.5)
-        #i = np.argmax(O)
-        inds = (O > ops['max_overlap']).nonzero()[0]
-        if len(inds) > 0:
-            i = np.max(inds)
-            ypix = stat[i]['ypix']
-            xpix = stat[i]['xpix']
-            mask[ypix,xpix] -= 1
-            del stat[i], ix[i]
-        else:
-            break
-    return stat, ix
 
 def create_cell_masks(ops, stat, Ly, Lx, allow_overlap=False):
     '''creates cell masks for ROIs in stat and computes radii

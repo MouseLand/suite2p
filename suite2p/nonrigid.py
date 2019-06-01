@@ -6,6 +6,8 @@ from scipy.ndimage import gaussian_filter
 from skimage.transform import warp#, PiecewiseAffineTransform
 from suite2p import register
 import time
+import multiprocessing
+from multiprocessing import Pool
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -160,9 +162,35 @@ def phasecorr_worker(inputs):
             ymax1[:,n] = ymax
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
-    Y = shift_data_worker((data, ops, ymax1, xmax1))
+    Y = shift_data(data, ops, ymax1, xmax1)
     #Y=data
     return Y, ymax1, xmax1, cmax1
+
+def shift_data(data, ops, ymax1, xmax1):
+    ''' split into workers across frames '''
+    ops['num_workers'] = 0
+    if ops['num_workers']<0:
+        dreg = shift_data_worker(data, ops, ymax1, xmax1)
+    else:
+        if ops['num_workers']<1:
+            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
+        num_cores = ops['num_workers']
+        nimg = data.shape[0]
+        nbatch = int(np.ceil(nimg/float(num_cores)))
+        #nbatch = 50
+        inputs = np.arange(0, nimg, nbatch)
+        irange = []
+        dsplit = []
+        for i in inputs:
+            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
+            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
+            dsplit.append([data[ilist,:, :], ops, ymax1[ilist,:], xmax1[ilist,:]])
+        with Pool(num_cores) as p:
+            results = p.map(shift_data, dsplit)
+        dreg = np.zeros_like(data)
+        for i in range(0,len(results)):
+            dreg[irange[i], :, :] = results[i]
+    return dreg
 
 def shift_data_worker(inputs):
     ''' piecewise affine transformation of data using shifts from phasecorr_worker '''

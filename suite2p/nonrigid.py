@@ -186,7 +186,7 @@ def shift_data(data, ops, ymax1, xmax1):
             irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
             dsplit.append([data[ilist,:, :], ops, ymax1[ilist,:], xmax1[ilist,:]])
         with Pool(num_cores) as p:
-            results = p.map(shift_data, dsplit)
+            results = p.map(shift_data_worker, dsplit)
         dreg = np.zeros_like(data)
         for i in range(0,len(results)):
             dreg[irange[i], :, :] = results[i]

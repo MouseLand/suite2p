@@ -275,6 +275,7 @@ def phasecorr(data, refAndMasks, ops):
     ''' compute registration offsets
         uses phase correlation if ops['do_phasecorr'] '''
     nimg, Ly, Lx = data.shape
+    print(nimg)
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
@@ -293,9 +294,8 @@ def phasecorr(data, refAndMasks, ops):
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.float32)
     else:
         X = data.copy().astype(np.float32)
-    # mask for X to set edges to zero (especially useful in 1P)
-    X *= maskMul
-    X += maskOffset
+    #X *= maskMul
+    #X += maskOffset
     print(toc(t0))
 
     # shifts and corrmax
@@ -306,14 +306,19 @@ def phasecorr(data, refAndMasks, ops):
     # placeholder variables for numexpr
     xfft = np.empty_like(cfRefImg)
     epsm = np.empty_like(cfRefImg)
+    x = np.empty((Ly,Lx), np.float32)
 
     # phase correlation operation
     xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg/(epsm + abs(xfft*cfRefImg))' )
+    # mask for X to set edges to zero (especially useful in 1P)
+    xmask = ne3.NumExpr( 'x = x*maskMul + maskOffset' )
     epsm = eps0
     print(toc(t0))
 
     # loop over frames and compute phase corr and max phase corr shift
     for t in np.arange(nimg):
+        x = X[t]
+        xmask(x=x, maskMul=maskMul, maskOffset=maskOffset)
         xfft = fft2(X[t], s=(ly,lx)) # fft of frame
         # phase corr with reference image
         xcorr2( xfft=xfft, cfRefImg=cfRefImg, epsm=epsm)

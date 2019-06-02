@@ -9,6 +9,11 @@ from scipy.signal import medfilt
 from scipy.ndimage import laplace
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
+import gc
+import multiprocessing
+N_threads = int(multiprocessing.cpu_count() / 2)
+import numexpr3 as ne3
+ne3.set_nthreads(N_threads)
 
 HAS_FFTW=False
 try:
@@ -249,9 +254,8 @@ def getCCmax(cc, lcorr):
     ymax, xmax = ymax-lcorr, xmax-lcorr
     return ymax,xmax,cmax
 
-def shift_data_worker(inputs):
+def shift_data(X, ymax, xmax, m0):
     ''' rigid shift of X by ymax and xmax '''
-    X, ymax, xmax, m0 = inputs
     ymax = ymax.flatten()
     xmax = xmax.flatten()
     if X.ndim<3:
@@ -267,46 +271,69 @@ def shift_data_worker(inputs):
         X[n][:, xrange] = m0
     return X
 
-def phasecorr_worker(inputs):
-    ''' compute registration offsets and shift data '''
-    data, refAndMasks, ops = inputs
-    k=tic()
-    if ops['nonrigid'] and len(refAndMasks)>3:
-        refAndMasksNR = refAndMasks[3:]
-        refAndMasks = refAndMasks[:3]
-        nr = True
-    else:
-        nr = False
+def phasecorr(data, refAndMasks, ops):
+    ''' compute registration offsets
+        uses phase correlation if ops['do_phasecorr'] '''
     nimg, Ly, Lx = data.shape
-    k=tic()
+    maskMul    = refAndMasks[0]
+    maskOffset = refAndMasks[1]
+    cfRefImg   = refAndMasks[2].squeeze()
+    ly,lx = cfRefImg.shape[-2:]
+    lyhalf = int(np.floor(ly/2))
+    lxhalf = int(np.floor(lx/2))
+
+    t0 = tic()
+    # maximum registration shift allowed
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)-lpad))
+    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)))
+
+    # preprocessing for 1P recordings
     if ops['1Preg']:
-        data1 = data.copy().astype(np.float32)
-        data1 = one_photon_preprocess(data1, ops)
-        cc = correlation_map(data1, refAndMasks, ops['do_phasecorr'])
-        del data1
+        #data = data.copy().astype(np.float32)
+        X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.float32)
     else:
-        cc = correlation_map(data, refAndMasks, ops['do_phasecorr'])
-    #print(toc(k))
-    # get ymax,xmax, cmax not upsampled
-    ymax, xmax, cmax = getCCmax(cc, lcorr)
-    #print(toc(k))
-    #print(ymax)
-    Y = shift_data_worker((data.copy(), ymax, xmax, ops['refImg'].mean()))
-    #Y = data
-    #print(toc(k))
-    yxnr = []
-    if nr:
-        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasksNR, ops))
-        yxnr = [ymax1,xmax1,cmax1]
-    return Y, ymax, xmax, cmax, yxnr
+        X = data.copy().astype(np.float32)
+    # mask for X to set edges to zero (especially useful in 1P)
+    X *= maskMul
+    X += maskOffset
+    print(toc(t0))
+
+    # shifts and corrmax
+    ymax = np.zeros((nimg,), np.int32)
+    xmax = np.zeros((nimg,), np.int32)
+    cmax = np.zeros((nimg,), np.int32)
+
+    # placeholder variables for numexpr
+    xfft = np.empty_like(cfRefImg)
+    epsm = np.empty_like(cfRefImg)
+
+    # phase correlation operation
+    xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg/(epsm + abs(xfft*cfRefImg))' )
+    epsm = eps0
+    print(toc(t0))
+
+    # loop over frames and compute phase corr and max phase corr shift
+    for t in np.arange(nimg):
+        xfft = fft2(X[t]) # fft of frame
+        # phase corr with reference image
+        xcorr2( xfft=xfft, cfRefImg=cfRefImg, epsm=epsm)
+        output = np.real(ifft2( xfft ))
+        output = fft.fftshift(output, axes=(-2,-1))
+        cc = output[np.ix_(np.arange(lyhalf-lcorr,lyhalf+lcorr+1,1,int),
+                        np.arange(lxhalf-lcorr,lxhalf+lcorr+1,1,int))]
+        # max of phase corr
+        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc, axis=None), cc.shape)
+        cmax[t] = cc[ymax[t], xmax[t]]
+    ymax, xmax = ymax-lcorr, xmax-lcorr
+    gc.collect()
+    print(toc(t0))
+    return ymax, xmax, cmax
 
 def register_data(data, refAndMasks, ops):
     ''' register data matrix to reference image and shift '''
     ''' need reference image ops['refImg']'''
     ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
-    ''' calls phasecorr_worker '''
+    ''' calls phasecorr '''
     if ops['bidiphase']!=0:
         data = shift_bidiphase(data.copy(), ops['bidiphase'])
     nr=False
@@ -314,7 +341,15 @@ def register_data(data, refAndMasks, ops):
     if ops['nonrigid'] and len(refAndMasks)>3:
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
-    Y, ymax, xmax, cmax, yxnr = phasecorr_worker((data, refAndMasks, ops))
+
+    # rigid registration
+    ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
+    Y = shift_data(data.copy(), ymax, xmax, ops['refImg'].mean())
+
+    # non-rigid registration
+    if nr:
+        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasks[3:], ops))
+        yxnr = [ymax1,xmax1,cmax1]
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -440,7 +475,7 @@ def refine_init(ops, frames, refImg):
         # shift data requires an array of shifts
         dy = np.array([int(np.round(dy))])
         dx = np.array([int(np.round(dx))])
-        refImg = shift_data_worker((refImg, dy, dx, refImg.mean())).squeeze()
+        refImg = shift_data(refImg, dy, dx, refImg.mean()).squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 

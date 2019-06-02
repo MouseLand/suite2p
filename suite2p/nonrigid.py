@@ -13,6 +13,11 @@ eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
 
+def tic():
+    return time.time()
+def toc(i0):
+    return time.time() - i0
+
 def linear_interp(iy, ix, yb, xb, f):
     ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
     ''' assumes f is 3D and last two dimensions are yb,xb '''
@@ -91,6 +96,7 @@ def phasecorr_worker(inputs):
     ''' loop through blocks and compute phase correlations'''
     data, refAndMasks, ops = inputs
     nimg, Ly, Lx = data.shape
+    t0=tic()
     maxregshift = np.round(ops['maxregshiftNR'])
     LyMax = np.diff(np.array(ops['yblock']))
     ly = int(np.diff(ops['yblock'][0]))
@@ -116,6 +122,7 @@ def phasecorr_worker(inputs):
         data_block[n,:,:,:] = data1[np.ix_(np.arange(0,nimg).astype(int),yind,xind)]
     del data1
     cc1 = register.correlation_map(data_block, refAndMasks, ops['do_phasecorr'])
+    print('fft %2.2f'%toc(t0))
     lyhalf = int(np.floor(cc1.shape[-2]/2))
     lxhalf = int(np.floor(cc1.shape[-1]/2))
     cc0 = cc1[:, :, (lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
@@ -138,7 +145,7 @@ def phasecorr_worker(inputs):
             if j>0:
                 ccsm[n, ism, :, :] = cc
             snr[ism] = register.getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
-
+    print('snr %2.2f'%toc(t0))
     for n in range(nb):
         cc = ccsm[n,:,:,:]
         ymax, xmax, cmax = register.getXYup(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
@@ -149,7 +156,7 @@ def phasecorr_worker(inputs):
         xmax1[:,n] = xmax
         cmax1[:,n] = cmax
         #snr1[:,n] = snr
-
+    print('xyup %2.2f'%toc(t0))
     # smooth cc across blocks if sig>0
     # currently not used
     sig = 0
@@ -163,6 +170,7 @@ def phasecorr_worker(inputs):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
     Y = shift_data(data, ops, ymax1, xmax1)
+    print('shift %2.2f'%toc(t0))    
     #Y=data
     return Y, ymax1, xmax1, cmax1
 
@@ -170,7 +178,7 @@ def shift_data(data, ops, ymax1, xmax1):
     ''' split into workers across frames '''
     ops['num_workers'] = 0
     if ops['num_workers']<0:
-        dreg = shift_data_worker(data, ops, ymax1, xmax1)
+        dreg = shift_data_worker((data, ops, ymax1, xmax1))
     else:
         if ops['num_workers']<1:
             ops['num_workers'] = int(multiprocessing.cpu_count()/2)

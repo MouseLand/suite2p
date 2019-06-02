@@ -301,7 +301,7 @@ def phasecorr(data, refAndMasks, ops):
     # shifts and corrmax
     ymax = np.zeros((nimg,), np.int32)
     xmax = np.zeros((nimg,), np.int32)
-    cmax = np.zeros((nimg,), np.int32)
+    cmax = np.zeros((nimg,), np.float32)
 
     # placeholder variables for numexpr
     xfft = np.empty_like(cfRefImg)
@@ -314,7 +314,7 @@ def phasecorr(data, refAndMasks, ops):
 
     # loop over frames and compute phase corr and max phase corr shift
     for t in np.arange(nimg):
-        xfft = fft2(X[t]) # fft of frame
+        xfft = fft2(X[t], s=(ly,lx)) # fft of frame
         # phase corr with reference image
         xcorr2( xfft=xfft, cfRefImg=cfRefImg, epsm=epsm)
         output = np.real(ifft2( xfft ))

@@ -167,8 +167,8 @@ def prepare_masks(refImg1, ops):
 def phasecorr(data, refAndMasks, ops):
     ''' loop through blocks and compute phase correlations'''
     nimg, Ly, Lx = data.shape
-    maskMul    = refAndMasks[0]
-    maskOffset = refAndMasks[1]
+    maskMul    = refAndMasks[0].squeeze()
+    maskOffset = refAndMasks[1].squeeze()
     cfRefImg   = refAndMasks[2].squeeze()
     t0=tic()
     LyMax = np.diff(np.array(ops['yblock']))
@@ -184,9 +184,9 @@ def phasecorr(data, refAndMasks, ops):
 
     # preprocessing for 1P recordings
     if ops['1Preg']:
-        data1 = register.one_photon_preprocess(data.copy().astype(np.float32), ops)
+        X = register.one_photon_preprocess(data.copy().astype(np.float32), ops)
     else:
-        data1 = data.astype(np.float32)
+        X = data.astype(np.float32)
 
     # shifts and corrmax
     ymax1 = np.zeros((nimg,nb),np.float32)
@@ -194,39 +194,41 @@ def phasecorr(data, refAndMasks, ops):
     xmax1 = np.zeros((nimg,nb),np.float32)
 
     # placeholder variables for numpexpr
-    xfft = np.empty_like(cfRefImg[0])
-    epsm = np.empty_like(cfRefImg[0])
-    cfRefImg0 = np.empty_like(cfRefImg[0])
-    x = np.empty((ly,lx), np.float32)
-    maskMul0 = np.empty((ly,lx), np.float32)
-    maskOffset0 = np.empty((ly,lx), np.float32)
+    #xfft = np.empty_like(cfRefImg[0])
+    #epsm = np.empty_like(cfRefImg[0])
+    #cfRefImg0 = np.empty_like(cfRefImg[0])
+    #x = np.empty((ly,lx), np.float32)
+    #maskMul0 = np.empty((ly,lx), np.float32)
+    #maskOffset0 = np.empty((ly,lx), np.float32)
 
     # compute phase-correlation of blocks
-    xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg0/(epsm + abs(xfft*cfRefImg0))' )
+    #xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg0/(epsm + abs(xfft*cfRefImg0))' )
     # mask for X to set edges to zero (especially useful in 1P)
-    xmask = ne3.NumExpr( 'x = x*maskMul0 + maskOffset0' )
-    epsm = eps0
+    #xmask = ne3.NumExpr( 'x = x*maskMul0 + maskOffset0' )
+    #epsm = eps0
 
-    cc0 = np.zeros((nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
-    snr = np.zeros((nb,), np.float32)
+    cc0 = np.zeros((nimg, nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
+    snr = np.zeros((nimg, nb), np.float32)
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
-    for t in range(nimg):
-        for n in range(nb):
-            yind = ops['yblock'][n]
-            yind = np.arange(yind[0],yind[-1]).astype(int)
-            xind = ops['xblock'][n]
-            xind = np.arange(xind[0],xind[-1]).astype(int)
-            x = data1[t][np.ix_(yind, xind)]
-            #xmask(x=x, maskMul0=maskMul[n], maskOffset0=maskOffset[n])
-            xfft = register.fft2(x)
-            xcorr2( xfft=xfft, cfRefImg0=cfRefImg[n], epsm=epsm)
-            output = np.real(register.ifft2( xfft ))
+    Y = np.zeros((nimg, ly, lx), 'complex64')
+    for n in range(nb):
+        yind = ops['yblock'][n]
+        yind = np.arange(yind[0],yind[-1]).astype(int)
+        xind = ops['xblock'][n]
+        xind = np.arange(xind[0],xind[-1]).astype(int)
+        Xt = X[np.ix_(np.arange(0,nimg,1,int), yind, xind)]
+        Xt *= maskMul[n]
+        Xt += maskOffset[n]
+        for t in range(nimg):
+            Y[t] = register.fft2(Xt[t])
+        Y = register.apply_dotnorm(Y, cfRefImg[n])
+        for t in range(nimg):
+            output = np.real(register.ifft2( Y[t] ))
             output = fft.fftshift(output, axes=(-2,-1))
             cc = output[np.ix_(np.arange(lyhalf-lcorr-lpad,lyhalf+lcorr+1+lpad,1,int),
                             np.arange(lxhalf-lcorr-lpad,lxhalf+lcorr+1+lpad,1,int))]
-            cc0[n] = cc.copy()
-
+            cc0[t,n] = cc.copy()
             # compute SNR
             ix = np.argmax(cc[np.ix_(np.arange(lpad, cc.shape[-2]-lpad, 1, int),
                                      np.arange(lpad, cc.shape[-1]-lpad, 1, int))], axis=None)
@@ -235,16 +237,17 @@ def phasecorr(data, refAndMasks, ops):
             # set to 0 all pts +-lpad from ymax,xmax
             cc[np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))] = 0
             Xmax  = np.maximum(0, np.max(cc, axis=None))
-            snr[n] = X1max / Xmax
-        ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0, (cc0.shape[0], -1)), cc0.shape)
-        cc0[snr < ops['snr_thresh']] = ccsm[snr < ops['snr_thresh']]
+            snr[t,n] = X1max / (1e-5 + Xmax)
+    for t in range(nimg):
+        ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0[t], (cc0.shape[1], -1)), cc0.shape[1:])
+        cc0[t][snr[t] < ops['snr_thresh']] = ccsm[snr[t] < ops['snr_thresh']]
         del ccsm
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
-            ix = np.argmax(cc0[n][np.ix_(np.arange(lpad, cc.shape[-2]-lpad, 1, int),
-                                     np.arange(lpad, cc.shape[-1]-lpad, 1, int))], axis=None)
+            ix = np.argmax(cc0[t,n][np.ix_(np.arange(lpad, cc.shape[-2]-lpad, 1, int),
+                                    np.arange(lpad, cc.shape[-1]-lpad, 1, int))], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            ccmat[n] = cc0[n][np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))]
+            ccmat[n] = cc0[t,n][np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))]
             ymax[n], xmax[n] = ym, xm
         ccmat = np.reshape(ccmat, (nb,-1))
         ccb = np.dot(ccmat, Kmat)
@@ -254,7 +257,7 @@ def phasecorr(data, refAndMasks, ops):
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax - lyhalf, xmax1[t] + xmax - lxhalf
-    del data1
+    del Y
     print('fft %2.2f'%toc(t0))
     #cc0 = cc0.reshape((cc0.shape[0], -1))
     #cc2 = []
@@ -293,7 +296,7 @@ def phasecorr(data, refAndMasks, ops):
 
 def shift_data(data, ops, ymax1, xmax1):
     ''' split into workers across frames '''
-    ops['num_workers'] = 0
+    ops['num_workers'] = -1
     if ops['num_workers']<0:
         dreg = shift_data_worker((data, ops, ymax1, xmax1))
     else:

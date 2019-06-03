@@ -17,6 +17,14 @@ N_threads = int(multiprocessing.cpu_count() / 2)
 import numexpr3 as ne3
 ne3.set_nthreads(N_threads)
 
+HAS_GPU=False
+try:
+    import cupy as cp
+    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan
+    HAS_GPU=True
+except ImportError:
+    HAS_GPU=False
+
 HAS_FFTW=False
 try:
     import mkl_fft
@@ -202,11 +210,7 @@ def phasecorr(data, refAndMasks, ops):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
-    ly,lx = cfRefImg.shape[-2:]
-    lyhalf = int(np.floor(ly/2))
-    lxhalf = int(np.floor(lx/2))
 
-    t0 = tic()
     # maximum registration shift allowed
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)))
@@ -218,21 +222,28 @@ def phasecorr(data, refAndMasks, ops):
     else:
         X = data.copy().astype(np.float32)
 
+    X *= maskMul
+    X += maskOffset
+
+    ymax, xmax, cmax = phasecorr_cpu(X, cfRefImg, lcorr)
+
+    return ymax, xmax, cmax
+
+def phasecorr_cpu(X, cfRefImg, lcorr):
+    nimg = X.shape[0]
+    ly,lx = cfRefImg.shape[-2:]
+    lyhalf = int(np.floor(ly/2))
+    lxhalf = int(np.floor(lx/2))
+
     # shifts and corrmax
     ymax = np.zeros((nimg,), np.int32)
     xmax = np.zeros((nimg,), np.int32)
     cmax = np.zeros((nimg,), np.float32)
 
-    X *= maskMul
-    X += maskOffset
-
     Y = np.zeros((X.shape[0], ly, lx), 'complex64')
-    print(toc(t0))
     for t in np.arange(nimg):
         Y[t] = fft2(X[t], s=(ly,lx))
-    print(toc(t0))
     Y = apply_dotnorm(Y, cfRefImg)
-    print(toc(t0))
     for t in np.arange(nimg):
         output = np.real(ifft2(Y[t]))
         output = fft.fftshift(output, axes=(-2,-1))
@@ -242,7 +253,40 @@ def phasecorr(data, refAndMasks, ops):
         cmax[t] = cc[ymax[t], xmax[t]]
 
     ymax, xmax = ymax-lcorr, xmax-lcorr
-    print(toc(t0))
+    return ymax, xmax, cmax
+
+def phasecorr_gpu(X, cfRefImg, lcorr):
+    ''' not being used - speed ups only ~30% '''
+    nimg,Ly,Lx = X.shape
+    ly,lx = cfRefImg.shape[-2:]
+    lyhalf = int(np.floor(ly/2))
+    lxhalf = int(np.floor(lx/2))
+
+    # put on GPU
+    ref_gpu = cp.asarray(cfRefImg)
+    x_gpu = cp.asarray(X)
+
+    # phasecorrelation
+    x_gpu = fftn(x_gpu, axes=(1,2), overwrite_x=True) * np.sqrt(Ly-1) * np.sqrt(Lx-1)
+    for t in range(x_gpu.shape[0]):
+        tmp = x_gpu[t,:,:]
+        tmp = cp.multiply(tmp, ref_gpu)
+        tmp = cp.divide(tmp, cp.absolute(tmp) + 1e-5)
+        x_gpu[t,:,:] = tmp
+    x_gpu = ifftn(x_gpu, axes=(1,2), overwrite_x=True)  * np.sqrt(Ly-1) * np.sqrt(Lx-1)
+    x_gpu = cp.fft.fftshift(cp.real(x_gpu), axes=(1,2))
+
+    # get max index
+    x_gpu = x_gpu[cp.ix_(np.arange(0,nimg,1,int),
+                    np.arange(lyhalf-lcorr,lyhalf+lcorr+1,1,int),
+                    np.arange(lxhalf-lcorr,lxhalf+lcorr+1,1,int))]
+    ix = cp.argmax(cp.reshape(x_gpu, (nimg, -1)), axis=1)
+    cmax = x_gpu[np.arange(0,nimg,1,int), ix]
+    ymax,xmax = cp.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    cmax = cp.asnumpy(cmax).flatten()
+    ymax = cp.asnumpy(ymax)
+    xmax = cp.asnumpy(xmax)
+    ymax,xmax = ymax-lcorr, xmax-lcorr
     return ymax, xmax, cmax
 
 def register_data(data, refAndMasks, ops):
@@ -261,12 +305,11 @@ def register_data(data, refAndMasks, ops):
     # rigid registration
     ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     Y = shift_data(data.copy(), ymax, xmax, ops['refImg'].mean())
-
     # non-rigid registration
     if nr:
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(Y, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        Y = shift_data(Y, ops, ymax1, xmax1)
+        Y = nonrigid.shift_data(Y, ops, ymax1, xmax1)
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

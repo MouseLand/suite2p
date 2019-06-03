@@ -3,7 +3,9 @@ import numpy as np
 from scipy.fftpack import next_fast_len
 from numpy import random as rnd
 import multiprocessing
-import scipy.fftpack as fft
+#import scipy.fftpack as fft
+from numpy import fft
+from numba import vectorize, complex64, float32
 import math
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
@@ -20,6 +22,7 @@ try:
     import mkl_fft
     #print('imported mkl_fft successfully')
     HAS_MKL=True
+    print(HAS_MKL)
 except ImportError:
     HAS_MKL=False
     #print('failed to import mkl_fft - please see issue #182 to fix')
@@ -271,6 +274,10 @@ def shift_data(X, ymax, xmax, m0):
         X[n][:, xrange] = m0
     return X
 
+@vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
+def apply_dotnorm(Y, cfRefImg):
+    return (Y*cfRefImg) / (eps0 + np.abs(Y*cfRefImg))
+
 def phasecorr(data, refAndMasks, ops):
     ''' compute registration offsets
         uses phase correlation if ops['do_phasecorr'] '''
@@ -294,43 +301,31 @@ def phasecorr(data, refAndMasks, ops):
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.float32)
     else:
         X = data.copy().astype(np.float32)
-    #X *= maskMul
-    #X += maskOffset
-    print(toc(t0))
 
     # shifts and corrmax
     ymax = np.zeros((nimg,), np.int32)
     xmax = np.zeros((nimg,), np.int32)
     cmax = np.zeros((nimg,), np.float32)
 
-    # placeholder variables for numexpr
-    xfft = np.empty_like(cfRefImg)
-    epsm = np.empty_like(cfRefImg)
-    x = np.empty((Ly,Lx), np.float32)
+    X *= maskMul
+    X += maskOffset
 
-    # phase correlation operation
-    xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg/(epsm + abs(xfft*cfRefImg))' )
-    # mask for X to set edges to zero (especially useful in 1P)
-    xmask = ne3.NumExpr( 'x = x*maskMul + maskOffset' )
-    epsm = eps0
+    Y = np.zeros((X.shape[0], ly, lx), 'complex64')
     print(toc(t0))
-
-    # loop over frames and compute phase corr and max phase corr shift
     for t in np.arange(nimg):
-        x = X[t]
-        xmask(x=x, maskMul=maskMul, maskOffset=maskOffset)
-        xfft = fft2(X[t], s=(ly,lx)) # fft of frame
-        # phase corr with reference image
-        xcorr2( xfft=xfft, cfRefImg=cfRefImg, epsm=epsm)
-        output = np.real(ifft2( xfft ))
+        Y[t] = fft2(X[t], s=(ly,lx))
+    print(toc(t0))
+    Y = apply_dotnorm(Y, cfRefImg)
+    print(toc(t0))
+    for t in np.arange(nimg):
+        output = np.real(ifft2(Y[t]))
         output = fft.fftshift(output, axes=(-2,-1))
         cc = output[np.ix_(np.arange(lyhalf-lcorr,lyhalf+lcorr+1,1,int),
                         np.arange(lxhalf-lcorr,lxhalf+lcorr+1,1,int))]
-        # max of phase corr
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc, axis=None), cc.shape)
         cmax[t] = cc[ymax[t], xmax[t]]
+
     ymax, xmax = ymax-lcorr, xmax-lcorr
-    gc.collect()
     print(toc(t0))
     return ymax, xmax, cmax
 

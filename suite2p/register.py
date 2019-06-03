@@ -58,34 +58,10 @@ def tic():
 def toc(i0):
     return time.time() - i0
 
-eps0 = 1e-5;
+eps0 = 1e-5
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
-lpad = 3   # upsample from a square +/- lpad
 hp = 60
-subpixel = 10
 
-
-# smoothing kernel
-def kernelD(a, b):
-    dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
-    dys = np.reshape(a[1], (-1,1)) - np.reshape(b[1], (1,-1))
-    ds = np.square(dxs) + np.square(dys)
-    K = np.exp(-ds/(2*np.square(sigL)))
-    return K
-
-def mat_upsample(lpad):
-    lar    = np.arange(-lpad, lpad+1)
-    larUP  = np.arange(-lpad, lpad+.001, 1./subpixel)
-    x, y   = np.meshgrid(lar, lar)
-    xU, yU = np.meshgrid(larUP, larUP)
-    Kx = kernelD((x,y),(x,y))
-    Kx = np.linalg.inv(Kx)
-    Kg = kernelD((x,y),(xU,yU))
-    Kmat = np.dot(Kx, Kg)
-    nup = larUP.shape[0]
-    return Kmat, nup
-
-Kmat, nup = mat_upsample(lpad)
 
 def gaussian_fft(sig, Ly, Lx):
     ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
@@ -195,65 +171,6 @@ def correlation_map(X, refAndMasks, do_phasecorr):
     cc = fft.fftshift(cc, axes=(-2,-1))
     return cc
 
-def getSNR(cc, Ls, ops):
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    X1max  = np.amax(cc0, axis = 1)
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)]
-    for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
-    snr = X1max / Xmax # computes snr
-    return snr
-
-def getXYup(cc, Ls, ops):
-    ''' get subpixel registration shifts from phase-correlation matrix cc '''
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    #X1max  = np.amax(cc0, axis = 1)
-    # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)].copy()
-    for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
-    ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
-    for j in range(0, nimg):
-        ccmat[j,:,:] = cc[j, (mxpt[0][j] -lpad):(mxpt[0][j] +lpad+1), (mxpt[1][j] -lpad):(mxpt[1][j] +lpad+1)]
-    ccmat = np.reshape(ccmat, (nimg,-1))
-    ccb = np.dot(ccmat, Kmat)
-    imax = np.argmax(ccb, axis=1)
-    cmax = np.amax(ccb, axis=1)
-    ymax, xmax = np.unravel_index(imax, (nup,nup))
-    mdpt = np.floor(nup/2)
-    ymax,xmax = (ymax-mdpt)/subpixel, (xmax-mdpt)/subpixel
-    ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
-    return ymax, xmax, cmax
-
-def getCCmax(cc, lcorr):
-    ''' get integer registration shifts from phase-correlation matrix cc '''
-    ''' max shift of +/-lcorr '''
-    Lyhalf = int(np.floor(cc.shape[1]/2))
-    Lxhalf = int(np.floor(cc.shape[2]/2))
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    ix  = np.argmax(cc0, axis = 1)
-    cmax = cc0[np.arange(0,nimg,1,int), ix]
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    ymax, xmax = ymax-lcorr, xmax-lcorr
-    return ymax,xmax,cmax
-
 def shift_data(X, ymax, xmax, m0):
     ''' rigid shift of X by ymax and xmax '''
     ymax = ymax.flatten()
@@ -275,7 +192,6 @@ def phasecorr(data, refAndMasks, ops):
     ''' compute registration offsets
         uses phase correlation if ops['do_phasecorr'] '''
     nimg, Ly, Lx = data.shape
-    print(nimg)
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
@@ -331,6 +247,7 @@ def phasecorr(data, refAndMasks, ops):
         cmax[t] = cc[ymax[t], xmax[t]]
     ymax, xmax = ymax-lcorr, xmax-lcorr
     gc.collect()
+    del X
     print(toc(t0))
     return ymax, xmax, cmax
 
@@ -353,8 +270,9 @@ def register_data(data, refAndMasks, ops):
 
     # non-rigid registration
     if nr:
-        Y, ymax1, xmax1, cmax1 = nonrigid.phasecorr_worker((Y, refAndMasks[3:], ops))
+        ymax1, xmax1, cmax1 = nonrigid.phasecorr(Y, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
+        Y = shift_data(Y, ops, ymax1, xmax1)
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

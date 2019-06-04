@@ -262,63 +262,62 @@ def linear_interp(iy, ix, yb, xb, f):
     fup = np.transpose(fup, (1,2,0))
     return fup
 
-@vectorize([float32(float32,float32,float32,float32,float32,float32)], nopython=True)
-def bilinear_interp(d00, d01, d10, d11, yc, xc):
-    out = (d00 * (1 - yc) * (1 - xc) +
-           d01 * (1 - yc) * xc +
-           d10 * yc * (1 - xc) +
-           d11 * yc * xc)
-    return out
+#@vectorize([float32(float32,float32,float32,float32,float32,float32)], nopython=True)
+#def bilinear_interp(d00, d01, d10, d11, yc, xc):
+#    out = (d00 * (1 - yc) * (1 - xc) +
+#           d01 * (1 - yc) * xc +
+#           d10 * yc * (1 - xc) +
+#           d11 * yc * xc)
+#    #out = d00 * (1-yc)* (1-xc)
+#    return out
 
-@njit((float32[:, :],int32[:,:],int32[:,:], float32[:,:], float32[:,:], float32[:,:], float32[:,:]))
-def index_square(I, yc_floor, xc_floor, d00, d01, d10, d11):
-    for i in range(I.shape[-2]):
-        for j in range(I.shape[-1]):
-            ycf = yc_floor[i,j]
-            xcf = xc_floor[i,j]
-            d00[i,j] = I[ycf, xcf]
-            d01[i,j] = I[ycf, xcf+1]
-            d10[i,j] = I[ycf+1, xcf]
-            d11[i,j] = I[ycf+1, xcf+1]
+@njit((float32[:, :],float32[:,:], float32[:,:], float32[:,:]))
+def map_coordinates(I, yc, xc, Y):
+    ''' bilinear transform of image with ycoordinates yc and xcoordinates xc to Y'''
+    Ly,Lx = I.shape
+    yc_floor = yc.copy().astype(np.int32)
+    xc_floor = xc.copy().astype(np.int32)
+    yc -= yc_floor
+    xc -= xc_floor
+    for i in range(yc_floor.shape[0]):
+        for j in range(yc_floor.shape[1]):
+            yf = min(Ly-1, max(0, yc_floor[i,j]))
+            xf = min(Lx-1, max(0, xc_floor[i,j]))
+            yf1= min(Ly-1, yf+1)
+            xf1= min(Lx-1, xf+1)
+            y = yc[i,j]
+            x = xc[i,j]
+            Y[i,j] = (I[yf, xf] * (1 - y) * (1 - x) +
+                    I[yf, xf1] * (1 - y) * x +
+                    I[yf1, xf] * y * (1 - x) +
+                    I[yf1, xf1] * y * x )
+    #Y = bilinear_interp(d00, d01, d10, d11, yc, xc)
+    #return Y
 
 @vectorize([int32(float32)], nopython=True)
 def nfloor(y):
     return math.floor(y) #np.int32(np.floor(y))
 
 @njit((float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]), parallel=True)
-def map_coordinates(data, yup, xup, mshy, mshx, Y):
-    ''' warp data to y and x coords (data is nimg x Ly x Lx) '''
-    d00 = np.zeros_like(data[0])
-    d01 = np.zeros_like(data[0])
-    d10 = np.zeros_like(data[0])
-    d11 = np.zeros_like(data[0])
-    #yc_floor = np.zeros(data[0].shape, np.int32)
-    #xc_floor = np.zeros(data[0].shape, np.int32)
+def shift_coordinates(data, yup, xup, mshy, mshx, Y):
+    ''' shift data by yup and xup
+        data is nimg x Ly x Lx
+        yup, xup are shift matrices of nimg x Ly x Lx
+        mshy, mshx are mesh grids of Ly x Lx
+        Y is matrix to return
+    '''
+    Ly,Lx = data.shape[1:]
     for t in prange(data.shape[0]):
-        yc = mshy + yup[t]
-        xc = mshx + xup[t]
-        yc_floor = yc.astype(np.int32)
-        xc_floor = xc.astype(np.int32)
-        yc -= yc_floor
-        xc -= xc_floor
-        index_square(data[t], yc_floor, xc_floor, d00, d01, d10, d11)
-        Y[t] = bilinear_interp(d00, d01, d10, d11, yc, xc)
+        map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
 
 @njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
-    d00 = np.zeros_like(mshx)
-    d01 = np.zeros_like(mshx)
-    d10 = np.zeros_like(mshx)
-    d11 = np.zeros_like(mshx)
-    my_floor = mshy.astype(np.int32)
-    mx_floor = mshy.astype(np.int32)
-    mshy -= my_floor
-    mshx -= mx_floor
+    ''' interpolate from ymax1 to mshy to create coordinate transforms '''
     for t in prange(ymax1.shape[0]):
-        index_square(ymax1[t], my_floor, mx_floor, d00, d01, d10, d11)
-        yup[t] = bilinear_interp(d00, d01, d10, d11, mshy, mshx)
-        index_square(xmax1[t], my_floor, mx_floor, d00, d01, d10, d11)
-        xup[t] = bilinear_interp(d00, d01, d10, d11, mshy, mshx)
+        # y shifts for blocks to coordinate map
+        map_coordinates(ymax1[t], mshy.copy(), mshx.copy(), yup[t])
+        # x shifts for blocks to coordinate map
+        map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])
 
 def upsample_block_shifts(ops, ymax1, xmax1):
     '''
@@ -332,31 +331,24 @@ def upsample_block_shifts(ops, ymax1, xmax1):
     nimg = ymax1.shape[0]
     ymax1 = np.reshape(ymax1, (nimg,nblocks[0], nblocks[1]))
     xmax1 = np.reshape(xmax1, (nimg,nblocks[0], nblocks[1]))
-    # replicate first and last row and column for padded interpolation
-    ymax1 = np.pad(ymax1, ((0,0), (1,1), (1,1)), 'edge')
-    xmax1 = np.pad(xmax1, ((0,0), (1,1), (1,1)), 'edge')
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    iy = np.arange(0,Ly,1,np.float32)
-    ix = np.arange(0,Lx,1,np.float32)
     yb = np.array(ops['yblock'][::ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
     xb = np.array(ops['xblock'][:ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
-    yb = np.hstack((0, yb, Ly-1))
-    xb = np.hstack((0, xb, Lx-1))
 
-    # normalize distances for interpolation
-    iy /= yb.max() * yb.shape[0]
-    yb /= yb.max() * yb.shape[0]
-    ix /= xb.max() * xb.shape[0]
-    xb /= xb.max() * xb.shape[0]
-    mshx,mshy = np.meshgrid(iy, ix)
-
+    iy = np.arange(0,Ly,1,np.float32)
+    ix = np.arange(0,Lx,1,np.float32)
+    iy = np.interp(iy, yb, np.arange(0,yb.size,1,int)).astype(np.float32)
+    ix = np.interp(ix, xb, np.arange(0,xb.size,1,int)).astype(np.float32)
+    mshx,mshy = np.meshgrid(ix, iy)
     # interpolate from block centers to all points Ly x Lx
+    #Ly,Lx = mshy.shape
     yup = np.zeros((nimg,Ly,Lx), np.float32)
     xup = np.zeros((nimg,Ly,Lx), np.float32)
-    block_interp(ymax1,ymax1,mshy,mshx,yup,xup)
+
+    block_interp(ymax1,xmax1,mshy,mshx,yup,xup)
     return yup, xup
 
 def transform_data(data, ops, ymax1, xmax1):
@@ -370,5 +362,5 @@ def transform_data(data, ops, ymax1, xmax1):
     mshx,mshy = np.meshgrid(np.arange(0,Lx,1,np.float32), np.arange(0,Ly,1,np.float32))
     Y = np.zeros_like(data)
     # use shifts and do bilinear interpolation
-    map_coordinates(data, yup, xup, mshy, mshx, Y)
+    shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y

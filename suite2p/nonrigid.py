@@ -143,6 +143,12 @@ def apply_masks(Y, maskMul, maskOffset):
 @vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
+def my_clip(X, lcorr, lpad):
+    x00 = X[:, :, :lcorr+lpad+1, :lcorr+lpad+1]
+    x11 = X[:, :, -lcorr-lpad:, -lcorr-lpad:]
+    x01 = X[:, :, :lcorr+lpad+1, -lcorr-lpad:]
+    x10 = X[:, :, -lcorr-lpad:, :lcorr+lpad+1]
+    return x00, x01, x10, x11
 
 def phasecorr(data, refAndMasks, ops):
     t0=tic()
@@ -177,31 +183,29 @@ def phasecorr(data, refAndMasks, ops):
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
 
-    print('fft %2.2f'%toc(t0))
+
     Y = np.zeros((nimg, nb, ly, lx), 'int16')
     for n in range(nb):
         yind, xind = ops['yblock'][n], ops['xblock'][n]
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
-
     for n in range(nb):
         for t in range(nimg):
             fft2(Y[t,n], overwrite_x=True)
     Y = register.apply_dotnorm(Y, cfRefImg)
-
     for n in range(nb):
         for t in range(nimg):
             ifft2(Y[t,n], overwrite_x=True)
-            output = fft.fftshift(np.real(Y[t,n]), axes=(-2,-1))
-            cc0[t,n] = output[(lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
+    x00, x01, x10, x11 = my_clip(Y, lcorr, lpad)
+    cc0 = np.real(np.block([[x11, x10], [x01, x00]]))
+    for n in range(nb):
+        for t in range(nimg):
             ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
             X1max = cc0[t,n][ym+lpad, xm+lpad]
             cc0[t,n][ym:ym+2*lpad+1, xm:xm+2*lpad+1] = 0 # set to 0 all pts +-lpad from ymax,xmax
             Xmax  = np.maximum(0, np.max(cc0[t,n], axis=None))
             snr[t,n] = X1max / (1e-5 + Xmax)
-    print('fft %2.2f'%toc(t0))
-
     for t in range(nimg):
         ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0[t], (cc0.shape[1], -1)), cc0.shape[1:])
         cc0[t][snr[t] < ops['snr_thresh']] = ccsm[snr[t] < ops['snr_thresh']]

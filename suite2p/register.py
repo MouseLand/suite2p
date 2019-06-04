@@ -188,7 +188,12 @@ def phasecorr(data, refAndMasks, ops):
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
 
     return ymax, xmax, cmax
-
+def my_clip(X, lcorr):
+    x00 = X[:,  :lcorr+1, :lcorr+1]
+    x11 = X[:,  -lcorr:, -lcorr:]
+    x01 = X[:,  :lcorr+1, -lcorr:]
+    x10 = X[:,  -lcorr:, :lcorr+1]
+    return x00, x01, x10, x11
 def phasecorr_cpu(data, refAndMasks, lcorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
@@ -210,11 +215,11 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
     X = apply_dotnorm(X, cfRefImg)
     for t in np.arange(nimg):
         ifft2(X[t], overwrite_x=True)
-        output = fft.fftshift(np.real(X[t]), axes=(-2,-1))
-        cc = output[lyhalf-lcorr:lyhalf+lcorr+1, lxhalf-lcorr:lxhalf+lcorr+1]
-        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc, axis=None), cc.shape)
-        cmax[t] = cc[ymax[t], xmax[t]]
-
+    x00, x01, x10, x11 = my_clip(X, lcorr)
+    cc = np.real(np.block([[x11, x10], [x01, x00]]))
+    for t in np.arange(nimg):
+        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))
+        cmax[t] = cc[t, ymax[t], xmax[t]]
     ymax, xmax = ymax-lcorr, xmax-lcorr
     return ymax, xmax, cmax
 

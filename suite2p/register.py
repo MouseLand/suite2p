@@ -278,7 +278,7 @@ def register_data(data, refAndMasks, ops):
     if nr:
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        #Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
+        Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

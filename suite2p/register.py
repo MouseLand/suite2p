@@ -14,8 +14,8 @@ from skimage.external.tifffile import TiffWriter
 import gc
 import multiprocessing
 N_threads = int(multiprocessing.cpu_count() / 2)
-import numexpr3 as ne3
-ne3.set_nthreads(N_threads)
+#import numexpr3 as ne3
+#ne3.set_nthreads(N_threads)
 
 HAS_GPU=False
 try:
@@ -307,9 +307,11 @@ def register_data(data, refAndMasks, ops):
     Y = shift_data(data.copy(), ymax, xmax, ops['refImg'].mean())
     # non-rigid registration
     if nr:
+        t0 = tic()
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(Y, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
         Y = nonrigid.shift_data(Y, ops, ymax1, xmax1)
+
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.fftpack as fft
+from numpy import fft
 from scipy.fftpack import next_fast_len
 #from numpy import fft
 from scipy.ndimage import gaussian_filter
@@ -8,9 +8,10 @@ from suite2p import register
 import time
 import multiprocessing
 from multiprocessing import Pool
+from numba import vectorize, float32, complex64
 N_threads = int(multiprocessing.cpu_count() / 2)
-import numexpr3 as ne3
-ne3.set_nthreads(N_threads)
+#import numexpr3 as ne3
+#ne3.set_nthreads(N_threads)
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -21,6 +22,10 @@ def tic():
     return time.time()
 def toc(i0):
     return time.time() - i0
+
+@vectorize([complex64(float32, float32, float32)], nopython=True, target = 'parallel')
+def addmultiply(x,y,z):
+    return np.complex64(x*y + z)
 
 # smoothing kernel
 def kernelD(a, b):
@@ -193,38 +198,26 @@ def phasecorr(data, refAndMasks, ops):
     cmax1 = np.zeros((nimg,nb),np.float32)
     xmax1 = np.zeros((nimg,nb),np.float32)
 
-    # placeholder variables for numpexpr
-    #xfft = np.empty_like(cfRefImg[0])
-    #epsm = np.empty_like(cfRefImg[0])
-    #cfRefImg0 = np.empty_like(cfRefImg[0])
-    #x = np.empty((ly,lx), np.float32)
-    #maskMul0 = np.empty((ly,lx), np.float32)
-    #maskOffset0 = np.empty((ly,lx), np.float32)
-
-    # compute phase-correlation of blocks
-    #xcorr2 = ne3.NumExpr( 'xfft=xfft*cfRefImg0/(epsm + abs(xfft*cfRefImg0))' )
-    # mask for X to set edges to zero (especially useful in 1P)
-    #xmask = ne3.NumExpr( 'x = x*maskMul0 + maskOffset0' )
-    #epsm = eps0
-
     cc0 = np.zeros((nimg, nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
     snr = np.zeros((nimg, nb), np.float32)
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
-    Y = np.zeros((nimg, ly, lx), 'complex64')
+
+    print('fft %2.2f'%toc(t0))
+    Y = np.zeros((nimg, nb, ly, lx), 'float32')
     for n in range(nb):
-        yind = ops['yblock'][n]
-        yind = np.arange(yind[0],yind[-1]).astype(int)
-        xind = ops['xblock'][n]
-        xind = np.arange(xind[0],xind[-1]).astype(int)
-        Xt = X[np.ix_(np.arange(0,nimg,1,int), yind, xind)]
-        Xt *= maskMul[n]
-        Xt += maskOffset[n]
+        yind, xind = ops['yblock'][n], ops['xblock'][n]
+        Y[:,n] = X[:, yind[0]:yind[-1], xind[0]:xind[-1]]
+    Y = addmultiply(Y, maskMul, maskOffset)
+
+    for n in range(nb):
         for t in range(nimg):
-            Y[t] = register.fft2(Xt[t])
-        Y = register.apply_dotnorm(Y, cfRefImg[n])
+            Y[t,n] = register.fft2(Y[t,n])
+    Y = register.apply_dotnorm(Y, cfRefImg)
+
+    for n in range(nb):
         for t in range(nimg):
-            output = np.real(register.ifft2( Y[t] ))
+            output = np.real(register.ifft2( Y[t,n] ))
             output = fft.fftshift(output, axes=(-2,-1))
             cc = output[np.ix_(np.arange(lyhalf-lcorr-lpad,lyhalf+lcorr+1+lpad,1,int),
                             np.arange(lxhalf-lcorr-lpad,lxhalf+lcorr+1+lpad,1,int))]
@@ -238,6 +231,8 @@ def phasecorr(data, refAndMasks, ops):
             cc[np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))] = 0
             Xmax  = np.maximum(0, np.max(cc, axis=None))
             snr[t,n] = X1max / (1e-5 + Xmax)
+    print('fft %2.2f'%toc(t0))
+
     for t in range(nimg):
         ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0[t], (cc0.shape[1], -1)), cc0.shape[1:])
         cc0[t][snr[t] < ops['snr_thresh']] = ccsm[snr[t] < ops['snr_thresh']]
@@ -257,30 +252,8 @@ def phasecorr(data, refAndMasks, ops):
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax - lyhalf, xmax1[t] + xmax - lxhalf
-    del Y
     print('fft %2.2f'%toc(t0))
-    #cc0 = cc0.reshape((cc0.shape[0], -1))
-    #cc2 = []
-    #R = ops['NRsm']
-    #cc2.append(cc0)
-    #for j in range(2):
-    #    cc2.append(R @ cc2[j])
-    #for j in range(len(cc2)):
-    #    cc2[j] = cc2[j].reshape((nb, nimg, 2*lcorr+2*lpad+1, 2*lcorr+2*lpad+1))
-    #ccsm = cc2[0]
-    #for n in range(nb):
-    #    snr = np.ones((nimg,), 'float32')
-    #    for j in range(len(cc2)):
-    #        ism = snr<ops['snr_thresh']
-    #        if np.sum(ism)==0:
-    #            break
-    #        cc = cc2[j][n,ism,:,:]
-    #        if j>0:
-    #            ccsm[n, ism, :, :] = cc
-    #        snr[ism] = getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
-    #print('snr %2.2f'%toc(t0))
-    # smooth cc across blocks if sig>0
-    # currently not used
+
     sig = 0
     if sig>0:
         cc1 = np.reshape(cc1,(nimg,ly,lx,nblocks[0],nblocks[1]))
@@ -296,7 +269,7 @@ def phasecorr(data, refAndMasks, ops):
 
 def shift_data(data, ops, ymax1, xmax1):
     ''' split into workers across frames '''
-    ops['num_workers'] = -1
+    ops['num_workers'] = 0
     if ops['num_workers']<0:
         dreg = shift_data_worker((data, ops, ymax1, xmax1))
     else:

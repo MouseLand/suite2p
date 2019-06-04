@@ -1,17 +1,12 @@
 import numpy as np
 from numpy import fft
 from scipy.fftpack import next_fast_len
-#from numpy import fft
-from scipy.ndimage import gaussian_filter
+from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
+from scipy.ndimage import gaussian_filter, map_coordinates
 from skimage.transform import warp#, PiecewiseAffineTransform
 from suite2p import register
 import time
-import multiprocessing
-from multiprocessing import Pool
-from numba import vectorize, float32, complex64
-N_threads = int(multiprocessing.cpu_count() / 2)
-#import numexpr3 as ne3
-#ne3.set_nthreads(N_threads)
+import math
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -95,30 +90,6 @@ def getXYup(cc, Ls, ops):
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
     return ymax, xmax, cmax
 
-def linear_interp(iy, ix, yb, xb, f):
-    ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
-    ''' assumes f is 3D and last two dimensions are yb,xb '''
-    fup = f.copy().astype(np.float32)
-    Lax = [iy.size, ix.size]
-    for n in range(2):
-        fup = np.transpose(fup,(1,2,0)).copy()
-        if n==0:
-            ds  = np.abs(iy[:,np.newaxis] - yb[:,np.newaxis].T)
-        else:
-            ds  = np.abs(ix[:,np.newaxis] - xb[:,np.newaxis].T)
-        im1 = np.argmin(ds, axis=1)
-        w1  = ds[np.arange(0,Lax[n],1,int),im1]
-        ds[np.arange(0,Lax[n],1,int),im1] = np.inf
-        im2 = np.argmin(ds, axis=1)
-        w2  = ds[np.arange(0,Lax[n],1,int),im2]
-        wnorm = w1+w2
-        w1 /= wnorm
-        w2 /= wnorm
-        fup = (1-w1[:,np.newaxis,np.newaxis]) * fup[im1] + (1-w2[:,np.newaxis,np.newaxis]) * fup[im2]
-    fup = np.transpose(fup, (1,2,0))
-    return fup
-
-
 def prepare_masks(refImg1, ops):
     refImg0=refImg1.copy()
     if ops['1Preg']:
@@ -168,6 +139,10 @@ def prepare_masks(refImg1, ops):
 
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
+
+@vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel')
+def apply_masks(Y, maskMul, maskOffset):
+    return Y*maskMul + maskOffset
 
 def phasecorr(data, refAndMasks, ops):
     ''' loop through blocks and compute phase correlations'''
@@ -267,62 +242,136 @@ def phasecorr(data, refAndMasks, ops):
 
     return ymax1, xmax1, cmax1
 
-def shift_data(data, ops, ymax1, xmax1):
-    ''' split into workers across frames '''
-    ops['num_workers'] = 0
-    if ops['num_workers']<0:
-        dreg = shift_data_worker((data, ops, ymax1, xmax1))
-    else:
-        if ops['num_workers']<1:
-            ops['num_workers'] = int(multiprocessing.cpu_count()/2)
-        num_cores = ops['num_workers']
-        nimg = data.shape[0]
-        nbatch = int(np.ceil(nimg/float(num_cores)))
-        #nbatch = 50
-        inputs = np.arange(0, nimg, nbatch)
-        irange = []
-        dsplit = []
-        for i in inputs:
-            ilist = i + np.arange(0,np.minimum(nbatch, nimg-i))
-            irange.append(i + np.arange(0,np.minimum(nbatch, nimg-i)))
-            dsplit.append([data[ilist,:, :], ops, ymax1[ilist,:], xmax1[ilist,:]])
-        with Pool(num_cores) as p:
-            results = p.map(shift_data_worker, dsplit)
-        dreg = np.zeros_like(data)
-        for i in range(0,len(results)):
-            dreg[irange[i], :, :] = results[i]
-    return dreg
+def linear_interp(iy, ix, yb, xb, f):
+    ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
+    ''' assumes f is 3D and last two dimensions are yb,xb '''
+    fup = f.copy().astype(np.float32)
+    Lax = [iy.size, ix.size]
+    for n in range(2):
+        fup = np.transpose(fup,(1,2,0)).copy()
+        if n==0:
+            ds  = np.abs(iy[:,np.newaxis] - yb[:,np.newaxis].T)
+        else:
+            ds  = np.abs(ix[:,np.newaxis] - xb[:,np.newaxis].T)
+        im1 = np.argmin(ds, axis=1)
+        w1  = ds[np.arange(0,Lax[n],1,int),im1]
+        ds[np.arange(0,Lax[n],1,int),im1] = np.inf
+        im2 = np.argmin(ds, axis=1)
+        w2  = ds[np.arange(0,Lax[n],1,int),im2]
+        wnorm = w1+w2
+        w1 /= wnorm
+        w2 /= wnorm
+        fup = (1-w1[:,np.newaxis,np.newaxis]) * fup[im1] + (1-w2[:,np.newaxis,np.newaxis]) * fup[im2]
+    fup = np.transpose(fup, (1,2,0))
+    return fup
 
-def shift_data_worker(inputs):
-    ''' piecewise affine transformation of data using shifts from phasecorr_worker '''
-    data,ops,ymax1,xmax1 = inputs
+@vectorize([float32(float32,float32,float32,float32,float32,float32)], nopython=True)
+def bilinear_interp(d00, d01, d10, d11, yc, xc):
+    out = (d00 * (1 - yc) * (1 - xc) +
+           d01 * (1 - yc) * xc +
+           d10 * yc * (1 - xc) +
+           d11 * yc * xc)
+    return out
+
+@njit((float32[:, :],int32[:,:],int32[:,:], float32[:,:], float32[:,:], float32[:,:], float32[:,:]))
+def index_square(I, yc_floor, xc_floor, d00, d01, d10, d11):
+    for i in range(I.shape[-2]):
+        for j in range(I.shape[-1]):
+            ycf = yc_floor[i,j]
+            xcf = xc_floor[i,j]
+            d00[i,j] = I[ycf, xcf]
+            d01[i,j] = I[ycf, xcf+1]
+            d10[i,j] = I[ycf+1, xcf]
+            d11[i,j] = I[ycf+1, xcf+1]
+
+@vectorize([int32(float32)], nopython=True)
+def nfloor(y):
+    return math.floor(y) #np.int32(np.floor(y))
+
+@njit((float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]), parallel=True)
+def map_coordinates(data, yup, xup, mshy, mshx, Y):
+    ''' warp data to y and x coords (data is nimg x Ly x Lx) '''
+    d00 = np.zeros_like(data[0])
+    d01 = np.zeros_like(data[0])
+    d10 = np.zeros_like(data[0])
+    d11 = np.zeros_like(data[0])
+    #yc_floor = np.zeros(data[0].shape, np.int32)
+    #xc_floor = np.zeros(data[0].shape, np.int32)
+    for t in prange(data.shape[0]):
+        yc = mshy + yup[t]
+        xc = mshx + xup[t]
+        yc_floor = yc.astype(np.int32)
+        xc_floor = xc.astype(np.int32)
+        yc -= yc_floor
+        xc -= xc_floor
+        index_square(data[t], yc_floor, xc_floor, d00, d01, d10, d11)
+        Y[t] = bilinear_interp(d00, d01, d10, d11, yc, xc)
+
+@njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True)
+def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
+    d00 = np.zeros_like(mshx)
+    d01 = np.zeros_like(mshx)
+    d10 = np.zeros_like(mshx)
+    d11 = np.zeros_like(mshx)
+    my_floor = mshy.astype(np.int32)
+    mx_floor = mshy.astype(np.int32)
+    mshy -= my_floor
+    mshx -= mx_floor
+    for t in prange(ymax1.shape[0]):
+        index_square(ymax1[t], my_floor, mx_floor, d00, d01, d10, d11)
+        yup[t] = bilinear_interp(d00, d01, d10, d11, mshy, mshx)
+        index_square(xmax1[t], my_floor, mx_floor, d00, d01, d10, d11)
+        xup[t] = bilinear_interp(d00, d01, d10, d11, mshy, mshx)
+
+def upsample_block_shifts(ops, ymax1, xmax1):
+    '''
+        ymax1,xmax1 are shifts in Y and X of blocks of size nimg x nblocks
+        this function upsamples ymax1, xmax1 so that they are nimg x Ly x Lx
+        for later bilinear interpolation
+        returns yup, xup <- nimg x Ly x Lx
+    '''
+    Ly,Lx = ops['Ly'],ops['Lx']
     nblocks = ops['nblocks']
-    if data.ndim<3:
-        data = data[np.newaxis,:,:]
-    nimg,Ly,Lx = data.shape
+    nimg = ymax1.shape[0]
     ymax1 = np.reshape(ymax1, (nimg,nblocks[0], nblocks[1]))
     xmax1 = np.reshape(xmax1, (nimg,nblocks[0], nblocks[1]))
     # replicate first and last row and column for padded interpolation
     ymax1 = np.pad(ymax1, ((0,0), (1,1), (1,1)), 'edge')
     xmax1 = np.pad(xmax1, ((0,0), (1,1), (1,1)), 'edge')
-
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    iy = np.arange(0,Ly,1,int)
-    ix = np.arange(0,Lx,1,int)
+    iy = np.arange(0,Ly,1,np.float32)
+    ix = np.arange(0,Lx,1,np.float32)
     yb = np.array(ops['yblock'][::ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
     xb = np.array(ops['xblock'][:ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
     yb = np.hstack((0, yb, Ly-1))
     xb = np.hstack((0, xb, Lx-1))
-    yup = linear_interp(iy, ix, yb, xb, ymax1)
-    xup = linear_interp(iy, ix, yb, xb, xmax1)
-    mshx,mshy = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly))
-    Y = np.zeros((nimg,Ly,Lx), np.float32)
-    for t in range(nimg):
-        ycoor = (mshy + yup[t])#.flatten()
-        xcoor = (mshx + xup[t])#.flatten()
-        coords = np.concatenate((ycoor[np.newaxis,:], xcoor[np.newaxis,:]))
-        Y[t] = warp(data[t],coords, order=1, clip=False, preserve_range=True)
+
+    # normalize distances for interpolation
+    iy /= yb.max() * yb.shape[0]
+    yb /= yb.max() * yb.shape[0]
+    ix /= xb.max() * xb.shape[0]
+    xb /= xb.max() * xb.shape[0]
+    mshx,mshy = np.meshgrid(iy, ix)
+
+    # interpolate from block centers to all points Ly x Lx
+    yup = np.zeros((nimg,Ly,Lx), np.float32)
+    xup = np.zeros((nimg,Ly,Lx), np.float32)
+    block_interp(ymax1,ymax1,mshy,mshx,yup,xup)
+    return yup, xup
+
+def transform_data(data, ops, ymax1, xmax1):
+    ''' piecewise affine transformation of data using block shifts ymax1, xmax1 '''
+    nblocks = ops['nblocks']
+    if data.ndim<3:
+        data = data[np.newaxis,:,:]
+    nimg,Ly,Lx = data.shape
+    # take shifts and make matrices of shifts nimg x Ly x Lx
+    yup,xup = upsample_block_shifts(ops, ymax1, xmax1)
+    mshx,mshy = np.meshgrid(np.arange(0,Lx,1,np.float32), np.arange(0,Ly,1,np.float32))
+    Y = np.zeros_like(data)
+    # use shifts and do bilinear interpolation
+    map_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y

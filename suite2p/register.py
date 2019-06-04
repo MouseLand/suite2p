@@ -30,7 +30,6 @@ try:
     import mkl_fft
     #print('imported mkl_fft successfully')
     HAS_MKL=True
-    print(HAS_MKL)
 except ImportError:
     HAS_MKL=False
     #print('failed to import mkl_fft - please see issue #182 to fix')
@@ -307,11 +306,10 @@ def register_data(data, refAndMasks, ops):
     Y = shift_data(data.copy(), ymax, xmax, ops['refImg'].mean())
     # non-rigid registration
     if nr:
-        t0 = tic()
+        Y = Y.astype(np.float32)
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(Y, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        Y = nonrigid.shift_data(Y, ops, ymax1, xmax1)
-
+        Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
@@ -713,6 +711,7 @@ def register_binary(ops, refImg=None):
         do_regmetrics = ops['do_regmetrics']
     else:
         do_regmetrics = True
+    do_regmetrics = False
 
     k0 = tic()
 

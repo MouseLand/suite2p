@@ -5,7 +5,7 @@ from numpy import random as rnd
 import multiprocessing
 #import scipy.fftpack as fft
 from numpy import fft
-from numba import vectorize, complex64, float32
+from numba import vectorize, complex64, float32, int16
 import math
 from scipy.signal import medfilt
 from scipy.ndimage import laplace
@@ -16,6 +16,7 @@ import multiprocessing
 N_threads = int(multiprocessing.cpu_count() / 2)
 #import numexpr3 as ne3
 #ne3.set_nthreads(N_threads)
+from mkl_fft import fft2, ifft2
 
 HAS_GPU=False
 try:
@@ -25,42 +26,6 @@ try:
 except ImportError:
     HAS_GPU=False
 
-HAS_FFTW=False
-try:
-    import mkl_fft
-    #print('imported mkl_fft successfully')
-    HAS_MKL=True
-except ImportError:
-    HAS_MKL=False
-    #print('failed to import mkl_fft - please see issue #182 to fix')
-
-def fft2(data, s=None):
-    if s==None:
-        s=(data.shape[-2], data.shape[-1])
-    if HAS_FFTW:
-        x = pyfftw.empty_aligned(data.shape, dtype=np.float32)
-        x[:] = data
-        fft_object = pyfftw.builders.fftn(x, s=s, axes=(-2,-1),threads=2)
-        data = fft_object()
-    elif HAS_MKL:
-        data = mkl_fft.fft2(data,shape=s,axes=(-2,-1))
-    else:
-        data = fft.fft2(data, s, axes=(-2,-1))
-    return data
-
-def ifft2(data, s=None):
-    if s==None:
-        s=(data.shape[-2], data.shape[-1])
-    if HAS_FFTW:
-        x = pyfftw.empty_aligned(data.shape, dtype=np.complex64)
-        x[:] = data
-        fft_object = pyfftw.builders.ifftn(data, s=s, axes=(-2,-1),threads=2)
-        data = fft_object()
-    elif HAS_MKL:
-        data = mkl_fft.ifft2(data, shape=s, axes=(-2,-1))
-    else:
-        data = fft.ifft2(data, s, axes=(-2,-1))
-    return data
 
 
 def tic():
@@ -190,25 +155,26 @@ def shift_data(X, ymax, xmax, m0):
     nimg, Ly, Lx = X.shape
     for n in range(nimg):
         X[n] = np.roll(X[n], (-ymax[n], -xmax[n]), axis=(0,1))
-        yrange = np.arange(0, Ly,1,int) + ymax[n]
-        xrange = np.arange(0, Lx,1,int) + xmax[n]
-        yrange = yrange[np.logical_or(yrange<0, yrange>Ly-1)] - ymax[n]
-        xrange = xrange[np.logical_or(xrange<0, xrange>Lx-1)] - xmax[n]
-        X[n][yrange, :] = m0
-        X[n][:, xrange] = m0
-    return X
+        #yrange = np.arange(0, Ly,1,int) + ymax[n]
+        #xrange = np.arange(0, Lx,1,int) + xmax[n]
+        #yrange = yrange[np.logical_or(yrange<0, yrange>Ly-1)] - ymax[n]
+        #xrange = xrange[np.logical_or(xrange<0, xrange>Lx-1)] - xmax[n]
+        #X[n][yrange, :] = m0
+        #X[n][:, xrange] = m0
 
+@vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
+def addmultiplytype(x,y,z):
+    return np.complex64(x*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
-    return (Y*cfRefImg) / (eps0 + np.abs(Y*cfRefImg))
+    x = Y*cfRefImg
+    x  /= (1e-5 + np.abs(x))
+    return x
 
 def phasecorr(data, refAndMasks, ops):
     ''' compute registration offsets
         uses phase correlation if ops['do_phasecorr'] '''
     nimg, Ly, Lx = data.shape
-    maskMul    = refAndMasks[0]
-    maskOffset = refAndMasks[1]
-    cfRefImg   = refAndMasks[2].squeeze()
 
     # maximum registration shift allowed
     maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
@@ -218,18 +184,17 @@ def phasecorr(data, refAndMasks, ops):
     if ops['1Preg']:
         #data = data.copy().astype(np.float32)
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.float32)
-    else:
-        X = data.copy().astype(np.float32)
 
-    X *= maskMul
-    X += maskOffset
-
-    ymax, xmax, cmax = phasecorr_cpu(X, cfRefImg, lcorr)
+    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
 
     return ymax, xmax, cmax
 
-def phasecorr_cpu(X, cfRefImg, lcorr):
-    nimg = X.shape[0]
+def phasecorr_cpu(data, refAndMasks, lcorr):
+    maskMul    = refAndMasks[0]
+    maskOffset = refAndMasks[1]
+    cfRefImg   = refAndMasks[2].squeeze()
+
+    nimg = data.shape[0]
     ly,lx = cfRefImg.shape[-2:]
     lyhalf = int(np.floor(ly/2))
     lxhalf = int(np.floor(lx/2))
@@ -239,15 +204,14 @@ def phasecorr_cpu(X, cfRefImg, lcorr):
     xmax = np.zeros((nimg,), np.int32)
     cmax = np.zeros((nimg,), np.float32)
 
-    Y = np.zeros((X.shape[0], ly, lx), 'complex64')
+    X = addmultiplytype(data, maskMul, maskOffset)
+    for t in range(X.shape[0]):
+        fft2(X[t], overwrite_x=True)
+    X = apply_dotnorm(X, cfRefImg)
     for t in np.arange(nimg):
-        Y[t] = fft2(X[t], s=(ly,lx))
-    Y = apply_dotnorm(Y, cfRefImg)
-    for t in np.arange(nimg):
-        output = np.real(ifft2(Y[t]))
-        output = fft.fftshift(output, axes=(-2,-1))
-        cc = output[np.ix_(np.arange(lyhalf-lcorr,lyhalf+lcorr+1,1,int),
-                        np.arange(lxhalf-lcorr,lxhalf+lcorr+1,1,int))]
+        ifft2(X[t], overwrite_x=True)
+        output = fft.fftshift(np.real(X[t]), axes=(-2,-1))
+        cc = output[lyhalf-lcorr:lyhalf+lcorr+1, lxhalf-lcorr:lxhalf+lcorr+1]
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc, axis=None), cc.shape)
         cmax[t] = cc[ymax[t], xmax[t]]
 
@@ -303,13 +267,13 @@ def register_data(data, refAndMasks, ops):
 
     # rigid registration
     ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
-    Y = shift_data(data.copy(), ymax, xmax, ops['refImg'].mean())
+    shift_data(data, ymax, xmax, ops['refImg'].mean())
     # non-rigid registration
+    Y = []
     if nr:
-        Y = Y.astype(np.float32)
-        ymax1, xmax1, cmax1 = nonrigid.phasecorr(Y, refAndMasks[3:], ops)
+        ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
+        #Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
     return Y, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

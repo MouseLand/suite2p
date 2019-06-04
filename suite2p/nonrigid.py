@@ -7,6 +7,7 @@ from skimage.transform import warp#, PiecewiseAffineTransform
 from suite2p import register
 import time
 import math
+from mkl_fft import fft2, ifft2
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -17,10 +18,6 @@ def tic():
     return time.time()
 def toc(i0):
     return time.time() - i0
-
-@vectorize([complex64(float32, float32, float32)], nopython=True, target = 'parallel')
-def addmultiply(x,y,z):
-    return np.complex64(x*y + z)
 
 # smoothing kernel
 def kernelD(a, b):
@@ -143,14 +140,18 @@ def prepare_masks(refImg1, ops):
 @vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel')
 def apply_masks(Y, maskMul, maskOffset):
     return Y*maskMul + maskOffset
+@vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
+def addmultiply(x,y,z):
+    return np.complex64(x*y + z)
 
 def phasecorr(data, refAndMasks, ops):
+    t0=tic()
     ''' loop through blocks and compute phase correlations'''
     nimg, Ly, Lx = data.shape
     maskMul    = refAndMasks[0].squeeze()
     maskOffset = refAndMasks[1].squeeze()
     cfRefImg   = refAndMasks[2].squeeze()
-    t0=tic()
+
     LyMax = np.diff(np.array(ops['yblock']))
     ly,lx = cfRefImg.shape[-2:]
     lyhalf = int(np.floor(ly/2))
@@ -165,8 +166,6 @@ def phasecorr(data, refAndMasks, ops):
     # preprocessing for 1P recordings
     if ops['1Preg']:
         X = register.one_photon_preprocess(data.copy().astype(np.float32), ops)
-    else:
-        X = data.astype(np.float32)
 
     # shifts and corrmax
     ymax1 = np.zeros((nimg,nb),np.float32)
@@ -179,32 +178,27 @@ def phasecorr(data, refAndMasks, ops):
     xmax = np.zeros((nb,), np.int32)
 
     print('fft %2.2f'%toc(t0))
-    Y = np.zeros((nimg, nb, ly, lx), 'float32')
+    Y = np.zeros((nimg, nb, ly, lx), 'int16')
     for n in range(nb):
         yind, xind = ops['yblock'][n], ops['xblock'][n]
-        Y[:,n] = X[:, yind[0]:yind[-1], xind[0]:xind[-1]]
+        Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
 
     for n in range(nb):
         for t in range(nimg):
-            Y[t,n] = register.fft2(Y[t,n])
+            fft2(Y[t,n], overwrite_x=True)
     Y = register.apply_dotnorm(Y, cfRefImg)
 
     for n in range(nb):
         for t in range(nimg):
-            output = np.real(register.ifft2( Y[t,n] ))
-            output = fft.fftshift(output, axes=(-2,-1))
-            cc = output[np.ix_(np.arange(lyhalf-lcorr-lpad,lyhalf+lcorr+1+lpad,1,int),
-                            np.arange(lxhalf-lcorr-lpad,lxhalf+lcorr+1+lpad,1,int))]
-            cc0[t,n] = cc.copy()
-            # compute SNR
-            ix = np.argmax(cc[np.ix_(np.arange(lpad, cc.shape[-2]-lpad, 1, int),
-                                     np.arange(lpad, cc.shape[-1]-lpad, 1, int))], axis=None)
+            ifft2(Y[t,n], overwrite_x=True)
+            output = fft.fftshift(np.real(Y[t,n]), axes=(-2,-1))
+            cc0[t,n] = output[(lyhalf-lcorr-lpad):(lyhalf+lcorr+1+lpad), (lxhalf-lcorr-lpad):(lxhalf+lcorr+1+lpad)]
+            ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            X1max = cc[ym+lpad, xm+lpad]
-            # set to 0 all pts +-lpad from ymax,xmax
-            cc[np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))] = 0
-            Xmax  = np.maximum(0, np.max(cc, axis=None))
+            X1max = cc0[t,n][ym+lpad, xm+lpad]
+            cc0[t,n][ym:ym+2*lpad+1, xm:xm+2*lpad+1] = 0 # set to 0 all pts +-lpad from ymax,xmax
+            Xmax  = np.maximum(0, np.max(cc0[t,n], axis=None))
             snr[t,n] = X1max / (1e-5 + Xmax)
     print('fft %2.2f'%toc(t0))
 
@@ -214,10 +208,9 @@ def phasecorr(data, refAndMasks, ops):
         del ccsm
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
-            ix = np.argmax(cc0[t,n][np.ix_(np.arange(lpad, cc.shape[-2]-lpad, 1, int),
-                                    np.arange(lpad, cc.shape[-1]-lpad, 1, int))], axis=None)
+            ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            ccmat[n] = cc0[t,n][np.ix_(np.arange(ym, ym+2*lpad+1, 1, int), np.arange(xm, xm+2*lpad+1, 1, int))]
+            ccmat[n] = cc0[t,n][ym:ym+2*lpad+1, xm:xm+2*lpad+1]
             ymax[n], xmax[n] = ym, xm
         ccmat = np.reshape(ccmat, (nb,-1))
         ccb = np.dot(ccmat, Kmat)

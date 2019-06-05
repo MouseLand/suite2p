@@ -398,7 +398,7 @@ def sparsery(ops):
     nscales = len(lxs)
 
     t0 = time.time()
-    niter = 5000
+    niter = 250 * ops['max_iterations']
     Vmax = np.zeros((niter))
     ihop = np.zeros((niter))
     vrat = np.zeros((niter))

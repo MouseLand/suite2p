@@ -514,7 +514,7 @@ def mesoscan_to_binary(ops):
                 else:
                     nfunc = 0
                 #frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
-                im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels, jlines[0]:jlines[-1], :]
+                im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels, jlines[0]:(jlines[-1]+1), :]
                 #im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
                 #ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))

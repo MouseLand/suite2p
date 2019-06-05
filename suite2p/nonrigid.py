@@ -176,7 +176,6 @@ def phasecorr(data, refAndMasks, ops):
     xmax1 = np.zeros((nimg,nb),np.float32)
 
     cc0 = np.zeros((nimg, nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
-    snr = np.zeros((nimg, nb), np.float32)
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
 
@@ -208,7 +207,6 @@ def phasecorr(data, refAndMasks, ops):
         snr = np.ones((nimg,), 'float32')
         for j in range(len(cc2)):
             ism = snr<ops['snr_thresh']
-            print(np.sum(ism))
             if np.sum(ism)==0:
                 break
             cc = cc2[j][n,ism,:,:]
@@ -233,18 +231,6 @@ def phasecorr(data, refAndMasks, ops):
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
     print('fft %2.2f'%toc(t0))
-
-    sig = 0
-    if sig>0:
-        cc1 = np.reshape(cc1,(nimg,ly,lx,nblocks[0],nblocks[1]))
-        cc1 = gaussian_filter(cc1, [0,0,0,sig,sig])
-        cc1 = np.reshape(cc1,(nimg,ly,lx,nb))
-        for n in range(nb):
-            ymax, xmax, cmax = getXYup(cc1[:,:,:,n], (lcorr,lpad, lyhalf, lxhalf), ops)
-            ymax1[:,n] = ymax
-            xmax1[:,n] = xmax
-            cmax1[:,n] = cmax
-
     return ymax1, xmax1, cmax1
 
 def getSNR(cc, Ls, ops):

@@ -49,7 +49,7 @@ def gaussian_fft(sig, Ly, Lx):
     hgy = np.exp(-np.square(yy/sig) / 2)
     hgg = hgy * hgx
     hgg /= hgg.sum()
-    fhg = np.real(fft.fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+    fhg = np.real(fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
     return fhg
 
 def spatial_taper(sig, Ly, Lx):
@@ -113,10 +113,10 @@ def prepare_masks(refImg0, ops):
 
     # reference image in fourier domain
     if ops['pad_fft']:
-        cfRefImg   = np.conj(fft.fft2(refImg,
+        cfRefImg   = np.conj(fft2(refImg,
                             (next_fast_len(ops['Ly']), next_fast_len(ops['Lx']))))
     else:
-        cfRefImg   = np.conj(fft.fft2(refImg))
+        cfRefImg   = np.conj(fft2(refImg))
 
     if ops['do_phasecorr']:
         absRef     = np.absolute(cfRefImg);
@@ -167,8 +167,8 @@ def addmultiplytype(x,y,z):
     return np.complex64(np.float32(x)*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
-    x = Y*cfRefImg
-    x  /= (1e-5 + np.abs(x))
+    x  = Y / (eps0 + np.abs(Y))
+    x = x*cfRefImg
     return x
 
 def phasecorr(data, refAndMasks, ops):
@@ -280,7 +280,7 @@ def register_data(data, refAndMasks, ops):
     if nr:
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        data = nonrigid.transform_data(data, ops, ymax1, xmax1)
+        #data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):

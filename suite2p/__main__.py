@@ -1,7 +1,7 @@
 import suite2p
 import numpy as np
 import time, os
-from suite2p import register, dcnv, celldetect, run_s2p, gui2p
+from suite2p import run_s2p, gui2p
 import argparse
 
 def tic():
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
     args = parser.parse_args()
-    
+
     ops = {}
     db= {}
     if len(args.ops)>0:

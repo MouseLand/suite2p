@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, celldetect2
+from suite2p import utils, roiextract
 import time
 
 '''
@@ -61,8 +61,8 @@ def detect(ops, stat):
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
     # ops['min_neuropil_pixels'] = 80
-    _, cell_pix, cell_masks = celldetect2.create_cell_masks(ops, stat, Ly, Lx, allow_overlap=True)
-    neuropil_masks = celldetect2.create_neuropil_masks(ops, stat, cell_pix)
+    _, cell_pix, cell_masks = roiextract.create_cell_masks(ops, stat, Ly, Lx, allow_overlap=True)
+    neuropil_masks = roiextract.create_neuropil_masks(ops, stat, cell_pix)
     neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
     cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
 

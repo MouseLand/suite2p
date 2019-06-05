@@ -513,10 +513,10 @@ def mesoscan_to_binary(ops):
                     nfunc = ops['functional_chan']-1
                 else:
                     nfunc = 0
-                # take iplanes
-                frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
-                im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
-                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+                #frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
+                im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels, jlines[0]:jlines[-1], :]
+                #im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
+                #ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
@@ -524,7 +524,7 @@ def mesoscan_to_binary(ops):
                     frange = np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels)
                     im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
                     reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                    #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
         gc.collect()

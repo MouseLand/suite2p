@@ -55,7 +55,7 @@ def pc_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, blo
         'do_phasecorr': do_phasecorr,
         'smooth_sigma': smooth_sigma,
         '1Preg': False,
-        'pad_fft': True,
+        'pad_fft': False,
         'bidiphase': 0,
         'refImg': refImg
         }

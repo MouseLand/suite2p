@@ -122,7 +122,7 @@ def prepare_masks(refImg1, ops):
 @vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel')
 def apply_masks(Y, maskMul, maskOffset):
     return Y*maskMul + maskOffset
-@vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
+@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
 def my_clip(X, lhalf):
@@ -230,7 +230,6 @@ def phasecorr(data, refAndMasks, ops):
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
-    print('fft %2.2f'%toc(t0))
     return ymax1, xmax1, cmax1
 
 def getSNR(cc, Ls, ops):
@@ -308,7 +307,8 @@ def map_coordinates(I, yc, xc, Y):
 def nfloor(y):
     return math.floor(y) #np.int32(np.floor(y))
 
-@njit((int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]), parallel=True)
+@njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
+       'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     ''' shift data by yup and xup
         data is nimg x Ly x Lx

@@ -162,7 +162,7 @@ def shift_data(X, ymax, xmax, m0):
         #X[n][yrange, :] = m0
         #X[n][:, xrange] = m0
 
-@vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
+@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
 def addmultiplytype(x,y,z):
     return np.complex64(np.float32(x)*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
@@ -683,7 +683,6 @@ def register_binary(ops, refImg=None):
         do_regmetrics = ops['do_regmetrics']
     else:
         do_regmetrics = True
-    do_regmetrics = False
 
     k0 = tic()
 

@@ -263,7 +263,7 @@ def phasecorr(data, refAndMasks, ops):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
 
-    return ymax1, xmax1, snr
+    return ymax1, xmax1, cmax1
 
 def linear_interp(iy, ix, yb, xb, f):
     ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''

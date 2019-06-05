@@ -1,3 +1,4 @@
+import gc
 import numpy as np
 from natsort import natsorted
 import math, time
@@ -526,6 +527,7 @@ def mesoscan_to_binary(ops):
                     ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
+        gc.collect()
     print(ops1[0]['nframes'])
     # write ops files
     do_registration = ops['do_registration']

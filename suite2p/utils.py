@@ -3,7 +3,7 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import register, nonrigid, chan2detect, celldetect2, sparsedetect, roiextract
+from suite2p import register, nonrigid, chan2detect, sparsedetect, roiextract
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io

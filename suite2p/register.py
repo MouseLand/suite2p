@@ -164,7 +164,7 @@ def shift_data(X, ymax, xmax, m0):
 
 @vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
 def addmultiplytype(x,y,z):
-    return np.complex64(x*y + z)
+    return np.complex64(np.float32(x)*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
     x = Y*cfRefImg
@@ -183,7 +183,7 @@ def phasecorr(data, refAndMasks, ops):
     # preprocessing for 1P recordings
     if ops['1Preg']:
         #data = data.copy().astype(np.float32)
-        X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.float32)
+        X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
 
@@ -280,8 +280,8 @@ def register_data(data, refAndMasks, ops):
     if nr:
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
-        Y = nonrigid.transform_data(Y, ops, ymax1, xmax1)
-    return Y, ymax, xmax, cmax, yxnr
+        data = nonrigid.transform_data(data, ops, ymax1, xmax1)
+    return data, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
     if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
@@ -401,12 +401,13 @@ def refine_init(ops, frames, refImg):
         xmax = xmax.astype(np.float32)
         isort = np.argsort(-cmax)
         nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
-        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze()
+        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze().astype(np.int16)
         dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
         # shift data requires an array of shifts
         dy = np.array([int(np.round(dy))])
         dx = np.array([int(np.round(dx))])
-        refImg = shift_data(refImg, dy, dx, refImg.mean()).squeeze()
+        shift_data(refImg, dy, dx, refImg.mean())
+        refImg = refImg.squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
@@ -549,7 +550,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
             buff = raw_file_align.read(nbytesread)
         else:
             buff = reg_file_align.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
         if data.size==0:
             break

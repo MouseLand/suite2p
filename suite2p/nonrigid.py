@@ -41,24 +41,6 @@ def mat_upsample(lpad):
 
 Kmat, nup = mat_upsample(lpad)
 
-def getSNR(cc, Ls, ops):
-    ''' compute SNR of phase-correlation - is it an accurate predicted shift? '''
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    X1max  = np.amax(cc0, axis = 1)
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)]
-    for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
-    snr = X1max / Xmax # computes snr
-    return snr
-
 def getXYup(cc, Ls, ops):
     ''' get subpixel registration shifts from phase-correlation matrix cc '''
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
@@ -143,11 +125,11 @@ def apply_masks(Y, maskMul, maskOffset):
 @vectorize([complex64(int16, float32, float32)], nopython=True, target = 'parallel')
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
-def my_clip(X, lcorr, lpad):
-    x00 = X[:, :, :lcorr+lpad+1, :lcorr+lpad+1]
-    x11 = X[:, :, -lcorr-lpad:, -lcorr-lpad:]
-    x01 = X[:, :, :lcorr+lpad+1, -lcorr-lpad:]
-    x10 = X[:, :, -lcorr-lpad:, :lcorr+lpad+1]
+def my_clip(X, lhalf):
+    x00 = X[:, :, :lhalf+1, :lhalf+1]
+    x11 = X[:, :, -lhalf:, -lhalf:]
+    x01 = X[:, :, :lhalf+1, -lhalf:]
+    x10 = X[:, :, -lhalf:, :lhalf+1]
     return x00, x01, x10, x11
 def getSNR(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
@@ -210,10 +192,9 @@ def phasecorr(data, refAndMasks, ops):
     for n in range(nb):
         for t in range(nimg):
             ifft2(Y[t,n], overwrite_x=True)
-    x00, x01, x10, x11 = my_clip(Y, lcorr, lpad)
+    x00, x01, x10, x11 = my_clip(Y, lcorr+lpad)
     cc0 = np.real(np.block([[x11, x10], [x01, x00]]))
     cc0 = np.transpose(cc0, (1,0,2,3))
-
     cc0 = cc0.reshape((cc0.shape[0], -1))
     cc2 = []
     R = ops['NRsm']
@@ -227,12 +208,13 @@ def phasecorr(data, refAndMasks, ops):
         snr = np.ones((nimg,), 'float32')
         for j in range(len(cc2)):
             ism = snr<ops['snr_thresh']
+            print(np.sum(ism))
             if np.sum(ism)==0:
                 break
             cc = cc2[j][n,ism,:,:]
             if j>0:
                 ccsm[n, ism, :, :] = cc
-            snr[ism] = getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+            snr[ism] = getSNR(cc, (lcorr,lpad), ops)
 
     ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
     for t in range(nimg):
@@ -264,6 +246,24 @@ def phasecorr(data, refAndMasks, ops):
             cmax1[:,n] = cmax
 
     return ymax1, xmax1, cmax1
+
+def getSNR(cc, Ls, ops):
+    ''' compute SNR of phase-correlation - is it an accurate predicted shift? '''
+    (lcorr, lpad) = Ls
+    nimg = cc.shape[0]
+    cc0 = cc[:, lpad:-lpad, lpad:-lpad]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    X1max  = np.amax(cc0, axis = 1)
+    ix  = np.argmax(cc0, axis = 1)
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    # set to 0 all pts +-lpad from ymax,xmax
+    cc0 = cc.copy()
+    for j in range(nimg):
+        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
+    cc0 = np.reshape(cc0, (nimg, -1))
+    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
+    snr = X1max / Xmax # computes snr
+    return snr
 
 def linear_interp(iy, ix, yb, xb, f):
     ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''

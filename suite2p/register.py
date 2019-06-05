@@ -154,7 +154,7 @@ def shift_data(X, ymax, xmax, m0):
         X = X[np.newaxis,:,:]
     nimg, Ly, Lx = X.shape
     for n in range(nimg):
-        X[n] = np.roll(X[n], (-ymax[n], -xmax[n]), axis=(0,1))
+        X[n] = np.roll(X[n].copy(), (-ymax[n], -xmax[n]), axis=(0,1))
         #yrange = np.arange(0, Ly,1,int) + ymax[n]
         #xrange = np.arange(0, Lx,1,int) + xmax[n]
         #yrange = yrange[np.logical_or(yrange<0, yrange>Ly-1)] - ymax[n]
@@ -188,12 +188,14 @@ def phasecorr(data, refAndMasks, ops):
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
 
     return ymax, xmax, cmax
+
 def my_clip(X, lcorr):
     x00 = X[:,  :lcorr+1, :lcorr+1]
     x11 = X[:,  -lcorr:, -lcorr:]
     x01 = X[:,  :lcorr+1, -lcorr:]
     x10 = X[:,  -lcorr:, :lcorr+1]
     return x00, x01, x10, x11
+
 def phasecorr_cpu(data, refAndMasks, lcorr):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
@@ -273,8 +275,8 @@ def register_data(data, refAndMasks, ops):
     # rigid registration
     ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     shift_data(data, ymax, xmax, ops['refImg'].mean())
-    # non-rigid registration
     Y = []
+    # non-rigid registration
     if nr:
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]

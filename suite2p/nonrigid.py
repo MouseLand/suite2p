@@ -149,7 +149,22 @@ def my_clip(X, lcorr, lpad):
     x01 = X[:, :, :lcorr+lpad+1, -lcorr-lpad:]
     x10 = X[:, :, -lcorr-lpad:, :lcorr+lpad+1]
     return x00, x01, x10, x11
-
+def getSNR(cc, Ls, ops):
+    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
+    nimg = cc.shape[0]
+    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = np.reshape(cc0, (nimg, -1))
+    X1max  = np.amax(cc0, axis = 1)
+    ix  = np.argmax(cc0, axis = 1)
+    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    # set to 0 all pts +-lpad from ymax,xmax
+    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)]
+    for j in range(nimg):
+        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
+    cc0 = np.reshape(cc0, (nimg, -1))
+    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
+    snr = X1max / Xmax # computes snr
+    return snr
 def phasecorr(data, refAndMasks, ops):
     t0=tic()
     ''' loop through blocks and compute phase correlations'''
@@ -197,16 +212,7 @@ def phasecorr(data, refAndMasks, ops):
             ifft2(Y[t,n], overwrite_x=True)
     x00, x01, x10, x11 = my_clip(Y, lcorr, lpad)
     cc0 = np.real(np.block([[x11, x10], [x01, x00]]))
-    for n in range(nb):
-        for t in range(nimg):
-            ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
-            ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            X1max = cc0[t,n][ym+lpad, xm+lpad]
-            czero = cc0[t,n].copy()
-            czero[ym:ym+2*lpad+1, xm:xm+2*lpad+1] = 0 # set to 0 all pts +-lpad from ymax,xmax
-            Xmax  = np.maximum(0, np.max(czero, axis=None))
-            snr[t,n] = X1max / (1e-5 + Xmax)
-
+    cc0 = np.transpose(cc0, (1,0,2,3))
 
     cc0 = cc0.reshape((cc0.shape[0], -1))
     cc2 = []
@@ -226,18 +232,15 @@ def phasecorr(data, refAndMasks, ops):
             cc = cc2[j][n,ism,:,:]
             if j>0:
                 ccsm[n, ism, :, :] = cc
-            snr[ism] = register.getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+            snr[ism] = getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
 
-
+    ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
     for t in range(nimg):
-        ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0[t], (cc0.shape[1], -1)), cc0.shape[1:])
-        cc0[t][snr[t] < ops['snr_thresh']] = ccsm[snr[t] < ops['snr_thresh']]
-        del ccsm
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
-            ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
+            ix = np.argmax(ccsm[n, t][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            ccmat[n] = cc0[t,n][ym:ym+2*lpad+1, xm:xm+2*lpad+1]
+            ccmat[n] = ccsm[n,t][ym:ym+2*lpad+1, xm:xm+2*lpad+1]
             ymax[n], xmax[n] = ym-lcorr, xm-lcorr
         ccmat = np.reshape(ccmat, (nb,-1))
         ccb = np.dot(ccmat, Kmat)

@@ -206,6 +206,29 @@ def phasecorr(data, refAndMasks, ops):
             czero[ym:ym+2*lpad+1, xm:xm+2*lpad+1] = 0 # set to 0 all pts +-lpad from ymax,xmax
             Xmax  = np.maximum(0, np.max(czero, axis=None))
             snr[t,n] = X1max / (1e-5 + Xmax)
+
+
+    cc0 = cc0.reshape((cc0.shape[0], -1))
+    cc2 = []
+    R = ops['NRsm']
+    cc2.append(cc0)
+    for j in range(2):
+        cc2.append(R @ cc2[j])
+    for j in range(len(cc2)):
+        cc2[j] = cc2[j].reshape((nb, nimg, 2*lcorr+2*lpad+1, 2*lcorr+2*lpad+1))
+    ccsm = cc2[0]
+    for n in range(nb):
+        snr = np.ones((nimg,), 'float32')
+        for j in range(len(cc2)):
+            ism = snr<ops['snr_thresh']
+            if np.sum(ism)==0:
+                break
+            cc = cc2[j][n,ism,:,:]
+            if j>0:
+                ccsm[n, ism, :, :] = cc
+            snr[ism] = register.getSNR(cc, (lcorr,lpad, lcorr+lpad, lcorr+lpad), ops)
+
+
     for t in range(nimg):
         ccsm = np.reshape(ops['NRsm'] @ np.reshape(cc0[t], (cc0.shape[1], -1)), cc0.shape[1:])
         cc0[t][snr[t] < ops['snr_thresh']] = ccsm[snr[t] < ops['snr_thresh']]

@@ -183,7 +183,6 @@ def phasecorr(data, refAndMasks, ops):
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
 
-
     Y = np.zeros((nimg, nb, ly, lx), 'int16')
     for n in range(nb):
         yind, xind = ops['yblock'][n], ops['xblock'][n]
@@ -215,7 +214,7 @@ def phasecorr(data, refAndMasks, ops):
             ix = np.argmax(cc0[t,n][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
             ccmat[n] = cc0[t,n][ym:ym+2*lpad+1, xm:xm+2*lpad+1]
-            ymax[n], xmax[n] = ym, xm
+            ymax[n], xmax[n] = ym-lcorr, xm-lcorr
         ccmat = np.reshape(ccmat, (nb,-1))
         ccb = np.dot(ccmat, Kmat)
         imax = np.argmax(ccb, axis=1)
@@ -223,7 +222,7 @@ def phasecorr(data, refAndMasks, ops):
         ymax1[t], xmax1[t] = np.unravel_index(imax, (nup,nup))
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
-        ymax1[t], xmax1[t] = ymax1[t] + ymax - lyhalf, xmax1[t] + xmax - lxhalf
+        ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
     print('fft %2.2f'%toc(t0))
 
     sig = 0
@@ -237,7 +236,7 @@ def phasecorr(data, refAndMasks, ops):
             xmax1[:,n] = xmax
             cmax1[:,n] = cmax
 
-    return ymax1, xmax1, cmax1
+    return ymax1, xmax1, snr
 
 def linear_interp(iy, ix, yb, xb, f):
     ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
@@ -271,7 +270,7 @@ def linear_interp(iy, ix, yb, xb, f):
 #    #out = d00 * (1-yc)* (1-xc)
 #    return out
 
-@njit((float32[:, :],float32[:,:], float32[:,:], float32[:,:]))
+@njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'])
 def map_coordinates(I, yc, xc, Y):
     ''' bilinear transform of image with ycoordinates yc and xcoordinates xc to Y'''
     Ly,Lx = I.shape
@@ -287,18 +286,16 @@ def map_coordinates(I, yc, xc, Y):
             xf1= min(Lx-1, xf+1)
             y = yc[i,j]
             x = xc[i,j]
-            Y[i,j] = (I[yf, xf] * (1 - y) * (1 - x) +
-                    I[yf, xf1] * (1 - y) * x +
-                    I[yf1, xf] * y * (1 - x) +
-                    I[yf1, xf1] * y * x )
-    #Y = bilinear_interp(d00, d01, d10, d11, yc, xc)
-    #return Y
+            Y[i,j] = (np.float32(I[yf, xf]) * (1 - y) * (1 - x) +
+                      np.float32(I[yf, xf1]) * (1 - y) * x +
+                      np.float32(I[yf1, xf]) * y * (1 - x) +
+                      np.float32(I[yf1, xf1]) * y * x )
 
 @vectorize([int32(float32)], nopython=True)
 def nfloor(y):
     return math.floor(y) #np.int32(np.floor(y))
 
-@njit((float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]), parallel=True)
+@njit((int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]), parallel=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     ''' shift data by yup and xup
         data is nimg x Ly x Lx
@@ -360,7 +357,7 @@ def transform_data(data, ops, ymax1, xmax1):
     # take shifts and make matrices of shifts nimg x Ly x Lx
     yup,xup = upsample_block_shifts(ops, ymax1, xmax1)
     mshx,mshy = np.meshgrid(np.arange(0,Lx,1,np.float32), np.arange(0,Ly,1,np.float32))
-    Y = np.zeros_like(data)
+    Y = np.zeros(data.shape, np.float32)
     # use shifts and do bilinear interpolation
     shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y

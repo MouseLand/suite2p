@@ -9,6 +9,8 @@ from scipy.sparse import csr_matrix
 from scipy import stats
 import os
 
+
+
 def tic():
     return time.time()
 def toc(i0):
@@ -135,6 +137,13 @@ def create_neuropil_masks(ops, stat, cell_pix):
     neuropil_masks /= S[:, np.newaxis, np.newaxis]
     return neuropil_masks
 
+#from numba import njit, float32, prange, boolean
+#@njit((float32[:,:], int32[:], float32[:]), parallel=True)
+#def matmul_index(X, inds, Y):
+#    for t in prange(inds.shape[0]):
+#        Y[n] = X[inds[:], t]
+
+
 def extractF(ops, stat, neuropil_masks, reg_file):
     nimgbatch = 1000
     nframes = int(ops['nframes'])
@@ -160,14 +169,16 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         nimg = int(np.floor(data.size / (Ly*Lx)))
         if nimg == 0:
             break
-        data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+        data = np.reshape(data, (-1, Ly, Lx))
         inds = ix+np.arange(0,nimg,1,int)
-        ops['meanImg'] += data[~ops['badframes'][inds],:,:].mean(axis=0)
-        data = np.reshape(data, (nimg,-1)).transpose()
+        ops['meanImg'] += data.mean(axis=0)
+        data = np.reshape(data, (nimg,-1))
+        
         # extract traces and neuropil
         for n in range(ncells):
-            F[n,inds] = (data[stat[n]['ipix'],:] * stat[n]['lam'][:,np.newaxis]).sum(axis=0)
-        Fneu[:,inds] = neuropil_masks @ data
+            F[n,inds] = np.dot(data[:, stat[n]['ipix']], stat[n]['lam'])
+            #Fneu[n,inds] = np.mean(data[neuropil_masks[n,:], :], axis=0)
+        Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         if ix%(5*nimg)==0:
             print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
         ix += nimg
@@ -212,7 +223,6 @@ def roi_detect_and_extract(ops):
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
     print(ops['diameter'])
     ops, stat = sparsedetect.sparsery(ops)
-    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
 
     ### apply default classifier ###
     classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -232,6 +242,7 @@ def roi_detect_and_extract(ops):
     else:
         iscell = np.zeros((0,2))
     np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
+    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
 
     stat = sparsedetect.get_overlaps(stat,ops)
     #stat, ix = remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])

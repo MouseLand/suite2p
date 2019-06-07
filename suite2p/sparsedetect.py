@@ -4,11 +4,19 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage.filters import uniform_filter
 import numpy as np
 import time
+from numba import vectorize, float32
 
 def tic():
     return time.time()
 def toc(i0):
     return time.time() - i0
+
+@vectorize('float32(float32, float32)', target = 'parallel', nopython=True)
+def my_max(a, b):
+    return max(a,b)
+@vectorize('float32(float32, float32)', target = 'parallel', nopython=True)
+def my_sum(a, b):
+    return a+b
 
 def get_mov(ops):
     i0 = tic()
@@ -47,39 +55,35 @@ def get_mov(ops):
             nimgd = int(np.floor(data.size / (Ly*Lx)))
             if nimgd < nt0:
                 break
-            data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
+            data = np.reshape(data, (-1, Ly, Lx))
             dinds = idata + np.arange(0,data.shape[0],1,int)
             idata+=data.shape[0]
-            if badframes:
+            if badframes and np.sum(ops['badframes'][dinds])>.5:
                 data = data[~ops['badframes'][dinds],:,:]
-            # bin data
             nimgd = data.shape[0]
             if nimgd < nimgbatch:
                 nmax = int(np.floor(nimgd / nt0) * nt0)
                 data = data[:nmax,:,:]
             dbin = np.reshape(data, (-1,nt0,Ly,Lx))
-            dbin = dbin.mean(axis=1)
-            #dbin = np.squeeze(dbin, axis=1)
-            #dbin -= dbin.mean(axis=0)
-            inds = ix + np.arange(0,dbin.shape[0])
+            DD = dbin.mean(axis=1)
             # crop into valid area
-            dbin = dbin[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-            mov[inds,:,:] = dbin
-            max_proj = np.maximum(max_proj, dbin.max(axis=0))
+            mov[ix:ix+dbin.shape[0],:,:] = DD[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
+    max_proj = np.max(mov, axis=0)
+
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
         for j in range(mov.shape[1]):
             mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
     else:
-        i0 = 0
+        ki0 = 0
         while 1:
-            irange = i0 + np.arange(0,int(ops['high_pass']))
+            irange = ki0 + np.arange(0,int(ops['high_pass']))
             irange = irange[irange<mov.shape[0]]
             if len(irange)>0:
-                mov[irange,:,:] -= np.mean(mov[irange,:,:], axis=0)
-                i0 += len(irange)
+                mov[ki0:ki0+int(ops['high_pass']),:,:] -= mov[ki0:ki0+int(ops['high_pass']),:,:].mean(axis=0)
+                ki0 += len(irange)
             else:
                 break
     return mov, max_proj
@@ -94,15 +98,11 @@ def get_sdmov(mov, ops):
         nbins, npix = mov.shape
     sdmov = np.zeros(npix, 'float32')
     while 1:
-        inds = ix + np.arange(0,batch_size)
-        inds = inds[inds<nbins]
-        if inds.size==0:
+        if ix>=nbins:
             break
-        sdmov += np.sum(np.diff(mov[inds, :], axis = 0)**2, axis = 0)
+        sdmov += np.sum(np.diff(mov[ix:ix+batch_size,:, :], axis = 0)**2, axis = 0)
         ix = ix + batch_size
-    sdmov = (sdmov/nbins)**0.5
-    sdmov = np.maximum(1e-10,sdmov)
-    #sdmov = np.mean(np.diff(mov, axis = 0)**2, axis = 0)**.5
+    sdmov = np.maximum(1e-10, (sdmov/nbins)**0.5)
     return sdmov
 
 
@@ -328,7 +328,7 @@ def sparsery(ops):
     ops['Lyc'] = Ly
     ops['Lxc'] = Lx
     sdmov = get_sdmov(rez, ops)
-    rez /= np.reshape(sdmov, (Ly,Lx))
+    rez /= sdmov
     #rez *= -1
 
     lx = [ops['spatial_hp']]
@@ -398,7 +398,7 @@ def sparsery(ops):
     nscales = len(lxs)
 
     t0 = time.time()
-    niter = 5000
+    niter = 250 * ops['max_iterations']
     Vmax = np.zeros((niter))
     ihop = np.zeros((niter))
     vrat = np.zeros((niter))

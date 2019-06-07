@@ -9,7 +9,7 @@ from matplotlib import cm
 import time
 import sys,os
 #sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
-from rastermap import mapping
+from rastermap.mapping import Rastermap
 from suite2p import gui,fig
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
@@ -326,9 +326,9 @@ class VisWindow(QtGui.QMainWindow):
         self.PCedit.returnPressed.connect(self.PCreturn)
 
         #model = np.load(os.path.join(parent.ops['save_path0'], 'embedding.npy'))
-        model = np.load('embedding.npy', allow_pickle=True).item()
-        self.isort1 = np.argsort(model['embedding'][:,0])
-        self.u = model['uv'][0]
+        #model = np.load('embedding.npy', allow_pickle=True).item()
+        self.isort1 = np.argsort(self.model.embedding[:,0])
+        self.u = self.model.u
         self.comboBox.addItem("rastermap")
         #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
@@ -357,21 +357,25 @@ class VisWindow(QtGui.QMainWindow):
         ops = {'n_components': 1, 'n_X': 100, 'alpha': 1., 'K': 1.,
                     'nPC': 200, 'constraints': 2, 'annealing': True, 'init': 'pca',
                     'start_time': 0, 'end_time': -1}
-        #opspath = os.path.join(parent.ops['save_path0'], 'rasterops.npy')
-        opspath = 'rasterops.npy'
-        np.save(opspath, ops)
-
-        #spath = os.path.join(parent.ops['save_path0'], 'rastersp.npy')
-        spath = 'rastersp.npy'
-        np.save(spath, self.sp)
-
         self.error=False
         self.finish=True
         self.mapOn.setEnabled(False)
         self.tic=time.time()
-
-        self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
-                            (spath, opspath))
+        try:
+            self.model = Rastermap(n_components=ops['n_components'], n_X=ops['n_X'], nPC=ops['nPC'],
+                          init=ops['init'], alpha=ops['alpha'], K=ops['K'], constraints=ops['constraints'],
+                          annealing=ops['annealing'])
+            self.model.fit(self.sp)
+            #proc  = {'embedding': model.embedding, 'uv': [model.u, model.v],
+            #         'ops': ops, 'filename': args.S, 'train_time': train_time}
+            #basename, fname = os.path.split(args.S)
+            #np.save(os.path.join(basename, 'embedding.npy'), proc)
+            print('raster map computed in %3.2f s'%(time.time()-self.tic))
+        except:
+            print('Interrupted by error (not finished)\n')
+        self.activate(parent)
+        #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
+        #                    (spath, opspath))
 
     def finished(self, parent):
         if self.finish and not self.error:

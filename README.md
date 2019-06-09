@@ -99,6 +99,8 @@ For a description of all the settings and their defaults, see this wiki [page](h
 
 ### Using the GUI
 
+![multiselect](gui_images/multiselect.gif)
+
 suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results.
 
 The GUI serves two main functions:

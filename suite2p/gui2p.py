@@ -10,6 +10,7 @@ from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
+from scipy import io
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -20,10 +21,10 @@ def resample_frames(y, x, xt):
     return yt
 
 class MainW(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(10, 10, 1600, 950)
+        self.setGeometry(0, 0, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -72,17 +73,19 @@ class MainW(QtGui.QMainWindow):
         for k in range(6):
             self.ops_plot.append(0)
 
-        # ------ MENU BAR -----------------
+        # --------------- MENU BAR --------------------------
         # run suite2p from scratch
         runS2P = QtGui.QAction("&Run suite2p ", self)
         runS2P.setShortcut("Ctrl+R")
         runS2P.triggered.connect(self.run_suite2p)
         self.addAction(runS2P)
+
         # load processed data
         loadProc = QtGui.QAction("&Load processed data", self)
         loadProc.setShortcut("Ctrl+L")
         loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
+
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
             "Load behavior or stim trace (1D only)", self
@@ -90,23 +93,27 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
+
+        # load processed data
+        self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
+        self.saveMat.setShortcut("Ctrl+S")
+        self.saveMat.triggered.connect(self.save_mat)
+        self.saveMat.setEnabled(False)
+        self.addAction(self.saveMat)
+
         # export figure
         exportFig = QtGui.QAction("Export as image (svg)", self)
         exportFig.triggered.connect(self.export_fig)
         exportFig.setEnabled(True)
         self.addAction(exportFig)
-        # load masks
-        # loadMask = QtGui.QAction(
-        #     "&Load masks (stat.npy) and extract traces", self
-        # )
-        # loadMask.setShortcut('Ctrl+M')
-        # self.addAction(loadMask)
+
         # make mainmenu!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
         file_menu.addAction(self.loadBeh)
+        file_menu.addAction(self.saveMat)
         file_menu.addAction(exportFig)
         # classifier menu
         self.trainfiles = []
@@ -164,11 +171,7 @@ class MainW(QtGui.QMainWindow):
         reg_menu.addAction(self.reg)
         reg_menu.addAction(self.regPC)
 
-        # self.reg.setShortcut('Ctrl+V')
-        # --------- MAIN WIDGET LAYOUT ---------
-        # pg.setConfigOption('background', 'w')
-        # cwidget = EventWidget(self)
-        # plugins menuBar
+        # plugin menu
         self.plugins = {}
         plugin_menu = main_menu.addMenu('&Plugins')
         for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
@@ -176,15 +179,13 @@ class MainW(QtGui.QMainWindow):
             self.plugins[entry_pt.name].triggered.connect(entry_pt.window)
             plugin_menu.addAction(self.plugins[entry_pt.name])
 
-        #self.reg.setShortcut('Ctrl+V')
-        #### --------- MAIN WIDGET LAYOUT --------- ####
-        #pg.setConfigOption('background', 'w')
-        #cwidget = EventWidget(self)
+        # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QtGui.QWidget()
         self.l0 = QtGui.QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
         # ROI CHECKBOX
+        self.l0.setVerticalSpacing(4)
         self.checkBox = QtGui.QCheckBox("ROIs On [space bar]")
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.stateChanged.connect(self.ROIs_on)
@@ -241,11 +242,12 @@ class MainW(QtGui.QMainWindow):
                 btn.setEnabled(True)
             b += 1
         self.sizebtns.setExclusive(True)
-        # -------- MAIN PLOTTING AREA ----------
+
+        ##### -------- MAIN PLOTTING AREA ---------- ####################
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600, 0)
         self.win.resize(1000, 500)
-        self.l0.addWidget(self.win, 1, 2, 40, 30)
+        self.l0.addWidget(self.win, 1, 2, 41, 30)
         layout = self.win.ci.layout
         # --- cells image
         self.p1 = self.win.addViewBox(
@@ -290,14 +292,16 @@ class MainW(QtGui.QMainWindow):
         # self.key_on(self.win.scene().keyPressEvent)
         self.show()
         self.win.show()
-        # --------- VIEW AND COLOR BUTTONS ----------
+
+        ###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############
         self.views = [
             "Q: ROIs",
             "W: mean img",
             "E: mean img (enhanced)",
             "R: correlation map",
-            "T: mean img (chan2, corrected)",
-            "Y: mean img (chan2)",
+            "T: max projection",
+            "Y: mean img (chan2, corrected)",
+            "U: mean img (chan2)",
 
         ]
         self.colors = [
@@ -310,6 +314,23 @@ class MainW(QtGui.QMainWindow):
             "J: classifier, cell prob=",
             "K: correlations, bin=",
         ]
+
+        # quadrant buttons
+        self.quadbtns = QtGui.QButtonGroup(self)
+        #vlabel = QtGui.QLabel(self)
+        #vlabel.setText("<font color='white'>Background</font>")
+        #vlabel.setFont(boldfont)
+        #vlabel.resize(vlabel.minimumSizeHint())
+        #self.l0.addWidget(vlabel, 1, 0, 1, 1)
+        for b in range(9):
+            btn = gui.QuadButton(b, ' '+str(b+1), self)
+            self.quadbtns.addButton(btn, b)
+            self.l0.addWidget(btn, 0 + self.quadbtns.button(b).ypos, 29 + self.quadbtns.button(b).xpos, 1, 1)
+            btn.setEnabled(False)
+            b += 1
+        self.quadbtns.setExclusive(True)
+
+        # view buttons
         b = 0
         boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         self.viewbtns = QtGui.QButtonGroup(self)
@@ -349,7 +370,6 @@ class MainW(QtGui.QMainWindow):
                 self.colors[b] = self.colors[b][3:]
             b += 1
         self.chan2edit = QtGui.QLineEdit(self)
-        #self.chan2edit.setValidator(QtGui.QFloatValidator(0, 1.2))
         self.chan2edit.setText("0.6")
         self.chan2edit.setFixedWidth(40)
         self.chan2edit.setAlignment(QtCore.Qt.AlignRight)
@@ -357,10 +377,6 @@ class MainW(QtGui.QMainWindow):
         self.l0.addWidget(self.chan2edit, nv + b - 4, 1, 1, 1)
 
         self.probedit = QtGui.QLineEdit(self)
-        #self.probedit.setDecimals(3)
-        #self.probedit.setMaximum(1.0)
-        #self.probedit.setMinimum(0.0)
-        #self.probedit.setSingleStep(0.01)
         self.probedit.setText("0.5")
         self.probedit.setFixedWidth(40)
         self.probedit.setAlignment(QtCore.Qt.AlignRight)
@@ -368,9 +384,7 @@ class MainW(QtGui.QMainWindow):
             lambda: classgui.apply(self)
         )
         self.l0.addWidget(self.probedit, nv + b - 3, 1, 1, 1)
-        #self.applyclass = QtGui.QPushButton(" apply")
-        #self.applyclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        #self.applyclass.clicked.connect(lambda: classgui.apply(self))
+
 
         self.binedit = QtGui.QLineEdit(self)
         self.binedit.setValidator(QtGui.QIntValidator(0, 500))
@@ -397,9 +411,6 @@ class MainW(QtGui.QMainWindow):
             colorbarW.addLabel("0.5", color=[255, 255, 255], row=1, col=1),
             colorbarW.addLabel("1.0", color=[255, 255, 255], row=1, col=2),
         ]
-        #self.applyclass.setEnabled(False)
-        #self.applyclass.setStyleSheet(self.styleInactive)
-        #self.l0.addWidget(self.applyclass, self.bend + 1, 0, 1, 1)
 
         # ----- CLASSIFIER BUTTONS -------
         cllabel = QtGui.QLabel("")
@@ -530,19 +541,31 @@ class MainW(QtGui.QMainWindow):
         # initialize merges
         self.merged = []
         self.rastermap = False
-        model = np.load(self.classorig)
-        model = model.item()
+        model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]
-        #self.fname = '/media/carsen/DATA2/Github/TX4/stat.npy'
-        #self.fname = 'C:/Users/carse/github/data/stat.npy'
-        #self.load_proc()
-        #self.load_behavior('C:/Users/carse/github/data/beht.npy')
+
+        # load initial file
+        if statfile is not None:
+            self.fname = statfile
+            self.load_proc()
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
         self.win.scene().showExportDialog()
 
     def mode_change(self, i):
+        '''
+            changes the activity mode that is used when multiple neurons are selected
+            or in visualization windows like rastermap or for correlation computation!
+
+            activityMode =
+            0 : F
+            1 : Fneu
+            2 : F - 0.7 * Fneu (default)
+            3 : spks
+
+            uses binning set by self.bin
+        '''
         self.activityMode = i
         if self.loaded:
             # activity used for correlations
@@ -602,14 +625,17 @@ class MainW(QtGui.QMainWindow):
                 elif event.key() == QtCore.Qt.Key_R:
                     self.viewbtns.button(3).setChecked(True)
                     self.viewbtns.button(3).press(self, 3)
-                elif event.key() == QtCore.Qt.Key_Y:
+                elif event.key() == QtCore.Qt.Key_T:
+                    self.viewbtns.button(4).setChecked(True)
+                    self.viewbtns.button(4).press(self, 4)
+                elif event.key() == QtCore.Qt.Key_U:
                     if "meanImg_chan2" in self.ops:
+                        self.viewbtns.button(6).setChecked(True)
+                        self.viewbtns.button(6).press(self, 6)
+                elif event.key() == QtCore.Qt.Key_Y:
+                    if "meanImg_chan2_corrected" in self.ops:
                         self.viewbtns.button(5).setChecked(True)
                         self.viewbtns.button(5).press(self, 5)
-                elif event.key() == QtCore.Qt.Key_T:
-                    if "meanImg_chan2_corrected" in self.ops:
-                        self.viewbtns.button(4).setChecked(True)
-                        self.viewbtns.button(4).press(self, 4)
                 elif event.key() == QtCore.Qt.Key_Space:
                     self.checkBox.toggle()
                 elif event.key() == QtCore.Qt.Key_A:
@@ -855,6 +881,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
+        self.saveMat.setEnabled(True)
         self.bloaded = False
         self.ROI_remove()
         self.isROI = False
@@ -913,7 +940,9 @@ class MainW(QtGui.QMainWindow):
         self.lcell0.setText("%d" % (self.iscell.sum()))
         fig.init_range(self)
         fig.plot_trace(self)
-        if (type(self.ops["diameter"]) is not int) and (len(self.ops["diameter"]) > 1):
+        if 'aspect' in self.ops:
+            self.xyrat = self.ops['aspect']
+        elif 'diameter' in self.ops and (type(self.ops["diameter"]) is not int) and (len(self.ops["diameter"]) > 1):
             self.xyrat = self.ops["diameter"][0] / self.ops["diameter"][1]
         else:
             self.xyrat = 1.0
@@ -926,6 +955,9 @@ class MainW(QtGui.QMainWindow):
         classgui.activate(self, False)
 
     def enable_views_and_classifier(self):
+        for b in range(9):
+            self.quadbtns.button(b).setEnabled(True)
+            self.quadbtns.button(b).setStyleSheet(self.styleUnpressed)
         for b in range(len(self.views)):
             self.viewbtns.button(b).setEnabled(True)
             self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
@@ -935,11 +967,11 @@ class MainW(QtGui.QMainWindow):
                 self.viewbtns.button(b).setStyleSheet(self.stylePressed)
         # check for second channel
         if "meanImg_chan2_corrected" not in self.ops:
-            self.viewbtns.button(4).setEnabled(False)
-            self.viewbtns.button(4).setStyleSheet(self.styleInactive)
+            self.viewbtns.button(5).setEnabled(False)
+            self.viewbtns.button(5).setStyleSheet(self.styleInactive)
             if "meanImg_chan2" not in self.ops:
-                self.viewbtns.button(5).setEnabled(False)
-                self.viewbtns.button(5).setStyleSheet(self.styleInactive)
+                self.viewbtns.button(6).setEnabled(False)
+                self.viewbtns.button(6).setStyleSheet(self.styleInactive)
 
         for b in range(len(self.colors)):
             if b==5:
@@ -1166,7 +1198,7 @@ class MainW(QtGui.QMainWindow):
         name = self.fname
         print(name)
         try:
-            stat = np.load(name)
+            stat = np.load(name, allow_pickle=True)
             ypix = stat[0]["ypix"]
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
@@ -1192,8 +1224,7 @@ class MainW(QtGui.QMainWindow):
                       "(spks.npy)")
                 goodfolder = False
             try:
-                ops = np.load(basename + "/ops.npy")
-                ops = ops.item()
+                ops = np.load(basename + "/ops.npy", allow_pickle=True).item()
             except (ValueError, OSError, RuntimeError, TypeError, NameError):
                 print("ERROR: there is no ops file in this folder (ops.npy)")
                 goodfolder = False
@@ -1289,7 +1320,17 @@ class MainW(QtGui.QMainWindow):
         else:
             print("ERROR: this is not a 1D array with length of data")
 
-
+    def save_mat(self):
+        matpath = os.path.join(self.basename,'Fall.mat')
+        io.savemat(matpath, {'stat': self.stat,
+                             'ops': self.ops,
+                             'F': self.Fcell,
+                             'Fneu': self.Fneu,
+                             'spks': self.Spks,
+                             'iscell': np.concatenate((self.iscell[:,np.newaxis],
+                                                       self.probcell[:,np.newaxis]), axis=1)
+                             })
+        print('saving to mat')
 
     def load_custom_mask(self):
         name = QtGui.QFileDialog.getOpenFileName(
@@ -1418,7 +1459,7 @@ class MainW(QtGui.QMainWindow):
     #    np.save(self.basename+'/gui_data.npy', gui_data)
 
 
-def run():
+def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(
@@ -1432,7 +1473,7 @@ def run():
     app_icon.addFile(icon_path, QtCore.QSize(96, 96))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
-    GUI = MainW()
+    GUI = MainW(statfile=statfile)
     ret = app.exec_()
     # GUI.save_gui_data()
     sys.exit(ret)

@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
 from scipy import stats
-from suite2p import utils, dcnv, celldetect2, fig
+from suite2p import utils, dcnv, sparsedetect, fig
 import math
 from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
@@ -42,7 +42,7 @@ def activity_stats(parent):
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')
     stat0["npix_norm"] = stat0["npix"] / npix.mean()
     # compactness
-    rs,dy,dx = celldetect2.circleMask(d0)
+    rs,dy,dx = sparsedetect.circleMask(d0)
     rsort = np.sort(rs.flatten())
     r2 = ((ypix - stat0["med"][0])/d0[0])**2 + ((xpix - stat0["med"][1])/d0[1])**2
     r2 = r2**.5

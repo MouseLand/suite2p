@@ -1,7 +1,7 @@
 # heavily modified script from a pyqt4 release
 
 from PyQt5 import QtGui, QtCore
-from suite2p import register,fig
+from suite2p import register,fig,utils
 import pyqtgraph as pg
 import os
 import sys
@@ -76,6 +76,8 @@ class PCViewer(QtGui.QMainWindow):
             self.titles.append(t1)
         self.loaded = False
         self.wraw = False
+        self.wred = False
+        self.wraw_wred = False
         self.l0.addWidget(QtGui.QLabel(''),7,0,1,1)
         self.l0.setRowStretch(7,1)
         self.cframe = 0
@@ -142,7 +144,7 @@ class PCViewer(QtGui.QMainWindow):
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,
-                            "Open single-plane ops.npy file",filter="ops.npy")
+                            "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
         if fileName:
             print(fileName[0])
@@ -150,8 +152,7 @@ class PCViewer(QtGui.QMainWindow):
 
     def openFile(self, fileName):
         try:
-            ops = np.load(fileName)
-            ops = ops.item()
+            ops = np.load(fileName, allow_pickle=True).item()
             self.Ly = ops['Ly']
             self.Lx = ops['Lx']
             self.PC = ops['regPC']
@@ -358,6 +359,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.loaded = False
         self.Floaded = False
         self.wraw = False
+        self.wred = False
+        self.wraw_wred = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
@@ -374,16 +377,169 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,
-                            "Open single-plane ops.npy file",filter="ops.npy")
+                            "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
         if fileName:
             print(fileName[0])
             self.openFile(fileName[0], False)
 
+    def open_combined(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self,
+                            "Open multiplane ops1.npy file",filter="ops*.npy")
+        # load ops in same folder
+        if fileName:
+            print(fileName[0])
+            self.openCombined(fileName[0])
+
+    def openCombined(self, fileName):
+        try:
+            ops1 = np.load(fileName, allow_pickle=True)
+            basefolder = ops1[0]['save_path0']
+            #opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
+            #self.LY = opsCombined['Ly']
+            #self.LX = opsCombined['Lx']
+            self.LY = 0
+            self.LX = 0
+            self.reg_loc = []
+            self.reg_file = []
+            self.Ly = []
+            self.Lx = []
+            self.dy = []
+            self.dx = []
+            self.yrange = []
+            self.xrange = []
+            self.ycrop  = []
+            self.xcrop  = []
+            # check that all binaries still exist
+            for ipl,ops in enumerate(ops1):
+                #if os.path.isfile(ops['reg_file']):
+                if os.path.isfile(ops['reg_file']):
+                    reg_file = ops['reg_file']
+                else:
+                    reg_file = os.path.join(os.path.dirname(fileName),'plane%d'%ipl, 'data.bin')
+                print(reg_file, os.path.isfile(reg_file))
+                self.reg_loc.append(reg_file)
+                self.reg_file = open(self.reg_loc[-1], 'rb')
+                self.reg_file.close()
+                self.Ly.append(ops['Ly'])
+                self.Lx.append(ops['Lx'])
+                self.dy.append(ops['dy'])
+                self.dx.append(ops['dx'])
+                self.xrange.append(np.arange(self.dx[-1], self.dx[-1] + self.Lx[-1], 1, int))
+                self.yrange.append(np.arange(self.dy[-1], self.dy[-1] + self.Ly[-1], 1, int))
+                xrange = ops['xrange']
+                yrange = ops['yrange']
+                xcrop = np.zeros((ops['Lx'],), dtype=np.bool)
+                xcrop[np.arange(xrange[0], xrange[1], 1, int)] = True
+                self.xcrop.append(xcrop.nonzero()[0])
+                ycrop = np.zeros((ops['Ly'],), dtype=np.bool)
+                ycrop[np.arange(yrange[0], yrange[1], 1, int)] = True
+                self.ycrop.append(ycrop.nonzero()[0])
+                self.xrange[-1] = self.xrange[-1][xcrop]
+                self.yrange[-1] = self.yrange[-1][ycrop]
+                self.LY = np.maximum(self.LY, self.Ly[-1]+self.dy[-1])
+                self.LX = np.maximum(self.LX, self.Lx[-1]+self.dx[-1])
+            #if os.path.isfile(os.path.join(basefolder, 'suite2p/combined/','F.npy')):
+            #    self.Fcell = np.load(os.path.join(basefolder, 'suite2p/combined/','F.npy'))
+            #    self.stat =  np.load(os.path.join(basefolder, 'suite2p/combined/','stat.npy'))
+            #    self.Floaded = True
+            #else:
+            self.Floaded = False
+            if self.Floaded:
+                ncells = len(self.stat)
+                for n in range(0,ncells):
+                    ypix = self.stat[n]['ypix'].flatten()
+                    xpix = self.stat[n]['xpix'].flatten()
+                    iext = fig.boundary(ypix,xpix)
+                    yext = ypix[iext]
+                    xext = xpix[iext]
+                    #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))
+                    #xext = np.hstack((xext,xext+1,xext-1,xext+1,xext-1))
+                    goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
+                    self.stat[n]['yext'] = yext[goodi]
+                    self.stat[n]['xext'] = xext[goodi]
+            good = True
+        except Exception as e:
+            print("ERROR: incorrect ops1.npy or missing binaries")
+            good = False
+        if good:
+            # only show registered even if raw exists
+            self.wraw = False
+            self.wred = False
+            self.wraw_wred = False
+            self.p1.clear()
+            self.p2.clear()
+            self.ichosen = 0
+            self.ROIedit.setText('0')
+            # get scaling from 100 random frames
+            frames = utils.sample_frames(ops,
+                                        np.linspace(0,ops['nframes']-1,np.minimum(ops['nframes'],100)).astype(int),
+                                        self.reg_loc[-1])
+            self.srange = frames.mean() + frames.std()*np.array([-1,5])
+            self.srange[0] = max(0, self.srange[0])
+            self.reg_file = []
+            self.nbytesread = []
+            for n in range(len(self.reg_loc)):
+                self.reg_file.append(open(self.reg_loc[n],'rb'))
+                self.nbytesread.append(2 * self.Ly[n] * self.Lx[n])
+
+            #aspect ratio
+            if (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
+                self.xyrat = ops["diameter"][0] / ops["diameter"][1]
+            else:
+                self.xyrat = 1.0
+            self.p0.setAspectLocked(lock=True, ratio=self.xyrat)
+
+            self.movieLabel.setText(self.reg_loc[0])
+            self.nframes = ops['nframes']
+            self.time_step = 1. / ops['fs'] * 1000 / 5 # 5x real-time
+            self.frameDelta = int(np.maximum(5,self.nframes/200))
+            self.frameSlider.setSingleStep(self.frameDelta)
+            self.currentMovieDirectory = QtCore.QFileInfo(fileName).path()
+            if self.nframes > 0:
+                self.updateFrameSlider()
+                self.updateButtons()
+
+            # plot ops X-Y offsets for the last plane
+            if 'yoff' in ops:
+                self.yoff = ops['yoff']
+                self.xoff = ops['xoff']
+            else:
+                self.yoff = np.zeros((ops['nframes'],))
+                self.xoff = np.zeros((ops['nframes'],))
+            self.p1.plot(self.yoff, pen='g')
+            self.p1.plot(self.xoff, pen='y')
+            self.p1.setRange(xRange=(0,self.nframes),
+                             yRange=(np.minimum(self.yoff.min(),self.xoff.min()),
+                                     np.maximum(self.yoff.max(),self.xoff.max())),
+                             padding=0.0)
+            self.p1.setLimits(xMin=0,xMax=self.nframes)
+            self.scatter1 = pg.ScatterPlotItem()
+            self.p1.addItem(self.scatter1)
+            self.scatter1.setData([self.cframe,self.cframe],
+                                  [self.yoff[self.cframe],self.xoff[self.cframe]],
+                                  size=10,brush=pg.mkBrush(255,0,0))
+            if self.Floaded:
+                self.cell_mask()
+                self.ft = self.Fcell[self.ichosen,:]
+                self.p2.plot(self.ft, pen='b')
+                self.p2.setRange(xRange=(0,self.nframes),
+                                 yRange=(self.ft.min(),self.ft.max()),
+                                 padding=0.0)
+                self.p2.setLimits(xMin=0,xMax=self.nframes)
+                self.scatter2 = pg.ScatterPlotItem()
+                self.p2.addItem(self.scatter2)
+                self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+                self.p2.setXLink('plot1')
+            self.cframe = -1
+            self.loaded = True
+            self.next_frame()
+
     def openFile(self, fileName, fromgui):
         try:
-            ops = np.load(fileName)
-            ops = ops.item()
+            ops = np.load(fileName, allow_pickle=True).item()
+            self.LY = 0
+            self.LX = 0
             self.Ly = ops['Ly']
             self.Lx = ops['Lx']
             if os.path.isfile(ops['reg_file']):
@@ -425,21 +581,53 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ichosen = 0
             self.ROIedit.setText('0')
             # get scaling from 100 random frames
-            frames = subsample_frames(ops, np.minimum(ops['nframes'],100), self.reg_loc)
-            self.srange = frames.mean() + frames.std()*np.array([-3,3])
+            frames = subsample_frames(ops, np.minimum(ops['nframes']-1,100), self.reg_loc)
+            self.srange = frames.mean() + frames.std()*np.array([-2,5])
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
             self.wraw = False
-            if 'reg_file_raw' in ops:
+            self.wred = False
+            self.wraw_wred = False
+            if 'reg_file_raw' in ops or 'raw_file' in ops:
                 if self.reg_loc == ops['reg_file']:
-                    self.reg_loc_raw = ops['reg_file_raw']
+                    if 'reg_file_raw' in ops:
+                        self.reg_loc_raw = ops['reg_file_raw']
+                    else:
+                        self.reg_loc_raw = ops['raw_file']
                 else:
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
                 self.reg_file_raw = open(self.reg_loc_raw,'rb')
                 self.wraw=True
+
+            if 'reg_file_chan2' in ops:
+                if self.reg_loc == ops['reg_file']:
+                    self.reg_loc_red = ops['reg_file_chan2']
+                else:
+                    self.reg_loc_red = os.path.join(os.path.dirname(fileName),'data_chan2.bin')
+                self.reg_file_chan2 = open(self.reg_loc_red,'rb')
+                self.wred=True
+            if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
+                if self.reg_loc == ops['reg_file']:
+                    if 'reg_file_raw_chan2' in ops:
+                        self.reg_loc_raw_chan2 = ops['reg_file_raw_chan2']
+                    else:
+                        self.reg_loc_raw_chan2 = ops['raw_file_chan2']
+                else:
+                    self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
+                self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
+                self.wraw_wred=True
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
+
+            #aspect ratio
+            if (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
+                self.xyrat = ops["diameter"][0] / ops["diameter"][1]
+            else:
+                self.xyrat = 1.0
+            self.p0.setAspectLocked(lock=True, ratio=self.xyrat)
+
             self.nframes = ops['nframes']
+            self.time_step = 1. / ops['fs'] * 1000 / 5 # 5x real-time
             self.frameDelta = int(np.maximum(5,self.nframes/200))
             self.frameSlider.setSingleStep(self.frameDelta)
             self.currentMovieDirectory = QtCore.QFileInfo(fileName).path()
@@ -590,8 +778,14 @@ class BinaryPlayer(QtGui.QMainWindow):
         openButton = QtGui.QToolButton()
         openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
         openButton.setIconSize(iconSize)
-        openButton.setToolTip("Open binary file")
+        openButton.setToolTip("Open single-plane ops.npy")
         openButton.clicked.connect(self.open)
+
+        openButton2 = QtGui.QToolButton()
+        openButton2.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DirOpenIcon))
+        openButton2.setIconSize(iconSize)
+        openButton2.setToolTip("Open multi-plane ops1.npy")
+        openButton2.clicked.connect(self.open_combined)
 
         self.playButton = QtGui.QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
@@ -619,6 +813,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         quitButton.clicked.connect(self.close)
 
         self.l0.addWidget(openButton,1,0,1,1)
+        self.l0.addWidget(openButton2,1,1,1,1)
         self.l0.addWidget(self.playButton,15,0,1,1)
         self.l0.addWidget(self.pauseButton,15,1,1,1)
         #self.l0.addWidget(quitButton,0,1,1,1)
@@ -631,9 +826,17 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.cframe = np.maximum(0, np.minimum(self.nframes-1, self.cframe))
             self.cframe = int(self.cframe)
             # seek to absolute position
-            self.reg_file.seek(self.nbytesread * self.cframe, 0)
-            if self.wraw:
-                self.reg_file_raw.seek(self.nbytesread * self.cframe, 0)
+            if self.LY>0:
+                for n in range(len(self.reg_file)):
+                    self.reg_file[n].seek(self.nbytesread[n] * self.cframe, 0)
+            else:
+                self.reg_file.seek(self.nbytesread * self.cframe, 0)
+                if self.wraw:
+                    self.reg_file_raw.seek(self.nbytesread * self.cframe, 0)
+                if self.wred:
+                    self.reg_file_chan2.seek(self.nbytesread * self.cframe, 0)
+                if self.wraw_wred:
+                    self.reg_file_raw_chan2.seek(self.nbytesread * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 
@@ -642,22 +845,66 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.cframe+=1
         if self.cframe > self.nframes - 1:
             self.cframe = 0
-            self.reg_file.seek(0, 0)
+            if self.LY>0:
+                for n in range(len(self.reg_file)):
+                    self.reg_file[n].seek(0, 0)
+            else:
+                self.reg_file.seek(0, 0)
+                if self.wraw:
+                    self.reg_file_raw.seek(0, 0)
+                if self.wred:
+                    self.reg_file_chan2.seek(0, 0)
+                if self.wraw_wred:
+                    self.reg_file_raw_chan2.seek(0, 0)
+        if self.LY > 0:
+            self.img = np.zeros((self.LY, self.LX, 3), dtype=np.int16)
+            ichan = np.arange(0,3,1,int)
+            for n in range(len(self.reg_file)):
+                buff = self.reg_file[n].read(self.nbytesread[n])
+                img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[n],self.Lx[n]))
+                img = img[np.ix_(self.ycrop[n], self.xcrop[n])]
+                img = np.tile(img[:,:,np.newaxis],(1,1,3))
+                self.img[np.ix_(self.yrange[n], self.xrange[n], ichan)] = img
+            if self.Floaded:
+                self.img[self.yext,self.xext,0] = self.srange[0]
+                self.img[self.yext,self.xext,1] = self.srange[0]
+                self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
+        else:
+            buff = self.reg_file.read(self.nbytesread)
+            self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            self.img = np.tile(self.img,(1,1,3))
+            if self.Floaded:
+                self.img[self.yext,self.xext,0] = self.srange[0]
+                self.img[self.yext,self.xext,1] = self.srange[0]
+                self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
             if self.wraw:
-                self.reg_file_raw.seek(0, 0)
-        buff = self.reg_file.read(self.nbytesread)
-        self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
-        self.img = np.tile(self.img,(1,1,3))
-        if self.Floaded:
-            self.img[self.yext,self.xext,0] = self.srange[0]
-            self.img[self.yext,self.xext,1] = self.srange[0]
-            self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
-        if self.wraw:
-            buff = self.reg_file_raw.read(self.nbytesread)
-            imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
-            imgraw = np.tile(imgraw,(1,1,3))
-            blk = self.srange[0]*np.ones((imgraw.shape[0],max(10,int(imgraw.shape[1]*0.05)),3),dtype=np.int16)
-            self.img = np.concatenate((imgraw,blk,self.img),axis=1)
+                buff = self.reg_file_raw.read(self.nbytesread)
+                imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+                imgraw = np.tile(imgraw,(1,1,3))
+                blk = self.srange[0]*np.ones((imgraw.shape[0],max(10,int(imgraw.shape[1]*0.05)),3),dtype=np.int16)
+                self.img = np.concatenate((imgraw,blk,self.img),axis=1)
+
+            if self.wred:
+                buff = self.reg_file_chan2.read(self.nbytesread)
+                imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+                if self.wraw:
+                    self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                    np.arange(0,self.Lx,1,int)+self.img.shape[1]-self.Lx, [0])] = imgred
+                    self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                    np.arange(0,self.Lx,1,int)+self.img.shape[1]-self.Lx, [2])] = 0
+                else:
+                    self.img[:,:,0] = imgred[:,:,0]
+                    self.img[:,:,2] = 0
+            if self.wraw_wred:
+                buff = self.reg_file_raw_chan2.read(self.nbytesread)
+                imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+                self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                np.arange(0,self.Lx,1,int), [0])] = imgred_raw
+                self.img[np.ix_(np.arange(0,self.Ly,1,int),
+                                np.arange(0,self.Lx,1,int), [2])] = 0
+                #imgred = np.tile(imgred,(1,1,3))
+                #blk = self.srange[0]*np.ones((imgred.shape[0],max(10,int(imgred.shape[1]*0.05)),3),dtype=np.int16)
+                #self.img = np.concatenate((self.img,blk,imgred),axis=1)
         self.pimg.setImage(self.img)
         self.pimg.setLevels(self.srange)
         self.frameSlider.setValue(self.cframe)
@@ -677,7 +924,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.playButton.setEnabled(False)
             self.pauseButton.setEnabled(True)
             self.frameSlider.setEnabled(False)
-            self.updateTimer.start(25)
+            self.updateTimer.start(self.time_step)
 
 
     def pause(self):

@@ -57,9 +57,8 @@ class ListChooser(QtGui.QDialog):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops.npy / db.npy file',filter='*.npy')
         if name:
             try:
-                ops = np.load(name[0])
+                ops = np.load(name[0], allow_pickle=True).item()
                 badfile = True
-                ops = ops.item()
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     badfile = False
                 elif 'h5py' in ops and len(ops['h5py']) > 0:
@@ -83,18 +82,20 @@ class ListChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(50,50,1200,900)
-        self.setWindowTitle('Choose run options')
+        self.setGeometry(0,0,1300,900)
+        self.setWindowTitle('Choose run options (hold mouse over parameters to see descriptions)')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
+        self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                           'ops/ops_user.npy')
         try:
-            self.ops = np.load(self.opsfile)
-            self.ops = self.ops.item()
+            self.ops = np.load(self.opsfile, allow_pickle=True).item()
+            ops0 = run_s2p.default_ops()
+            self.ops = {**ops0, **self.ops}
             print('loaded default ops')
         except Exception as e:
             print('could not load default ops, using built-in ops settings')
@@ -104,54 +105,68 @@ class RunWindow(QtGui.QDialog):
         self.fast_disk = []
         self.opslist = []
         self.batch = False
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin']
-        outkeys = [['save_mat','combined'],['num_workers','num_workers_roi']]
-        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size', 'maxregshift','smooth_sigma','keep_movie_raw', 'reg_tif','reg_tif_chan2']
-        nrkeys = ['nonrigid','block_size','snr_thresh','maxregshiftNR']
-        cellkeys = ['connected','max_overlap','threshold_scaling','smooth_masks','max_iterations','navg_frames_svd','nsvd_for_roi','ratio_neuropil','high_pass']
-        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
+        self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
+                   'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
+                   'min_neuropil_pixels', 'spatial_scale']
+        self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
+                    'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
+                    'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap']
+        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
+        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
+        nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
+        cellkeys = ['roidetect','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
-        labels = ['Main settings',['Output settings','Parallel'],'Registration','Nonrigid','ROI detection',['Extraction/Neuropil','Deconvolution']]
+        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
-                    'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
                     'if 1, binary file is deleted after processing is complete',
+                    'whether or not to compute bidirectional phase offset of recording (from line scanning)',
+                    'set a fixed number (in pixels) for the bidirectional phase offset',
+                    'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
                     'save output also as mat file "Fall.mat"',
                     'combine results across planes in separate folder "combined" at end of processing',
-                    '0 to select num_cores, -1 to disable parallelism, N to enforce value',
-                    'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    'if 1, registered tiffs are saved',
+                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
+                    'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
                     'if 1, registration is performed',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
+                    'gaussian smoothing after phase corr: 1.15 good for 2P recordings, recommend 2-5 for 1P recordings',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
-                    '1.15 good for 2P recordings, recommend >5 for 1P recordings',
+                    'this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames',
                     'if 1, unregistered binary is kept in a separate file data_raw.bin',
-                    'if 1, registered tiffs are saved',
-                    'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',
                     'maximum *pixel* shift allowed for nonrigid, relative to rigid',
+                    'whether to perform high-pass filtering and tapering for registration (necessary for 1P recordings)',
+                    'window for spatial high-pass filtering before registration',
+                    'whether to smooth before high-pass filtering before registration',
+                    "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
+                    'whether or not to run cell (ROI) detection',
+                    '0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
-                    'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',
-                    'whether to smooth masks in final pass of cell detection',
+                    'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
-                    'max number of binned frames for the SVD',
-                    'max number of SVD components to keep for ROI detection',
-                    'ratio between neuropil basis size and cell radius',
                     'running mean subtraction with window of size "high_pass" (use low values for 1P)',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
                     'window for maximin',
                     'smoothing constant for gaussian filter',
+<<<<<<< HEAD
                     'smoothing constant for gaussian filter',
                     'neuropil coefficient (constant across all neurons)']
+=======
+                    'neuropil coefficient']
+>>>>>>> classifier
 
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel = QtGui.QLabel('File paths')
@@ -176,8 +191,8 @@ class RunWindow(QtGui.QDialog):
             qw = QtGui.QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
         self.opsbtns = QtGui.QButtonGroup(self)
-        opsstr = ['cell soma', 'dendrites/axons']
-        self.opsname = ['soma', 'dendrite']
+        opsstr = ['1P imaging', 'dendrites/axons']
+        self.opsname = ['1P', 'dendrite']
         for b in range(len(opsstr)):
             btn = OpsButton(b, opsstr[b], self)
             self.opsbtns.addButton(btn, b)
@@ -208,6 +223,7 @@ class RunWindow(QtGui.QDialog):
                         qlabel = QtGui.QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
                         qedit.set_text(self.ops)
+                        qedit.setToolTip(tooltips[kk])
                         qedit.setFixedWidth(90)
                         self.layout.addWidget(qlabel,k*2-1,2*(l+2),1,2)
                         self.layout.addWidget(qedit,k*2,2*(l+2),1,2)
@@ -260,10 +276,12 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(self.binlabel,16,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
-        self.layout.addWidget(self.runButton,19,0,1,1)
+        n0 = 21
+        self.layout.addWidget(self.runButton,n0,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QtGui.QTextEdit()
-        self.layout.addWidget(self.textEdit, 20,0,30,2*l)
+        self.layout.addWidget(self.textEdit, n0+1,0,30,2*l)
+        self.textEdit.setFixedHeight(300)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -273,30 +291,30 @@ class RunWindow(QtGui.QDialog):
         # stop process
         self.stopButton = QtGui.QPushButton('STOP')
         self.stopButton.setEnabled(False)
-        self.layout.addWidget(self.stopButton, 19,1,1,1)
+        self.layout.addWidget(self.stopButton, n0,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
         self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
         self.cleanButton.setToolTip('will run at end of processing')
         self.cleanButton.setEnabled(True)
-        self.layout.addWidget(self.cleanButton, 19,2,1,2)
+        self.layout.addWidget(self.cleanButton, n0,2,1,2)
         self.cleanup = False
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
-        self.layout.addWidget(self.cleanLabel,19,4,1,12)
+        self.layout.addWidget(self.cleanLabel,n0,4,1,12)
         self.listOps = QtGui.QPushButton('save settings and\n add more (batch)')
         self.listOps.clicked.connect(self.list_ops)
-        self.layout.addWidget(self.listOps,19,14,1,2)
+        self.layout.addWidget(self.listOps,n0,12,1,2)
         self.listOps.setEnabled(False)
         self.removeOps = QtGui.QPushButton('remove last added')
         self.removeOps.clicked.connect(self.remove_ops)
-        self.layout.addWidget(self.removeOps,19,16,1,2)
+        self.layout.addWidget(self.removeOps,n0,14,1,2)
         self.removeOps.setEnabled(False)
         self.odata = []
         for n in range(10):
             self.odata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.odata[n],
-                                  20+n,14,1,4)
+                                  n0+1+n,12,1,4)
         self.f = 0
 
     def remove_ops(self):
@@ -332,8 +350,7 @@ class RunWindow(QtGui.QDialog):
         self.binlabel.setText('')
         self.h5text.setText('')
         # clear ops not in GUI
-        self.ops = np.load(self.opsfile)
-        self.ops = self.ops.item()
+        self.ops = np.load(self.opsfile, allow_pickle=True).item()
         self.save_text() # grab ops in GUI
         # enable all the file loaders again
         self.bh5py.setEnabled(True)
@@ -347,7 +364,7 @@ class RunWindow(QtGui.QDialog):
 
     def compile_ops_db(self):
         for k,key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
@@ -375,8 +392,7 @@ class RunWindow(QtGui.QDialog):
         if self.batch:
             shutil.copy('ops%d.npy'%self.f, 'ops.npy')
             shutil.copy('db%d.npy'%self.f, 'db.npy')
-            self.db = np.load('db.npy')
-            self.db = self.db.item()
+            self.db = np.load('db.npy', allow_pickle=True).item()
         else:
             self.compile_ops_db()
             np.save('ops.npy', self.ops)
@@ -384,6 +400,17 @@ class RunWindow(QtGui.QDialog):
         print('Running suite2p!')
         print('starting process')
         print(self.db)
+        if len(self.save_path)==0:
+            if len(self.db['data_path'])>0:
+                fpath = self.db['data_path'][0]
+            else:
+                fpath = os.path.dirname(self.db['h5py'])
+            self.save_path = fpath
+        save_folder = os.path.join(self.save_path, 'suite2p/')
+        if not os.path.isdir(save_folder):
+            os.makedirs(save_folder)
+        self.logfile = open(os.path.join(save_folder, 'run.log'), 'w')
+        #self.logfile.close()
         self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 
     def stop(self):
@@ -396,6 +423,7 @@ class RunWindow(QtGui.QDialog):
         self.cleanButton.setEnabled(False)
 
     def finished(self, parent):
+        self.logfile.close()
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         if self.finish and not self.error:
@@ -438,7 +466,7 @@ class RunWindow(QtGui.QDialog):
     def save_text(self):
         for k in range(len(self.editlist)):
             key = self.keylist[k]
-            self.ops[key] = self.editlist[k].get_text(self.ops[key])
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
 
     def load_ops(self):
         print('loading ops')
@@ -448,11 +476,12 @@ class RunWindow(QtGui.QDialog):
             ext = os.path.splitext(name)[1]
             try:
                 if ext == '.npy':
-                    ops = np.load(name)
-                    ops = ops.item()
+                    ops = np.load(name, allow_pickle=True).item()
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
+                ops0 = run_s2p.default_ops()
+                ops = {**ops0, **ops}
                 for key in ops:
                     if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0' and key!='h5py':
                         if key in self.keylist:
@@ -503,16 +532,24 @@ class RunWindow(QtGui.QDialog):
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
-        cursor.insertText(str(self.process.readAllStandardOutput(), 'utf-8'))
+        output = str(self.process.readAllStandardOutput(), 'utf-8')
+        cursor.insertText(output)
         self.textEdit.ensureCursorVisible()
+        #self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        self.logfile.write(output)
+        #self.logfile.close()
 
     def stderr_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         cursor.insertText('>>>ERROR<<<\n')
-        cursor.insertText(str(self.process.readAllStandardError(), 'utf-8'))
+        output = str(self.process.readAllStandardError(), 'utf-8')
+        cursor.insertText(output)
         self.textEdit.ensureCursorVisible()
         self.error = True
+        #self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        self.logfile.write('>>>ERROR<<<\n')
+        self.logfile.write(output)
 
     def clean_script(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')
@@ -567,7 +604,7 @@ class LineEdit(QtGui.QLineEdit):
         self.key = key
         #self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))
 
-    def get_text(self,okey):
+    def get_text(self,intkeys,boolkeys):
         key = self.key
         if key=='diameter' or key=='block_size':
             diams = self.text().replace(' ','').split(',')
@@ -576,10 +613,12 @@ class LineEdit(QtGui.QLineEdit):
             else:
                 okey = int(diams[0])
         else:
-            if type(okey) is float:
+            if key in intkeys:
+                okey = int(float(self.text()))
+            elif key in boolkeys:
+                okey = bool(int(self.text()))
+            else:
                 okey = float(self.text())
-            elif type(okey) is int or bool:
-                okey = int(self.text())
         return okey
 
     def set_text(self,ops):
@@ -606,8 +645,7 @@ class OpsButton(QtGui.QPushButton):
         try:
             opsdef = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                               'ops/ops_%s.npy'%parent.opsname[bid])
-            ops = np.load(opsdef)
-            ops = ops.item()
+            ops = np.load(opsdef, allow_pickle=True).item()
             for key in ops:
                 if key in parent.keylist:
                     parent.editlist[parent.keylist.index(key)].set_text(ops)
@@ -633,6 +671,35 @@ class VerticalLabel(QtGui.QWidget):
         painter.end()
 
 
+### custom QPushButton class for quadrant plotting
+# requires buttons to put into a QButtonGroup (parent.viewbtns)
+# allows only 1 button to pressed at a time
+class QuadButton(QtGui.QPushButton):
+    def __init__(self, bid, Text, parent=None):
+        super(QuadButton,self).__init__(parent)
+        self.setText(Text)
+        self.setCheckable(True)
+        self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.resize(self.minimumSizeHint())
+        self.setMaximumWidth(22)
+        self.xpos = bid%3
+        self.ypos = int(np.floor(bid/3))
+        self.clicked.connect(lambda: self.press(parent, bid))
+        self.show()
+    def press(self, parent, bid):
+        for b in range(9):
+            if parent.quadbtns.button(b).isEnabled():
+                parent.quadbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        self.setStyleSheet(parent.stylePressed)
+        self.xrange = np.array([self.xpos-.15, self.xpos+1.15]) * parent.ops['Lx']/3
+        self.yrange = np.array([self.ypos-.15, self.ypos+1.15]) * parent.ops['Ly']/3
+        # change the zoom
+        parent.p1.setXRange(self.xrange[0], self.xrange[1])
+        parent.p1.setYRange(self.yrange[0], self.yrange[1])
+        parent.p2.setXRange(self.xrange[0], self.xrange[1])
+        parent.p2.setYRange(self.yrange[0], self.yrange[1])
+        parent.show()
 
 ### custom QPushButton class that plots image when clicked
 # requires buttons to put into a QButtonGroup (parent.viewbtns)
@@ -689,13 +756,12 @@ class ColorButton(QtGui.QPushButton):
             for b in range(3):
                 parent.topbtns.button(b).setEnabled(False)
                 parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
-        if bid==6:
+        if bid==7:
             fig.corr_masks(parent)
-        #elif bid==7:
-        #    fig.beh_masks(parent)
         M = fig.draw_masks(parent)
         fig.plot_masks(parent,M)
         fig.plot_colorbar(parent,bid)
+        parent.show()
 
 # size of view
 class SizeButton(QtGui.QPushButton):

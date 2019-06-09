@@ -1,8 +1,7 @@
 import suite2p
 import numpy as np
 import time, os
-from suite2p import register, dcnv, celldetect, run_s2p, gui2p
-from scipy import stats
+from suite2p import run_s2p, gui2p
 import argparse
 
 def tic():
@@ -11,8 +10,7 @@ def toc(i0):
     return time.time() - i0
 
 def main():
-    ops = np.load('ops.npy')
-    ops = ops.item()
+    ops = np.load('ops.npy', allow_pickle=True).item()
     suite2p.main(ops)
 
 if __name__ == '__main__':
@@ -24,11 +22,9 @@ if __name__ == '__main__':
     ops = {}
     db= {}
     if len(args.ops)>0:
-        ops = np.load(args.ops)
-        ops = ops.item()
+        ops = np.load(args.ops, allow_pickle=True).item()
     if len(args.db)>0:
-        db = np.load(args.db)
-        db = db.item()
+        db = np.load(args.db, allow_pickle=True).item()
         suite2p.run_s2p.run_s2p(ops, db)
     else:
         gui2p.run()

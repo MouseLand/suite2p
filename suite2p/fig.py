@@ -111,11 +111,14 @@ def make_colors(parent):
     parent.clabels = []
     ncells = len(parent.stat)
     allcols = np.random.random((ncells,1))
-    allcols = allcols / 1.4
-    allcols = allcols + 0.1
-    print(parent.redcell.sum())
-    parent.randcols = allcols
-    allcols[parent.redcell] = 0
+    if 'meanImg_chan2' in parent.ops:
+        allcols = allcols / 1.4
+        allcols = allcols + 0.1
+        print(parent.redcell.sum())
+        parent.randcols = allcols
+        allcols[parent.redcell] = 0
+    else:
+        parent.randcols = allcols
 
     b=0
     for names in parent.colors[:-1]:
@@ -246,13 +249,28 @@ def init_masks(parent):
                     ops['xrange'][0]:ops['xrange'][1]] = vcorr
                 mimg = np.maximum(0,np.minimum(1,mimg))
             elif k==4:
+                if 'max_proj' in ops:
+                    mproj = ops['max_proj']
+                    mimg1 = np.percentile(mproj,1)
+                    mimg99 = np.percentile(mproj,99)
+                    mproj = (mproj - mimg1) / (mimg99 - mimg1)
+                    mimg = np.zeros((ops['Ly'],ops['Lx']),np.float32)
+                    try:
+                        mimg[ops['yrange'][0]:ops['yrange'][1],
+                            ops['xrange'][0]:ops['xrange'][1]] = mproj
+                    except:
+                        print('maxproj not in combined view')
+                    mimg = np.maximum(0,np.minimum(1,mimg))
+                else:
+                    mimg = 0.5 * np.ones((ops['Ly'], ops['Lx']), np.float32)
+            elif k==5:
                 if 'meanImg_chan2_corrected' in ops:
                     mimg = ops['meanImg_chan2_corrected']
                     mimg1 = np.percentile(mimg,1)
                     mimg99 = np.percentile(mimg,99)
                     mimg     = (mimg - mimg1) / (mimg99 - mimg1)
                     mimg = np.maximum(0,np.minimum(1,mimg))
-            elif k==5:
+            elif k==6:
                 if 'meanImg_chan2' in ops:
                     mimg = ops['meanImg_chan2']
                     mimg1 = np.percentile(mimg,1)
@@ -306,8 +324,6 @@ def init_masks(parent):
     parent.Sext = Sext
     parent.Lam  = Lam
     parent.LamMean = LamMean
-
-
 
 def chan2_masks(parent):
     c = 0
@@ -588,8 +604,8 @@ def flip_for_class(parent, iscell):
         parent.iscell = iscell
         init_masks(parent)
 
-def make_chosen_ROI(M0, ypix, xpix):
-    M0[ypix,xpix,:] = np.ones((ypix.size,3), np.float32)
+def make_chosen_ROI(M0, ypix, xpix, v):
+    M0[ypix,xpix,:] = np.tile(v[:,np.newaxis], (1,3))# * np.ones((ypix.size,3), np.float32)
     return M0
 
 def make_chosen_circle(M0, ycirc, xcirc, col, sat):
@@ -630,7 +646,9 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             for n in parent.imerge:
                 ypix = parent.stat[n]['ypix'].flatten()
                 xpix = parent.stat[n]['xpix'].flatten()
-                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix)
+                v = (parent.iROI[wplot][:,ypix,xpix]>0).sum(axis=0) - 1
+                v = 1 - v/3
+                M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, v)
         else:
             for n in parent.imerge:
                 ypix = parent.stat[n]['ypix'].flatten()
@@ -714,7 +732,7 @@ def flip_cell(parent):
     for i in range(2):
         for c in range(cols.shape[1]):
             for k in range(6):
-                if k<3 or k==4:
+                if k != 3:
                     H = cols[parent.iROI[i,0,ypix,xpix],c]
                     S = parent.Sroi[i,ypix,xpix]
                 else:
@@ -722,7 +740,7 @@ def flip_cell(parent):
                     S = parent.Sext[i,ypix,xpix]
                 if k==0:
                     V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
-                elif k==1 or k==2 or k==4:
+                elif k==1 or k==2 or k==4 or k==5 or k==6:
                     V = parent.Vback[k-1,ypix,xpix]
                     S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i,0,ypix,xpix]/parent.LamMean))
                 elif k==3:

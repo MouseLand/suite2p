@@ -6,22 +6,27 @@ from sklearn.linear_model  import LogisticRegression
 import shutil
 
 class Classifier:
-    def __init__(self, classfile=None):
+    def __init__(self, classfile=None, keys=None):
         # stat are cell stats from currently loaded recording
         # classfile is a previously saved classifier file
         if classfile is not None:
             self.classfile = classfile
-            self.load()
+            self.load(keys=keys)
         else:
             self.loaded = False
 
-    def load(self):
+    def load(self, keys=None):
         try:
-            model = np.load(self.classfile)
-            model = model.item()
-            self.stats = model['stats']
+            model = np.load(self.classfile, allow_pickle=True).item()
+            if keys is None:
+                self.keys = model['keys']
+                self.stats = model['stats']
+            else:
+                model['keys'] = np.array(model['keys'])
+                ikey = np.isin(model['keys'], keys)
+                self.keys = model['keys'][ikey].tolist()
+                self.stats = model['stats'][:,ikey]
             self.iscell = model['iscell']
-            self.keys = model['keys']
             self.loaded = True
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: incorrect classifier file')
@@ -71,8 +76,20 @@ def get_stat_keys(stat, keys):
             test_stats[j,k] = stat[j][keys[k]]
     return test_stats
 
-def run(classfile,stat):
-    model = Classifier(classfile=classfile)
+def run(classfile, stat, keys=None):
+    model = Classifier(classfile=classfile, keys=keys)
+
+    flag = np.zeros(len(model.keys), 'bool')
+    new_keys = []
+    for j in range(len(model.keys)):
+        key = model.keys[j]
+        if key not in stat[0]:
+            flag[j] = True
+        else:
+            new_keys.append(key)
+    model.keys = new_keys
+    model.stats = np.delete(model.stats, np.nonzero(flag)[0], axis=1)
+
     # compute cell probability
     probcell = model.apply(stat)
     iscell = probcell > 0.5

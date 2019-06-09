@@ -19,7 +19,7 @@ def my_sum(a, b):
     return a+b
 
 def get_mov(ops):
-    t0 = ops['t0']
+    t0 = tic()
     badframes = False
     if 'badframes' in ops:
         badframes = True
@@ -31,7 +31,7 @@ def get_mov(ops):
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)
     ops['nbinned'] = np.floor(nframes/nt0).astype('int32')
-    print('time %2.2f sec. Binning movie in chunks of %2.2d'%(toc(t0), nt0))
+    print('Binning movie in chunks of length %2.2d'%(nt0))
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
@@ -70,7 +70,7 @@ def get_mov(ops):
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
     max_proj = np.max(mov, axis=0)
-    print('time %0.2f sec. Binned movie: [%d,%d,%d]'%(toc(t0), mov.shape[0], mov.shape[1], mov.shape[2] ))
+    print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], toc(t0)))
 
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
@@ -322,7 +322,6 @@ def square_conv2(mov,lx):
     return movt
 
 def sparsery(ops):
-    t0 = ops['t0']
     rez, max_proj = get_mov(ops)
     ops['max_proj'] = max_proj
     nframes, Ly, Lx = rez.shape
@@ -410,6 +409,7 @@ def sparsery(ops):
     vrat = np.zeros((niter))
     Npix = np.zeros((niter))
 
+    t0 = tic()
 
     for tj in range(niter):
         v0max = np.array([np.amax(V0[j]) for j in range(5)])
@@ -460,7 +460,7 @@ def sparsery(ops):
         ypix.append(ypix0)
         lam.append(lam0)
         if tj%1000==0:
-            print('time %0.2f sec. %d ROIs, score=%2.2f'%(time.time()-t0, tj, Vmax[tj]))
+            print('%d ROIs, score=%2.2f'%(tj, Vmax[tj]))
     #print(tj, time.time()-t0, Vmax[tj])
     ops['Vmax'] = Vmax
     ops['ihop'] = ihop

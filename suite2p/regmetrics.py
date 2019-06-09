@@ -73,7 +73,7 @@ def pc_register_worker(inputs):
     maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
     maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
     refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-    dwrite, ymax, xmax, cmax, yxnr = register.register_data(Img, refAndMasks, ops)
+    dwrite, ymax, xmax, cmax, yxnr = register.register_and_shift(Img, refAndMasks, ops)
     X = np.zeros((3,))
     X[1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
     X[0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)

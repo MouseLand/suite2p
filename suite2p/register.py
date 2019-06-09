@@ -493,7 +493,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     meanImg = np.zeros((Ly, Lx))
     k=0
     nfr=0
-    t0 = ops['t0']
+    t0 = time.time()
     while True:
         if raw:
             buff = raw_file_align.read(nbytesread)
@@ -531,9 +531,9 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         nfr += data.shape[0]
         k += 1
         if k%5==0:
-            print('time %0.2f sec. Registered %d/%d frames'%(toc(t0), nfr, ops['nframes']))
+            print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], toc(t0)))
 
-    print('time %0.2f sec. Registration for %d frames complete'%(toc(t0), ops['nframes']))
+    print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], toc(t0)))
 
     # mean image across all frames
     if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
@@ -564,7 +564,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     ix = 0
     meanImg = np.zeros((Ly, Lx))
     k=0
-    t0 = ops['t0']
+    t0 = time.time()
     if raw:
         reg_file_alt = open(reg_file_alt, 'wb')
         raw_file_alt = open(raw_file_alt, 'rb')
@@ -609,7 +609,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         ops['meanImg'] = meanImg/k
     else:
         ops['meanImg_chan2'] = meanImg/k
-    print('time %0.2f sec. Registered second channel'%(toc(t0)))
+    print('Registered second channel in %0.2f sec.'%(toc(t0)))
 
     reg_file_alt.close()
     if raw:
@@ -641,15 +641,15 @@ def register_binary(ops, refImg=None):
     else:
         do_regmetrics = True
 
-    t0 = ops['t0']
 
     # compute reference image
     if refImg is not None:
         print('WARNING: using reference frame given, will not compute registration metrics')
         do_regmetrics = False
     else:
+        t0 = time.time()
         refImg = pick_init(ops)
-        print('time %0.2f sec. Computed reference frame for registration'%(toc(t0)))
+        print('Reference frame, %0.2f sec.'%(toc(t0)))
     ops['refImg'] = refImg
 
     # get binary file paths
@@ -689,8 +689,9 @@ def register_binary(ops, refImg=None):
 
     # compute metrics for registration
     if do_regmetrics and ops['nframes']>=2000:
+        t0=tic()
         ops = regmetrics.get_pc_metrics(ops)
-        print('time %0.2f sec. Computed registration metrics'%(toc(t0)))
+        print('Registration metrics, %0.2f sec.'%(toc(t0)))
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
@@ -754,7 +755,7 @@ def register_npy(Z, ops):
 
         k += 1
         if k%5==0:
-            print('registered %d/%d frames in time %4.2f'%(nfr, ops['nframes'], toc(k0)))
+            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], toc(k0)))
 
     # compute some potentially useful info
     ops['th_badframes'] = 100

@@ -381,7 +381,7 @@ def tiff_to_binary(ops):
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
             if ix%(batch_size*4)==0:
-                print('time %0.2f sec. %d frames per binary'%(toc(t0), ix))
+                print('%d frames per binary, time %0.2f sec.'%(ix,toc(t0)))
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
@@ -410,7 +410,6 @@ def split_multiops(ops1):
     return ops1
 
 def mesoscan_to_binary(ops):
-    print(ops['data_path'])
     # copy ops to list where each element is ops for each plane
     # load json file with line start stops
     if 'lines' not in ops:
@@ -530,7 +529,7 @@ def mesoscan_to_binary(ops):
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
             if ix%(batch_size*4)==0:
-                print('time %0.2f sec. %d frames per binary'%(toc(t0), ix))
+                print('%d frames per binary, time %0.2f sec.'%(ix,toc(t0)))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']

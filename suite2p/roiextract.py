@@ -140,7 +140,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
 
 
 def extractF(ops, stat, neuropil_masks, reg_file):
-    t0=ops['t0']
+    t0=time.time()
     nimgbatch = 1000
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
@@ -175,11 +175,9 @@ def extractF(ops, stat, neuropil_masks, reg_file):
             F[n,inds] = np.dot(data[:, stat[n]['ipix']], stat[n]['lam'])
             #Fneu[n,inds] = np.mean(data[neuropil_masks[n,:], :], axis=0)
         Fneu[:,inds] = np.dot(neuropil_masks , data.T)
-        if ix%(5*nimg)==0:
-            print('time %0.2f sec. Extracted fluorescence from %d/%d frames'%(toc(t0),ix+nimg,ops['nframes']))
         ix += nimg
         k += 1
-    print('time %0.2f sec. Finished fluorescence extraction from %d frames'%(toc(t0),ops['nframes']))
+    print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], toc(t0)))
     ops['meanImg'] /= k
 
     reg_file.close()
@@ -192,6 +190,7 @@ def masks_and_traces(ops, stat):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
+    t0=time.time()
     stat,cell_pix,_  = create_cell_masks(ops, stat)
     neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
     Ly=ops['Ly']
@@ -201,6 +200,8 @@ def masks_and_traces(ops, stat):
     stat0 = []
     for n in range(len(stat)):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
+    print('Masks made in %0.2f sec.'%toc(t0))
+
     F,Fneu,ops = extractF(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, ops2 = extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
@@ -211,9 +212,9 @@ def masks_and_traces(ops, stat):
     return F, Fneu, F_chan2, Fneu_chan2, ops, stat
 
 def roi_detect_and_extract(ops):
-    t0=ops['t0']
+    t0=time.time()
     ops, stat = sparsedetect.sparsery(ops)
-    print('time %0.2f sec. Found %d ROIs'%(toc(t0), len(stat)))
+    print('Found %d ROIs, %0.2f sec'%(len(stat), toc(t0)))
 
     ### apply default classifier ###
     if len(stat) > 0:
@@ -231,20 +232,19 @@ def roi_detect_and_extract(ops):
             ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
             stat = stat[ic]
             iscell = iscell[ic]
-            print('time %0.2f sec. After classification with threshold %0.2f, %d ROIs remain'%(toc(t0), ops['preclassify'], len(stat)))
+            print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
     else:
         iscell = np.zeros((0,2))
 
     stat = sparsedetect.get_overlaps(stat,ops)
     stat, ix = sparsedetect.remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])
     iscell = iscell[ix,:]
-    print('time %0.2f sec. After removing overlaps, %d ROIs remain'%(toc(t0), len(stat)))
+    print('After removing overlaps, %d ROIs remain'%(len(stat)))
 
     np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
 
     # extract fluorescence and neuropil
     F, Fneu, F_chan2, Fneu_chan2, ops, stat = masks_and_traces(ops, stat)
-    #print('time %0.2f sec. Extracted fluorescence from %d ROIs'%(toc(t0), len(stat)))
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
 
@@ -273,5 +273,4 @@ def roi_detect_and_extract(ops):
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
     np.save(os.path.join(fpath,'stat.npy'), stat)
-    print('time %0.2f sec. ROI results saved to %s'%(toc(t0), ops['save_path']))
     return ops

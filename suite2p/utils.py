@@ -349,39 +349,34 @@ def tiff_to_binary(ops):
 
             # check if uint16
             if type(im[0,0,0]) == np.uint16:
-                im = im / 2
+                im = im // 2
+                im = im.astype(np.int16)
 
             if im.shape[0] > nfr:
                 im = im[:nfr, :, :]
             nframes = im.shape[0]
             for j in range(0,nplanes):
                 if ik==0 and ix==0:
-                    ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                    if nchannels>1:
-                        ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                     ops1[j]['nframes'] = 0
                 i0 = nchannels * ((iplane+j)%nplanes)
                 if nchannels>1:
                     nfunc = ops['functional_chan']-1
                 else:
                     nfunc = 0
-                im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                #im2write -= int(109.3381/2)
+                im2write = im[int(i0)+nfunc:nframes::nplanes*nchannels]
 
-                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
                 #print(ops1[j]['frames_per_folder'][which_folder])
                 if nchannels>1:
-                    im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                    im2write = im[int(i0)+1-nfunc:nframes::nplanes*nchannels)]
                     reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
 
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
-            if ix%(batch_size*4)==0:
-                print('%d frames per binary, time %0.2f sec.'%(ix,toc(t0)))
+            if ops1[j]['nframes']%(batch_size*4)==0:
+                print('%d frames per binary, time %0.2f sec.'%(ops1[j]['nframes'],toc(t0)))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']
@@ -530,8 +525,8 @@ def mesoscan_to_binary(ops):
                     #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
-            if ix%(batch_size*4)==0:
-                print('%d frames per binary, time %0.2f sec.'%(ix,toc(t0)))
+            if ops1[j]['nframes']%(batch_size*4)==0:
+                print('%d frames per binary, time %0.2f sec.'%(ops1[j]['nframes'],toc(t0)))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']

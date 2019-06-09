@@ -382,6 +382,7 @@ def tiff_to_binary(ops):
             ix+=nframes
             if ix%(batch_size*4)==0:
                 print('%d frames per binary, time %0.2f sec.'%(ix,toc(t0)))
+        gc.collect()
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']

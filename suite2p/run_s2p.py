@@ -20,7 +20,7 @@ def default_ops():
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
-        'mesoscan': False, # reads in scanimage mesoscope files
+        'mesoscan': False, # for reading in scanimage mesoscope files
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
@@ -29,17 +29,13 @@ def default_ops():
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane
         'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
-        'diameter':12, # this is the main parameter for cell detection, 2-dimensional if Y and X are different (e.g. [6 12])
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)
-        'force_sktiff': False,
-        'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5
+        'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         # output settings
+        'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
-        # parallel settings
-        'num_workers': -1, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
-        'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
         # bidirectional phase offset
         'do_bidiphase': False,
         'bidiphase': 0,
@@ -59,7 +55,7 @@ def default_ops():
         'pad_fft': False,
         # non rigid registration settings
         'nonrigid': True, # whether to use nonrigid registration
-        'block_size': [128, 128], # block size to register
+        'block_size': [128, 128], # block size to register (** keep this a multiple of 2 **)
         'snr_thresh': 1.2, # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # 1P settings
@@ -68,32 +64,29 @@ def default_ops():
         'pre_smooth': 2, # whether to smooth before high-pass filtering before registration
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
-        'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
+        'roidetect': True, # whether or not to run ROI extraction
         'spatial_scale': 0, # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
+        'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000, # max number of binned frames for cell detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
         'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
         'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
-        'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
-        'ratio_neuropil_to_cell': 3., # minimum ratio between neuropil radius and cell radius
-        'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation during cell detection
-        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
-        'outer_neuropil_radius': np.inf, # maximum neuropil radius
-        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
         'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
+        # ROI extraction parameters
+        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
+        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
+        'allow_overlap': False, # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
         'chan2_thres': 0.65, # minimum for detection of brightness on channel 2
         # deconvolution settings
-        'baseline': 'maximin', # baselining mode
+        'baseline': 'maximin', # baselining mode (can also choose 'prctile')
         'win_baseline': 60., # window for maximin
         'sig_baseline': 10., # smoothing constant for gaussian filter
         'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
         'neucoeff': .7,  # neuropil coefficient
-        'allow_overlap': False,
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-        'roidetect': True
       }
     return ops
 

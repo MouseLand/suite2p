@@ -101,7 +101,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat by EXTENDING ROI (SLOW!!)
     inputs:
         ops, stat, cell_pix
-            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
+            from ops: inner_neuropil_radius, min_neuropil_pixels
             from stat: ypix, xpix
             cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
     outputs:
@@ -110,12 +110,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
     ncells = len(stat)
     Ly = cell_pix.shape[0]
     Lx = cell_pix.shape[1]
-    outer_radius = ops['outer_neuropil_radius']
     neuropil_masks = np.zeros((ncells,Ly,Lx), np.float32)
-    # if outer_radius is infinite, define outer radius as a multiple of the cell radius
-    if np.isinf(ops['outer_neuropil_radius']):
-        min_pixels = ops['min_neuropil_pixels']
-        ratio      = ops['ratio_neuropil_to_cell']
     for n in range(ncells):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']

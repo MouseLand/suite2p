@@ -147,7 +147,6 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
-        ops['t0'] = t0
         # copy tiff to a binary
         if len(ops['h5py']):
             ops1 = utils.h5py_to_binary(ops)
@@ -183,7 +182,6 @@ def run_s2p(ops={},db={}):
 
     while ipl<len(ops1):
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
-        ops1[ipl]['t0'] = t0
         t1 = tic()
         if not flag_binreg:
             ######### REGISTRATION #########

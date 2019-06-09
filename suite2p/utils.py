@@ -303,7 +303,7 @@ def tiff_to_binary(ops):
     ''' converts tiff to *.bin file '''
     ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
     ''' assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2'''
-    t0=ops['t0']
+    t0=tic()
     # copy ops to list where each element is ops for each plane
     ops1 = init_ops(ops)
     nplanes = ops1[0]['nplanes']
@@ -413,6 +413,7 @@ def split_multiops(ops1):
 def mesoscan_to_binary(ops):
     # copy ops to list where each element is ops for each plane
     # load json file with line start stops
+    t0 = tic()
     if 'lines' not in ops:
         fpath = os.path.join(ops['data_path'][0], '*json')
         fs = glob.glob(fpath)

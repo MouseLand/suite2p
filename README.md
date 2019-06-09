@@ -26,7 +26,7 @@ pip install suite2p
 ~~~~
 If this fails, you might not have Python 3 (or pip, or a recent enough version of pip). You'll need to install a distribution of Python like [Anaconda](https://www.anaconda.com/download/). Choose **Python 3.x** for your operating system. You might need to use an anaconda prompt if you did not add anaconda to the path. Try "pip install suite2p" again. If it still fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is 
 ~~~~
-python -m pip install --upgrade pip
+pip install --upgrade pip
 ~~~~
 And try "pip install suite2p" again. If it still fails, install Anaconda, and use the Anaconda command prompt to have a clean environment. Alternatively, if you already have Anaconda, create a clean conda environment just for suite2p with 
 ~~~~
@@ -52,23 +52,23 @@ If when running `python -m suite2p`, you receive an error associated with **matp
 pip install matplotlib --upgrade
 ~~~
 
+If you receive an error about "pickling" or in "skimage", then try
+~~~
+pip install numpy==1.14
+~~~
+
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine. 
 
-The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. 
-
-To export views in the GUI, you can right-click. Exporting to 'svg' will work with the latest release of pyqtgraph. However, to export to different file types (like png or tiff, see [issue](https://github.com/MouseLand/suite2p/issues/44)), you will need to install the development version of pyqtgraph yourself by
-~~~
-pip install git+https://github.com/pyqtgraph/pyqtgraph
-~~~
+(+ more info on the [wiki](https://github.com/MouseLand/suite2p/wiki/Installation) for running the latest github code and for mac users)
 
 
 ## Examples
 
-An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1R3ota25jdUthSzQ). It's a single-plane, single-channel recording.
+An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265NHRWYXUz7CRhbJHtd6B-zJs8f). It's a single-plane, single-channel recording.
 
 ## Getting started
 
-The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. 
+The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. Make sure to run this from a directory in which you have **WRITE** access (suite2p saves a couple temporary files in your current directory):
 ~~~~
 python -m suite2p
 ~~~~
@@ -85,6 +85,10 @@ Then:
 		~~~~
 3. Press run and wait. Messages should start appearing in the embedded command line. 
 4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).
+
+For more information on input file formatting, see this wiki [page](https://github.com/MouseLand/suite2p/wiki/Input-format-and-supported-file-types).
+
+For a description of all the settings and their defaults, see this wiki [page](https://github.com/MouseLand/suite2p/wiki/Settings-(ops.npy)). Also, you can mouse over the settings in the run window to see a short description of each of them.
 
 ### Using the GUI
 
@@ -109,7 +113,9 @@ Main GUI controls (works in all views):
 4. Swap cell = Right-click on the cell
 5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
 
-You can add your manual curation to a pre-built classifier by clicking "Add current data to classifier". Or you can make a brand-new classifier from a list of "iscell.npy" files that you've manually curated. The default classifier in the GUI is initialized as the suite2p classifier, but you can overwrite it by adding to it, or loading a different classifier and saving it as the default. The default classifier is used in the pipeline to produce the initial "iscell.npy" file 
+You can add your manual curation to a pre-built classifier by clicking "Add current data to classifier". Or you can make a brand-new classifier from a list of "iscell.npy" files that you've manually curated. The default classifier in the GUI is initialized as the suite2p classifier, but you can overwrite it by adding to it, or loading a different classifier and saving it as the default. The default classifier is used in the pipeline to produce the initial "iscell.npy" file.
+
+There is more information on using the GUI on the [wiki](https://github.com/MouseLand/suite2p/wiki/Using-the-GUI)
  
 ## Other ways to call Suite2p
 
@@ -137,63 +143,10 @@ ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
-## Option defaults
+See this wiki [page](https://github.com/MouseLand/suite2p/wiki/Outputs) for more info.
 
-~~~~python
- ops = {
-        # file paths
-	'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
-	'fast_disk': [], # used to store temporary binary file, defaults to save_path0 (set to a string NOT a list)
-        'delete_bin': False, # whether to delete binary file after processing
-        'h5py_key': 'data', # key in h5 where data array is stored (data should be time x pixels x pixels)
-        # main settings
-        'nplanes' : 1, # each tiff has these many planes in sequence
-        'nchannels' : 1, # each tiff has these many channels per plane
-        'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
-        'diameter':12, # this is the main parameter for cell detection, 2-dimensional if Y and X are different (e.g. [6 12])
-        'tau':  1., # this is the main parameter for deconvolution
-        'fs': 10.,  # sampling rate (total across planes)
-        # output settings
-        'save_mat': False, # whether to save output as matlab files
-        'combined': True, # combine multiple planes into a single result /single canvas for GUI
-        # parallel settings
-        'num_workers': 0, # 0 to select num_cores, -1 to disable parallelism, N to enforce value
-        'num_workers_roi': -1, # 0 to select number of planes, -1 to disable parallelism, N to enforce value
-        # registration settings
-        'do_registration': True, # whether to register data
-        'nimg_init': 200, # subsampled frames for finding reference image
-        'batch_size': 200, # number of frames per batch
-        'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
-        'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
-        'reg_tif': False, # whether to save registered tiffs
-        'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-        # cell detection settings
-        'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
-        'navg_frames_svd': 5000, # max number of binned frames for the SVD
-        'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
-        'max_iterations': 20, # maximum number of iterations to do cell detection
-        'ratio_neuropil': 6., # ratio between neuropil basis size and cell radius
-        'ratio_neuropil_to_cell': 3, # minimum ratio between neuropil radius and cell radius
-        'tile_factor': 1., # use finer (>1) or coarser (<1) tiles for neuropil estimation during cell detection
-        'threshold_scaling': 1., # adjust the automatically determined threshold by this scalar multiplier
-        'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
-        'inner_neuropil_radius': 2, # number of pixels to keep between ROI and neuropil donut
-        'outer_neuropil_radius': np.inf, # maximum neuropil radius
-        'min_neuropil_pixels': 350, # minimum number of pixels in the neuropil
-        # deconvolution settings
-        'baseline': 'maximin', # baselining mode
-        'win_baseline': 60., # window for maximin
-        'sig_baseline': 10., # smoothing constant for gaussian filter
-        'prctile_baseline': 8.,# optional (whether to use a percentile baseline)
-        'neucoeff': .7,  # neuropil coefficient
-        'allow_overlap': False,
-        'xrange': np.array([0, 0]),
-        'yrange': np.array([0, 0]),
-      }
-~~~~
-
-### Dependencies
-suite2p relies on the following packages (which are automatically installed with pip if missing):
+## Dependencies
+suite2p relies on these awesome packages (which are automatically installed with pip if missing):
 - [rastermap](https://github.com/MouseLand/rastermap)
 - [pyqtgraph](http://pyqtgraph.org/)
 - [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
@@ -202,8 +155,9 @@ suite2p relies on the following packages (which are automatically installed with
 - [h5py](https://www.h5py.org/)
 - [scikit-image](https://scikit-image.org/)
 - [scikit-learn](http://scikit-learn.org/stable/)
-- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb function), should not conflict with PyQt5)
-
+- [scanimage-tiff-reader](http://scanimage.gitlab.io/ScanImageTiffReaderDocs/)
+- [natsort](https://natsort.readthedocs.io/en/master/)
+- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb and colormap function), should not conflict with PyQt5)
 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

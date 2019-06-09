@@ -9,6 +9,7 @@ from scipy.sparse import linalg
 import scipy.io
 from skimage.external.tifffile import imread, TiffFile
 from skimage import io
+from ScanImageTiffReader import ScanImageTiffReader
 
 def tic():
     return time.time()
@@ -213,33 +214,55 @@ def h5py_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
+def open_tiff(file, sktiff):
+    if sktiff:
+        tif = TiffFile(file, fastij = False)
+        Ltif = len(tif)
+    else:
+        tif = ScanImageTiffReader(file)
+        Ltif = tif.shape()[0]
+    return tif, Ltif
+
 def tiff_to_binary(ops):
-    '''
-    convert tiffs to binary file
-    '''
+    ''' converts tiff to *.bin file '''
+    ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
+    ''' assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2'''
+
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
+
     # open all binary files for writing
+    # look for tiffs in all requested folders
+    fs, ops2 = get_tif_list(ops1[0])
     reg_file = []
     reg_file_chan2=[]
     for ops in ops1:
         reg_file.append(open(ops['reg_file'], 'wb'))
         if nchannels>1:
             reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    fs, ops = get_tif_list(ops1[0]) # look for tiffs in all requested folders
-    for op in ops1:
-        op['first_tiffs'] = ops['first_tiffs']
-        op['frames_per_folder'] = np.zeros((ops['first_tiffs'].sum(),), np.int32)
-    batch_size = 2000
+        ops['first_tiffs'] = ops2['first_tiffs']
+        ops['frames_per_folder'] = np.zeros((ops2['first_tiffs'].sum(),), np.int32)
+        ops['filelist'] = fs
+
+    # try tiff readers
+    try:
+        tif = ScanImageTiffReader(fs[0])
+        im = tif.data(beg=0, end=np.minimum(500, tif.shape()[0]-1))
+        tif.close()
+        sktiff=False
+    except:
+        sktiff = True
+        print('ScanImageTiffReader not working for this tiff type, using scikit-image')
+
+    batch_size = 500
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
     # loop over all tiffs
     which_folder = -1
     for ik, file in enumerate(fs):
-        # size of tiff
-        tif = TiffFile(file, fastij = True)
-        Ltif = len(tif)
+        # open tiff
+        tif, Ltif = open_tiff(file, sktiff)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
             which_folder += 1
@@ -249,11 +272,20 @@ def tiff_to_binary(ops):
             if ix >= Ltif:
                 break
             nfr = min(Ltif - ix, batch_size)
-            im = imread(file, pages = range(ix, ix + nfr))
+            # tiff reading
+            if sktiff:
+                im = imread(file, pages = range(ix, ix + nfr), fastij = False)
+            else:
+                im = tif.data(beg=ix, end=ix+nfr)
+
+            # for single-page tiffs, add 1st dim
             if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
+
+            # check if uint16
             if type(im[0,0,0]) == np.uint16:
                 im = im / 2
+
             if im.shape[0] > nfr:
                 im = im[:nfr, :, :]
             nframes = im.shape[0]
@@ -287,7 +319,7 @@ def tiff_to_binary(ops):
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'],ops['Lx'] = ops['meanImg'].shape
-        ops['filelist'] = fs
+
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
@@ -462,18 +494,6 @@ def get_tif_list(ops):
             ops['first_tiffs'] = np.array(first_tiffs)
             print('Found %d tifs'%(len(fsall)))
     return fsall, ops
-
-def get_tif_list_old(ops):
-    froot = ops['data_path']
-    if len(ops['subfolders'])==0:
-        fs = list_tifs(ops, froot)
-    else:
-        fs = []
-        for folder_down in ops['subfolders']:
-            fold = os.path.join(froot, folder_down)
-            fs.extend(list_tifs(ops, fold))
-    if fs is None:
-        raise Exception('Could not find any tifs')
 
 
 def get_cells(ops):

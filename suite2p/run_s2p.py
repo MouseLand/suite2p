@@ -95,7 +95,8 @@ def run_s2p(ops={},db={}):
             ops['save_path0'], tail = os.path.split(ops['h5py'])
         else:
             ops['save_path0'] = ops['data_path'][0]
-    # check if there are files already registered
+
+    # check if there are files already registered!
     fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
     if os.path.isfile(fpathops1):
         files_found_flag = True
@@ -123,7 +124,8 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-    ######### REGISTRATION #########
+
+    # if not set up files and copy tiffs/h5py to binary
     if not files_found_flag:
         # get default options
         ops0 = default_ops()
@@ -146,18 +148,20 @@ def run_s2p(ops={},db={}):
                 ops1 = utils.tiff_to_binary(ops)
                 print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
         np.save(fpathops1, ops1) # save ops1
+    else:
+        print('found binaries')
+        print(ops1[0]['reg_file'])
+
     ops1 = np.array(ops1)
     ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
-    if files_found_flag:
-        print('found ops1 and binaries')
-        print(ops1[0]['reg_file'])
     if flag_binreg:
-        print('found pre-registered binaries')
         print('skipping registration...')
     if flag_binreg and not files_found_flag:
         print('binary file created, but registration not performed')
+
+    # set up number of CPU workers for registration and cell detection
     if len(ops1)>1 and ops['num_workers_roi']>=0:
         if ops['num_workers_roi']==0:
             ops['num_workers_roi'] = len(ops1)
@@ -165,6 +169,8 @@ def run_s2p(ops={},db={}):
     else:
         ni = 1
     ik = 0
+
+    ######### REGISTRATION #########
     while ik<len(ops1):
         ipl = ik + np.arange(0, min(ni, len(ops1)-ik))
         if not flag_binreg:

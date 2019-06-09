@@ -27,16 +27,20 @@ We have created an [environment.yml](environment.yml) file for suite2p. You will
 ~~~~
 conda env create -n suite2p
 conda activate suite2p
-pip install suite2p
 ~~~~
 
-Now you can run `python -m suite2p` from anywhere, but NOTE you have to activate this environment with the command **conda activate suite2p** first.
+This creates an environment - you will always have to run **conda activate suite2p** before you run suite2p. We will only support users using conda going forward - conda ensures mkl_fft and numba run correctly and quickly on your machine.
+
+Next install suite2p:
+~~~~
+pip install suite2p
+~~~~
 
 If this fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is
 ~~~~
 pip install --upgrade pip
 ~~~~
-And try "pip install suite2p" again.
+And try `pip install suite2p` again.
 
 To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run:
 ~~~~
@@ -54,10 +58,6 @@ If when running `python -m suite2p`, you receive an error associated with **matp
 pip install matplotlib --upgrade
 ~~~~
 
-If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
-
-The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
-
 To export views in the GUI, you can right-click. Exporting to 'svg' will work with the latest release of pyqtgraph. However, to export to different file types (like png or tiff, see [issue](https://github.com/MouseLand/suite2p/issues/44)), you will need to install the development version of pyqtgraph yourself by
 ~~~~
 pip install git+https://github.com/pyqtgraph/pyqtgraph
@@ -65,8 +65,9 @@ pip install git+https://github.com/pyqtgraph/pyqtgraph
 
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
 
-(+ more info on the [wiki](https://github.com/MouseLand/suite2p/wiki/Installation) for running the latest github code and for mac users)
+The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
 
+(+ there's more info on the [install wiki](https://github.com/MouseLand/suite2p/wiki/Installation))
 
 ## Examples
 
@@ -149,11 +150,8 @@ ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
-See this wiki [page](https://github.com/MouseLand/suite2p/wiki/Outputs) for more info.
+See the [output wiki page](https://github.com/MouseLand/suite2p/wiki/Outputs) for more info.
 
-## Dependencies
-suite2p relies on these awesome packages (which are automatically installed with pip if missing):
-=======
 ## Option defaults
 
 ~~~~python
@@ -231,9 +229,8 @@ suite2p relies on these awesome packages (which are automatically installed with
       }
 ~~~~
 
-### Dependencies
-suite2p relies on the following packages (which are automatically installed with conda/pip if missing):
->>>>>>> classifier
+## Dependencies
+suite2p relies on the following excellent packages (which are automatically installed with conda/pip if missing):
 - [rastermap](https://github.com/MouseLand/rastermap)
 - [pyqtgraph](http://pyqtgraph.org/)
 - [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)

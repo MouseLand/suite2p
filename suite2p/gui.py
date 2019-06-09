@@ -83,7 +83,7 @@ class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
         self.setGeometry(0,0,1300,900)
-        self.setWindowTitle('Choose run options')
+        self.setWindowTitle('Choose run options (hold mouse over parameters to see descriptions)')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
         self.layout.setVerticalSpacing(2)
@@ -112,7 +112,7 @@ class RunWindow(QtGui.QDialog):
                     'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
@@ -132,8 +132,7 @@ class RunWindow(QtGui.QDialog):
                     'combine results across planes in separate folder "combined" at end of processing',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
-                    #'0 to select num_cores, -1 to disable parallelism, N to enforce value',
-                    #'ROI detection parallelism: 0 to select number of planes, -1 to disable parallelism, N to enforce value',
+                    'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
                     'if 1, registration is performed',
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
@@ -151,7 +150,7 @@ class RunWindow(QtGui.QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'whether or not to run cell (ROI) detection',
-                    '0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels',
+                    '0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'adjust the automatically determined threshold by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
@@ -187,8 +186,8 @@ class RunWindow(QtGui.QDialog):
             qw = QtGui.QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
         self.opsbtns = QtGui.QButtonGroup(self)
-        opsstr = ['cell soma', 'dendrites/axons']
-        self.opsname = ['soma', 'dendrite']
+        opsstr = ['1P imaging', 'dendrites/axons']
+        self.opsname = ['1P', 'dendrite']
         for b in range(len(opsstr)):
             btn = OpsButton(b, opsstr[b], self)
             self.opsbtns.addButton(btn, b)
@@ -219,6 +218,7 @@ class RunWindow(QtGui.QDialog):
                         qlabel = QtGui.QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
                         qedit.set_text(self.ops)
+                        qedit.setToolTip(tooltips[kk])
                         qedit.setFixedWidth(90)
                         self.layout.addWidget(qlabel,k*2-1,2*(l+2),1,2)
                         self.layout.addWidget(qedit,k*2,2*(l+2),1,2)

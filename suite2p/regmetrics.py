@@ -40,7 +40,7 @@ def pclowhigh(mov, nlowhigh, nPC):
 def cov_worker(mov):
     return mov @ mov.T
 
-def pc_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
+def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
     ''' register top and bottom of PCs to each other '''
     # registration settings
     ops = {
@@ -52,7 +52,6 @@ def pc_register(pclow, pchigh, refImg, do_phasecorr=True, smooth_sigma=1.15, blo
         'maxregshiftNR': np.array(maxregshiftNR),
         'maxregshift': np.array(maxregshift),
         'subpixel': 10,
-        'do_phasecorr': do_phasecorr,
         'smooth_sigma': smooth_sigma,
         '1Preg': False,
         'pad_fft': False,
@@ -97,16 +96,12 @@ def get_pc_metrics(ops, use_red=False):
     else:
         mov  = utils.sample_frames(ops, ix, ops['reg_file'])
 
-    num_workers = ops['num_workers']
-    if num_workers == 0:
-        num_workers = int(multiprocessing.cpu_count()/2)
-
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = pc_register(pclow, pchigh, ops['refImg'], ops['do_phasecorr'],
+    X    = pc_register(pclow, pchigh, ops['refImg'],
                        ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X

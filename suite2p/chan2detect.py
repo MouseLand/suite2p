@@ -61,7 +61,7 @@ def detect(ops, stat):
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
     # ops['min_neuropil_pixels'] = 80
-    _, cell_pix, cell_masks = roiextract.create_cell_masks(ops, stat, Ly, Lx, allow_overlap=True)
+    _, cell_pix, cell_masks = roiextract.create_cell_masks(ops, stat)
     neuropil_masks = roiextract.create_neuropil_masks(ops, stat, cell_pix)
     neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
     cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))

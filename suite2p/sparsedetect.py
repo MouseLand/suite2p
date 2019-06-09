@@ -382,6 +382,7 @@ def sparsery(ops):
     Th2 = ops['threshold_scaling']*max(1,im)
     vmultiplier = max(1, np.float32(rez.shape[0])/1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
+    ops['spatscale_pix'] = 3*2**im
 
     V0 = []
     ops['Vmap']  = []

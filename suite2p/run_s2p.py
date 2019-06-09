@@ -33,9 +33,10 @@ def default_ops():
         'fs': 10.,  # sampling rate (total across planes)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         # output settings
-        'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5
+        'preclassify': 0.3, # apply classifier before signal extraction with probability 0.3
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
+        'aspect': 1.0, # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
         # bidirectional phase offset
         'do_bidiphase': False,
         'bidiphase': 0,
@@ -49,7 +50,6 @@ def default_ops():
         'reg_tif': False, # whether to save registered tiffs
         'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-        'do_phasecorr': True, # whether to do cross-correlation or phase-correlation (recommend PHASE-CORR)
         'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         'th_badframes': 1.0, # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
@@ -69,7 +69,6 @@ def default_ops():
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000, # max number of binned frames for cell detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
-        'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
         'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
@@ -95,6 +94,7 @@ def run_s2p(ops={},db={}):
     ops0 = default_ops()
     ops = {**ops0, **ops}
     ops = {**ops, **db}
+    print(db)
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
             ops['save_path0'], tail = os.path.split(ops['h5py'])
@@ -107,6 +107,7 @@ def run_s2p(ops={},db={}):
         files_found_flag = True
         flag_binreg = True
         ops1 = np.load(fpathops1, allow_pickle=True)
+        print('FOUND OPS IN %s'%ops1[0]['save_path'])
         for i,op in enumerate(ops1):
             # default behavior is to look in the ops
             flag_reg = os.path.isfile(op['reg_file'])
@@ -119,6 +120,8 @@ def run_s2p(ops={},db={}):
             files_found_flag &= flag_reg
             if 'refImg' not in op or op['do_registration']>1:
                 flag_binreg = False
+                if i==len(ops1)-1:
+                    print("NOTE: not registered / registration forced with ops['do_registration']>1")
             # use the new False
             ops1[i] = {**op, **ops}.copy()
             # for mesoscope tiffs, preserve original lines, etc
@@ -131,7 +134,6 @@ def run_s2p(ops={},db={}):
                 ops1[i]['iplane'] = op['iplane']
 
             #ops1[i] = ops1[i].copy()
-            print(ops1[i]['save_path'])
             # except for registration results
             ops1[i]['xrange'] = op['xrange']
             ops1[i]['yrange'] = op['yrange']
@@ -165,17 +167,16 @@ def run_s2p(ops={},db={}):
 
         np.save(fpathops1, ops1) # save ops1
     else:
-        print('found binaries')
-        print(ops1[0]['reg_file'])
+        print('FOUND BINARIES: %s'%ops1[0]['reg_file'])
 
     ops1 = np.array(ops1)
     #ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
     if flag_binreg:
-        print('skipping registration...')
+        print('SKIPPING REGISTRATION...')
     if flag_binreg and not files_found_flag:
-        print('binary file created, but registration not performed')
+        print('NOTE: binary file created, but registration not performed')
 
     # set up number of CPU workers for registration and cell detection
     ipl = 0

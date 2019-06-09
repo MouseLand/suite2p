@@ -3,12 +3,11 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, register, sparsedetect, classifier
+from suite2p import utils, register, sparsedetect, classifier, chan2detect
 import time
 from scipy.sparse import csr_matrix
 from scipy import stats
 import os
-
 
 
 def tic():
@@ -30,7 +29,7 @@ def create_cell_masks(ops, stat):
     Lx=ops['Lx']
     ncells = len(stat)
     cell_pix = np.zeros((Ly,Lx))
-    #cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
+    cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
     for n in range(ncells):
         #if allow_overlap:
         overlap = np.zeros((stat[n]['npix'],), bool)
@@ -41,17 +40,18 @@ def create_cell_masks(ops, stat):
         stat[n]['ipix'] = ipix
         if xpix.size:
             # compute radius of neuron (used for neuropil scaling)
-            radius = utils.fitMVGaus(ypix/ops['diameter'][0], xpix/ops['diameter'][1],lam,2)[2]
-            stat[n]['radius'] = radius[0] * np.mean(ops['diameter'])
+            radius = utils.fitMVGaus(ypix/ops['aspect'], xpix, lam, 2)[2]
+            stat[n]['radius'] = radius[0]
+            #stat[n]['radius'] = radius[0] * np.mean(ops['diameter'])
             stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
             # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
             cell_pix[ypix[lam>0],xpix[lam>0]] += 1
-            #cell_masks[n, ypix, xpix] = lam / lam.sum()
+            cell_masks[n, ypix, xpix] = lam / lam.sum()
         else:
             stat[n]['radius'] = 0
             stat[n]['aspect_ratio'] = 1
     cell_pix = np.minimum(1, cell_pix)
-    return stat, cell_pix#, cell_masks
+    return stat, cell_pix, cell_masks
 
 def circle_neuropil_masks(ops, stat, cell_pix):
     '''creates surround neuropil masks for ROIs in stat using gradually extending circles
@@ -192,7 +192,7 @@ def masks_and_traces(ops, stat):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
-    stat,cell_pix  = create_cell_masks(ops, stat)
+    stat,cell_pix,_  = create_cell_masks(ops, stat)
     neuropil_masks = create_neuropil_masks(ops,stat,cell_pix)
     Ly=ops['Ly']
     Lx=ops['Lx']
@@ -212,11 +212,6 @@ def masks_and_traces(ops, stat):
 
 def roi_detect_and_extract(ops):
     t0=ops['t0']
-    ops['diameter'] = np.array(ops['diameter'])
-    if ops['diameter'].size<2:
-        ops['diameter'] = int(np.array(ops['diameter']))
-        ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
-    ops['diameter'] = np.array(ops['diameter']).astype('int32')
     ops, stat = sparsedetect.sparsery(ops)
     print('time %0.2f sec. Found %d ROIs'%(toc(t0), len(stat)))
 
@@ -236,7 +231,7 @@ def roi_detect_and_extract(ops):
             ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
             stat = stat[ic]
             iscell = iscell[ic]
-            print('time %0.2f sec. After classification, %d ROIs remain'%(toc(t0), len(stat)))
+            print('time %0.2f sec. After classification with threshold %0.2f, %d ROIs remain'%(toc(t0), ops['preclassify'], len(stat)))
     else:
         iscell = np.zeros((0,2))
 

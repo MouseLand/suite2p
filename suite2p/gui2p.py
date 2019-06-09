@@ -940,7 +940,9 @@ class MainW(QtGui.QMainWindow):
         self.lcell0.setText("%d" % (self.iscell.sum()))
         fig.init_range(self)
         fig.plot_trace(self)
-        if (type(self.ops["diameter"]) is not int) and (len(self.ops["diameter"]) > 1):
+        if 'aspect' in self.ops:
+            self.xyrat = self.ops['aspect']
+        elif 'diameter' in self.ops and (type(self.ops["diameter"]) is not int) and (len(self.ops["diameter"]) > 1):
             self.xyrat = self.ops["diameter"][0] / self.ops["diameter"][1]
         else:
             self.xyrat = 1.0

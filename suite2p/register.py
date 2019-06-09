@@ -118,9 +118,8 @@ def prepare_masks(refImg0, ops):
     else:
         cfRefImg   = np.conj(fft2(refImg))
 
-    if ops['do_phasecorr']:
-        absRef     = np.absolute(cfRefImg);
-        cfRefImg   = cfRefImg / (eps0 + absRef)
+    absRef     = np.absolute(cfRefImg);
+    cfRefImg   = cfRefImg / (eps0 + absRef)
 
     # gaussian filter in space
     fhg = gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
@@ -131,20 +130,6 @@ def prepare_masks(refImg0, ops):
     cfRefImg = cfRefImg.astype('complex64')
     cfRefImg = np.reshape(cfRefImg, (1, cfRefImg.shape[0], cfRefImg.shape[1]))
     return maskMul, maskOffset, cfRefImg
-
-def correlation_map(X, refAndMasks, do_phasecorr):
-    maskMul    = refAndMasks[0]
-    maskOffset = refAndMasks[1]
-    cfRefImg   = refAndMasks[2]
-    #nimg, Ly, Lx = X.shape
-    X = X * maskMul + maskOffset
-    X = fft2(X, (cfRefImg.shape[-2], cfRefImg.shape[-1]))
-    if do_phasecorr:
-        X = X / (eps0 + np.absolute(X))
-    X *= cfRefImg
-    cc = np.real(ifft2(X))
-    cc = fft.fftshift(cc, axes=(-2,-1))
-    return cc
 
 def shift_data(X, ymax, xmax, m0):
     ''' rigid shift of X by ymax and xmax '''
@@ -225,13 +210,13 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
     ymax, xmax = ymax-lcorr, xmax-lcorr
     return ymax, xmax, cmax
 
-def register_data(data, refAndMasks, ops):
+def register_and_shift(data, refAndMasks, ops):
     ''' register data matrix to reference image and shift '''
     ''' need reference image ops['refImg']'''
     ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
     ''' calls phasecorr '''
     if ops['bidiphase']!=0:
-        data = shift_bidiphase(data.copy(), ops['bidiphase'])
+        shift_bidiphase(data, ops['bidiphase'])
     nr=False
     yxnr = []
     if ops['nonrigid'] and len(refAndMasks)>3:
@@ -338,8 +323,6 @@ def shift_bidiphase(frames, bidiphase):
         xr = np.arange(0, bidiphase+Lx, 1, int)
         xrout = np.arange(-bidiphase, Lx, 1, int)
         frames[np.ix_(ntr, yr, xr)] = frames[np.ix_(ntr, yr, xrout)]
-    return frames
-
 
 def pick_init_init(ops, frames):
     nimg = frames.shape[0]
@@ -362,7 +345,7 @@ def refine_init(ops, frames, refImg):
     for iter in range(0,niter):
         ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
-        freg, ymax, xmax, cmax, yxnr = register_data(frames, [maskMul, maskOffset, cfRefImg], ops)
+        freg, ymax, xmax, cmax, yxnr = register_and_shift(frames, [maskMul, maskOffset, cfRefImg], ops)
         ymax = ymax.astype(np.float32)
         xmax = xmax.astype(np.float32)
         isort = np.argsort(-cmax)
@@ -388,7 +371,7 @@ def pick_init(ops):
         ops['bidiphase'] = get_bidiphase(frames)
         print('NOTE: estimated bidiphase offset from data: %d pixels'%ops['bidiphase'])
     if ops['bidiphase'] != 0:
-        frames = shift_bidiphase(frames.copy(), ops['bidiphase'])
+        shift_bidiphase(frames, ops['bidiphase'])
     refImg = pick_init_init(ops, frames)
     refImg = refine_init(ops, frames, refImg)
     return refImg
@@ -522,7 +505,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
             break
         data = np.reshape(data, (-1, Ly, Lx))
 
-        dout = register_data(data, refAndMasks, ops)
+        dout = register_and_shift(data, refAndMasks, ops)
         data = np.minimum(dout[0], 2**15 - 2)
         meanImg += data.sum(axis=0)
         data = data.astype('int16')
@@ -563,6 +546,14 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         raw_file_align.close()
     return ops, offsets
 
+def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
+    if ops['bidiphase']!=0:
+        shift_bidiphase(data, ops['bidiphase'])
+    shift_data(data, ymax, xmax, ops['refImg'].mean())
+    if ops['nonrigid']==True:
+        data = nonrigid.transform_data(data, ops, ymax1, xmax1)
+    return data
+
 def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     ''' apply registration shifts to binary data'''
     nbatch = ops['batch_size']
@@ -585,22 +576,22 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         else:
             buff = reg_file_alt.read(nbytesread)
 
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
         if data.size==0:
             break
         data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
         nframes = data.shape[0]
-
-        # register by pre-determined amount
         iframes = ix + np.arange(0,nframes,1,int)
-        if ops['bidiphase']!=0:
-            data = shift_bidiphase(data.copy(), ops['bidiphase'])
+
+        # get shifts
         ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
-        data = shift_data_worker((data.copy(), ymax, xmax, ops['refImg'].mean()))
-        if ops['nonrigid']==True:
+        ymax1,xmax1 = [],[]
+        if ops['nonrigid']:
             ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
-            data = nonrigid.shift_data_worker((data, ops, ymax1, xmax1))
+
+        # apply shifts
+        data = apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
         data = np.minimum(data, 2**15 - 2)
         meanImg += data.mean(axis=0)
         data = data.astype('int16')

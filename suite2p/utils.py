@@ -57,10 +57,12 @@ def fitMVGaus(y,x,lam,thres=2.5):
 def enhanced_mean_image(ops):
     ''' computes enhanced mean image for GUI '''
     if 1:
-        I = ops['meanImg']
-        Imed = signal.medfilt2d(I, 4*ops['diameter']+1)
+        I = ops['meanImg'].astype(np.float32)
+        diameter = 4*np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']]) + 1
+        diameter = diameter.flatten().astype(np.int64)
+        Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
         I = I - Imed
-        Idiv = signal.medfilt2d(np.absolute(I), 4*ops['diameter']+1)
+        Idiv = signal.medfilt2d(np.absolute(I), [diameter[0], diameter[1]])
         I = I / (1e-10 + Idiv)
         mimg1 = -6
         mimg99 = 6
@@ -432,6 +434,7 @@ def mesoscan_to_binary(ops):
         ops['nrois'] = len(ops['lines'])
     nplanes = ops['nplanes']
 
+    print("NOTE: nplanes %d nrois %d => ops['nplanes'] = %d"%(nplanes,ops['nrois'],ops['nrois']*nplanes))
     # multiply lines across planes
     lines = ops['lines'].copy()
     dy = ops['dy'].copy()
@@ -447,7 +450,7 @@ def mesoscan_to_binary(ops):
         ops['iplane'][n::ops['nrois']] = np.arange(0, nplanes, 1, int)
     ops['nplanes'] = nplanes * ops['nrois']
     ops1 = init_ops(ops)
-    print('NOTE: nplanes %d nrois %d'%(nplanes,ops['nrois']))
+
     # this shouldn't make it here
     if 'lines' not in ops:
         for j in range(len(ops1)):
@@ -664,12 +667,12 @@ def combined(ops1):
             meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
         if 'meanImg_chan2_corrected' in ops:
             meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
-        if 'max_proj' in ops:
-            max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
+
         xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
         yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
-
+        if 'max_proj' in ops:
+            max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
         for j in range(len(stat0)):
             stat0[j]['xpix'] += ops['dx']
             stat0[j]['ypix'] += ops['dy']

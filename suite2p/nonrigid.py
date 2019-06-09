@@ -108,9 +108,8 @@ def prepare_masks(refImg1, ops):
         maskMul1[n,0,:,:] *= maskMul2.astype('float32')
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
         cfRefImg   = np.conj(fft.fft2(refImg))
-        if ops['do_phasecorr']:
-            absRef     = np.absolute(cfRefImg)
-            cfRefImg   = cfRefImg / (eps0 + absRef)
+        absRef     = np.absolute(cfRefImg)
+        cfRefImg   = cfRefImg / (eps0 + absRef)
 
         # gaussian filter
         fhg = register.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])

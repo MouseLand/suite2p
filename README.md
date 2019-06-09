@@ -163,6 +163,7 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5 (turn off with value 0)
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
+        'aspect': 1.0, # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
         # bidirectional phase offset
         'do_bidiphase': False,
         'bidiphase': 0,
@@ -176,7 +177,6 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'reg_tif': False, # whether to save registered tiffs
         'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
-        'do_phasecorr': True, # whether to do cross-correlation or phase-correlation (recommend PHASE-CORR)
         'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         'th_badframes': 1.0, # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
@@ -196,7 +196,6 @@ iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second 
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000, # max number of binned frames for cell detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
-        'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
         'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)

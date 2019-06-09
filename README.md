@@ -29,7 +29,7 @@ conda env create -n suite2p
 conda activate suite2p
 ~~~~
 
-This creates an environment - you will always have to run **conda activate suite2p** before you run suite2p. We will only support users using conda going forward - conda ensures mkl_fft and numba run correctly and quickly on your machine.
+This creates an environment - you will always have to run **conda activate suite2p** before you run suite2p. We will only support users using conda going forward - conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
 
 Next install suite2p:
 ~~~~
@@ -98,6 +98,8 @@ For more information on input file formatting, see this wiki [page](https://gith
 For a description of all the settings and their defaults, see this wiki [page](https://github.com/MouseLand/suite2p/wiki/Settings-(ops.npy)). Also, you can mouse over the settings in the run window to see a short description of each of them.
 
 ### Using the GUI
+
+![multiselect](gui_images/multiselect.gif)
 
 suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results.
 

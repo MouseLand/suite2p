@@ -155,7 +155,7 @@ def find_files_open_binaries(ops1, ish5):
         # find h5's
         if ops1[0]['look_one_level_down']:
             fs = list_h5(ops1[0])
-            print('using a list of h5 files:')
+            print('NOTE: using a list of h5 files:')
             print(fs)
         else:
             fs = [ops1[0]['h5py']]
@@ -185,7 +185,7 @@ def h5py_to_binary(ops):
     key = ops1[0]['h5py_key']
     if ops1[0]['look_one_level_down']:
         h5list = list_h5(ops1[0])
-        print('using a list of h5 files:')
+        print('NOTE: using a list of h5 files:')
         print(h5list)
     else:
         h5list = [ops1[0]['h5py']]
@@ -291,17 +291,17 @@ def choose_tiff_reader(fs0, ops):
         sktiff=False
     except:
         sktiff = True
-        print('ScanImageTiffReader not working for this tiff type, using scikit-image')
+        print('NOTE: ScanImageTiffReader not working for this tiff type, using scikit-image')
     if 'force_sktiff' in ops and ops['force_sktiff']:
         sktiff=True
-        print('user chose scikit-image for tiff reading')
+        print('NOTE: user chose scikit-image for tiff reading')
     return sktiff
 
 def tiff_to_binary(ops):
     ''' converts tiff to *.bin file '''
     ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
     ''' assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2'''
-
+    t0=ops['t0']
     # copy ops to list where each element is ops for each plane
     ops1 = init_ops(ops)
     nplanes = ops1[0]['nplanes']
@@ -378,7 +378,8 @@ def tiff_to_binary(ops):
 
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
-    print(ops1[0]['nframes'])
+            if ix%(batch_size*4)==0:
+                print('time %0.2f sec. %d frames per binary'%(toc(t0), ix))
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
@@ -446,7 +447,7 @@ def mesoscan_to_binary(ops):
         ops['iplane'][n::ops['nrois']] = np.arange(0, nplanes, 1, int)
     ops['nplanes'] = nplanes * ops['nrois']
     ops1 = init_ops(ops)
-    print('nplanes %d nrois %d'%(nplanes,ops['nrois']))
+    print('NOTE: nplanes %d nrois %d'%(nplanes,ops['nrois']))
     # this shouldn't make it here
     if 'lines' not in ops:
         for j in range(len(ops1)):
@@ -458,8 +459,6 @@ def mesoscan_to_binary(ops):
     ops = ops1[0]
 
     #nplanes = ops1[0]['nplanes']
-    print(nplanes)
-    print(ops1[0]['nplanes'])
     nchannels = ops1[0]['nchannels']
     if nchannels>1:
         nfunc = ops['functional_chan']-1
@@ -527,8 +526,9 @@ def mesoscan_to_binary(ops):
                     #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
+            if ix%(batch_size*4)==0:
+                print('time %0.2f sec. %d frames per binary'%(toc(t0), ix))
         gc.collect()
-    print(ops1[0]['nframes'])
     # write ops files
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
@@ -592,7 +592,7 @@ def get_tif_list(ops):
             fsall.append(os.path.join(froot[0], tif))
         ops['first_tiffs'] = np.zeros((len(fsall),), dtype=np.bool)
         ops['first_tiffs'][0] = True
-        print('Found %d tifs'%(len(fsall)))
+        print('** Found %d tifs - converting to binary **'%(len(fsall)))
     else:
         if len(froot)==1:
             if len(ops['subfolders'])==0:
@@ -616,7 +616,8 @@ def get_tif_list(ops):
             raise Exception('no tiffs')
         else:
             ops['first_tiffs'] = np.array(first_tiffs)
-            print('Found %d tifs'%(len(fsall)))
+            print('** Found %d tifs - converting to binary **'%(len(fsall)))
+            #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
 def sub2ind(array_shape, rows, cols):

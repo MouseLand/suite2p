@@ -11,8 +11,8 @@ except ImportError:
 
 def tic():
     return time.time()
-def toc(i0):
-    return time.time() - i0
+def toc(t0):
+    return time.time() - t0
 
 def default_ops():
     ops = {
@@ -33,6 +33,7 @@ def default_ops():
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (total across planes)
         'force_sktiff': False,
+        'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5
         # output settings
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
@@ -45,8 +46,8 @@ def default_ops():
         # registration settings
         'do_registration': 1, # whether to register data (2 forces re-registration)
         'keep_movie_raw': False,
-        'nimg_init': 200, # subsampled frames for finding reference image
-        'batch_size': 200, # number of frames per batch
+        'nimg_init': 300, # subsampled frames for finding reference image
+        'batch_size': 500, # number of frames per batch
         'maxregshift': 0.1, # max allowed registration shift, as a fraction of frame max(width and height)
         'align_by_chan' : 1, # when multi-channel, you can align by non-functional channel (1-based)
         'reg_tif': False, # whether to save registered tiffs
@@ -68,8 +69,8 @@ def default_ops():
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
-        'navg_frames_svd': 5000, # max number of binned frames for the SVD
-        'nsvd_for_roi': 1000, # max number of SVD components to keep for ROI detection
+        'spatial_scale': 0, # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
+        'nbinned': 5000, # max number of binned frames for cell detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
         'smooth_masks': 1, # whether to smooth masks in the final pass of cell detection
         'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
@@ -97,7 +98,7 @@ def default_ops():
     return ops
 
 def run_s2p(ops={},db={}):
-    i0 = tic()
+    t0 = tic()
     ops0 = default_ops()
     ops = {**ops0, **ops}
     ops = {**ops, **db}
@@ -151,22 +152,23 @@ def run_s2p(ops={},db={}):
         ops0 = default_ops()
         # combine with user options
         ops = {**ops0, **ops}
+        ops['t0'] = t0
         # copy tiff to a binary
         if len(ops['h5py']):
             ops1 = utils.h5py_to_binary(ops)
-            print('time %4.4f. Wrote h5py to binaries for %d planes'%(toc(i0), len(ops1)))
+            print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(toc(t0), len(ops1)))
         else:
             if 'mesoscan' in ops and ops['mesoscan']:
                 ops1 = utils.mesoscan_to_binary(ops)
-                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
             elif HAS_HAUS:
-                print('time %4.4f. Using HAUSIO')
+                print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
                 ops1 = dataset.tosuite2p(ops)
-                print('time %4.4f. Wrote data to binaries for %d planes'%(toc(i0), len(ops1)))
+                print('time %4.2f sec. Wrote data to binaries for %d planes'%(toc(t0), len(ops1)))
             else:
                 ops1 = utils.tiff_to_binary(ops)
-                print('time %4.4f. Wrote tifs to binaries for %d planes'%(toc(i0), len(ops1)))
+                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
 
         np.save(fpathops1, ops1) # save ops1
     else:
@@ -183,38 +185,36 @@ def run_s2p(ops={},db={}):
         print('binary file created, but registration not performed')
 
     # set up number of CPU workers for registration and cell detection
-    if len(ops1)>1 and ops['num_workers_roi']>=0:
-        if ops['num_workers_roi']==0:
-            ops['num_workers_roi'] = len(ops1)
-        ni = ops['num_workers_roi']
-    else:
-        ni = 1
-    ik = 0
+    ipl = 0
 
-    ######### REGISTRATION #########
-    while ik<len(ops1):
-        ipl = ik # + np.arange(0, min(ni, len(ops1)-ik))
+    while ipl<len(ops1):
+        print('-------------------- PLANE %d -------------------------'%ipl)
+        ops1[ipl]['t0'] = t0
         if not flag_binreg:
+            ######### REGISTRATION #########
+            print('RUNNING REGISTRATION')
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
-            print('time %4.4f. Registration complete for %d planes'%(toc(i0),ni))
+            print('time %0.2f. Registration complete'%(toc(t0)))
         if 'roidetect' in ops1[ipl]:
             roidetect = ops['roidetect']
         else:
             roidetect = True
-        ######## CELL DETECTION AND ROI EXTRACTION ##############
         if roidetect:
+            ######## CELL DETECTION AND ROI EXTRACTION ##############
+            print('RUNNING ROI DETECTION AND EXTRACTION')
             ops1[ipl] = roiextract.roi_detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
 
             ######### SPIKE DECONVOLUTION ###############
+            print('RUNNING SPIKE DECONVOLUTION')
             F = np.load(os.path.join(fpath,'F.npy'))
             Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
             dF = F - ops['neucoeff']*Fneu
             spks = dcnv.oasis(dF, ops)
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('time %4.4f. Detected spikes in %d ROIs'%(toc(i0), F.shape[0]))
+            print('time %0.2f. Detected spikes in %d ROIs'%(toc(t0), F.shape[0]))
 
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:
@@ -226,8 +226,9 @@ def run_s2p(ops={},db={}):
                                      'spks': spks,
                                      'iscell': iscell})
         else:
-            print("skipping cell detection (ops['roidetect']=False)")
-        ik += 1 #len(ipl)
+            print("WARNING: skipping cell detection (ops['roidetect']=False)")
+        print('time %0.2f sec. finished plane %d'%(toc(t0),ipl))
+        ipl += 1 #len(ipl)
 
     # save final ops1 with all planes
     np.save(fpathops1, ops1)
@@ -247,5 +248,5 @@ def run_s2p(ops={},db={}):
             if ops['nchannels']>1:
                 os.remove(ops['reg_file_chan2'])
 
-    print('finished all tasks in total time %4.4f sec'%toc(i0))
+    print('TOTAL TIME %0.2f sec'%toc(t0))
     return ops1

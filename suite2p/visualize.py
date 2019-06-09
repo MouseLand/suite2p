@@ -8,8 +8,8 @@ from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
 import sys,os
-#sys.path.insert(0, '/media/carsen/DATA2/Github/rastermap/rastermap')
 from rastermap.mapping import Rastermap
+#from mapping import Rastermap
 from suite2p import gui,fig
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
@@ -329,6 +329,7 @@ class VisWindow(QtGui.QMainWindow):
         #model = np.load('embedding.npy', allow_pickle=True).item()
         self.isort1 = np.argsort(self.model.embedding[:,0])
         self.u = self.model.u
+        self.v = self.model.v
         self.comboBox.addItem("rastermap")
         #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
@@ -371,9 +372,9 @@ class VisWindow(QtGui.QMainWindow):
             #basename, fname = os.path.split(args.S)
             #np.save(os.path.join(basename, 'embedding.npy'), proc)
             print('raster map computed in %3.2f s'%(time.time()-self.tic))
+            self.activate(parent)
         except:
-            print('Interrupted by error (not finished)\n')
-        self.activate(parent)
+            print('Rastermap issue: Interrupted by error (not finished)\n')
         #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
         #                    (spath, opspath))
 
@@ -414,7 +415,17 @@ class VisWindow(QtGui.QMainWindow):
     def sort_time(self):
         if self.raster:
             if self.sortTime.isChecked():
-                self.tsort = self.isort2
+                ops = {'n_components': 1, 'n_X': 100, 'alpha': 1., 'K': 1.,
+                            'nPC': 200, 'constraints': 2, 'annealing': True, 'init': 'pca',
+                            'start_time': 0, 'end_time': -1}
+                if not hasattr(self, 'isort2'):
+                    self.model = Rastermap(n_components=ops['n_components'], n_X=ops['n_X'], nPC=ops['nPC'],
+                                  init=ops['init'], alpha=ops['alpha'], K=ops['K'], constraints=ops['constraints'],
+                                  annealing=ops['annealing'])
+                    unorm = (self.u**2).sum(axis=0)**0.5
+                    self.model.fit(self.sp.T, u=self.v * unorm, v=self.u / unorm)
+                    self.isort2 = np.argsort(self.model.embedding[:,0])
+                self.tsort = self.isort2.astype(np.int32)
             else:
                 self.tsort = np.arange(0,self.sp.shape[1]).astype(np.int32)
             self.neural_sorting(self.comboBox.currentIndex())

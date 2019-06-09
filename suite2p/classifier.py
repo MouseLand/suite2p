@@ -27,7 +27,6 @@ class Classifier:
                 self.keys = model['keys'][ikey].tolist()
                 self.stats = model['stats'][:,ikey]
             self.iscell = model['iscell']
-            print(self.keys)
             self.loaded = True
         except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print('ERROR: incorrect classifier file')

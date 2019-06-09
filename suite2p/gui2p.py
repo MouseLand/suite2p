@@ -10,6 +10,7 @@ from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
+from scipy import io
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -78,11 +79,13 @@ class MainW(QtGui.QMainWindow):
         runS2P.setShortcut("Ctrl+R")
         runS2P.triggered.connect(self.run_suite2p)
         self.addAction(runS2P)
+
         # load processed data
         loadProc = QtGui.QAction("&Load processed data", self)
         loadProc.setShortcut("Ctrl+L")
         loadProc.triggered.connect(self.load_dialog)
         self.addAction(loadProc)
+
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
             "Load behavior or stim trace (1D only)", self
@@ -90,6 +93,14 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
+
+        # load processed data
+        self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
+        self.saveMat.setShortcut("Ctrl+S")
+        self.saveMat.triggered.connect(self.save_mat)
+        self.saveMat.setEnabled(False)
+        self.addAction(self.saveMat)
+
         # export figure
         exportFig = QtGui.QAction("Export as image (svg)", self)
         exportFig.triggered.connect(self.export_fig)
@@ -102,6 +113,7 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
         file_menu.addAction(self.loadBeh)
+        file_menu.addAction(self.saveMat)
         file_menu.addAction(exportFig)
         # classifier menu
         self.trainfiles = []
@@ -869,6 +881,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
+        self.saveMat.setEnabled(True)
         self.bloaded = False
         self.ROI_remove()
         self.isROI = False
@@ -1305,7 +1318,17 @@ class MainW(QtGui.QMainWindow):
         else:
             print("ERROR: this is not a 1D array with length of data")
 
-
+    def save_mat(self):
+        matpath = os.path.join(self.basename,'Fall.mat')
+        io.savemat(matpath, {'stat': self.stat,
+                             'ops': self.ops,
+                             'F': self.Fcell,
+                             'Fneu': self.Fneu,
+                             'spks': self.Spks,
+                             'iscell': np.concatenate((self.iscell[:,np.newaxis],
+                                                       self.probcell[:,np.newaxis]), axis=1)
+                             })
+        print('saving to mat')
 
     def load_custom_mask(self):
         name = QtGui.QFileDialog.getOpenFileName(

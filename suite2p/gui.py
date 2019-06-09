@@ -106,28 +106,28 @@ class RunWindow(QtGui.QDialog):
         self.opslist = []
         self.batch = False
         self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
-                   'batch_size', 'max_iterations', 'navg_frames_svd','inner_neuropil_radius',
-                   'outer_neuropil_radius']
+                   'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
+                   'min_neuropil_pixels', 'spatial_scale']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                     'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap']
-        tifkeys = ['nplanes','nchannels','functional_chan','diameter','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = ['save_mat','combined','reg_tif','reg_tif_chan2']
+        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2']
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','connected','max_overlap','threshold_scaling','max_iterations','navg_frames_svd','ratio_neuropil','high_pass']
-        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','prctile_baseline','neucoeff']]
+        cellkeys = ['roidetect','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
-                    'approximate diameter of ROIs in pixels (can input two numbers separated by a comma for elongated ROIs)',
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
                     'if 1, binary file is deleted after processing is complete',
                     'whether or not to compute bidirectional phase offset of recording (from line scanning)',
                     'set a fixed number (in pixels) for the bidirectional phase offset',
+                    'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
                     'save output also as mat file "Fall.mat"',
                     'combine results across planes in separate folder "combined" at end of processing',
                     'if 1, registered tiffs are saved',
@@ -151,18 +151,16 @@ class RunWindow(QtGui.QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'whether or not to run cell (ROI) detection',
+                    '0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
-                    'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'adjust the automatically determined threshold by this scalar multiplier',
+                    'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
-                    'max number of binned frames for the SVD',
-                    'ratio between neuropil basis size and cell radius',
                     'running mean subtraction with window of size "high_pass" (use low values for 1P)',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
                     'window for maximin',
-                    'smoothing constant for gaussian filter',
                     'smoothing constant for gaussian filter',
                     'neuropil coefficient']
 
@@ -611,7 +609,7 @@ class LineEdit(QtGui.QLineEdit):
                 okey = int(diams[0])
         else:
             if key in intkeys:
-                okey = int(self.text())
+                okey = int(float(self.text()))
             elif key in boolkeys:
                 okey = bool(int(self.text()))
             else:

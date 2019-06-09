@@ -19,19 +19,19 @@ def my_sum(a, b):
     return a+b
 
 def get_mov(ops):
-    i0 = tic()
+    t0 = ops['t0']
     badframes = False
     if 'badframes' in ops:
         badframes = True
         nframes = ops['nframes'] - ops['badframes'].sum()
     else:
         nframes = ops['nframes']
-    bin_min = np.floor(nframes / ops['navg_frames_svd']).astype('int32');
+    bin_min = np.floor(nframes / ops['nbinned']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     nt0 = max(bin_min, bin_tau)
-    ops['navg_frames_svd'] = np.floor(nframes/nt0).astype('int32')
-    print('nt0=%2.2d'%nt0)
+    ops['nbinned'] = np.floor(nframes/nt0).astype('int32')
+    print('time %2.2f sec. Binning movie in chunks of %2.2d'%(toc(t0), nt0))
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
@@ -41,9 +41,8 @@ def get_mov(ops):
     nimgbatch = min(nframes, nimgbatch)
     nimgbatch = nt0 * np.floor(nimgbatch/nt0)
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
-    mov = np.zeros((ops['navg_frames_svd'], Lyc, Lxc), np.float32)
+    mov = np.zeros((ops['nbinned'], Lyc, Lxc), np.float32)
     max_proj = np.zeros((Lyc, Lxc), np.float32)
-    print(mov.shape)
     ix = 0
     idata = 0
     # load and bin data
@@ -71,6 +70,7 @@ def get_mov(ops):
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
     max_proj = np.max(mov, axis=0)
+    print('time %0.2f sec. Binned movie: [%d,%d,%d]'%(toc(t0), mov.shape[0], mov.shape[1], mov.shape[2] ))
 
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
@@ -322,6 +322,7 @@ def square_conv2(mov,lx):
     return movt
 
 def sparsery(ops):
+    t0 = ops['t0']
     rez, max_proj = get_mov(ops)
     ops['max_proj'] = max_proj
     nframes, Ly, Lx = rez.shape
@@ -370,12 +371,17 @@ def sparsery(ops):
     ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
     im, nm = mode(imap[ipk][isort[:50]])
+    if ops['spatial_scale'] > 0:
+        im = max(1, min(4, ops['spatial_scale']))
+        fstr = 'FORCED'
+    else:
+        fstr = 'estimated'
 
     if im==0:
-        print('best scale was 0, everything should break now')
+        print('ERROR: best scale was 0, everything should break now!')
     Th2 = ops['threshold_scaling']*max(1,im)
     vmultiplier = max(1, np.float32(rez.shape[0])/1200)
-    print('spatial scale %d, time epochs %2.2f, threshold %2.2f '%(im, vmultiplier, vmultiplier*Th2))
+    print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
 
     V0 = []
     ops['Vmap']  = []
@@ -397,7 +403,6 @@ def sparsery(ops):
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
-    t0 = time.time()
     niter = 250 * ops['max_iterations']
     Vmax = np.zeros((niter))
     ihop = np.zeros((niter))
@@ -454,8 +459,8 @@ def sparsery(ops):
         ypix.append(ypix0)
         lam.append(lam0)
         if tj%1000==0:
-            print('%d ROIs, %2.2f s, score=%2.2f'%(tj, time.time()-t0, Vmax[tj]))
-    print(tj, time.time()-t0, Vmax[tj])
+            print('time %0.2f sec. %d ROIs, score=%2.2f'%(time.time()-t0, tj, Vmax[tj]))
+    #print(tj, time.time()-t0, Vmax[tj])
     ops['Vmax'] = Vmax
     ops['ihop'] = ihop
     ops['Vsplit'] = vrat

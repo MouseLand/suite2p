@@ -145,6 +145,7 @@ def create_neuropil_masks(ops, stat, cell_pix):
 
 
 def extractF(ops, stat, neuropil_masks, reg_file):
+    t0=ops['t0']
     nimgbatch = 1000
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
@@ -173,17 +174,17 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         inds = ix+np.arange(0,nimg,1,int)
         ops['meanImg'] += data.mean(axis=0)
         data = np.reshape(data, (nimg,-1))
-        
+
         # extract traces and neuropil
         for n in range(ncells):
             F[n,inds] = np.dot(data[:, stat[n]['ipix']], stat[n]['lam'])
             #Fneu[n,inds] = np.mean(data[neuropil_masks[n,:], :], axis=0)
         Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         if ix%(5*nimg)==0:
-            print('extracted %d/%d frames in %3.2f sec'%(ix+nimg,ops['nframes'], toc(k0)))
+            print('time %0.2f sec. Extracted fluorescence from %d/%d frames'%(toc(t0),ix+nimg,ops['nframes']))
         ix += nimg
         k += 1
-    print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
+    print('time %0.2f sec. Finished fluorescence extraction from %d frames'%(toc(t0),ops['nframes']))
     ops['meanImg'] /= k
 
     reg_file.close()
@@ -215,41 +216,45 @@ def masks_and_traces(ops, stat):
     return F, Fneu, F_chan2, Fneu_chan2, ops, stat
 
 def roi_detect_and_extract(ops):
-    i0 = tic()
+    t0=ops['t0']
     ops['diameter'] = np.array(ops['diameter'])
     if ops['diameter'].size<2:
         ops['diameter'] = int(np.array(ops['diameter']))
         ops['diameter'] = np.array((ops['diameter'], ops['diameter']))
     ops['diameter'] = np.array(ops['diameter']).astype('int32')
-    print(ops['diameter'])
     ops, stat = sparsedetect.sparsery(ops)
+    print('time %0.2f sec. Found %d ROIs'%(toc(t0), len(stat)))
 
     ### apply default classifier ###
-    classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-        "classifiers/classifier_user.npy",
-    )
-    if not os.path.isfile(classfile):
-        classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-            "classifiers/classifier.npy"
-        )
-        shutil.copy(classorig, classfile)
-    print(classfile)
     if len(stat) > 0:
-        iscell = classifier.run(classfile, stat, keys=['npix_norm', 'compact'])
-        ic = (iscell[:,0]>0.5).flatten().astype(np.bool)
-        stat = stat[ic]
-        iscell = iscell[ic, :]
+        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier_user.npy",
+        )
+        if not os.path.isfile(classfile):
+            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                "classifiers/classifier.npy"
+            )
+            shutil.copy(classorig, classfile)
+        print('NOTE: applying classifier %s'%classfile)
+        iscell = classifier.run(classfile, stat, keys=['npix_norm', 'compact', 'skew'])
+        if 'preclassify' in ops and ops['preclassify'] > 0.0:
+            ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
+            stat = stat[ic]
+            iscell = iscell[ic]
+            print('time %0.2f sec. After classification, %d ROIs remain'%(toc(t0), len(stat)))
     else:
         iscell = np.zeros((0,2))
-    np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
-    print('time %4.4f. Found %d ROIs'%(toc(i0), len(stat)))
 
     stat = sparsedetect.get_overlaps(stat,ops)
-    #stat, ix = remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])
+    stat, ix = sparsedetect.remove_overlaps(stat, ops, ops['Ly'], ops['Lx'])
+    iscell = iscell[ix,:]
+    print('time %0.2f sec. After removing overlaps, %d ROIs remain'%(toc(t0), len(stat)))
+
+    np.save(os.path.join(ops['save_path'],'iscell.npy'), iscell)
 
     # extract fluorescence and neuropil
     F, Fneu, F_chan2, Fneu_chan2, ops, stat = masks_and_traces(ops, stat)
-    print('time %4.4f. Extracted fluorescence from %d ROIs'%(toc(i0), len(stat)))
+    #print('time %0.2f sec. Extracted fluorescence from %d ROIs'%(toc(t0), len(stat)))
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
 
@@ -278,7 +283,5 @@ def roi_detect_and_extract(ops):
     np.save(os.path.join(fpath,'F.npy'), F)
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
     np.save(os.path.join(fpath,'stat.npy'), stat)
-    iscell = np.ones((len(stat),2))
-    np.save(os.path.join(fpath, 'iscell.npy'), iscell)
-    print('results saved to %s'%ops['save_path'])
+    print('time %0.2f sec. ROI results saved to %s'%(toc(t0), ops['save_path']))
     return ops

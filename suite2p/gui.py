@@ -82,7 +82,7 @@ class ListChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(0,0,1300,900)
+        self.setGeometry(0,0,1500,900)
         self.setWindowTitle('Choose run options (hold mouse over parameters to see descriptions)')
         self.win = QtGui.QWidget(self)
         self.layout = QtGui.QGridLayout()
@@ -161,12 +161,7 @@ class RunWindow(QtGui.QDialog):
                     'minimum number of pixels in the neuropil',
                     'window for maximin',
                     'smoothing constant for gaussian filter',
-<<<<<<< HEAD
-                    'smoothing constant for gaussian filter',
-                    'neuropil coefficient (constant across all neurons)']
-=======
                     'neuropil coefficient']
->>>>>>> classifier
 
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel = QtGui.QLabel('File paths')

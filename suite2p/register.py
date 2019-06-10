@@ -157,8 +157,7 @@ def apply_dotnorm(Y, cfRefImg):
     return x
 
 def phasecorr(data, refAndMasks, ops):
-    ''' compute registration offsets
-        uses phase correlation if ops['do_phasecorr'] '''
+    ''' compute registration offsets '''
     nimg, Ly, Lx = data.shape
 
     # maximum registration shift allowed

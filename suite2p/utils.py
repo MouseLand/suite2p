@@ -321,6 +321,7 @@ def tiff_to_binary(ops):
 
     # loop over all tiffs
     which_folder = -1
+    ntotal=0
     for ik, file in enumerate(fs):
         # open tiff
         tif, Ltif = open_tiff(file, sktiff)
@@ -363,20 +364,21 @@ def tiff_to_binary(ops):
                     nfunc = ops['functional_chan']-1
                 else:
                     nfunc = 0
-                im2write = im[int(i0)+nfunc:nframes::nplanes*nchannels]
+                im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels]
 
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
                 #print(ops1[j]['frames_per_folder'][which_folder])
                 if nchannels>1:
-                    im2write = im[int(i0)+1-nfunc:nframes::nplanes*nchannels)]
+                    im2write = im[int(i0)+1-nfunc:nframes:nplanes*nchannels]
                     reg_file_chan2[j].write(bytearray(im2write))
 
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
-            if ops1[j]['nframes']%(batch_size*4)==0:
-                print('%d frames per binary, time %0.2f sec.'%(ops1[j]['nframes'],toc(t0)))
+            ntotal+=nframes
+            if ntotal%(batch_size*4)==0:
+                print('%d frames of binary, time %0.2f sec.'%(ntotal,toc(t0)))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']
@@ -470,6 +472,7 @@ def mesoscan_to_binary(ops):
 
     # loop over all tiffs
     which_folder = -1
+    ntotal=0
     for ik, file in enumerate(fs):
         # open tiff
         tif, Ltif = open_tiff(file, sktiff)
@@ -525,8 +528,9 @@ def mesoscan_to_binary(ops):
                     #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
-            if ops1[j]['nframes']%(batch_size*4)==0:
-                print('%d frames per binary, time %0.2f sec.'%(ops1[j]['nframes'],toc(t0)))
+            ntotal+=nframes
+            if ntotal%(batch_size*4)==0:
+                print('%d frames per binary, time %0.2f sec.'%(ntotal,toc(t0)))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']

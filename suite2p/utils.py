@@ -359,6 +359,9 @@ def tiff_to_binary(ops):
             for j in range(0,nplanes):
                 if ik==0 and ix==0:
                     ops1[j]['nframes'] = 0
+                    ops1[j]['meanImg'] = np.zeros((len(jlines), im.shape[2]), np.float32)
+                    if nchannels>1:
+                        ops1[j]['meanImg_chan2'] = np.zeros((len(jlines), im.shape[2]), np.float32)
                 i0 = nchannels * ((iplane+j)%nplanes)
                 if nchannels>1:
                     nfunc = ops['functional_chan']-1

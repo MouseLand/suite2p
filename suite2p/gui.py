@@ -406,7 +406,7 @@ class RunWindow(QtGui.QDialog):
             os.makedirs(save_folder)
         self.logfile = open(os.path.join(save_folder, 'run.log'), 'w')
         #self.logfile.close()
-        self.process.start('python3 -u -W ignore -m suite2p --ops ops.npy --db db.npy')
+        self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
 
     def stop(self):
         self.finish = False

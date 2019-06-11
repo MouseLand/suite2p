@@ -215,6 +215,8 @@ def run_s2p(ops={},db={}):
 
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:
+                stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
+                iscell = np.load(os.path.join(fpath,'iscell.npy'))
                 matpath = os.path.join(ops['save_path'],'Fall.mat')
                 io.savemat(matpath, {'stat': stat,
                                      'ops': ops,

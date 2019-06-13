@@ -173,7 +173,7 @@ def run_s2p(ops={},db={}):
     if not ops['do_registration']:
         flag_binreg = True
     if flag_binreg:
-        print('SKIPPING REGISTRATION...')
+        print('SKIPPING REGISTRATION FOR ALL PLANES...')
     if flag_binreg and not files_found_flag:
         print('NOTE: binary file created, but registration not performed')
 
@@ -189,7 +189,7 @@ def run_s2p(ops={},db={}):
             print('----------- REGISTRATION')
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
-            print('Total %0.2f sec'%(toc(t11)))
+            print('----------- Total %0.2f sec'%(toc(t11)))
         if 'roidetect' in ops1[ipl]:
             roidetect = ops['roidetect']
         else:
@@ -201,7 +201,7 @@ def run_s2p(ops={},db={}):
             ops1[ipl] = roiextract.roi_detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
-            print('Total %0.2f sec.'%(toc(t11)))
+            print('----------- Total %0.2f sec.'%(toc(t11)))
 
             ######### SPIKE DECONVOLUTION ###############
             t11=tic()
@@ -211,7 +211,7 @@ def run_s2p(ops={},db={}):
             dF = F - ops['neucoeff']*Fneu
             spks = dcnv.oasis(dF, ops)
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('Total %0.2f sec.'%(toc(t11)))
+            print('----------- Total %0.2f sec.'%(toc(t11)))
 
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:
@@ -226,7 +226,7 @@ def run_s2p(ops={},db={}):
                                      'iscell': iscell})
         else:
             print("WARNING: skipping cell detection (ops['roidetect']=False)")
-        print('Plane %d out of %d planes processed in %0.2f sec (can open in GUI).'%(ipl,len(ops1),toc(t1)))
+        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,len(ops1),toc(t1)))
         print('total = %0.2f sec.'%(toc(t0)))
         ipl += 1 #len(ipl)
 

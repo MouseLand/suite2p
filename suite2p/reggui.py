@@ -484,7 +484,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.nbytesread.append(2 * self.Ly[n] * self.Lx[n])
 
             #aspect ratio
-            if (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
+            if 'aspect' in ops:
+                self.xyrat = ops['aspect']
+            elif 'diameter' in ops and (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
                 self.xyrat = ops["diameter"][0] / ops["diameter"][1]
             else:
                 self.xyrat = 1.0
@@ -620,7 +622,9 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.nbytesread = 2 * self.Ly * self.Lx
 
             #aspect ratio
-            if (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
+            if 'aspect' in ops:
+                self.xyrat = ops['aspect']
+            elif 'diameter' in ops and (type(ops["diameter"]) is not int) and (len(ops["diameter"]) > 1):
                 self.xyrat = ops["diameter"][0] / ops["diameter"][1]
             else:
                 self.xyrat = 1.0

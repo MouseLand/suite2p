@@ -90,7 +90,7 @@ Then:
     - -> Add fast_disk (this is where the binary file of registered data will be created, choose an SSD for this path) ((otherwise the save path is used as the fast disk path))
     - Set some parameters (see full list below). At the minimum:
 		~~~~
-		nplanes, nchannels, diameter, tau, fs
+		nplanes, nchannels, tau, fs
 		~~~~
 3. Press run and wait. Messages should start appearing in the embedded command line.
 4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).

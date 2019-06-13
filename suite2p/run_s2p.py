@@ -226,7 +226,7 @@ def run_s2p(ops={},db={}):
                                      'iscell': iscell})
         else:
             print("WARNING: skipping cell detection (ops['roidetect']=False)")
-        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,len(ops1),toc(t1)))
+        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,toc(t1)))
         print('total = %0.2f sec.'%(toc(t0)))
         ipl += 1 #len(ipl)
 

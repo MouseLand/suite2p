@@ -41,6 +41,7 @@ release = '1.0.4'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
+    'recommonmark'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

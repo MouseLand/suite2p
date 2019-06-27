@@ -58,6 +58,14 @@ def enhanced_mean_image(ops):
     ''' computes enhanced mean image for GUI '''
     if 1:
         I = ops['meanImg'].astype(np.float32)
+        if 'spatscale_pix' not in ops:
+            if isinstance(ops['diameter'], int):
+                diameter = np.array([ops['diameter'], ops['diameter']])
+            else:
+                diameter = np.array(ops['diameter'])
+            ops['spatscale_pix'] = diameter[1]
+            ops['aspect'] = diameter[0]/diameter[1]
+
         diameter = 4*np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']]) + 1
         diameter = diameter.flatten().astype(np.int64)
         Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])

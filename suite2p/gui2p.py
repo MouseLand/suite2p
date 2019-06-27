@@ -671,6 +671,23 @@ class MainW(QtGui.QMainWindow):
                     if self.rastermap:
                         self.colorbtns.button(9).setChecked(True)
                         self.colorbtns.button(9).press(self, 9)
+                elif event.key() == QtCore.Qt.Key_Left:
+                    self.ichosen = (self.ichosen-1)%len(self.stat)
+                    self.imerge = [self.ichosen]
+                    self.ichosen_stats()
+                    M = fig.draw_masks(self)
+                    fig.plot_masks(self, M)
+                    fig.plot_trace(self)
+                    self.show()
+                elif event.key() == QtCore.Qt.Key_Right:
+                    self.ichosen = (self.ichosen+1)%len(self.stat)
+                    self.imerge = [self.ichosen]
+                    self.ichosen_stats()
+                    M = fig.draw_masks(self)
+                    fig.plot_masks(self, M)
+                    fig.plot_trace(self)
+                    self.show()
+
 
     def merge_cells(self):
         dm = QtGui.QMessageBox.question(

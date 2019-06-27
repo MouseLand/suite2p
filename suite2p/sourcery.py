@@ -360,12 +360,12 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
 def sourcery(ops):
     change_codes = True
     i0 = tic()
-    ops, U,sdmov, u   = getSVDdata(ops) # get SVD components
     if isinstance(ops['diameter'], int):
         ops['diameter'] = [ops['diameter'], ops['diameter']]
     ops['diameter'] = np.array(ops['diameter'])
     ops['spatscale_pix'] = ops['diameter'][1]
     ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
+    ops, U,sdmov, u   = getSVDdata(ops) # get SVD components
     S, StU , StS = getStU(ops, U)
     Lyc, Lxc,nsvd = U.shape
     ops['Lyc'] = Lyc

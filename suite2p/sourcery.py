@@ -236,7 +236,6 @@ def get_stat(ops, stat, Ucell, codes):
     frac = 0.5
     ncells = len(stat)
     footprints = np.zeros((ncells,))
-    npix = np.zeros((ncells,))
     for k in range(0,ncells):
         stat0 = stat[k]
         ypix = stat0['ypix']
@@ -262,12 +261,13 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['xpix'] += ops['xrange'][0]
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
-        npix[k] = xpix.size
     mfoot = np.nanmedian(footprints)
     for n in range(len(stat)):
         stat[n]['footprint'] = footprints[n] / mfoot
         if np.isnan(stat[n]['footprint']):
             stat[n]['footprint'] = 0
+    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
+    npix /= np.mean(npix[:100])
     #mmrs = np.nanmedian(mrs[:100])
     for n in range(len(stat)):
         #stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)

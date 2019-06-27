@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, register
+from suite2p import utils, register, sparsedetect
 import time
 #from matplotlib.colors import hsv_to_rgb
 #from matplotlib import pyplot as plt
@@ -14,18 +14,18 @@ def toc(i0):
     return time.time() - i0
 
 def getSVDdata(ops):
-    mov = get_mov(ops)
+    mov, max_proj = sparsedetect.get_mov(ops)
+    ops['max_proj'] = max_proj
     nbins, Lyc, Lxc = np.shape(mov)
 
     sig = ops['diameter']/10. # PICK UP
     for j in range(nbins):
-        mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
-
-    mov = np.reshape(mov, (-1,Lyc*Lxc))
+        mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
 
     # compute noise variance across frames
-    sdmov = get_sdmov(mov, ops)
+    sdmov = sparsedetect.get_sdmov(mov, ops)
     mov /= sdmov
+    mov = np.reshape(mov, (-1,Lyc*Lxc))
     if 1:
         # compute covariance of binned frames
         cov = mov @ mov.transpose() / mov.shape[1]
@@ -41,10 +41,10 @@ def getSVDdata(ops):
         u = []
     U = np.reshape(U, (-1,Lyc,Lxc))
     U = np.transpose(U, (1, 2, 0)).copy()
-    return U, sdmov, u
+    return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
-    mov = get_mov(ops)
+    mov, _ = sparsedetect.get_mov(ops)
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
@@ -52,10 +52,10 @@ def getSVDproj(ops, u):
         for j in range(nbins):
             mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
     if 1:
-        mov = np.reshape(mov, (-1,Lyc*Lxc))
         #sdmov = np.ones((Lyc*Lxc,), 'float32')
-        sdmov = get_sdmov(mov, ops)
+        sdmov = sparsedetect.get_sdmov(mov, ops)
         mov/=sdmov
+        mov = np.reshape(mov, (-1,Lyc*Lxc))
 
         U = u.transpose() @ mov
         U = U.transpose().copy().reshape((Lyc,Lxc,-1))
@@ -108,7 +108,6 @@ def create_neuropil_basis(ops, Ly, Lx):
             basis functions (pixels x nbasis functions)
     '''
     ratio_neuropil = ops['ratio_neuropil']
-    print(ratio_neuropil)
     tile_factor    = ops['tile_factor']
     diameter       = ops['diameter']
 
@@ -237,6 +236,7 @@ def get_stat(ops, stat, Ucell, codes):
     frac = 0.5
     ncells = len(stat)
     footprints = np.zeros((ncells,))
+    npix = np.zeros((ncells,))
     for k in range(0,ncells):
         stat0 = stat[k]
         ypix = stat0['ypix']
@@ -262,87 +262,17 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['xpix'] += ops['xrange'][0]
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
+        npix[k] = xpix.size
     mfoot = np.nanmedian(footprints)
     for n in range(len(stat)):
         stat[n]['footprint'] = footprints[n] / mfoot
         if np.isnan(stat[n]['footprint']):
             stat[n]['footprint'] = 0
+    #mmrs = np.nanmedian(mrs[:100])
+    for n in range(len(stat)):
+        #stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)
+        stat[n]['npix_norm'] = npix[n]
     return stat
-
-def create_cell_masks(ops, stat, Ly, Lx, allow_overlap=False):
-    '''creates cell masks for ROIs in stat and computes radii
-    inputs:
-        stat, Ly, Lx, allow_overlap
-            from stat: ypix, xpix, lam
-            allow_overlap: boolean whether or not to include overlapping pixels in cell masks (default: False)
-    outputs:
-        stat, cell_pix (Ly,Lx), cell_masks (ncells,Ly,Lx)
-            assigned to stat: radius (minimum of 3 pixels)
-    '''
-    ncells = len(stat)
-    cell_pix = np.zeros((Ly,Lx))
-    cell_masks = np.zeros((ncells,Ly,Lx), np.float32)
-    for n in range(ncells):
-        if allow_overlap:
-            overlap = np.zeros((stat[n]['npix'],), bool)
-        else:
-            overlap = stat[n]['overlap']
-        ypix = stat[n]['ypix'][~overlap]
-        xpix = stat[n]['xpix'][~overlap]
-        lam  = stat[n]['lam'][~overlap]
-        if xpix.size:
-            # compute radius of neuron (used for neuropil scaling)
-            radius = utils.fitMVGaus(ypix/ops['diameter'][0], xpix/ops['diameter'][1],lam,2)[2]
-            stat[n]['radius'] = radius[0] * np.mean(ops['diameter'])
-            stat[n]['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
-            # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
-            cell_pix[ypix[lam>0],xpix[lam>0]] += 1
-            # add pixels to cell masks
-            cell_masks[n, ypix, xpix] = lam / lam.sum()
-        else:
-            stat[n]['radius'] = 0
-            stat[n]['aspect_ratio'] = 1
-    cell_pix = np.minimum(1, cell_pix)
-    return stat, cell_pix, cell_masks
-
-def create_neuropil_masks(ops, stat, cell_pix):
-    '''creates surround neuropil masks for ROIs in stat
-    inputs:
-        ops, stat, cell_pix
-            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
-            from stat: ypix, xpix
-            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
-    outputs:
-        neuropil_masks (ncells,Ly,Lx)
-    '''
-    ncells = len(stat)
-    Ly = cell_pix.shape[0]
-    Lx = cell_pix.shape[1]
-    neuropil_masks = np.zeros((ncells,Ly,Lx),np.float32)
-    outer_radius = ops['outer_neuropil_radius']
-    # if outer_radius is infinite, define outer radius as a multiple of the cell radius
-    if np.isinf(ops['outer_neuropil_radius']):
-        min_pixels = ops['min_neuropil_pixels']
-        ratio      = ops['ratio_neuropil_to_cell']
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        # first extend to get ring of dis-allowed pixels
-        ypix, xpix = extendROI(ypix, xpix, Ly, Lx,ops['inner_neuropil_radius'])
-        # count how many pixels are valid
-        nring = np.sum(cell_pix[ypix,xpix]<.5)
-        ypix1,xpix1 = ypix,xpix
-        for j in range(0,100):
-            ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
-            if np.sum(cell_pix[ypix1,xpix1]<.5)-nring>ops['min_neuropil_pixels']:
-                break # break if there are at least a minimum number of valid pixels
-        ix = cell_pix[ypix1,xpix1]<.5
-        ypix1, xpix1 = ypix1[ix], xpix1[ix]
-        neuropil_masks[n,ypix1,xpix1] = 1.
-        neuropil_masks[n,ypix,xpix] = 0
-    S = np.sum(neuropil_masks, axis=(1,2))
-    neuropil_masks /= S[:, np.newaxis, np.newaxis]
-    return neuropil_masks
 
 def getVmap(Ucell, sig):
     us = gaussian_filter(Ucell, [sig[0], sig[1], 0.],  mode='wrap')
@@ -430,7 +360,12 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
 def sourcery(ops):
     change_codes = True
     i0 = tic()
-    U,sdmov, u   = getSVDdata(ops) # get SVD components
+    ops, U,sdmov, u   = getSVDdata(ops) # get SVD components
+    if isinstance(ops['diameter'], int):
+        ops['diameter'] = [ops['diameter'], ops['diameter']]
+    ops['diameter'] = np.array(ops['diameter'])
+    ops['spatscale_pix'] = ops['diameter'][1]
+    ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
     S, StU , StS = getStU(ops, U)
     Lyc, Lxc,nsvd = U.shape
     ops['Lyc'] = Lyc
@@ -547,13 +482,13 @@ def sourcery(ops):
             stat = [{'ypix':ypix[n], 'lam':lam[n], 'xpix':xpix[n]} for n in range(ncells)]
             stat = connected_region(stat, ops)
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
-            stat, ix = remove_overlaps(stat, ops, Lyc, Lxc)
-            print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
+            #stat, ix = remove_overlaps(stat, ops, Lyc, Lxc)
+            #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
             ypix = [stat[n]['ypix'] for n in range(len(stat))]
             xpix = [stat[n]['xpix'] for n in range(len(stat))]
             lam = [stat[n]['lam'] for n in range(len(stat))]
-            L = L[:,:,ix]
-            codes = codes[ix, :]
+            #L = L[:,:,ix]
+            #codes = codes[ix, :]
             ncells = len(ypix)
         if refine>0:
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
@@ -580,56 +515,5 @@ def postprocess(ops, stat, Ucell, codes):
     #mPix, mLam, codes = mergeROIs(ops, Lyc,Lxc,d0,mPix,mLam,codes,Ucell)
     stat = connected_region(stat, ops)
     stat = get_stat(ops, stat, Ucell, codes)
-    stat = get_overlaps(stat,ops)
+    stat = np.array(stat)
     return stat
-
-def extractF(ops, stat):
-    nimgbatch = 1000
-    nframes = int(ops['nframes'])
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    ncells = len(stat)
-
-    stat,cell_pix,cell_masks = create_cell_masks(ops, stat,Ly,Lx,ops['allow_overlap'])
-    neuropil_masks           = create_neuropil_masks(ops,stat,cell_pix)
-    # add surround neuropil masks to stat
-    for n in range(ncells):
-        stat[n]['ipix_neuropil'] = neuropil_masks[n,:,:].flatten().nonzero();
-    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
-    cell_masks     = np.reshape(cell_masks,(-1,Ly*Lx))
-
-    F    = np.zeros((ncells, nframes),np.float32)
-    Fneu = np.zeros((ncells, nframes),np.float32)
-
-    reg_file = open(ops['reg_file'], 'rb')
-    nimgbatch = int(nimgbatch)
-    block_size = Ly*Lx*nimgbatch*2
-    ix = 0
-    data = 1
-
-    ops['meanImg'] = np.zeros((Ly,Lx))
-    k0 = tic()
-    while data is not None:
-        buff = reg_file.read(block_size)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        nimgd = int(np.floor(data.size / (Ly*Lx)))
-        if nimgd == 0:
-            break
-        data = np.reshape(data, (-1, Ly, Lx)).astype(np.float32)
-        ops['meanImg'] += np.sum(data,axis=0)
-
-        # resize data to be Ly*Lx by nimgd
-        data = np.reshape(data, (nimgd,-1)).transpose()
-        # compute cell activity
-        inds = ix + np.arange(0,nimgd)
-        F[:, inds]    = cell_masks @ data
-        Fneu[:, inds] = neuropil_masks @ data
-
-        if ix%(5*nimgd)==0:
-            print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
-        ix += nimgd
-    print('extracted %d/%d frames in %3.2f sec'%(ix,ops['nframes'], toc(k0)))
-    ops['meanImg'] /= ops['nframes']
-
-    reg_file.close()
-    return F, Fneu, ops

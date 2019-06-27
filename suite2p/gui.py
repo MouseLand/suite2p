@@ -110,12 +110,12 @@ class RunWindow(QtGui.QDialog):
                    'min_neuropil_pixels', 'spatial_scale']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                     'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
-                    'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap']
+                    'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
@@ -150,7 +150,9 @@ class RunWindow(QtGui.QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'whether or not to run cell (ROI) detection',
-                    '0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
+                    'whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)',
+                    'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
+                    'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
                     'adjust the automatically determined threshold by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',

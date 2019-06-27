@@ -1,4 +1,4 @@
-from scipy.ndimage import maximum_filter
+from scipy.ndimage import maximum_filter, gaussian_filter
 from scipy.stats import mode
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage.filters import uniform_filter
@@ -75,7 +75,7 @@ def get_mov(ops):
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
     if ops['high_pass']<10:
         for j in range(mov.shape[1]):
-            mov[:,j,:] -= ndimage.gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
+            mov[:,j,:] -= gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
     else:
         ki0 = 0
         while 1:
@@ -90,12 +90,13 @@ def get_mov(ops):
 
 def get_sdmov(mov, ops):
     ix = 0
-    batch_size = 500
+
     if len(mov.shape)>2:
         nbins,Ly, Lx = mov.shape
         npix = (Ly , Lx)
     else:
         nbins, npix = mov.shape
+    batch_size = min(500,nbins)
     sdmov = np.zeros(npix, 'float32')
     while 1:
         if ix>=nbins:
@@ -378,7 +379,7 @@ def sparsery(ops):
 
     if im==0:
         print('ERROR: best scale was 0, everything should break now!')
-    Th2 = ops['threshold_scaling']*max(1,im)
+    Th2 = ops['threshold_scaling']*5*max(1,im)
     vmultiplier = max(1, np.float32(rez.shape[0])/1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
     ops['spatscale_pix'] = 3*2**im

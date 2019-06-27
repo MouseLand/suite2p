@@ -3,7 +3,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, register, sparsedetect, classifier, chan2detect
+from suite2p import utils, register, sparsedetect, classifier, chan2detect, sourcery
 import time
 from scipy.sparse import csr_matrix
 from scipy import stats
@@ -213,7 +213,10 @@ def masks_and_traces(ops, stat):
 
 def roi_detect_and_extract(ops):
     t0=time.time()
-    ops, stat = sparsedetect.sparsery(ops)
+    if ops['sparse_mode']:
+        ops, stat = sparsedetect.sparsery(ops)
+    else:
+        ops, stat = sourcery.sourcery(ops)
     print('Found %d ROIs, %0.2f sec'%(len(stat), toc(t0)))
 
     ### apply default classifier ###

@@ -33,7 +33,7 @@ def default_ops():
         'fs': 10.,  # sampling rate (total across planes)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         # output settings
-        'preclassify': 0.3, # apply classifier before signal extraction with probability 0.3
+        'preclassify': 0., # apply classifier before signal extraction with probability 0.3
         'save_mat': False, # whether to save output as matlab files
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
         'aspect': 1.0, # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
@@ -65,11 +65,13 @@ def default_ops():
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
         'roidetect': True, # whether or not to run ROI extraction
+        'sparse_mode': False, # whether or not to run sparse_mode
+        'diameter': 12, # if not sparse_mode, use diameter for filtering and extracting
         'spatial_scale': 0, # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000, # max number of binned frames for cell detection
         'max_iterations': 20, # maximum number of iterations to do cell detection
-        'threshold_scaling': 5., # adjust the automatically determined threshold by this scalar multiplier
+        'threshold_scaling': 1.0, # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75, # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100, # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         # ROI extraction parameters

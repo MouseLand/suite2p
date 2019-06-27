@@ -8,8 +8,19 @@ Welcome to suite2p's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: HOW-TO:
 
+   installation
+   inputs
+   runit
+   gui
+
+   :caption: HOW-IT-WORKS:
+
+   registration
+   roidetection
+   fluorextract
+   deconvolution
 
 
 Indices and tables

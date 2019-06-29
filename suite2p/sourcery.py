@@ -31,7 +31,7 @@ def getSVDdata(ops):
         cov = mov @ mov.transpose() / mov.shape[1]
         cov = cov.astype('float32')
 
-        nsvd_for_roi = min(ops['nsvd_for_roi'], int(cov.shape[0]/2))
+        nsvd_for_roi = min(ops['nbinned'], int(cov.shape[0]/2))
         u, s, v = np.linalg.svd(cov)
 
         u = u[:, :nsvd_for_roi]
@@ -107,8 +107,14 @@ def create_neuropil_basis(ops, Ly, Lx):
         outputs:
             basis functions (pixels x nbasis functions)
     '''
-    ratio_neuropil = ops['ratio_neuropil']
-    tile_factor    = ops['tile_factor']
+    if 'ratio_neuropil' in ops:
+        ratio_neuropil = ops['ratio_neuropil']
+    else:
+        ratio_neuropil = 6.
+    if 'tile_factor' in ops:
+        tile_factor    = ops['tile_factor']
+    else:
+        tile_factor = 1.
     diameter       = ops['diameter']
 
     ntilesY  = 1+2*int(np.ceil(tile_factor * Ly / (ratio_neuropil * diameter[0]/2))/2)

@@ -675,11 +675,12 @@ def register_binary(ops, refImg=None):
     # compute valid region
     # ignore user-specified bad_frames.npy
     ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
-    if os.path.isfile(os.path.join(ops['data_path'][0], 'bad_frames.npy')):
-        badframes = np.load(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
-        badframes = badframes.flatten().astype(int)
-        ops['badframes'][badframes] = True
-        print(ops['badframes'].sum())
+    if len(ops['data_path']) > 0:
+        if os.path.isfile(os.path.join(ops['data_path'][0], 'bad_frames.npy')):
+            badframes = np.load(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
+            badframes = badframes.flatten().astype(int)
+            ops['badframes'][badframes] = True
+            print(ops['badframes'].sum())
     # return frames which fall outside range
     ops = compute_crop(ops)
 

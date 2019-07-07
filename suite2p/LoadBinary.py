@@ -6,6 +6,6 @@ def binMovie(ops):
 
     with open(ops['reg_file'], 'r') as binary_file:
     # Read the whole file at once
-    data = binary_file.read()
-    print(data)
+        data = binary_file.read()
+        print(data)
     return mov

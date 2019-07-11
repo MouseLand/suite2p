@@ -5,7 +5,7 @@ from scipy import ndimage
 import math
 from suite2p import utils, register, sparsedetect
 import time
-#from matplotlib.colors import hsv_to_rgb
+from matplotlib.colors import hsv_to_rgb
 #from matplotlib import pyplot as plt
 
 def tic():

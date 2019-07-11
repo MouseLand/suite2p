@@ -3,11 +3,13 @@ import numpy as np
 from natsort import natsorted
 import math, time
 import glob, h5py, os, json
-from scipy import signal
 from suite2p import register, nonrigid, chan2detect, sparsedetect, roiextract
-from scipy import stats, signal
+from scipy import stats
+from scipy import signal
 from scipy.sparse import linalg
 import scipy.io
+from scipy.ndimage import gaussian_filter
+from scipy.ndimage import filters
 #from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from skimage.external.tifffile import imread, TiffFile

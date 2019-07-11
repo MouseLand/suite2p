@@ -1,3 +1,4 @@
+import shutil
 import numpy as np
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter

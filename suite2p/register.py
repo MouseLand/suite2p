@@ -708,6 +708,8 @@ def register_npy(Z, ops):
     if ops['nonrigid']:
         ops = utils.make_blocks(ops)
 
+    refImg = ops['refImg']
+    nframes = ops['nframes']
     Ly = ops['Ly']
     Lx = ops['Lx']
 
@@ -717,10 +719,6 @@ def register_npy(Z, ops):
     yoff = np.zeros((0,),np.float32)
     xoff = np.zeros((0,),np.float32)
     corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
 
     maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops) # prepare masks for rigid registration
     if ops['nonrigid']:
@@ -728,9 +726,13 @@ def register_npy(Z, ops):
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
         nb = ops['nblocks'][0] * ops['nblocks'][1]
+        yoff1 = np.zeros((0,nb),np.float32)
+        xoff1 = np.zeros((0,nb),np.float32)
+        corrXY1 = np.zeros((0,nb),np.float32)
     else:
         refAndMasks = [maskMul, maskOffset, cfRefImg]
 
+    t0 = tic()
     k = 0
     nfr = 0
     Zreg = np.zeros((nframes, Ly, Lx,), 'int16')
@@ -755,7 +757,7 @@ def register_npy(Z, ops):
 
         k += 1
         if k%5==0:
-            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], toc(k0)))
+            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], toc(t0)))
 
     # compute some potentially useful info
     ops['th_badframes'] = 100

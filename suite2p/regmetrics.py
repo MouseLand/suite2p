@@ -1,11 +1,8 @@
-from numpy import fft
-import numpy as np
-import multiprocessing
+import time
 from multiprocessing import Pool
-import sys
-from suite2p import register, utils, nonrigid
+
+import numpy as np
 from scipy.signal import convolve2d
-from scipy.sparse import linalg
 from sklearn.decomposition import PCA
 try:
     import cv2
@@ -13,7 +10,8 @@ try:
 except ImportError:
     HAS_CV2 = False
 
-import time
+from suite2p import register, utils, nonrigid
+
 
 def pclowhigh(mov, nlowhigh, nPC):
     ''' get mean of top and bottom PC weights for nPC's of mov '''

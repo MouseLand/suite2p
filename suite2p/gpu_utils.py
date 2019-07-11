@@ -2,7 +2,7 @@ import numpy as np
 HAS_GPU=False
 try:
     import cupy as cp
-    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan
+    from cupyx.scipy.fftpack import fftn, ifftn
     HAS_GPU=True
 except ImportError:
     HAS_GPU=False

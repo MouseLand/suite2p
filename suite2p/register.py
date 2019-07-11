@@ -1,18 +1,13 @@
-import glob, h5py, time, os, shutil
+import time, os
 import numpy as np
 from scipy.fftpack import next_fast_len
-from numpy import random as rnd
 import multiprocessing
 #import scipy.fftpack as fft
 from numpy import fft
-from numba import vectorize, complex64, float32, int16
-import math
+from numba import vectorize, complex64
 from scipy.signal import medfilt
-from scipy.ndimage import laplace
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
-import gc
-import multiprocessing
 N_threads = int(multiprocessing.cpu_count() / 2)
 #import numexpr3 as ne3
 #ne3.set_nthreads(N_threads)

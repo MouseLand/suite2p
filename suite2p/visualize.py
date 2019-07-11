@@ -1,16 +1,16 @@
+import time
+import sys
+
 from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
 from scipy.ndimage import gaussian_filter1d
-from scipy.sparse.linalg import eigsh
 from scipy.stats import zscore
-from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
-import time
-import sys,os
 from rastermap.mapping import Rastermap
-#from mapping import Rastermap
-from suite2p import gui,fig
+
+from suite2p import gui, fig
+
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):

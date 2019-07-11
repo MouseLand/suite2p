@@ -1,10 +1,7 @@
 import numpy as np
-from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
-from scipy import ndimage
-import math
-from suite2p import utils, roiextract
-import time
+
+from suite2p import roiextract
 
 '''
 identify cells with channel 2 brightness (aka red cells)

@@ -1,18 +1,20 @@
 import gc
+import math
+import time
+import os
+import glob
+import json
+
 import numpy as np
 from natsort import natsorted
-import math, time
-import glob, h5py, os, json
-from suite2p import register, nonrigid, chan2detect, sparsedetect, roiextract
-from scipy import stats
+import h5py
 from scipy import signal
-from scipy.sparse import linalg
 import scipy.io
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import filters
-#from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from skimage.external.tifffile import imread, TiffFile
+
 
 def tic():
     return time.time()

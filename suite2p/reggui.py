@@ -1,10 +1,10 @@
 # heavily modified script from a pyqt4 release
 
-from PyQt5 import QtGui, QtCore
-from suite2p import register,fig,utils
-import pyqtgraph as pg
 import os
-import sys
+
+from PyQt5 import QtGui, QtCore
+from suite2p import fig, utils
+import pyqtgraph as pg
 import numpy as np
 
 class PCViewer(QtGui.QMainWindow):

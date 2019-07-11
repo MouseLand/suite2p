@@ -1,8 +1,10 @@
+import os
+import shutil
+import json
+
 from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-from pyqtgraph import console
-import sys, json, os, pickle, time, shutil
 import numpy as np
+
 from suite2p import fig
 from suite2p import run_s2p
 

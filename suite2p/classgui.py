@@ -1,9 +1,10 @@
-from PyQt5 import QtGui, QtCore
-import sys
-import numpy as np
 import os
-from suite2p import fig, classifier
 import shutil
+
+from PyQt5 import QtGui
+import numpy as np
+
+from suite2p import fig, classifier
 
 def load(parent, name):
     print('loading classifier ', name)

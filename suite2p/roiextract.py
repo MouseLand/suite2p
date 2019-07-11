@@ -1,14 +1,12 @@
-import shutil
-import numpy as np
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from scipy import ndimage
-import math
-from suite2p import utils, register, sparsedetect, classifier, chan2detect, sourcery
-import time
-from scipy.sparse import csr_matrix
-from scipy import stats
 import os
+import shutil
+import time
+
+import numpy as np
+from scipy import ndimage
+from scipy import stats
+
+from suite2p import utils, sparsedetect, classifier, chan2detect, sourcery
 
 
 def tic():

@@ -1,13 +1,14 @@
+import time
+import math
+
 import numpy as np
 from numpy import fft
 from scipy.fftpack import next_fast_len
-from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
-from scipy.ndimage import gaussian_filter, map_coordinates
-from skimage.transform import warp#, PiecewiseAffineTransform
-from suite2p import register
-import time
-import math
+from numba import vectorize, float32, int32, njit, prange
+from scipy.ndimage import map_coordinates
 from mkl_fft import fft2, ifft2
+
+from suite2p import register
 
 eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...

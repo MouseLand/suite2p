@@ -2,15 +2,16 @@ import sys
 import os
 import shutil
 import time
+
 import numpy as np
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
-from pyqtgraph import GraphicsScene
-from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
 from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 from scipy import io
+
+from suite2p import fig, gui, visualize, reggui, classgui, merge
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''

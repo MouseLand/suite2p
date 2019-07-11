@@ -1,14 +1,7 @@
 import numpy as np
-import pyqtgraph as pg
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from scipy import signal
-from scipy import ndimage
-from suite2p import utils
-import math
-from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
-import time
+
+from suite2p import utils
 
 def plot_colorbar(parent, bid):
     if bid==0:

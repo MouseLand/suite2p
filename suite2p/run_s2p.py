@@ -1,13 +1,15 @@
 import os
+import time
+
 import numpy as np
-import time, os, shutil
-from suite2p import register, dcnv, classifier, utils, roiextract
-from scipy import stats, io, signal
+from scipy import io
 try:
     from haussmeister import haussio
     HAS_HAUS = True
 except ImportError:
     HAS_HAUS = False
+
+from suite2p import register, dcnv, utils, roiextract
 
 def tic():
     return time.time()

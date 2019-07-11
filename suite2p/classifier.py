@@ -1,9 +1,6 @@
-import sys
 import numpy as np
 from scipy.ndimage import gaussian_filter
-import os
-from sklearn.linear_model  import LogisticRegression
-import shutil
+from sklearn.linear_model import LogisticRegression
 
 class Classifier:
     def __init__(self, classfile=None, keys=None):

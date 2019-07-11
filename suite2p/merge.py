@@ -1,11 +1,8 @@
 import numpy as np
-import pyqtgraph as pg
 from scipy import stats
-from suite2p import utils, dcnv, sparsedetect, fig
-import math
-from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
-import time
+
+from suite2p import utils, dcnv, sparsedetect, fig
 
 def activity_stats(parent):
     i0      = int(1-parent.iscell[parent.ichosen])

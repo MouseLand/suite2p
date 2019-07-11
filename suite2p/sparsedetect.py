@@ -1,10 +1,11 @@
+import time
+
 from scipy.ndimage import maximum_filter, gaussian_filter
 from scipy.stats import mode
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage.filters import uniform_filter
 import numpy as np
-import time
-from numba import vectorize, float32
+from numba import vectorize
 
 def tic():
     return time.time()

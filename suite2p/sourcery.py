@@ -1,12 +1,13 @@
+import time
+import math
+
 import numpy as np
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
-import math
-from suite2p import utils, register, sparsedetect
-import time
 from matplotlib.colors import hsv_to_rgb
-#from matplotlib import pyplot as plt
+
+from suite2p import sparsedetect
 
 def tic():
     return time.time()

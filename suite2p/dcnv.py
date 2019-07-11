@@ -1,7 +1,8 @@
-import numpy as np
 import multiprocessing
-from scipy.ndimage import filters
 from multiprocessing import Pool
+
+import numpy as np
+from scipy.ndimage import filters
 
 def oasis1t(inputs):
     F, ops = inputs
@@ -62,7 +63,7 @@ def oasis(F, ops):
 
 def preprocess(F,ops):
     sig = ops['sig_baseline']
-    win = int(ops['win_baseline']*ops['fs'])    
+    win = int(ops['win_baseline']*ops['fs'])
     if ops['baseline']=='maximin':
         Flow = filters.gaussian_filter(F,    [0., sig])
         Flow = filters.minimum_filter1d(Flow,    win)

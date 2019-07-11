@@ -1,8 +1,11 @@
-import suite2p
-import numpy as np
-import time, os
-from suite2p import run_s2p, gui2p
+import time
 import argparse
+
+import numpy as np
+
+import suite2p
+from suite2p import gui2p
+
 
 def tic():
     return time.time()

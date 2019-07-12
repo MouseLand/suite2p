@@ -8,6 +8,7 @@ import time
 from scipy.sparse import csr_matrix
 from scipy import stats
 import os
+import shutil
 
 
 def tic():

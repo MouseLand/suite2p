@@ -1443,7 +1443,7 @@ class MainW(QtGui.QMainWindow):
                 os.path.abspath(os.path.dirname(__file__)),
                 "classifiers/classifier_user.npy",
             )
-            np.save(classfile, self.model)
+            classgui.save_model(classfile, self.model.stats, self.model.iscell, self.model.keys)
 
     def reset_default(self):
         dm = QtGui.QMessageBox.question(

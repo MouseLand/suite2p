@@ -426,16 +426,20 @@ def write_tiffs(data, ops, k, ichan):
     if ichan==0:
         if ops['functional_chan']==ops['align_by_chan']:
             tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            wchan = 0
         else:
             tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            wchan = 1
     else:
         if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
-        else:
             tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            wchan = 1
+        else:
+            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            wchan = 0
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
-    fname = 'file_chan%0.3d.tif'%k
+    fname = 'file%0.3d_chan%d.tif'%(k,wchan)
     with TiffWriter(os.path.join(tifroot, fname)) as tif:
         for i in range(data.shape[0]):
             tif.save(data[i])

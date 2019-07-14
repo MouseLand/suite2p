@@ -598,8 +598,11 @@ class BinaryPlayer(QtGui.QMainWindow):
                         self.reg_loc_raw = ops['raw_file']
                 else:
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
-                self.reg_file_raw = open(self.reg_loc_raw,'rb')
-                self.wraw=True
+                try:
+                    self.reg_file_raw = open(self.reg_loc_raw,'rb')
+                    self.wraw=True
+                except:
+                    self.wraw = False
 
             if 'reg_file_chan2' in ops:
                 if self.reg_loc == ops['reg_file']:
@@ -616,8 +619,11 @@ class BinaryPlayer(QtGui.QMainWindow):
                         self.reg_loc_raw_chan2 = ops['raw_file_chan2']
                 else:
                     self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
-                self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
-                self.wraw_wred=True
+                try:
+                    self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
+                    self.wraw_wred=True
+                except:
+                    self.wraw_wred = False
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
 

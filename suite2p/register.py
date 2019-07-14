@@ -632,7 +632,7 @@ def register_binary(ops, refImg=None):
         ops = utils.make_blocks(ops)
 
     ops['nframes'] = get_nFrames(ops)
-
+    print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings
     if ops['nframes']<50:
         raise Exception('ERROR: the total number of frames should be at least 50 ')

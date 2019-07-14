@@ -348,6 +348,8 @@ def tiff_to_binary(ops):
             if type(im[0,0,0]) == np.uint16:
                 im = im // 2
                 im = im.astype(np.int16)
+            if type(im[0,0,0]) == np.uint8:
+                im = im.astype(np.int16)
 
             if im.shape[0] > nfr:
                 im = im[:nfr, :, :]

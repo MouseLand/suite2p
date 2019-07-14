@@ -692,7 +692,7 @@ def register_binary(ops, refImg=None):
         np.save(ops['ops_path'], ops)
 
     # compute metrics for registration
-    if do_regmetrics and ops['nframes']>=2000:
+    if do_regmetrics and ops['nframes']>=1500:
         t0=tic()
         ops = regmetrics.get_pc_metrics(ops)
         print('Registration metrics, %0.2f sec.'%(toc(t0)))

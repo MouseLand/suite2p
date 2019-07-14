@@ -47,6 +47,10 @@ class PCViewer(QtGui.QMainWindow):
         self.p2.addItem(self.img2)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
+        self.p4 = self.win.addPlot(row=0,col=1,colspan=2)
+        self.p4.setMouseEnabled(x=False)
+        self.p4.setMenuEnabled(False)
+
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(40)
@@ -157,6 +161,10 @@ class PCViewer(QtGui.QMainWindow):
             self.Lx = ops['Lx']
             self.PC = ops['regPC']
             self.DX = ops['regDX']
+            if 'tPC' in ops:
+                self.tPC = ops['tPC']
+            else:
+                self.tPC = np.zeros((1,self.PC.shape[1]))
             good = True
         except Exception as e:
             print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
@@ -225,6 +233,11 @@ class PCViewer(QtGui.QMainWindow):
                                  size=10,brush=pg.mkBrush(255,255,255))
             self.p3.setLabel('left', 'pixel shift')
             self.p3.setLabel('bottom', 'PC #')
+
+            self.p4.clear()
+            self.p4.plot(self.tPC[:,iPC])
+            self.p4.setLabel('left', 'magnitude')
+            self.p4.setLabel('bottom', 'time')
             self.show()
             self.zoom_plot()
 

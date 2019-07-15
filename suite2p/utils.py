@@ -188,21 +188,9 @@ def h5py_to_binary(ops):
 
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
+
     # open all binary files for writing
-    reg_file = []
-    reg_file_chan2=[]
-    for ops in ops1:
-        reg_file.append(open(ops['reg_file'], 'wb'))
-        if nchannels>1:
-            reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    # open h5py file for reading
-    key = ops1[0]['h5py_key']
-    if ops1[0]['look_one_level_down']:
-        h5list = list_h5(ops1[0])
-        print('NOTE: using a list of h5 files:')
-        print(h5list)
-    else:
-        h5list = [ops1[0]['h5py']]
+    ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True)
 
     key = ops1[0]['h5py_key']
     iall = 0
@@ -363,6 +351,8 @@ def tiff_to_binary(ops):
             # check if uint16
             if type(im[0,0,0]) == np.uint16:
                 im = im // 2
+                im = im.astype(np.int16)
+            if type(im[0,0,0]) == np.uint8:
                 im = im.astype(np.int16)
 
             if im.shape[0] > nfr:

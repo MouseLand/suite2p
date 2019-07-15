@@ -47,6 +47,10 @@ class PCViewer(QtGui.QMainWindow):
         self.p2.addItem(self.img2)
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
+        self.p4 = self.win.addPlot(row=0,col=1,colspan=2)
+        self.p4.setMouseEnabled(x=False)
+        self.p4.setMenuEnabled(False)
+
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(40)
@@ -157,6 +161,10 @@ class PCViewer(QtGui.QMainWindow):
             self.Lx = ops['Lx']
             self.PC = ops['regPC']
             self.DX = ops['regDX']
+            if 'tPC' in ops:
+                self.tPC = ops['tPC']
+            else:
+                self.tPC = np.zeros((1,self.PC.shape[1]))
             good = True
         except Exception as e:
             print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
@@ -225,6 +233,11 @@ class PCViewer(QtGui.QMainWindow):
                                  size=10,brush=pg.mkBrush(255,255,255))
             self.p3.setLabel('left', 'pixel shift')
             self.p3.setLabel('bottom', 'PC #')
+
+            self.p4.clear()
+            self.p4.plot(self.tPC[:,iPC])
+            self.p4.setLabel('left', 'magnitude')
+            self.p4.setLabel('bottom', 'time')
             self.show()
             self.zoom_plot()
 
@@ -598,8 +611,11 @@ class BinaryPlayer(QtGui.QMainWindow):
                         self.reg_loc_raw = ops['raw_file']
                 else:
                     self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
-                self.reg_file_raw = open(self.reg_loc_raw,'rb')
-                self.wraw=True
+                try:
+                    self.reg_file_raw = open(self.reg_loc_raw,'rb')
+                    self.wraw=True
+                except:
+                    self.wraw = False
 
             if 'reg_file_chan2' in ops:
                 if self.reg_loc == ops['reg_file']:
@@ -616,8 +632,11 @@ class BinaryPlayer(QtGui.QMainWindow):
                         self.reg_loc_raw_chan2 = ops['raw_file_chan2']
                 else:
                     self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
-                self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
-                self.wraw_wred=True
+                try:
+                    self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
+                    self.wraw_wred=True
+                except:
+                    self.wraw_wred = False
             self.movieLabel.setText(self.reg_loc)
             self.nbytesread = 2 * self.Ly * self.Lx
 

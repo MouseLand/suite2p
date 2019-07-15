@@ -215,11 +215,11 @@ def init_masks(parent):
             LamAll[ypix,xpix] = lam
 
     LamMean = LamAll[LamAll>1e-10].mean()
-    RGBall = np.zeros((2,cols.shape[1]+1,6,Ly,Lx,3), np.float32)
-    Vback   = np.zeros((5,Ly,Lx), np.float32)
-    RGBback = np.zeros((5,Ly,Lx,3), np.float32)
+    RGBall = np.zeros((2,cols.shape[1]+1,7,Ly,Lx,3), np.float32)
+    Vback   = np.zeros((6,Ly,Lx), np.float32)
+    RGBback = np.zeros((6,Ly,Lx,3), np.float32)
 
-    for k in range(6):
+    for k in range(7):
         if k>0:
             if k==2:
                 if 'meanImgE' not in ops:
@@ -301,7 +301,7 @@ def init_masks(parent):
                     hsv = np.concatenate((H,S,Va),axis=2)
                     RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
 
-    for k in range(5):
+    for k in range(6):
         H = np.zeros((Ly,Lx,1),np.float32)
         S = np.zeros((Ly,Lx,1),np.float32)
         V = np.expand_dims(Vback[k,:,:],axis=2)

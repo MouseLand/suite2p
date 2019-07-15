@@ -421,16 +421,20 @@ def write_tiffs(data, ops, k, ichan):
     if ichan==0:
         if ops['functional_chan']==ops['align_by_chan']:
             tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            wchan = 0
         else:
             tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            wchan = 1
     else:
         if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
-        else:
             tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            wchan = 1
+        else:
+            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            wchan = 0
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
-    fname = 'file_chan%0.3d.tif'%k
+    fname = 'file%0.3d_chan%d.tif'%(k,wchan)
     with TiffWriter(os.path.join(tifroot, fname)) as tif:
         for i in range(data.shape[0]):
             tif.save(data[i])
@@ -623,7 +627,7 @@ def register_binary(ops, refImg=None):
         ops = utils.make_blocks(ops)
 
     ops['nframes'] = get_nFrames(ops)
-
+    print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings
     if ops['nframes']<50:
         raise Exception('ERROR: the total number of frames should be at least 50 ')
@@ -683,7 +687,7 @@ def register_binary(ops, refImg=None):
         np.save(ops['ops_path'], ops)
 
     # compute metrics for registration
-    if do_regmetrics and ops['nframes']>=2000:
+    if do_regmetrics and ops['nframes']>=1500:
         t0=tic()
         ops = regmetrics.get_pc_metrics(ops)
         print('Registration metrics, %0.2f sec.'%(toc(t0)))

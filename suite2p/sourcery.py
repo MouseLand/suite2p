@@ -206,22 +206,6 @@ def pairwiseDistance(y,x):
          + (np.expand_dims(x,axis=-1) - np.expand_dims(x,axis=0))**2)**0.5
     return dists
 
-def convert_to_pix(mPix, mLam):
-    stat = []
-    ncells = mPix.shape[0]
-    for k in range(0,ncells):
-        stat0 = {}
-        goodi   = np.array(((mPix[k,:]>=0) & (mLam[k,:]>1e-10)).nonzero()).astype(np.int32)
-        ipix    = mPix[k,goodi].astype(np.int32)
-        ypix,xpix = np.unravel_index(ipix.astype(np.int32), (Ly,Lx))
-        stat0['ypix'] = ypix
-        stat0['xpix'] = xpix
-        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
-        stat0['npix'] = ipix.size
-        stat0['lam']  = mLam[k, goodi]
-        stat.append(stat0.copy())
-    return stat
-
 # this function needs to be updated with the new stat
 def get_stat(ops, stat, Ucell, codes):
     '''computes statistics of cells found using sourcery

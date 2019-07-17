@@ -174,7 +174,7 @@ See the [output wiki page](https://github.com/MouseLand/suite2p/wiki/Outputs) fo
         'nchannels' : 1, # each tiff has these many channels per plane
         'functional_chan' : 1, # this channel is used to extract functional ROIs (1-based)
         'tau':  1., # this is the main parameter for deconvolution
-        'fs': 10.,  # sampling rate (total across planes)
+        'fs': 10.,  # sampling rate (PER PLANE - e.g. if you have 12 planes then this should be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         # output settings
         'preclassify': 0.5, # apply classifier before signal extraction with probability 0.5 (turn off with value 0)

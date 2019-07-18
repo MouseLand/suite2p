@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import time, os, shutil
-from suite2p import register, dcnv, classifier, utils, roiextract
+from suite2p import register, dcnv, classifier, utils, roiextract, regmetrics
 from scipy import stats, io, signal
 try:
     from haussmeister import haussio
@@ -192,6 +192,17 @@ def run_s2p(ops={},db={}):
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(toc(t11)))
+        if not files_found_flag or not flag_binreg:
+            # compute metrics for registration
+            if 'do_regmetrics' in ops:
+                do_regmetrics = ops['do_regmetrics']
+            else:
+                do_regmetrics = True
+            if do_regmetrics and ops1[ipl]['nframes']>=1500:
+                t0=tic()
+                ops1[ipl] = regmetrics.get_pc_metrics(ops1[ipl])
+                print('Registration metrics, %0.2f sec.'%(toc(t0)))
+                np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         if 'roidetect' in ops1[ipl]:
             roidetect = ops['roidetect']
         else:

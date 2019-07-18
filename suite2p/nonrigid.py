@@ -130,6 +130,7 @@ def my_clip(X, lhalf):
     x01 = X[:, :, :lhalf+1, -lhalf:]
     x10 = X[:, :, -lhalf:, :lhalf+1]
     return x00, x01, x10, x11
+
 def getSNR(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
     nimg = cc.shape[0]
@@ -146,6 +147,7 @@ def getSNR(cc, Ls, ops):
     Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
     snr = X1max / Xmax # computes snr
     return snr
+
 def phasecorr(data, refAndMasks, ops):
     t0=tic()
     ''' loop through blocks and compute phase correlations'''
@@ -229,7 +231,8 @@ def phasecorr(data, refAndMasks, ops):
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
-    return ymax1, xmax1, cmax1
+    #ccmat = np.reshape(ccmat, (nb, 2*lpad+1, 2*lpad+1))
+    return ymax1, xmax1, cmax1, ccsm
 
 def getSNR(cc, Ls, ops):
     ''' compute SNR of phase-correlation - is it an accurate predicted shift? '''

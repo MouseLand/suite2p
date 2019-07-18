@@ -86,7 +86,7 @@ def get_pc_metrics(ops, use_red=False):
         metrics saved to ops['regPC'] and ops['X']
     '''
     nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
-    if ops['Ly'] > 700:
+    if ops['Ly'] > 700 or ops['Lx'] > 700:
         nsamp = min(2500, nsamp)
     nPC      = 30 # n PCs to compute motion for
     nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
@@ -101,7 +101,11 @@ def get_pc_metrics(ops, use_red=False):
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
-    X    = pc_register(pclow, pchigh, ops['refImg'],
+    if 'refImg' in ops:
+        refImg = ops['refImg']
+    else:
+        refImg = mov.mean(axis=0)
+    X    = pc_register(pclow, pchigh, refImg,
                        ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X

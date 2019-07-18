@@ -157,9 +157,8 @@ class PCViewer(QtGui.QMainWindow):
     def openFile(self, fileName):
         try:
             ops = np.load(fileName, allow_pickle=True).item()
-            self.Ly = ops['Ly']
-            self.Lx = ops['Lx']
             self.PC = ops['regPC']
+            self.Ly, self.Lx = self.PC.shape[2:]
             self.DX = ops['regDX']
             if 'tPC' in ops:
                 self.tPC = ops['tPC']

@@ -228,7 +228,7 @@ def register_and_shift(data, refAndMasks, ops):
     Y = []
     # non-rigid registration
     if nr:
-        ymax1, xmax1, cmax1 = nonrigid.phasecorr(data, refAndMasks[3:], ops)
+        ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
         data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data, ymax, xmax, cmax, yxnr
@@ -323,11 +323,17 @@ def shift_bidiphase(frames, bidiphase):
         xrout = np.arange(-bidiphase, Lx, 1, int)
         frames[np.ix_(ntr, yr, xr)] = frames[np.ix_(ntr, yr, xrout)]
 
-def pick_init_init(ops, frames):
-    nimg = frames.shape[0]
+def pick_init_init(frames):
+    ''' input: frames (nimg x Ly x Lx)
+        output: refImg (Ly x Lx)
+        use frames and find its correlation matrix
+        choose the seed frame as the one with the top 20 most correlated pairs
+        use the average of the seed frame with its top 20 as the initial reference image
+    '''
+    nimg,Ly,Lx = frames.shape
     frames = np.reshape(frames, (nimg,-1)).astype('float32')
     frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
-    cc = frames @ np.transpose(frames)
+    cc = np.matmul(frames, frames.T)
     ndiag = np.sqrt(np.diag(cc))
     cc = cc / np.outer(ndiag, ndiag)
     CCsort = -np.sort(-cc, axis = 1)
@@ -335,7 +341,7 @@ def pick_init_init(ops, frames):
     imax = np.argmax(bestCC)
     indsort = np.argsort(-cc[imax, :])
     refImg = np.mean(frames[indsort[0:20], :], axis = 0)
-    refImg = np.reshape(refImg, (ops['Ly'], ops['Lx']))
+    refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
 def refine_init(ops, frames, refImg):
@@ -371,7 +377,7 @@ def pick_init(ops):
         print('NOTE: estimated bidiphase offset from data: %d pixels'%ops['bidiphase'])
     if ops['bidiphase'] != 0:
         shift_bidiphase(frames, ops['bidiphase'])
-    refImg = pick_init_init(ops, frames)
+    refImg = pick_init_init(frames)
     refImg = refine_init(ops, frames, refImg)
     return refImg
 
@@ -639,12 +645,6 @@ def register_binary(ops, refImg=None):
     if ops['nframes']<200:
         print('WARNING: number of frames is below 200, unpredictable behaviors may occur')
 
-    if 'do_regmetrics' in ops:
-        do_regmetrics = ops['do_regmetrics']
-    else:
-        do_regmetrics = True
-
-
     # compute reference image
     if refImg is not None:
         print('WARNING: using reference frame given, will not compute registration metrics')
@@ -690,12 +690,6 @@ def register_binary(ops, refImg=None):
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
-
-    # compute metrics for registration
-    if do_regmetrics and ops['nframes']>=1500:
-        t0=tic()
-        ops = regmetrics.get_pc_metrics(ops)
-        print('Registration metrics, %0.2f sec.'%(toc(t0)))
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)

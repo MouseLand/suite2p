@@ -92,7 +92,7 @@ class VisWindow(QtGui.QMainWindow):
             self.p3.plot(self.beh_time,self.beh)
             self.p3.setXRange(0,sp.shape[1])
         # set colormap to viridis
-        colormap = cm.get_cmap("viridis")
+        colormap = cm.get_cmap("gray_r")
         colormap._init()
         lut = (colormap._lut * 255).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
         lut = lut[0:-3,:]

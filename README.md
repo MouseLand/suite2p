@@ -23,31 +23,22 @@ The matlab version is available [here](https://github.com/cortex-lab/Suite2P). N
 
 ## Installation
 
-Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.x** and your operating system.You might need to use an anaconda prompt if you did not add anaconda to the path.
+Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.x** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 
-We have created an [environment.yml](environment.yml) file for suite2p. You will need to download this file from the github (or clone the repository and run from in there). Once in a folder which contains **environment.yml**, run the following:
-~~~~
-conda env create -n suite2p
-conda activate suite2p
-~~~~
+1. Download the `environment.yml` file from the repository
+2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
+3. Run `conda env create -f environment.yml`
+4. To activate this new environment, run `conda activate suite2p`
+5. You should see `(suite2p)` on the left side of the terminal line. Now run `python -m suite2p` and you're all set.
 
-This creates an environment - you will always have to run **conda activate suite2p** before you run suite2p. Conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
+Note you will always have to run **conda activate suite2p** before you run suite2p. Conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
 
-Next install suite2p:
-~~~~
-pip install suite2p
-~~~~
-
-If this fails, there might be some interaction between pre-installed dependencies and the ones Suite2p needs. First thing to try is
-~~~~
-pip install --upgrade pip
-~~~~
-And try `pip install suite2p` again.
-
-To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run:
+To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:
 ~~~~
 pip install suite2p --upgrade
 ~~~~
+
+**Common issues**
 
 If when running `python -m suite2p`, you receive the error: `No module named PyQt5.sip`, then try uninstalling and reinstalling pyqt5
 ~~~~
@@ -58,11 +49,6 @@ pip install pyqt5 pyqt5-tools pyqt5.sip
 If when running `python -m suite2p`, you receive an error associated with **matplotlib**, try upgrading it:
 ~~~~
 pip install matplotlib --upgrade
-~~~~
-
-To export views in the GUI, you can right-click. Exporting to 'svg' will work with the latest release of pyqtgraph. However, to export to different file types (like png or tiff, see [issue](https://github.com/MouseLand/suite2p/issues/44)), you will need to install the development version of pyqtgraph yourself by
-~~~~
-pip install git+https://github.com/pyqtgraph/pyqtgraph
 ~~~~
 
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.

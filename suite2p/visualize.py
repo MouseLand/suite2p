@@ -12,6 +12,39 @@ from rastermap.mapping import Rastermap
 #from mapping import Rastermap
 from suite2p import gui,fig
 
+# custom vertical label
+class VerticalLabel(QtGui.QWidget):
+    def __init__(self, text=None):
+        super(self.__class__, self).__init__()
+        self.text = text
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setPen(QtCore.Qt.white)
+        painter.translate(0, 0)
+        painter.rotate(90)
+        if self.text:
+            painter.drawText(0, 0, self.text)
+        painter.end()
+
+class Slider(QtGui.QSlider):
+    def __init__(self, bid, parent=None):
+        super(self.__class__, self).__init__()
+        self.bid = bid
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setValue(parent.sat[bid]*100)
+        self.setTickPosition(QtGui.QSlider.TicksLeft)
+        self.setTickInterval(10)
+        self.valueChanged.connect(lambda: self.level_change(parent,bid))
+        self.setTracking(False)
+
+    def level_change(self, parent, bid):
+        parent.sat[bid] = float(self.value())/100
+        parent.img.setLevels([parent.sat[0],parent.sat[1]])
+        parent.imgROI.setLevels([parent.sat[0],parent.sat[1]])
+        parent.win.show()
+
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -58,9 +91,8 @@ class VisWindow(QtGui.QMainWindow):
             sp = parent.Spks[self.cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
-        sp -= sp.min()
-        sp /= sp.max()
-        self.sp = np.maximum(0,np.minimum(1,sp))
+        self.sp = np.maximum(-4,np.minimum(8,sp)) + 4
+        self.sp /= 12
         self.tsort = np.arange(0,sp.shape[1]).astype(np.int32)
         # 100 ms bins
         self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
@@ -99,24 +131,22 @@ class VisWindow(QtGui.QMainWindow):
         # apply the colormap
         self.img.setLookupTable(lut)
         self.imgROI.setLookupTable(lut)
-        self.img.setLevels([0,1])
-        self.imgROI.setLevels([0,1])
         layout.setColumnStretchFactor(1,3)
         layout.setRowStretchFactor(1,3)
         # add slider for levels
-        self.sl = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.sl.setMinimum(0)
-        self.sl.setMaximum(100)
-        self.sl.setValue(100)
-        self.sl.setTickPosition(QtGui.QSlider.TicksLeft)
-        self.sl.setTickInterval(10)
-        self.sl.valueChanged.connect(self.levelchange)
-        self.sl.setTracking(False)
-        self.sat = 1.0
-        self.l0.addWidget(self.sl,0,2,5,1)
-        qlabel = gui.VerticalLabel(text='saturation')
-        #qlabel.setStyleSheet('color: white;')
-        self.l0.addWidget(qlabel,1,3,3,1)
+        self.sl = []
+        txt = ["lower saturation", 'upper saturation']
+        self.sat = [0.3,0.7]
+        for j in range(2):
+            self.sl.append(Slider(j, self))
+            self.l0.addWidget(self.sl[j],0+2*(1-j),2,2,1)
+            #qlabel = VerticalLabel(text=txt[j])
+            #qlabel.setStyleSheet('color: white;')
+        qlabel = QtGui.QLabel('saturation')
+        qlabel.setStyleSheet('color: white;')
+        self.img.setLevels([self.sat[0], self.sat[1]])
+        self.imgROI.setLevels([self.sat[0], self.sat[1]])
+        self.l0.addWidget(qlabel,0,3,1,2)
         self.isort = np.arange(0,self.cells.size).astype(np.int32)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
@@ -140,7 +170,7 @@ class VisWindow(QtGui.QMainWindow):
         self.l0.addWidget(self.mapOn,0,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,1,0,1,2)
-        self.l0.addWidget(QtGui.QLabel(''),2,0,1,1)
+        self.l0.addWidget(QtGui.QLabel('PC 1:'),2,0,1,2)
         #self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
         self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
         self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
@@ -281,12 +311,7 @@ class VisWindow(QtGui.QMainWindow):
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
         axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
-        self.imgROI.setLevels([0,self.sat])
-
-    def levelchange(self):
-        self.sat = float(self.sl.value())/100
-        self.img.setLevels([0,self.sat])
-        self.imgROI.setLevels([0,self.sat])
+        self.imgROI.setLevels([self.sat[0], self.sat[1]])
 
     def PC_on(self, plot):
         # edit buttons
@@ -444,7 +469,7 @@ class VisWindow(QtGui.QMainWindow):
             self.spF = self.sp
         self.spF = zscore(self.spF, axis=1)
         self.spF = np.minimum(8, self.spF)
-        self.spF = np.maximum(0, self.spF)
-        self.spF /= 8
+        self.spF = np.maximum(-4, self.spF) + 4
+        self.spF /= 12
         self.img.setImage(self.spF)
         self.ROI_position()

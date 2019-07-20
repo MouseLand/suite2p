@@ -264,7 +264,8 @@ def roi_detect_and_extract(ops):
     if 'meanImg_chan2' in ops:
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
-        ops, redcell = chan2detect.detect(ops, stat)
+        #ops, redcell = chan2detect.detect(ops, stat)
+        redcell = np.zeros(len(stat), np.bool)
         np.save(os.path.join(fpath, 'redcell.npy'), redcell)
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
         np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)

@@ -17,3 +17,4 @@ dependencies:
     - natsort
     - scanimage-tiff-reader
     - rastermap=0.1.0
+    - suite2p

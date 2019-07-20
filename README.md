@@ -31,6 +31,8 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 4. To activate this new environment, run `conda activate suite2p`
 5. You should see `(suite2p)` on the left side of the terminal line. Now run `python -m suite2p` and you're all set.
 
+If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
+
 Note you will always have to run **conda activate suite2p** before you run suite2p. Conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
 
 To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:

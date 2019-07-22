@@ -87,7 +87,7 @@ def get_pc_metrics(ops, use_red=False):
     '''
     nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
     if ops['Ly'] > 700 or ops['Lx'] > 700:
-        nsamp = min(2500, nsamp)
+        nsamp = min(2000, nsamp)
     nPC      = 30 # n PCs to compute motion for
     nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')

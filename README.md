@@ -19,6 +19,8 @@ The deconvolution algorithm is based on [this paper](https://journals.plos.org/p
 
 **More in depth documentation is available on the [wiki](https://github.com/MouseLand/suite2p/wiki).**
 
+See this **twitter [thread]** for GUI demonstrations.
+
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
 ## Installation

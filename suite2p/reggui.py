@@ -567,7 +567,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if not fromgui:
                 if os.path.isfile(os.path.join(os.path.dirname(fileName),'F.npy')):
                     self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
-                    self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'))
+                    self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False

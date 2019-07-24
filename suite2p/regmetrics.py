@@ -86,6 +86,8 @@ def get_pc_metrics(ops, use_red=False):
         metrics saved to ops['regPC'] and ops['X']
     '''
     nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
+    if ops['nframes'] < 5000:
+        nsamp = min(2000, ops['nframes'])
     if ops['Ly'] > 700 or ops['Lx'] > 700:
         nsamp = min(2000, nsamp)
     nPC      = 30 # n PCs to compute motion for

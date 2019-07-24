@@ -176,7 +176,7 @@ def run_s2p(ops={},db={}):
     if not ops['do_registration']:
         flag_binreg = True
 
-    if ops['do_registration']>0:
+    if ops['do_registration']>1:
         flag_binreg = False
         print('do_registration>1 => forcing registration')
 

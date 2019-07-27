@@ -354,6 +354,7 @@ def chan2_masks(parent):
 def custom_masks(parent):
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+2
+    print(c)
     n = np.array(parent.imerge)
     inactive=False
     no_1d = False
@@ -384,24 +385,25 @@ def custom_masks(parent):
     for i in range(2):
         H = icols[parent.iROI[i,0,:,:]]
         Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
-        if k==0:
-            S = parent.Sroi[i,:,:]
-            V = Vorig
-        elif k==3:
-            S = parent.Sext[i,:,:]
-            V = parent.Vback[k-1,:,:]
-            V = np.maximum(0,np.minimum(1, V + S))
-        else:
-            S = np.maximum(0,np.minimum(1, Vorig*1.5))
-            V = parent.Vback[k-1,:,:]
-        H = np.expand_dims(H,axis=2)
-        S = np.expand_dims(S,axis=2)
-        V = np.expand_dims(V,axis=2)
-        hsv = np.concatenate((H,S,V),axis=2)
-        if inactive:
-            rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
-        else:
-            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+        for k in range(6):
+            if k==0:
+                S = parent.Sroi[i,:,:]
+                V = Vorig
+            elif k==3:
+                S = parent.Sext[i,:,:]
+                V = parent.Vback[k-1,:,:]
+                V = np.maximum(0,np.minimum(1, V + S))
+            else:
+                S = np.maximum(0,np.minimum(1, Vorig*1.5))
+                V = parent.Vback[k-1,:,:]
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            if inactive:
+                rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
+            else:
+                parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
     if inactive:
         if no_1d:
             parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
@@ -431,27 +433,28 @@ def rastermap_masks(parent):
     if inactive:
         nb,Ly,Lx = parent.Vback.shape[0]+1, parent.Vback.shape[1], parent.Vback.shape[2]
         rgb = np.zeros((2,1,nb,Ly,Lx,3),np.float32)
-    for i in range(2):
-        H = icols[parent.iROI[i,0,:,:]]
-        Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
-        if k==0:
-            S = parent.Sroi[i,:,:]
-            V = Vorig
-        elif k==3:
-            S = parent.Sext[i,:,:]
-            V = parent.Vback[k-1,:,:]
-            V = np.maximum(0,np.minimum(1, V + S))
-        else:
-            S = np.maximum(0,np.minimum(1, Vorig*1.5))
-            V = parent.Vback[k-1,:,:]
-        H = np.expand_dims(H,axis=2)
-        S = np.expand_dims(S,axis=2)
-        V = np.expand_dims(V,axis=2)
-        hsv = np.concatenate((H,S,V),axis=2)
-        if inactive:
-            rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
-        else:
-            parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
+    for k in range(6):
+        for i in range(2):
+            H = icols[parent.iROI[i,0,:,:]]
+            Vorig = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i,0,:,:]/parent.LamMean))
+            if k==0:
+                S = parent.Sroi[i,:,:]
+                V = Vorig
+            elif k==3:
+                S = parent.Sext[i,:,:]
+                V = parent.Vback[k-1,:,:]
+                V = np.maximum(0,np.minimum(1, V + S))
+            else:
+                S = np.maximum(0,np.minimum(1, Vorig*1.5))
+                V = parent.Vback[k-1,:,:]
+            H = np.expand_dims(H,axis=2)
+            S = np.expand_dims(S,axis=2)
+            V = np.expand_dims(V,axis=2)
+            hsv = np.concatenate((H,S,V),axis=2)
+            if inactive:
+                rgb[i,0,k,:,:,:] = hsv_to_rgb(hsv)
+            else:
+                parent.RGBall[i,c,k,:,:,:] = hsv_to_rgb(hsv)
     if inactive:
         if no_1d:
             parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
@@ -633,6 +636,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     view    = parent.ops_plot[1]
     color   = parent.ops_plot[2]
     cols    = parent.ops_plot[3]
+
     if view>0 and plotROI==0:
         M = [parent.RGBback[view-1,:,:,:],
              parent.RGBback[view-1,:,:,:]]
@@ -664,8 +668,13 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
                     col = parent.ops_plot[4][n]
                     sat = 0
                     M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
-                else:
+                elif color < cols.shape[1]:
                     col   = cols[n,color]
+                    sat = 1
+                    M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
+                else:
+                    if color==9:
+                        col = parent.ops_plot[6][n]
                     sat = 1
                     M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
     return M[0],M[1]

@@ -470,7 +470,7 @@ class MainW(QtGui.QMainWindow):
         self.comboBox.addItem("Fneu")
         self.comboBox.addItem("F - 0.7*Fneu")
         self.comboBox.addItem("deconvolved")
-        self.activityMode = 2
+        self.activityMode = 3
         self.comboBox.setCurrentIndex(self.activityMode)
         self.comboBox.currentIndexChanged.connect(self.mode_change)
         # up/down arrows to resize view

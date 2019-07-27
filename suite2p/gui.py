@@ -107,9 +107,9 @@ class RunWindow(QtGui.QDialog):
         self.batch = False
         self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
-                   'min_neuropil_pixels', 'spatial_scale']
+                   'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
-                    'do_registration', 'save_mat', 'combined', '1Preg', 'nonrigid',
+                     'save_mat', 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
@@ -696,6 +696,8 @@ class QuadButton(QtGui.QPushButton):
         parent.p1.setYRange(self.yrange[0], self.yrange[1])
         parent.p2.setXRange(self.xrange[0], self.xrange[1])
         parent.p2.setYRange(self.yrange[0], self.yrange[1])
+        parent.p2.setXLink("plot1")
+        parent.p2.setYLink("plot1")
         parent.show()
 
 ### custom QPushButton class that plots image when clicked

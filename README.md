@@ -19,7 +19,7 @@ The deconvolution algorithm is based on [this paper](https://journals.plos.org/p
 
 **More in depth documentation is available on the [wiki](https://github.com/MouseLand/suite2p/wiki).**
 
-See this **twitter [thread]** for GUI demonstrations.
+See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations.
 
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
@@ -112,7 +112,7 @@ Main GUI controls (works in all views):
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
 3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
-5. Select multiple cells = (Ctrl + left-click) AND/OR ("Draw selection" button)
+5. Select multiple cells = (Ctrl + left-click) OR (SHIFT + left-click) AND/OR ("Draw selection" button)
 
 You can add your manual curation to a pre-built classifier by clicking "Add current data to classifier". Or you can make a brand-new classifier from a list of "iscell.npy" files that you've manually curated. The default classifier in the GUI is initialized as the suite2p classifier, but you can overwrite it by adding to it, or loading a different classifier and saving it as the default. The default classifier is used in the pipeline to produce the initial "iscell.npy" file.
 

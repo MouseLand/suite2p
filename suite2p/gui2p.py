@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
-from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge
+from suite2p import fig, gui, classifier, visualize, reggui, classgui, merge, drawroi
 from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
@@ -107,6 +107,11 @@ class MainW(QtGui.QMainWindow):
         exportFig.setEnabled(True)
         self.addAction(exportFig)
 
+        # export figure
+        self.manual = QtGui.QAction("Manual labelling", self)
+        self.manual.triggered.connect(self.manual_label)
+        self.manual.setEnabled(False)
+
         # make mainmenu!
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
@@ -115,6 +120,7 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(self.loadBeh)
         file_menu.addAction(self.saveMat)
         file_menu.addAction(exportFig)
+        file_menu.addAction(self.manual)
         # classifier menu
         self.trainfiles = []
         self.statlabels = None
@@ -302,7 +308,6 @@ class MainW(QtGui.QMainWindow):
             "T: max projection",
             "Y: mean img (chan2, corrected)",
             "U: mean img (chan2)",
-
         ]
         self.colors = [
             "A: random",
@@ -545,9 +550,12 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
+        #statfile = 'D:/DATA/GT1/multichannel_half/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
+            #self.manual_label()
+
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
@@ -600,7 +608,7 @@ class MainW(QtGui.QMainWindow):
 
     def keyPressEvent(self, event):
         if self.loaded:
-            if event.modifiers() != QtCore.Qt.ControlModifier:
+            if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
                 if event.key() == QtCore.Qt.Key_Return:
                     if 0:
                         if len(self.imerge) > 1:
@@ -611,8 +619,6 @@ class MainW(QtGui.QMainWindow):
                     self.show()
                 elif event.key() == QtCore.Qt.Key_Delete:
                     self.ROI_remove()
-                elif event.key() == QtCore.Qt.Key_Shift:
-                    split = 1
                 elif event.key() == QtCore.Qt.Key_Q:
                     self.viewbtns.button(0).setChecked(True)
                     self.viewbtns.button(0).press(self, 0)
@@ -899,6 +905,7 @@ class MainW(QtGui.QMainWindow):
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
         self.saveMat.setEnabled(True)
+        self.manual.setEnabled(True)
         self.bloaded = False
         self.ROI_remove()
         self.isROI = False
@@ -1088,7 +1095,7 @@ class MainW(QtGui.QMainWindow):
                         flip = False
                 if choose:
                     merged = False
-                    if event.modifiers() == QtCore.Qt.ControlModifier:
+                    if event.modifiers() == QtCore.Qt.ShiftModifier or event.modifiers() == QtCore.Qt.ControlModifier:
                         if self.iscell[self.imerge[0]] == self.iscell[ichosen]:
                             if ichosen not in self.imerge:
                                 self.imerge.append(ichosen)
@@ -1191,6 +1198,10 @@ class MainW(QtGui.QMainWindow):
     def run_suite2p(self):
         RW = gui.RunWindow(self)
         RW.show()
+
+    def manual_label(self):
+        MW = drawroi.ROIDraw(self)
+        MW.show()
 
     def vis_window(self):
         VW = visualize.VisWindow(self)

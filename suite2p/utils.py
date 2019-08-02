@@ -110,7 +110,11 @@ def init_ops(ops):
         dx = ops['dx']
     # compile ops into list across planes
     for j in range(0,nplanes):
-        ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
+        if len(ops['save_folder']) > 0:
+            ops['save_path'] = os.path.join(ops['save_path0'], ops['save_folder'], 'plane%d'%j)
+        else:
+            ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
+
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
             ops['fast_disk'] = ops['save_path0']
         ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
@@ -188,58 +192,61 @@ def h5py_to_binary(ops):
     # open all binary files for writing
     ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True)
 
-    key = ops1[0]['h5py_key']
+    keys = ops1[0]['h5py_key']
+    if isinstance(keys, str):
+        keys = [keys]
     iall = 0
     for h5 in h5list:
         with h5py.File(h5, 'r') as f:
             # if h5py data is 4D instead of 3D, assume that
             # data = nframes x nplanes x pixels x pixels
-            hdims = f[key].ndim
-            # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-            nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
-            if hdims==3:
-                nframes_all = f[key].shape[0]
-            else:
-                nframes_all = f[key].shape[0] * f[key].shape[1]
-            nbatch = min(nbatch, nframes_all)
-            if nchannels>1:
-                nfunc = ops['functional_chan'] - 1
-            else:
-                nfunc = 0
-            # loop over all tiffs
-            ik = 0
-            while 1:
+            for key in keys:
+                hdims = f[key].ndim
+                # keep track of the plane identity of the first frame (channel identity is assumed always 0)
+                nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
                 if hdims==3:
-                    irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
-                    if irange.size==0:
-                        break
-                    im = f[key][irange, :, :]
+                    nframes_all = f[key].shape[0]
                 else:
-                    irange = np.arange(ik/nplanes, min(ik/nplanes+nbatch/nplanes, nframes_all/nplanes), 1)
-                    if irange.size==0:
-                        break
-                    im = f[key][irange,:,:,:]
-                    im = np.reshape(im, (im.shape[0]*nplanes,im.shape[2],im.shape[3]))
-                nframes = im.shape[0]
-                if type(im[0,0,0]) == np.uint16:
-                    im = im / 2
-                for j in range(0,nplanes):
-                    if iall==0:
-                        ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                    nframes_all = f[key].shape[0] * f[key].shape[1]
+                nbatch = min(nbatch, nframes_all)
+                if nchannels>1:
+                    nfunc = ops['functional_chan'] - 1
+                else:
+                    nfunc = 0
+                # loop over all tiffs
+                ik = 0
+                while 1:
+                    if hdims==3:
+                        irange = np.arange(ik, min(ik+nbatch, nframes_all), 1)
+                        if irange.size==0:
+                            break
+                        im = f[key][irange, :, :]
+                    else:
+                        irange = np.arange(ik/nplanes, min(ik/nplanes+nbatch/nplanes, nframes_all/nplanes), 1)
+                        if irange.size==0:
+                            break
+                        im = f[key][irange,:,:,:]
+                        im = np.reshape(im, (im.shape[0]*nplanes,im.shape[2],im.shape[3]))
+                    nframes = im.shape[0]
+                    if type(im[0,0,0]) == np.uint16:
+                        im = im / 2
+                    for j in range(0,nplanes):
+                        if iall==0:
+                            ops1[j]['meanImg'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                            if nchannels>1:
+                                ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
+                            ops1[j]['nframes'] = 0
+                        i0 = nchannels * ((j)%nplanes)
+                        im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                        reg_file[j].write(bytearray(im2write))
+                        ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                         if nchannels>1:
-                            ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
-                        ops1[j]['nframes'] = 0
-                    i0 = nchannels * ((j)%nplanes)
-                    im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                    reg_file[j].write(bytearray(im2write))
-                    ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
-                    if nchannels>1:
-                        im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
-                        reg_file_chan2[j].write(bytearray(im2write))
-                        ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
-                    ops1[j]['nframes'] += im2write.shape[0]
-                ik += nframes
-                iall += nframes
+                            im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                            reg_file_chan2[j].write(bytearray(im2write))
+                            ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                        ops1[j]['nframes'] += im2write.shape[0]
+                    ik += nframes
+                    iall += nframes
         # write ops files
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
@@ -721,7 +728,10 @@ def combined(ops1):
     ops['Lx'] = LX
     ops['xrange'] = [0, ops['Lx']]
     ops['yrange'] = [0, ops['Ly']]
-    fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')
+    if len(ops['save_folder']) > 0:
+        fpath = os.path.join(ops['save_path0'], ops['save_folder'], 'combined')
+    else:
+        fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')
     if not os.path.isdir(fpath):
         os.makedirs(fpath)
     ops['save_path'] = fpath

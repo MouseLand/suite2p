@@ -24,6 +24,7 @@ def default_ops():
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
+        'save_folder': [],
         'subfolders': [],
         # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
@@ -60,7 +61,7 @@ def default_ops():
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # 1P settings
         '1Preg': False, # whether to perform high-pass filtering and tapering
-        'spatial_hp': 50, # window for spatial high-pass filtering before registration
+        'spatial_hp': 25, # window for spatial high-pass filtering before registration
         'pre_smooth': 2, # whether to smooth before high-pass filtering before registration
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings

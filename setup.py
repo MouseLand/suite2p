@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="suite2p",
-    version="0.6.14",
+    version="0.6.15",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
     description="Pipeline for calcium imaging",

@@ -10,8 +10,6 @@ suite2p includes the following modules:
 * Spike detection
 * Visualization GUI
 
-There will be a workshop at Janelia on suite2p and kilosort2 Aug 19-23, see details [here](https://www.janelia.org/you-janelia/conferences/learning-to-use-suite2p-and-kilosort2). Room and meals will be provided.
-
 This code was written by Carsen Stringer and Marius Pachitariu.  
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  

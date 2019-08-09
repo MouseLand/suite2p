@@ -363,7 +363,8 @@ def sparsery(ops):
         ops['Vmap'].append(V0[j].copy())
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
     for t in range(1,len(gxy)-1):
-        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t])
+        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t],
+                                     kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
         I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
     I0 = np.amax(I, axis=0)
     ops['Vcorr'] = I0
@@ -393,7 +394,8 @@ def sparsery(ops):
         ops['Vmap'].append(V0[j].copy())
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
     for t in range(1,len(gxy)-1):
-        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t])
+        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t],
+                                     kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
         I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
     I0 = np.amax(I, axis=0)
     ops['Vcorr'] = I0

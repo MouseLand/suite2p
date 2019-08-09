@@ -66,6 +66,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.p1 = self.win.addPlot(row=0,col=1)
         self.p1.setMouseEnabled(x=True,y=False)
         self.p1.setMenuEnabled(False)
+        self.p1.scene().sigMouseMoved.connect(self.mouse_moved)
 
         self.p0 = self.win.addViewBox(name='plot1',lockAspect=True,row=0,col=0,invertY=True)
         self.img0=pg.ImageItem()
@@ -131,6 +132,16 @@ class ROIDraw(QtGui.QMainWindow):
         self.Lx = self.ops['Lx']
         self.ROIs = []
         self.cell_pos = []
+        self.extracted = False
+
+    def mouse_moved(self, pos):
+        if self.extracted:
+            if self.p1.sceneBoundingRect().contains(pos):
+                x = self.p1.vb.mapSceneToView(pos).x()
+                y = self.p1.vb.mapSceneToView(pos).y()
+                self.ineuron = self.nROIs - y + 1
+                #print(self.ineuron)
+
 
     def keyPressEvent(self, event):
         if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
@@ -184,7 +195,12 @@ class ROIDraw(QtGui.QMainWindow):
 
     def proc_ROI(self, parent):
         stat0 = []
-
+        if self.extracted:
+            for t,s in zip(self.scatter, self.tlabel):
+                self.p0.removeItem(s)
+                self.p0.removeItem(t)
+        self.scatter = []
+        self.tlabel = []
         for n in range(self.nROIs):
             ellipse = self.ROIs[n].ellipse
             yrange = self.ROIs[n].yrange
@@ -194,16 +210,17 @@ class ROIDraw(QtGui.QMainWindow):
             xpix = x[ellipse].flatten()
             lam = np.ones(ypix.shape)
             stat0.append({'ypix': ypix, 'xpix': xpix, 'lam': lam, 'npix': ypix.size})
-            tlabel = pg.TextItem(str(n), self.ROIs[n].color, anchor=(0, 0))
-            tlabel.setPos(xpix.mean(), ypix.mean())
-            self.p0.addItem(tlabel)
-            self.scatter = pg.ScatterPlotItem([xpix.mean()], [ypix.mean()],
-                                                pen=self.ROIs[n].color, symbol='+')
-            self.p0.addItem(self.scatter)
+            self.tlabel.append(pg.TextItem(str(n), self.ROIs[n].color, anchor=(0, 0)))
+            self.tlabel[-1].setPos(xpix.mean(), ypix.mean())
+            self.p0.addItem(self.tlabel[-1])
+            self.scatter.append(pg.ScatterPlotItem([xpix.mean()], [ypix.mean()],
+                                                pen=self.ROIs[n].color, symbol='+'))
+            self.p0.addItem(self.scatter[-1])
         F, Fneu, F_chan2, Fneu_chan2, ops, stat = roiextract.masks_and_traces(parent.ops, stat0)
         self.Fcell = F
         self.Fneu = Fneu
         self.plot_trace()
+        self.extracted = True
 
     def plot_trace(self):
         self.trange = np.arange(0, self.Fcell.shape[1])

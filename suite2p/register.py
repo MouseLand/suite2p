@@ -1,4 +1,4 @@
-import glob, h5py, time, os, shutil
+import time, os
 import numpy as np
 from scipy.fftpack import next_fast_len
 from numpy import random as rnd

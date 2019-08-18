@@ -170,7 +170,9 @@ def circle(med, r):
     return x,y
 
 def init_masks(parent):
-    '''creates RGB masks using stat and puts them in M0 or M1 depending on
+    '''
+
+    creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
         ops: mean_image, Vcorr
@@ -180,6 +182,7 @@ def init_masks(parent):
     outputs:
         M0: ROIs that are True in iscell
         M1: ROIs that are False in iscell
+
     '''
     ops = parent.ops
     stat = parent.stat
@@ -620,7 +623,9 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
     return M0
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
-    '''creates RGB masks using stat and puts them in M0 or M1 depending on
+    '''
+    
+    creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
         ops: mean_image, Vcorr
@@ -630,6 +635,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     outputs:
         M0: ROIs that are True in iscell
         M1: ROIs that are False in iscell
+
     '''
     ncells  = parent.iscell.shape[0]
     plotROI = parent.ops_plot[0]

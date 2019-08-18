@@ -27,6 +27,8 @@ build/
 suite2p/classifiers/classifier_user.npy
 suite2p/ops/ops_user.npy
 *.ipynb
+.buildinfo
+doctrees/
 
 # =========================
 # Operating System Files

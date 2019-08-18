@@ -30,7 +30,12 @@ release = '0.6.17'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc',
+            'sphinx.ext.mathjax',
+            'sphinx.ext.viewcode',
+            'sphinx.ext.autosummary',
+            'sphinx.ext.doctest',
+            'sphinx.ext.inheritance_diagram']
 
 source_suffix='.rst'
 

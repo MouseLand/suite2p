@@ -19,4 +19,9 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. autoclass:: suite2p.register
+.. automodule:: suite2p.register
+    :members:
+    :undoc-members:
+    :special-members:
+    :inherited-members:
+    :show-inheritance:

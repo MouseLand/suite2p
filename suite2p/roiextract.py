@@ -10,12 +10,6 @@ from scipy import stats
 import os
 import shutil
 
-
-def tic():
-    return time.time()
-def toc(i0):
-    return time.time() - i0
-
 def create_cell_masks(ops, stat):
     '''creates cell masks for ROIs in stat and computes radii
     inputs:
@@ -178,7 +172,7 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         ix += nimg
         k += 1
-    print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], toc(t0)))
+    print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
     ops['meanImg'] /= k
 
     reg_file.close()
@@ -201,7 +195,7 @@ def masks_and_traces(ops, stat):
     stat0 = []
     for n in range(len(stat)):
         stat0.append({'ipix':stat[n]['ipix'],'lam':stat[n]['lam']/stat[n]['lam'].sum()})
-    print('Masks made in %0.2f sec.'%toc(t0))
+    print('Masks made in %0.2f sec.'%(time.time()-t0))
 
     F,Fneu,ops = extractF(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
@@ -218,7 +212,7 @@ def roi_detect_and_extract(ops):
         ops, stat = sparsedetect.sparsery(ops)
     else:
         ops, stat = sourcery.sourcery(ops)
-    print('Found %d ROIs, %0.2f sec'%(len(stat), toc(t0)))
+    print('Found %d ROIs, %0.2f sec'%(len(stat), time.time()-t0))
 
     ### apply default classifier ###
     if len(stat) > 0:

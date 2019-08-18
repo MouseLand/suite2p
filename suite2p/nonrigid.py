@@ -5,7 +5,6 @@ from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 from scipy.ndimage import gaussian_filter, map_coordinates
 from skimage.transform import warp#, PiecewiseAffineTransform
 from suite2p import register
-import time
 import math
 from mkl_fft import fft2, ifft2
 
@@ -13,11 +12,6 @@ eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
 subpixel = 10
-
-def tic():
-    return time.time()
-def toc(i0):
-    return time.time() - i0
 
 # smoothing kernel
 def kernelD(a, b):
@@ -149,7 +143,6 @@ def getSNR(cc, Ls, ops):
     return snr
 
 def phasecorr(data, refAndMasks, ops):
-    t0=tic()
     ''' loop through blocks and compute phase correlations'''
     nimg, Ly, Lx = data.shape
     maskMul    = refAndMasks[0].squeeze()

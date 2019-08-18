@@ -11,11 +11,6 @@ from scipy.signal import medfilt
 from scipy.ndimage import laplace
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
-import gc
-import multiprocessing
-N_threads = int(multiprocessing.cpu_count() / 2)
-#import numexpr3 as ne3
-#ne3.set_nthreads(N_threads)
 from mkl_fft import fft2, ifft2
 
 HAS_GPU=False
@@ -25,13 +20,6 @@ try:
     HAS_GPU=True
 except ImportError:
     HAS_GPU=False
-
-
-
-def tic():
-    return time.time()
-def toc(t0):
-    return time.time() - t0
 
 eps0 = 1e-5
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...

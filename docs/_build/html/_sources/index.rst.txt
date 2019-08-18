@@ -18,11 +18,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. automodule:: suite2p
-.. automodule:: suite2p.register
-.. automodule:: suite2p.sourcery
-.. automodule:: suite2p.sparsery
-.. automodule:: suite2p.fig
-.. automodule:: suite2p.gui
-.. automodule:: suite2p.run_s2p

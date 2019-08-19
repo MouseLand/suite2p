@@ -15,11 +15,11 @@ For support, please open an [issue](https://github.com/MouseLand/suite2p/issues)
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  
 The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
-**More in depth documentation is available on the [wiki](https://github.com/MouseLand/suite2p/wiki).**
-
 See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations.
 
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
+
+## *NEW* github [page](http://mouseland.github.io/suite2p) using sphinx
 
 ## Installation
 

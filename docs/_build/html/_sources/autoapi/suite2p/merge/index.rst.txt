@@ -1,0 +1,17 @@
+:mod:`suite2p.merge`
+====================
+
+.. py:module:: suite2p.merge
+
+
+Module Contents
+---------------
+
+.. function:: activity_stats(parent)
+
+
+.. function:: fig_masks(parent)
+
+   merges multiple cells' colors together
+
+

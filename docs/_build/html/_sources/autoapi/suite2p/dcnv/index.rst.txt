@@ -1,0 +1,18 @@
+:mod:`suite2p.dcnv`
+===================
+
+.. py:module:: suite2p.dcnv
+
+
+Module Contents
+---------------
+
+.. function:: oasis1t(inputs)
+
+
+.. function:: oasis(F, ops)
+
+
+.. function:: preprocess(F, ops)
+
+

@@ -1,0 +1,12 @@
+:mod:`suite2p.LoadBinary`
+=========================
+
+.. py:module:: suite2p.LoadBinary
+
+
+Module Contents
+---------------
+
+.. function:: binMovie(ops)
+
+

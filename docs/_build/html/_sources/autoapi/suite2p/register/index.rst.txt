@@ -1,0 +1,171 @@
+:mod:`suite2p.register`
+=======================
+
+.. py:module:: suite2p.register
+
+
+Module Contents
+---------------
+
+.. data:: HAS_GPU
+   :annotation: = False
+
+   
+
+.. data:: HAS_GPU
+   :annotation: = True
+
+   
+
+.. data:: eps0
+   :annotation: = 1e-05
+
+   
+
+.. data:: sigL
+   :annotation: = 0.85
+
+   
+
+.. data:: hp
+   :annotation: = 60
+
+   
+
+.. function:: gaussian_fft(sig, Ly, Lx)
+
+   gaussian filter in the fft domain with std sig and size Ly,Lx
+
+
+.. function:: spatial_taper(sig, Ly, Lx)
+
+   spatial taper  on edges with gaussian of std sig
+
+
+.. function:: spatial_smooth(data, N)
+
+   spatially smooth data using cumsum over axis=1,2 with window N
+
+
+.. function:: spatial_high_pass(data, N)
+
+   high pass filters data over axis=1,2 with window N
+
+
+.. function:: one_photon_preprocess(data, ops)
+
+   pre filtering for one-photon data
+
+
+.. function:: prepare_masks(refImg0, ops)
+
+
+.. function:: shift_data(X, ymax, xmax, m0)
+
+   rigid shift of X by ymax and xmax
+
+
+.. function:: addmultiplytype(x, y, z)
+
+
+.. function:: apply_dotnorm(Y, cfRefImg)
+
+
+.. function:: phasecorr(data, refAndMasks, ops)
+
+   compute registration offsets
+
+
+.. function:: my_clip(X, lcorr)
+
+
+.. function:: phasecorr_cpu(data, refAndMasks, lcorr)
+
+
+.. function:: register_and_shift(data, refAndMasks, ops)
+
+   register data matrix to reference image and shift
+
+
+.. function:: get_nFrames(ops)
+
+
+.. function:: subsample_frames(ops, nsamps)
+
+   get nsamps frames from binary file for initial reference image
+
+
+.. function:: get_bidiphase(frames)
+
+   computes the bidirectional phase offset
+   sometimes in line scanning there will be offsets between lines
+   if ops['do_bidiphase'], then bidiphase is computed and applied
+
+
+.. function:: shift_bidiphase(frames, bidiphase)
+
+   shift frames by bidirectional phase offset, bidiphase
+
+
+.. function:: pick_init_init(frames)
+
+   input: frames (nimg x Ly x Lx)
+   output: refImg (Ly x Lx)
+   use frames and find its correlation matrix
+   choose the seed frame as the one with the top 20 most correlated pairs
+   use the average of the seed frame with its top 20 as the initial reference image
+
+
+.. function:: refine_init(ops, frames, refImg)
+
+
+.. function:: pick_init(ops)
+
+   compute initial reference image from ops['nimg_init'] frames
+
+
+.. function:: prepare_refAndMasks(refImg, ops)
+
+
+.. function:: init_offsets(ops)
+
+
+.. function:: compute_crop(ops)
+
+   determines ops['badframes'] (using ops['th_badframes'])
+   and excludes these ops['badframes'] when computing valid ranges
+   from registration in y and x
+
+
+.. function:: write_tiffs(data, ops, k, ichan)
+
+
+.. function:: bin_paths(ops, raw)
+
+
+.. function:: register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align)
+
+   register binary data to reference image refImg
+
+
+.. function:: apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
+
+
+.. function:: apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
+
+   apply registration shifts to binary data
+
+
+.. function:: register_binary(ops, refImg=None)
+
+   registration of binary files
+
+
+.. function:: register_npy(Z, ops)
+
+
+.. function:: shift_data_subpixel(inputs)
+
+   rigid shift of X by ymax and xmax
+
+

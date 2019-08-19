@@ -18,20 +18,32 @@ def toc(i0):
     return time.time() - i0
 
 def fitMVGaus(y,x,lam,thres=2.5):
-    ''' computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations
-    inputs:
-        y, x, lam, thres
-            y,x: pixel locations
-            lam: pixel weights
-        thres: number of standard deviations at which to draw ellipse
-    outputs:
-        mu, cov, ellipse, area
-            mu: mean of gaussian fit
-            cov: covariance of gaussian fit
-            radii: half of major and minor axis lengths of elliptical fit
-            ellipse: coordinates of elliptical fit
-            area: area of ellipse
-    '''
+    """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
+
+    Parameters
+    ----------
+    y : float, array
+        pixel locations in y
+    x : float, array
+        pixel locations in x
+    lam : float, array
+        weights of each pixel
+
+    Returns
+    -------
+        mu : float
+            mean of gaussian fit.
+        cov : float
+            covariance of gaussian fit.
+        radii : float, array
+            half of major and minor axis lengths of elliptical fit.
+        ellipse : float, array
+            coordinates of elliptical fit.
+        area : float
+            area of ellipse.
+
+    """
+
     # normalize pixel weights
     lam /= lam.sum()
     # mean of gaussian

@@ -1,0 +1,17 @@
+:mod:`clean`
+============
+
+.. py:module:: clean
+
+
+Module Contents
+---------------
+
+.. function:: main(ops1)
+
+
+.. data:: parser
+   
+
+   
+

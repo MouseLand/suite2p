@@ -1,0 +1,74 @@
+:mod:`suite2p.drawroi`
+======================
+
+.. py:module:: suite2p.drawroi
+
+
+Module Contents
+---------------
+
+.. py:class:: ViewButton(bid, Text, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QPushButton`
+
+   
+   .. method:: press(self, parent, bid)
+
+
+
+
+.. py:class:: ROIDraw(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QMainWindow`
+
+   
+   .. method:: mouse_moved(self, pos)
+
+
+
+   
+   .. method:: keyPressEvent(self, event)
+
+
+
+   
+   .. method:: add_ROI(self, pos=None)
+
+
+
+   
+   .. method:: plot_clicked(self, event)
+
+      left-click chooses a cell, right-click flips cell to other view
+
+
+
+   
+   .. method:: proc_ROI(self, parent)
+
+
+
+   
+   .. method:: plot_trace(self)
+
+
+
+
+.. py:class:: sROI(iROI, parent=None, pos=None, diameter=None, color=None, yrange=None, xrange=None)
+
+   
+   .. method:: draw(self, parent, imy, imx, dy, dx)
+
+
+
+   
+   .. method:: remove(self, parent)
+
+
+
+   
+   .. method:: position(self, parent)
+
+
+
+

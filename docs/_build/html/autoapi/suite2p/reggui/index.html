@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.reggui &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Input format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html#different-file-types">Different file types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.reggui</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/autoapi/suite2p/reggui/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.reggui">
+<span id="suite2p-reggui"></span><h1><a class="reference internal" href="#module-suite2p.reggui" title="suite2p.reggui"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.reggui</span></code></a><a class="headerlink" href="#module-suite2p.reggui" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="suite2p.reggui.PCViewer">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.reggui.</code><code class="sig-name descname">PCViewer</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QMainWindow</span></code></p>
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.createButtons">
+<code class="sig-name descname">createButtons</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.createButtons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.createButtons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.start">
+<code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.pause">
+<code class="sig-name descname">pause</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.pause" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.openFile">
+<code class="sig-name descname">openFile</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">fileName</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.openFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.openFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.next_frame">
+<code class="sig-name descname">next_frame</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.next_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.next_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.plot_frame">
+<code class="sig-name descname">plot_frame</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.plot_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.plot_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.zoom_plot">
+<code class="sig-name descname">zoom_plot</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.zoom_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.zoom_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.plot_clicked">
+<code class="sig-name descname">plot_clicked</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.plot_clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.plot_clicked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.PCViewer.keyPressEvent">
+<code class="sig-name descname">keyPressEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#PCViewer.keyPressEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.PCViewer.keyPressEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.reggui.BinaryPlayer">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.reggui.</code><code class="sig-name descname">BinaryPlayer</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QMainWindow</span></code></p>
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.open_combined">
+<code class="sig-name descname">open_combined</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.open_combined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.open_combined" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.openCombined">
+<code class="sig-name descname">openCombined</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">fileName</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.openCombined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.openCombined" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.openFile">
+<code class="sig-name descname">openFile</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">fileName</em>, <em class="sig-param">fromgui</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.openFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.openFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.keyPressEvent">
+<code class="sig-name descname">keyPressEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.keyPressEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.keyPressEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.number_chosen">
+<code class="sig-name descname">number_chosen</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.number_chosen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.number_chosen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.plot_clicked">
+<code class="sig-name descname">plot_clicked</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.plot_clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.plot_clicked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.cell_mask">
+<code class="sig-name descname">cell_mask</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.cell_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.cell_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.go_to_frame">
+<code class="sig-name descname">go_to_frame</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.go_to_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.go_to_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.fitToWindow">
+<code class="sig-name descname">fitToWindow</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.fitToWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.fitToWindow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.updateFrameSlider">
+<code class="sig-name descname">updateFrameSlider</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.updateFrameSlider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.updateFrameSlider" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.updateButtons">
+<code class="sig-name descname">updateButtons</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.updateButtons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.updateButtons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.createButtons">
+<code class="sig-name descname">createButtons</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.createButtons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.createButtons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.jump_to_frame">
+<code class="sig-name descname">jump_to_frame</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.jump_to_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.jump_to_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.next_frame">
+<code class="sig-name descname">next_frame</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.next_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.next_frame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.start">
+<code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.reggui.BinaryPlayer.pause">
+<code class="sig-name descname">pause</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#BinaryPlayer.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.BinaryPlayer.pause" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.reggui.subsample_frames">
+<code class="sig-prename descclassname">suite2p.reggui.</code><code class="sig-name descname">subsample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">nsamps</em>, <em class="sig-param">reg_loc</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/reggui.html#subsample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.reggui.subsample_frames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

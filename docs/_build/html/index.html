@@ -35,7 +35,8 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -79,12 +80,19 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Welcome to suite2p’s documentation!</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html">Input format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html#different-file-types">Different file types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
 </ul>
-</div>
+
             
           
         </div>
@@ -149,197 +157,80 @@
             
   <div class="section" id="welcome-to-suite2p-s-documentation">
 <h1>Welcome to suite2p’s documentation!<a class="headerlink" href="#welcome-to-suite2p-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-</div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<p>suite2p is an imaging processing pipeline written in Python 3 which
+includes the following modules:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p>Registration</p></li>
+<li><p>Cell detection</p></li>
+<li><p>Spike detection</p></li>
+<li><p>Visualization GUI</p></li>
+</ul>
+<p>For examples of how the output looks and how the GUI works, check out
+this twitter <a class="reference external" href="https://twitter.com/marius10p/status/1032804776633880583">thread</a>.</p>
+<p>This code was written by Carsen Stringer and Marius Pachitariu. For
+support, please open an <a class="reference external" href="https://github.com/MouseLand/suite2p/issues">issue</a>.</p>
+<p>The reference paper is <a class="reference external" href="https://www.biorxiv.org/content/early/2017/07/20/061507">here</a>. The deconvolution algorithm is based on
+<a class="reference external" href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423">this paper</a>, with settings based on <a class="reference external" href="http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018">this
+paper</a>.</p>
+<p>We make pip installable releases of suite2p, here is the <a class="reference external" href="https://pypi.org/project/suite2p/">pypi</a>. You
+can install it as <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">suite2p</span></code></p>
+<ul class="simple">
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 </ul>
-<span class="target" id="module-suite2p.register"></span><dl class="function">
-<dt id="suite2p.register.apply_shifts">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">apply_shifts</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em>, <em class="sig-param">ymax1</em>, <em class="sig-param">xmax1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#apply_shifts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.apply_shifts" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.apply_shifts_to_binary">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">apply_shifts_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">offsets</em>, <em class="sig-param">reg_file_alt</em>, <em class="sig-param">raw_file_alt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#apply_shifts_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.apply_shifts_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>apply registration shifts to binary data</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.bin_paths">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">bin_paths</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">raw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#bin_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.bin_paths" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.compute_crop">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">compute_crop</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#compute_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.compute_crop" title="Permalink to this definition">¶</a></dt>
-<dd><p>determines ops[‘badframes’] (using ops[‘th_badframes’])
-and excludes these ops[‘badframes’] when computing valid ranges
-from registration in y and x</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.gaussian_fft">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">gaussian_fft</code><span class="sig-paren">(</span><em class="sig-param">sig</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#gaussian_fft"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.gaussian_fft" title="Permalink to this definition">¶</a></dt>
-<dd><p>gaussian filter in the fft domain with std sig and size Ly,Lx</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.get_bidiphase">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">get_bidiphase</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#get_bidiphase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.get_bidiphase" title="Permalink to this definition">¶</a></dt>
-<dd><p>computes the bidirectional phase offset
-sometimes in line scanning there will be offsets between lines
-if ops[‘do_bidiphase’], then bidiphase is computed and applied</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.get_nFrames">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">get_nFrames</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#get_nFrames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.get_nFrames" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.init_offsets">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">init_offsets</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#init_offsets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.init_offsets" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.my_clip">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">my_clip</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">lcorr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#my_clip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.my_clip" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.one_photon_preprocess">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">one_photon_preprocess</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#one_photon_preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.one_photon_preprocess" title="Permalink to this definition">¶</a></dt>
-<dd><p>pre filtering for one-photon data</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.phasecorr">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">phasecorr</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#phasecorr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.phasecorr" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute registration offsets</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.phasecorr_cpu">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">phasecorr_cpu</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">lcorr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#phasecorr_cpu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.phasecorr_cpu" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.pick_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">pick_init</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#pick_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.pick_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute initial reference image from ops[‘nimg_init’] frames</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.pick_init_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">pick_init_init</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#pick_init_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.pick_init_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>input: frames (nimg x Ly x Lx)
-output: refImg (Ly x Lx)
-use frames and find its correlation matrix
-choose the seed frame as the one with the top 20 most correlated pairs
-use the average of the seed frame with its top 20 as the initial reference image</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.prepare_masks">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">prepare_masks</code><span class="sig-paren">(</span><em class="sig-param">refImg0</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#prepare_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.prepare_masks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.prepare_refAndMasks">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">prepare_refAndMasks</code><span class="sig-paren">(</span><em class="sig-param">refImg</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#prepare_refAndMasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.prepare_refAndMasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.refine_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">refine_init</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">frames</em>, <em class="sig-param">refImg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#refine_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.refine_init" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.register_and_shift">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_and_shift</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#register_and_shift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_and_shift" title="Permalink to this definition">¶</a></dt>
-<dd><p>register data matrix to reference image and shift</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.register_binary">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">refImg=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#register_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>registration of binary files</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.register_binary_to_ref">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_binary_to_ref</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">refImg</em>, <em class="sig-param">reg_file_align</em>, <em class="sig-param">raw_file_align</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#register_binary_to_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_binary_to_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>register binary data to reference image refImg</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.register_npy">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_npy</code><span class="sig-paren">(</span><em class="sig-param">Z</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#register_npy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_npy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.shift_bidiphase">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_bidiphase</code><span class="sig-paren">(</span><em class="sig-param">frames</em>, <em class="sig-param">bidiphase</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#shift_bidiphase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_bidiphase" title="Permalink to this definition">¶</a></dt>
-<dd><p>shift frames by bidirectional phase offset, bidiphase</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.shift_data">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em>, <em class="sig-param">m0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#shift_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>rigid shift of X by ymax and xmax</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.shift_data_subpixel">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_data_subpixel</code><span class="sig-paren">(</span><em class="sig-param">inputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#shift_data_subpixel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_data_subpixel" title="Permalink to this definition">¶</a></dt>
-<dd><p>rigid shift of X by ymax and xmax</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.spatial_high_pass">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">spatial_high_pass</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#spatial_high_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.spatial_high_pass" title="Permalink to this definition">¶</a></dt>
-<dd><p>high pass filters data over axis=1,2 with window N</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.spatial_smooth">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">spatial_smooth</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">N</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#spatial_smooth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.spatial_smooth" title="Permalink to this definition">¶</a></dt>
-<dd><p>spatially smooth data using cumsum over axis=1,2 with window N</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.spatial_taper">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">spatial_taper</code><span class="sig-paren">(</span><em class="sig-param">sig</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#spatial_taper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.spatial_taper" title="Permalink to this definition">¶</a></dt>
-<dd><p>spatial taper  on edges with gaussian of std sig</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.subsample_frames">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">subsample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">nsamps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#subsample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.subsample_frames" title="Permalink to this definition">¶</a></dt>
-<dd><p>get nsamps frames from binary file for initial reference image</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.tic">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">tic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#tic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.tic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.toc">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">toc</code><span class="sig-paren">(</span><em class="sig-param">t0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#toc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.toc" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.register.write_tiffs">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">write_tiffs</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">k</em>, <em class="sig-param">ichan</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/suite2p/register.html#write_tiffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.write_tiffs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html">Input format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#directory-structure">Directory structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#frame-ordering">Frame ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#recordings-with-photostim-other-artifacts">Recordings with photostim / other artifacts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html#different-file-types">Different file types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#tiffs">Tiffs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#mesoscope-tiffs">Mesoscope tiffs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#thorlabs-raw-files">Thorlabs raw files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inputs.html#hdf5-files-and-sbx">HDF5 files (and *.sbx)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#main-settings">Main settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#output-settings">Output settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#registration">Registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#roi-detection">ROI detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#signal-extraction">Signal extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#spike-deconvolution">Spike deconvolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html#channel-2-settings">Channel 2 settings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#different-views-and-colors">Different views and colors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#buttons-shortcuts-for-cell-selection">Buttons / shortcuts for cell selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#classifying-cells">Classifying cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#visualizing-activity">Visualizing activity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#view-registered-binary">View registered binary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#view-registration-metrics">View registration metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#matlab-output">MATLAB output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#multichannel-recordings">Multichannel recordings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#stat-npy-fields">stat.npy fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#ops-npy-fields">ops.npy fields</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/suite2p/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/clean/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">clean</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 
 
@@ -347,6 +238,13 @@ use the average of the seed frame with its top 20 as the initial reference image
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
   
 
   <hr/>

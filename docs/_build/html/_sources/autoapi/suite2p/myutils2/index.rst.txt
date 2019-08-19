@@ -1,0 +1,15 @@
+:mod:`suite2p.myutils2`
+=======================
+
+.. py:module:: suite2p.myutils2
+
+
+Module Contents
+---------------
+
+.. function:: conv2(s1, sig, axes=None)
+
+
+.. function:: conv_circ(s1, sig, axes=None)
+
+

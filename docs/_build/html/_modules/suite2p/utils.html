@@ -1,0 +1,1029 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.utils &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inputs.html">Input format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inputs.html#different-file-types">Different file types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">natsort</span> <span class="k">import</span> <span class="n">natsorted</span>
+<span class="kn">import</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">glob</span><span class="o">,</span> <span class="nn">h5py</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">signal</span>
+<span class="kn">from</span> <span class="nn">suite2p</span> <span class="k">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">nonrigid</span><span class="p">,</span> <span class="n">chan2detect</span><span class="p">,</span> <span class="n">sparsedetect</span><span class="p">,</span> <span class="n">roiextract</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span><span class="p">,</span> <span class="n">signal</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">linalg</span>
+<span class="kn">import</span> <span class="nn">scipy.io</span>
+<span class="c1">#from skimage import io</span>
+<span class="kn">from</span> <span class="nn">ScanImageTiffReader</span> <span class="k">import</span> <span class="n">ScanImageTiffReader</span>
+<span class="kn">from</span> <span class="nn">skimage.external.tifffile</span> <span class="k">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">TiffFile</span>
+
+<div class="viewcode-block" id="tic"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.tic">[docs]</a><span class="k">def</span> <span class="nf">tic</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
+<div class="viewcode-block" id="toc"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.toc">[docs]</a><span class="k">def</span> <span class="nf">toc</span><span class="p">(</span><span class="n">i0</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">i0</span></div>
+
+<div class="viewcode-block" id="fitMVGaus"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.fitMVGaus">[docs]</a><span class="k">def</span> <span class="nf">fitMVGaus</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">lam</span><span class="p">,</span><span class="n">thres</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    y : float, array</span>
+<span class="sd">        pixel locations in y</span>
+<span class="sd">    x : float, array</span>
+<span class="sd">        pixel locations in x</span>
+<span class="sd">    lam : float, array</span>
+<span class="sd">        weights of each pixel</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        mu : float</span>
+<span class="sd">            mean of gaussian fit.</span>
+<span class="sd">        cov : float</span>
+<span class="sd">            covariance of gaussian fit.</span>
+<span class="sd">        radii : float, array</span>
+<span class="sd">            half of major and minor axis lengths of elliptical fit.</span>
+<span class="sd">        ellipse : float, array</span>
+<span class="sd">            coordinates of elliptical fit.</span>
+<span class="sd">        area : float</span>
+<span class="sd">            area of ellipse.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># normalize pixel weights</span>
+    <span class="n">lam</span> <span class="o">/=</span> <span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="c1"># mean of gaussian</span>
+    <span class="n">yx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">mu</span>  <span class="o">=</span> <span class="p">(</span><span class="n">lam</span><span class="o">*</span><span class="n">yx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">yx</span> <span class="o">=</span> <span class="n">yx</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">yx</span> <span class="o">=</span> <span class="n">yx</span> <span class="o">*</span> <span class="n">lam</span><span class="o">**.</span><span class="mi">5</span>
+    <span class="c1">#yx  = np.concatenate((y*lam**0.5, x*lam**0.5),axis=0)</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">yx</span> <span class="o">@</span> <span class="n">yx</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="c1"># radii of major and minor axes</span>
+    <span class="n">radii</span><span class="p">,</span><span class="n">evec</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+    <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">radii</span><span class="p">))</span>
+    <span class="n">radii</span>       <span class="o">=</span> <span class="n">thres</span> <span class="o">*</span> <span class="n">radii</span><span class="o">**.</span><span class="mi">5</span>
+    <span class="c1"># compute pts of ellipse</span>
+    <span class="n">npts</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">npts</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ellipse</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">radii</span><span class="p">)</span> <span class="o">@</span> <span class="n">evec</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">+</span> <span class="n">mu</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">radii</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">radii</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">radii</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">ellipse</span><span class="p">,</span> <span class="n">area</span></div>
+
+<div class="viewcode-block" id="enhanced_mean_image"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.enhanced_mean_image">[docs]</a><span class="k">def</span> <span class="nf">enhanced_mean_image</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; computes enhanced mean image for GUI &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;spatscale_pix&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">diameter</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">Imed</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">-</span> <span class="n">Imed</span>
+        <span class="n">Idiv</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span> <span class="o">+</span> <span class="n">Idiv</span><span class="p">)</span>
+        <span class="n">mimg1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">6</span>
+        <span class="n">mimg99</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">I</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span>
+        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span> <span class="o">-</span> <span class="n">gaussian_filter</span><span class="p">(</span><span class="n">filters</span><span class="o">.</span><span class="n">minimum_filter</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">),</span>
+                                          <span class="mi">10</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">)</span>
+        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span> <span class="o">/</span> <span class="n">gaussian_filter</span><span class="p">(</span><span class="n">filters</span><span class="o">.</span><span class="n">maximum_filter</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">),</span>
+                                      <span class="mi">10</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">)</span>
+        <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+    <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">mimg0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mimg0</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+    <span class="n">mimg0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg0</span><span class="p">))</span>
+    <span class="n">mimg</span> <span class="o">=</span> <span class="n">mimg0</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">mimg</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mimg0</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImgE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mimg</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="init_ops"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.init_ops">[docs]</a><span class="k">def</span> <span class="nf">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+    <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;iplane&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">iplane</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span>
+        <span class="c1">#ops[&#39;nplanes&#39;] = len(ops[&#39;lines&#39;])</span>
+    <span class="n">ops1</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;fast_disk&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">]</span>
+    <span class="n">fast_disk</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span>
+    <span class="c1"># for mesoscope recording FOV locations</span>
+    <span class="k">if</span> <span class="s1">&#39;dy&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span>
+    <span class="c1"># compile ops into list across planes</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">],</span> <span class="s1">&#39;plane</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;plane</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;fast_disk&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fast_disk</span><span class="p">,</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;plane</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">],</span> <span class="s1">&#39;data.bin&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;keep_movie_raw&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">],</span> <span class="s1">&#39;data_raw.bin&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;iplane&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">iplane</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">],</span> <span class="s1">&#39;data_chan2.bin&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;keep_movie_raw&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]:</span>
+                <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">],</span> <span class="s1">&#39;data_chan2_raw.bin&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;dy&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">!=</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dy</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">])</span>
+        <span class="n">ops1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+
+<div class="viewcode-block" id="list_h5"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.list_h5">[docs]</a><span class="k">def</span> <span class="nf">list_h5</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="n">froot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span>
+    <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="s2">&quot;*.h5&quot;</span><span class="p">)</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">fs</span></div>
+
+<div class="viewcode-block" id="find_files_open_binaries"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.find_files_open_binaries">[docs]</a><span class="k">def</span> <span class="nf">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="n">ish5</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; find tiffs or h5 files, and open binaries to write to</span>
+<span class="sd">        inputs ops1 (list over planes), ish5 (whether or not h5)</span>
+<span class="sd">        returns ops1, fs (filelist), reg_file, reg_file_chan2 &#39;&#39;&#39;</span>
+    <span class="n">reg_file</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">reg_file_chan2</span><span class="o">=</span><span class="p">[]</span>
+
+
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;keep_movie_raw&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]:</span>
+            <span class="n">reg_file</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file&#39;</span><span class="p">],</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">reg_file_chan2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file_chan2&#39;</span><span class="p">],</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reg_file</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">],</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">reg_file_chan2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file_chan2&#39;</span><span class="p">],</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">ish5</span><span class="p">:</span>
+        <span class="c1"># find h5&#39;s</span>
+        <span class="k">if</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;look_one_level_down&#39;</span><span class="p">]:</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="n">list_h5</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NOTE: using a list of h5 files:&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;h5py&#39;</span><span class="p">]]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># find tiffs</span>
+        <span class="n">fs</span><span class="p">,</span> <span class="n">ops2</span> <span class="o">=</span> <span class="n">get_tif_list</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops2</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;frames_per_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ops2</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),),</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;filelist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fs</span>
+    <span class="k">return</span> <span class="n">ops1</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span></div>
+
+<div class="viewcode-block" id="h5py_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.h5py_to_binary">[docs]</a><span class="k">def</span> <span class="nf">h5py_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="c1"># copy ops to list where each element is ops for each plane</span>
+    <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+    <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+
+    <span class="c1"># open all binary files for writing</span>
+    <span class="n">ops1</span><span class="p">,</span> <span class="n">h5list</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span> <span class="o">=</span> <span class="n">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;h5py_key&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+    <span class="n">iall</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">h5</span> <span class="ow">in</span> <span class="n">h5list</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># if h5py data is 4D instead of 3D, assume that</span>
+            <span class="c1"># data = nframes x nplanes x pixels x pixels</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                <span class="n">hdims</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span>
+                <span class="c1"># keep track of the plane identity of the first frame (channel identity is assumed always 0)</span>
+                <span class="n">nbatch</span> <span class="o">=</span> <span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">hdims</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+                    <span class="n">nframes_all</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nframes_all</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">nbatch</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nbatch</span><span class="p">,</span> <span class="n">nframes_all</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1"># loop over all tiffs</span>
+                <span class="n">ik</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hdims</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+                        <span class="n">irange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ik</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">ik</span><span class="o">+</span><span class="n">nbatch</span><span class="p">,</span> <span class="n">nframes_all</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">irange</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                            <span class="k">break</span>
+                        <span class="n">im</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">irange</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">irange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ik</span><span class="o">/</span><span class="n">nplanes</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">ik</span><span class="o">/</span><span class="n">nplanes</span><span class="o">+</span><span class="n">nbatch</span><span class="o">/</span><span class="n">nplanes</span><span class="p">,</span> <span class="n">nframes_all</span><span class="o">/</span><span class="n">nplanes</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">irange</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                            <span class="k">break</span>
+                        <span class="n">im</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">irange</span><span class="p">,:,:,:]</span>
+                        <span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">nplanes</span><span class="p">,</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+                    <span class="n">nframes</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">im</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span>
+                        <span class="n">im</span> <span class="o">=</span> <span class="n">im</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">iall</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                                <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">i0</span> <span class="o">=</span> <span class="n">nchannels</span> <span class="o">*</span> <span class="p">((</span><span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="n">nplanes</span><span class="p">)</span>
+                        <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="n">nfunc</span><span class="p">,</span> <span class="n">nframes</span><span class="p">,</span> <span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">),:,:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+                        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                            <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">nfunc</span><span class="p">,</span> <span class="n">nframes</span><span class="p">,</span> <span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">),:,:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+                            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">ik</span> <span class="o">+=</span> <span class="n">nframes</span>
+                    <span class="n">iall</span> <span class="o">+=</span> <span class="n">nframes</span>
+        <span class="c1"># write ops files</span>
+    <span class="n">do_registration</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
+    <span class="n">do_nonrigid</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_registration</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]])</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="c1"># close all binary files and write ops files</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+
+<div class="viewcode-block" id="open_tiff"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.open_tiff">[docs]</a><span class="k">def</span> <span class="nf">open_tiff</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sktiff</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; opens tiff with either ScanImageTiffReader or skimage</span>
+<span class="sd">    returns tiff and its length &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">sktiff</span><span class="p">:</span>
+        <span class="n">tif</span> <span class="o">=</span> <span class="n">TiffFile</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">fastij</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">Ltif</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tif</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">tsize</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tsize</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># single page tiffs</span>
+            <span class="n">Ltif</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Ltif</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">shape</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">tif</span><span class="p">,</span> <span class="n">Ltif</span></div>
+
+<div class="viewcode-block" id="choose_tiff_reader"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.choose_tiff_reader">[docs]</a><span class="k">def</span> <span class="nf">choose_tiff_reader</span><span class="p">(</span><span class="n">fs0</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">fs0</span><span class="p">)</span>
+        <span class="n">tsize</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tsize</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># single page tiffs</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">beg</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">],</span> <span class="n">tif</span><span class="o">.</span><span class="n">shape</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">tif</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">sktiff</span><span class="o">=</span><span class="kc">False</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">sktiff</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NOTE: ScanImageTiffReader not working for this tiff type, using scikit-image&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;force_sktiff&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;force_sktiff&#39;</span><span class="p">]:</span>
+        <span class="n">sktiff</span><span class="o">=</span><span class="kc">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NOTE: user chose scikit-image for tiff reading&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sktiff</span></div>
+
+<div class="viewcode-block" id="tiff_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.tiff_to_binary">[docs]</a><span class="k">def</span> <span class="nf">tiff_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; converts tiff to *.bin file &#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39; requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file &#39;&#39;&#39;</span>
+    <span class="sd">&#39;&#39;&#39; assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2&#39;&#39;&#39;</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">tic</span><span class="p">()</span>
+    <span class="c1"># copy ops to list where each element is ops for each plane</span>
+    <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+    <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+
+    <span class="c1"># open all binary files for writing</span>
+    <span class="c1"># look for tiffs in all requested folders</span>
+    <span class="n">ops1</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span> <span class="o">=</span> <span class="n">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># try tiff readers</span>
+    <span class="n">sktiff</span> <span class="o">=</span> <span class="n">choose_tiff_reader</span><span class="p">(</span><span class="n">fs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">batch_size</span><span class="o">/</span><span class="p">(</span><span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">))</span>
+
+    <span class="c1"># loop over all tiffs</span>
+    <span class="n">which_folder</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">ntotal</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+        <span class="c1"># open tiff</span>
+        <span class="n">tif</span><span class="p">,</span> <span class="n">Ltif</span> <span class="o">=</span> <span class="n">open_tiff</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sktiff</span><span class="p">)</span>
+        <span class="c1"># keep track of the plane identity of the first frame (channel identity is assumed always 0)</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">][</span><span class="n">ik</span><span class="p">]:</span>
+            <span class="n">which_folder</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">iplane</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ix</span> <span class="o">&gt;=</span> <span class="n">Ltif</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">nfr</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">Ltif</span> <span class="o">-</span> <span class="n">ix</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
+            <span class="c1"># tiff reading</span>
+            <span class="k">if</span> <span class="n">sktiff</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">pages</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">nfr</span><span class="p">),</span> <span class="n">fastij</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Ltif</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">beg</span><span class="o">=</span><span class="n">ix</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">ix</span><span class="o">+</span><span class="n">nfr</span><span class="p">)</span>
+
+            <span class="c1"># for single-page tiffs, add 1st dim</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># check if uint16</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">im</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">im</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">nfr</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="p">[:</span><span class="n">nfr</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">nframes</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">ik</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">ix</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="n">i0</span> <span class="o">=</span> <span class="n">nchannels</span> <span class="o">*</span> <span class="p">((</span><span class="n">iplane</span><span class="o">+</span><span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="n">nplanes</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="n">nfunc</span><span class="p">:</span><span class="n">nframes</span><span class="p">:</span><span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">]</span>
+
+                <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;frames_per_folder&#39;</span><span class="p">][</span><span class="n">which_folder</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1">#print(ops1[j][&#39;frames_per_folder&#39;][which_folder])</span>
+                <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">nfunc</span><span class="p">:</span><span class="n">nframes</span><span class="p">:</span><span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">]</span>
+                    <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+
+            <span class="n">iplane</span> <span class="o">=</span> <span class="p">(</span><span class="n">iplane</span><span class="o">-</span><span class="n">nframes</span><span class="o">/</span><span class="n">nchannels</span><span class="p">)</span><span class="o">%</span><span class="n">nplanes</span>
+            <span class="n">ix</span><span class="o">+=</span><span class="n">nframes</span>
+            <span class="n">ntotal</span><span class="o">+=</span><span class="n">nframes</span>
+            <span class="k">if</span> <span class="n">ntotal</span><span class="o">%</span><span class="p">(</span><span class="n">batch_size</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> frames of binary, time </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">ntotal</span><span class="p">,</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="c1"># write ops files</span>
+    <span class="n">do_registration</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
+    <span class="n">do_nonrigid</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_registration</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]])</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="c1"># close all binary files and write ops files</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+
+<div class="viewcode-block" id="split_multiops"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.split_multiops">[docs]</a><span class="k">def</span> <span class="nf">split_multiops</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="s1">&#39;dx&#39;</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+
+<div class="viewcode-block" id="mesoscan_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.mesoscan_to_binary">[docs]</a><span class="k">def</span> <span class="nf">mesoscan_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="c1"># copy ops to list where each element is ops for each plane</span>
+    <span class="c1"># load json file with line start stops</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">tic</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;*json&#39;</span><span class="p">)</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">opsj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;nrois&#39;</span> <span class="ow">in</span> <span class="n">opsj</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;fs&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s1">&#39;nplanes&#39;</span> <span class="ow">in</span> <span class="n">opsj</span> <span class="ow">and</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">opsj</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">opsj</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opsj</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">])</span>
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: nplanes </span><span class="si">%d</span><span class="s2"> nrois </span><span class="si">%d</span><span class="s2"> =&gt; ops[&#39;nplanes&#39;] = </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">nplanes</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">nplanes</span><span class="p">))</span>
+    <span class="c1"># multiply lines across planes</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">nplanes</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">nplanes</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">nplanes</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nplanes</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">],),</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]):</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">::</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">lines</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span> <span class="o">*</span> <span class="n">nplanes</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">::</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">dy</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span> <span class="o">*</span> <span class="n">nplanes</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">::</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">dx</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span> <span class="o">*</span> <span class="n">nplanes</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">::</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nplanes</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nplanes</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+    <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="c1"># this shouldn&#39;t make it here</span>
+    <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)):</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="o">**</span><span class="n">opsj</span><span class="p">[</span><span class="n">j</span><span class="p">]}</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># open all binary files for writing</span>
+    <span class="c1"># look for tiffs in all requested folders</span>
+    <span class="n">ops1</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span> <span class="o">=</span> <span class="n">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1">#nplanes = ops1[0][&#39;nplanes&#39;]</span>
+    <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">nfunc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nfunc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+
+    <span class="c1"># which tiff reader works for user&#39;s tiffs</span>
+    <span class="n">sktiff</span> <span class="o">=</span> <span class="n">choose_tiff_reader</span><span class="p">(</span><span class="n">fs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># loop over all tiffs</span>
+    <span class="n">which_folder</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">ntotal</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+        <span class="c1"># open tiff</span>
+        <span class="n">tif</span><span class="p">,</span> <span class="n">Ltif</span> <span class="o">=</span> <span class="n">open_tiff</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sktiff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">][</span><span class="n">ik</span><span class="p">]:</span>
+            <span class="n">which_folder</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">iplane</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ix</span> <span class="o">&gt;=</span> <span class="n">Ltif</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">nfr</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">Ltif</span> <span class="o">-</span> <span class="n">ix</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sktiff</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">pages</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">nfr</span><span class="p">),</span> <span class="n">fastij</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Ltif</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">beg</span><span class="o">=</span><span class="n">ix</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">ix</span><span class="o">+</span><span class="n">nfr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="c1">#im = io.imread(file)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">nfr</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="p">[:</span><span class="n">nfr</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">nframes</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]):</span>
+                <span class="n">jlines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;lines&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+                <span class="n">jplane</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ik</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">ix</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">jlines</span><span class="p">),</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">jlines</span><span class="p">),</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                    <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">i0</span> <span class="o">=</span> <span class="n">nchannels</span> <span class="o">*</span> <span class="p">((</span><span class="n">iplane</span><span class="o">+</span><span class="n">jplane</span><span class="p">)</span><span class="o">%</span><span class="n">nplanes</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nfunc</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1">#frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)</span>
+                <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="n">nfunc</span><span class="p">:</span><span class="n">nframes</span><span class="p">:</span><span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">,</span> <span class="n">jlines</span><span class="p">[</span><span class="mi">0</span><span class="p">]:(</span><span class="n">jlines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="p">:]</span>
+                <span class="c1">#im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]</span>
+                <span class="c1">#ops1[j][&#39;meanImg&#39;] += im2write.astype(np.float32).sum(axis=0)</span>
+                <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;frames_per_folder&#39;</span><span class="p">][</span><span class="n">which_folder</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">frange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">-</span><span class="n">nfunc</span><span class="p">,</span> <span class="n">nframes</span><span class="p">,</span> <span class="n">nplanes</span><span class="o">*</span><span class="n">nchannels</span><span class="p">)</span>
+                    <span class="n">im2write</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">frange</span><span class="p">,</span> <span class="n">jlines</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">))]</span>
+                    <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
+                    <span class="c1">#ops1[j][&#39;meanImg_chan2&#39;] += im2write.astype(np.float32).sum(axis=0)</span>
+            <span class="n">iplane</span> <span class="o">=</span> <span class="p">(</span><span class="n">iplane</span><span class="o">-</span><span class="n">nframes</span><span class="o">/</span><span class="n">nchannels</span><span class="p">)</span><span class="o">%</span><span class="n">nplanes</span>
+            <span class="n">ix</span><span class="o">+=</span><span class="n">nframes</span>
+            <span class="n">ntotal</span><span class="o">+=</span><span class="n">nframes</span>
+            <span class="k">if</span> <span class="n">ntotal</span><span class="o">%</span><span class="p">(</span><span class="n">batch_size</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> frames per binary, time </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">ntotal</span><span class="p">,</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="c1"># write ops files</span>
+    <span class="n">do_registration</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
+    <span class="n">do_nonrigid</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_registration</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]])</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="c1"># close all binary files and write ops files</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]):</span>
+        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+
+<div class="viewcode-block" id="list_tifs"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.list_tifs">[docs]</a><span class="k">def</span> <span class="nf">list_tifs</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="n">look_one_level_down</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    list of tiffs in folder froot + one level down maybe</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">first_tiffs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="s2">&quot;*.tif&quot;</span><span class="p">)</span>
+    <span class="n">fs</span>  <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
+    <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="s2">&quot;*.tiff&quot;</span><span class="p">)</span>
+    <span class="n">fs2</span> <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fs2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">first_tiffs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">),),</span> <span class="s1">&#39;bool&#39;</span><span class="p">))</span>
+        <span class="n">first_tiffs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">lfs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">look_one_level_down</span><span class="p">:</span>
+        <span class="n">fdir</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">folder_down</span> <span class="ow">in</span> <span class="n">fdir</span><span class="p">:</span>
+            <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_down</span><span class="p">,</span> <span class="s2">&quot;*.tif&quot;</span><span class="p">)</span>
+            <span class="n">fs3</span> <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
+            <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_down</span><span class="p">,</span> <span class="s2">&quot;*.tiff&quot;</span><span class="p">)</span>
+            <span class="n">fs4</span> <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
+            <span class="n">fs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fs3</span><span class="p">)</span>
+            <span class="n">fs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fs4</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs3</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">fs4</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">first_tiffs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">fs3</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">fs4</span><span class="p">),),</span> <span class="s1">&#39;bool&#39;</span><span class="p">))</span>
+                <span class="n">first_tiffs</span><span class="p">[</span><span class="n">lfs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">lfs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fs</span><span class="p">,</span> <span class="n">first_tiffs</span></div>
+
+<div class="viewcode-block" id="get_tif_list"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.get_tif_list">[docs]</a><span class="k">def</span> <span class="nf">get_tif_list</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    make list of tiffs to process</span>
+<span class="sd">    if ops[&#39;subfolders&#39;], then all tiffs ops[&#39;data_path&#39;][0] / ops[&#39;subfolders&#39;] / *.tif</span>
+<span class="sd">    if ops[&#39;look_one_level_down&#39;], then all tiffs in all folders + one level down</span>
+<span class="sd">    if ops[&#39;tiff_list&#39;], then ops[&#39;data_path&#39;][0] / ops[&#39;tiff_list&#39;] ONLY</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">froot</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
+    <span class="c1"># use a user-specified list of tiffs</span>
+    <span class="k">if</span> <span class="s1">&#39;tiff_list&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">fsall</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tif</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;tiff_list&#39;</span><span class="p">]:</span>
+            <span class="n">fsall</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tif</span><span class="p">))</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">fsall</span><span class="p">),),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;** Found </span><span class="si">%d</span><span class="s1"> tifs - converting to binary **&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fsall</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">froot</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">fold_list</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fold_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">folder_down</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">]:</span>
+                    <span class="n">fold</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">folder_down</span><span class="p">)</span>
+                    <span class="n">fold_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fold_list</span> <span class="o">=</span> <span class="n">froot</span>
+        <span class="n">fsall</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nfs</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">first_tiffs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">fld</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fold_list</span><span class="p">):</span>
+            <span class="n">fs</span><span class="p">,</span> <span class="n">ftiffs</span> <span class="o">=</span> <span class="n">list_tifs</span><span class="p">(</span><span class="n">fld</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;look_one_level_down&#39;</span><span class="p">])</span>
+            <span class="n">fsall</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+            <span class="n">first_tiffs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ftiffs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not find any tiffs&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;no tiffs&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;first_tiffs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">first_tiffs</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;** Found </span><span class="si">%d</span><span class="s1"> tifs - converting to binary **&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fsall</span><span class="p">)))</span>
+            <span class="c1">#print(&#39;Found %d tifs&#39;%(len(fsall)))</span>
+    <span class="k">return</span> <span class="n">fsall</span><span class="p">,</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="sub2ind"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.sub2ind">[docs]</a><span class="k">def</span> <span class="nf">sub2ind</span><span class="p">(</span><span class="n">array_shape</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">):</span>
+    <span class="n">inds</span> <span class="o">=</span> <span class="n">rows</span> <span class="o">*</span> <span class="n">array_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">cols</span>
+    <span class="k">return</span> <span class="n">inds</span></div>
+
+<div class="viewcode-block" id="combined"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.combined">[docs]</a><span class="k">def</span> <span class="nf">combined</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Combines all the entries in ops1 into a single result file.</span>
+<span class="sd">    Multi-plane recordings are arranged to best tile a square.</span>
+<span class="sd">    Multi-roi recordings are arranged by their dx,dy physical localization.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;dx&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s1">&#39;dy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">):</span>
+        <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+        <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+        <span class="n">nX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">))</span><span class="o">/</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">])</span>
+        <span class="n">nX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nX</span><span class="p">)</span>
+        <span class="n">nY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)</span><span class="o">/</span><span class="n">nX</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)):</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">%</span><span class="n">nX</span><span class="p">)</span> <span class="o">*</span> <span class="n">Lx</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">j</span><span class="o">/</span><span class="n">nX</span><span class="p">)</span> <span class="o">*</span> <span class="n">Ly</span>
+    <span class="n">LY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">])))</span>
+    <span class="n">LX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">])))</span>
+    <span class="n">meanImg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+    <span class="n">meanImgE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">meanImg_chan2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s1">&#39;meanImg_chan2_corrected&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">meanImg_chan2_corrected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s1">&#39;max_proj&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">max_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+
+    <span class="n">Vcorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">LY</span><span class="p">,</span> <span class="n">LX</span><span class="p">))</span>
+    <span class="n">Nfr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">ops</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span>
+        <span class="n">stat0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;stat.npy&#39;</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">xrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">])</span>
+        <span class="n">yrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">])</span>
+        <span class="n">meanImg</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span>
+        <span class="n">meanImgE</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImgE&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">meanImg_chan2</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;meanImg_chan2_corrected&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="n">meanImg_chan2_corrected</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2_corrected&#39;</span><span class="p">]</span>
+
+        <span class="n">xrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">yrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">Vcorr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Vcorr&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;max_proj&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="n">max_proj</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;max_proj&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stat0</span><span class="p">)):</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;med&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;med&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="n">F0</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;F.npy&#39;</span><span class="p">))</span>
+        <span class="n">Fneu0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;Fneu.npy&#39;</span><span class="p">))</span>
+        <span class="n">spks0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;spks.npy&#39;</span><span class="p">))</span>
+        <span class="n">iscell0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;iscell.npy&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;redcell.npy&#39;</span><span class="p">)):</span>
+            <span class="n">redcell0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;redcell.npy&#39;</span><span class="p">))</span>
+            <span class="n">hasred</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">redcell0</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">hasred</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">nn</span><span class="p">,</span><span class="n">nt</span> <span class="o">=</span> <span class="n">F0</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">nt</span><span class="o">&lt;</span><span class="n">Nfr</span><span class="p">:</span>
+            <span class="n">fcat</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nn</span><span class="p">,</span><span class="n">Nfr</span><span class="o">-</span><span class="n">nt</span><span class="p">),</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+            <span class="c1">#print(F0.shape)</span>
+            <span class="c1">#print(fcat.shape)</span>
+            <span class="n">F0</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">F0</span><span class="p">,</span> <span class="n">fcat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">spks0</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">spks0</span><span class="p">,</span> <span class="n">fcat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">Fneu0</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Fneu0</span><span class="p">,</span> <span class="n">fcat</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">F</span><span class="p">,</span> <span class="n">Fneu</span><span class="p">,</span> <span class="n">spks</span><span class="p">,</span><span class="n">stat</span><span class="p">,</span><span class="n">iscell</span><span class="p">,</span><span class="n">redcell</span> <span class="o">=</span> <span class="n">F0</span><span class="p">,</span> <span class="n">Fneu0</span><span class="p">,</span> <span class="n">spks0</span><span class="p">,</span><span class="n">stat0</span><span class="p">,</span> <span class="n">iscell0</span><span class="p">,</span> <span class="n">redcell0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">F</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">F</span><span class="p">,</span> <span class="n">F0</span><span class="p">))</span>
+            <span class="n">Fneu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Fneu</span><span class="p">,</span> <span class="n">Fneu0</span><span class="p">))</span>
+            <span class="n">spks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">spks</span><span class="p">,</span> <span class="n">spks0</span><span class="p">))</span>
+            <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">stat</span><span class="p">,</span><span class="n">stat0</span><span class="p">))</span>
+            <span class="n">iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">iscell</span><span class="p">,</span><span class="n">iscell0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">hasred</span><span class="p">:</span>
+                <span class="n">redcell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">redcell</span><span class="p">,</span><span class="n">redcell0</span><span class="p">))</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">meanImg</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImgE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImgE</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg_chan2</span>
+    <span class="k">if</span> <span class="s1">&#39;meanImg_chan2_corrected&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2_corrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg_chan2_corrected</span>
+    <span class="k">if</span> <span class="s1">&#39;max_proj&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;max_proj&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_proj</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Vcorr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Vcorr</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LY</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LX</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">],</span> <span class="s1">&#39;combined&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;combined&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fpath</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;F.npy&#39;</span><span class="p">),</span> <span class="n">F</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;Fneu.npy&#39;</span><span class="p">),</span> <span class="n">Fneu</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;spks.npy&#39;</span><span class="p">),</span> <span class="n">spks</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;ops.npy&#39;</span><span class="p">),</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;stat.npy&#39;</span><span class="p">),</span> <span class="n">stat</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;iscell.npy&#39;</span><span class="p">),</span> <span class="n">iscell</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hasred</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;redcell.npy&#39;</span><span class="p">),</span> <span class="n">redcell</span><span class="p">)</span>
+
+    <span class="c1"># save as matlab file</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;save_mat&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_mat&#39;</span><span class="p">]:</span>
+        <span class="n">matpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;Fall.mat&#39;</span><span class="p">)</span>
+        <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;stat&#39;</span><span class="p">:</span> <span class="n">stat</span><span class="p">,</span>
+                                    <span class="s1">&#39;ops&#39;</span><span class="p">:</span> <span class="n">ops</span><span class="p">,</span>
+                                    <span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="n">F</span><span class="p">,</span>
+                                    <span class="s1">&#39;Fneu&#39;</span><span class="p">:</span> <span class="n">Fneu</span><span class="p">,</span>
+                                    <span class="s1">&#39;spks&#39;</span><span class="p">:</span> <span class="n">spks</span><span class="p">,</span>
+                                    <span class="s1">&#39;iscell&#39;</span><span class="p">:</span> <span class="n">iscell</span><span class="p">,</span>
+                                    <span class="s1">&#39;redcell&#39;</span><span class="p">:</span> <span class="n">redcell</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="make_blocks"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.make_blocks">[docs]</a><span class="k">def</span> <span class="nf">make_blocks</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="c1">## split FOV into blocks to register separately</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;maxregshiftNR&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;maxregshiftNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="s1">&#39;block_size&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">]</span>
+
+    <span class="n">ny</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">Ly</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">Lx</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">Ly</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ly</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">Lx</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Lx</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">ystart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Ly</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ny</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">xstart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Lx</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">nx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yblock&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xblock&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+            <span class="n">yind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ystart</span><span class="p">[</span><span class="n">iy</span><span class="p">],</span> <span class="n">ystart</span><span class="p">[</span><span class="n">iy</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">xind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xstart</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">xstart</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">+</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;block_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yblock&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yind</span><span class="p">)</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xblock&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xind</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">ny</span><span class="p">,</span> <span class="n">nx</span><span class="p">]</span>
+
+    <span class="n">ys</span><span class="p">,</span> <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">))</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="n">ys</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">xs</span> <span class="o">=</span> <span class="n">xs</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="p">(</span><span class="n">ys</span> <span class="o">-</span> <span class="n">ys</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">xs</span> <span class="o">-</span> <span class="n">xs</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">ds</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">R</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;NRsm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="sample_frames"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.sample_frames">[docs]</a><span class="k">def</span> <span class="nf">sample_frames</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; get frames ix from reg_file</span>
+<span class="sd">        frames are cropped by ops[&#39;yrange&#39;] and ops[&#39;xrange&#39;]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">nbytesread</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">Lyc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Lxc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">),</span> <span class="n">Lyc</span><span class="p">,</span> <span class="n">Lxc</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="c1"># load and bin data</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reg_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">)):</span>
+            <span class="n">reg_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">nbytesread</span><span class="o">*</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
+            <span class="n">mov</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">mov</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

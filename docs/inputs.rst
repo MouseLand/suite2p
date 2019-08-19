@@ -1,10 +1,13 @@
+Inputs
+-------------------------
+
 Input format
-------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This applies to all file types!
 
 Directory structure
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 suite2p looks for all tiffs/hdf5 in the folders listed in
 ``ops['data_path']``. If you want suite2p to look in those folders AND
@@ -20,7 +23,7 @@ processed in ``ops['tiff_list']``.
 See examples in this `notebook`_.
 
 Frame ordering
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you have data with multiple planes and/or multiple channels, suite2p
 expects the frames to be interleaved, e.g.
@@ -38,7 +41,7 @@ channels are ones-based (channel 1 and 2 NOT 0 and 1).
 .. _recordings-with-photostim--other-artifacts:
 
 Recordings with photostim / other artifacts
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Photostim and other artifacts require you to exclude these frames during
 ROI detection. Otherwise there will be "ROIs" that are related to the
@@ -57,10 +60,10 @@ Put this file into the first folder in your ops['data_path'] (the first
 folder you choose in the GUI).
 
 Different file types
---------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Tiffs
-~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Most tiffs should work out of the box. suite2p relies on two external
 tiff readers: `scanimage-tiff-reader`_ and `sklearn.external.tifffile`_.
@@ -86,7 +89,7 @@ imageJ and suite2p can recognize (see matlab tiff writing
 `here <https://www.mathworks.com/help/matlab/ref/tiff.write.html>`__).
 
 Mesoscope tiffs
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We have a matlab script
 `here <https://github.com/MouseLand/suite2p/blob/master/helpers/mesoscope_json_from_scanimage.m>`__
@@ -103,7 +106,7 @@ running, this parameter will change to "nplanes \* nrois" and each
 you're using this and having trouble because it's not straightforward.
 
 Thorlabs raw files
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Christoph Schmidt-Hieber (@neurodroid) has written `haussmeister`_ which
 can load and convert ThorLabs \*.raw files to suite2p binary files!
@@ -113,7 +116,7 @@ suite2p will automatically use this if you have pip installed it
 .. _hdf5-files-and-sbx:
 
 HDF5 files (and \*.sbx)
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These should work out of the box, but are less well-tested. Dario
 Ringach has a utility to convert neurolabware \*.sbx files to \*.h5

@@ -42,7 +42,6 @@ can install it as ``pip install suite2p``
    :caption: Basics:
 
    installation
-   dependencies
    inputs
    settings
    gui
@@ -52,7 +51,7 @@ can install it as ``pip install suite2p``
 .. toctree::
    :maxdepth: 3
    :caption: How it works:
-   
+
    registration
    celldetection
    roiextraction

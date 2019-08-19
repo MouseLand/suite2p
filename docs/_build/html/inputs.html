@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Input format &mdash; suite2p 0.6.17 documentation</title>
+  <title>Inputs &mdash; suite2p 0.6.17 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Settings (ops.npy)" href="settings.html" />
-    <link rel="prev" title="Dependencies" href="dependencies.html" /> 
+    <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -84,18 +84,20 @@
               <p class="caption"><span class="caption-text">Basics:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Input format</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#directory-structure">Directory structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#frame-ordering">Frame ordering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#recordings-with-photostim-other-artifacts">Recordings with photostim / other artifacts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#input-format">Input format</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#directory-structure">Directory structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#frame-ordering">Frame ordering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recordings-with-photostim-other-artifacts">Recordings with photostim / other artifacts</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#different-file-types">Different file types</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#tiffs">Tiffs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mesoscope-tiffs">Mesoscope tiffs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#thorlabs-raw-files">Thorlabs raw files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#hdf5-files-and-sbx">HDF5 files (and *.sbx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#different-file-types">Different file types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tiffs">Tiffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mesoscope-tiffs">Mesoscope tiffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thorlabs-raw-files">Thorlabs raw files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hdf5-files-and-sbx">HDF5 files (and *.sbx)</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
@@ -155,7 +157,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Input format</li>
+      <li>Inputs</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -174,11 +176,13 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="input-format">
-<h1>Input format<a class="headerlink" href="#input-format" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="inputs">
+<h1>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="input-format">
+<h2>Input format<a class="headerlink" href="#input-format" title="Permalink to this headline">¶</a></h2>
 <p>This applies to all file types!</p>
 <div class="section" id="directory-structure">
-<h2>Directory structure<a class="headerlink" href="#directory-structure" title="Permalink to this headline">¶</a></h2>
+<h3>Directory structure<a class="headerlink" href="#directory-structure" title="Permalink to this headline">¶</a></h3>
 <p>suite2p looks for all tiffs/hdf5 in the folders listed in
 <code class="docutils literal notranslate"><span class="pre">ops['data_path']</span></code>. If you want suite2p to look in those folders AND
 all their children folders, set <code class="docutils literal notranslate"><span class="pre">ops['look_one_level_down']=True</span></code>. If
@@ -191,7 +195,7 @@ processed in <code class="docutils literal notranslate"><span class="pre">ops['t
 <p>See examples in this <a class="reference external" href="https://github.com/MouseLand/suite2p/blob/master/jupyter/run_pipeline_tiffs_or_batch.ipynb">notebook</a>.</p>
 </div>
 <div class="section" id="frame-ordering">
-<h2>Frame ordering<a class="headerlink" href="#frame-ordering" title="Permalink to this headline">¶</a></h2>
+<h3>Frame ordering<a class="headerlink" href="#frame-ordering" title="Permalink to this headline">¶</a></h3>
 <p>If you have data with multiple planes and/or multiple channels, suite2p
 expects the frames to be interleaved, e.g.</p>
 <ul class="simple">
@@ -206,7 +210,7 @@ expects the frames to be interleaved, e.g.</p>
 <p>channels are ones-based (channel 1 and 2 NOT 0 and 1).</p>
 </div>
 <div class="section" id="recordings-with-photostim-other-artifacts">
-<span id="id1"></span><h2>Recordings with photostim / other artifacts<a class="headerlink" href="#recordings-with-photostim-other-artifacts" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h3>Recordings with photostim / other artifacts<a class="headerlink" href="#recordings-with-photostim-other-artifacts" title="Permalink to this headline">¶</a></h3>
 <p>Photostim and other artifacts require you to exclude these frames during
 ROI detection. Otherwise there will be “ROIs” that are related to the
 stimulation, not actually cells. To exclude them, make an array of
@@ -223,9 +227,9 @@ folder you choose in the GUI).</p>
 </div>
 </div>
 <div class="section" id="different-file-types">
-<h1>Different file types<a class="headerlink" href="#different-file-types" title="Permalink to this headline">¶</a></h1>
+<h2>Different file types<a class="headerlink" href="#different-file-types" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="tiffs">
-<h2>Tiffs<a class="headerlink" href="#tiffs" title="Permalink to this headline">¶</a></h2>
+<h3>Tiffs<a class="headerlink" href="#tiffs" title="Permalink to this headline">¶</a></h3>
 <p>Most tiffs should work out of the box. suite2p relies on two external
 tiff readers: <a class="reference external" href="http://scanimage.gitlab.io/ScanImageTiffReaderDocs/">scanimage-tiff-reader</a> and <a class="reference external" href="http://scikit-image.org/docs/dev/api/skimage.external.tifffile.html">sklearn.external.tifffile</a>.
 The default is the scanimage one, but it will use the other one if it
@@ -247,7 +251,7 @@ imageJ and suite2p can recognize (see matlab tiff writing
 <a class="reference external" href="https://www.mathworks.com/help/matlab/ref/tiff.write.html">here</a>).</p>
 </div>
 <div class="section" id="mesoscope-tiffs">
-<h2>Mesoscope tiffs<a class="headerlink" href="#mesoscope-tiffs" title="Permalink to this headline">¶</a></h2>
+<h3>Mesoscope tiffs<a class="headerlink" href="#mesoscope-tiffs" title="Permalink to this headline">¶</a></h3>
 <p>We have a matlab script
 <a class="reference external" href="https://github.com/MouseLand/suite2p/blob/master/helpers/mesoscope_json_from_scanimage.m">here</a>
 for extracting the parameters from scanimage tiffs collected from the
@@ -263,14 +267,14 @@ running, this parameter will change to “nplanes * nrois” and each
 you’re using this and having trouble because it’s not straightforward.</p>
 </div>
 <div class="section" id="thorlabs-raw-files">
-<h2>Thorlabs raw files<a class="headerlink" href="#thorlabs-raw-files" title="Permalink to this headline">¶</a></h2>
+<h3>Thorlabs raw files<a class="headerlink" href="#thorlabs-raw-files" title="Permalink to this headline">¶</a></h3>
 <p>Christoph Schmidt-Hieber (&#64;neurodroid) has written <a class="reference external" href="https://github.com/neurodroid/haussmeister">haussmeister</a> which
 can load and convert ThorLabs *.raw files to suite2p binary files!
 suite2p will automatically use this if you have pip installed it
 (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">haussmeister</span></code>).</p>
 </div>
 <div class="section" id="hdf5-files-and-sbx">
-<span id="id2"></span><h2>HDF5 files (and *.sbx)<a class="headerlink" href="#hdf5-files-and-sbx" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h3>HDF5 files (and *.sbx)<a class="headerlink" href="#hdf5-files-and-sbx" title="Permalink to this headline">¶</a></h3>
 <p>These should work out of the box, but are less well-tested. Dario
 Ringach has a utility to convert neurolabware *.sbx files to *.h5
 files (see blog post
@@ -280,6 +284,7 @@ directory. Then for your ‘h5path’ set it to one of those *.h5 files.
 Then if ops[‘look_one_level_down’] = 1, it processes ALL the h5 files in
 that same directory. Also make sure they all have the same key for the
 data.</p>
+</div>
 </div>
 </div>
 
@@ -294,7 +299,7 @@ data.</p>
         <a href="settings.html" class="btn btn-neutral float-right" title="Settings (ops.npy)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="dependencies.html" class="btn btn-neutral float-left" title="Dependencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

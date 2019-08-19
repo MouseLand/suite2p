@@ -528,9 +528,9 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         nfr += data.shape[0]
         k += 1
         if k%5==0:
-            print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], toc(t0)))
+            print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
-    print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], toc(t0)))
+    print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
     # mean image across all frames
     if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
@@ -606,7 +606,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         ops['meanImg'] = meanImg/k
     else:
         ops['meanImg_chan2'] = meanImg/k
-    print('Registered second channel in %0.2f sec.'%(toc(t0)))
+    print('Registered second channel in %0.2f sec.'%(time.time()-t0))
 
     reg_file_alt.close()
     if raw:
@@ -640,7 +640,7 @@ def register_binary(ops, refImg=None):
     else:
         t0 = time.time()
         refImg = pick_init(ops)
-        print('Reference frame, %0.2f sec.'%(toc(t0)))
+        print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
     # get binary file paths
@@ -741,7 +741,7 @@ def register_npy(Z, ops):
 
         k += 1
         if k%5==0:
-            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], toc(k0)))
+            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], time.time()-k0))
 
     # compute some potentially useful info
     ops['th_badframes'] = 100

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Dependencies &mdash; suite2p 0.6.17 documentation</title>
+  <title>Spike deconvolution &mdash; suite2p 0.6.17 documentation</title>
   
 
   
@@ -36,8 +36,7 @@
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Input format" href="inputs.html" />
-    <link rel="prev" title="Installation" href="installation.html" /> 
+    <link rel="prev" title="Signal extraction" href="roiextraction.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -82,9 +81,9 @@
             
             
               <p class="caption"><span class="caption-text">Basics:</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Input format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html#different-file-types">Different file types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
@@ -93,11 +92,11 @@
 <li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="registration.html">Registration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spike deconvolution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
 </ul>
 
@@ -144,13 +143,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Dependencies</li>
+      <li>Spike deconvolution</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/dependencies.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/deconvolution.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -163,22 +162,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="dependencies">
-<h1>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference external" href="https://github.com/MouseLand/rastermap">rastermap</a></p></li>
-<li><p><a class="reference external" href="http://pyqtgraph.org/">pyqtgraph</a></p></li>
-<li><p><a class="reference external" href="http://pyqt.sourceforge.net/Docs/PyQt5/">PyQt5</a></p></li>
-<li><p><a class="reference external" href="http://www.numpy.org/">numpy</a> (&gt;=1.13.0)</p></li>
-<li><p><a class="reference external" href="https://www.scipy.org/">scipy</a></p></li>
-<li><p><a class="reference external" href="https://www.h5py.org/">h5py</a></p></li>
-<li><p><a class="reference external" href="https://scikit-image.org/">scikit-image</a></p></li>
-<li><p><a class="reference external" href="http://scikit-learn.org/stable/">scikit-learn</a></p></li>
-<li><p><a class="reference external" href="http://scanimage.gitlab.io/ScanImageTiffReaderDocs/">scanimage-tiff-reader</a></p></li>
-<li><p><a class="reference external" href="https://natsort.readthedocs.io/en/master/">natsort</a></p></li>
-<li><p><a class="reference external" href="https://matplotlib.org/">matplotlib</a> (not for plotting (only using hsv_to_rgb and colormap
-function), should not conflict with PyQt5)</p></li>
-</ul>
+  <div class="section" id="spike-deconvolution">
+<h1>Spike deconvolution<a class="headerlink" href="#spike-deconvolution" title="Permalink to this headline">¶</a></h1>
+<p>Our spike deconvolution in the pipeline is based on the OASIS algorithm
+(see <a class="reference external" href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423">OASIS paper</a>). We run it with only a non-negativity constraint -
+no L0/L1 constraints (see this <a class="reference external" href="http://www.jneurosci.org/content/38/37/7976">paper</a> for more details on why).</p>
+<p>We first baseline the traces using the rolling max of the rolling min.
+Here is an example of how the pipeline processes the traces (and how to
+run your own data separately if you want):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># compute deconvolution</span>
+<span class="kn">from</span> <span class="nn">suite2p</span> <span class="k">import</span> <span class="n">dcnv</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">tau</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># timescale of indicator</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="mf">30.0</span> <span class="c1"># sampling rate in Hz</span>
+<span class="n">neucoeff</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="c1"># neuropil coefficient</span>
+<span class="c1"># for computing and subtracting baseline</span>
+<span class="n">baseline</span> <span class="o">=</span> <span class="s1">&#39;maximin&#39;</span> <span class="c1"># take the running max of the running min after smoothing with gaussian</span>
+<span class="n">sig_baseline</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="c1"># in bins, standard deviation of gaussian with which to smooth</span>
+<span class="n">win_baseline</span> <span class="o">=</span> <span class="mf">60.0</span> <span class="c1"># in seconds, window in which to compute max/min filters</span>
+
+<span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tau&#39;</span><span class="p">:</span> <span class="n">tau</span><span class="p">,</span> <span class="s1">&#39;fs&#39;</span><span class="p">:</span> <span class="n">fs</span><span class="p">,</span> <span class="s1">&#39;neucoeff&#39;</span><span class="p">:</span> <span class="n">neucoeff</span><span class="p">,</span>
+       <span class="s1">&#39;baseline&#39;</span><span class="p">:</span> <span class="n">baseline</span><span class="p">,</span> <span class="s1">&#39;sig_baseline&#39;</span><span class="p">:</span> <span class="n">sig_baseline</span><span class="p">,</span> <span class="s1">&#39;win_baseline&#39;</span><span class="p">:</span> <span class="n">win_baseline</span><span class="p">}</span>
+
+<span class="c1"># load traces and subtract neuropil</span>
+<span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;F.npy&#39;</span><span class="p">)</span>
+<span class="n">Fneu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;Fneu.npy&#39;</span><span class="p">)</span>
+<span class="n">Fc</span> <span class="o">=</span> <span class="n">F</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;neucoeff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">Fneu</span>
+
+<span class="c1"># baseline operation</span>
+<span class="n">Fc</span> <span class="o">=</span> <span class="n">dcnv</span><span class="o">.</span><span class="n">preprocess</span><span class="p">(</span><span class="n">Fc</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+
+<span class="c1"># get spikes</span>
+<span class="n">spks</span> <span class="o">=</span> <span class="n">dcnv</span><span class="o">.</span><span class="n">oasis</span><span class="p">(</span><span class="n">Fc</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 
 
@@ -189,10 +207,8 @@ function), should not conflict with PyQt5)</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="inputs.html" class="btn btn-neutral float-right" title="Input format" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="roiextraction.html" class="btn btn-neutral float-left" title="Signal extraction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

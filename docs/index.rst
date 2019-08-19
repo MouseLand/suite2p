@@ -38,13 +38,22 @@ can install it as ``pip install suite2p``
 * :ref:`genindex`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Basics:
 
    installation
+   dependencies
    inputs
    settings
    gui
    outputs
    multiday
-   dependencies
+
+.. toctree::
+   :maxdepth: 3
+   :caption: How it works:
+   
+   registration
+   celldetection
+   roiextraction
+   deconvolution

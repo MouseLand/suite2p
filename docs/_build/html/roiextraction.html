@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Dependencies &mdash; suite2p 0.6.17 documentation</title>
+  <title>Signal extraction &mdash; suite2p 0.6.17 documentation</title>
   
 
   
@@ -36,8 +36,8 @@
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Input format" href="inputs.html" />
-    <link rel="prev" title="Installation" href="installation.html" /> 
+    <link rel="next" title="Spike deconvolution" href="deconvolution.html" />
+    <link rel="prev" title="Cell detection" href="celldetection.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -82,9 +82,9 @@
             
             
               <p class="caption"><span class="caption-text">Basics:</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Input format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html#different-file-types">Different file types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
@@ -93,10 +93,10 @@
 <li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="registration.html">Registration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
 </ul>
@@ -144,13 +144,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Dependencies</li>
+      <li>Signal extraction</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/dependencies.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/roiextraction.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -163,22 +163,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="dependencies">
-<h1>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference external" href="https://github.com/MouseLand/rastermap">rastermap</a></p></li>
-<li><p><a class="reference external" href="http://pyqtgraph.org/">pyqtgraph</a></p></li>
-<li><p><a class="reference external" href="http://pyqt.sourceforge.net/Docs/PyQt5/">PyQt5</a></p></li>
-<li><p><a class="reference external" href="http://www.numpy.org/">numpy</a> (&gt;=1.13.0)</p></li>
-<li><p><a class="reference external" href="https://www.scipy.org/">scipy</a></p></li>
-<li><p><a class="reference external" href="https://www.h5py.org/">h5py</a></p></li>
-<li><p><a class="reference external" href="https://scikit-image.org/">scikit-image</a></p></li>
-<li><p><a class="reference external" href="http://scikit-learn.org/stable/">scikit-learn</a></p></li>
-<li><p><a class="reference external" href="http://scanimage.gitlab.io/ScanImageTiffReaderDocs/">scanimage-tiff-reader</a></p></li>
-<li><p><a class="reference external" href="https://natsort.readthedocs.io/en/master/">natsort</a></p></li>
-<li><p><a class="reference external" href="https://matplotlib.org/">matplotlib</a> (not for plotting (only using hsv_to_rgb and colormap
-function), should not conflict with PyQt5)</p></li>
-</ul>
+  <div class="section" id="signal-extraction">
+<h1>Signal extraction<a class="headerlink" href="#signal-extraction" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -189,10 +175,10 @@ function), should not conflict with PyQt5)</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="inputs.html" class="btn btn-neutral float-right" title="Input format" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="deconvolution.html" class="btn btn-neutral float-right" title="Spike deconvolution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="celldetection.html" class="btn btn-neutral float-left" title="Cell detection" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

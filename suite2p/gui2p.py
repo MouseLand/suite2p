@@ -88,7 +88,7 @@ class MainW(QtGui.QMainWindow):
 
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
-            "Load behavior or stim trace (1D only)", self
+            "Load behavior or stim traces", self
         )
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)

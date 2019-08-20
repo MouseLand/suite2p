@@ -1313,7 +1313,7 @@ class MainW(QtGui.QMainWindow):
             beh = np.load(name)
             bresample=False
             if beh.ndim>1:
-                if beh.shape[1] < 2:
+                if beh.shape[1] < 10:
                     beh = beh.flatten()
                     if beh.shape[0] == self.Fcell.shape[1]:
                         self.bloaded = True
@@ -1331,17 +1331,18 @@ class MainW(QtGui.QMainWindow):
                 RuntimeError, TypeError, NameError):
             print("ERROR: this is not a 1D array with length of data")
         if self.bloaded:
-            beh -= beh.min()
-            beh /= beh.max()
-            self.beh = beh
-            self.beh_time = beh_time
-            if bresample:
-                self.beh_resampled = resample_frames(self.beh, self.beh_time, np.arange(0,self.Fcell.shape[1]))
-            else:
-                self.beh_resampled = self.beh
-            b = len(self.colors)
-            self.colorbtns.button(b).setEnabled(True)
-            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            for ind in range(beh.shape[1]):
+                beh[:,ind] -= beh[:,ind].min()
+                beh[:,ind] /= beh[:,ind].max()
+                self.beh[:,ind] = beh[:,ind]
+                self.beh_time = beh_time
+                if bresample:
+                    self.beh_resampled[:,ind] = resample_frames(self.beh[:,ind], self.beh_time, np.arange(0,self.Fcell.shape[1]))
+                else:
+                    self.beh_resampled[:,ind] = self.beh[:,ind]
+                b = len(self.colors)
+                self.colorbtns.button(b).setEnabled(True)
+                self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
             fig.beh_masks(self)
             fig.plot_trace(self)
             self.show()

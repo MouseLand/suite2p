@@ -70,7 +70,8 @@ def plot_trace(parent):
         if parent.bloaded:
             favg -= favg.min()
             favg /= favg.max()
-            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+            for ind in range(parent.beh.shape[1]):
+                parent.p3.plot(parent.beh_time,-1*bsc*(ind+1)+parent.beh[:,ind]*bsc,pen='w')
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
@@ -624,7 +625,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

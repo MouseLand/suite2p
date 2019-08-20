@@ -6,9 +6,10 @@ import sys
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
 
+
 class ViewButton(QtGui.QPushButton):
     def __init__(self, bid, Text, parent=None):
-        super(ViewButton,self).__init__(parent)
+        super(ViewButton, self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
         self.setStyleSheet(parent.styleUnpressed)
@@ -16,24 +17,15 @@ class ViewButton(QtGui.QPushButton):
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
+
     def press(self, parent, bid):
         for b in range(len(parent.views)):
             if parent.viewbtns.button(b).isEnabled():
                 parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
-        im0 = np.zeros((parent.Ly, parent.Lx), np.float32)
-        if bid==0:
-            parent.img0.setImage(parent.ops['meanImg'])
-        elif bid==1:
-            parent.img0.setImage(parent.ops['meanImgE'])
-        elif bid==2:
-            im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['Vcorr']
-            parent.img0.setImage(im0)
-        else:
-            im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['max_proj']
-            parent.img0.setImage(im0)
+
+        parent.img0.setImage(parent.masked_images[:, :, :, bid])
+
         parent.win.show()
         parent.show()
 
@@ -42,12 +34,12 @@ class ROIDraw(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(ROIDraw, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
-        self.setGeometry(70,70,1400,800)
+        self.setGeometry(70, 70, 1400, 800)
         self.setWindowTitle('extract ROI activity')
         self.cwidget = QtGui.QWidget(self)
         self.setCentralWidget(self.cwidget)
         self.l0 = QtGui.QGridLayout()
-        #layout = QtGui.QFormLayout()
+        # layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
         self.stylePressed = ("QPushButton {Text-align: left; "
                              "background-color: rgb(100,50,100); "
@@ -56,30 +48,30 @@ class ROIDraw(QtGui.QMainWindow):
                                "background-color: rgb(50,50,50); "
                                "color:white;}")
 
-        #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
+        # self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
         # --- cells image
         self.win = pg.GraphicsLayoutWidget()
-        self.l0.addWidget(self.win,3,0,13,14)
+        self.l0.addWidget(self.win, 3, 0, 13, 14)
         layout = self.win.ci.layout
         # A plot area (ViewBox + axes) for displaying the image
-        self.p1 = self.win.addPlot(row=0,col=1)
-        self.p1.setMouseEnabled(x=True,y=False)
+        self.p1 = self.win.addPlot(row=0, col=1)
+        self.p1.setMouseEnabled(x=True, y=False)
         self.p1.setMenuEnabled(False)
         self.p1.scene().sigMouseMoved.connect(self.mouse_moved)
 
-        self.p0 = self.win.addViewBox(name='plot1',lockAspect=True,row=0,col=0,invertY=True)
-        self.img0=pg.ImageItem()
+        self.p0 = self.win.addViewBox(name='plot1', lockAspect=True, row=0, col=0, invertY=True)
+        self.img0 = pg.ImageItem()
         self.p0.addItem(self.img0)
-        self.img0.setImage(parent.ops['meanImg'])
+
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
         self.instructions = QtGui.QLabel("Add ROI: button / SHIFT+CLICK")
         self.instructions.setStyleSheet("color: white;")
-        self.l0.addWidget(self.instructions,0,0,1,4)
+        self.l0.addWidget(self.instructions, 0, 0, 1, 4)
         self.instructions = QtGui.QLabel("Remove last clicked ROI: DELETE")
         self.instructions.setStyleSheet("color: white;")
-        self.l0.addWidget(self.instructions,1,0,1,4)
+        self.l0.addWidget(self.instructions, 1, 0, 1, 4)
 
         self.addROI = QtGui.QPushButton("add ROI")
         self.addROI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
@@ -87,24 +79,24 @@ class ROIDraw(QtGui.QMainWindow):
         self.addROI.setEnabled(True)
         self.addROI.setFixedWidth(60)
         self.addROI.setStyleSheet(self.styleUnpressed)
-        self.l0.addWidget(self.addROI,2,0,1,1)
+        self.l0.addWidget(self.addROI, 2, 0, 1, 1)
         lbl = QtGui.QLabel('diameter:')
         lbl.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         lbl.setStyleSheet("color: white;")
         lbl.setFixedWidth(60)
-        self.l0.addWidget(lbl,2,1,1,1)
+        self.l0.addWidget(lbl, 2, 1, 1, 1)
         self.diam = QtGui.QLineEdit(self)
         self.diam.setValidator(QtGui.QIntValidator(0, 10000))
         self.diam.setText("12")
         self.diam.setFixedWidth(35)
         self.diam.setAlignment(QtCore.Qt.AlignRight)
-        self.l0.addWidget(self.diam, 2,2,1,1)
+        self.l0.addWidget(self.diam, 2, 2, 1, 1)
         self.procROI = QtGui.QPushButton("extract ROIs")
         self.procROI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.procROI.clicked.connect(lambda: self.proc_ROI(parent))
         self.procROI.setStyleSheet(self.styleUnpressed)
         self.procROI.setEnabled(True)
-        self.l0.addWidget(self.procROI,3,0,1,3)
+        self.l0.addWidget(self.procROI, 3, 0, 1, 3)
         self.l0.addWidget(QtGui.QLabel(""), 4, 0, 1, 3)
         self.l0.setRowStretch(4, 1)
 
@@ -121,11 +113,11 @@ class ROIDraw(QtGui.QMainWindow):
             self.l0.addWidget(btn, b, 3, 1, 2)
             btn.setEnabled(True)
             b += 1
-        b=0
+        b = 0
         self.viewbtns.button(b).setChecked(True)
         self.viewbtns.button(b).setStyleSheet(self.stylePressed)
 
-        self.l0.addWidget(QtGui.QLabel("neuropil"), 13,13,1,1)
+        self.l0.addWidget(QtGui.QLabel("neuropil"), 13, 13, 1, 1)
 
         self.ops = parent.ops
         self.Ly = self.ops['Ly']
@@ -133,6 +125,58 @@ class ROIDraw(QtGui.QMainWindow):
         self.ROIs = []
         self.cell_pos = []
         self.extracted = False
+        self.iscell = parent.iscell
+
+        # Get maskf for pixels that are cells
+        self.masked_images = self.normalize_img_add_masks(parent)
+        # Mean image as default
+        self.img0.setImage(self.masked_images[:, :, :, 0])
+
+    def normalize_img_add_masks(self, parent):
+        masked_image = np.zeros(((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
+        for i in np.arange(4):  # 4 because 4 buttons
+            print(i)
+            if i == 0:
+                mimg = parent.ops['meanImg']
+            elif i == 1:
+                mimg = parent.ops['meanImgE']
+            elif i == 2:
+                im0 = np.zeros((self.Ly, self.Lx), np.float32)
+                im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
+                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['Vcorr']
+                mimg = im0
+            else:
+                im0 = np.zeros((self.Ly, self.Lx), np.float32)
+                im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
+                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['max_proj']
+                mimg = im0
+
+            mimg1 = np.percentile(mimg, 1)
+            mimg99 = np.percentile(mimg, 99)
+            mimg = (mimg - mimg1) / (mimg99 - mimg1)
+            mimg = np.maximum(0, np.minimum(1, mimg))
+            masked_image[:, :, :, i] = self.create_masks_of_cells(parent, mimg)
+            print(np.shape(mimg), np.shape(masked_image))
+
+        return masked_image
+
+    def create_masks_of_cells(self, parent, mean_img):
+        H = np.zeros_like(mean_img)
+        S = np.zeros_like(mean_img)
+        columncol = parent.ops_plot[3][:, 0]
+
+        for n in np.arange(np.shape(parent.iscell)[0]):
+            if parent.iscell[n] == 1:
+                ypix = parent.stat[n]['ypix'].flatten()
+                xpix = parent.stat[n]['xpix'].flatten()
+                H[ypix, xpix] = np.random.rand()
+                S[ypix, xpix] = 1
+
+        pix = np.concatenate(((H[:, :, np.newaxis]),
+                              S[:, :, np.newaxis],
+                              mean_img[:, :, np.newaxis]), axis=-1)
+        pix = hsv_to_rgb(pix)
+        return pix
 
     def mouse_moved(self, pos):
         if self.extracted:
@@ -140,8 +184,7 @@ class ROIDraw(QtGui.QMainWindow):
                 x = self.p1.vb.mapSceneToView(pos).x()
                 y = self.p1.vb.mapSceneToView(pos).y()
                 self.ineuron = self.nROIs - y + 1
-                #print(self.ineuron)
-
+                # print(self.ineuron)
 
     def keyPressEvent(self, event):
         if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
@@ -183,20 +226,20 @@ class ROIDraw(QtGui.QMainWindow):
                 posy = pos.x()
                 posx = pos.y()
                 if event.modifiers() == QtCore.Qt.ShiftModifier:
-                    self.add_ROI(pos=np.array([posx-5,posy-5,
-                                int(self.diam.text()),int(self.diam.text())]))
+                    self.add_ROI(pos=np.array([posx - 5, posy - 5,
+                                               int(self.diam.text()), int(self.diam.text())]))
                 if event.double():
                     self.p0.setXRange(0, self.Lx)
                     self.p0.setYRange(0, self.Ly)
-            elif x==self.p1:
+            elif x == self.p1:
                 if event.double():
-                    self.p1.setXRange(0,self.trange.size)
+                    self.p1.setXRange(0, self.trange.size)
                     self.p1.setYRange(self.fmin, self.fmax)
 
     def proc_ROI(self, parent):
         stat0 = []
         if self.extracted:
-            for t,s in zip(self.scatter, self.tlabel):
+            for t, s in zip(self.scatter, self.tlabel):
                 self.p0.removeItem(s)
                 self.p0.removeItem(t)
         self.scatter = []
@@ -205,7 +248,7 @@ class ROIDraw(QtGui.QMainWindow):
             ellipse = self.ROIs[n].ellipse
             yrange = self.ROIs[n].yrange
             xrange = self.ROIs[n].xrange
-            x,y = np.meshgrid(xrange, yrange)
+            x, y = np.meshgrid(xrange, yrange)
             ypix = y[ellipse].flatten()
             xpix = x[ellipse].flatten()
             lam = np.ones(ypix.shape)
@@ -214,8 +257,10 @@ class ROIDraw(QtGui.QMainWindow):
             self.tlabel[-1].setPos(xpix.mean(), ypix.mean())
             self.p0.addItem(self.tlabel[-1])
             self.scatter.append(pg.ScatterPlotItem([xpix.mean()], [ypix.mean()],
-                                                pen=self.ROIs[n].color, symbol='+'))
+                                                   pen=self.ROIs[n].color, symbol='+'))
             self.p0.addItem(self.scatter[-1])
+        if not os.path.isfile(parent.ops['reg_file']):
+            parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
         F, Fneu, F_chan2, Fneu_chan2, ops, stat = roiextract.masks_and_traces(parent.ops, stat0)
         self.Fcell = F
         self.Fneu = Fneu
@@ -231,23 +276,24 @@ class ROIDraw(QtGui.QMainWindow):
         k = self.nROIs - 1
         ttick = list()
         for n in range(self.nROIs):
-            f = self.Fcell[n,:]
-            fneu = self.Fneu[n,:]
+            f = self.Fcell[n, :]
+            fneu = self.Fneu[n, :]
             favg += f.flatten()
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
             fneu = (fneu - fmin) / (fmax - fmin)
             rgb = self.ROIs[n].color
-            self.p1.plot(self.trange,f+k*kspace,pen=rgb)
-            self.p1.plot(self.trange,fneu+k*kspace,pen='r')
-            ttick.append((k*kspace+f.mean(), str(n)))
-            k-=1
-        self.fmax = (self.nROIs-1)*kspace + 1
+            self.p1.plot(self.trange, f + k * kspace, pen=rgb)
+            self.p1.plot(self.trange, fneu + k * kspace, pen='r')
+            ttick.append((k * kspace + f.mean(), str(n)))
+            k -= 1
+        self.fmax = (self.nROIs - 1) * kspace + 1
         self.fmin = 0
         ax.setTicks([ttick])
         self.p1.setXRange(0, self.Fcell.shape[1])
         self.p1.setYRange(self.fmin, self.fmax)
+
 
 class sROI():
     def __init__(self, iROI, parent=None, pos=None, diameter=None, color=None,
@@ -269,8 +315,8 @@ class sROI():
             dx = (view[0][1] - view[0][0]) / 4
             dy = (view[1][1] - view[1][0]) / 4
             if diameter is None:
-                dx = np.maximum(3, np.minimum(dx, parent.Ly*0.2))
-                dy = np.maximum(3, np.minimum(dy, parent.Lx*0.2))
+                dx = np.maximum(3, np.minimum(dx, parent.Ly * 0.2))
+                dy = np.maximum(3, np.minimum(dy, parent.Lx * 0.2))
             else:
                 dx = diameter
                 dy = diameter
@@ -305,7 +351,7 @@ class sROI():
             if i > self.iROI:
                 parent.ROIs[i].iROI -= 1
         del parent.ROIs[self.iROI]
-        parent.iROI = min(len(parent.ROIs)-1, max(0, parent.iROI))
+        parent.iROI = min(len(parent.ROIs) - 1, max(0, parent.iROI))
         parent.nROIs -= 1
         parent.win.show()
         parent.show()
@@ -319,16 +365,15 @@ class sROI():
         sizex, sizey = self.ROI.size()
         xrange = (np.arange(-1 * int(sizex), 1) + int(posx)).astype(np.int32)
         yrange = (np.arange(-1 * int(sizey), 1) + int(posy)).astype(np.int32)
-        yrange += int(np.floor(sizey/2)) + 1
+        yrange += int(np.floor(sizey / 2)) + 1
         # what is ellipse circling?
         br = self.ROI.boundingRect()
         ellipse = np.zeros((yrange.size, xrange.size), np.bool)
-        x,y = np.meshgrid(np.arange(0,xrange.size,1), np.arange(0,yrange.size,1))
-        ellipse = ((y - br.center().y())**2 / (br.height()/2)**2 +
-                    (x - br.center().x())**2 / (br.width()/2)**2) <= 1
+        x, y = np.meshgrid(np.arange(0, xrange.size, 1), np.arange(0, yrange.size, 1))
+        ellipse = ((y - br.center().y()) ** 2 / (br.height() / 2) ** 2 +
+                   (x - br.center().x()) ** 2 / (br.width() / 2) ** 2) <= 1
 
-
-        ellipse = ellipse[:,np.logical_and(xrange >= 0, xrange < parent.Lx)]
+        ellipse = ellipse[:, np.logical_and(xrange >= 0, xrange < parent.Lx)]
         xrange = xrange[np.logical_and(xrange >= 0, xrange < parent.Lx)]
         ellipse = ellipse[np.logical_and(yrange >= 0, yrange < parent.Ly), :]
         yrange = yrange[np.logical_and(yrange >= 0, yrange < parent.Ly)]

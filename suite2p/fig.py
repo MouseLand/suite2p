@@ -65,17 +65,19 @@ def plot_trace(parent):
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
             k-=1
-        bsc = len(pmerge)/25 + 1
+        bsc = (len(pmerge))/25 + 1
         # at bottom plot behavior and avg trace
         if parent.bloaded:
             favg -= favg.min()
             favg /= favg.max()
-            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+            for ind in range(parent.beh.shape[1]):
+                parent.p3.plot(parent.trange,-ind*bsc-1*bsc+parent.beh[:,ind]*bsc,pen='w')
+                ttick.append((-ind*bsc-1*bsc, 'b%d'%ind))
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             parent.traceLabel[2].setText("")
-            parent.fmin=-1*bsc
+            parent.fmin=-parent.beh.shape[1]*bsc-1*bsc
         else:
             for n in range(3):
                 parent.traceLabel[n].setText("")
@@ -468,8 +470,8 @@ def beh_masks(parent):
     c = parent.ops_plot[3].shape[1]+1
     print(c)
     n = np.array(parent.imerge)
-    nb = int(np.floor(parent.beh_resampled.size/parent.bin))
-    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    nb = int(np.floor(parent.beh.size/parent.bin))
+    sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
@@ -624,7 +626,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

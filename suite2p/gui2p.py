@@ -1369,7 +1369,7 @@ class MainW(QtGui.QMainWindow):
         self.evtloaded = True
 
         #check file dimensions
-        if len(self.evts.shape)==1 and len(self.evts.shape)%2==0:
+        if len(self.evts.shape)==1 and len(self.evts)%2==0:
             self.evts = evts.reshape(-1,2)
         elif len(self.evts.shape)!=2 or self.evts.shape[1]!=2:
             self.evtloaded = False

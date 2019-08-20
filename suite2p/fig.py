@@ -20,6 +20,10 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
+    try:
+        parent.p3.removeItem(parent.fillbtw)
+    except:
+        print('first plot!')
     ax = parent.p3.getAxis('left')
     if len(parent.imerge)==1:
         n = parent.imerge[0]
@@ -35,6 +39,15 @@ def plot_trace(parent):
         parent.p3.plot(parent.trange,f,pen='b')
         parent.p3.plot(parent.trange,fneu,pen='r')
         parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = fmax
+                curve1 = parent.p3.plot(parent.trange,np.zeros(len(f)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         parent.fmin=0
         parent.fmax=fmax
         ax.setTicks(None)
@@ -84,7 +97,7 @@ def plot_trace(parent):
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])
-    parent.p3.setXRange(0,parent.Fcell.shape[1])
+    #parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
 def plot_masks(parent,M):
@@ -624,7 +637,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

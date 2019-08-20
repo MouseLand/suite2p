@@ -1370,7 +1370,7 @@ class MainW(QtGui.QMainWindow):
 
         #check file dimensions
         if len(self.evts.shape)==1 and len(self.evts)%2==0:
-            self.evts = evts.reshape(-1,2)
+            self.evts = self.evts.reshape(-1,2)
         elif len(self.evts.shape)!=2 or self.evts.shape[1]!=2:
             self.evtloaded = False
             raise 'Event file must be an 1D or 2D array of shape 2,2 (event_start,event_stop)'

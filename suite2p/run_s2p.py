@@ -26,6 +26,7 @@ def default_ops():
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
         'subfolders': [],
+        'bruker': False,
         # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane
@@ -159,6 +160,8 @@ def run_s2p(ops={},db={}):
             if 'mesoscan' in ops and ops['mesoscan']:
                 ops1 = utils.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
+            elif 'bruker' in ops and ops['bruker']:
+                ops1 = utils.ome_to_binary(ops)
             elif HAS_HAUS:
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])

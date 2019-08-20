@@ -24,7 +24,7 @@ class MainW(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(0, 0, 1500, 800)
+        self.setGeometry(0, 0, 1500, 400)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -523,26 +523,40 @@ class MainW(QtGui.QMainWindow):
         self.ncedit.setAlignment(QtCore.Qt.AlignRight)
         self.ncedit.returnPressed.connect(self.nc_chosen)
         self.l0.addWidget(self.ncedit, self.bend + 7 + k, 0, 1, 1)
-        # labels for traces
-        self.traceLabel = [
-            QtGui.QLabel(self),
-            QtGui.QLabel(self),
-            QtGui.QLabel(self)
-        ]
-        self.traceText = [
-            "<font color='blue'>fluorescence</font>",
-            "<font color='red'>neuropil</font>",
-            "<font color='gray'>deconvolved</font>",
-        ]
-        for n in range(3):
-            self.traceLabel[n].setText(self.traceText[n])
-            self.traceLabel[n].setFont(boldfont)
-            self.l0.addWidget(
-                self.traceLabel[n],
-                self.bend + 7 + k,
-                4 + n * 2,
-                1, 2
-            )
+        #Agus
+        # Deconv CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxd = QtGui.QCheckBox("Deconvolved [N]")
+        self.checkBoxd.setStyleSheet("color: white;")
+        self.checkBoxd.stateChanged.connect(self.deconv_on)
+        self.deconvOn = True
+        self.checkBoxd.toggle()
+        self.l0.addWidget(self.checkBoxd,
+        self.bend + 7 + k,
+        4,
+        1, 2)
+        # neuropil CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxn = QtGui.QCheckBox("Neuropil [B]")
+        self.checkBoxn.setStyleSheet("color: red;")
+        self.checkBoxn.stateChanged.connect(self.neuropil_on)
+        self.neuropilOn = True
+        self.checkBoxn.toggle()
+        self.l0.addWidget(self.checkBoxn,
+        self.bend + 7 + k,
+        6,
+        1, 2)
+        # traces CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxt = QtGui.QCheckBox("Fluorescence [V]")
+        self.checkBoxt.setStyleSheet("color: blue;")
+        self.checkBoxt.stateChanged.connect(self.traces_on)
+        self.tracesOn = True
+        self.checkBoxt.toggle()
+        self.l0.addWidget(self.checkBoxt,
+        self.bend + 7 + k,
+        8,
+        1, 2)
         # initialize merges
         self.merged = []
         self.rastermap = False
@@ -550,7 +564,8 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'D:/DATA/GT1/multichannel_half/suite2p/plane0/stat.npy'
+        #Agus
+        #statfile = '/groups/hackathon/data/guest1/DG/2/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
@@ -644,6 +659,14 @@ class MainW(QtGui.QMainWindow):
                         self.viewbtns.button(5).press(self, 5)
                 elif event.key() == QtCore.Qt.Key_Space:
                     self.checkBox.toggle()
+                #Agus
+                elif event.key() == QtCore.Qt.Key_N:
+                    self.checkBoxd.toggle()
+                elif event.key() == QtCore.Qt.Key_B:
+                    self.checkBoxn.toggle()
+                elif event.key() == QtCore.Qt.Key_V:
+                    self.checkBoxt.toggle()
+                #
                 elif event.key() == QtCore.Qt.Key_A:
                     self.colorbtns.button(0).setChecked(True)
                     self.colorbtns.button(0).press(self, 0)
@@ -1065,6 +1088,32 @@ class MainW(QtGui.QMainWindow):
             M = fig.draw_masks(self)
             fig.plot_masks(self, M)
 
+    #Agus
+    def deconv_on(self, state):
+        if state == QtCore.Qt.Checked:
+            self.deconvOn = True
+        else:
+            self.deconvOn = False
+        fig.plot_trace(self)
+        self.win.show()
+        self.show()
+    def neuropil_on(self, state):
+        if state == QtCore.Qt.Checked:
+            self.neuropilOn = True
+        else:
+            self.neuropilOn = False
+        fig.plot_trace(self)
+        self.win.show()
+        self.show()
+    def traces_on(self, state):
+        if state == QtCore.Qt.Checked:
+            self.tracesOn = True
+        else:
+            self.tracesOn = False
+        fig.plot_trace(self)
+        self.win.show()
+        self.show()
+    #
     def plot_clicked(self, event):
         """left-click chooses a cell, right-click flips cell to other view"""
         flip = False

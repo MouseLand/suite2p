@@ -678,7 +678,11 @@ class MainW(QtGui.QMainWindow):
                         self.colorbtns.button(9).setChecked(True)
                         self.colorbtns.button(9).press(self, 9)
                 elif event.key() == QtCore.Qt.Key_Left:
-                    self.ichosen = (self.ichosen-1)%len(self.stat)
+                    ctype = self.iscell[self.ichosen]
+                    while -1:
+                        self.ichosen = (self.ichosen-1)%len(self.stat)
+                        if self.iscell[self.ichosen] is ctype:
+                            break
                     self.imerge = [self.ichosen]
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
@@ -686,13 +690,33 @@ class MainW(QtGui.QMainWindow):
                     fig.plot_trace(self)
                     self.show()
                 elif event.key() == QtCore.Qt.Key_Right:
-                    self.ichosen = (self.ichosen+1)%len(self.stat)
+                ##Agus
+                    ctype = self.iscell[self.ichosen]
+                    while 1:
+                        self.ichosen = (self.ichosen+1)%len(self.stat)
+                        if self.iscell[self.ichosen] is ctype:
+                            break
                     self.imerge = [self.ichosen]
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
                     self.show()
+                ##Agus
+                elif event.key() == QtCore.Qt.Key_Up:
+                    ctype = self.iscell[self.ichosen]
+                    self.flip_plot(ctype+1)
+                    while 1:
+                        self.ichosen = (self.ichosen+1)%len(self.stat)
+                        if self.iscell[self.ichosen] is ctype:
+                            break
+                    self.imerge = [self.ichosen]
+                    self.ichosen_stats()
+                    M = fig.draw_masks(self)
+                    fig.plot_masks(self, M)
+                    fig.plot_trace(self)
+                    self.show()
+
 
 
     def merge_cells(self):

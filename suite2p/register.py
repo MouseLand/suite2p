@@ -675,8 +675,8 @@ def register_binary(ops, refImg=None):
             print(ops['badframes'].sum())
     # return frames which fall outside range
     ops = compute_crop(ops)
-
-    interpolate_badframes(ops,reg_file_align,reg_file_alt)
+    if ops['interpolate_badframes'] == True:
+        interpolate_badframes(ops,reg_file_align,reg_file_alt)
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
@@ -693,11 +693,12 @@ def interpolate_badframes(ops,reg_file_align,reg_file_alt):
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
     for ind in ind_bad:
+        print('Interpolating bad frames')
         frame_prev_ind=np.amax(ind_good[ind_good < int(ind)])
         frame_next_ind=np.amin(ind_good[ind_good > int(ind)])
         w_sum=frame_next_ind-frame_prev_ind
         w=[(frame_next_ind-ind)/w_sum,(ind-frame_prev_ind)/w_sum]
-        print(ind, frame_prev_ind, frame_next_ind)
+        #print(ind, frame_prev_ind, frame_next_ind)
 
         with open(reg_file_align,'r+b') as reg_file_align_temp:
             reg_file_align_temp.seek(nbytesread*frame_prev_ind, 0)

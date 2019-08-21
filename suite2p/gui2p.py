@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 import numpy as np
+from numpy import genfromtxt
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
@@ -11,6 +12,7 @@ from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 from scipy import io
+import csv
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -88,7 +90,7 @@ class MainW(QtGui.QMainWindow):
 
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
-            "Load behavior or stim traces", self
+            "Load behavior or stim traces(.npy, .csv)", self
         )
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
@@ -1304,13 +1306,42 @@ class MainW(QtGui.QMainWindow):
             self.load_again(Text)
 
     def load_behavior(self):
+        """
+        Loads behavior one or multi dimension data in the GUI.
+        Valid file formats: .npy - numpy arrays
+                            .csv - files, comma separated with one line header
+                            which will be skipped. For now...
+        """
+
         name = QtGui.QFileDialog.getOpenFileName(
-            self, "Open *.npy", filter="*.npy"
-        )
+            self, filter="File types (*.csv *.npy)")
+
         name = name[0]
+        pathTo, ext = os.path.splitext(name)
+        if ext == '.npy':
+            name = np.load(name)
+        if ext == '.csv':
+            with open(name) as f:
+                reader = csv.reader(f)
+                columns = next(reader)
+                colmap = dict(zip(columns, range(len(columns))))
+            arr = np.matrix(np.loadtxt(name, delimiter=",", skiprows=1))
+            name = np.array(arr)
+        if ext != '.csv' or '.npy':
+            print('---- Input only can be .csv or .npy ----')
+
+        # debugging statements
+        # name = '/groups/hackathon/data/guest3/sampleData/TSeries-06262017-1330-1minrec-002/suite2p/fakeData.csv'
+        # print(name)
+        # print(ext)
+        # print(name[0])
+        # print(type(name))
+        # print(name.shape)
+
         bloaded = False
         try:
-            beh = np.load(name)
+            beh = name
+            # set_trace()
             if beh.ndim==1:
                 beh=beh[:,np.newaxis]
             if beh.shape[0] == self.Fcell.shape[1]:

@@ -148,6 +148,25 @@ You can select as many cells as you want, but by default only 40 of
 those will be plotted. You can increase or decrease this number by
 changing the number in the box below *max # plotted*.
 
+Loading event traces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to plot a trace of events (stimuli, behavior, etc.) to the activity
+traces in the bottom row. This is done by accessing the menu:
+
+File > Load event traces
+
+This feature takes as input a npy array containing a sequence of *Frame numbers*
+when the events occurred.
+
+This array can be a 1D sequence of [evt_start,evt_stop,evt_start,evt_stop...] frames or a
+2D column array of shape (evt_start,evt_stop). Having evt values that are larger than
+the frame number of the recording will cause an error.
+
+Loading an event series will enable the tracing of a shadowed area in the Trace view
+so that neural activity can be easily compared to the events.
+
+
 Classifying cells
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -20,6 +20,10 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
+    try:
+        parent.p3.removeItem(parent.fillbtw)
+    except:
+        print('first plot!')
     ax = parent.p3.getAxis('left')
     if len(parent.imerge)==1:
         n = parent.imerge[0]
@@ -35,6 +39,15 @@ def plot_trace(parent):
         parent.p3.plot(parent.trange,f,pen='b')
         parent.p3.plot(parent.trange,fneu,pen='r')
         parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = fmax
+                curve1 = parent.p3.plot(parent.trange,np.zeros(len(f)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         parent.fmin=0
         parent.fmax=fmax
         ax.setTicks(None)
@@ -65,17 +78,19 @@ def plot_trace(parent):
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
             k-=1
-        bsc = len(pmerge)/25 + 1
+        bsc = (len(pmerge))/25 + 1
         # at bottom plot behavior and avg trace
         if parent.bloaded:
             favg -= favg.min()
             favg /= favg.max()
-            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+            for ind in range(parent.beh.shape[1]):
+                parent.p3.plot(parent.trange,-ind*bsc-1*bsc+parent.beh[:,ind]*bsc,pen='w')
+                ttick.append((-ind*bsc-1*bsc, 'b%d'%ind))
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             parent.traceLabel[2].setText("")
-            parent.fmin=-1*bsc
+            parent.fmin=-parent.beh.shape[1]*bsc-1*bsc
         else:
             for n in range(3):
                 parent.traceLabel[n].setText("")
@@ -83,8 +98,17 @@ def plot_trace(parent):
         #ttick.append((-0.5*bsc,'1D var'))
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = parent.fmax
+                curve1 = parent.p3.plot(parent.trange,np.repeat(parent.fmin,len(parent.trange)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         ax.setTicks([ttick])
-    parent.p3.setXRange(0,parent.Fcell.shape[1])
+    #parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
 def plot_masks(parent,M):
@@ -464,12 +488,13 @@ def rastermap_masks(parent):
         parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
 
 def beh_masks(parent):
+    beh0=parent.beh[:,0]
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+1
     print(c)
     n = np.array(parent.imerge)
-    nb = int(np.floor(parent.beh_resampled.size/parent.bin))
-    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    nb = int(np.floor(beh0.size/parent.bin))
+    sn = np.reshape(beh0[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
@@ -624,7 +649,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

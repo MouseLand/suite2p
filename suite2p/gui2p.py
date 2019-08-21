@@ -24,7 +24,7 @@ class MainW(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(0, 0, 1500, 800)
+        self.setGeometry(0, 0, 1500, 600)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -88,12 +88,19 @@ class MainW(QtGui.QMainWindow):
 
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
-            "Load behavior or stim trace (1D only)", self
+            "Load behavior or stim trace", self
         )
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
 
+        #load event traces
+        self.loadEvt = QtGui.QAction(
+            "Load event traces", self
+        )
+        self.loadEvt.triggered.connect(self.load_events)
+        self.loadEvt.setEnabled(False)
+        self.addAction(self.loadEvt)
 
         # load processed data
         self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
@@ -119,6 +126,7 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
         file_menu.addAction(self.loadBeh)
+        file_menu.addAction(self.loadEvt)
         file_menu.addAction(self.saveMat)
         file_menu.addAction(exportFig)
         file_menu.addAction(self.manual)
@@ -362,7 +370,7 @@ class MainW(QtGui.QMainWindow):
         b = 0
         # colorbars for different statistics
         colorsAll = self.colors.copy()
-        colorsAll.append("L: corr with 1D var, bin= ^^^")
+        colorsAll.append("L: corr with beh var, bin= ^^^")
         colorsAll.append("M: rastermap / custom")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
@@ -551,7 +559,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'D:/DATA/GT1/multichannel_half/suite2p/plane0/stat.npy'
+        #statfile = '/groups/hackathon/home/guest16/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
@@ -905,6 +913,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
+        self.loadEvt.setEnabled(True)
         self.saveMat.setEnabled(True)
         self.manual.setEnabled(True)
         self.bloaded = False
@@ -1312,34 +1321,20 @@ class MainW(QtGui.QMainWindow):
         bloaded = False
         try:
             beh = np.load(name)
-            bresample=False
-            if beh.ndim>1:
-                if beh.shape[1] < 2:
-                    beh = beh.flatten()
-                    if beh.shape[0] == self.Fcell.shape[1]:
-                        self.bloaded = True
-                        beh_time = np.arange(0, self.Fcell.shape[1])
-                else:
-                    self.bloaded = True
-                    beh_time = beh[:,1]
-                    beh = beh[:,0]
-                    bresample=True
-            else:
-                if beh.shape[0] == self.Fcell.shape[1]:
-                    self.bloaded = True
-                    beh_time = np.arange(0, self.Fcell.shape[1])
+            if beh.ndim==1:
+                beh=beh[:,np.newaxis]
+            if beh.shape[0] == self.Fcell.shape[1]:
+                self.bloaded = True
+                beh_time = np.arange(0, self.Fcell.shape[1])
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
-            print("ERROR: this is not a 1D array with length of data")
+            print("ERROR: the behavioral data does not have same sampling frequency")
         if self.bloaded:
-            beh -= beh.min()
-            beh /= beh.max()
+            for ind in range(beh.shape[1]):
+                beh[:,ind] -= beh[:,ind].min()
+                beh[:,ind] /= beh[:,ind].max()
             self.beh = beh
-            self.beh_time = beh_time
-            if bresample:
-                self.beh_resampled = resample_frames(self.beh, self.beh_time, np.arange(0,self.Fcell.shape[1]))
-            else:
-                self.beh_resampled = self.beh
+            self.beh_time=beh_time
             b = len(self.colors)
             self.colorbtns.button(b).setEnabled(True)
             self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
@@ -1347,7 +1342,29 @@ class MainW(QtGui.QMainWindow):
             fig.plot_trace(self)
             self.show()
         else:
-            print("ERROR: this is not a 1D array with length of data")
+            print("ERROR: this is not an array with length of data")
+
+    def load_events(self):
+        name = QtGui.QFileDialog.getOpenFileName(
+            self, "Open *.npy",filter='*.npy'
+        )
+        name = name[0]
+        evtloaded = False
+        #check file type
+        self.evts = np.load(name).astype('int64')
+        self.evtloaded = True
+
+        #check file dimensions
+        if len(self.evts.shape)==1 and len(self.evts)%2==0:
+            self.evts = self.evts.reshape(-1,2)
+        elif len(self.evts.shape)!=2 or self.evts.shape[1]!=2:
+            self.evtloaded = False
+            raise 'Event file must be an 1D or 2D array of shape 2,2 (event_start,event_stop)'
+        #except (ValueError, KeyError, OSError,
+        #        RuntimeError, TypeError, NameError):
+        #    print("Event file must be an 1D or 2D array of shape 2,2 (event_start,event_stop)")
+
+
 
     def save_mat(self):
         matpath = os.path.join(self.basename,'Fall.mat')

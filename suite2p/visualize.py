@@ -121,8 +121,10 @@ class VisWindow(QtGui.QMainWindow):
         if self.bloaded:
             self.beh = parent.beh
             self.beh_time = parent.beh_time
-            self.p3.plot(self.beh_time,self.beh)
-            self.p3.setXRange(0,sp.shape[1])
+            for ind in range(self.beh.shape[1]):
+                self.p3.plot(self.beh_time,-ind+self.beh[:,ind])
+                self.p3.setXRange(0,sp.shape[1])
+                #ttick.append((-ind, 'b%d'%ind))
         # set colormap to viridis
         colormap = cm.get_cmap("gray_r")
         colormap._init()
@@ -300,9 +302,14 @@ class VisWindow(QtGui.QMainWindow):
         avg -= avg.min()
         avg /= avg.max()
         self.p3.plot(xrange,avg,pen=(140,140,140))
+        #ttick = list()
         if self.bloaded:
-            self.p3.plot(self.beh_time,self.beh,pen='w')
+            ttick = list()
+            for ind in range(self.beh.shape[1]):
+                self.p3.plot(self.beh_time,-ind+self.beh[:,ind])
+                ttick.append((-ind, 'b%d'%ind))
         self.p3.setXRange(xrange[0],xrange[-1])
+                #ttick.append((-ind, 'b%d'%ind))
         #
         #self.selected = (self.sp.shape[0]-1) - yrange
         self.selected = yrange
@@ -311,6 +318,7 @@ class VisWindow(QtGui.QMainWindow):
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
         axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        axy.setTicks([ttick])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
 
     def PC_on(self, plot):

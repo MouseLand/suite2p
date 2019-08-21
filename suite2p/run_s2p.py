@@ -89,6 +89,7 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
+        'interpolate_badframes': True #option to interpolate the bad frames using weighted average
       }
     return ops
 

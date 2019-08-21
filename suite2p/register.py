@@ -675,6 +675,8 @@ def register_binary(ops, refImg=None):
             print(ops['badframes'].sum())
     # return frames which fall outside range
     ops = compute_crop(ops)
+    if ops['interpolate_badframes'] == True:
+        interpolate_badframes(ops,reg_file_align,reg_file_alt)
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
@@ -682,6 +684,50 @@ def register_binary(ops, refImg=None):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
+
+
+def interpolate_badframes(ops,reg_file_align,reg_file_alt):
+    ind_bad = ops['badframes'].nonzero()[0].astype('int32')
+    ind_good = (~ops['badframes']).nonzero()[0].astype('int32')
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread =  np.int64(Ly*Lx*2)
+    for ind in ind_bad:
+        print('Interpolating bad frames')
+        frame_prev_ind=np.amax(ind_good[ind_good < int(ind)])
+        frame_next_ind=np.amin(ind_good[ind_good > int(ind)])
+        w_sum=frame_next_ind-frame_prev_ind
+        w=[(frame_next_ind-ind)/w_sum,(ind-frame_prev_ind)/w_sum]
+        #print(ind, frame_prev_ind, frame_next_ind)
+
+        with open(reg_file_align,'r+b') as reg_file_align_temp:
+            reg_file_align_temp.seek(nbytesread*frame_prev_ind, 0)
+            buff = reg_file_align_temp.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            data1 = np.reshape(data, (Ly, Lx))
+            reg_file_align_temp.seek(nbytesread*frame_next_ind, 0)
+            buff = reg_file_align_temp.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            data2 = np.reshape(data, (Ly, Lx))
+            data= (w[0]*data1+w[1]*data2)
+            data = data.astype(np.int16)
+            reg_file_align_temp.seek(nbytesread*ind, 0)
+            reg_file_align_temp.write(bytearray(data))
+        if ops['nchannels']>1:
+            with open(reg_file_alt,'r+b') as reg_file_alt_temp:
+                reg_file_alt_temp.seek(nbytesread*frame_prev_ind, 0)
+                buff = reg_file_alt_temp.read(nbytesread)
+                data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                data1 = np.reshape(data, (Ly, Lx))
+                reg_file_alt_temp.seek(nbytesread*frame_next_ind, 0)
+                buff = reg_file_alt_temp.read(nbytesread)
+                data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                data2 = np.reshape(data, (Ly, Lx))
+                data= (w[0]*data1+w[1]*data2)
+                data = data.astype(np.int16)
+                reg_file_alt_temp.seek(nbytesread*ind, 0)
+                reg_file_alt_temp.write(bytearray(data))
+                reg_file_alt_temp.close()
 
 
 

@@ -96,6 +96,15 @@ def plot_trace(parent):
         #ttick.append((-0.5*bsc,'1D var'))
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = parent.fmax
+                curve1 = parent.p3.plot(parent.trange,np.repeat(parent.fmin,len(parent.trange)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         ax.setTicks([ttick])
     #parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)

@@ -23,6 +23,7 @@ def default_ops():
         'mesoscan': False, # for reading in scanimage mesoscope files
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
+        'sbx': False, #takes list of sbx files as input (deactivates data_path)
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
         'subfolders': [],

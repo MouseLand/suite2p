@@ -975,7 +975,6 @@ def ome_to_binary(ops):
 
     # loop over all tiffs
     which_folder = 0
-    ntotal=0
     tif = ScanImageTiffReader(fs_Ch1[0])
     im0 = tif.data()
     Ly,Lx = im0.shape
@@ -989,6 +988,7 @@ def ome_to_binary(ops):
         # open tiff
         tif = ScanImageTiffReader(file)
         im = tif.data()
+        tif.close()
         if type(im[0,0]) == np.uint16:
             im = im // 2
             im = im.astype(np.int16)
@@ -998,7 +998,7 @@ def ome_to_binary(ops):
         reg_file[j].write(bytearray(im))
         ix+=1
         if ix%(1000)==0:
-            print('%d frames of binary, time %0.2f sec.'%(ntotal,toc(t0)))
+            print('%d frames of binary, time %0.2f sec.'%(ix,toc(t0)))
         gc.collect()
 
     if nchannels>1:
@@ -1019,9 +1019,8 @@ def ome_to_binary(ops):
             reg_file_chan2[j].write(bytearray(im))
             ix+=1
             if ix%(1000)==0:
-                print('%d frames of binary, time %0.2f sec.'%(ntotal,toc(t0)))
+                print('%d frames of binary, time %0.2f sec.'%(ix,toc(t0)))
             gc.collect()
-
 
     # write ops files
     do_registration = ops['do_registration']

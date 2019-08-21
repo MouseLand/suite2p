@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import roiextract, sparsedetect
+from suite2p import roiextract, sparsedetect, dcnv
 import pyqtgraph as pg
 import os
 import sys
@@ -58,8 +58,11 @@ def masks_and_traces(ops, stat, stat_orig):
         stat[n]['std'] = sd[n]
         stat[n]['med'] = [np.mean(stat[n]['ypix']), np.mean(stat[n]['xpix'])]
 
+    dF = F - ops['neucoeff'] * Fneu
+    spks = dcnv.oasis(dF, ops)
+
     print('Ftrace size', np.shape(Fneu), np.shape(F))
-    return F, Fneu, F_chan2, Fneu_chan2, ops, stat
+    return F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat
 
 
 class ViewButton(QtGui.QPushButton):
@@ -214,7 +217,7 @@ class ROIDraw(QtGui.QMainWindow):
         # Save fluorescence traces
         Fcell = np.concatenate((self.Fcell, parent.Fcell), axis=0)
         Fneu = np.concatenate((self.Fneu, parent.Fneu), axis=0)
-        Spks = np.concatenate((np.zeros_like(self.Fneu), parent.Spks),
+        Spks = np.concatenate((self.Spks, parent.Spks),
                               axis=0)  # For now convert spikes to 0 for the new ROIS and then fix it later
         np.save(os.path.join(parent.basename, 'F.npy'), Fcell)
         np.save(os.path.join(parent.basename, 'Fneu.npy'), Fneu)
@@ -232,6 +235,7 @@ class ROIDraw(QtGui.QMainWindow):
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
 
         # close GUI
+        parent.load_proc()
         self.close()
 
     def normalize_img_add_masks(self, parent):
@@ -356,11 +360,12 @@ class ROIDraw(QtGui.QMainWindow):
         if not os.path.isfile(parent.ops['reg_file']):
             parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
 
-        F, Fneu, F_chan2, Fneu_chan2, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
+        F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
         print('After', stat[0].keys())
         print('Orig', parent.stat[0].keys())
         self.Fcell = F
         self.Fneu = Fneu
+        self.Spks = spks
         self.plot_trace()
         self.extracted = True
         self.new_stat = stat

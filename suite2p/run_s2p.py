@@ -26,7 +26,6 @@ def default_ops():
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
         'subfolders': [],
-        'bruker': False,
         # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane
@@ -34,6 +33,7 @@ def default_ops():
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
+        'frames_include': (0,-1),
         # output settings
         'preclassify': 0., # apply classifier before signal extraction with probability 0.3
         'save_mat': False, # whether to save output as matlab files
@@ -44,6 +44,7 @@ def default_ops():
         'bidiphase': 0,
         # registration settings
         'do_registration': 1, # whether to register data (2 forces re-registration)
+        'two_step_registration': False,
         'keep_movie_raw': False,
         'nimg_init': 300, # subsampled frames for finding reference image
         'batch_size': 500, # number of frames per batch
@@ -52,6 +53,7 @@ def default_ops():
         'reg_tif': False, # whether to save registered tiffs
         'reg_tif_chan2': False, # whether to save channel 2 registered tiffs
         'subpixel' : 10, # precision of subpixel registration (1/subpixel steps)
+        'smooth_sigma_time' : 0, # gaussian smoothing in time
         'smooth_sigma': 1.15, # ~1 good for 2P recordings, recommend >5 for 1P recordings
         'th_badframes': 1.0, # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
@@ -90,7 +92,7 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
-      }
+    }
     return ops
 
 def run_s2p(ops={},db={}):
@@ -160,8 +162,6 @@ def run_s2p(ops={},db={}):
             if 'mesoscan' in ops and ops['mesoscan']:
                 ops1 = utils.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
-            elif 'bruker' in ops and ops['bruker']:
-                ops1 = utils.ome_to_binary(ops)
             elif HAS_HAUS:
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
@@ -202,6 +202,15 @@ def run_s2p(ops={},db={}):
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(toc(t11)))
+            
+            if ops['two_step_registration']:
+                print('----------- REGISTRATION STEP 2 (copying raw binary)')
+                os.system('cp {} {}'.format(ops1[ipl]['raw_file'], ops1[ipl]['reg_file'])) # copy raw
+                print('----------- REGISTRATION STEP 2')
+                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg']) # register binary
+                np.save(fpathops1, ops1) # save ops1
+                print('----------- Total %0.2f sec'%(toc(t11)))
+
         if not files_found_flag or not flag_binreg:
             # compute metrics for registration
             if 'do_regmetrics' in ops:

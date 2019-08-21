@@ -208,7 +208,7 @@ def h5py_to_binary(ops):
     if isinstance(keys, str):
         keys = [keys]
     iall = 0
-    for j in ops['nplanes']:
+    for j in range(ops['nplanes']):
         ops1[j]['nframes_per_folder'] = np.zeros(len(h5list), np.int32)
 
     for ih5,h5 in enumerate(h5list):

@@ -20,6 +20,10 @@ def plot_colorbar(parent, bid):
 
 def plot_trace(parent):
     parent.p3.clear()
+    try:
+        parent.p3.removeItem(parent.fillbtw)
+    except:
+        print('first plot!')
     ax = parent.p3.getAxis('left')
     if len(parent.imerge)==1:
         n = parent.imerge[0]
@@ -35,6 +39,15 @@ def plot_trace(parent):
         parent.p3.plot(parent.trange,f,pen='b')
         parent.p3.plot(parent.trange,fneu,pen='r')
         parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = fmax
+                curve1 = parent.p3.plot(parent.trange,np.zeros(len(f)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         parent.fmin=0
         parent.fmax=fmax
         ax.setTicks(None)
@@ -85,8 +98,17 @@ def plot_trace(parent):
         #ttick.append((-0.5*bsc,'1D var'))
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
+        if hasattr(parent,'evtloaded'):
+            if parent.evtloaded:
+                evt_sq = np.zeros(len(parent.trange))
+                for evt in parent.evts:
+                    evt_sq[evt[0]:evt[1]] = parent.fmax
+                curve1 = parent.p3.plot(parent.trange,np.repeat(parent.fmin,len(parent.trange)),pen=(0,0,0,0))
+                curve2 = parent.p3.plot(parent.trange,evt_sq,pen=(0,0,0,0))
+                parent.fillbtw = pg.FillBetweenItem(curve1=curve1,curve2=curve2,pen=(127,127,127,100),brush=(127,127,127,100))
+                parent.p3.addItem(parent.fillbtw)
         ax.setTicks([ttick])
-    parent.p3.setXRange(0,parent.Fcell.shape[1])
+    #parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
 def plot_masks(parent,M):
@@ -466,12 +488,13 @@ def rastermap_masks(parent):
         parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
 
 def beh_masks(parent):
+    beh0=parent.beh[:,0]
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+1
     print(c)
     n = np.array(parent.imerge)
-    nb = int(np.floor(parent.beh.size/parent.bin))
-    sn = np.reshape(parent.beh[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    nb = int(np.floor(beh0.size/parent.bin))
+    sn = np.reshape(beh0[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))

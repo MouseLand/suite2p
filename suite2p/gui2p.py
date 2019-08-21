@@ -96,6 +96,14 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
 
+        #load event traces
+        self.loadEvt = QtGui.QAction(
+            "Load event traces", self
+        )
+        self.loadEvt.triggered.connect(self.load_events)
+        self.loadEvt.setEnabled(False)
+        self.addAction(self.loadEvt)
+
         # load processed data
         self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
         self.saveMat.setShortcut("Ctrl+S")
@@ -120,6 +128,7 @@ class MainW(QtGui.QMainWindow):
         file_menu.addAction(runS2P)
         file_menu.addAction(loadProc)
         file_menu.addAction(self.loadBeh)
+        file_menu.addAction(self.loadEvt)
         file_menu.addAction(self.saveMat)
         file_menu.addAction(exportFig)
         file_menu.addAction(self.manual)
@@ -363,7 +372,7 @@ class MainW(QtGui.QMainWindow):
         b = 0
         # colorbars for different statistics
         colorsAll = self.colors.copy()
-        colorsAll.append("L: corr with 1D var, bin= ^^^")
+        colorsAll.append("L: corr with beh var, bin= ^^^")
         colorsAll.append("M: rastermap / custom")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
@@ -552,7 +561,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/groups/hackathon/data/guest3/sampleData/TSeries-06262017-1330-1minrec-002/suite2p/plane0/stat.npy'
+        # statfile = '/groups/hackathon/data/guest3/sampleData/TSeries-06262017-1330-1minrec-002/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
@@ -906,6 +915,7 @@ class MainW(QtGui.QMainWindow):
 
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
+        self.loadEvt.setEnabled(True)
         self.saveMat.setEnabled(True)
         self.manual.setEnabled(True)
         self.bloaded = False
@@ -1363,7 +1373,29 @@ class MainW(QtGui.QMainWindow):
             fig.plot_trace(self)
             self.show()
         else:
-            print("ERROR: this is not a 1D array with length of data")
+            print("ERROR: this is not an array with length of data")
+
+    def load_events(self):
+        name = QtGui.QFileDialog.getOpenFileName(
+            self, "Open *.npy",filter='*.npy'
+        )
+        name = name[0]
+        evtloaded = False
+        #check file type
+        self.evts = np.load(name).astype('int64')
+        self.evtloaded = True
+
+        #check file dimensions
+        if len(self.evts.shape)==1 and len(self.evts)%2==0:
+            self.evts = self.evts.reshape(-1,2)
+        elif len(self.evts.shape)!=2 or self.evts.shape[1]!=2:
+            self.evtloaded = False
+            raise 'Event file must be an 1D or 2D array of shape 2,2 (event_start,event_stop)'
+        #except (ValueError, KeyError, OSError,
+        #        RuntimeError, TypeError, NameError):
+        #    print("Event file must be an 1D or 2D array of shape 2,2 (event_start,event_stop)")
+
+
 
     def save_mat(self):
         matpath = os.path.join(self.basename,'Fall.mat')

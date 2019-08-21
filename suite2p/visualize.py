@@ -304,8 +304,15 @@ class VisWindow(QtGui.QMainWindow):
         self.p3.plot(xrange,avg,pen=(140,140,140))
         #ttick = list()
         if self.bloaded:
+<<<<<<< HEAD
             for ind in range(self.beh.shape[1]):
                 self.p3.plot(self.beh_time,-ind+self.beh[:,ind])
+=======
+            ttick = list()
+            for ind in range(self.beh.shape[1]):
+                self.p3.plot(self.beh_time,-ind+self.beh[:,ind])
+                ttick.append((-ind, 'b%d'%ind))
+>>>>>>> 89b85d0fd36fad2c749661e086c89ad3c7a9b7b4
         self.p3.setXRange(xrange[0],xrange[-1])
                 #ttick.append((-ind, 'b%d'%ind))
         #
@@ -316,6 +323,7 @@ class VisWindow(QtGui.QMainWindow):
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
         axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        axy.setTicks([ttick])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
 
     def PC_on(self, plot):

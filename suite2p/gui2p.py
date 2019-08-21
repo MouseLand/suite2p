@@ -559,7 +559,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/groups/hackathon/home/guest16/plane0/stat.npy'
+        #statfile = '/groups/hackathon/home/guest16/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()

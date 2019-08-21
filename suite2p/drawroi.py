@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import roiextract
+from suite2p import roiextract, sparsedetect
 import pyqtgraph as pg
 import os
 import sys
@@ -215,7 +215,7 @@ class ROIDraw(QtGui.QMainWindow):
         Fcell = np.concatenate((self.Fcell, parent.Fcell), axis=0)
         Fneu = np.concatenate((self.Fneu, parent.Fneu), axis=0)
         Spks = np.concatenate((np.zeros_like(self.Fneu), parent.Spks),
-                              axis=0)  # For now convert spikes to 0 for the new ROIS
+                              axis=0)  # For now convert spikes to 0 for the new ROIS and then fix it later
         np.save(os.path.join(parent.basename, 'F.npy'), Fcell)
         np.save(os.path.join(parent.basename, 'Fneu.npy'), Fneu)
         np.save(os.path.join(parent.basename, 'Spks.npy'), Spks)
@@ -225,11 +225,13 @@ class ROIDraw(QtGui.QMainWindow):
         stat_all = self.new_stat.copy()
         for n in range(len(parent.stat)):
             stat_all.append(parent.stat[n])
-        np.save(os.path.join(parent.basename, 'stat.npy'), stat_all)
+        # Calculate overlap before saving
+        stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, parent.ops)
+        print(stat_all_w_overlap[0]['overlap'])
+        np.save(os.path.join(parent.basename, 'stat.npy'), stat_all_w_overlap)
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
 
         # close GUI
-        parent.make_masks_and_buttons()
         self.close()
 
     def normalize_img_add_masks(self, parent):

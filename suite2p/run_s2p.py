@@ -231,6 +231,7 @@ def run_s2p(ops={},db={}):
             print('----------- SPIKE DECONVOLUTION')
             F = np.load(os.path.join(fpath,'F.npy'))
             Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
+            redcell = np.load(os.path.join(fpath,'redcell.npy'))
             dF = F - ops['neucoeff']*Fneu
             spks = dcnv.oasis(dF, ops)
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
@@ -246,6 +247,7 @@ def run_s2p(ops={},db={}):
                                      'F': F,
                                      'Fneu': Fneu,
                                      'spks': spks,
+                                     'redcell': redcell,
                                      'iscell': iscell})
         else:
             print("WARNING: skipping cell detection (ops['roidetect']=False)")

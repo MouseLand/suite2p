@@ -439,7 +439,8 @@ class MainW(QtGui.QMainWindow):
             "skew",
             "compact",
             "footprint",
-            "aspect_ratio"
+            "aspect_ratio",
+            "chan2_prob"
         ]
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QtGui.QLabel(self)
@@ -550,6 +551,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
+        statfile = '/groups/hackathon/data/guest15/Male1/07-10/1/suite2p/plane0/stat.npy'
         #statfile = 'D:/DATA/GT1/multichannel_half/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
@@ -693,7 +695,13 @@ class MainW(QtGui.QMainWindow):
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
                     self.show()
-
+                elif event.key() == QtCore.Qt.Key_C:
+                    self.redcell[self.ichosen] = ~self.redcell[self.ichosen]
+                    fig.chan2_masks(self)
+                    print('switched red')
+                    M = fig.draw_masks(self)
+                    fig.plot_masks(self, M)
+                    self.show()
 
     def merge_cells(self):
         dm = QtGui.QMessageBox.question(
@@ -1354,6 +1362,7 @@ class MainW(QtGui.QMainWindow):
                              'ops': self.ops,
                              'F': self.Fcell,
                              'Fneu': self.Fneu,
+                             'redcell': self.redcell,
                              'spks': self.Spks,
                              'iscell': np.concatenate((self.iscell[:,np.newaxis],
                                                        self.probcell[:,np.newaxis]), axis=1)

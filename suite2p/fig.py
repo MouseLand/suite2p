@@ -115,7 +115,7 @@ def make_colors(parent):
         allcols = allcols / 1.4
         allcols = allcols + 0.1
         print(parent.redcell.sum())
-        parent.randcols = allcols
+        parent.randcols = allcols.copy()
         allcols[parent.redcell] = 0
     else:
         parent.randcols = allcols
@@ -330,7 +330,7 @@ def init_masks(parent):
 
 def chan2_masks(parent):
     c = 0
-    cols = parent.randcols
+    cols = parent.randcols.copy()
     cols[parent.redcell] = 0
     cols = cols.flatten()
     parent.ops_plot[3][:,0] = cols
@@ -624,7 +624,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

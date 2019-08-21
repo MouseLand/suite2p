@@ -5,6 +5,61 @@ import os
 import sys
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
+import time
+from scipy import stats
+
+
+def masks_and_traces(ops, stat, stat_orig):
+    ''' main extraction function
+        inputs: ops and stat
+        creates cell and neuropil masks and extracts traces
+        returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
+        F_chan2 and Fneu_chan2 will be empty if no second channel
+    '''
+    t0 = time.time()
+    # Concatenate stat so a good neuropil function can be formed
+    stat_all = stat.copy()
+    for n in range(len(stat_orig)):
+        stat_all.append(stat_orig[n])
+    stat_all, cell_pix, _ = roiextract.create_cell_masks(ops, stat_all)
+    stat = stat_all[:len(stat)]
+
+    neuropil_masks = roiextract.create_neuropil_masks(ops, stat, cell_pix)
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
+
+    stat0 = []
+    for n in range(len(stat)):
+        stat0.append({'ipix': stat[n]['ipix'], 'lam': stat[n]['lam'] / stat[n]['lam'].sum()})
+    print('Masks made in %0.2f sec.' % (time.time() - t0))
+
+    F, Fneu, ops = roiextract.extractF(ops, stat0, neuropil_masks, ops['reg_file'])
+    if 'reg_file_chan2' in ops:
+        F_chan2, Fneu_chan2, ops2 = roiextract.extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        ops['meanImg_chan2'] = ops2['meanImg_chan2']
+    else:
+        F_chan2, Fneu_chan2 = [], []
+
+    # compute activity statistics for classifier
+    npix = np.array([stat_orig[n]['npix'] for n in range(len(stat_orig))]).astype('float32')
+    for n in range(len(stat)):
+        stat[n]['npix_norm'] = stat[n]['npix'] / np.mean(npix[:100])  # What if there are less than 100 cells?
+        stat[n]['compact'] = 1
+        stat[n]['footprint'] = 2
+        stat[n]['Manual'] = 1  # Add manual key
+
+    # subtract neuropil and compute skew, std from F
+    dF = F - ops['neucoeff'] * Fneu
+    sk = stats.skew(dF, axis=1)
+    sd = np.std(dF, axis=1)
+    for n in range(F.shape[0]):
+        stat[n]['skew'] = sk[n]
+        stat[n]['std'] = sd[n]
+        stat[n]['med'] = [np.mean(stat[n]['ypix']), np.mean(stat[n]['xpix'])]
+
+    print('Ftrace size', np.shape(Fneu), np.shape(F))
+    return F, Fneu, F_chan2, Fneu_chan2, ops, stat
 
 
 class ViewButton(QtGui.QPushButton):
@@ -66,10 +121,10 @@ class ROIDraw(QtGui.QMainWindow):
 
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
-        self.instructions = QtGui.QLabel("Add ROI: button / SHIFT+CLICK")
+        self.instructions = QtGui.QLabel("Add ROI: button / Alt+CLICK")
         self.instructions.setStyleSheet("color: white;")
         self.l0.addWidget(self.instructions, 0, 0, 1, 4)
-        self.instructions = QtGui.QLabel("Remove last clicked ROI: DELETE")
+        self.instructions = QtGui.QLabel("Remove last clicked ROI: D")
         self.instructions.setStyleSheet("color: white;")
         self.l0.addWidget(self.instructions, 1, 0, 1, 4)
 
@@ -99,6 +154,15 @@ class ROIDraw(QtGui.QMainWindow):
         self.l0.addWidget(self.procROI, 3, 0, 1, 3)
         self.l0.addWidget(QtGui.QLabel(""), 4, 0, 1, 3)
         self.l0.setRowStretch(4, 1)
+
+        # CloseGUI button - once done save the ROIs to stat.npy
+        self.closeGUI = QtGui.QPushButton("Save and Quit")
+        self.closeGUI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.closeGUI.clicked.connect(lambda: self.close_GUI(parent))
+        self.closeGUI.setEnabled(True)
+        self.closeGUI.setFixedWidth(100)
+        self.closeGUI.setStyleSheet(self.styleUnpressed)
+        self.l0.addWidget(self.closeGUI, 0, 5, 1, 1)
 
         # view buttons
         self.views = ["W: mean img",
@@ -131,6 +195,42 @@ class ROIDraw(QtGui.QMainWindow):
         self.masked_images = self.normalize_img_add_masks(parent)
         # Mean image as default
         self.img0.setImage(self.masked_images[:, :, :, 0])
+
+    def close_GUI(self, parent):
+        # Replace old stat file
+        print('Saving old stat')
+        np.save(os.path.join(parent.basename, 'stat_orig.npy'), parent.stat)
+
+        # Save iscell
+        print('Num cells', self.nROIs)
+        print(np.shape(parent.probcell))
+        iscell_prob = np.concatenate((parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
+
+        new_iscell = np.ones((self.nROIs, 2))
+        new_iscell = np.concatenate((new_iscell, iscell_prob),
+                                    axis=0)
+        np.save(os.path.join(parent.basename, 'iscell.npy'), new_iscell)
+
+        # Save fluorescence traces
+        Fcell = np.concatenate((self.Fcell, parent.Fcell), axis=0)
+        Fneu = np.concatenate((self.Fneu, parent.Fneu), axis=0)
+        Spks = np.concatenate((np.zeros_like(self.Fneu), parent.Spks),
+                              axis=0)  # For now convert spikes to 0 for the new ROIS
+        np.save(os.path.join(parent.basename, 'F.npy'), Fcell)
+        np.save(os.path.join(parent.basename, 'Fneu.npy'), Fneu)
+        np.save(os.path.join(parent.basename, 'Spks.npy'), Spks)
+
+        # Append new stat file with old and save
+        print('Saving new stat')
+        stat_all = self.new_stat.copy()
+        for n in range(len(parent.stat)):
+            stat_all.append(parent.stat[n])
+        np.save(os.path.join(parent.basename, 'stat.npy'), stat_all)
+        print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
+
+        # close GUI
+        parent.make_masks_and_buttons()
+        self.close()
 
     def normalize_img_add_masks(self, parent):
         masked_image = np.zeros(((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
@@ -187,8 +287,8 @@ class ROIDraw(QtGui.QMainWindow):
                 # print(self.ineuron)
 
     def keyPressEvent(self, event):
-        if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
-            if event.key() == QtCore.Qt.Key_Delete:
+        if event.modifiers() != QtCore.Qt.AltModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_D:
                 self.ROIs[self.iROI].remove(self)
             elif event.key() == QtCore.Qt.Key_W:
                 self.viewbtns.button(0).setChecked(True)
@@ -211,21 +311,13 @@ class ROIDraw(QtGui.QMainWindow):
         self.nROIs += 1
 
     def plot_clicked(self, event):
-        """left-click chooses a cell, right-click flips cell to other view"""
-        flip = False
-        choose = False
-        zoom = False
-        replot = False
         items = self.win.scene().items(event.scenePos())
-        posx = 0
-        posy = 0
-        iplot = 0
         for x in items:
             if x == self.img0:
                 pos = self.p0.mapSceneToView(event.scenePos())
                 posy = pos.x()
                 posx = pos.y()
-                if event.modifiers() == QtCore.Qt.ShiftModifier:
+                if event.modifiers() == QtCore.Qt.AltModifier:
                     self.add_ROI(pos=np.array([posx - 5, posy - 5,
                                                int(self.diam.text()), int(self.diam.text())]))
                 if event.double():
@@ -261,11 +353,15 @@ class ROIDraw(QtGui.QMainWindow):
             self.p0.addItem(self.scatter[-1])
         if not os.path.isfile(parent.ops['reg_file']):
             parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
-        F, Fneu, F_chan2, Fneu_chan2, ops, stat = roiextract.masks_and_traces(parent.ops, stat0)
+
+        F, Fneu, F_chan2, Fneu_chan2, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
+        print('After', stat[0].keys())
+        print('Orig', parent.stat[0].keys())
         self.Fcell = F
         self.Fneu = Fneu
         self.plot_trace()
         self.extracted = True
+        self.new_stat = stat
 
     def plot_trace(self):
         self.trange = np.arange(0, self.Fcell.shape[1])
@@ -282,17 +378,19 @@ class ROIDraw(QtGui.QMainWindow):
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
-            fneu = (fneu - fmin) / (fmax - fmin)
             rgb = self.ROIs[n].color
             self.p1.plot(self.trange, f + k * kspace, pen=rgb)
-            self.p1.plot(self.trange, fneu + k * kspace, pen='r')
+            fneu = (fneu - fmin) / (fmax - fmin)
+            if self.nROIs == 1:
+                print('Printing')
+                self.p1.plot(self.trange, fneu + k * kspace, pen='r')
             ttick.append((k * kspace + f.mean(), str(n)))
             k -= 1
         self.fmax = (self.nROIs - 1) * kspace + 1
         self.fmin = 0
         ax.setTicks([ttick])
         self.p1.setXRange(0, self.Fcell.shape[1])
-        self.p1.setYRange(self.fmin, self.fmax)
+        # self.p1.setYRange(self.fmin, self.fmax)
 
 
 class sROI():

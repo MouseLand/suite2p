@@ -157,7 +157,7 @@ def phasecorr(data, refAndMasks, ops):
         #data = data.copy().astype(np.float32)
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
 
-    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
+    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 
     return ymax, xmax, cmax
 
@@ -168,7 +168,7 @@ def my_clip(X, lcorr):
     x10 = X[:,  -lcorr:, :lcorr+1]
     return x00, x01, x10, x11
 
-def phasecorr_cpu(data, refAndMasks, lcorr):
+def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time=0):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
@@ -191,6 +191,9 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
         ifft2(X[t], overwrite_x=True)
     x00, x01, x10, x11 = my_clip(X, lcorr)
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
+    if smooth_sigma_time > 0:
+        print('smoothing!')
+        cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
     for t in np.arange(nimg):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))
         cmax[t] = cc[t, ymax[t], xmax[t]]
@@ -211,17 +214,17 @@ def register_and_shift(data, refAndMasks, ops):
         nr=True
 
     # rigid registration
-    # temporal smoothing:
-    if ops['smooth_sigma_time'] > 0:
+    if ops['smooth_sigma_time'] > 0: # temporal smoothing:
         data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
         ymax, xmax, cmax = phasecorr(data_smooth, refAndMasks[:3], ops)
     else:
         ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     shift_data(data, ymax, xmax, ops['refImg'].mean())
     Y = []
+    
     # non-rigid registration
     if nr:
-        if ops['smooth_sigma_time'] > 0:
+        if ops['smooth_sigma_time'] > 0: # temporal smoothing:
             data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
             ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data_smooth, refAndMasks[3:], ops)
         else:

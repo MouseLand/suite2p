@@ -88,8 +88,10 @@ class sbxmap(object):
                         }
             return data
         else:
-            mapped_data = -mapped_data.reshape((self.info['nChan'], self.info['sz'][1], self.info['recordsPerBuffer'], self.info['length']), order = 'F')
-            return np.rot90(mapped_data[0])
+            # this generates the array in the size of num_frames * size[0] * size[1]
+            # need to reshape this
+            mapped_data = mapped_data.reshape((self.info['nChan']*self.info['length'], self.info['sz'][0], self.info['sz'][1]))
+            return mapped_data
 
     def crop(self, length=[None], rows=[None], cols=[None], basename=None):
         basename = self.filename if basename is None else os.path.splitext(basename)[0]

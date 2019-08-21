@@ -285,6 +285,8 @@ class PCViewer(QtGui.QMainWindow):
                 else:
                     self.pause()
 
+
+
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(BinaryPlayer, self).__init__(parent)
@@ -296,6 +298,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.l0 = QtGui.QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
+        self.loaded=False
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
         # --- cells image
@@ -361,6 +364,19 @@ class BinaryPlayer(QtGui.QMainWindow):
         #self.speedSpinBox.setRange(1, 9999)
         #self.speedSpinBox.setValue(100)
         #self.speedSpinBox.setSuffix("%")
+
+
+
+        # ROI CHECKBOX
+        self.checkBox = QtGui.QCheckBox("Make DFF video")
+        self.checkBox.setStyleSheet("color: white;")
+        self.checkBox.stateChanged.connect(self.dff_on)
+        self.dff = False
+        self.l0.addWidget(self.checkBox, 5, 0, 1, 1)
+
+
+
+
         self.frameSlider.valueChanged.connect(self.go_to_frame)
         self.l0.addWidget(self.movieLabel,0,0,1,5)
         self.updateFrameSlider()
@@ -385,6 +401,17 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.openFile(fileName, True)
 
 
+    def dff_on(self, state):
+        if state == QtCore.Qt.Checked:
+            self.dff = True
+        else:
+            self.dff = False
+        if self.loaded:
+            if self.dff:
+                self.srange = self.srange_dff
+            else:
+                self.srange = self.srange_default
+            self.next_frame()
 
 
     def open(self):
@@ -474,6 +501,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         except Exception as e:
             print("ERROR: incorrect ops1.npy or missing binaries")
             good = False
+        print(good)
         if good:
             # only show registered even if raw exists
             self.wraw = False
@@ -487,8 +515,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             frames = utils.sample_frames(ops,
                                         np.linspace(0,ops['nframes']-1,np.minimum(ops['nframes'],100)).astype(int),
                                         self.reg_loc[-1])
-            self.srange = frames.mean() + frames.std()*np.array([-1,5])
-            self.srange[0] = max(0, self.srange[0])
+            self.srange_default = frames.mean() + frames.std()*np.array([-1,5])
+            self.srange_default[0] = max(0, self.srange_default[0])
+            self.srange = self.srange_default
+            self.srange_dff = [-1,1]#frames.std()*np.array([-4,4])
+            self.mean_dff = frames.mean(axis=0)
+
             self.reg_file = []
             self.nbytesread = []
             for n in range(len(self.reg_loc)):
@@ -596,7 +628,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.ROIedit.setText('0')
             # get scaling from 100 random frames
             frames = subsample_frames(ops, np.minimum(ops['nframes']-1,100), self.reg_loc)
-            self.srange = frames.mean() + frames.std()*np.array([-2,5])
+
+            self.srange_default = frames.mean() + frames.std()*np.array([-2,5])
+            self.srange_default[0] = max(0, self.srange_default[0])
+            self.srange = self.srange_default
+            self.srange_dff = [-1,1]#frames.std()*np.array([-4,4])
+            self.mean_dff = frames.mean(axis=0)
             #self.srange = [np.percentile(frames.flatten(),8), np.percentile(frames.flatten(),99)]
             self.reg_file = open(self.reg_loc,'rb')
             self.wraw = False
@@ -894,6 +931,10 @@ class BinaryPlayer(QtGui.QMainWindow):
         else:
             buff = self.reg_file.read(self.nbytesread)
             self.img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly,self.Lx))[:,:,np.newaxis]
+            if self.dff:
+                self.img = (self.img - self.mean_dff)/(self.mean_dff + 1)
+
+
             self.img = np.tile(self.img,(1,1,3))
             if self.Floaded:
                 self.img[self.yext,self.xext,0] = self.srange[0]

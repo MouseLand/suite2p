@@ -90,6 +90,12 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
         'xrange': np.array([0, 0]),
         'yrange': np.array([0, 0]),
+        # sbx settings
+        'scanbox': 0,
+        'min_row_sbx': 0,
+        'max_row_sbx': 0,
+        'min_col_sbx': 0,
+        'max_col_sbx': 0,
       }
     return ops
 
@@ -162,6 +168,9 @@ def run_s2p(ops={},db={}):
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
             elif 'bruker' in ops and ops['bruker']:
                 ops1 = utils.ome_to_binary(ops)
+            elif 'scanbox' in ops and ops['scanbox']:
+                ops1 = utils.sbx_to_binary(ops)
+                print('time %4.2f sec. Wrote data to binaries for %d planes'%(toc(t0), len(ops1)))
             elif HAS_HAUS:
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])

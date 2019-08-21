@@ -233,6 +233,22 @@ class RunWindow(QtGui.QDialog):
                 kl+=1
             l+=1
 
+        sbxstr = ['scanbox', 'min_row', 'max_row', 'min_col', 'max_col']
+        sbxkeys = ['scanbox', 'min_row_sbx', 'max_row_sbx', 'min_col_sbx', 'max_col_sbx']
+        sbxtooltips = ['load scanbox', 'minimum row value for FOV', 'maximum row value for FOV', \
+                       'minimum col value for FOV', 'maximum col value for FOV']
+        sb_pos = 8
+        for sb in range(len(sbxstr)):
+            qedit = LineEdit(sb,sbxkeys[sb],self)
+            qlabel = QtGui.QLabel(sbxkeys[sb])
+            qlabel.setToolTip(sbxtooltips[sb])
+            qedit.set_text(self.ops)
+            qedit.setToolTip(tooltips[sb])
+            qedit.setFixedWidth(90)
+            self.layout.addWidget(qlabel,sb_pos,2,1,2)
+            self.layout.addWidget(qedit,sb_pos+1,2,1,2)
+            sb_pos+=2
+
         # data_path
         key = 'look_one_level_down'
         qlabel = QtGui.QLabel(key)
@@ -256,6 +272,11 @@ class RunWindow(QtGui.QDialog):
             self.layout.addWidget(self.qdata[n],
                                   n+5,0,1,2)
         # save_path0
+        # save_path0
+        self.bsbxpy = QtGui.QPushButton('OR add sbx file path')
+        self.bsbxpy.clicked.connect(self.get_sbxpy)
+        self.layout.addWidget(self.bsbxpy,9,0,1,2)
+        self.sbxtext = QtGui.QLabel('')
         self.bh5py = QtGui.QPushButton('OR add h5 file path')
         self.bh5py.clicked.connect(self.get_h5py)
         self.layout.addWidget(self.bh5py,11,0,1,2)
@@ -355,6 +376,7 @@ class RunWindow(QtGui.QDialog):
         self.btiff.setEnabled(True)
         self.bsave.setEnabled(True)
         self.bbin.setEnabled(True)
+        self.bsbxpy.setEnabled(True)
         # and enable the run button
         self.runButton.setEnabled(True)
         self.removeOps.setEnabled(True)
@@ -567,6 +589,7 @@ class RunWindow(QtGui.QDialog):
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.bh5py.setEnabled(False)
+            self.bsbxpy.setEnabled(False)
 
     def get_h5py(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
@@ -584,6 +607,19 @@ class RunWindow(QtGui.QDialog):
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.btiff.setEnabled(False)
+            self.bsbxpy.setEnabled(False)
+
+    def get_sbxpy(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open sbx file')
+        name = name[0]
+        if len(name)>0:
+            self.sbx_path = name
+            self.sbxtext.setText(name)
+            self.runButton.setEnabled(True)
+            self.listOps.setEnabled(True)
+            #self.loadDb.setEnabled(False)
+            self.btiff.setEnabled(False)
+            self.bh5py.setEnabled(False)
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")

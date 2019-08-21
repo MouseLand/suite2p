@@ -11,6 +11,7 @@ import scipy.io
 #from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from skimage.external.tifffile import imread, TiffFile
+from suite2p import sbxmap
 
 def tic():
     return time.time()
@@ -158,7 +159,7 @@ def list_h5(ops):
     fs = natsorted(glob.glob(lpath))
     return fs
 
-def find_files_open_binaries(ops1, ish5):
+def find_files_open_binaries(ops1, ish5, issbx):
     ''' find tiffs or h5 files, and open binaries to write to
         inputs ops1 (list over planes), ish5 (whether or not h5)
         returns ops1, fs (filelist), reg_file, reg_file_chan2 '''
@@ -185,6 +186,13 @@ def find_files_open_binaries(ops1, ish5):
             print(fs)
         else:
             fs = [ops1[0]['h5py']]
+    elif issbx:
+       # find sbx list of files
+        fs, ops2 = get_tif_list(ops1[0]) #get_sbx_list(ops1[0])
+        for ops in ops1:
+            ops['first_tiffs'] = ops2['first_tiffs']
+            ops['frames_per_folder'] = np.zeros((ops2['first_tiffs'].sum(),), np.int32)
+            ops['filelist'] = fs
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])
@@ -202,7 +210,7 @@ def h5py_to_binary(ops):
     nchannels = ops1[0]['nchannels']
 
     # open all binary files for writing
-    ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True)
+    ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True, False)
 
     keys = ops1[0]['h5py_key']
     if isinstance(keys, str):
@@ -331,7 +339,7 @@ def tiff_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, False)
     ops = ops1[0]
     # try tiff readers
     sktiff = choose_tiff_reader(fs[0], ops1[0])
@@ -425,6 +433,51 @@ def tiff_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
+def sbx_to_binary(ops):
+    '''
+    converts scanbox .sbx to *.bin file
+    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
+    assigns ops keys: nframes, meanImg, meanImg_chan2
+    '''
+    t0=tic()
+    # copy ops to list where each element is ops for each plane
+    ops1 = init_ops(ops)
+    nplanes = ops1[0]['nplanes']
+    nchannels = ops1[0]['nchannels']
+
+    # open all binary files for writing
+    # look for sbx files in all requested folders
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, True)
+    ops = ops1[0]
+
+    # main loading part
+    sbx = sbxmap(ops['data_path'])
+    im = sbx.data()
+
+    # check if uint16
+    if type(im[0,0,0]) == np.uint16:
+        im = im // 2
+        im = im.astype(np.int16)
+    if type(im[0,0,0]) == np.uint8:
+        im = im.astype(np.int16)
+
+    # needs work here
+    nframes = im.shape[0]
+    for j in range(0,nplanes):
+        if ik==0 and ix==0:
+            ops1[j]['nframes'] = 0
+            ops1[j]['meanImg'] = np.zeros((im.shape[1], im.shape[2]), np.float32)
+            if nchannels>1:
+                ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1], im.shape[2]), np.float32)
+        i0 = nchannels * ((iplane+j)%nplanes)
+        if nchannels>1:
+            nfunc = ops['functional_chan']-1
+        else:
+            nfunc = 0
+        im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels]
+
+
+
 def ome_to_binary(ops):
     '''
     converts ome.tiff to *.bin file for non-interleaved red channel recordings
@@ -442,7 +495,7 @@ def ome_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, False)
     ops = ops1[0]
     # try tiff readers
     sktiff = choose_tiff_reader(fs[0], ops1[0])
@@ -589,7 +642,7 @@ def mesoscan_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, False)
     ops = ops1[0]
 
     #nplanes = ops1[0]['nplanes']
@@ -958,7 +1011,7 @@ def ome_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, False)
     ops = ops1[0]
 
     fs_Ch1, fs_Ch2 = [], []

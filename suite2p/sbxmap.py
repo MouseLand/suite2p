@@ -2,7 +2,7 @@ import numpy as np
 import os
 import scipy.io as spio
 
-def loadmat(filename):
+def lmat(filename):
     '''
     this function should be called instead of direct spio.loadmat
     as it cures the problem of not properly recovering python dictionaries
@@ -64,7 +64,7 @@ class sbxmap(object):
             return (self.info['length'], self.info['sz'][0], self.info['sz'][1])
     @property
     def info(self):
-        _info = loadmat(self.filename + '.mat')['info']
+        _info = lmat(self.filename + '.mat')['info']
         # Fixes issue when using uint16 for memmapping
         _info['sz'] = _info['sz'].tolist()
         # Defining number of channels/size factor

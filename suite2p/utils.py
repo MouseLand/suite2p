@@ -208,7 +208,10 @@ def h5py_to_binary(ops):
     if isinstance(keys, str):
         keys = [keys]
     iall = 0
-    for h5 in h5list:
+    for j in ops['nplanes']:
+        ops1[j]['nframes_per_folder'] = np.zeros(len(h5list), np.int32)
+
+    for ih5,h5 in enumerate(h5list):
         with h5py.File(h5, 'r') as f:
             # if h5py data is 4D instead of 3D, assume that
             # data = nframes x nplanes x pixels x pixels
@@ -257,8 +260,10 @@ def h5py_to_binary(ops):
                             reg_file_chan2[j].write(bytearray(im2write))
                             ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                         ops1[j]['nframes'] += im2write.shape[0]
+                        ops1[j]['nframes_per_folder'][ih5] += im2write.shape[0]
                     ik += nframes
                     iall += nframes
+
         # write ops files
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']

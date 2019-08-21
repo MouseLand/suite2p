@@ -264,7 +264,7 @@ def h5py_to_binary(ops):
                     ik += nframes
                     iall += nframes
 
-        # write ops files
+    # write ops files
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:

@@ -61,7 +61,7 @@ def masks_and_traces(ops, stat, stat_orig):
     dF = F - ops['neucoeff'] * Fneu
     spks = dcnv.oasis(dF, ops)
 
-    print('Ftrace size', np.shape(Fneu), np.shape(F))
+    # print('Ftrace size', np.shape(Fneu), np.shape(F))
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat
 
 
@@ -230,7 +230,6 @@ class ROIDraw(QtGui.QMainWindow):
             stat_all.append(parent.stat[n])
         # Calculate overlap before saving
         stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, parent.ops)
-        print(stat_all_w_overlap[0]['overlap'])
         np.save(os.path.join(parent.basename, 'stat.npy'), stat_all_w_overlap)
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
 
@@ -361,8 +360,8 @@ class ROIDraw(QtGui.QMainWindow):
             parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
-        print('After', stat[0].keys())
-        print('Orig', parent.stat[0].keys())
+        # print('After', stat[0].keys())
+        # print('Orig', parent.stat[0].keys())
         self.Fcell = F
         self.Fneu = Fneu
         self.Spks = spks

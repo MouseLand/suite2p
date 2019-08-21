@@ -24,7 +24,7 @@ class MainW(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(0, 0, 1500, 800)
+        self.setGeometry(0, 0, 1500, 600)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -88,7 +88,7 @@ class MainW(QtGui.QMainWindow):
 
         # load a behavioral trace
         self.loadBeh = QtGui.QAction(
-            "Load behavior or stim trace (1D only)", self
+            "Load behavior or stim trace", self
         )
         self.loadBeh.triggered.connect(self.load_behavior)
         self.loadBeh.setEnabled(False)
@@ -361,7 +361,7 @@ class MainW(QtGui.QMainWindow):
         b = 0
         # colorbars for different statistics
         colorsAll = self.colors.copy()
-        colorsAll.append("L: corr with 1D var, bin= ^^^")
+        colorsAll.append("L: corr with beh var, bin= ^^^")
         colorsAll.append("M: rastermap / custom")
         for names in colorsAll:
             btn = gui.ColorButton(b, "&" + names, self)
@@ -550,7 +550,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'D:/DATA/GT1/multichannel_half/suite2p/plane0/stat.npy'
+        #statfile = '/groups/hackathon/data/guest3/sampleData/TSeries-06262017-1330-1minrec-002/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
@@ -1311,43 +1311,28 @@ class MainW(QtGui.QMainWindow):
         bloaded = False
         try:
             beh = np.load(name)
-            bresample=False
-            if beh.ndim>1:
-                if beh.shape[1] < 10:
-                    beh = beh.flatten()
-                    if beh.shape[0] == self.Fcell.shape[1]:
-                        self.bloaded = True
-                        beh_time = np.arange(0, self.Fcell.shape[1])
-                else:
-                    self.bloaded = True
-                    beh_time = beh[:,1]
-                    beh = beh[:,0]
-                    bresample=True
-            else:
-                if beh.shape[0] == self.Fcell.shape[1]:
-                    self.bloaded = True
-                    beh_time = np.arange(0, self.Fcell.shape[1])
+            if beh.ndim==1:
+                beh=beh[:,np.newaxis]
+            if beh.shape[0] == self.Fcell.shape[1]:
+                self.bloaded = True
+                beh_time = np.arange(0, self.Fcell.shape[1])
         except (ValueError, KeyError, OSError,
                 RuntimeError, TypeError, NameError):
-            print("ERROR: this is not a 1D array with length of data")
+            print("ERROR: the behavioral data does not have same sampling frequency")
         if self.bloaded:
             for ind in range(beh.shape[1]):
                 beh[:,ind] -= beh[:,ind].min()
                 beh[:,ind] /= beh[:,ind].max()
-                self.beh[:,ind] = beh[:,ind]
-                self.beh_time = beh_time
-                if bresample:
-                    self.beh_resampled[:,ind] = resample_frames(self.beh[:,ind], self.beh_time, np.arange(0,self.Fcell.shape[1]))
-                else:
-                    self.beh_resampled[:,ind] = self.beh[:,ind]
-                b = len(self.colors)
-                self.colorbtns.button(b).setEnabled(True)
-                self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
+            self.beh = beh
+            self.beh_time=beh_time
+            b = len(self.colors)
+            self.colorbtns.button(b).setEnabled(True)
+            self.colorbtns.button(b).setStyleSheet(self.styleUnpressed)
             fig.beh_masks(self)
             fig.plot_trace(self)
             self.show()
         else:
-            print("ERROR: this is not a 1D array with length of data")
+            print("ERROR: this is not an array with length of data")
 
     def save_mat(self):
         matpath = os.path.join(self.basename,'Fall.mat')

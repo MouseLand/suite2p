@@ -60,9 +60,12 @@ def get_mov(ops):
                 data = data[:nmax,:,:]
             dbin = np.reshape(data, (-1,nt0,Ly,Lx))
             DD = dbin.mean(axis=1)
+            # add spatial smoothing
+            #DD = gaussian_filter(DD, [0, 1., 1.])
             # crop into valid area
             mov[ix:ix+dbin.shape[0],:,:] = DD[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
             ix += dbin.shape[0]
+    #print('i was here')
     mov = mov[:ix,:,:]
     max_proj = np.max(mov, axis=0)
     print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))

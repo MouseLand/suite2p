@@ -65,18 +65,19 @@ def plot_trace(parent):
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
             k-=1
-        bsc = len(pmerge)/25 + 1
+        bsc = (len(pmerge))/25 + 1
         # at bottom plot behavior and avg trace
         if parent.bloaded:
             favg -= favg.min()
             favg /= favg.max()
             for ind in range(parent.beh.shape[1]):
-                parent.p3.plot(parent.beh_time,-1*bsc*(ind+1)+parent.beh[:,ind]*bsc,pen='w')
+                parent.p3.plot(parent.trange,-ind*bsc-1*bsc+parent.beh[:,ind]*bsc,pen='w')
+                ttick.append((-ind*bsc-1*bsc, 'b%d'%ind))
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
             parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             parent.traceLabel[2].setText("")
-            parent.fmin=-1*bsc
+            parent.fmin=-parent.beh.shape[1]*bsc-1*bsc
         else:
             for n in range(3):
                 parent.traceLabel[n].setText("")
@@ -465,12 +466,13 @@ def rastermap_masks(parent):
         parent.RGBall = np.concatenate([parent.RGBall,rgb], axis=1)
 
 def beh_masks(parent):
+    beh0=parent.beh[:,0]
     k = parent.ops_plot[1]
     c = parent.ops_plot[3].shape[1]+1
     print(c)
     n = np.array(parent.imerge)
-    nb = int(np.floor(parent.beh_resampled.size/parent.bin))
-    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    nb = int(np.floor(beh0.size/parent.bin))
+    sn = np.reshape(beh0[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).sum()
     cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))

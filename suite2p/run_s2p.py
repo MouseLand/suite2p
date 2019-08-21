@@ -33,7 +33,7 @@ def default_ops():
         'tau':  1., # this is the main parameter for deconvolution
         'fs': 10.,  # sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
-        'frames_include': (0,-1),
+        'frames_include': -1,
         # output settings
         'preclassify': 0., # apply classifier before signal extraction with probability 0.3
         'save_mat': False, # whether to save output as matlab files
@@ -69,7 +69,7 @@ def default_ops():
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
         'roidetect': True, # whether or not to run ROI extraction
-        'sparse_mode': False, # whether or not to run sparse_mode
+        'sparse_mode': True, # whether or not to run sparse_mode
         'diameter': 12, # if not sparse_mode, use diameter for filtering and extracting
         'spatial_scale': 0, # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
         'connected': True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)

@@ -192,7 +192,6 @@ def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time=0):
     x00, x01, x10, x11 = my_clip(X, lcorr)
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
     if smooth_sigma_time > 0:
-        print('smoothing!')
         cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
     for t in np.arange(nimg):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))

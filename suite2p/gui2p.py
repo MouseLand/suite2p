@@ -94,6 +94,7 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
 
+
         # load processed data
         self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
         self.saveMat.setShortcut("Ctrl+S")

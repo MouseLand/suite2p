@@ -102,6 +102,8 @@ def run_s2p(ops={},db={}):
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
             ops['save_path0'], tail = os.path.split(ops['h5py'])
+        elif ('sbx' in ops) and len(ops['sbx'])>0:
+            ops['save_path0'], tail = os.path.split(ops['sbx'])
         else:
             ops['save_path0'] = ops['data_path'][0]
 
@@ -164,6 +166,9 @@ def run_s2p(ops={},db={}):
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
                 ops1 = dataset.tosuite2p(ops)
+                print('time %4.2f sec. Wrote data to binaries for %d planes'%(toc(t0), len(ops1)))
+            elif 'sbx' in ops and ops['sbx']:
+                ops1 = utils.sbx_to_binary(ops)
                 print('time %4.2f sec. Wrote data to binaries for %d planes'%(toc(t0), len(ops1)))
             else:
                 ops1 = utils.tiff_to_binary(ops)

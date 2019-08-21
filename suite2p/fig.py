@@ -30,7 +30,7 @@ def plot_trace(parent):
         fmin = np.minimum(f.min(), fneu.min())
         #sp from 0 to fmax
         sp /= sp.max()
-        #Agus
+        #agus
         sp *= fmax - fmin
         #sp += fmin*0.95
         if parent.tracesOn:

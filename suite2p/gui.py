@@ -247,6 +247,8 @@ class RunWindow(QtGui.QDialog):
             qedit.setFixedWidth(90)
             self.layout.addWidget(qlabel,sb_pos,2,1,2)
             self.layout.addWidget(qedit,sb_pos+1,2,1,2)
+            self.keylist.append(key)
+            self.editlist.append(qedit)
             sb_pos+=2
 
         # data_path
@@ -272,11 +274,11 @@ class RunWindow(QtGui.QDialog):
             self.layout.addWidget(self.qdata[n],
                                   n+5,0,1,2)
         # save_path0
-        # save_path0
         self.bsbxpy = QtGui.QPushButton('OR add sbx file path')
         self.bsbxpy.clicked.connect(self.get_sbxpy)
         self.layout.addWidget(self.bsbxpy,9,0,1,2)
         self.sbxtext = QtGui.QLabel('')
+        self.layout.addWidget(self.sbxtext,10,0,1,2)
         self.bh5py = QtGui.QPushButton('OR add h5 file path')
         self.bh5py.clicked.connect(self.get_h5py)
         self.layout.addWidget(self.bh5py,11,0,1,2)
@@ -360,6 +362,8 @@ class RunWindow(QtGui.QDialog):
         if hasattr(self, 'h5_path'):
             self.h5_path = []
             self.h5_key = 'data'
+        if hasattr(self, 'sbx_path'): #scanbox
+            self.sbx_path = []
         self.save_path = []
         self.fast_disk = []
         # clear labels
@@ -392,14 +396,18 @@ class RunWindow(QtGui.QDialog):
             self.db['h5py'] = self.h5_path
             self.db['h5py_key'] = self.h5_key
             self.datastr = self.h5_path
+        elif hasattr(self, 'sbx_path'):
+            self.db['sbxpy'] = self.sbx_path
+            self.datastr = self.sbx_path
         else:
             self.datastr = self.data_path[0]
-        print(self.datastr)
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
-            else:
+            elif hasattr(self, 'h5_path'):
                 fpath = os.path.dirname(self.db['h5py'])
+            else:
+                fpath = os.path.dirname(self.db['sbxpy'])
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
         if len(self.fast_disk)==0:
@@ -518,6 +526,7 @@ class RunWindow(QtGui.QDialog):
                     self.bh5py.setEnabled(False)
                     self.btiff.setEnabled(True)
                     self.listOps.setEnabled(True)
+                    self.bsbxpy.setEnabled(False)
                     if hasattr(self,'h5_path'):
                         self.h5text.setText('')
                         del self.h5_path
@@ -532,6 +541,16 @@ class RunWindow(QtGui.QDialog):
                     self.btiff.setEnabled(False)
                     self.bh5py.setEnabled(True)
                     self.listOps.setEnabled(True)
+                    self.bsbxpy.setEnabled(False)
+                elif 'scanbox' in ops>0:
+                    self.sbx_path = ops['sbxpy']
+                    self.sbxtext.setText(ops['sbxpy'])
+                    self.data_path = []
+                    self.runButton.setEnabled(True)
+                    self.btiff.setEnabled(False)
+                    self.bh5py.setEnabled(True)
+                    self.listOps.setEnabled(True)   
+                    self.bsbxpy.setEnabled(True)
                 if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)
@@ -617,7 +636,6 @@ class RunWindow(QtGui.QDialog):
             self.sbxtext.setText(name)
             self.runButton.setEnabled(True)
             self.listOps.setEnabled(True)
-            #self.loadDb.setEnabled(False)
             self.btiff.setEnabled(False)
             self.bh5py.setEnabled(False)
 

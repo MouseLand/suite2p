@@ -4,14 +4,13 @@ from natsort import natsorted
 import math, time
 import glob, h5py, os, json
 from scipy import signal
-from suite2p import register, nonrigid, chan2detect, sparsedetect, roiextract
+from suite2p import register, nonrigid, chan2detect, sparsedetect, roiextract, sbxmap
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
 #from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from skimage.external.tifffile import imread, TiffFile
-from suite2p import sbxmap
 
 def tic():
     return time.time()
@@ -159,6 +158,30 @@ def list_h5(ops):
     fs = natsorted(glob.glob(lpath))
     return fs
 
+def list_sbx(ops):
+    froot = os.path.dirname(ops['sbxpy'])
+    lpath = os.path.join(froot, "*.sbx")
+    fs = natsorted(glob.glob(lpath))
+    return fs
+
+def load_sbx(filename,ops):
+    sbx = sbxmap.sbxmap(filename)
+    _im = sbx.data()
+    min_row = ops['min_row_sbx']
+    max_row = ops['max_row_sbx']
+    min_col = ops['min_col_sbx']
+    max_col = ops['max_col_sbx']
+    if max_row!=-1 and max_col!=-1:
+        if max_row==-1:
+            if min_row>=0 and min_col>=0 and max_col<_im.shape[2]:
+                _im = _im[:,min_row:,min_col:max_col]
+        elif max_col==-1:
+            if min_row>=0 and max_row<_im.shape[1] and min_col>=0:
+                _im = _im[:,min_row:,min_col:]
+    else:
+        _im = _im    
+    return _im
+
 def find_files_open_binaries(ops1, ish5, issbx):
     ''' find tiffs or h5 files, and open binaries to write to
         inputs ops1 (list over planes), ish5 (whether or not h5)
@@ -187,12 +210,12 @@ def find_files_open_binaries(ops1, ish5, issbx):
         else:
             fs = [ops1[0]['h5py']]
     elif issbx:
-       # find sbx list of files
-        fs, ops2 = get_tif_list(ops1[0]) #get_sbx_list(ops1[0])
-        for ops in ops1:
-            ops['first_tiffs'] = ops2['first_tiffs']
-            ops['frames_per_folder'] = np.zeros((ops2['first_tiffs'].sum(),), np.int32)
-            ops['filelist'] = fs
+        if ops1[0]['look_one_level_down']:
+            fs = list_sbx(ops1[0])
+            print('NOTE: using a list of sbx files:')
+            print(fs)
+        else:
+            fs = [ops1[0]['sbxpy']]
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])
@@ -436,7 +459,7 @@ def tiff_to_binary(ops):
 def sbx_to_binary(ops):
     '''
     converts scanbox .sbx to *.bin file
-    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
+    requires ops keys: nplanes, nchannels, sbxpy, look_one_level_down, reg_file
     assigns ops keys: nframes, meanImg, meanImg_chan2
     '''
     t0=tic()
@@ -444,38 +467,50 @@ def sbx_to_binary(ops):
     ops1 = init_ops(ops)
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
-
+    
     # open all binary files for writing
     # look for sbx files in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, True)
+    ops1, sbxfilelist, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False, True)
     ops = ops1[0]
 
     # main loading part
-    sbx = sbxmap(ops['data_path'])
-    im = sbx.data()
-
+    im = np.array([])
+    for idxsbx, filename in enumerate(sbxfilelist):
+        _im = load_sbx(filename, ops)
+        if idxsbx==0:
+            im = _im
+        else:
+            im = np.concatenate((im,_im))
+    print(im.shape)
+    
     # check if uint16
     if type(im[0,0,0]) == np.uint16:
         im = im // 2
         im = im.astype(np.int16)
     if type(im[0,0,0]) == np.uint8:
         im = im.astype(np.int16)
-
     # needs work here
-    nframes = im.shape[0]
-    for j in range(0,nplanes):
-        if ik==0 and ix==0:
-            ops1[j]['nframes'] = 0
-            ops1[j]['meanImg'] = np.zeros((im.shape[1], im.shape[2]), np.float32)
-            if nchannels>1:
-                ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1], im.shape[2]), np.float32)
-        i0 = nchannels * ((iplane+j)%nplanes)
+    # TODO: updating meanImg
+    
+    
+    # write ops files
+    do_registration = ops1[0]['do_registration']
+    for ops in ops1:
+        ops['Ly'],ops['Lx'] = ops['meanImg'].shape
+        if not do_registration:
+            ops['yrange'] = np.array([0,ops['Ly']])
+            ops['xrange'] = np.array([0,ops['Lx']])
+        ops['meanImg'] /= ops['nframes']
         if nchannels>1:
-            nfunc = ops['functional_chan']-1
-        else:
-            nfunc = 0
-        im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels]
-
+            ops['meanImg_chan2'] /= ops['nframes']
+        np.save(ops['ops_path'], ops)
+    # close all binary files and write ops files
+    for j in range(0,nplanes):
+        reg_file[j].close()
+        if nchannels>1:
+            reg_file_chan2[j].close()
+            
+    return ops1
 
 
 def ome_to_binary(ops):

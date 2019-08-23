@@ -211,7 +211,7 @@ def register_and_shift(data, refAndMasks, ops):
     if ops['nonrigid'] and len(refAndMasks)>3:
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
-
+    
     # rigid registration
     if ops['smooth_sigma_time'] > 0: # temporal smoothing:
         data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
@@ -219,7 +219,6 @@ def register_and_shift(data, refAndMasks, ops):
     else:
         ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     shift_data(data, ymax, xmax, ops['refImg'].mean())
-    Y = []
     
     # non-rigid registration
     if nr:
@@ -635,8 +634,8 @@ def register_binary(ops, refImg=None):
         ops = utils.make_blocks(ops)
 
     ops['nframes'] = get_nFrames(ops)
-    if not ops['max_nr_frames'] == -1:
-        ops['nframes'] = min((ops['nframes'], ops['max_nr_frames']))
+    if not ops['frames_include'] == -1:
+        ops['nframes'] = min((ops['nframes'], ops['frames_include']))
 
     print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings

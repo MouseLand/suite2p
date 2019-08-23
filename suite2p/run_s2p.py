@@ -203,11 +203,16 @@ def run_s2p(ops={},db={}):
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(toc(t11)))
             
-            if ops['two_step_registration']:
+            if ops['two_step_registration'] and ops['keep_movie_raw']:
+                print('----------- REGISTRATION STEP 2 (making mean image (exlcuding bad frames)')
+                frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']), 
+                                            ops1[ipl]['reg_file'], crop=False)
+                ops1[ipl]['meanImg'] = np.mean(frames, axis=0)
+                ops1[ipl]['meanImg2'] = np.percentile(frames, 90, axis=0) * np.std(frames, axis=0)
                 print('----------- REGISTRATION STEP 2 (copying raw binary)')
-                os.system('cp {} {}'.format(ops1[ipl]['raw_file'], ops1[ipl]['reg_file'])) # copy raw
+                os.system('cp {} {}'.format(ops1[ipl]['raw_file'], ops1[ipl]['reg_file']))
                 print('----------- REGISTRATION STEP 2')
-                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg']) # register binary
+                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg2']) # register binary
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(toc(t11)))
 

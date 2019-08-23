@@ -416,6 +416,8 @@ def compute_crop(ops):
     # exclude frames which have a large deviation and/or low correlation
     px = dxy / np.maximum(0, cXY)
     ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['xoff']) > (ops['maxregshift'] * ops['Lx'] * 0.95), ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['yoff']) > (ops['maxregshift'] * ops['Ly'] * 0.95), ops['badframes'])
     ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
     ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
     xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
@@ -574,7 +576,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         reg_file_alt = open(reg_file_alt, 'wb')
         raw_file_alt = open(raw_file_alt, 'rb')
     else:
-        reg_file_alt = open(reg_file_alt, 'r+b')    
+        reg_file_alt = open(reg_file_alt, 'r+b')
     while True:
         if raw:
             buff = raw_file_alt.read(nbytesread)
@@ -646,8 +648,7 @@ def register_binary(ops, refImg=None):
 
     # compute reference image
     if refImg is not None:
-        print('WARNING: user reference frame given, will not compute registration metrics')
-        do_regmetrics = False
+        print('NOTE: user reference frame given')
     else:
         t0 = time.time()
         refImg = pick_init(ops)
@@ -684,6 +685,7 @@ def register_binary(ops, refImg=None):
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True
             print(ops['badframes'].sum())
+    
     # return frames which fall outside range
     ops = compute_crop(ops)
 
@@ -693,8 +695,6 @@ def register_binary(ops, refImg=None):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
-
-
 
 def register_npy(Z, ops):
     # if ops does not have refImg, get a new refImg

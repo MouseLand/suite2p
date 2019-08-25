@@ -336,11 +336,6 @@ class MainW(QtGui.QMainWindow):
 
         # quadrant buttons
         self.quadbtns = QtGui.QButtonGroup(self)
-        #vlabel = QtGui.QLabel(self)
-        #vlabel.setText("<font color='white'>Background</font>")
-        #vlabel.setFont(boldfont)
-        #vlabel.resize(vlabel.minimumSizeHint())
-        #self.l0.addWidget(vlabel, 1, 0, 1, 1)
         for b in range(9):
             btn = gui.QuadButton(b, ' '+str(b+1), self)
             self.quadbtns.addButton(btn, b)
@@ -753,6 +748,7 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
+                    self.zoom_to_cell()
                     self.show()
 
 
@@ -1417,6 +1413,8 @@ class MainW(QtGui.QMainWindow):
                     self.stat[n]['imerge'] = []
                 self.stat = np.array(self.stat)
                 self.make_masks_and_buttons()
+                self.ichosen = 0
+                self.imerge = [0]
                 self.loaded = True
             else:
                 print("stat.npy found, but other files not in folder")

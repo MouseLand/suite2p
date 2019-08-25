@@ -84,7 +84,7 @@ def plot_trace(parent):
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])
-    parent.p3.setXRange(0,parent.Fcell.shape[1])
+    #parent.p3.setXRange(0,parent.Fcell.shape[1])
     parent.p3.setYRange(parent.fmin,parent.fmax)
 
 def plot_masks(parent,M):

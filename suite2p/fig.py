@@ -30,16 +30,18 @@ def plot_trace(parent):
         fmin = np.minimum(f.min(), fneu.min())
         #sp from 0 to fmax
         sp /= sp.max()
-        sp *= fmax# - fmin
-        #sp += fmin
-        parent.p3.plot(parent.trange,f,pen='b')
-        parent.p3.plot(parent.trange,fneu,pen='r')
-        parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
-        parent.fmin=0
+        #agus
+        sp *= fmax - fmin
+        #sp += fmin*0.95
+        if parent.tracesOn:
+            parent.p3.plot(parent.trange,f,pen='b')
+        if parent.neuropilOn:
+            parent.p3.plot(parent.trange,fneu,pen='r')
+        if parent.deconvOn:
+            parent.p3.plot(parent.trange,(sp+fmin),pen=(255,255,255,100))
+        parent.fmin= fmin
         parent.fmax=fmax
         ax.setTicks(None)
-        for n in range(3):
-            parent.traceLabel[n].setText(parent.traceText[n])
     else:
         nmax = int(parent.ncedit.text())
         kspace = 1.0/parent.sc
@@ -72,13 +74,11 @@ def plot_trace(parent):
             favg /= favg.max()
             parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
-            parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
-            parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
-            parent.traceLabel[2].setText("")
+            #parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
+            #parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
+            #parent.traceLabel[2].setText("")
             parent.fmin=-1*bsc
         else:
-            for n in range(3):
-                parent.traceLabel[n].setText("")
             parent.fmin=0
         #ttick.append((-0.5*bsc,'1D var'))
 

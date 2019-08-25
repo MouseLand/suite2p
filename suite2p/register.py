@@ -243,6 +243,8 @@ def subsample_frames(ops, nsamps):
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
+    #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
+
     if 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file']):
         if ops['nchannels']>1:
             if ops['functional_chan'] == ops['align_by_chan']:

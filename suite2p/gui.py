@@ -109,10 +109,10 @@ class RunWindow(QtGui.QDialog):
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
-                     'save_mat', 'combined', '1Preg', 'nonrigid',
+                     'save_mat', 'combined', '1Preg', 'nonrigid', 'bruker',
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect','bruker']
         regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
@@ -133,7 +133,8 @@ class RunWindow(QtGui.QDialog):
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
-                    'if 1, registration is performed',
+                    'if you have bruker single-page tiffs with Ch1 and Ch2, say 1',
+                    "if 1, registration is performed if it wasn't performed already",
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',

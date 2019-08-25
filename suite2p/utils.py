@@ -208,7 +208,10 @@ def h5py_to_binary(ops):
     if isinstance(keys, str):
         keys = [keys]
     iall = 0
-    for h5 in h5list:
+    for j in range(ops['nplanes']):
+        ops1[j]['nframes_per_folder'] = np.zeros(len(h5list), np.int32)
+
+    for ih5,h5 in enumerate(h5list):
         with h5py.File(h5, 'r') as f:
             # if h5py data is 4D instead of 3D, assume that
             # data = nframes x nplanes x pixels x pixels
@@ -257,9 +260,11 @@ def h5py_to_binary(ops):
                             reg_file_chan2[j].write(bytearray(im2write))
                             ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                         ops1[j]['nframes'] += im2write.shape[0]
+                        ops1[j]['nframes_per_folder'][ih5] += im2write.shape[0]
                     ik += nframes
                     iall += nframes
-        # write ops files
+
+    # write ops files
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
@@ -828,3 +833,117 @@ def sample_frames(ops, ix, reg_file):
             data = np.reshape(data, (Ly, Lx))
             mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
     return mov
+
+def ome_to_binary(ops):
+    '''
+    converts ome.tiff to *.bin file for non-interleaved red channel recordings
+    assumes SINGLE-PAGE tiffs where first channel has string 'Ch1'
+    and also SINGLE FOLDER
+    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
+    assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
+    '''
+    t0=tic()
+    # copy ops to list where each element is ops for each plane
+    ops1 = init_ops(ops)
+    nplanes = ops1[0]['nplanes']
+
+    # open all binary files for writing
+    # look for tiffs in all requested folders
+    ops1, fs, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, False)
+    ops = ops1[0]
+
+    fs_Ch1, fs_Ch2 = [], []
+    for f in fs:
+        if f.find('Ch1')>-1:
+            if ops['functional_chan'] == 1:
+                fs_Ch1.append(f)
+            else:
+                fs_Ch2.append(f)
+        else:
+            if ops['functional_chan'] == 1:
+                fs_Ch2.append(f)
+            else:
+                fs_Ch1.append(f)
+
+    if len(fs_Ch2)==0:
+        ops1[0]['nchannels'] = 1
+    nchannels = ops1[0]['nchannels']
+
+    # loop over all tiffs
+    which_folder = 0
+    tif = ScanImageTiffReader(fs_Ch1[0])
+    im0 = tif.data()
+    Ly,Lx = im0.shape
+    j=0
+
+    for j in range(nplanes):
+        ops1[j]['nframes'] = 0
+        ops1[j]['frames_per_folder'][0] = 0
+        ops1[j]['meanImg'] = np.zeros((Ly,Lx))
+        if nchannels > 1:
+            ops1[j]['meanImg_chan2'] = np.zeros((Ly,Lx))
+    ix=0
+
+    j=0
+    for ik, file in enumerate(fs_Ch1):
+        # open tiff
+        tif = ScanImageTiffReader(file)
+        im = tif.data()
+        tif.close()
+        if type(im[0,0]) == np.uint16:
+            im = im // 2
+            im = im.astype(np.int16)
+
+        ops1[j]['meanImg'] += im
+        ops1[j]['nframes'] += 1
+        ops1[j]['nframes_per_folder'] += 1
+
+        reg_file[j].write(bytearray(im))
+        ix+=1
+        if ix%(1000)==0:
+            print('%d frames of binary, time %0.2f sec.'%(ix,toc(t0)))
+        gc.collect()
+        j+=1
+        j = j%nplanes
+
+    if nchannels>1:
+
+        ix=0
+        j=0
+        for ik, file in enumerate(fs_Ch2):
+            # open tiff
+            tif = ScanImageTiffReader(file)
+            im = tif.data()
+
+            if type(im[0,0]) == np.uint16:
+                im = im // 2
+                im = im.astype(np.int16)
+
+            ops1[j]['meanImg_chan2'] += im
+
+            reg_file_chan2[j].write(bytearray(im))
+            ix+=1
+            if ix%(1000)==0:
+                print('%d frames of binary, time %0.2f sec.'%(ix,toc(t0)))
+            gc.collect()
+            j+=1
+            j = j%nplanes
+
+    # write ops files
+    do_registration = ops['do_registration']
+    do_nonrigid = ops1[0]['nonrigid']
+    for ops in ops1:
+        ops['Ly'],ops['Lx'] = Ly,Lx
+        if not do_registration:
+            ops['yrange'] = np.array([0,ops['Ly']])
+            ops['xrange'] = np.array([0,ops['Lx']])
+        ops['meanImg'] /= ops['nframes']
+        if nchannels>1:
+            ops['meanImg_chan2'] /= ops['nframes']
+        np.save(ops['ops_path'], ops)
+    # close all binary files and write ops files
+    for j in range(0,nplanes):
+        reg_file[j].close()
+        if nchannels>1:
+            reg_file_chan2[j].close()
+    return ops1

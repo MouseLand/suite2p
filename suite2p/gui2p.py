@@ -11,6 +11,7 @@ from pkg_resources import iter_entry_points
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 from scipy import io
+import warnings
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -24,7 +25,8 @@ class MainW(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainW, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
-        self.setGeometry(0, 0, 1500, 400)
+
+        self.setGeometry(50, 50, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         icon_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"
@@ -94,12 +96,13 @@ class MainW(QtGui.QMainWindow):
         self.loadBeh.setEnabled(False)
         self.addAction(self.loadBeh)
 
-        # load processed data
+        # save to matlab file
         self.saveMat = QtGui.QAction("&Save to mat file (*.mat)", self)
         self.saveMat.setShortcut("Ctrl+S")
         self.saveMat.triggered.connect(self.save_mat)
         self.saveMat.setEnabled(False)
         self.addAction(self.saveMat)
+
 
         # export figure
         exportFig = QtGui.QAction("Export as image (svg)", self)
@@ -176,6 +179,17 @@ class MainW(QtGui.QMainWindow):
         self.regPC.setEnabled(True)
         reg_menu.addAction(self.reg)
         reg_menu.addAction(self.regPC)
+
+        # merge menuBar
+        merge_menu = main_menu.addMenu("&Merge ROIs")
+        self.sugMerge = QtGui.QAction("Auto-suggest merges", self)
+        self.sugMerge.triggered.connect(self.suggest_merge)
+        self.sugMerge.setEnabled(False)
+        self.saveMerge = QtGui.QAction("&Append merges to npy files", self)
+        self.saveMerge.triggered.connect(self.save_merge)
+        self.saveMerge.setEnabled(False)
+        merge_menu.addAction(self.sugMerge)
+        merge_menu.addAction(self.saveMerge)
 
         # plugin menu
         self.plugins = {}
@@ -564,8 +578,7 @@ class MainW(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #Agus
-        #statfile = '/groups/hackathon/data/guest1/DG/2/suite2p/plane0/stat.npy'
+        #statfile = 'D:/grive/suite2python/BootCamp/cerebellum/stat.npy'
         if statfile is not None:
             self.fname = statfile
             self.load_proc()
@@ -608,7 +621,7 @@ class MainW(QtGui.QMainWindow):
             ).mean(axis=2)
 
             self.Fbin = self.Fbin - self.Fbin.mean(axis=1)[:, np.newaxis]
-            self.Fstd = (self.Fbin ** 2).sum(axis=1)
+            self.Fstd = (self.Fbin ** 2).mean(axis=1)**0.5
             self.trange = np.arange(0, self.Fcell.shape[1])
             # if in correlation-view, recompute
             if self.ops_plot[2] == self.ops_plot[3].shape[1]:
@@ -625,7 +638,7 @@ class MainW(QtGui.QMainWindow):
         if self.loaded:
             if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
                 if event.key() == QtCore.Qt.Key_Return:
-                    if 0:
+                    if event.modifiers()==QtCore.Qt.AltModifier:
                         if len(self.imerge) > 1:
                             self.merge_cells()
                 elif event.key() == QtCore.Qt.Key_Escape:
@@ -711,6 +724,7 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
+                    self.zoom_to_cell()
                     self.show()
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
@@ -724,6 +738,7 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
+                    self.zoom_to_cell()
                     self.show()
                 ##Agus
                 elif event.key() == QtCore.Qt.Key_Up:
@@ -741,6 +756,9 @@ class MainW(QtGui.QMainWindow):
                     self.show()
 
 
+    def suggest_merge(self):
+        MergeWindow = merge.MergeWindow(self)
+        MergeWindow.show()
 
     def merge_cells(self):
         dm = QtGui.QMessageBox.question(
@@ -750,13 +768,7 @@ class MainW(QtGui.QMainWindow):
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
         )
         if dm == QtGui.QMessageBox.Yes:
-            nmerged = len(self.merged)
-            merge.activity_stats(self)
-            merge.fig_masks(self)
-            M = fig.draw_masks(self)
-            fig.plot_masks(self, M)
-            fig.plot_trace(self)
-            self.show()
+            merge.merge_ROIs(self)
             self.merged.append(self.imerge)
             print(self.merged)
             print('merged ROIs')
@@ -952,6 +964,8 @@ class MainW(QtGui.QMainWindow):
     def make_masks_and_buttons(self):
         self.loadBeh.setEnabled(True)
         self.saveMat.setEnabled(True)
+        self.saveMerge.setEnabled(True)
+        self.sugMerge.setEnabled(True)
         self.manual.setEnabled(True)
         self.bloaded = False
         self.ROI_remove()
@@ -990,6 +1004,7 @@ class MainW(QtGui.QMainWindow):
             )
             self.stat[n]["ycirc"] = ycirc[goodi]
             self.stat[n]["xcirc"] = xcirc[goodi]
+            self.stat[n]["inmerge"] = 0
         # enable buttons
         self.enable_views_and_classifier()
         # make color arrays for various views
@@ -1200,6 +1215,7 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
+                    self.zoom_to_cell()
                     self.show()
                 elif event.button() == 2:
                     if iplot == 1:
@@ -1231,12 +1247,15 @@ class MainW(QtGui.QMainWindow):
             self.iscell[n] = ~self.iscell[n]
             self.ichosen = n
             fig.flip_cell(self)
+            if 'imerge' in self.stat[n]:
+                for k in self.stat[n]['imerge']:
+                    self.iscell[k] = ~self.iscell[k]
         np.save(
             self.basename + "/iscell.npy",
             np.concatenate(
                 (
-                    np.expand_dims(self.iscell, axis=1),
-                    np.expand_dims(self.probcell, axis=1),
+                    np.expand_dims(self.iscell[self.notmerged], axis=1),
+                    np.expand_dims(self.probcell[self.notmerged], axis=1),
                 ),
                 axis=1,
             ),
@@ -1266,6 +1285,34 @@ class MainW(QtGui.QMainWindow):
         else:
             self.p3.setXRange(0, self.Fcell.shape[1])
             self.p3.setYRange(self.fmin, self.fmax)
+        self.show()
+
+    def zoom_to_cell(self):
+        irange = 0.1 * np.array([self.ops['Ly'], self.ops['Lx']]).max()
+        if len(self.imerge) > 1:
+            apix = np.zeros((0,2))
+            for i,k in enumerate(self.imerge):
+                apix = np.append(apix,
+                        np.concatenate((self.stat[k]['ypix'].flatten()[:,np.newaxis],
+                                        self.stat[k]['xpix'].flatten()[:,np.newaxis]), axis=1),
+                        axis=0)
+
+            imin = apix.min(axis=0)
+            imax = apix.max(axis=0)
+            icent = apix.mean(axis=0)
+            imin[0] = min(icent[0]-irange, imin[0])
+            imin[1] = min(icent[1]-irange, imin[1])
+            imax[0] = max(icent[0]+irange, imax[0])
+            imax[1] = max(icent[1]+irange, imax[1])
+        else:
+            icent = np.array(self.stat[self.ichosen]['med'])
+            imin = icent - irange
+            imax = icent + irange
+        self.p1.setYRange(imin[0], imax[0])
+        self.p1.setXRange(imin[1], imax[1])
+        self.p2.setYRange(imin[0], imax[0])
+        self.p2.setXRange(imin[1], imax[1])
+        self.win.show()
         self.show()
 
     def run_suite2p(self):
@@ -1363,8 +1410,12 @@ class MainW(QtGui.QMainWindow):
                 self.probcell = probcell
                 self.redcell = redcell
                 self.probredcell = probredcell
+                self.notmerged = np.ones_like(self.iscell).astype(np.bool)
                 for n in range(len(self.stat)):
                     self.stat[n]['chan2_prob'] = self.probredcell[n]
+                    self.stat[n]['inmerge'] = 0
+                    self.stat[n]['imerge'] = []
+                self.stat = np.array(self.stat)
                 self.make_masks_and_buttons()
                 self.loaded = True
             else:
@@ -1422,6 +1473,7 @@ class MainW(QtGui.QMainWindow):
             print("ERROR: this is not a 1D array with length of data")
 
     def save_mat(self):
+        print('saving to mat')
         matpath = os.path.join(self.basename,'Fall.mat')
         io.savemat(matpath, {'stat': self.stat,
                              'ops': self.ops,
@@ -1429,9 +1481,25 @@ class MainW(QtGui.QMainWindow):
                              'Fneu': self.Fneu,
                              'spks': self.Spks,
                              'iscell': np.concatenate((self.iscell[:,np.newaxis],
-                                                       self.probcell[:,np.newaxis]), axis=1)
+                                                       self.probcell[:,np.newaxis]), axis=1),
+                             'redcell': np.concatenate((np.expand_dims(self.redcell,axis=1),
+                             np.expand_dims(self.probredcell,axis=1)), axis=1)
                              })
-        print('saving to mat')
+
+    def save_merge(self):
+        print('saving to NPY')
+        np.save(os.path.join(self.basename, 'ops.npy'), self.ops)
+        np.save(os.path.join(self.basename, 'stat.npy'), self.stat)
+        np.save(os.path.join(self.basename, 'F.npy'), self.Fcell)
+        np.save(os.path.join(self.basename, 'Fneu.npy'), self.Fneu)
+        np.save(os.path.join(self.basename, 'spks.npy'), self.Spks)
+        iscell =  np.concatenate((self.iscell[:,np.newaxis],
+                                  self.probcell[:,np.newaxis]), axis=1)
+        np.save(os.path.join(self.basename, 'iscell.npy'), iscell)
+        np.save(os.path.join(self.basename, 'redcell.npy'),
+                np.concatenate((np.expand_dims(self.redcell,axis=1),
+                np.expand_dims(self.probredcell,axis=1)), axis=1))
+        self.notmerged = np.ones(self.iscell.size, np.bool)
 
     def load_custom_mask(self):
         name = QtGui.QFileDialog.getOpenFileName(
@@ -1562,6 +1630,7 @@ class MainW(QtGui.QMainWindow):
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)
+    warnings.filterwarnings("ignore")
     app = QtGui.QApplication(sys.argv)
     icon_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "logo/logo.png"

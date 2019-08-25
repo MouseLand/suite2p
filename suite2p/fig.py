@@ -198,9 +198,14 @@ def init_masks(parent):
     iExt   = -1 * np.ones((2,3,Ly,Lx), np.int32)
     iROI   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
+    # ignore merged cells
+    iignore = np.zeros(ncells, np.bool)
     for n in range(ncells-1,-1,-1):
         ypix = stat[n]['ypix']
-        if ypix is not None:
+        if ypix is not None and not iignore[n]:
+            if 'imerge' in stat[n]:
+                for k in stat[n]['imerge']:
+                    iignore[k] = True
             xpix = stat[n]['xpix']
             yext = stat[n]['yext']
             xext = stat[n]['xext']
@@ -469,10 +474,10 @@ def beh_masks(parent):
     print(c)
     n = np.array(parent.imerge)
     nb = int(np.floor(parent.beh_resampled.size/parent.bin))
-    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    sn = np.reshape(parent.beh_resampled[:nb*parent.bin], (nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
-    snstd = (sn**2).sum()
-    cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
+    snstd = (sn**2).mean()**0.5
+    cc = np.dot(parent.Fbin, sn.T) / parent.Fbin.shape[-1] / np.dot(parent.Fstd,snstd)
     cc[n] = cc.mean()
     istat = cc
     inactive=False
@@ -624,7 +629,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

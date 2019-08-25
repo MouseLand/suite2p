@@ -134,7 +134,7 @@ class RunWindow(QtGui.QDialog):
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
                     'if you have bruker single-page tiffs with Ch1 and Ch2, say 1',
-                    'if 1, registration is performed',
+                    "if 1, registration is performed if it wasn't performed already",
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',

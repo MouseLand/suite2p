@@ -21,71 +21,72 @@ def plot_colorbar(parent, bid):
 def plot_trace(parent):
     parent.p3.clear()
     ax = parent.p3.getAxis('left')
-    if len(parent.imerge)==1:
-        n = parent.imerge[0]
-        f = parent.Fcell[n,:]
-        fneu = parent.Fneu[n,:]
-        sp = parent.Spks[n,:]
-        fmax = np.maximum(f.max(), fneu.max())
-        fmin = np.minimum(f.min(), fneu.min())
-        #sp from 0 to fmax
-        sp /= sp.max()
-        sp *= fmax# - fmin
-        #sp += fmin
-        parent.p3.plot(parent.trange,f,pen='b')
-        parent.p3.plot(parent.trange,fneu,pen='r')
-        parent.p3.plot(parent.trange,sp,pen=(255,255,255,100))
-        parent.fmin=0
-        parent.fmax=fmax
-        ax.setTicks(None)
-        for n in range(3):
-            parent.traceLabel[n].setText(parent.traceText[n])
-    else:
-        nmax = int(parent.ncedit.text())
-        kspace = 1.0/parent.sc
-        ttick = list()
-        pmerge = parent.imerge[:np.minimum(len(parent.imerge),nmax)]
-        k=len(pmerge)-1
-        i = parent.activityMode
-        favg = np.zeros((parent.Fcell.shape[1],))
-        for n in pmerge[::-1]:
-            if i==0:
-                f = parent.Fcell[n,:]
-            elif i==1:
-                f = parent.Fneu[n,:]
-            elif i==2:
-                f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
-            else:
-                f = parent.Spks[n,:]
-            favg += f.flatten()
-            fmax = f.max()
-            fmin = f.min()
-            f = (f - fmin) / (fmax - fmin)
-            rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
-            parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
-            ttick.append((k*kspace+f.mean(), str(n)))
-            k-=1
-        bsc = len(pmerge)/25 + 1
-        # at bottom plot behavior and avg trace
-        if parent.bloaded:
-            favg -= favg.min()
-            favg /= favg.max()
-            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
-            parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
-            parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
-            parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
-            parent.traceLabel[2].setText("")
-            parent.fmin=-1*bsc
+    if hasattr(parent, 'imerge'):
+        if len(parent.imerge)==1:
+            n = parent.imerge[0]
+            f = parent.Fcell[n,:]
+            fneu = parent.Fneu[n,:]
+            sp = parent.Spks[n,:]
+            fmax = np.maximum(f.max(), fneu.max())
+            fmin = np.minimum(f.min(), fneu.min())
+            #sp from 0 to fmax
+            sp /= sp.max()
+            #agus
+            sp *= fmax - fmin
+            #sp += fmin*0.95
+            if parent.tracesOn:
+                parent.p3.plot(parent.trange,f,pen='b')
+            if parent.neuropilOn:
+                parent.p3.plot(parent.trange,fneu,pen='r')
+            if parent.deconvOn:
+                parent.p3.plot(parent.trange,(sp+fmin),pen=(255,255,255,100))
+            parent.fmin= fmin
+            parent.fmax=fmax
+            ax.setTicks(None)
         else:
-            for n in range(3):
-                parent.traceLabel[n].setText("")
-            parent.fmin=0
-        #ttick.append((-0.5*bsc,'1D var'))
+            nmax = int(parent.ncedit.text())
+            kspace = 1.0/parent.sc
+            ttick = list()
+            pmerge = parent.imerge[:np.minimum(len(parent.imerge),nmax)]
+            k=len(pmerge)-1
+            i = parent.activityMode
+            favg = np.zeros((parent.Fcell.shape[1],))
+            for n in pmerge[::-1]:
+                if i==0:
+                    f = parent.Fcell[n,:]
+                elif i==1:
+                    f = parent.Fneu[n,:]
+                elif i==2:
+                    f = parent.Fcell[n,:] - 0.7*parent.Fneu[n,:]
+                else:
+                    f = parent.Spks[n,:]
+                favg += f.flatten()
+                fmax = f.max()
+                fmin = f.min()
+                f = (f - fmin) / (fmax - fmin)
+                rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
+                parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
+                ttick.append((k*kspace+f.mean(), str(n)))
+                k-=1
+            bsc = len(pmerge)/25 + 1
+            # at bottom plot behavior and avg trace
+            if parent.bloaded:
+                favg -= favg.min()
+                favg /= favg.max()
+                parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+                parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
+                #parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
+                #parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
+                #parent.traceLabel[2].setText("")
+                parent.fmin=-1*bsc
+            else:
+                parent.fmin=0
+            #ttick.append((-0.5*bsc,'1D var'))
 
-        parent.fmax=(len(pmerge)-1)*kspace + 1
-        ax.setTicks([ttick])
-    parent.p3.setXRange(0,parent.Fcell.shape[1])
-    parent.p3.setYRange(parent.fmin,parent.fmax)
+            parent.fmax=(len(pmerge)-1)*kspace + 1
+            ax.setTicks([ttick])
+        #parent.p3.setXRange(0,parent.Fcell.shape[1])
+        parent.p3.setYRange(parent.fmin,parent.fmax)
 
 def plot_masks(parent,M):
     parent.img1.setImage(M[0],levels=(0.0,1.0))
@@ -198,9 +199,14 @@ def init_masks(parent):
     iExt   = -1 * np.ones((2,3,Ly,Lx), np.int32)
     iROI   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
+    # ignore merged cells
+    iignore = np.zeros(ncells, np.bool)
     for n in range(ncells-1,-1,-1):
         ypix = stat[n]['ypix']
-        if ypix is not None:
+        if ypix is not None and not iignore[n]:
+            if 'imerge' in stat[n]:
+                for k in stat[n]['imerge']:
+                    iignore[k] = True
             xpix = stat[n]['xpix']
             yext = stat[n]['yext']
             xext = stat[n]['xext']
@@ -469,10 +475,10 @@ def beh_masks(parent):
     print(c)
     n = np.array(parent.imerge)
     nb = int(np.floor(parent.beh_resampled.size/parent.bin))
-    sn = np.reshape(parent.beh_resampled[:nb*parent.bin],(nb,parent.bin)).mean(axis=1)
+    sn = np.reshape(parent.beh_resampled[:nb*parent.bin], (nb,parent.bin)).mean(axis=1)
     sn -= sn.mean()
-    snstd = (sn**2).sum()
-    cc = np.dot(parent.Fbin, sn.T) / np.sqrt(np.dot(parent.Fstd,snstd))
+    snstd = (sn**2).mean()**0.5
+    cc = np.dot(parent.Fbin, sn.T) / parent.Fbin.shape[-1] / np.dot(parent.Fstd,snstd)
     cc[n] = cc.mean()
     istat = cc
     inactive=False
@@ -624,7 +630,7 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
-    
+
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:

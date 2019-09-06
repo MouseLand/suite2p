@@ -13,13 +13,13 @@ from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
 from mkl_fft import fft2, ifft2
 
-HAS_GPU=False
-try:
-    import cupy as cp
-    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan
-    HAS_GPU=True
-except ImportError:
-    HAS_GPU=False
+#HAS_GPU=False
+#try:
+#    import cupy as cp
+#    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan
+#    HAS_GPU=True
+#except ImportError:
+#    HAS_GPU=False
 
 eps0 = 1e-5
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
@@ -243,6 +243,8 @@ def subsample_frames(ops, nsamps):
     frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
+    #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
+
     if 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file']):
         if ops['nchannels']>1:
             if ops['functional_chan'] == ops['align_by_chan']:

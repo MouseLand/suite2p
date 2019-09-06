@@ -96,6 +96,7 @@ def default_ops():
         'max_row_sbx': -1,
         'min_col_sbx': 0,
         'max_col_sbx': -1,
+        'sbxpy':[],
       }
     return ops
 

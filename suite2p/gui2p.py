@@ -566,6 +566,14 @@ class MainW(QtGui.QMainWindow):
         self.bend + 7 + k,
         8,
         1, 2)
+        # Zoom on CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxz = QtGui.QCheckBox("Zoom [Z]")
+        self.checkBoxz.setStyleSheet("color: white;")
+        self.checkBoxz.stateChanged.connect(self.Zoom_on)
+        self.zoom_on = True
+        self.checkBoxz.toggle()
+        self.l0.addWidget(self.checkBoxz, self.bend + 7 +k, 10, 1, 2)
         # initialize merges
         self.merged = []
         self.rastermap = False
@@ -674,6 +682,8 @@ class MainW(QtGui.QMainWindow):
                     self.checkBoxn.toggle()
                 elif event.key() == QtCore.Qt.Key_V:
                     self.checkBoxt.toggle()
+                elif event.key() == QtCore.Qt.Key_Z:
+                    self.checkBoxz.toggle()
                 #
                 elif event.key() == QtCore.Qt.Key_A:
                     self.colorbtns.button(0).setChecked(True)
@@ -719,7 +729,8 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
-                    #self.zoom_to_cell()
+                    if self.zoom_on:
+                        self.zoom_to_cell()
                     self.show()
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
@@ -733,7 +744,8 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
-                    #self.zoom_to_cell()
+                    if self.zoom_on:
+                        self.zoom_to_cell()
                     self.show()
                 ##Agus
                 elif event.key() == QtCore.Qt.Key_Up:
@@ -748,7 +760,8 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
-                    #self.zoom_to_cell()
+                    if self.zoom_on:
+                        self.zoom_to_cell()
                     self.show()
 
 
@@ -1099,6 +1112,12 @@ class MainW(QtGui.QMainWindow):
             M = fig.draw_masks(self)
             fig.plot_masks(self, M)
 
+    def Zoom_on(self, state):
+        if state == QtCore.Qt.Checked:
+            self.zoom_on = True
+        else:
+            self.zoom_on = False
+
     #Agus
     def deconv_on(self, state):
         if state == QtCore.Qt.Checked:
@@ -1108,6 +1127,7 @@ class MainW(QtGui.QMainWindow):
         fig.plot_trace(self)
         self.win.show()
         self.show()
+
     def neuropil_on(self, state):
         if state == QtCore.Qt.Checked:
             self.neuropilOn = True
@@ -1211,7 +1231,8 @@ class MainW(QtGui.QMainWindow):
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
-                    #self.zoom_to_cell()
+                    if self.zoom_on:
+                        self.zoom_to_cell()
                     self.show()
                 elif event.button() == 2:
                     if iplot == 1:

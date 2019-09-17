@@ -1101,30 +1101,35 @@ class MainW(QtGui.QMainWindow):
 
     #Agus
     def deconv_on(self, state):
-        if state == QtCore.Qt.Checked:
-            self.deconvOn = True
-        else:
-            self.deconvOn = False
-        fig.plot_trace(self)
-        self.win.show()
-        self.show()
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.deconvOn = True
+            else:
+                self.deconvOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+
     def neuropil_on(self, state):
-        if state == QtCore.Qt.Checked:
-            self.neuropilOn = True
-        else:
-            self.neuropilOn = False
-        fig.plot_trace(self)
-        self.win.show()
-        self.show()
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.neuropilOn = True
+            else:
+                self.neuropilOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+
     def traces_on(self, state):
-        if state == QtCore.Qt.Checked:
-            self.tracesOn = True
-        else:
-            self.tracesOn = False
-        fig.plot_trace(self)
-        self.win.show()
-        self.show()
-    #
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.tracesOn = True
+            else:
+                self.tracesOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+        #
     def plot_clicked(self, event):
         """left-click chooses a cell, right-click flips cell to other view"""
         flip = False

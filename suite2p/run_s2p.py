@@ -21,6 +21,7 @@ def default_ops():
         'fast_disk': [], # used to store temporary binary file, defaults to save_path0
         'delete_bin': False, # whether to delete binary file after processing
         'mesoscan': False, # for reading in scanimage mesoscope files
+        'bruker': False, # whether or not single page BRUKER tiffs!
         'h5py': [], # take h5py as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
@@ -202,10 +203,10 @@ def run_s2p(ops={},db={}):
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(toc(t11)))
-            
+
             if ops['two_step_registration'] and ops['keep_movie_raw']:
                 print('----------- REGISTRATION STEP 2 (making mean image (exlcuding bad frames)')
-                frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']), 
+                frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']),
                                             ops1[ipl]['reg_file'], crop=False)
                 ops1[ipl]['meanImg'] = np.mean(frames, axis=0)
                 ops1[ipl]['meanImg2'] = np.percentile(frames, 90, axis=0) * np.std(frames, axis=0)

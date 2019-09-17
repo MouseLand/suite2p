@@ -113,7 +113,7 @@ class RunWindow(QtGui.QDialog):
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect','bruker']
-        regkeys = ['do_registration','align_by_chan','nimg_init', 'batch_size','smooth_sigma', 'maxregshift','th_badframes','keep_movie_raw']
+        regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
@@ -139,9 +139,11 @@ class RunWindow(QtGui.QDialog):
                     '# of subsampled frames for finding reference image',
                     'number of frames per batch',
                     'gaussian smoothing after phase corr: 1.15 good for 2P recordings, recommend 2-5 for 1P recordings',
+                    'gaussian smoothing in time, useful for low SNR data',
                     'max allowed registration shift, as a fraction of frame max(width and height)',
                     'this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames',
                     'if 1, unregistered binary is kept in a separate file data_raw.bin',
+                    'run registration twice (useful if data is really noisy), *keep_movie_raw must be 1*',
                     'whether to use nonrigid registration (splits FOV into blocks of size block_size)',
                     'block size in number of pixels in Y and X (two numbers separated by a comma)',
                     'if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing',

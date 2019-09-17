@@ -12,7 +12,7 @@ dependencies:
   - scikit-image
   - scikit-learn
   - pip:
-    - PyQt5
+    - PyQt5==5.11.3
     - git+https://github.com/pyqtgraph/pyqtgraph
     - natsort
     - scanimage-tiff-reader

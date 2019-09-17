@@ -915,16 +915,21 @@ def make_blocks(ops):
 
     return ops
 
-def sample_frames(ops, ix, reg_file):
-    """ returns frames ```ix``` from ```ops['reg_file']```
-        frames are cropped by ```ops['yrange']``` and ```ops['xrange']```
-    """
+def sample_frames(ops, ix, reg_file, crop=True):
+    ''' get frames ix from reg_file
+        frames are cropped by ops['yrange'] and ops['xrange']
+    '''
+    bad_frames = ops['badframes']
+    ix = ix[bad_frames[ix]==0]
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
-    mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    if crop:
+        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    else:
+        mov = np.zeros((len(ix), Ly, Lx), np.int16)
     # load and bin data
     with open(reg_file, 'rb') as reg_file:
         for i in range(len(ix)):
@@ -932,7 +937,10 @@ def sample_frames(ops, ix, reg_file):
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             data = np.reshape(data, (Ly, Lx))
-            mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            if crop:
+                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            else:
+                mov[i,:,:] = data
     return mov
 
 def ome_to_binary(ops):

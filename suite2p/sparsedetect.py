@@ -52,6 +52,8 @@ def get_mov(ops):
             data = np.reshape(data, (-1, Ly, Lx))
             dinds = idata + np.arange(0,data.shape[0],1,int)
             idata+=data.shape[0]
+            if dinds[-1] >= ops['nframes']: # this only happens when ops['frames_include'] != -1
+                break
             if badframes and np.sum(ops['badframes'][dinds])>.5:
                 data = data[~ops['badframes'][dinds],:,:]
             nimgd = data.shape[0]

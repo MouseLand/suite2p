@@ -175,13 +175,13 @@
 <span class="kn">from</span> <span class="nn">skimage.external.tifffile</span> <span class="k">import</span> <span class="n">TiffWriter</span>
 <span class="kn">from</span> <span class="nn">mkl_fft</span> <span class="k">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span>
 
-<span class="n">HAS_GPU</span><span class="o">=</span><span class="kc">False</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">cupy</span> <span class="k">as</span> <span class="nn">cp</span>
-    <span class="kn">from</span> <span class="nn">cupyx.scipy.fftpack</span> <span class="k">import</span> <span class="n">fftn</span><span class="p">,</span> <span class="n">ifftn</span><span class="p">,</span> <span class="n">get_fft_plan</span>
-<div class="viewcode-block" id="HAS_GPU"><a class="viewcode-back" href="../../autoapi/suite2p/register/index.html#suite2p.register.HAS_GPU">[docs]</a>    <span class="n">HAS_GPU</span><span class="o">=</span><span class="kc">True</span></div>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">HAS_GPU</span><span class="o">=</span><span class="kc">False</span>
+<span class="c1">#HAS_GPU=False</span>
+<span class="c1">#try:</span>
+<span class="c1">#    import cupy as cp</span>
+<span class="c1">#    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan</span>
+<span class="c1">#    HAS_GPU=True</span>
+<span class="c1">#except ImportError:</span>
+<span class="c1">#    HAS_GPU=False</span>
 
 <div class="viewcode-block" id="eps0"><a class="viewcode-back" href="../../autoapi/suite2p/register/index.html#suite2p.register.eps0">[docs]</a><span class="n">eps0</span> <span class="o">=</span> <span class="mf">1e-5</span></div>
 <div class="viewcode-block" id="sigL"><a class="viewcode-back" href="../../autoapi/suite2p/register/index.html#suite2p.register.sigL">[docs]</a><span class="n">sigL</span> <span class="o">=</span> <span class="mf">0.85</span> <span class="c1"># smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...</span></div>
@@ -405,6 +405,8 @@
     <span class="n">frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nsamps</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
     <span class="n">nbytesread</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Ly</span> <span class="o">*</span> <span class="n">Lx</span>
     <span class="n">istart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nFrames</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="n">nsamps</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
+    <span class="c1">#istart = np.arange(nFrames - nsamps, nFrames).astype(&#39;int64&#39;)</span>
+
     <span class="k">if</span> <span class="s1">&#39;keep_movie_raw&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="s1">&#39;raw_file&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file&#39;</span><span class="p">]):</span>
         <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;align_by_chan&#39;</span><span class="p">]:</span>
@@ -690,9 +692,9 @@
         <span class="n">nfr</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">k</span><span class="o">%</span><span class="mi">5</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
 
     <span class="c1"># mean image across all frames</span>
     <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;align_by_chan&#39;</span><span class="p">]:</span>
@@ -768,7 +770,7 @@
         <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">k</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">k</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Registered second channel in </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Registered second channel in </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
 
     <span class="n">reg_file_alt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
@@ -802,7 +804,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">refImg</span> <span class="o">=</span> <span class="n">pick_init</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reference frame, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reference frame, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
     <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;refImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">refImg</span>
 
     <span class="c1"># get binary file paths</span>
@@ -903,7 +905,7 @@
 
         <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">k</span><span class="o">%</span><span class="mi">5</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames </span><span class="si">%4.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">toc</span><span class="p">(</span><span class="n">k0</span><span class="p">)))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames </span><span class="si">%4.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">k0</span><span class="p">))</span>
 
     <span class="c1"># compute some potentially useful info</span>
     <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;th_badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>

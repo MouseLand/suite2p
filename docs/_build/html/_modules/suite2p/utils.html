@@ -229,34 +229,43 @@
     <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">ellipse</span><span class="p">,</span> <span class="n">area</span></div>
 
 <div class="viewcode-block" id="enhanced_mean_image"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.enhanced_mean_image">[docs]</a><span class="k">def</span> <span class="nf">enhanced_mean_image</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; computes enhanced mean image for GUI &#39;&#39;&#39;</span>
-    <span class="k">if</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;spatscale_pix&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">])</span>
-            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot; computes enhanced mean image and adds it to ops</span>
 
-        <span class="n">diameter</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]])</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-        <span class="n">Imed</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">-</span> <span class="n">Imed</span>
-        <span class="n">Idiv</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span> <span class="o">+</span> <span class="n">Idiv</span><span class="p">)</span>
-        <span class="n">mimg1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">6</span>
-        <span class="n">mimg99</span> <span class="o">=</span> <span class="mi">6</span>
-        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">I</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span>
-        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span> <span class="o">-</span> <span class="n">gaussian_filter</span><span class="p">(</span><span class="n">filters</span><span class="o">.</span><span class="n">minimum_filter</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">),</span>
-                                          <span class="mi">10</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">)</span>
-        <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span> <span class="o">/</span> <span class="n">gaussian_filter</span><span class="p">(</span><span class="n">filters</span><span class="o">.</span><span class="n">maximum_filter</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">),</span>
-                                      <span class="mi">10</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">)</span>
-        <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg0</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+<span class="sd">    Median filters ops[&#39;meanImg&#39;] with 4*diameter in 2D and subtracts and</span>
+<span class="sd">    divides by this median-filtered image to return a high-pass filtered</span>
+<span class="sd">    image ops[&#39;meanImgE&#39;]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        uses &#39;meanImg&#39;, &#39;aspect&#39;, &#39;diameter&#39;, &#39;yrange&#39; and &#39;xrange&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops : dictionary</span>
+<span class="sd">            &#39;meanImgE&#39; field add</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">I</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;spatscale_pix&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">diameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">])</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">diameter</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]])</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">Imed</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">-</span> <span class="n">Imed</span>
+    <span class="n">Idiv</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span> <span class="o">+</span> <span class="n">Idiv</span><span class="p">)</span>
+    <span class="n">mimg1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">6</span>
+    <span class="n">mimg99</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">mimg0</span> <span class="o">=</span> <span class="n">I</span>
+
     <span class="n">mimg0</span> <span class="o">=</span> <span class="n">mimg0</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
     <span class="n">mimg0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mimg0</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
     <span class="n">mimg0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg0</span><span class="p">))</span>
@@ -267,6 +276,24 @@
     <span class="k">return</span> <span class="n">ops</span></div>
 
 <div class="viewcode-block" id="init_ops"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.init_ops">[docs]</a><span class="k">def</span> <span class="nf">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; computes enhanced mean image and adds it to ops</span>
+
+<span class="sd">    Median filters ops[&#39;meanImg&#39;] with 4*diameter in 2D and subtracts and</span>
+<span class="sd">    divides by this median-filtered image to return a high-pass filtered</span>
+<span class="sd">    image ops[&#39;meanImgE&#39;]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        uses &#39;meanImg&#39;, &#39;aspect&#39;, &#39;diameter&#39;, &#39;yrange&#39; and &#39;xrange&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops : dictionary</span>
+<span class="sd">            &#39;meanImgE&#39; field add</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
     <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
@@ -370,7 +397,10 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">keys</span><span class="p">]</span>
     <span class="n">iall</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">h5</span> <span class="ow">in</span> <span class="n">h5list</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]):</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes_per_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">h5list</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ih5</span><span class="p">,</span><span class="n">h5</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">h5list</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="c1"># if h5py data is 4D instead of 3D, assume that</span>
             <span class="c1"># data = nframes x nplanes x pixels x pixels</span>
@@ -419,9 +449,11 @@
                             <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im2write</span><span class="p">))</span>
                             <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                         <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes_per_folder&#39;</span><span class="p">][</span><span class="n">ih5</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im2write</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">ik</span> <span class="o">+=</span> <span class="n">nframes</span>
                     <span class="n">iall</span> <span class="o">+=</span> <span class="n">nframes</span>
-        <span class="c1"># write ops files</span>
+
+    <span class="c1"># write ops files</span>
     <span class="n">do_registration</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
     <span class="n">do_nonrigid</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
@@ -990,6 +1022,120 @@
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
             <span class="n">mov</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
     <span class="k">return</span> <span class="n">mov</span></div>
+
+<div class="viewcode-block" id="ome_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.ome_to_binary">[docs]</a><span class="k">def</span> <span class="nf">ome_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    converts ome.tiff to *.bin file for non-interleaved red channel recordings</span>
+<span class="sd">    assumes SINGLE-PAGE tiffs where first channel has string &#39;Ch1&#39;</span>
+<span class="sd">    and also SINGLE FOLDER</span>
+<span class="sd">    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file</span>
+<span class="sd">    assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">t0</span><span class="o">=</span><span class="n">tic</span><span class="p">()</span>
+    <span class="c1"># copy ops to list where each element is ops for each plane</span>
+    <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+
+    <span class="c1"># open all binary files for writing</span>
+    <span class="c1"># look for tiffs in all requested folders</span>
+    <span class="n">ops1</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span> <span class="o">=</span> <span class="n">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">fs_Ch1</span><span class="p">,</span> <span class="n">fs_Ch2</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;Ch1&#39;</span><span class="p">)</span><span class="o">&gt;-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">fs_Ch1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fs_Ch2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">fs_Ch2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fs_Ch1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs_Ch2</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">nchannels</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span>
+
+    <span class="c1"># loop over all tiffs</span>
+    <span class="n">which_folder</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">fs_Ch1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">im0</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+    <span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span> <span class="o">=</span> <span class="n">im0</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">j</span><span class="o">=</span><span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;frames_per_folder&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">nchannels</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span>
+    <span class="n">ix</span><span class="o">=</span><span class="mi">0</span>
+
+    <span class="n">j</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs_Ch1</span><span class="p">):</span>
+        <span class="c1"># open tiff</span>
+        <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+        <span class="n">tif</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">im</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">im</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;nframes_per_folder&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im</span><span class="p">))</span>
+        <span class="n">ix</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">ix</span><span class="o">%</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> frames of binary, time </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="n">j</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">j</span><span class="o">%</span><span class="n">nplanes</span>
+
+    <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+
+        <span class="n">ix</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">j</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ik</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fs_Ch2</span><span class="p">):</span>
+            <span class="c1"># open tiff</span>
+            <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">im</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">:</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="n">im</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">im</span>
+
+            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">im</span><span class="p">))</span>
+            <span class="n">ix</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">ix</span><span class="o">%</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> frames of binary, time </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span><span class="n">toc</span><span class="p">(</span><span class="n">t0</span><span class="p">)))</span>
+            <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+            <span class="n">j</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">j</span><span class="o">%</span><span class="n">nplanes</span>
+
+    <span class="c1"># write ops files</span>
+    <span class="n">do_registration</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
+    <span class="n">do_nonrigid</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_registration</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]])</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]])</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="c1"># close all binary files and write ops files</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="n">reg_file</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nchannels</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
 </pre></div>
 
            </div>

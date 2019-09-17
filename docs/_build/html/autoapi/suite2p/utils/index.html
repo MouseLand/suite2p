@@ -201,13 +201,42 @@
 <dl class="function">
 <dt id="suite2p.utils.enhanced_mean_image">
 <code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">enhanced_mean_image</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#enhanced_mean_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.enhanced_mean_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>computes enhanced mean image for GUI</p>
+<dd><p>computes enhanced mean image and adds it to ops</p>
+<p>Median filters ops[‘meanImg’] with 4*diameter in 2D and subtracts and
+divides by this median-filtered image to return a high-pass filtered
+image ops[‘meanImgE’]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – uses ‘meanImg’, ‘aspect’, ‘diameter’, ‘yrange’ and ‘xrange’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ops</strong> – ‘meanImgE’ field add</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dictionary</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.utils.init_ops">
 <code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">init_ops</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#init_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.init_ops" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>computes enhanced mean image and adds it to ops</p>
+<p>Median filters ops[‘meanImg’] with 4*diameter in 2D and subtracts and
+divides by this median-filtered image to return a high-pass filtered
+image ops[‘meanImgE’]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – uses ‘meanImg’, ‘aspect’, ‘diameter’, ‘yrange’ and ‘xrange’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ops</strong> – ‘meanImgE’ field add</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dictionary</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.utils.list_h5">
@@ -293,6 +322,16 @@ Multi-roi recordings are arranged by their dx,dy physical localization.</p>
 <code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">sample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">ix</em>, <em class="sig-param">reg_file</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#sample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.sample_frames" title="Permalink to this definition">¶</a></dt>
 <dd><p>get frames ix from reg_file
 frames are cropped by ops[‘yrange’] and ops[‘xrange’]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.utils.ome_to_binary">
+<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">ome_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#ome_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.ome_to_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts ome.tiff to <a href="#id5"><span class="problematic" id="id6">*</span></a>.bin file for non-interleaved red channel recordings
+assumes SINGLE-PAGE tiffs where first channel has string ‘Ch1’
+and also SINGLE FOLDER
+requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
+assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</p>
 </dd></dl>
 
 </div>

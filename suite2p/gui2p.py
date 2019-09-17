@@ -568,6 +568,8 @@ class MainW(QtGui.QMainWindow):
         1, 2)
         # initialize merges
         self.merged = []
+        self.imerge = [0]
+        self.ichosen = 0
         self.rastermap = False
         model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]

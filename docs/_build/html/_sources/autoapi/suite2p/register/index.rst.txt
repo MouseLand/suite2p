@@ -7,16 +7,6 @@
 Module Contents
 ---------------
 
-.. data:: HAS_GPU
-   :annotation: = False
-
-   
-
-.. data:: HAS_GPU
-   :annotation: = True
-
-   
-
 .. data:: eps0
    :annotation: = 1e-05
 

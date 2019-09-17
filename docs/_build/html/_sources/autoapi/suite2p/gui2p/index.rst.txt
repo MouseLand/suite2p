@@ -43,6 +43,11 @@ Module Contents
 
 
    
+   .. method:: suggest_merge(self)
+
+
+
+   
    .. method:: merge_cells(self)
 
 
@@ -123,6 +128,21 @@ Module Contents
 
 
    
+   .. method:: deconv_on(self, state)
+
+
+
+   
+   .. method:: neuropil_on(self, state)
+
+
+
+   
+   .. method:: traces_on(self, state)
+
+
+
+   
    .. method:: plot_clicked(self, event)
 
       left-click chooses a cell, right-click flips cell to other view
@@ -146,6 +166,11 @@ Module Contents
 
    
    .. method:: zoom_plot(self, iplot)
+
+
+
+   
+   .. method:: zoom_to_cell(self)
 
 
 
@@ -191,6 +216,11 @@ Module Contents
 
    
    .. method:: save_mat(self)
+
+
+
+   
+   .. method:: save_merge(self)
 
 
 

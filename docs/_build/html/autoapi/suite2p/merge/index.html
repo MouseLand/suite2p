@@ -164,14 +164,71 @@
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="suite2p.merge.activity_stats">
-<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">activity_stats</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#activity_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.activity_stats" title="Permalink to this definition">¶</a></dt>
+<dt id="suite2p.merge.distance_matrix">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">distance_matrix</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">ilist</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#distance_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.distance_matrix" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="suite2p.merge.fig_masks">
-<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">fig_masks</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#fig_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.fig_masks" title="Permalink to this definition">¶</a></dt>
-<dd><p>merges multiple cells’ colors together</p>
+<dt id="suite2p.merge.merge_ROIs">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">merge_ROIs</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#merge_ROIs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.merge_ROIs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.merge.merge_activity_masks">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">merge_activity_masks</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#merge_activity_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.merge_activity_masks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.merge.remove_mask">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">remove_mask</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">n</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#remove_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.remove_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.merge.add_mask">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">add_mask</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">n</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#add_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.add_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.merge.redraw_masks">
+<code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">redraw_masks</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">n</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#redraw_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.redraw_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>redraws masks with new cell ids</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.merge.MergeWindow">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">MergeWindow</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#MergeWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.MergeWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QDialog</span></code></p>
+<dl class="method">
+<dt id="suite2p.merge.MergeWindow.do_merge">
+<code class="sig-name descname">do_merge</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#MergeWindow.do_merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.MergeWindow.do_merge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.merge.MergeWindow.compute_merge_list">
+<code class="sig-name descname">compute_merge_list</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#MergeWindow.compute_merge_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.MergeWindow.compute_merge_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.merge.MergeWindow.suggest_merge">
+<code class="sig-name descname">suggest_merge</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#MergeWindow.suggest_merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.MergeWindow.suggest_merge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.merge.LineEdit">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.merge.</code><code class="sig-name descname">LineEdit</code><span class="sig-paren">(</span><em class="sig-param">key</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#LineEdit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.LineEdit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QLineEdit</span></code></p>
+<dl class="method">
+<dt id="suite2p.merge.LineEdit.get_text">
+<code class="sig-name descname">get_text</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#LineEdit.get_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.LineEdit.get_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.merge.LineEdit.set_text">
+<code class="sig-name descname">set_text</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/merge.html#LineEdit.set_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.merge.LineEdit.set_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>

@@ -8,7 +8,7 @@ from numpy import fft
 from numba import vectorize, complex64, float32, int16
 import math
 from scipy.signal import medfilt
-from scipy.ndimage import laplace
+from scipy.ndimage import laplace, gaussian_filter1d
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
 from mkl_fft import fft2, ifft2
@@ -140,7 +140,7 @@ def addmultiplytype(x,y,z):
     return np.complex64(np.float32(x)*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
-    x  = Y / (eps0 + np.abs(Y))
+    x = Y / (eps0 + np.abs(Y))
     x = x*cfRefImg
     return x
 
@@ -157,7 +157,7 @@ def phasecorr(data, refAndMasks, ops):
         #data = data.copy().astype(np.float32)
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
 
-    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
+    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 
     return ymax, xmax, cmax
 
@@ -168,7 +168,7 @@ def my_clip(X, lcorr):
     x10 = X[:,  -lcorr:, :lcorr+1]
     return x00, x01, x10, x11
 
-def phasecorr_cpu(data, refAndMasks, lcorr):
+def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time=0):
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
@@ -191,6 +191,8 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
         ifft2(X[t], overwrite_x=True)
     x00, x01, x10, x11 = my_clip(X, lcorr)
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
+    if smooth_sigma_time > 0:
+        cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
     for t in np.arange(nimg):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))
         cmax[t] = cc[t, ymax[t], xmax[t]]
@@ -209,14 +211,22 @@ def register_and_shift(data, refAndMasks, ops):
     if ops['nonrigid'] and len(refAndMasks)>3:
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
-
+    
     # rigid registration
-    ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
+    if ops['smooth_sigma_time'] > 0: # temporal smoothing:
+        data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+        ymax, xmax, cmax = phasecorr(data_smooth, refAndMasks[:3], ops)
+    else:
+        ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     shift_data(data, ymax, xmax, ops['refImg'].mean())
-    Y = []
+    
     # non-rigid registration
     if nr:
-        ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data, refAndMasks[3:], ops)
+        if ops['smooth_sigma_time'] > 0: # temporal smoothing:
+            data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data_smooth, refAndMasks[3:], ops)
+        else:
+            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
         data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data, ymax, xmax, cmax, yxnr
@@ -230,8 +240,6 @@ def get_nFrames(ops):
             nbytes = os.path.getsize(ops['reg_file'])
     else:
         nbytes = os.path.getsize(ops['reg_file'])
-
-
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
 
@@ -410,6 +418,8 @@ def compute_crop(ops):
     # exclude frames which have a large deviation and/or low correlation
     px = dxy / np.maximum(0, cXY)
     ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['xoff']) > (ops['maxregshift'] * ops['Lx'] * 0.95), ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['yoff']) > (ops['maxregshift'] * ops['Ly'] * 0.95), ops['badframes'])
     ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
     ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
     xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
@@ -500,9 +510,9 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
             buff = reg_file_align.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
-        if data.size==0:
+        if (data.size==0) | (nfr >= ops['nframes']):
             break
-        data = np.reshape(data, (-1, Ly, Lx))
+        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
         dout = register_and_shift(data, refAndMasks, ops)
         data = np.minimum(dout[0], 2**15 - 2)
@@ -577,10 +587,10 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
-        if data.size==0:
+        if (data.size==0) | (ix >= ops['nframes']):
             break
         data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
-        nframes = data.shape[0]
+        nframes = data.shape[0]        
         iframes = ix + np.arange(0,nframes,1,int)
 
         # get shifts
@@ -628,6 +638,9 @@ def register_binary(ops, refImg=None):
         ops = utils.make_blocks(ops)
 
     ops['nframes'] = get_nFrames(ops)
+    if not ops['frames_include'] == -1:
+        ops['nframes'] = min((ops['nframes'], ops['frames_include']))
+
     print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings
     if ops['nframes']<50:
@@ -637,8 +650,7 @@ def register_binary(ops, refImg=None):
 
     # compute reference image
     if refImg is not None:
-        print('WARNING: using reference frame given, will not compute registration metrics')
-        do_regmetrics = False
+        print('NOTE: user reference frame given')
     else:
         t0 = time.time()
         refImg = pick_init(ops)
@@ -675,6 +687,7 @@ def register_binary(ops, refImg=None):
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True
             print(ops['badframes'].sum())
+    
     # return frames which fall outside range
     ops = compute_crop(ops)
 
@@ -684,8 +697,6 @@ def register_binary(ops, refImg=None):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
-
-
 
 def register_npy(Z, ops):
     # if ops does not have refImg, get a new refImg

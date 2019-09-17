@@ -163,6 +163,16 @@
 <span id="suite2p-drawroi"></span><h1><a class="reference internal" href="#module-suite2p.drawroi" title="suite2p.drawroi"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.drawroi</span></code></a><a class="headerlink" href="#module-suite2p.drawroi" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.drawroi.masks_and_traces">
+<code class="sig-prename descclassname">suite2p.drawroi.</code><code class="sig-name descname">masks_and_traces</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">stat</em>, <em class="sig-param">stat_orig</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#masks_and_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.masks_and_traces" title="Permalink to this definition">¶</a></dt>
+<dd><p>main extraction function
+inputs: ops and stat
+creates cell and neuropil masks and extracts traces
+returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
+F_chan2 and Fneu_chan2 will be empty if no second channel</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="suite2p.drawroi.ViewButton">
 <em class="property">class </em><code class="sig-prename descclassname">suite2p.drawroi.</code><code class="sig-name descname">ViewButton</code><span class="sig-paren">(</span><em class="sig-param">bid</em>, <em class="sig-param">Text</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ViewButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ViewButton" title="Permalink to this definition">¶</a></dt>
@@ -178,6 +188,21 @@
 <dt id="suite2p.drawroi.ROIDraw">
 <em class="property">class </em><code class="sig-prename descclassname">suite2p.drawroi.</code><code class="sig-name descname">ROIDraw</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QMainWindow</span></code></p>
+<dl class="method">
+<dt id="suite2p.drawroi.ROIDraw.close_GUI">
+<code class="sig-name descname">close_GUI</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw.close_GUI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw.close_GUI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.drawroi.ROIDraw.normalize_img_add_masks">
+<code class="sig-name descname">normalize_img_add_masks</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw.normalize_img_add_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw.normalize_img_add_masks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.drawroi.ROIDraw.create_masks_of_cells">
+<code class="sig-name descname">create_masks_of_cells</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em>, <em class="sig-param">mean_img</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw.create_masks_of_cells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw.create_masks_of_cells" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="suite2p.drawroi.ROIDraw.mouse_moved">
 <code class="sig-name descname">mouse_moved</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pos</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw.mouse_moved"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw.mouse_moved" title="Permalink to this definition">¶</a></dt>
@@ -196,8 +221,7 @@
 <dl class="method">
 <dt id="suite2p.drawroi.ROIDraw.plot_clicked">
 <code class="sig-name descname">plot_clicked</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/drawroi.html#ROIDraw.plot_clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.drawroi.ROIDraw.plot_clicked" title="Permalink to this definition">¶</a></dt>
-<dd><p>left-click chooses a cell, right-click flips cell to other view</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="suite2p.drawroi.ROIDraw.proc_ROI">

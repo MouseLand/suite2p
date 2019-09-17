@@ -7,6 +7,15 @@
 Module Contents
 ---------------
 
+.. function:: masks_and_traces(ops, stat, stat_orig)
+
+   main extraction function
+   inputs: ops and stat
+   creates cell and neuropil masks and extracts traces
+   returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
+   F_chan2 and Fneu_chan2 will be empty if no second channel
+
+
 .. py:class:: ViewButton(bid, Text, parent=None)
 
    Bases: :class:`PyQt5.QtGui.QPushButton`
@@ -20,6 +29,21 @@ Module Contents
 .. py:class:: ROIDraw(parent=None)
 
    Bases: :class:`PyQt5.QtGui.QMainWindow`
+
+   
+   .. method:: close_GUI(self, parent)
+
+
+
+   
+   .. method:: normalize_img_add_masks(self, parent)
+
+
+
+   
+   .. method:: create_masks_of_cells(self, parent, mean_img)
+
+
 
    
    .. method:: mouse_moved(self, pos)
@@ -38,8 +62,6 @@ Module Contents
 
    
    .. method:: plot_clicked(self, event)
-
-      left-click chooses a cell, right-click flips cell to other view
 
 
 

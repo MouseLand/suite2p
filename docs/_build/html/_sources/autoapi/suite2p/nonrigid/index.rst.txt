@@ -29,8 +29,12 @@ Module Contents
 
 .. function:: kernelD(a, b)
 
+   Gaussian kernel from a to b
+
 
 .. function:: mat_upsample(lpad)
+
+   upsampling matrix using gaussian kernels
 
 
 .. function:: getXYup(cc, Ls, ops)
@@ -39,6 +43,8 @@ Module Contents
 
 
 .. function:: prepare_masks(refImg1, ops)
+
+   create blocked reference image and take its fft and multiply by gaussian smoothing mask
 
 
 .. function:: apply_masks(Y, maskMul, maskOffset)

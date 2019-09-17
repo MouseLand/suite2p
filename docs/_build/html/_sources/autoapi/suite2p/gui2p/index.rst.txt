@@ -17,6 +17,11 @@ Module Contents
    Bases: :class:`PyQt5.QtGui.QMainWindow`
 
    
+   .. method:: zoom_cell(self, state)
+
+
+
+   
    .. method:: export_fig(self)
 
 
@@ -39,6 +44,11 @@ Module Contents
 
    
    .. method:: keyPressEvent(self, event)
+
+
+
+   
+   .. method:: update_plot(self)
 
 
 

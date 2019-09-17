@@ -243,7 +243,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        ops : dictionary</span>
-<span class="sd">            &#39;meanImgE&#39; field add</span>
+<span class="sd">            &#39;meanImgE&#39; field added</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -276,21 +276,19 @@
     <span class="k">return</span> <span class="n">ops</span></div>
 
 <div class="viewcode-block" id="init_ops"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.init_ops">[docs]</a><span class="k">def</span> <span class="nf">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; computes enhanced mean image and adds it to ops</span>
-
-<span class="sd">    Median filters ops[&#39;meanImg&#39;] with 4*diameter in 2D and subtracts and</span>
-<span class="sd">    divides by this median-filtered image to return a high-pass filtered</span>
-<span class="sd">    image ops[&#39;meanImgE&#39;]</span>
+    <span class="sd">&quot;&quot;&quot; initializes ops files for each plane in recording</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ops : dictionary</span>
-<span class="sd">        uses &#39;meanImg&#39;, &#39;aspect&#39;, &#39;diameter&#39;, &#39;yrange&#39; and &#39;xrange&#39;</span>
+<span class="sd">        &#39;nplanes&#39;, &#39;save_path&#39;, &#39;save_folder&#39;, &#39;fast_disk&#39;, &#39;nchannels&#39;, &#39;keep_movie_raw&#39;</span>
+<span class="sd">        + (if mesoscope) &#39;dy&#39;, &#39;dx&#39;, &#39;lines&#39;</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        ops : dictionary</span>
-<span class="sd">            &#39;meanImgE&#39; field add</span>
+<span class="sd">        ops1 : list of dictionaries</span>
+<span class="sd">            adds fields &#39;save_path0&#39;, &#39;reg_file&#39;</span>
+<span class="sd">            (depending on ops: &#39;raw_file&#39;, &#39;reg_file_chan2&#39;, &#39;raw_file_chan2&#39;)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -348,9 +346,20 @@
     <span class="k">return</span> <span class="n">fs</span></div>
 
 <div class="viewcode-block" id="find_files_open_binaries"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.find_files_open_binaries">[docs]</a><span class="k">def</span> <span class="nf">find_files_open_binaries</span><span class="p">(</span><span class="n">ops1</span><span class="p">,</span> <span class="n">ish5</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; find tiffs or h5 files, and open binaries to write to</span>
-<span class="sd">        inputs ops1 (list over planes), ish5 (whether or not h5)</span>
-<span class="sd">        returns ops1, fs (filelist), reg_file, reg_file_chan2 &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;  finds tiffs or h5 files and opens binaries for writing</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops1 : list of dictionaries</span>
+<span class="sd">        &#39;keep_movie_raw&#39;, &#39;data_path&#39;, &#39;look_one_level_down&#39;, &#39;reg_file&#39;...</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops1 : list of dictionaries</span>
+<span class="sd">            adds fields &#39;filelist&#39;, &#39;first_tiffs&#39;, opens binaries</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">reg_file</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">reg_file_chan2</span><span class="o">=</span><span class="p">[]</span>
 
@@ -384,7 +393,21 @@
     <span class="k">return</span> <span class="n">ops1</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">reg_file_chan2</span></div>
 
 <div class="viewcode-block" id="h5py_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.h5py_to_binary">[docs]</a><span class="k">def</span> <span class="nf">h5py_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="c1"># copy ops to list where each element is ops for each plane</span>
+    <span class="sd">&quot;&quot;&quot;  finds h5 files and writes them to binaries</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;nplanes&#39;, &#39;h5_path&#39;, &#39;h5_key&#39;, &#39;save_path&#39;, &#39;save_folder&#39;, &#39;fast_disk&#39;,</span>
+<span class="sd">        &#39;nchannels&#39;, &#39;keep_movie_raw&#39;, &#39;look_one_level_down&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops1 : list of dictionaries</span>
+<span class="sd">            &#39;Ly&#39;, &#39;Lx&#39;, ops1[j][&#39;reg_file&#39;] or ops1[j][&#39;raw_file&#39;] is created binary</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
 
     <span class="n">nplanes</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
@@ -474,8 +497,10 @@
     <span class="k">return</span> <span class="n">ops1</span></div>
 
 <div class="viewcode-block" id="open_tiff"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.open_tiff">[docs]</a><span class="k">def</span> <span class="nf">open_tiff</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sktiff</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; opens tiff with either ScanImageTiffReader or skimage</span>
-<span class="sd">    returns tiff and its length &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot; opens tiff with either ScanImageTiffReader or skimage</span>
+<span class="sd">    returns tiff and its length</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">sktiff</span><span class="p">:</span>
         <span class="n">tif</span> <span class="o">=</span> <span class="n">TiffFile</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">fastij</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">Ltif</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tif</span><span class="p">)</span>
@@ -490,6 +515,25 @@
     <span class="k">return</span> <span class="n">tif</span><span class="p">,</span> <span class="n">Ltif</span></div>
 
 <div class="viewcode-block" id="choose_tiff_reader"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.choose_tiff_reader">[docs]</a><span class="k">def</span> <span class="nf">choose_tiff_reader</span><span class="p">(</span><span class="n">fs0</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  chooses tiff reader (ScanImageTiffReader is default)</span>
+
+<span class="sd">    tries to open tiff with ScanImageTiffReader and if it fails sets sktiff to True</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fs0 : string</span>
+<span class="sd">        path to first tiff in list</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;batch_size&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sktiff : bool</span>
+<span class="sd">        whether or not to use scikit-image tiff reader</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">try</span><span class="p">:</span>
         <span class="n">tif</span> <span class="o">=</span> <span class="n">ScanImageTiffReader</span><span class="p">(</span><span class="n">fs0</span><span class="p">)</span>
         <span class="n">tsize</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
@@ -509,9 +553,22 @@
     <span class="k">return</span> <span class="n">sktiff</span></div>
 
 <div class="viewcode-block" id="tiff_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.tiff_to_binary">[docs]</a><span class="k">def</span> <span class="nf">tiff_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; converts tiff to *.bin file &#39;&#39;&#39;</span>
-    <span class="sd">&#39;&#39;&#39; requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file &#39;&#39;&#39;</span>
-    <span class="sd">&#39;&#39;&#39; assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;  finds tiff files and writes them to binaries</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;nplanes&#39;, &#39;data_path&#39;, &#39;save_path&#39;, &#39;save_folder&#39;, &#39;fast_disk&#39;, &#39;nchannels&#39;, &#39;keep_movie_raw&#39;, &#39;look_one_level_down&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops1 : list of dictionaries</span>
+<span class="sd">            ops1[j][&#39;reg_file&#39;] or ops1[j][&#39;raw_file&#39;] is created binary</span>
+<span class="sd">            assigns keys &#39;Ly&#39;, &#39;Lx&#39;, &#39;tiffreader&#39;, &#39;first_tiffs&#39;,</span>
+<span class="sd">            &#39;frames_per_folder&#39;, &#39;nframes&#39;, &#39;meanImg&#39;, &#39;meanImg_chan2&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">t0</span><span class="o">=</span><span class="n">tic</span><span class="p">()</span>
     <span class="c1"># copy ops to list where each element is ops for each plane</span>
     <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
@@ -614,16 +671,23 @@
             <span class="n">reg_file_chan2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">ops1</span></div>
 
-<div class="viewcode-block" id="split_multiops"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.split_multiops">[docs]</a><span class="k">def</span> <span class="nf">split_multiops</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="s1">&#39;dx&#39;</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
-            <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">ops1</span></div>
-
 <div class="viewcode-block" id="mesoscan_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.mesoscan_to_binary">[docs]</a><span class="k">def</span> <span class="nf">mesoscan_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="c1"># copy ops to list where each element is ops for each plane</span>
-    <span class="c1"># load json file with line start stops</span>
+    <span class="sd">&quot;&quot;&quot; finds mesoscope tiff files and writes them to binaries</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;nplanes&#39;, &#39;data_path&#39;, &#39;save_path&#39;, &#39;save_folder&#39;, &#39;fast_disk&#39;,</span>
+<span class="sd">        &#39;nchannels&#39;, &#39;keep_movie_raw&#39;, &#39;look_one_level_down&#39;, &#39;lines&#39;, &#39;dx&#39;, &#39;dy&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ops1 : list of dictionaries</span>
+<span class="sd">            ops1[j][&#39;reg_file&#39;] or ops1[j][&#39;raw_file&#39;] is created binary</span>
+<span class="sd">            assigns keys &#39;Ly&#39;, &#39;Lx&#39;, &#39;tiffreader&#39;, &#39;first_tiffs&#39;, &#39;frames_per_folder&#39;,</span>
+<span class="sd">            &#39;nframes&#39;, &#39;meanImg&#39;, &#39;meanImg_chan2&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">t0</span> <span class="o">=</span> <span class="n">tic</span><span class="p">()</span>
     <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
         <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;*json&#39;</span><span class="p">)</span>
@@ -766,9 +830,8 @@
     <span class="k">return</span> <span class="n">ops1</span></div>
 
 <div class="viewcode-block" id="list_tifs"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.list_tifs">[docs]</a><span class="k">def</span> <span class="nf">list_tifs</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="n">look_one_level_down</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    list of tiffs in folder froot + one level down maybe</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot; get list of tiffs in folder froot + one level down maybe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">first_tiffs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">lpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">,</span> <span class="s2">&quot;*.tif&quot;</span><span class="p">)</span>
     <span class="n">fs</span>  <span class="o">=</span> <span class="n">natsorted</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">lpath</span><span class="p">))</span>
@@ -795,12 +858,11 @@
     <span class="k">return</span> <span class="n">fs</span><span class="p">,</span> <span class="n">first_tiffs</span></div>
 
 <div class="viewcode-block" id="get_tif_list"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.get_tif_list">[docs]</a><span class="k">def</span> <span class="nf">get_tif_list</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    make list of tiffs to process</span>
+    <span class="sd">&quot;&quot;&quot; make list of tiffs to process</span>
 <span class="sd">    if ops[&#39;subfolders&#39;], then all tiffs ops[&#39;data_path&#39;][0] / ops[&#39;subfolders&#39;] / *.tif</span>
 <span class="sd">    if ops[&#39;look_one_level_down&#39;], then all tiffs in all folders + one level down</span>
 <span class="sd">    if ops[&#39;tiff_list&#39;], then ops[&#39;data_path&#39;][0] / ops[&#39;tiff_list&#39;] ONLY</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">froot</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
     <span class="c1"># use a user-specified list of tiffs</span>
     <span class="k">if</span> <span class="s1">&#39;tiff_list&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
@@ -812,13 +874,13 @@
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;** Found </span><span class="si">%d</span><span class="s1"> tifs - converting to binary **&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fsall</span><span class="p">)))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">froot</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-                <span class="n">fold_list</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;subfolders&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
                 <span class="n">fold_list</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">folder_down</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">]:</span>
                     <span class="n">fold</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">froot</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">folder_down</span><span class="p">)</span>
                     <span class="n">fold_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fold_list</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">fold_list</span> <span class="o">=</span> <span class="n">froot</span>
         <span class="n">fsall</span> <span class="o">=</span> <span class="p">[]</span>
@@ -842,8 +904,8 @@
     <span class="k">return</span> <span class="n">inds</span></div>
 
 <div class="viewcode-block" id="combined"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.combined">[docs]</a><span class="k">def</span> <span class="nf">combined</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Combines all the entries in ops1 into a single result file.</span>
+    <span class="sd">&#39;&#39;&#39; Combines all the entries in ops1 into a single result file.</span>
+
 <span class="sd">    Multi-plane recordings are arranged to best tile a square.</span>
 <span class="sd">    Multi-roi recordings are arranged by their dx,dy physical localization.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -963,7 +1025,19 @@
     <span class="k">return</span> <span class="n">ops</span></div>
 
 <div class="viewcode-block" id="make_blocks"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.make_blocks">[docs]</a><span class="k">def</span> <span class="nf">make_blocks</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="c1">## split FOV into blocks to register separately</span>
+    <span class="sd">&quot;&quot;&quot; computes overlapping blocks to split FOV into to register separately</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;Ly&#39;, &#39;Lx&#39; (optional &#39;block_size&#39;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;yblock&#39;, &#39;xblock&#39;, &#39;nblocks&#39;, &#39;NRsm&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
     <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="s1">&#39;maxregshiftNR&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
@@ -1003,16 +1077,21 @@
 
     <span class="k">return</span> <span class="n">ops</span></div>
 
-<div class="viewcode-block" id="sample_frames"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.sample_frames">[docs]</a><span class="k">def</span> <span class="nf">sample_frames</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">):</span>
+<div class="viewcode-block" id="sample_frames"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.sample_frames">[docs]</a><span class="k">def</span> <span class="nf">sample_frames</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; get frames ix from reg_file</span>
 <span class="sd">        frames are cropped by ops[&#39;yrange&#39;] and ops[&#39;xrange&#39;]</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">bad_frames</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[</span><span class="n">bad_frames</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
     <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
     <span class="n">nbytesread</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">Lyc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">Lxc</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">mov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">),</span> <span class="n">Lyc</span><span class="p">,</span> <span class="n">Lxc</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">crop</span><span class="p">:</span>
+        <span class="n">mov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">),</span> <span class="n">Lyc</span><span class="p">,</span> <span class="n">Lxc</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">),</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="c1"># load and bin data</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reg_file</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">)):</span>
@@ -1020,17 +1099,29 @@
             <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
-            <span class="n">mov</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">crop</span><span class="p">:</span>
+                <span class="n">mov</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mov</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">data</span>
     <span class="k">return</span> <span class="n">mov</span></div>
 
 <div class="viewcode-block" id="ome_to_binary"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.ome_to_binary">[docs]</a><span class="k">def</span> <span class="nf">ome_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    converts ome.tiff to *.bin file for non-interleaved red channel recordings</span>
 <span class="sd">    assumes SINGLE-PAGE tiffs where first channel has string &#39;Ch1&#39;</span>
 <span class="sd">    and also SINGLE FOLDER</span>
-<span class="sd">    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file</span>
-<span class="sd">    assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        keys nplanes, nchannels, data_path, look_one_level_down, reg_file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ops1 : list of dictionaries</span>
+<span class="sd">        creates binaries ops1[j][&#39;reg_file&#39;]</span>
+<span class="sd">        assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">t0</span><span class="o">=</span><span class="n">tic</span><span class="p">()</span>
     <span class="c1"># copy ops to list where each element is ops for each plane</span>
     <span class="n">ops1</span> <span class="o">=</span> <span class="n">init_ops</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>

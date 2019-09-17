@@ -211,12 +211,40 @@
 <dl class="function">
 <dt id="suite2p.register.prepare_masks">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">prepare_masks</code><span class="sig-paren">(</span><em class="sig-param">refImg0</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#prepare_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.prepare_masks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>computes masks and fft’ed reference image for phasecorr</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refImg0</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘smooth_sigma’
+(if <code class="docutils literal notranslate"><span class="pre">`ops['1Preg']`</span></code>, need ‘spatial_taper’, ‘spatial_hp’, ‘pre_smooth’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>maskMul</strong> (<em>float32</em>) – mask that is multiplied to spatially taper frames</p></li>
+<li><p><strong>maskOffset</strong> (<em>float32</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cfRefImg</strong> (<em>complex64</em>) – reference image fft’ed and complex conjugate and multiplied by gaussian
+filter in the fft domain with standard deviation ‘smooth_sigma’</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.shift_data">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em>, <em class="sig-param">m0</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#shift_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>rigid shift of X by ymax and xmax</p>
+<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#shift_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>rigid shift X by integer shifts ymax and xmax in place (no return)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -238,74 +266,226 @@
 <dl class="function">
 <dt id="suite2p.register.my_clip">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">my_clip</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">lcorr</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#my_clip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.my_clip" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>perform 2D fftshift and crop with lcorr</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.phasecorr_cpu">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">phasecorr_cpu</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">lcorr</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#phasecorr_cpu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.phasecorr_cpu" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>compute phase correlation between data and reference image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>refAndMasks</strong> (<em>list</em>) – maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)</p></li>
+<li><p><strong>lcorr</strong> (<em>int</em>) – maximum shift in pixels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cmax</strong> (<em>float</em>) – maximum of phase correlation for each frame</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.register_and_shift">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_and_shift</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#register_and_shift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_and_shift" title="Permalink to this definition">¶</a></dt>
 <dd><p>register data matrix to reference image and shift</p>
+<p>need to run <code class="docutils literal notranslate"><span class="pre">`refAndMasks</span> <span class="pre">=</span> <span class="pre">register.prepare_refAndMasks(ops)`</span></code> to get fft’ed masks;
+if <code class="docutils literal notranslate"><span class="pre">`ops['nonrigid']`</span></code> need to run <code class="docutils literal notranslate"><span class="pre">`ops</span> <span class="pre">=</span> <span class="pre">utils.make_blocks(ops)`</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>refAndMasks</strong> (<em>list</em>) – maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nonrigid’, ‘bidiphase’, ‘1Preg’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – registered frames x Ly x Lx</p></li>
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cmax</strong> (<em>float</em>) – maximum of phase correlation for each frame</p></li>
+<li><p><strong>yxnr</strong> (<em>list</em>) – ymax, xmax and cmax from the non-rigid registration</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.get_nFrames">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">get_nFrames</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#get_nFrames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.get_nFrames" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>get number of frames in binary file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘Ly’, ‘Lx’, ‘reg_file’ (optional ‘keep_movie_raw’ and ‘raw_file’)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>nFrames</strong> – number of frames in the binary</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.subsample_frames">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">subsample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">nsamps</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#subsample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.subsample_frames" title="Permalink to this definition">¶</a></dt>
 <dd><p>get nsamps frames from binary file for initial reference image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘Ly’, ‘Lx’, ‘nframes’, ‘reg_file’ (optional ‘keep_movie_raw’ and ‘raw_file’)</p></li>
+<li><p><strong>nsamps</strong> (<em>int</em>) – number of frames to return</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>frames</strong> – frames x Ly x Lx</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.get_bidiphase">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">get_bidiphase</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#get_bidiphase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.get_bidiphase" title="Permalink to this definition">¶</a></dt>
-<dd><p>computes the bidirectional phase offset
-sometimes in line scanning there will be offsets between lines
+<dd><p>computes the bidirectional phase offset</p>
+<p>sometimes in line scanning there will be offsets between lines;
 if ops[‘do_bidiphase’], then bidiphase is computed and applied</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frames</strong> (<em>int16</em>) – random subsample of frames in binary (frames x Ly x Lx)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bidiphase</strong> – bidirectional phase offset in pixels</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.shift_bidiphase">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">shift_bidiphase</code><span class="sig-paren">(</span><em class="sig-param">frames</em>, <em class="sig-param">bidiphase</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#shift_bidiphase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.shift_bidiphase" title="Permalink to this definition">¶</a></dt>
 <dd><p>shift frames by bidirectional phase offset, bidiphase</p>
+<p>sometimes in line scanning there will be offsets between lines;
+shifts last axis by bidiphase</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frames</strong> (<em>int16</em>) – frames from binary (frames x Ly x Lx)</p></li>
+<li><p><strong>bidiphase</strong> (<em>int</em>) – bidirectional phase offset in pixels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>frames</strong> – shifted frames from binary (frames x Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
-<dt id="suite2p.register.pick_init_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">pick_init_init</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#pick_init_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.pick_init_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>input: frames (nimg x Ly x Lx)
-output: refImg (Ly x Lx)
-use frames and find its correlation matrix
-choose the seed frame as the one with the top 20 most correlated pairs
-use the average of the seed frame with its top 20 as the initial reference image</p>
+<dt id="suite2p.register.pick_initial_reference">
+<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">pick_initial_reference</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#pick_initial_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.pick_initial_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the initial reference image</p>
+<p>the seed frame is the frame with the largest correlations with other frames;
+the average of the seed frame with its top 20 correlated pairs is the
+inital reference frame returned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frames</strong> (<em>int16</em>) – frames from binary (frames x Ly x Lx)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – initial reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
-<dt id="suite2p.register.refine_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">refine_init</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">frames</em>, <em class="sig-param">refImg</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#refine_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.refine_init" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="suite2p.register.iterative_alignment">
+<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">iterative_alignment</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">frames</em>, <em class="sig-param">refImg</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#iterative_alignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.iterative_alignment" title="Permalink to this definition">¶</a></dt>
+<dd><p>iterative alignment of initial frames to compute reference image</p>
+<p>the seed frame is the frame with the largest correlations with other frames;
+the average of the seed frame with its top 20 correlated pairs is the
+inital reference frame returned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nonrigid’, ‘smooth_sigma’, ‘bidiphase’, ‘1Preg’</p></li>
+<li><p><strong>frames</strong> (<em>int16</em>) – frames from binary (frames x Ly x Lx)</p></li>
+<li><p><strong>refImg</strong> (<em>int16</em>) – initial reference image (Ly x Lx)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – final reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
-<dt id="suite2p.register.pick_init">
-<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">pick_init</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#pick_init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.pick_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute initial reference image from ops[‘nimg_init’] frames</p>
+<dt id="suite2p.register.compute_reference_image">
+<code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">compute_reference_image</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#compute_reference_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.compute_reference_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the reference image</p>
+<p>computes initial reference image using ops[‘nimg_init’] frames</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nimg_init’, ‘nonrigid’, ‘smooth_sigma’, ‘bidiphase’, ‘1Preg’,
+‘reg_file’, (optional ‘keep_movie_raw’, ‘raw_movie’)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – initial reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.prepare_refAndMasks">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">prepare_refAndMasks</code><span class="sig-paren">(</span><em class="sig-param">refImg</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#prepare_refAndMasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.prepare_refAndMasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>prepares refAndMasks for phasecorr using refImg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refImg</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘smooth_sigma’
+(if <code class="docutils literal notranslate"><span class="pre">`ops['1Preg']`</span></code>, need ‘spatial_taper’, ‘spatial_hp’, ‘pre_smooth’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refAndMasks</strong> – maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.init_offsets">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">init_offsets</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#init_offsets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.init_offsets" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>initialize offsets for all frames</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.compute_crop">
@@ -318,23 +498,77 @@ from registration in y and x</p>
 <dl class="function">
 <dt id="suite2p.register.write_tiffs">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">write_tiffs</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">k</em>, <em class="sig-param">ichan</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#write_tiffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.write_tiffs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>writes frames to tiffs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – frames x Ly x Lx</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘functional_chan’, ‘align_by_chan’</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – number of tiff</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.bin_paths">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">bin_paths</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">raw</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#bin_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.bin_paths" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>set which binary is being aligned to</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.register_binary_to_ref">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">register_binary_to_ref</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">refImg</em>, <em class="sig-param">reg_file_align</em>, <em class="sig-param">raw_file_align</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#register_binary_to_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.register_binary_to_ref" title="Permalink to this definition">¶</a></dt>
 <dd><p>register binary data to reference image refImg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – </p></li>
+<li><p><strong>refImg</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>reg_file_align</strong> (<em>string</em>) – file to (read if raw_file_align empty, and) write registered binary to</p></li>
+<li><p><strong>raw_file_align</strong> (<em>string</em>) – file to read raw binary from (if not empty)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – sets ‘meanImg’ or ‘meanImg_chan2’
+maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p></li>
+<li><p><strong>offsets</strong> (<em>list</em>) – [ymax, xmax, cmax, yxnr] &lt;- shifts and correlations</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.apply_shifts">
 <code class="sig-prename descclassname">suite2p.register.</code><code class="sig-name descname">apply_shifts</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em>, <em class="sig-param">ymax1</em>, <em class="sig-param">xmax1</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/register.html#apply_shifts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.register.apply_shifts" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>apply rigid and nonrigid shifts to data (for chan that’s not ‘align_by_chan’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>int16</em>) – </p>
+</dd>
+</dl>
+<p>ops : dictionary</p>
+<dl class="simple">
+<dt>refImg<span class="classifier">int16</span></dt><dd><p>reference image</p>
+</dd>
+<dt>reg_file_align<span class="classifier">string</span></dt><dd><p>file to (read if raw_file_align empty, and) write registered binary to</p>
+</dd>
+<dt>raw_file_align<span class="classifier">string</span></dt><dd><p>file to read raw binary from (if not empty)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – sets ‘meanImg’ or ‘meanImg_chan2’
+maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p></li>
+<li><p><strong>offsets</strong> (<em>list</em>) – [ymax, xmax, cmax, yxnr] &lt;- shifts and correlations</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.register.apply_shifts_to_binary">

@@ -221,7 +221,7 @@ class ROIDraw(QtGui.QMainWindow):
                               axis=0)  # For now convert spikes to 0 for the new ROIS and then fix it later
         np.save(os.path.join(parent.basename, 'F.npy'), Fcell)
         np.save(os.path.join(parent.basename, 'Fneu.npy'), Fneu)
-        np.save(os.path.join(parent.basename, 'Spks.npy'), Spks)
+        np.save(os.path.join(parent.basename, 'spks.npy'), Spks)
 
         # Append new stat file with old and save
         print('Saving new stat')
@@ -360,6 +360,7 @@ class ROIDraw(QtGui.QMainWindow):
             parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
+        print(spks.shape)
         # print('After', stat[0].keys())
         # print('Orig', parent.stat[0].keys())
         self.Fcell = F

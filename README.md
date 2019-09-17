@@ -19,7 +19,7 @@ See this **twitter [thread](https://twitter.com/marius10p/status/103280477663388
 
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
-## *NEW* github [page](http://mouseland.github.io/suite2p) using sphinx
+## *NEW* detailed github [page](http://mouseland.github.io/suite2p)
 
 ## Installation
 
@@ -57,8 +57,6 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
 
-(+ there's more info on the [install wiki](https://github.com/MouseLand/suite2p/wiki/Installation))
-
 ## Examples
 
 An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265NHRWYXUz7CRhbJHtd6B-zJs8f). It's a single-plane, single-channel recording.
@@ -82,10 +80,6 @@ Then:
 		~~~~
 3. Press run and wait. Messages should start appearing in the embedded command line.
 4. When the run is finished, the results will open in the GUI window and there you can visualize and refine the results (see below).
-
-For more information on input file formatting, see this wiki [page](https://github.com/MouseLand/suite2p/wiki/Input-format-and-supported-file-types).
-
-For a description of all the settings and their defaults, see this wiki [page](https://github.com/MouseLand/suite2p/wiki/Settings-(ops.npy)). Also, you can mouse over the settings in the run window to see a short description of each of them.
 
 ### Using the GUI
 
@@ -114,8 +108,6 @@ Main GUI controls (works in all views):
 
 You can add your manual curation to a pre-built classifier by clicking "Add current data to classifier". Or you can make a brand-new classifier from a list of "iscell.npy" files that you've manually curated. The default classifier in the GUI is initialized as the suite2p classifier, but you can overwrite it by adding to it, or loading a different classifier and saving it as the default. The default classifier is used in the pipeline to produce the initial "iscell.npy" file.
 
-There is more information on using the GUI on the [wiki](https://github.com/MouseLand/suite2p/wiki/Using-the-GUI)
-
 ## Other ways to call Suite2p
 
 1. From the command line:
@@ -141,8 +133,6 @@ stat.npy: array of statistics computed for each cell (ROIs by 1)
 ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
-
-See the [output wiki page](https://github.com/MouseLand/suite2p/wiki/Outputs) for more info.
 
 ## Option defaults
 

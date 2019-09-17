@@ -67,34 +67,43 @@ def fitMVGaus(y,x,lam,thres=2.5):
     return mu, cov, radii, ellipse, area
 
 def enhanced_mean_image(ops):
-    ''' computes enhanced mean image for GUI '''
-    if 1:
-        I = ops['meanImg'].astype(np.float32)
-        if 'spatscale_pix' not in ops:
-            if isinstance(ops['diameter'], int):
-                diameter = np.array([ops['diameter'], ops['diameter']])
-            else:
-                diameter = np.array(ops['diameter'])
-            ops['spatscale_pix'] = diameter[1]
-            ops['aspect'] = diameter[0]/diameter[1]
+    """ computes enhanced mean image and adds it to ops
 
-        diameter = 4*np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']]) + 1
-        diameter = diameter.flatten().astype(np.int64)
-        Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
-        I = I - Imed
-        Idiv = signal.medfilt2d(np.absolute(I), [diameter[0], diameter[1]])
-        I = I / (1e-10 + Idiv)
-        mimg1 = -6
-        mimg99 = 6
-        mimg0 = I
-    else:
-        mimg0 = ops['meanImg']
-        mimg0 = mimg0 - gaussian_filter(filters.minimum_filter(mimg0,50,mode='mirror'),
-                                          10,mode='mirror')
-        mimg0 = mimg0 / gaussian_filter(filters.maximum_filter(mimg0,50,mode='mirror'),
-                                      10,mode='mirror')
-        mimg1 = np.percentile(mimg0,1)
-        mimg99 = np.percentile(mimg0,99)
+    Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
+    divides by this median-filtered image to return a high-pass filtered
+    image ops['meanImgE']
+
+    Parameters
+    ----------
+    ops : dictionary
+        uses 'meanImg', 'aspect', 'diameter', 'yrange' and 'xrange'
+
+    Returns
+    -------
+        ops : dictionary
+            'meanImgE' field added
+
+    """
+
+    I = ops['meanImg'].astype(np.float32)
+    if 'spatscale_pix' not in ops:
+        if isinstance(ops['diameter'], int):
+            diameter = np.array([ops['diameter'], ops['diameter']])
+        else:
+            diameter = np.array(ops['diameter'])
+        ops['spatscale_pix'] = diameter[1]
+        ops['aspect'] = diameter[0]/diameter[1]
+
+    diameter = 4*np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']]) + 1
+    diameter = diameter.flatten().astype(np.int64)
+    Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
+    I = I - Imed
+    Idiv = signal.medfilt2d(np.absolute(I), [diameter[0], diameter[1]])
+    I = I / (1e-10 + Idiv)
+    mimg1 = -6
+    mimg99 = 6
+    mimg0 = I
+
     mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
     mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
     mimg0 = np.maximum(0,np.minimum(1,mimg0))
@@ -105,6 +114,22 @@ def enhanced_mean_image(ops):
     return ops
 
 def init_ops(ops):
+    """ initializes ops files for each plane in recording
+
+    Parameters
+    ----------
+    ops : dictionary
+        'nplanes', 'save_path', 'save_folder', 'fast_disk', 'nchannels', 'keep_movie_raw'
+        + (if mesoscope) 'dy', 'dx', 'lines'
+
+    Returns
+    -------
+        ops1 : list of dictionaries
+            adds fields 'save_path0', 'reg_file'
+            (depending on ops: 'raw_file', 'reg_file_chan2', 'raw_file_chan2')
+
+    """
+
     nplanes = ops['nplanes']
     nchannels = ops['nchannels']
     if 'lines' in ops:
@@ -158,6 +183,7 @@ def list_h5(ops):
     fs = natsorted(glob.glob(lpath))
     return fs
 
+<<<<<<< HEAD
 def list_sbx(ops):
     froot = os.path.dirname(ops['sbxpy'])
     lpath = os.path.join(froot, "*.sbx")
@@ -186,6 +212,23 @@ def find_files_open_binaries(ops1, ish5, issbx):
     ''' find tiffs or h5 files, and open binaries to write to
         inputs ops1 (list over planes), ish5 (whether or not h5)
         returns ops1, fs (filelist), reg_file, reg_file_chan2 '''
+=======
+def find_files_open_binaries(ops1, ish5):
+    """  finds tiffs or h5 files and opens binaries for writing
+
+    Parameters
+    ----------
+    ops1 : list of dictionaries
+        'keep_movie_raw', 'data_path', 'look_one_level_down', 'reg_file'...
+
+    Returns
+    -------
+        ops1 : list of dictionaries
+            adds fields 'filelist', 'first_tiffs', opens binaries
+
+    """
+
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     reg_file = []
     reg_file_chan2=[]
 
@@ -226,7 +269,21 @@ def find_files_open_binaries(ops1, ish5, issbx):
     return ops1, fs, reg_file, reg_file_chan2
 
 def h5py_to_binary(ops):
-    # copy ops to list where each element is ops for each plane
+    """  finds h5 files and writes them to binaries
+
+    Parameters
+    ----------
+    ops : dictionary
+        'nplanes', 'h5_path', 'h5_key', 'save_path', 'save_folder', 'fast_disk',
+        'nchannels', 'keep_movie_raw', 'look_one_level_down'
+
+    Returns
+    -------
+        ops1 : list of dictionaries
+            'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+
+    """
+
     ops1 = init_ops(ops)
 
     nplanes = ops1[0]['nplanes']
@@ -316,8 +373,10 @@ def h5py_to_binary(ops):
     return ops1
 
 def open_tiff(file, sktiff):
-    ''' opens tiff with either ScanImageTiffReader or skimage
-    returns tiff and its length '''
+    """ opens tiff with either ScanImageTiffReader or skimage
+    returns tiff and its length
+
+    """
     if sktiff:
         tif = TiffFile(file, fastij = False)
         Ltif = len(tif)
@@ -332,6 +391,25 @@ def open_tiff(file, sktiff):
     return tif, Ltif
 
 def choose_tiff_reader(fs0, ops):
+    """  chooses tiff reader (ScanImageTiffReader is default)
+
+    tries to open tiff with ScanImageTiffReader and if it fails sets sktiff to True
+
+    Parameters
+    ----------
+    fs0 : string
+        path to first tiff in list
+
+    ops : dictionary
+        'batch_size'
+
+    Returns
+    -------
+    sktiff : bool
+        whether or not to use scikit-image tiff reader
+
+    """
+
     try:
         tif = ScanImageTiffReader(fs0)
         tsize = tif.shape()
@@ -351,9 +429,22 @@ def choose_tiff_reader(fs0, ops):
     return sktiff
 
 def tiff_to_binary(ops):
-    ''' converts tiff to *.bin file '''
-    ''' requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file '''
-    ''' assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2'''
+    """  finds tiff files and writes them to binaries
+
+    Parameters
+    ----------
+    ops : dictionary
+        'nplanes', 'data_path', 'save_path', 'save_folder', 'fast_disk', 'nchannels', 'keep_movie_raw', 'look_one_level_down'
+
+    Returns
+    -------
+        ops1 : list of dictionaries
+            ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+            assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
+            'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'
+
+    """
+
     t0=tic()
     # copy ops to list where each element is ops for each plane
     ops1 = init_ops(ops)
@@ -456,16 +547,32 @@ def tiff_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
+<<<<<<< HEAD
 def split_multiops(ops1):
     for j in range(len(ops1)):
         if 'dx' in ops1[j] and np.size(ops1[j]['dx'])>1:
             ops1[j]['dx'] = ops1[j]['dx'][j]
             ops1[j]['dy'] = ops1[j]['dy'][j]
     return ops1
-
+=======
 def mesoscan_to_binary(ops):
-    # copy ops to list where each element is ops for each plane
-    # load json file with line start stops
+    """ finds mesoscope tiff files and writes them to binaries
+
+    Parameters
+    ----------
+    ops : dictionary
+        'nplanes', 'data_path', 'save_path', 'save_folder', 'fast_disk',
+        'nchannels', 'keep_movie_raw', 'look_one_level_down', 'lines', 'dx', 'dy'
+
+    Returns
+    -------
+        ops1 : list of dictionaries
+            ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+            assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs', 'frames_per_folder',
+            'nframes', 'meanImg', 'meanImg_chan2'
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
+
+    """
     t0 = tic()
     if 'lines' not in ops:
         fpath = os.path.join(ops['data_path'][0], '*json')
@@ -608,9 +715,8 @@ def mesoscan_to_binary(ops):
     return ops1
 
 def list_tifs(froot, look_one_level_down):
-    '''
-    list of tiffs in folder froot + one level down maybe
-    '''
+    """ get list of tiffs in folder froot + one level down maybe
+    """
     first_tiffs = []
     lpath = os.path.join(froot, "*.tif")
     fs  = natsorted(glob.glob(lpath))
@@ -637,12 +743,11 @@ def list_tifs(froot, look_one_level_down):
     return fs, first_tiffs
 
 def get_tif_list(ops):
-    '''
-    make list of tiffs to process
+    """ make list of tiffs to process
     if ops['subfolders'], then all tiffs ops['data_path'][0] / ops['subfolders'] / *.tif
     if ops['look_one_level_down'], then all tiffs in all folders + one level down
     if ops['tiff_list'], then ops['data_path'][0] / ops['tiff_list'] ONLY
-    '''
+    """
     froot = ops['data_path']
     # use a user-specified list of tiffs
     if 'tiff_list' in ops:
@@ -654,13 +759,13 @@ def get_tif_list(ops):
         print('** Found %d tifs - converting to binary **'%(len(fsall)))
     else:
         if len(froot)==1:
-            if len(ops['subfolders'])==0:
-                fold_list = ops['data_path']
-            else:
+            if 'subfolders' in ops and len(ops['subfolders'])>0:
                 fold_list = []
                 for folder_down in ops['subfolders']:
                     fold = os.path.join(froot[0], folder_down)
                     fold_list.append(fold)
+            else:
+                fold_list = ops['data_path']
         else:
             fold_list = froot
         fsall = []
@@ -684,8 +789,8 @@ def sub2ind(array_shape, rows, cols):
     return inds
 
 def combined(ops1):
-    '''
-    Combines all the entries in ops1 into a single result file.
+    ''' Combines all the entries in ops1 into a single result file.
+
     Multi-plane recordings are arranged to best tile a square.
     Multi-roi recordings are arranged by their dx,dy physical localization.
     '''
@@ -805,7 +910,19 @@ def combined(ops1):
     return ops
 
 def make_blocks(ops):
-    ## split FOV into blocks to register separately
+    """ computes overlapping blocks to split FOV into to register separately
+
+    Parameters
+    ----------
+    ops : dictionary
+        'Ly', 'Lx' (optional 'block_size')
+
+    Returns
+    -------
+    ops : dictionary
+        'yblock', 'xblock', 'nblocks', 'NRsm'
+
+    """
     Ly = ops['Ly']
     Lx = ops['Lx']
     if 'maxregshiftNR' not in ops:
@@ -845,16 +962,21 @@ def make_blocks(ops):
 
     return ops
 
-def sample_frames(ops, ix, reg_file):
+def sample_frames(ops, ix, reg_file, crop=True):
     ''' get frames ix from reg_file
         frames are cropped by ops['yrange'] and ops['xrange']
     '''
+    bad_frames = ops['badframes']
+    ix = ix[bad_frames[ix]==0]
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
-    mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    if crop:
+        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    else:
+        mov = np.zeros((len(ix), Ly, Lx), np.int16)
     # load and bin data
     with open(reg_file, 'rb') as reg_file:
         for i in range(len(ix)):
@@ -862,7 +984,10 @@ def sample_frames(ops, ix, reg_file):
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             data = np.reshape(data, (Ly, Lx))
-            mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            if crop:
+                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            else:
+                mov[i,:,:] = data
     return mov
 
 def sbx_to_binary(ops):
@@ -922,13 +1047,28 @@ def sbx_to_binary(ops):
     return ops1
 
 def ome_to_binary(ops):
-    '''
+    """
     converts ome.tiff to *.bin file for non-interleaved red channel recordings
     assumes SINGLE-PAGE tiffs where first channel has string 'Ch1'
     and also SINGLE FOLDER
+<<<<<<< HEAD
     requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
     assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     '''
+=======
+
+    Parameters
+    ----------
+    ops : dictionary
+        keys nplanes, nchannels, data_path, look_one_level_down, reg_file
+
+    Returns
+    -------
+    ops1 : list of dictionaries
+        creates binaries ops1[j]['reg_file']
+        assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
+    """
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     t0=tic()
     # copy ops to list where each element is ops for each plane
     ops1 = init_ops(ops)

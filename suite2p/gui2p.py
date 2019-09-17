@@ -535,35 +535,56 @@ class MainW(QtGui.QMainWindow):
         #Agus
         # Deconv CHECKBOX
         self.l0.setVerticalSpacing(4)
+<<<<<<< HEAD
         self.checkBoxd = QtGui.QCheckBox("Deconvolved [N]")
+=======
+        self.checkBoxd = QtGui.QCheckBox("deconv [N]")
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
         self.checkBoxd.setStyleSheet("color: white;")
         self.checkBoxd.stateChanged.connect(self.deconv_on)
         self.deconvOn = True
         self.checkBoxd.toggle()
         self.l0.addWidget(self.checkBoxd,
         self.bend + 7 + k,
+<<<<<<< HEAD
         4,
         1, 2)
         # neuropil CHECKBOX
         self.l0.setVerticalSpacing(4)
         self.checkBoxn = QtGui.QCheckBox("Neuropil [B]")
+=======
+        3,
+        1, 2)
+        # neuropil CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxn = QtGui.QCheckBox("neuropil [B]")
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
         self.checkBoxn.setStyleSheet("color: red;")
         self.checkBoxn.stateChanged.connect(self.neuropil_on)
         self.neuropilOn = True
         self.checkBoxn.toggle()
         self.l0.addWidget(self.checkBoxn,
         self.bend + 7 + k,
+<<<<<<< HEAD
         6,
         1, 2)
         # traces CHECKBOX
         self.l0.setVerticalSpacing(4)
         self.checkBoxt = QtGui.QCheckBox("Fluorescence [V]")
+=======
+        5,
+        1, 2)
+        # traces CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxt = QtGui.QCheckBox("raw fluor [V]")
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
         self.checkBoxt.setStyleSheet("color: blue;")
         self.checkBoxt.stateChanged.connect(self.traces_on)
         self.tracesOn = True
         self.checkBoxt.toggle()
         self.l0.addWidget(self.checkBoxt,
         self.bend + 7 + k,
+<<<<<<< HEAD
         8,
         1, 2)
         # Zoom on CHECKBOX
@@ -574,8 +595,26 @@ class MainW(QtGui.QMainWindow):
         self.zoom_on = True
         self.checkBoxz.toggle()
         self.l0.addWidget(self.checkBoxz, self.bend + 7 +k, 10, 1, 2)
+=======
+        7,
+        1, 2)
+
+        # zoom to cell CHECKBOX
+        self.l0.setVerticalSpacing(4)
+        self.checkBoxz = QtGui.QCheckBox("zoom to cell")
+        self.checkBoxz.setStyleSheet("color: white;")
+        self.checkBoxz.stateChanged.connect(self.zoom_cell)
+        self.zoomtocell = False
+        self.l0.addWidget(self.checkBoxz,
+        self.bend + 7 + k,
+        15,
+        1, 2)
+
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
         # initialize merges
         self.merged = []
+        self.imerge = [0]
+        self.ichosen = 0
         self.rastermap = False
         model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]
@@ -587,6 +626,13 @@ class MainW(QtGui.QMainWindow):
             self.load_proc()
             #self.manual_label()
 
+    def zoom_cell(self, state):
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.zoomtocell = True
+            else:
+                self.zoomtocell = False
+            self.update_plot()
 
     def export_fig(self):
         self.win.scene().contextMenuItem = self.p1
@@ -682,8 +728,11 @@ class MainW(QtGui.QMainWindow):
                     self.checkBoxn.toggle()
                 elif event.key() == QtCore.Qt.Key_V:
                     self.checkBoxt.toggle()
+<<<<<<< HEAD
                 elif event.key() == QtCore.Qt.Key_Z:
                     self.checkBoxz.toggle()
+=======
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
                 #
                 elif event.key() == QtCore.Qt.Key_A:
                     self.colorbtns.button(0).setChecked(True)
@@ -725,6 +774,7 @@ class MainW(QtGui.QMainWindow):
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
+<<<<<<< HEAD
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
@@ -732,6 +782,10 @@ class MainW(QtGui.QMainWindow):
                     if self.zoom_on:
                         self.zoom_to_cell()
                     self.show()
+=======
+                    self.update_plot()
+
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
                     ctype = self.iscell[self.ichosen]
@@ -740,12 +794,16 @@ class MainW(QtGui.QMainWindow):
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
+<<<<<<< HEAD
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
                     fig.plot_trace(self)
                     if self.zoom_on:
                         self.zoom_to_cell()
+=======
+                    self.update_plot()
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
                     self.show()
                 ##Agus
                 elif event.key() == QtCore.Qt.Key_Up:
@@ -756,6 +814,7 @@ class MainW(QtGui.QMainWindow):
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
+<<<<<<< HEAD
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
@@ -764,6 +823,20 @@ class MainW(QtGui.QMainWindow):
                         self.zoom_to_cell()
                     self.show()
 
+=======
+                    self.update_plot()
+                    self.show()
+
+    def update_plot(self):
+        self.ichosen_stats()
+        M = fig.draw_masks(self)
+        fig.plot_masks(self, M)
+        fig.plot_trace(self)
+        if self.zoomtocell:
+            self.zoom_to_cell()
+        self.win.show()
+        self.show()
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
 
     def suggest_merge(self):
         MergeWindow = merge.MergeWindow(self)
@@ -1112,6 +1185,7 @@ class MainW(QtGui.QMainWindow):
             M = fig.draw_masks(self)
             fig.plot_masks(self, M)
 
+<<<<<<< HEAD
     def Zoom_on(self, state):
         if state == QtCore.Qt.Checked:
             self.zoom_on = True
@@ -1145,6 +1219,39 @@ class MainW(QtGui.QMainWindow):
         self.win.show()
         self.show()
     #
+=======
+    #Agus
+    def deconv_on(self, state):
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.deconvOn = True
+            else:
+                self.deconvOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+
+    def neuropil_on(self, state):
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.neuropilOn = True
+            else:
+                self.neuropilOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+
+    def traces_on(self, state):
+        if self.loaded:
+            if state == QtCore.Qt.Checked:
+                self.tracesOn = True
+            else:
+                self.tracesOn = False
+            fig.plot_trace(self)
+            self.win.show()
+            self.show()
+        #
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     def plot_clicked(self, event):
         """left-click chooses a cell, right-click flips cell to other view"""
         flip = False
@@ -1227,6 +1334,7 @@ class MainW(QtGui.QMainWindow):
                     if self.ops_plot[2] == self.ops_plot[3].shape[1]:
                         fig.corr_masks(self)
                         fig.plot_colorbar(self, self.ops_plot[2])
+<<<<<<< HEAD
                     self.ichosen_stats()
                     M = fig.draw_masks(self)
                     fig.plot_masks(self, M)
@@ -1234,6 +1342,9 @@ class MainW(QtGui.QMainWindow):
                     if self.zoom_on:
                         self.zoom_to_cell()
                     self.show()
+=======
+                    self.update_plot()
+>>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
                 elif event.button() == 2:
                     if iplot == 1:
                         event.acceptedItem = self.p1

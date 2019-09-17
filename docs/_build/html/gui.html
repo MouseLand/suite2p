@@ -87,7 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Using the GUI</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#different-views-and-colors">Different views and colors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#different-views-and-colors-for-roi-panels">Different views and colors for ROI panels</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#views">Views</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#colors">Colors</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#correlations">Correlations</a></li>
@@ -99,9 +99,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#mouse-control">Mouse control</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#keyboard-shortcuts">Keyboard shortcuts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#multi-cell-selection">Multi-cell selection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#trace-view-bottom-row">Trace view (bottom row)</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#trace-view-bottom-row">Trace view (bottom row)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#classifying-cells">Classifying cells</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#adding-data-to-a-classifier">Adding data to a classifier</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#building-your-own-classifier">Building your own classifier</a></li>
@@ -196,8 +196,8 @@ automatically identify the cells as one of these two classes. Note that
 these categories do not have to be ‘cells’ and ‘NOT cells’, they could
 be ‘boutons’ and ‘NOT boutons’, we just chose to say ‘cells’ because
 that’s the most common ROI studied.</p>
-<div class="section" id="different-views-and-colors">
-<h2>Different views and colors<a class="headerlink" href="#different-views-and-colors" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="different-views-and-colors-for-roi-panels">
+<h2>Different views and colors for ROI panels<a class="headerlink" href="#different-views-and-colors-for-roi-panels" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="views">
 <h3>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h3>
 <p>To turn off ROIs in views 2-4, uncheck <em>ROIs on</em></p>
@@ -284,6 +284,8 @@ letters, just press the letter (do not capitalize)</p></li>
 <li><p>E = enhanced mean image</p></li>
 <li><p>R = correlation map</p></li>
 <li><p>A-K = different color maps</p></li>
+<li><p>Left and right keys = cycle between cells of same panel</p></li>
+<li><p>Up Key = flip selected cell to other panel</p></li>
 </ul>
 </div>
 <div class="section" id="multi-cell-selection">
@@ -299,8 +301,9 @@ instance, in ‘skew’ view, <em>select top n</em> will select the most skewed
 neurons. In ‘correlation’ view, it will choose the most correlated
 neurons with the currently selected neuron.</p>
 </div>
+</div>
 <div class="section" id="trace-view-bottom-row">
-<h3>Trace view (bottom row)<a class="headerlink" href="#trace-view-bottom-row" title="Permalink to this headline">¶</a></h3>
+<h2>Trace view (bottom row)<a class="headerlink" href="#trace-view-bottom-row" title="Permalink to this headline">¶</a></h2>
 <p>When one cell is selected, the fluorescence, neuropil and deconvolved
 traces are shown for the chosen cell in the bottom row of the GUI. When
 multiple cells are selected, you can choose what type of traces to view
@@ -317,7 +320,11 @@ traces overlap with the +/- buttons.</p>
 <p>You can select as many cells as you want, but by default only 40 of
 those will be plotted. You can increase or decrease this number by
 changing the number in the box below <em>max # plotted</em>.</p>
-</div>
+<p>You can hide the fluorescence, neuropil and/or the deconvolved traces by
+toggling the chechboxes or using the keys as follows:</p>
+<p>Deconvolved - N key
+Neuropil - B Key
+Fluorescence - V Key</p>
 </div>
 <div class="section" id="classifying-cells">
 <h2>Classifying cells<a class="headerlink" href="#classifying-cells" title="Permalink to this headline">¶</a></h2>

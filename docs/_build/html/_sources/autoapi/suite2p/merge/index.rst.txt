@@ -7,11 +7,58 @@
 Module Contents
 ---------------
 
-.. function:: activity_stats(parent)
+.. function:: distance_matrix(parent, ilist)
 
 
-.. function:: fig_masks(parent)
+.. function:: merge_ROIs(parent)
 
-   merges multiple cells' colors together
+
+.. function:: merge_activity_masks(parent)
+
+
+.. function:: remove_mask(parent, n)
+
+
+.. function:: add_mask(parent, n)
+
+
+.. function:: redraw_masks(parent, n)
+
+   redraws masks with new cell ids
+
+
+.. py:class:: MergeWindow(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QDialog`
+
+   
+   .. method:: do_merge(self, parent)
+
+
+
+   
+   .. method:: compute_merge_list(self, parent)
+
+
+
+   
+   .. method:: suggest_merge(self, parent)
+
+
+
+
+.. py:class:: LineEdit(key, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QLineEdit`
+
+   
+   .. method:: get_text(self)
+
+
+
+   
+   .. method:: set_text(self, ops)
+
+
 
 

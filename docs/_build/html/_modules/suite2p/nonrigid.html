@@ -166,7 +166,7 @@
 <span class="kn">from</span> <span class="nn">numba</span> <span class="k">import</span> <span class="n">vectorize</span><span class="p">,</span><span class="n">float32</span><span class="p">,</span><span class="n">int32</span><span class="p">,</span><span class="n">int16</span><span class="p">,</span><span class="n">jit</span><span class="p">,</span><span class="n">njit</span><span class="p">,</span><span class="n">prange</span><span class="p">,</span> <span class="n">complex64</span>
 <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="k">import</span> <span class="n">gaussian_filter</span><span class="p">,</span> <span class="n">map_coordinates</span>
 <span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="k">import</span> <span class="n">warp</span><span class="c1">#, PiecewiseAffineTransform</span>
-<span class="kn">from</span> <span class="nn">suite2p</span> <span class="k">import</span> <span class="n">register</span>
+<span class="kn">from</span> <span class="nn">suite2p</span> <span class="k">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">utils</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">mkl_fft</span> <span class="k">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span>
 
@@ -177,6 +177,7 @@
 
 <span class="c1"># smoothing kernel</span>
 <div class="viewcode-block" id="kernelD"><a class="viewcode-back" href="../../autoapi/suite2p/nonrigid/index.html#suite2p.nonrigid.kernelD">[docs]</a><span class="k">def</span> <span class="nf">kernelD</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Gaussian kernel from a to b &quot;&quot;&quot;</span>
     <span class="n">dxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
     <span class="n">dys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dxs</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dys</span><span class="p">)</span>
@@ -184,6 +185,7 @@
     <span class="k">return</span> <span class="n">K</span></div>
 
 <div class="viewcode-block" id="mat_upsample"><a class="viewcode-back" href="../../autoapi/suite2p/nonrigid/index.html#suite2p.nonrigid.mat_upsample">[docs]</a><span class="k">def</span> <span class="nf">mat_upsample</span><span class="p">(</span><span class="n">lpad</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; upsampling matrix using gaussian kernels &quot;&quot;&quot;</span>
     <span class="n">lar</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">lpad</span><span class="p">,</span> <span class="n">lpad</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">larUP</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">lpad</span><span class="p">,</span> <span class="n">lpad</span><span class="o">+.</span><span class="mi">001</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="n">subpixel</span><span class="p">)</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">lar</span><span class="p">,</span> <span class="n">lar</span><span class="p">)</span>
@@ -198,7 +200,7 @@
 <span class="n">Kmat</span><span class="p">,</span> <span class="n">nup</span> <span class="o">=</span> <span class="n">mat_upsample</span><span class="p">(</span><span class="n">lpad</span><span class="p">)</span>
 
 <div class="viewcode-block" id="getXYup"><a class="viewcode-back" href="../../autoapi/suite2p/nonrigid/index.html#suite2p.nonrigid.getXYup">[docs]</a><span class="k">def</span> <span class="nf">getXYup</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; get subpixel registration shifts from phase-correlation matrix cc &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot; get subpixel registration shifts from phase-correlation matrix cc &quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">lcorr</span><span class="p">,</span> <span class="n">lpad</span><span class="p">,</span> <span class="n">Lyhalf</span><span class="p">,</span> <span class="n">Lxhalf</span><span class="p">)</span> <span class="o">=</span> <span class="n">Ls</span>
     <span class="n">nimg</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">cc0</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">Lyhalf</span><span class="o">-</span><span class="n">lcorr</span><span class="p">):(</span><span class="n">Lyhalf</span><span class="o">+</span><span class="n">lcorr</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">Lxhalf</span><span class="o">-</span><span class="n">lcorr</span><span class="p">):(</span><span class="n">Lxhalf</span><span class="o">+</span><span class="n">lcorr</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
@@ -226,6 +228,11 @@
     <span class="k">return</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">cmax</span></div>
 
 <div class="viewcode-block" id="prepare_masks"><a class="viewcode-back" href="../../autoapi/suite2p/nonrigid/index.html#suite2p.nonrigid.prepare_masks">[docs]</a><span class="k">def</span> <span class="nf">prepare_masks</span><span class="p">(</span><span class="n">refImg1</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; create blocked reference image and take its fft and multiply by gaussian smoothing mask &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;yblock&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">make_blocks</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
     <span class="n">refImg0</span><span class="o">=</span><span class="n">refImg1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;1Preg&#39;</span><span class="p">]:</span>
         <span class="n">maskSlope</span>    <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatial_taper&#39;</span><span class="p">]</span>

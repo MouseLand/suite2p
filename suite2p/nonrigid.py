@@ -4,7 +4,7 @@ from scipy.fftpack import next_fast_len
 from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 from scipy.ndimage import gaussian_filter, map_coordinates
 from skimage.transform import warp#, PiecewiseAffineTransform
-from suite2p import register
+from suite2p import register, utils
 import math
 from mkl_fft import fft2, ifft2
 
@@ -15,6 +15,7 @@ subpixel = 10
 
 # smoothing kernel
 def kernelD(a, b):
+    """ Gaussian kernel from a to b """
     dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
     dys = np.reshape(a[1], (-1,1)) - np.reshape(b[1], (1,-1))
     ds = np.square(dxs) + np.square(dys)
@@ -22,6 +23,7 @@ def kernelD(a, b):
     return K
 
 def mat_upsample(lpad):
+    """ upsampling matrix using gaussian kernels """
     lar    = np.arange(-lpad, lpad+1)
     larUP  = np.arange(-lpad, lpad+.001, 1./subpixel)
     x, y   = np.meshgrid(lar, lar)
@@ -36,7 +38,7 @@ def mat_upsample(lpad):
 Kmat, nup = mat_upsample(lpad)
 
 def getXYup(cc, Ls, ops):
-    ''' get subpixel registration shifts from phase-correlation matrix cc '''
+    """ get subpixel registration shifts from phase-correlation matrix cc """
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
     nimg = cc.shape[0]
     cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
@@ -64,6 +66,11 @@ def getXYup(cc, Ls, ops):
     return ymax, xmax, cmax
 
 def prepare_masks(refImg1, ops):
+    """ create blocked reference image and take its fft and multiply by gaussian smoothing mask """
+
+    if 'yblock' not in ops:
+        ops = utils.make_blocks(ops)
+
     refImg0=refImg1.copy()
     if ops['1Preg']:
         maskSlope    = ops['spatial_taper']

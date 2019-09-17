@@ -10,7 +10,7 @@ these categories do not have to be 'cells' and 'NOT cells', they could
 be 'boutons' and 'NOT boutons', we just chose to say 'cells' because
 that's the most common ROI studied.
 
-Different views and colors
+Different views and colors for ROI panels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Views
@@ -110,6 +110,10 @@ Keyboard shortcuts
 -  E = enhanced mean image
 -  R = correlation map
 -  A-K = different color maps
+-  Left and right keys = cycle between cells of same panel
+-  Up Key = flip selected cell to other panel
+
+
 
 Multi-cell selection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -128,7 +132,7 @@ neurons. In 'correlation' view, it will choose the most correlated
 neurons with the currently selected neuron.
 
 Trace view (bottom row)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When one cell is selected, the fluorescence, neuropil and deconvolved
 traces are shown for the chosen cell in the bottom row of the GUI. When
@@ -147,6 +151,13 @@ traces overlap with the +/- buttons.
 You can select as many cells as you want, but by default only 40 of
 those will be plotted. You can increase or decrease this number by
 changing the number in the box below *max # plotted*.
+
+You can hide the fluorescence, neuropil and/or the deconvolved traces by
+toggling the chechboxes or using the keys as follows:
+
+Deconvolved - N key
+Neuropil - B Key
+Fluorescence - V Key
 
 Classifying cells
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

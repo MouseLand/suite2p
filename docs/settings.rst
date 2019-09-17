@@ -94,10 +94,18 @@ Registration
   of *>4* is recommended for one-photon recordings (with a 512x512
   pixel FOV).
 
+- **smooth_sigma_time**: (*float, default: 0*) standard deviation in time frames
+  of the gaussian used to smooth the data before phase correlation is computed.
+  Might need this to be set to 1 or 2 for low SNR data.
+
 -  **keep_movie_raw**: (*bool, default: True*) whether or not to keep
   the binary file of the non-registered frames. You can view the
   registered and non-registered binaries together in the GUI in the
   "View registered binaries" view if you set this to *True*.
+
+- **two_step_registration**: (*bool, default: False*) whether or not to run
+  registration twice (for low SNR data). *keep_movie_raw* must be True for this
+  to work.
 
 -  **reg_tif**: (*bool, default: False*) whether or not to write the
   registered binary to tiff files

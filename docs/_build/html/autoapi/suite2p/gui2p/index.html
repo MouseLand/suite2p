@@ -174,6 +174,11 @@
 <em class="property">class </em><code class="sig-prename descclassname">suite2p.gui2p.</code><code class="sig-name descname">MainW</code><span class="sig-paren">(</span><em class="sig-param">statfile=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QMainWindow</span></code></p>
 <dl class="method">
+<dt id="suite2p.gui2p.MainW.zoom_cell">
+<code class="sig-name descname">zoom_cell</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.zoom_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.zoom_cell" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="suite2p.gui2p.MainW.export_fig">
 <code class="sig-name descname">export_fig</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.export_fig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.export_fig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -194,6 +199,16 @@ or in visualization windows like rastermap or for correlation computation!</p>
 <dl class="method">
 <dt id="suite2p.gui2p.MainW.keyPressEvent">
 <code class="sig-name descname">keyPressEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.keyPressEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.keyPressEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.update_plot">
+<code class="sig-name descname">update_plot</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.update_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.update_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.suggest_merge">
+<code class="sig-name descname">suggest_merge</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.suggest_merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.suggest_merge" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -277,6 +292,21 @@ or in visualization windows like rastermap or for correlation computation!</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="suite2p.gui2p.MainW.deconv_on">
+<code class="sig-name descname">deconv_on</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.deconv_on"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.deconv_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.neuropil_on">
+<code class="sig-name descname">neuropil_on</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.neuropil_on"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.neuropil_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.traces_on">
+<code class="sig-name descname">traces_on</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.traces_on"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.traces_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="suite2p.gui2p.MainW.plot_clicked">
 <code class="sig-name descname">plot_clicked</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.plot_clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.plot_clicked" title="Permalink to this definition">¶</a></dt>
 <dd><p>left-click chooses a cell, right-click flips cell to other view</p>
@@ -300,6 +330,11 @@ or in visualization windows like rastermap or for correlation computation!</p>
 <dl class="method">
 <dt id="suite2p.gui2p.MainW.zoom_plot">
 <code class="sig-name descname">zoom_plot</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">iplot</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.zoom_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.zoom_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.zoom_to_cell">
+<code class="sig-name descname">zoom_to_cell</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.zoom_to_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.zoom_to_cell" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -345,6 +380,11 @@ or in visualization windows like rastermap or for correlation computation!</p>
 <dl class="method">
 <dt id="suite2p.gui2p.MainW.save_mat">
 <code class="sig-name descname">save_mat</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.save_mat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.save_mat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui2p.MainW.save_merge">
+<code class="sig-name descname">save_merge</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/gui2p.html#MainW.save_merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui2p.MainW.save_merge" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">

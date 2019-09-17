@@ -8,7 +8,7 @@ from numpy import fft
 from numba import vectorize, complex64, float32, int16
 import math
 from scipy.signal import medfilt
-from scipy.ndimage import laplace
+from scipy.ndimage import laplace, gaussian_filter1d
 from suite2p import nonrigid, utils, regmetrics
 from skimage.external.tifffile import TiffWriter
 from mkl_fft import fft2, ifft2
@@ -79,6 +79,8 @@ def one_photon_preprocess(data, ops):
     if ops['pre_smooth'] > 0:
         ops['pre_smooth'] = int(np.ceil(ops['pre_smooth']/2) * 2)
         data = spatial_smooth(data, ops['pre_smooth'])
+    else:
+        data = data.astype(np.float32)
 
     #for n in range(data.shape[0]):
     #    data[n,:,:] = laplace(data[n,:,:])
@@ -87,8 +89,29 @@ def one_photon_preprocess(data, ops):
     return data
 
 def prepare_masks(refImg0, ops):
+    """ computes masks and fft'ed reference image for phasecorr
+
+    Parameters
+    ----------
+    refImg0 : int16
+        reference image
+    ops : dictionary
+        requires 'smooth_sigma'
+        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
+
+    Returns
+    -------
+    maskMul : float32
+        mask that is multiplied to spatially taper frames
+    maskOffset : float32
+        shifts in x from cfRefImg to data for each frame
+    cfRefImg : complex64
+        reference image fft'ed and complex conjugate and multiplied by gaussian
+        filter in the fft domain with standard deviation 'smooth_sigma'
+
+    """
     refImg = refImg0.copy()
-    if ops['1Preg']:
+    if '1Preg' in ops and ops['1Preg']:
         maskSlope    = ops['spatial_taper'] # slope of taper mask at the edges
     else:
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
@@ -100,9 +123,9 @@ def prepare_masks(refImg0, ops):
     maskOffset = refImg.mean() * (1. - maskMul);
 
     # reference image in fourier domain
-    if ops['pad_fft']:
+    if 'pad_fft' in ops and ops['pad_fft']:
         cfRefImg   = np.conj(fft2(refImg,
-                            (next_fast_len(ops['Ly']), next_fast_len(ops['Lx']))))
+                            (next_fast_len(Ly), next_fast_len(Lx))))
     else:
         cfRefImg   = np.conj(fft2(refImg))
 
@@ -119,8 +142,20 @@ def prepare_masks(refImg0, ops):
     cfRefImg = np.reshape(cfRefImg, (1, cfRefImg.shape[0], cfRefImg.shape[1]))
     return maskMul, maskOffset, cfRefImg
 
-def shift_data(X, ymax, xmax, m0):
-    ''' rigid shift of X by ymax and xmax '''
+def shift_data(X, ymax, xmax):
+    """ rigid shift X by integer shifts ymax and xmax in place (no return)
+
+    Parameters
+    ----------
+    X : int16
+        array that's frames x Ly x Lx
+    ymax : int
+        shifts in y from cfRefImg to data for each frame
+    xmax : int
+        shifts in x from cfRefImg to data for each frame
+
+    """
+
     ymax = ymax.flatten()
     xmax = xmax.flatten()
     if X.ndim<3:
@@ -140,12 +175,12 @@ def addmultiplytype(x,y,z):
     return np.complex64(np.float32(x)*y + z)
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
-    x  = Y / (eps0 + np.abs(Y))
+    x = Y / (eps0 + np.abs(Y))
     x = x*cfRefImg
     return x
 
 def phasecorr(data, refAndMasks, ops):
-    ''' compute registration offsets '''
+    """ compute registration offsets """
     nimg, Ly, Lx = data.shape
 
     # maximum registration shift allowed
@@ -157,11 +192,12 @@ def phasecorr(data, refAndMasks, ops):
         #data = data.copy().astype(np.float32)
         X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
 
-    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr)
+    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 
     return ymax, xmax, cmax
 
 def my_clip(X, lcorr):
+    """ perform 2D fftshift and crop with lcorr """
     x00 = X[:,  :lcorr+1, :lcorr+1]
     x11 = X[:,  -lcorr:, -lcorr:]
     x01 = X[:,  :lcorr+1, -lcorr:]
@@ -169,6 +205,27 @@ def my_clip(X, lcorr):
     return x00, x01, x10, x11
 
 def phasecorr_cpu(data, refAndMasks, lcorr):
+    """ compute phase correlation between data and reference image
+
+    Parameters
+    ----------
+    data : int16
+        array that's frames x Ly x Lx
+    refAndMasks : list
+        maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
+    lcorr : int
+        maximum shift in pixels
+
+    Returns
+    -------
+    ymax : int
+        shifts in y from cfRefImg to data for each frame
+    xmax : int
+        shifts in x from cfRefImg to data for each frame
+    cmax : float
+        maximum of phase correlation for each frame
+
+    """
     maskMul    = refAndMasks[0]
     maskOffset = refAndMasks[1]
     cfRefImg   = refAndMasks[2].squeeze()
@@ -191,6 +248,8 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
         ifft2(X[t], overwrite_x=True)
     x00, x01, x10, x11 = my_clip(X, lcorr)
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
+    if smooth_sigma_time > 0:
+        cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
     for t in np.arange(nimg):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))
         cmax[t] = cc[t, ymax[t], xmax[t]]
@@ -198,10 +257,35 @@ def phasecorr_cpu(data, refAndMasks, lcorr):
     return ymax, xmax, cmax
 
 def register_and_shift(data, refAndMasks, ops):
-    ''' register data matrix to reference image and shift '''
-    ''' need reference image ops['refImg']'''
-    ''' run refAndMasks = prepare_refAndMasks(ops) to get fft'ed masks '''
-    ''' calls phasecorr '''
+    """ register data matrix to reference image and shift
+
+    need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft'ed masks;
+    if ```ops['nonrigid']``` need to run ```ops = utils.make_blocks(ops)```
+
+    Parameters
+    ----------
+    data : int16
+        array that's frames x Ly x Lx
+    refAndMasks : list
+        maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
+    ops : dictionary
+        requires 'nonrigid', 'bidiphase', '1Preg'
+
+    Returns
+    -------
+    data : int16
+        registered frames x Ly x Lx
+    ymax : int
+        shifts in y from cfRefImg to data for each frame
+    xmax : int
+        shifts in x from cfRefImg to data for each frame
+    cmax : float
+        maximum of phase correlation for each frame
+    yxnr : list
+        ymax, xmax and cmax from the non-rigid registration
+
+    """
+
     if ops['bidiphase']!=0:
         shift_bidiphase(data, ops['bidiphase'])
     nr=False
@@ -211,17 +295,39 @@ def register_and_shift(data, refAndMasks, ops):
         nr=True
 
     # rigid registration
-    ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
+    if ops['smooth_sigma_time'] > 0: # temporal smoothing:
+        data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
+        ymax, xmax, cmax = phasecorr(data_smooth, refAndMasks[:3], ops)
+    else:
+        ymax, xmax, cmax = phasecorr(data, refAndMasks[:3], ops)
     shift_data(data, ymax, xmax, ops['refImg'].mean())
-    Y = []
+
     # non-rigid registration
     if nr:
-        ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data, refAndMasks[3:], ops)
+        if ops['smooth_sigma_time'] > 0: # temporal smoothing:
+            data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
+            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data_smooth, refAndMasks[3:], ops)
+        else:
+            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(data, refAndMasks[3:], ops)
         yxnr = [ymax1,xmax1,cmax1]
         data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data, ymax, xmax, cmax, yxnr
 
 def get_nFrames(ops):
+    """ get number of frames in binary file
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'Ly', 'Lx', 'reg_file' (optional 'keep_movie_raw' and 'raw_file')
+
+    Returns
+    -------
+    nFrames : int
+        number of frames in the binary
+
+    """
+
     if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
         try:
             nbytes = os.path.getsize(ops['raw_file'])
@@ -230,13 +336,25 @@ def get_nFrames(ops):
             nbytes = os.path.getsize(ops['reg_file'])
     else:
         nbytes = os.path.getsize(ops['reg_file'])
-
-
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
 
 def subsample_frames(ops, nsamps):
-    ''' get nsamps frames from binary file for initial reference image'''
+    """ get nsamps frames from binary file for initial reference image
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'Ly', 'Lx', 'nframes', 'reg_file' (optional 'keep_movie_raw' and 'raw_file')
+    nsamps : int
+        number of frames to return
+
+    Returns
+    -------
+    frames : int16
+        frames x Ly x Lx
+
+    """
     nFrames = ops['nframes']
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -271,10 +389,23 @@ def subsample_frames(ops, nsamps):
     return frames
 
 def get_bidiphase(frames):
-    ''' computes the bidirectional phase offset
-        sometimes in line scanning there will be offsets between lines
-        if ops['do_bidiphase'], then bidiphase is computed and applied
-    '''
+    """ computes the bidirectional phase offset
+
+    sometimes in line scanning there will be offsets between lines;
+    if ops['do_bidiphase'], then bidiphase is computed and applied
+
+    Parameters
+    ----------
+    frames : int16
+        random subsample of frames in binary (frames x Ly x Lx)
+
+    Returns
+    -------
+    bidiphase : int
+        bidirectional phase offset in pixels
+
+    """
+
     Ly = frames.shape[1]
     Lx = frames.shape[2]
     # lines scanned in 1 direction
@@ -299,7 +430,25 @@ def get_bidiphase(frames):
     return bidiphase
 
 def shift_bidiphase(frames, bidiphase):
-    ''' shift frames by bidirectional phase offset, bidiphase '''
+    """ shift frames by bidirectional phase offset, bidiphase
+
+    sometimes in line scanning there will be offsets between lines;
+    shifts last axis by bidiphase
+
+    Parameters
+    ----------
+    frames : int16
+        frames from binary (frames x Ly x Lx)
+    bidiphase : int
+        bidirectional phase offset in pixels
+
+    Returns
+    -------
+    frames : int16
+        shifted frames from binary (frames x Ly x Lx)
+
+    """
+
     bidiphase = int(bidiphase)
     nt, Ly, Lx = frames.shape
     yr = np.arange(1, np.floor(Ly/2)*2, 2, int)
@@ -313,13 +462,25 @@ def shift_bidiphase(frames, bidiphase):
         xrout = np.arange(-bidiphase, Lx, 1, int)
         frames[np.ix_(ntr, yr, xr)] = frames[np.ix_(ntr, yr, xrout)]
 
-def pick_init_init(frames):
-    ''' input: frames (nimg x Ly x Lx)
-        output: refImg (Ly x Lx)
-        use frames and find its correlation matrix
-        choose the seed frame as the one with the top 20 most correlated pairs
-        use the average of the seed frame with its top 20 as the initial reference image
-    '''
+def pick_initial_reference(frames):
+    """ computes the initial reference image
+
+    the seed frame is the frame with the largest correlations with other frames;
+    the average of the seed frame with its top 20 correlated pairs is the
+    inital reference frame returned
+
+    Parameters
+    ----------
+    frames : int16
+        frames from binary (frames x Ly x Lx)
+
+    Returns
+    -------
+    refImg : int16
+        initial reference image (Ly x Lx)
+
+    """
+
     nimg,Ly,Lx = frames.shape
     frames = np.reshape(frames, (nimg,-1)).astype('float32')
     frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
@@ -334,7 +495,30 @@ def pick_init_init(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
-def refine_init(ops, frames, refImg):
+def iterative_alignment(ops, frames, refImg):
+    """ iterative alignment of initial frames to compute reference image
+
+    the seed frame is the frame with the largest correlations with other frames;
+    the average of the seed frame with its top 20 correlated pairs is the
+    inital reference frame returned
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg'
+
+    frames : int16
+        frames from binary (frames x Ly x Lx)
+
+    refImg : int16
+        initial reference image (Ly x Lx)
+
+    Returns
+    -------
+    refImg : int16
+        final reference image (Ly x Lx)
+
+    """
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
@@ -350,13 +534,29 @@ def refine_init(ops, frames, refImg):
         # shift data requires an array of shifts
         dy = np.array([int(np.round(dy))])
         dx = np.array([int(np.round(dx))])
-        shift_data(refImg, dy, dx, refImg.mean())
+        shift_data(refImg, dy, dx)
         refImg = refImg.squeeze()
         ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
-def pick_init(ops):
-    ''' compute initial reference image from ops['nimg_init'] frames '''
+def compute_reference_image(ops):
+    """ compute the reference image
+
+    computes initial reference image using ops['nimg_init'] frames
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'nimg_init', 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg',
+        'reg_file', (optional 'keep_movie_raw', 'raw_movie')
+
+    Returns
+    -------
+    refImg : int16
+        initial reference image (Ly x Lx)
+
+    """
+
     Ly = ops['Ly']
     Lx = ops['Lx']
     nFrames = ops['nframes']
@@ -367,13 +567,30 @@ def pick_init(ops):
         print('NOTE: estimated bidiphase offset from data: %d pixels'%ops['bidiphase'])
     if ops['bidiphase'] != 0:
         shift_bidiphase(frames, ops['bidiphase'])
-    refImg = pick_init_init(frames)
-    refImg = refine_init(ops, frames, refImg)
+    refImg = pick_initial_reference(frames)
+    refImg = iterative_alignment(ops, frames, refImg)
     return refImg
 
-def prepare_refAndMasks(refImg,ops):
+def prepare_refAndMasks(refImg, ops):
+    """ prepares refAndMasks for phasecorr using refImg
+
+    Parameters
+    ----------
+    refImg : int16
+        reference image
+
+    ops : dictionary
+        requires 'smooth_sigma'
+        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
+
+    Returns
+    -------
+    refAndMasks : list
+        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+
+    """
     maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops)
-    if ops['nonrigid']:
+    if 'nonrigid' in ops and ops['nonrigid']:
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
     else:
@@ -381,6 +598,7 @@ def prepare_refAndMasks(refImg,ops):
     return refAndMasks
 
 def init_offsets(ops):
+    """ initialize offsets for all frames """
     yoff = np.zeros((0,),np.float32)
     xoff = np.zeros((0,),np.float32)
     corrXY = np.zeros((0,),np.float32)
@@ -410,6 +628,8 @@ def compute_crop(ops):
     # exclude frames which have a large deviation and/or low correlation
     px = dxy / np.maximum(0, cXY)
     ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['xoff']) > (ops['maxregshift'] * ops['Lx'] * 0.95), ops['badframes'])
+    ops['badframes'] = np.logical_or(abs(ops['yoff']) > (ops['maxregshift'] * ops['Ly'] * 0.95), ops['badframes'])
     ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
     ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
     xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
@@ -419,7 +639,21 @@ def compute_crop(ops):
     return ops
 
 def write_tiffs(data, ops, k, ichan):
-    if ichan==0:
+    """ writes frames to tiffs
+
+    Parameters
+    ----------
+    data : int16
+        frames x Ly x Lx
+
+    ops : dictionary
+        requires 'functional_chan', 'align_by_chan'
+
+    k : int
+        number of tiff
+
+    """
+    if ops['align_by_chan']==1:
         if ops['functional_chan']==ops['align_by_chan']:
             tifroot = os.path.join(ops['save_path'], 'reg_tif')
             wchan = 0
@@ -442,6 +676,7 @@ def write_tiffs(data, ops, k, ichan):
     #io.imsave(, data)
 
 def bin_paths(ops, raw):
+    """ set which binary is being aligned to """
     raw_file_align = []
     raw_file_alt = []
     reg_file_align = []
@@ -474,7 +709,32 @@ def bin_paths(ops, raw):
     return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt
 
 def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
-    ''' register binary data to reference image refImg '''
+    """ register binary data to reference image refImg
+
+    Parameters
+    ----------
+    ops : dictionary
+
+    refImg : int16
+        reference image
+
+    reg_file_align : string
+        file to (read if raw_file_align empty, and) write registered binary to
+
+    raw_file_align : string
+        file to read raw binary from (if not empty)
+
+    Returns
+    -------
+    ops : dictionary
+        sets 'meanImg' or 'meanImg_chan2'
+        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+
+    offsets : list
+        [ymax, xmax, cmax, yxnr] <- shifts and correlations
+    """
+
+
     offsets = init_offsets(ops)
     refAndMasks = prepare_refAndMasks(refImg,ops)
 
@@ -500,9 +760,9 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
             buff = reg_file_align.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
-        if data.size==0:
+        if (data.size==0) | (nfr >= ops['nframes']):
             break
-        data = np.reshape(data, (-1, Ly, Lx))
+        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
         dout = register_and_shift(data, refAndMasks, ops)
         data = np.minimum(dout[0], 2**15 - 2)
@@ -525,7 +785,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         # write registered tiffs
         if ops['reg_tif']:
-            write_tiffs(data, ops, k, 0)
+            write_tiffs(data, ops, k)
 
         nfr += data.shape[0]
         k += 1
@@ -546,9 +806,38 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     return ops, offsets
 
 def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
+    """ apply rigid and nonrigid shifts to data (for chan that's not 'align_by_chan')
+
+    Parameters
+    ----------
+    data : int16
+
+
+    ops : dictionary
+
+    refImg : int16
+        reference image
+
+    reg_file_align : string
+        file to (read if raw_file_align empty, and) write registered binary to
+
+    raw_file_align : string
+        file to read raw binary from (if not empty)
+
+    Returns
+    -------
+    ops : dictionary
+        sets 'meanImg' or 'meanImg_chan2'
+        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+
+    offsets : list
+        [ymax, xmax, cmax, yxnr] <- shifts and correlations
+
+
+    """
     if ops['bidiphase']!=0:
         shift_bidiphase(data, ops['bidiphase'])
-    shift_data(data, ymax, xmax, ops['refImg'].mean())
+    shift_data(data, ymax, xmax)
     if ops['nonrigid']==True:
         data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data
@@ -577,7 +866,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
         buff = []
-        if data.size==0:
+        if (data.size==0) | (ix >= ops['nframes']):
             break
         data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
         nframes = data.shape[0]
@@ -601,7 +890,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         # write registered tiffs
         if ops['reg_tif_chan2']:
-            write_tiffs(data, ops, k, 1)
+            write_tiffs(data, ops, k)
         ix += nframes
         k+=1
     if ops['functional_chan']!=ops['align_by_chan']:
@@ -628,6 +917,9 @@ def register_binary(ops, refImg=None):
         ops = utils.make_blocks(ops)
 
     ops['nframes'] = get_nFrames(ops)
+    if not ops['frames_include'] == -1:
+        ops['nframes'] = min((ops['nframes'], ops['frames_include']))
+
     print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings
     if ops['nframes']<50:
@@ -637,11 +929,10 @@ def register_binary(ops, refImg=None):
 
     # compute reference image
     if refImg is not None:
-        print('WARNING: using reference frame given, will not compute registration metrics')
-        do_regmetrics = False
+        print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        refImg = pick_init(ops)
+        refImg = compute_reference_image(ops)
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
@@ -675,6 +966,7 @@ def register_binary(ops, refImg=None):
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True
             print(ops['badframes'].sum())
+
     # return frames which fall outside range
     ops = compute_crop(ops)
 
@@ -684,8 +976,6 @@ def register_binary(ops, refImg=None):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
-
-
 
 def register_npy(Z, ops):
     # if ops does not have refImg, get a new refImg

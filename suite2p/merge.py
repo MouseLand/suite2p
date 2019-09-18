@@ -144,11 +144,7 @@ def merge_activity_masks(parent):
         np.delete(parent.probredcell, k, 0)
         np.delete(parent.redcell, k, 0)
         np.delete(parent.notmerged, k, 0)
-
-<<<<<<< HEAD
-=======
     print(parent.Fcell.shape, parent.Spks.shape)
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
     parent.stat = sparsedetect.get_overlaps(parent.stat, parent.ops)
@@ -162,10 +158,7 @@ def merge_activity_masks(parent):
     parent.probredcell = np.append(parent.probredcell, prmean)
     parent.redcell = np.append(parent.redcell, prmean > parent.chan2prob)
     parent.notmerged = np.append(parent.notmerged, False)
-<<<<<<< HEAD
-=======
     print(parent.Fcell.shape, parent.Spks.shape)
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
 
     # recompute binned F
     parent.mode_change(parent.activityMode)
@@ -306,17 +299,7 @@ class MergeWindow(QtGui.QDialog):
         parent.imerge = [parent.ichosen]
         self.iMerge.setText('ROIs merged: %s'%parent.stat[parent.ichosen]['imerge'])
         self.doMerge.setEnabled(False)
-<<<<<<< HEAD
-        parent.ichosen_stats()
-        M = fig.draw_masks(parent)
-        fig.plot_masks(parent, M)
-        fig.plot_trace(parent)
-        parent.win.show()
-        parent.show()
-        #self.suggest_merge(parent)
-=======
         parent.update_plot()
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
 
     def compute_merge_list(self, parent):
         print('computing automated merge suggestions...')
@@ -381,16 +364,8 @@ class MergeWindow(QtGui.QDialog):
         self.n+=1
         if self.n > len(self.merge_list)-1:
             self.n = 0
-<<<<<<< HEAD
-        parent.ichosen_stats()
-        M = fig.draw_masks(parent)
-        fig.plot_masks(parent, M)
-        fig.plot_trace(parent)
-        parent.zoom_to_cell()
-=======
         parent.checkBoxz.setChecked(True)
         parent.update_plot()
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
         parent.win.show()
         parent.show()
 

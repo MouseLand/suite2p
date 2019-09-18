@@ -160,13 +160,13 @@ def extractF(ops, stat, neuropil_masks, reg_file):
         nimg = int(np.floor(data.size / (Ly*Lx)))
         if nimg == 0:
             break
-        #try:
-        data = np.reshape(data, (-1, Ly, Lx))
-        inds = ix+np.arange(0,nimg,1,int)
-        ops['meanImg'] += data.mean(axis=0)
-        data = np.reshape(data, (nimg,-1))
-        #except ValueError:
-        #   continue
+        try:
+            data = np.reshape(data, (-1, Ly, Lx))
+            inds = ix+np.arange(0,nimg,1,int)
+            ops['meanImg'] += data.mean(axis=0)
+            data = np.reshape(data, (nimg,-1))
+        except ValueError:
+            continue
 
         # extract traces and neuropil
         for n in range(ncells):

@@ -183,7 +183,6 @@ def list_h5(ops):
     fs = natsorted(glob.glob(lpath))
     return fs
 
-<<<<<<< HEAD
 def list_sbx(ops):
     froot = os.path.dirname(ops['sbxpy'])
     lpath = os.path.join(froot, "*.sbx")
@@ -209,11 +208,6 @@ def load_sbx(filename,ops):
     return _im
 
 def find_files_open_binaries(ops1, ish5, issbx):
-    ''' find tiffs or h5 files, and open binaries to write to
-        inputs ops1 (list over planes), ish5 (whether or not h5)
-        returns ops1, fs (filelist), reg_file, reg_file_chan2 '''
-=======
-def find_files_open_binaries(ops1, ish5):
     """  finds tiffs or h5 files and opens binaries for writing
 
     Parameters
@@ -227,8 +221,6 @@ def find_files_open_binaries(ops1, ish5):
             adds fields 'filelist', 'first_tiffs', opens binaries
 
     """
-
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     reg_file = []
     reg_file_chan2=[]
 
@@ -547,14 +539,13 @@ def tiff_to_binary(ops):
             reg_file_chan2[j].close()
     return ops1
 
-<<<<<<< HEAD
 def split_multiops(ops1):
     for j in range(len(ops1)):
         if 'dx' in ops1[j] and np.size(ops1[j]['dx'])>1:
             ops1[j]['dx'] = ops1[j]['dx'][j]
             ops1[j]['dy'] = ops1[j]['dy'][j]
     return ops1
-=======
+
 def mesoscan_to_binary(ops):
     """ finds mesoscope tiff files and writes them to binaries
 
@@ -570,7 +561,6 @@ def mesoscan_to_binary(ops):
             ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
             assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs', 'frames_per_folder',
             'nframes', 'meanImg', 'meanImg_chan2'
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
 
     """
     t0 = tic()
@@ -1051,11 +1041,6 @@ def ome_to_binary(ops):
     converts ome.tiff to *.bin file for non-interleaved red channel recordings
     assumes SINGLE-PAGE tiffs where first channel has string 'Ch1'
     and also SINGLE FOLDER
-<<<<<<< HEAD
-    requires ops keys: nplanes, nchannels, data_path, look_one_level_down, reg_file
-    assigns ops keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
-    '''
-=======
 
     Parameters
     ----------
@@ -1068,7 +1053,6 @@ def ome_to_binary(ops):
         creates binaries ops1[j]['reg_file']
         assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     """
->>>>>>> 0e57f535d207e51bbe101a0292003a267ddf92f2
     t0=tic()
     # copy ops to list where each element is ops for each plane
     ops1 = init_ops(ops)

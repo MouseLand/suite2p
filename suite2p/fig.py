@@ -33,6 +33,8 @@ def plot_trace(parent):
         #agus
         sp *= fmax - fmin
         #sp += fmin*0.95
+        f = gaussian_filter(signal.medfilt(f,3), 3, mode='constant')
+        fneu = gaussian_filter(signal.medfilt(fneu,3), 3, mode='constant')
         if parent.tracesOn:
             parent.p3.plot(parent.trange,f,pen='b')
         if parent.neuropilOn:
@@ -63,6 +65,7 @@ def plot_trace(parent):
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
+            f = gaussian_filter(signal.medfilt(f,3), 3, mode='constant')
             rgb = hsv_to_rgb([parent.ops_plot[3][n,0],1,1])*255
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))

@@ -261,7 +261,7 @@ class ROIDraw(QtGui.QMainWindow):
             mimg = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0, np.minimum(1, mimg))
             masked_image[:, :, :, i] = self.create_masks_of_cells(parent, mimg)
-            print(np.shape(mimg), np.shape(masked_image))
+            #print(np.shape(mimg), np.shape(masked_image))
 
         return masked_image
 

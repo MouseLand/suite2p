@@ -192,20 +192,9 @@ def list_sbx(ops):
 def load_sbx(filename,ops):
     sbx = sbxmap.sbxmap(filename)
     _im = sbx.data()
-    min_row = ops['min_row_sbx']
-    max_row = ops['max_row_sbx']
-    min_col = ops['min_col_sbx']
-    max_col = ops['max_col_sbx']
-    if max_row!=-1 and max_col!=-1:
-        if max_row==-1:
-            if min_row>=0 and min_col>=0 and max_col<_im.shape[2]:
-                _im = _im[:,min_row:,min_col:max_col]
-        elif max_col==-1:
-            if min_row>=0 and max_row<_im.shape[1] and min_col>=0:
-                _im = _im[:,min_row:,min_col:]
-    else:
-        _im = _im    
-    return _im
+    nchannels = sbx.info['nChan']
+    nplanes = sbx.nplanes
+    return _im, nchannels, nplanes
 
 def find_files_open_binaries(ops1, ish5, issbx):
     """  finds tiffs or h5 files and opens binaries for writing
@@ -998,24 +987,12 @@ def sbx_to_binary(ops):
     ops = ops1[0]
 
     # main loading part
-    im = np.array([])
-    for idxsbx, filename in enumerate(sbxfilelist):
-        _im = load_sbx(filename, ops)
-        if idxsbx==0:
-            im = _im
-        else:
-            im = np.concatenate((im,_im))
-    print(im.shape)
-
-    # check if uint16
-    if type(im[0,0,0]) == np.uint16:
-        im = im // 2
-        im = im.astype(np.int16)
-    if type(im[0,0,0]) == np.uint8:
-        im = im.astype(np.int16)
+    im, nchannels, nplanes = load_sbx(sbxfilelist[-1], ops)
+    ops['nchannels'] = nchannels
+    ops['nplanes'] = nplanes
+   
     # needs work here
-    # TODO: updating meanImg
-
+    # add sub array selection on the basis of min_row, max_row, min_col, max_col
 
     # write ops files
     do_registration = ops1[0]['do_registration']

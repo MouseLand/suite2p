@@ -37,7 +37,6 @@ def _todict(matobj):
             dict[strg] = elem
     return dict
 
-
 class sbxmap(object):
     def __init__(self, filename):
         self.filename = os.path.splitext(filename)[0]
@@ -109,10 +108,19 @@ class sbxmap(object):
             return ['red']
 
     def data(self, length=[None], rows=[None], cols=[None]):
-        fullshape = [self.info['nChan']*self.info['length']] + self.info['sz']
+        fullshape = [self.info['length']] + self.info['sz']
         mapped_data = np.memmap(self.filename + '.sbx', dtype='uint16')
-        mapped_data = mapped_data.reshape(fullshape)
-        return mapped_data
+        data = {}
+        for i,channel in enumerate(self.channels):
+            data.update(
+                    {channel : mapped_data[i::len(self.channels)].reshape(fullshape)}
+                    )
+            data[channel] = {
+                    'plane_{}'.format(i) :
+                        data[channel][i::self.num_planes][slice(*length), slice(*rows), slice(*cols)]
+                    for i in range(self.num_planes)
+                    }
+        return data
 
     def crop(self, length=[None], rows=[None], cols=[None], basename=None):
         basename = self.filename if basename is None else os.path.splitext(basename)[0]

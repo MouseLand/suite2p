@@ -10,7 +10,7 @@ import time
 import sys,os
 from rastermap.mapping import Rastermap
 #from mapping import Rastermap
-from suite2p import gui,fig
+from suite2p.gui import rungui,masks
 
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):
@@ -367,8 +367,8 @@ class VisWindow(QtGui.QMainWindow):
         I[self.isort1] = np.arange(nsel).astype('int')
         parent.isort[self.cells] = I #self.isort1
         # set up colors for rastermap
-        fig.rastermap_masks(parent)
-        b = len(parent.colors)+1
+        masks.rastermap_masks(parent)
+        b = len(parent.color_names)-1
         parent.colorbtns.button(b).setEnabled(True)
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         parent.rastermap = True
@@ -429,11 +429,7 @@ class VisWindow(QtGui.QMainWindow):
             for n in self.selected:
                 parent.imerge.append(self.cells[self.isort[n]])
             parent.ichosen = parent.imerge[0]
-            parent.ichosen_stats()
-            M = fig.draw_masks(parent)
-            fig.plot_masks(parent,M)
-            fig.plot_trace(parent)
-            parent.show()
+            parent.update_plot()
         else:
             print('too many cells selected')
 

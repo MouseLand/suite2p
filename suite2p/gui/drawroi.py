@@ -1,11 +1,13 @@
 from PyQt5 import QtGui, QtCore
-from suite2p import roiextract, sparsedetect, dcnv
+from suite2p.extract import extract, dcnv, masks
+from suite2p.detect import sparsedetect
 import pyqtgraph as pg
 import os
 import sys
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
 import time
+from suite2p.gui import io
 from scipy import stats
 
 
@@ -21,10 +23,10 @@ def masks_and_traces(ops, stat, stat_orig):
     stat_all = stat.copy()
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
-    stat_all, cell_pix, _ = roiextract.create_cell_masks(ops, stat_all)
+    stat_all, cell_pix, _ = masks.create_cell_masks(ops, stat_all)
     stat = stat_all[:len(stat)]
 
-    neuropil_masks = roiextract.create_neuropil_masks(ops, stat, cell_pix)
+    neuropil_masks = masks.create_neuropil_masks(ops, stat, cell_pix)
     Ly = ops['Ly']
     Lx = ops['Lx']
     neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
@@ -34,9 +36,9 @@ def masks_and_traces(ops, stat, stat_orig):
         stat0.append({'ipix': stat[n]['ipix'], 'lam': stat[n]['lam'] / stat[n]['lam'].sum()})
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, ops = roiextract.extractF(ops, stat0, neuropil_masks, ops['reg_file'])
+    F, Fneu, ops = extract.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, ops2 = roiextract.extractF(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extract.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
@@ -162,7 +164,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.closeGUI = QtGui.QPushButton("Save and Quit")
         self.closeGUI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.closeGUI.clicked.connect(lambda: self.close_GUI(parent))
-        self.closeGUI.setEnabled(True)
+        self.closeGUI.setEnabled(False)
         self.closeGUI.setFixedWidth(100)
         self.closeGUI.setStyleSheet(self.styleUnpressed)
         self.l0.addWidget(self.closeGUI, 0, 5, 1, 1)
@@ -206,13 +208,6 @@ class ROIDraw(QtGui.QMainWindow):
 
         # Save iscell
         print('Num cells', self.nROIs)
-        print(np.shape(parent.probcell))
-        iscell_prob = np.concatenate((parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
-
-        new_iscell = np.ones((self.nROIs, 2))
-        new_iscell = np.concatenate((new_iscell, iscell_prob),
-                                    axis=0)
-        np.save(os.path.join(parent.basename, 'iscell.npy'), new_iscell)
 
         # Save fluorescence traces
         Fcell = np.concatenate((self.Fcell, parent.Fcell), axis=0)
@@ -231,10 +226,16 @@ class ROIDraw(QtGui.QMainWindow):
         # Calculate overlap before saving
         stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, parent.ops)
         np.save(os.path.join(parent.basename, 'stat.npy'), stat_all_w_overlap)
+        iscell_prob = np.concatenate((parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
+
+        new_iscell = np.ones((self.nROIs, 2))
+        new_iscell = np.concatenate((new_iscell, iscell_prob),
+                                    axis=0)
+        np.save(os.path.join(parent.basename, 'iscell.npy'), new_iscell)
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
 
         # close GUI
-        parent.load_proc()
+        io.load_proc(parent)
         self.close()
 
     def normalize_img_add_masks(self, parent):
@@ -252,8 +253,9 @@ class ROIDraw(QtGui.QMainWindow):
                 mimg = im0
             else:
                 im0 = np.zeros((self.Ly, self.Lx), np.float32)
-                im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['max_proj']
+                if 'max_proj' in parent.ops:
+                    im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
+                        parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['max_proj']
                 mimg = im0
 
             mimg1 = np.percentile(mimg, 1)
@@ -261,14 +263,13 @@ class ROIDraw(QtGui.QMainWindow):
             mimg = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0, np.minimum(1, mimg))
             masked_image[:, :, :, i] = self.create_masks_of_cells(parent, mimg)
-            print(np.shape(mimg), np.shape(masked_image))
 
         return masked_image
 
     def create_masks_of_cells(self, parent, mean_img):
         H = np.zeros_like(mean_img)
         S = np.zeros_like(mean_img)
-        columncol = parent.ops_plot[3][:, 0]
+        columncol = parent.colors['istat'][0]
 
         for n in np.arange(np.shape(parent.iscell)[0]):
             if parent.iscell[n] == 1:
@@ -314,6 +315,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.ROIs.append(sROI(iROI=self.nROIs, parent=self, pos=pos, diameter=int(self.diam.text())))
         self.ROIs[-1].position(self)
         self.nROIs += 1
+        self.closeGUI.setEnabled(False)
 
     def plot_clicked(self, event):
         items = self.win.scene().items(event.scenePos())
@@ -369,6 +371,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.plot_trace()
         self.extracted = True
         self.new_stat = stat
+        self.closeGUI.setEnabled(True)
 
     def plot_trace(self):
         self.trange = np.arange(0, self.Fcell.shape[1])

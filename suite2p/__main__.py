@@ -1,7 +1,8 @@
 import suite2p
 import numpy as np
 import os
-from suite2p import run_s2p, gui2p
+from suite2p import run_s2p
+from suite2p.gui import gui2p
 import argparse
 
 def main():

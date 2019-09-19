@@ -1,8 +1,11 @@
 import os
 import numpy as np
 import time, os, shutil
-from suite2p import register, dcnv, classifier, utils, roiextract, regmetrics
-from scipy import stats, io, signal
+from scipy.io import savemat
+from suite2p.io import tiff, h5
+from suite2p.register import register, metrics
+from suite2p.extract import extract, dcnv
+from suite2p import utils
 try:
     from haussmeister import haussio
     HAS_HAUS = True
@@ -157,11 +160,11 @@ def run_s2p(ops={},db={}):
         ops = {**ops0, **ops}
         # copy tiff to a binary
         if len(ops['h5py']):
-            ops1 = utils.h5py_to_binary(ops)
+            ops1 = h5.h5py_to_binary(ops)
             print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(toc(t0), len(ops1)))
         else:
             if 'mesoscan' in ops and ops['mesoscan']:
-                ops1 = utils.mesoscan_to_binary(ops)
+                ops1 = tiff.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
             elif HAS_HAUS:
                 print('time %4.2f sec. Using HAUSIO')
@@ -169,7 +172,7 @@ def run_s2p(ops={},db={}):
                 ops1 = dataset.tosuite2p(ops)
                 print('time %4.2f sec. Wrote data to binaries for %d planes'%(toc(t0), len(ops1)))
             else:
-                ops1 = utils.tiff_to_binary(ops)
+                ops1 = tiff.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(toc(t0), len(ops1)))
 
         np.save(fpathops1, ops1) # save ops1
@@ -225,7 +228,7 @@ def run_s2p(ops={},db={}):
                 do_regmetrics = True
             if do_regmetrics and ops1[ipl]['nframes']>=1500:
                 t0=tic()
-                ops1[ipl] = regmetrics.get_pc_metrics(ops1[ipl])
+                ops1[ipl] = metrics.get_pc_metrics(ops1[ipl])
                 print('Registration metrics, %0.2f sec.'%(toc(t0)))
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         if 'roidetect' in ops1[ipl]:
@@ -236,7 +239,7 @@ def run_s2p(ops={},db={}):
             ######## CELL DETECTION AND ROI EXTRACTION ##############
             t11=tic()
             print('----------- ROI DETECTION AND EXTRACTION')
-            ops1[ipl] = roiextract.roi_detect_and_extract(ops1[ipl])
+            ops1[ipl] = extract.detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
             print('----------- Total %0.2f sec.'%(toc(t11)))
@@ -256,7 +259,7 @@ def run_s2p(ops={},db={}):
                 stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
                 iscell = np.load(os.path.join(fpath,'iscell.npy'))
                 matpath = os.path.join(ops['save_path'],'Fall.mat')
-                io.savemat(matpath, {'stat': stat,
+                savemat(matpath, {'stat': stat,
                                      'ops': ops,
                                      'F': F,
                                      'Fneu': Fneu,

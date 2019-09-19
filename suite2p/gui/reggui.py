@@ -1,7 +1,7 @@
 # heavily modified script from a pyqt4 release
 
 from PyQt5 import QtGui, QtCore
-from suite2p import register,fig,utils
+from suite2p import utils
 import pyqtgraph as pg
 import os
 import sys
@@ -462,7 +462,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 for n in range(0,ncells):
                     ypix = self.stat[n]['ypix'].flatten()
                     xpix = self.stat[n]['xpix'].flatten()
-                    iext = fig.boundary(ypix,xpix)
+                    iext = utils.boundary(ypix,xpix)
                     yext = ypix[iext]
                     xext = xpix[iext]
                     #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))
@@ -576,7 +576,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 for n in range(0,ncells):
                     ypix = self.stat[n]['ypix'].flatten()
                     xpix = self.stat[n]['xpix'].flatten()
-                    iext = fig.boundary(ypix,xpix)
+                    iext = utils.boundary(ypix,xpix)
                     yext = ypix[iext]
                     xext = xpix[iext]
                     #yext = np.hstack((yext,yext+1,yext+1,yext-1,yext-1))

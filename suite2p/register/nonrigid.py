@@ -4,11 +4,10 @@ from scipy.fftpack import next_fast_len
 from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 from scipy.ndimage import gaussian_filter, map_coordinates
 from skimage.transform import warp#, PiecewiseAffineTransform
-from suite2p import register, utils
 import math
 from mkl_fft import fft2, ifft2
+from suite2p.register import utils
 
-eps0 = 1e-5;
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad
 subpixel = 10
@@ -36,6 +35,59 @@ def mat_upsample(lpad):
     return Kmat, nup
 
 Kmat, nup = mat_upsample(lpad)
+
+def make_blocks(ops):
+    """ computes overlapping blocks to split FOV into to register separately
+
+    Parameters
+    ----------
+    ops : dictionary
+        'Ly', 'Lx' (optional 'block_size')
+
+    Returns
+    -------
+    ops : dictionary
+        'yblock', 'xblock', 'nblocks', 'NRsm'
+
+    """
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    if 'maxregshiftNR' not in ops:
+        ops['maxregshiftNR'] = 5
+    if 'block_size' not in ops:
+        ops['block_size'] = [128, 128]
+
+    ny = int(np.ceil(1.5 * float(Ly) / ops['block_size'][0]))
+    nx = int(np.ceil(1.5 * float(Lx) / ops['block_size'][1]))
+
+    if ops['block_size'][0]>=Ly:
+        ops['block_size'][0] = Ly
+        ny = 1
+    if ops['block_size'][1]>=Lx:
+        ops['block_size'][1] = Lx
+        nx = 1
+
+    ystart = np.linspace(0, Ly - ops['block_size'][0], ny).astype('int')
+    xstart = np.linspace(0, Lx - ops['block_size'][1], nx).astype('int')
+    ops['yblock'] = []
+    ops['xblock'] = []
+    for iy in range(ny):
+        for ix in range(nx):
+            yind = np.array([ystart[iy], ystart[iy]+ops['block_size'][0]])
+            xind = np.array([xstart[ix], xstart[ix]+ops['block_size'][1]])
+            ops['yblock'].append(yind)
+            ops['xblock'].append(xind)
+    ops['nblocks'] = [ny, nx]
+
+    ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
+    ys = ys.flatten()
+    xs = xs.flatten()
+    ds = (ys - ys[:,np.newaxis])**2 + (xs - xs[:,np.newaxis])**2
+    R = np.exp(-ds)
+    R = R / np.sum(R,axis=0)
+    ops['NRsm'] = R.T
+
+    return ops
 
 def getXYup(cc, Ls, ops):
     """ get subpixel registration shifts from phase-correlation matrix cc """
@@ -65,7 +117,7 @@ def getXYup(cc, Ls, ops):
     ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
     return ymax, xmax, cmax
 
-def prepare_masks(refImg1, ops):
+def phasecorr_reference(refImg1, ops):
     """ create blocked reference image and take its fft and multiply by gaussian smoothing mask """
 
     if 'yblock' not in ops:
@@ -77,10 +129,10 @@ def prepare_masks(refImg1, ops):
     else:
         maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
     Ly,Lx = refImg0.shape
-    maskMul = register.spatial_taper(maskSlope, Ly, Lx)
+    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
     if ops['1Preg']:
-        refImg0 = register.one_photon_preprocess(refImg0[np.newaxis,:,:], ops).squeeze()
+        refImg0 = utils.one_photon_preprocess(refImg0[np.newaxis,:,:], ops).squeeze()
 
     # split refImg0 into multiple parts
     cfRefImg1 = []
@@ -104,16 +156,16 @@ def prepare_masks(refImg1, ops):
         xind = np.arange(xind[0],xind[-1]).astype('int')
 
         refImg = refImg0[np.ix_(yind,xind)]
-        maskMul2 = register.spatial_taper(2 * ops['smooth_sigma'], Ly, Lx)
+        maskMul2 = utils.spatial_taper(2 * ops['smooth_sigma'], Ly, Lx)
         maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
         maskMul1[n,0,:,:] *= maskMul2.astype('float32')
         maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
         cfRefImg   = np.conj(fft.fft2(refImg))
         absRef     = np.absolute(cfRefImg)
-        cfRefImg   = cfRefImg / (eps0 + absRef)
+        cfRefImg   = cfRefImg / (1e-5 + absRef)
 
         # gaussian filter
-        fhg = register.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
+        fhg = utils.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
         cfRefImg *= fhg
 
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
@@ -125,12 +177,6 @@ def apply_masks(Y, maskMul, maskOffset):
 @vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
-def my_clip(X, lhalf):
-    x00 = X[:, :, :lhalf+1, :lhalf+1]
-    x11 = X[:, :, -lhalf:, -lhalf:]
-    x01 = X[:, :, :lhalf+1, -lhalf:]
-    x10 = X[:, :, -lhalf:, :lhalf+1]
-    return x00, x01, x10, x11
 
 def getSNR(cc, Ls, ops):
     (lcorr, lpad, Lyhalf, Lxhalf) = Ls
@@ -148,6 +194,15 @@ def getSNR(cc, Ls, ops):
     Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
     snr = X1max / Xmax # computes snr
     return snr
+
+
+def clip(X, lhalf):
+    x00 = X[:, :, :lhalf+1, :lhalf+1]
+    x11 = X[:, :, -lhalf:, -lhalf:]
+    x01 = X[:, :, :lhalf+1, -lhalf:]
+    x10 = X[:, :, -lhalf:, :lhalf+1]
+    return x00, x01, x10, x11
+
 
 def phasecorr(data, refAndMasks, ops):
     ''' loop through blocks and compute phase correlations'''
@@ -169,7 +224,7 @@ def phasecorr(data, refAndMasks, ops):
 
     # preprocessing for 1P recordings
     if ops['1Preg']:
-        X = register.one_photon_preprocess(data.copy().astype(np.float32), ops)
+        X = utils.one_photon_preprocess(data.copy().astype(np.float32), ops)
 
     # shifts and corrmax
     ymax1 = np.zeros((nimg,nb),np.float32)
@@ -188,11 +243,11 @@ def phasecorr(data, refAndMasks, ops):
     for n in range(nb):
         for t in range(nimg):
             fft2(Y[t,n], overwrite_x=True)
-    Y = register.apply_dotnorm(Y, cfRefImg)
+    Y = utils.apply_dotnorm(Y, cfRefImg)
     for n in range(nb):
         for t in range(nimg):
             ifft2(Y[t,n], overwrite_x=True)
-    x00, x01, x10, x11 = my_clip(Y, lcorr+lpad)
+    x00, x01, x10, x11 = clip(Y, lcorr+lpad)
     cc0 = np.real(np.block([[x11, x10], [x01, x00]]))
     cc0 = np.transpose(cc0, (1,0,2,3))
     cc0 = cc0.reshape((cc0.shape[0], -1))

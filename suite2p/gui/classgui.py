@@ -2,8 +2,105 @@ from PyQt5 import QtGui, QtCore
 import sys
 import numpy as np
 import os
-from suite2p import fig, classifier
+from suite2p.gui import masks, io
+from suite2p.classify import classifier
+import __main__
 import shutil
+
+#def make_buttons(parent)
+
+def make_buttons(parent,b0):
+    # ----- CLASSIFIER BUTTONS -------
+    cllabel = QtGui.QLabel("")
+    cllabel.setFont(parent.boldfont)
+    cllabel.setText("<font color='white'>Classifier</font>")
+    parent.classLabel = QtGui.QLabel("<font color='white'>not loaded (using prob from iscell.npy)</font>")
+    parent.classLabel.setFont(QtGui.QFont("Arial", 8))
+    parent.l0.addWidget(cllabel, b0, 0, 1, 2)
+    b0+=1
+    parent.l0.addWidget(parent.classLabel, b0, 0, 1, 2)
+    parent.addtoclass = QtGui.QPushButton(" add current data to classifier")
+    parent.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+    parent.addtoclass.clicked.connect(lambda: add_to(parent))
+    parent.addtoclass.setStyleSheet(parent.styleInactive)
+    b0+=1
+    parent.l0.addWidget(parent.addtoclass, b0, 0, 1, 2)
+    return b0
+
+def load_classifier(parent):
+    name = QtGui.QFileDialog.getOpenFileName(parent, "Open File")
+    if name:
+        classgui.load(parent, name[0])
+        parent.class_activated()
+    else:
+        print("no classifier")
+
+def load_s2p_classifier(parent):
+    classgui.load(parent, parent.classorig)
+    parent.class_file()
+    parent.saveDefault.setEnabled(True)
+
+def load_default_classifier(parent):
+    classgui.load(
+        parent,
+        os.path.join(
+            os.path.abspath(os.path.dirname(__main__.__file__)),
+            "classifiers/classifier_user.npy",
+        ),
+    )
+    parent.class_activated()
+
+def class_file(parent):
+    if parent.classfile == os.path.join(
+        os.path.abspath(os.path.dirname(__main__.__file__)),
+        "classifiers/classifier_user.npy",
+    ):
+        cfile = "default classifier"
+    elif parent.classfile == os.path.join(
+        os.path.abspath(os.path.dirname(__main__.__file__)),
+        "classifiers/classifier.npy"
+    ):
+        cfile = "suite2p classifier"
+    else:
+        cfile = parent.classfile
+    cstr = "<font color='white'>" + cfile + "</font>"
+    parent.classLabel.setText(cstr)
+
+def class_activated(parent):
+    parent.class_file()
+    parent.saveDefault.setEnabled(True)
+    parent.addtoclass.setStyleSheet(parent.styleUnpressed)
+    parent.addtoclass.setEnabled(True)
+
+def class_default(parent):
+    dm = QtGui.QMessageBox.question(
+        parent,
+        "Default classifier",
+        "Are you sure you want to overwrite your default classifier?",
+        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+    )
+    if dm == QtGui.QMessageBox.Yes:
+        classfile = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier_user.npy",
+        )
+        classgui.save_model(classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
+
+def reset_default(parent):
+    dm = QtGui.QMessageBox.question(
+        parent,
+        "Default classifier",
+        ("Are you sure you want to reset the default classifier "
+         "to the built-in suite2p classifier?"),
+        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+    )
+    if dm == QtGui.QMessageBox.Yes:
+        classfile = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            "classifiers/classifier_user.npy",
+        )
+        shutil.copy(parent.classorig, classfile)
+
 
 def load(parent, name):
     print('loading classifier ', name)
@@ -74,7 +171,7 @@ def load_data(parent,keys,trainfiles):
 def add_to(parent):
     fname = parent.basename+'/iscell.npy'
     print('Adding current dataset to classifier')
-    if parent.classfile == os.path.join(os.path.abspath(os.path.dirname(__file__)),
+    if parent.classfile == os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
                      'classifiers/classifier_user.npy'):
         cfile = 'the default classifier'
     else:
@@ -94,15 +191,9 @@ def add_to(parent):
 def apply(parent):
     classval = float(parent.probedit.text())
     iscell = parent.probcell > classval
-    fig.flip_for_class(parent, iscell)
-    M = fig.draw_masks(parent)
-    fig.plot_masks(parent,M)
-    np.save(parent.basename+'/iscell.npy',
-            np.concatenate((np.expand_dims(parent.iscell,axis=1),
-            np.expand_dims(parent.probcell,axis=1)), axis=1))
-    parent.lcell0.setText(' %d'%parent.iscell.sum())
-    parent.lcell1.setText(' %d'%(parent.iscell.size-parent.iscell.sum()))
-
+    masks.flip_for_class(parent, iscell)
+    parent.update_plot()
+    io.save_iscell(parent)
 
 def save(parent, train_stats, train_iscell, keys):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Classifier name (*.npy)')
@@ -130,15 +221,8 @@ def save_list(parent):
 def activate(parent, inactive):
     if inactive:
         parent.probcell = parent.model.apply(parent.stat)
-    istat = parent.probcell
-    parent.clabels[-2] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
-    istat = istat - istat.min()
-    istat = istat / istat.max()
-    icols = fig.istat_transform(istat)
-    parent.ops_plot[3][:,-1] = icols
-    fig.class_masks(parent)
-    M = fig.draw_masks(parent)
-    fig.plot_masks(parent,M)
+    masks.class_masks(parent)
+    parent.update_plot()
 
 def disable(parent):
     parent.classbtn.setEnabled(False)
@@ -244,7 +328,7 @@ class ListChooser(QtGui.QDialog):
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
             classorig = parent.classfile
-            classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            classfile = os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
                              'classifiers/classifier_user.npy')
             shutil.copy(classorig, classfile)
 

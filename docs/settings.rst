@@ -42,6 +42,8 @@ These are the essential settings that are dataset-specific.
    line scanning (set by user). If set to any value besides 0, then this
    offset is used and applied to all frames in the recording.
 
+- **frames_include**: (*int, default: -1*) if greater than zero, only *frames_include* frames are processed. useful for testing parameters on a subset of data.
+
 Output settings
 ~~~~~~~~~~~~~~~
 

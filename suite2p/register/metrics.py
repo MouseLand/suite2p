@@ -3,10 +3,12 @@ import numpy as np
 import multiprocessing
 from multiprocessing import Pool
 import sys
-from suite2p import register, utils, nonrigid
+from suite2p.register import register, nonrigid
 from scipy.signal import convolve2d
 from scipy.sparse import linalg
 from sklearn.decomposition import PCA
+from suite2p.utils import sample_frames
+
 try:
     import cv2
     HAS_CV2 = True
@@ -60,7 +62,7 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         'refImg': refImg
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
-    ops = utils.make_blocks(ops)
+    ops = nonrigid.make_blocks(ops)
     X = np.zeros((nPC,3))
     for i in range(nPC):
         refImg = pclow[i]
@@ -71,10 +73,8 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
 
 def pc_register_worker(inputs):
     ops, refImg, Img = inputs
-    maskMul, maskOffset, cfRefImg = register.prepare_masks(refImg, ops)
-    maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
-    refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-    dwrite, ymax, xmax, cmax, yxnr = register.register_and_shift(Img, refAndMasks, ops)
+    refAndMasks = register.prepare_refAndMasks(refImg, ops)
+    dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(Img, refAndMasks, ops)
     X = np.zeros((3,))
     X[1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
     X[0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
@@ -95,9 +95,9 @@ def get_pc_metrics(ops, use_red=False):
     nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
     if use_red and 'reg_file_chan2' in ops:
-        mov  = utils.sample_frames(ops, ix, ops['reg_file_chan2'])
+        mov  = sample_frames(ops, ix, ops['reg_file_chan2'])
     else:
-        mov  = utils.sample_frames(ops, ix, ops['reg_file'])
+        mov  = sample_frames(ops, ix, ops['reg_file'])
 
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:

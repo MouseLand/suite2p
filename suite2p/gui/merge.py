@@ -1,7 +1,9 @@
 import numpy as np
 import pyqtgraph as pg
 from scipy import stats
-from suite2p import utils, dcnv, sparsedetect, fig
+from suite2p import utils
+from suite2p.extract import dcnv
+from suite2p.detect import sparsedetect
 import math
 from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
@@ -18,17 +20,23 @@ def distance_matrix(parent, ilist):
                                   parent.stat[k]['xpix'][:,np.newaxis])**2) ** 0.5).min()
     return idist
 
+def do_merge(parent):
+    dm = QtGui.QMessageBox.question(
+        parent,
+        "Merge cells",
+        "Do you want to merge selected cells?",
+        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+    )
+    if dm == QtGui.QMessageBox.Yes:
+        merge.merge_ROIs(parent)
+        parent.merged.append(parent.imerge)
+        print(parent.merged)
+        print('merged ROIs')
+
+
 def merge_ROIs(parent):
     merge_activity_masks(parent)
-    n = parent.iscell.size-1
-    redraw_masks(parent, n)
-    parent.ichosen = n
-    parent.imerge = [n]
-    M = fig.draw_masks(parent)
-    fig.plot_masks(parent, M)
-    fig.plot_trace(parent)
-    parent.win.show()
-    parent.show()
+    parent.update_plot()
 
 def merge_activity_masks(parent):
     print('merging activity... this may take some time')
@@ -117,10 +125,10 @@ def merge_activity_masks(parent):
 
     ### for GUI drawing
     # compute outline and circle around cell
-    iext = fig.boundary(ypix, xpix)
+    iext = utils.boundary(ypix, xpix)
     stat0["yext"] = ypix[iext].astype(np.int32)
     stat0["xext"] = xpix[iext].astype(np.int32)
-    ycirc, xcirc = fig.circle(stat0["med"], stat0["radius"])
+    ycirc, xcirc = utils.circle(stat0["med"], stat0["radius"])
     goodi = (
             (ycirc >= 0)
             & (xcirc >= 0)
@@ -133,8 +141,15 @@ def merge_activity_masks(parent):
     spks = dcnv.oasis(dF[np.newaxis, :], parent.ops)
 
     ### remove previously merged cell (do not replace)
+    # before removal, grab color
+    istat = parent.colors['istat']
+    istat = np.concatenate((istat, istat[:,parent.stat[n]['imerge'][0]][:,np.newaxis]), axis=1)
+    parent.colors['istat'] = istat
+    cols = parent.colors['cols']
+    cols = np.concatenate((cols, cols[:,parent.stat[n]['imerge'][0],:][:,np.newaxis,:]), axis=1)
+    parent.colors['cols'] = cols
     for k in remove_merged:
-        remove_mask(parent, k)
+        masks.remove_roi(parent, k, i0)
         np.delete(parent.stat, k, 0)
         np.delete(parent.Fcell, k, 0)
         np.delete(parent.Fneu, k, 0)
@@ -144,6 +159,8 @@ def merge_activity_masks(parent):
         np.delete(parent.probredcell, k, 0)
         np.delete(parent.redcell, k, 0)
         np.delete(parent.notmerged, k, 0)
+        np.delete(parent.colors['cols'], k, 1)
+        np.delete(parent.colors['istat'], k, 1)
 
     print(parent.Fcell.shape, parent.Spks.shape)
     # add cell to structs
@@ -167,57 +184,8 @@ def merge_activity_masks(parent):
     for n in merged_cells:
         parent.stat[n]['inmerge'] = parent.stat.size-1
 
-    add_mask(parent, parent.iscell.size-1)
-
-def remove_mask(parent, n):
-    i0 = int(1-parent.iscell[n])
-    for k in range(parent.iROI.shape[1]):
-        ipix = np.array((parent.iROI[i0,k,:,:]==n).nonzero()).astype(np.int32)
-        parent.iROI[i0, k, ipix[0,:], ipix[1,:]] = -1
-        ipix = np.array((parent.iExt[i0,k,:,:]==n).nonzero()).astype(np.int32)
-        parent.iExt[i0, k, ipix[0,:], ipix[1,:]] = -1
-    np.delete(parent.ops_plot[3], n, 0)
-
-def add_mask(parent, n):
-    ypix = parent.stat[n]["ypix"].astype(np.int32)
-    xpix = parent.stat[n]["xpix"].astype(np.int32)
-    i0      = int(1-parent.iscell[n])
-    parent.iROI[i0, 0, ypix, xpix] = n
-    parent.iExt[i0, 0, ypix, xpix] = n
-
-    cols = parent.ops_plot[3]
-    cols = np.concatenate((cols, cols[parent.stat[n]['imerge'][0]]*np.ones((1,cols.shape[1]))), axis=0)
-    parent.ops_plot[3] = cols
-
-def redraw_masks(parent, n):
-    '''
-    redraws masks with new cell ids
-    '''
-    i0 = int(1-parent.iscell[n])
-    ypix = parent.stat[n]["ypix"].astype(np.int32).flatten()
-    xpix = parent.stat[n]["xpix"].astype(np.int32).flatten()
-    cols = parent.ops_plot[3]
-    for c in range(cols.shape[1]):
-        for k in range(5):
-            if k<3 or k==4:
-                H = cols[parent.iROI[i0,0,ypix,xpix],c]
-                S = parent.Sroi[i0,ypix,xpix]
-            else:
-                H = cols[parent.iExt[i0,0,ypix,xpix],c]
-                S = parent.Sext[i0,ypix,xpix]
-            if k==0:
-                V = np.maximum(0, np.minimum(1, 0.75*parent.Lam[i0,0,ypix,xpix]/parent.LamMean))
-            elif k==1 or k==2 or k==4:
-                V = parent.Vback[k-1,ypix,xpix]
-                S = np.maximum(0, np.minimum(1, 1.5*0.75*parent.Lam[i0,0,ypix,xpix]/parent.LamMean))
-            elif k==3:
-                V = parent.Vback[k-1,ypix,xpix]
-                V = np.minimum(1, V + S)
-            H = np.expand_dims(H.flatten(),axis=1)
-            S = np.expand_dims(S.flatten(),axis=1)
-            V = np.expand_dims(V.flatten(),axis=1)
-            hsv = np.concatenate((H,S,V),axis=1)
-            parent.RGBall[i0,c,k,ypix,xpix,:] = hsv_to_rgb(hsv)
+    add_roi(parent, parent.iscell.size-1, i0)
+    redraw_masks(parent, ypix, xpix)
 
 class MergeWindow(QtGui.QDialog):
     def __init__(self, parent=None):
@@ -347,7 +315,7 @@ class MergeWindow(QtGui.QDialog):
             cell0 = parent.imerge[0]
             sstring = ''
             for i in parent.imerge[1:]:
-                rgb = hsv_to_rgb([parent.ops_plot[3][i,0],1,1])*255
+                rgb = parent.colors['cols'][0,i]
                 pen = pg.mkPen(rgb, width=3)
                 scatter=pg.ScatterPlotItem(parent.Fbin[cell0], parent.Fbin[i], pen=pen)
                 self.p0.addItem(scatter)

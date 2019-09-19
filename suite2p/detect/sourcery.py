@@ -3,7 +3,8 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
 import math
-from suite2p import utils, register, sparsedetect
+from suite2p import utils
+from suite2p.detect import sparsedetect
 import time
 
 def getSVDdata(ops):

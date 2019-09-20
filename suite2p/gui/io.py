@@ -230,7 +230,8 @@ def load_proc(parent):
             parent.ichosen = 0
             parent.imerge = [0]
             for n in range(len(parent.stat)):
-                parent.stat[n]['imerge'] = []
+                if 'imerge' not in parent.stat[n]:
+                    parent.stat[n]['imerge'] = []
             parent.loaded = True
         else:
             print("stat.npy found, but other files not in folder")

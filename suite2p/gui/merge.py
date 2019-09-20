@@ -4,6 +4,7 @@ from scipy import stats
 from suite2p import utils
 from suite2p.extract import dcnv
 from suite2p.detect import sparsedetect
+from suite2p.gui import masks
 import math
 from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
@@ -28,22 +29,18 @@ def do_merge(parent):
         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
     )
     if dm == QtGui.QMessageBox.Yes:
-        merge.merge_ROIs(parent)
+        merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
+        parent.update_plot()
         print(parent.merged)
         print('merged ROIs')
-
-
-def merge_ROIs(parent):
-    merge_activity_masks(parent)
-    parent.update_plot()
 
 def merge_activity_masks(parent):
     print('merging activity... this may take some time')
     i0      = int(1-parent.iscell[parent.ichosen])
-    ypix = np.array([])
-    xpix = np.array([])
-    lam  = np.array([])
+    ypix = np.zeros((0,), np.int32)
+    xpix = np.zeros((0,), np.int32)
+    lam = np.zeros((0,), np.float32)
     footprints  = np.array([])
     F    = np.zeros((0,parent.Fcell.shape[1]), np.float32)
     Fneu = np.zeros((0,parent.Fcell.shape[1]), np.float32)
@@ -92,8 +89,8 @@ def merge_activity_masks(parent):
 
     ### compute statistics of merges
     stat0["imerge"] = merged_cells
-    stat0["ypix"] = ypix.astype(np.int32)
-    stat0["xpix"] = xpix.astype(np.int32)
+    stat0["ypix"] = ypix
+    stat0["xpix"] = xpix
     stat0["lam"] = lam / lam.sum() * merged_cells.size
     stat0['med']  = [np.median(stat0["ypix"]), np.median(stat0["xpix"])]
     stat0["npix"] = ypix.size
@@ -112,8 +109,10 @@ def merge_activity_masks(parent):
     stat0["compact"] = stat0["mrs"] / (1e-10 + stat0["mrs0"])
     # footprint
     stat0["footprint"] = footprints.mean()
+    # red prob
+    stat0['chan2_prob'] = prmean
     # inmerge
-    stat0["inmerge"] = 0
+    stat0["inmerge"] = -1
 
     ### compute activity of merged cells
     F = F.mean(axis=0)
@@ -140,14 +139,7 @@ def merge_activity_masks(parent):
     # deconvolve activity
     spks = dcnv.oasis(dF[np.newaxis, :], parent.ops)
 
-    ### remove previously merged cell (do not replace)
-    # before removal, grab color
-    istat = parent.colors['istat']
-    istat = np.concatenate((istat, istat[:,parent.stat[n]['imerge'][0]][:,np.newaxis]), axis=1)
-    parent.colors['istat'] = istat
-    cols = parent.colors['cols']
-    cols = np.concatenate((cols, cols[:,parent.stat[n]['imerge'][0],:][:,np.newaxis,:]), axis=1)
-    parent.colors['cols'] = cols
+    ### remove previously merged cell from FOV (do not replace)
     for k in remove_merged:
         masks.remove_roi(parent, k, i0)
         np.delete(parent.stat, k, 0)
@@ -159,10 +151,7 @@ def merge_activity_masks(parent):
         np.delete(parent.probredcell, k, 0)
         np.delete(parent.redcell, k, 0)
         np.delete(parent.notmerged, k, 0)
-        np.delete(parent.colors['cols'], k, 1)
-        np.delete(parent.colors['istat'], k, 1)
 
-    print(parent.Fcell.shape, parent.Spks.shape)
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
     parent.stat = sparsedetect.get_overlaps(parent.stat, parent.ops)
@@ -176,16 +165,16 @@ def merge_activity_masks(parent):
     parent.probredcell = np.append(parent.probredcell, prmean)
     parent.redcell = np.append(parent.redcell, prmean > parent.chan2prob)
     parent.notmerged = np.append(parent.notmerged, False)
-    print(parent.Fcell.shape, parent.Spks.shape)
-
+    # * add colors *
+    masks.make_colors(parent)
     # recompute binned F
     parent.mode_change(parent.activityMode)
 
     for n in merged_cells:
-        parent.stat[n]['inmerge'] = parent.stat.size-1
-
-    add_roi(parent, parent.iscell.size-1, i0)
-    redraw_masks(parent, ypix, xpix)
+        parent.stat[n]['inmerge'] = len(parent.stat)-1
+        masks.remove_roi(parent, n, i0)
+    masks.add_roi(parent, len(parent.stat)-1, i0)
+    masks.redraw_masks(parent, ypix, xpix)
 
 class MergeWindow(QtGui.QDialog):
     def __init__(self, parent=None):

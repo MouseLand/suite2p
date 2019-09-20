@@ -104,6 +104,7 @@ def make_colors(parent):
     ncells = len(parent.stat)
     parent.colors['cols'] = np.zeros((len(parent.color_names), ncells, 3), np.uint8)
     parent.colors['istat'] = np.zeros((len(parent.color_names), ncells), np.float32)
+    np.random.seed(seed=0)
     allcols = np.random.random((ncells,))
     if 'meanImg_chan2' in parent.ops:
         allcols = allcols / 1.4
@@ -216,12 +217,13 @@ def init_masks(parent):
 
     # ignore merged cells
     iignore = np.zeros(ncells, np.bool)
-    for n in range(ncells-1,-1,-1):
+    for n in np.arange(ncells-1,-1,-1,int):
         ypix = stat[n]['ypix']
         if ypix is not None and not iignore[n]:
             if 'imerge' in stat[n]:
                 for k in stat[n]['imerge']:
                     iignore[k] = True
+                    print(k)
             xpix = stat[n]['xpix']
             lam = stat[n]['lam']
             lam = lam / lam.sum()
@@ -461,9 +463,7 @@ def remove_roi(parent, n, i0):
     parent.rois['iROI'][i0,2,ipix2[0,:],ipix2[1,:]] = -1
 
     # remove +/- 1 ROI exists
-    yonly = ypix[~parent.stat[n]['overlap']]
-    xonly = xpix[~parent.stat[n]['overlap']]
-    parent.rois['Sroi'][i0,yonly,xonly] = 0
+    parent.rois['Sroi'][i0,ypix,xpix] = parent.rois['iROI'][i0,0,ypix,xpix] > 0
 
     parent.rois['LamNorm'][i0,ypix,xpix] = np.maximum(0, np.minimum(1,
                         0.75*parent.rois['Lam'][i0,0,ypix,xpix]/parent.rois['LamMean']))
@@ -480,7 +480,7 @@ def add_roi(parent, n, i):
     parent.rois['iROI'][i,0,ypix,xpix] = n
     parent.rois['Lam'][i,2,ypix,xpix]  = parent.rois['Lam'][i,1,ypix,xpix]
     parent.rois['Lam'][i,1,ypix,xpix]  = parent.rois['Lam'][i,0,ypix,xpix]
-    parent.rois['Lam'][i,0,ypix,xpix]  = lam / lam.sum()
+    parent.rois['Lam'][i,0,ypix,xpix]  = lam #/ lam.sum()
 
     # set whether or not an ROI + weighting of pixels
     parent.rois['Sroi'][i,ypix,xpix] = 1

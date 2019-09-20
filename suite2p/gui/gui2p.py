@@ -288,7 +288,7 @@ class MainWindow(QtGui.QMainWindow):
                 if event.key() == QtCore.Qt.Key_Return:
                     if event.modifiers()==QtCore.Qt.AltModifier:
                         if len(self.imerge) > 1:
-                            merge.merge_cells(self)
+                            merge.do_merge(self)
                 elif event.key() == QtCore.Qt.Key_Escape:
                     self.zoom_plot(1)
                     self.zoom_plot(3)

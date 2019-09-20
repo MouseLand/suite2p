@@ -225,11 +225,12 @@ def load_proc(parent):
             for n in range(len(parent.stat)):
                 parent.stat[n]['chan2_prob'] = parent.probredcell[n]
                 parent.stat[n]['inmerge'] = 0
-                parent.stat[n]['imerge'] = []
             parent.stat = np.array(parent.stat)
             make_masks_and_enable_buttons(parent)
             parent.ichosen = 0
             parent.imerge = [0]
+            for n in range(len(parent.stat)):
+                parent.stat[n]['imerge'] = []
             parent.loaded = True
         else:
             print("stat.npy found, but other files not in folder")

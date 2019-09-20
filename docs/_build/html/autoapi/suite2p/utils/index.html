@@ -164,14 +164,16 @@
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="suite2p.utils.tic">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">tic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#tic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.tic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="suite2p.utils.boundary">
+<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">boundary</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#boundary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns pixels of mask that are on the exterior of the mask</p>
+</dd></dl>
 
 <dl class="function">
-<dt id="suite2p.utils.toc">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">toc</code><span class="sig-paren">(</span><em class="sig-param">i0</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#toc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.toc" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="suite2p.utils.circle">
+<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">circle</code><span class="sig-paren">(</span><em class="sig-param">med</em>, <em class="sig-param">r</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#circle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.circle" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns pixels of circle with radius 1.25x radius of cell (r)</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="suite2p.utils.fitMVGaus">
@@ -219,199 +221,31 @@ image ops[‘meanImgE’]</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="suite2p.utils.init_ops">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">init_ops</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#init_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.init_ops" title="Permalink to this definition">¶</a></dt>
-<dd><p>initializes ops files for each plane in recording</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘save_path’, ‘save_folder’, ‘fast_disk’, ‘nchannels’, ‘keep_movie_raw’
-+ (if mesoscope) ‘dy’, ‘dx’, ‘lines’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – adds fields ‘save_path0’, ‘reg_file’
-(depending on ops: ‘raw_file’, ‘reg_file_chan2’, ‘raw_file_chan2’)</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.list_h5">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">list_h5</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#list_h5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.list_h5" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.find_files_open_binaries">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">find_files_open_binaries</code><span class="sig-paren">(</span><em class="sig-param">ops1</em>, <em class="sig-param">ish5</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#find_files_open_binaries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.find_files_open_binaries" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds tiffs or h5 files and opens binaries for writing</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops1</strong> (<em>list of dictionaries</em>) – ‘keep_movie_raw’, ‘data_path’, ‘look_one_level_down’, ‘reg_file’…</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – adds fields ‘filelist’, ‘first_tiffs’, opens binaries</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.h5py_to_binary">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">h5py_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#h5py_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.h5py_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds h5 files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘h5_path’, ‘h5_key’, ‘save_path’, ‘save_folder’, ‘fast_disk’,
-‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ‘Ly’, ‘Lx’, ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.open_tiff">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">open_tiff</code><span class="sig-paren">(</span><em class="sig-param">file</em>, <em class="sig-param">sktiff</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#open_tiff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.open_tiff" title="Permalink to this definition">¶</a></dt>
-<dd><p>opens tiff with either ScanImageTiffReader or skimage
-returns tiff and its length</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.choose_tiff_reader">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">choose_tiff_reader</code><span class="sig-paren">(</span><em class="sig-param">fs0</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#choose_tiff_reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.choose_tiff_reader" title="Permalink to this definition">¶</a></dt>
-<dd><p>chooses tiff reader (ScanImageTiffReader is default)</p>
-<p>tries to open tiff with ScanImageTiffReader and if it fails sets sktiff to True</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fs0</strong> (<em>string</em>) – path to first tiff in list</p></li>
-<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘batch_size’</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>sktiff</strong> – whether or not to use scikit-image tiff reader</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.tiff_to_binary">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">tiff_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#tiff_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.tiff_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds tiff files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘data_path’, ‘save_path’, ‘save_folder’, ‘fast_disk’, ‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary
-assigns keys ‘Ly’, ‘Lx’, ‘tiffreader’, ‘first_tiffs’,
-‘frames_per_folder’, ‘nframes’, ‘meanImg’, ‘meanImg_chan2’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.mesoscan_to_binary">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">mesoscan_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#mesoscan_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.mesoscan_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds mesoscope tiff files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘data_path’, ‘save_path’, ‘save_folder’, ‘fast_disk’,
-‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’, ‘lines’, ‘dx’, ‘dy’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary
-assigns keys ‘Ly’, ‘Lx’, ‘tiffreader’, ‘first_tiffs’, ‘frames_per_folder’,
-‘nframes’, ‘meanImg’, ‘meanImg_chan2’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.list_tifs">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">list_tifs</code><span class="sig-paren">(</span><em class="sig-param">froot</em>, <em class="sig-param">look_one_level_down</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#list_tifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.list_tifs" title="Permalink to this definition">¶</a></dt>
-<dd><p>get list of tiffs in folder froot + one level down maybe</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.get_tif_list">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">get_tif_list</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#get_tif_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.get_tif_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>make list of tiffs to process
-if ops[‘subfolders’], then all tiffs ops[‘data_path’][0] / ops[‘subfolders’] / <a href="#id1"><span class="problematic" id="id2">*</span></a>.tif
-if ops[‘look_one_level_down’], then all tiffs in all folders + one level down
-if ops[‘tiff_list’], then ops[‘data_path’][0] / ops[‘tiff_list’] ONLY</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="suite2p.utils.sub2ind">
 <code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">sub2ind</code><span class="sig-paren">(</span><em class="sig-param">array_shape</em>, <em class="sig-param">rows</em>, <em class="sig-param">cols</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#sub2ind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.sub2ind" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="suite2p.utils.combined">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">combined</code><span class="sig-paren">(</span><em class="sig-param">ops1</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#combined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.combined" title="Permalink to this definition">¶</a></dt>
-<dd><p>Combines all the entries in ops1 into a single result file.</p>
-<p>Multi-plane recordings are arranged to best tile a square.
-Multi-roi recordings are arranged by their dx,dy physical localization.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.make_blocks">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">make_blocks</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#make_blocks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.make_blocks" title="Permalink to this definition">¶</a></dt>
-<dd><p>computes overlapping blocks to split FOV into to register separately</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘Ly’, ‘Lx’ (optional ‘block_size’)</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops</strong> – ‘yblock’, ‘xblock’, ‘nblocks’, ‘NRsm’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dictionary</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
 <dt id="suite2p.utils.sample_frames">
 <code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">sample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">ix</em>, <em class="sig-param">reg_file</em>, <em class="sig-param">crop=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#sample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.sample_frames" title="Permalink to this definition">¶</a></dt>
-<dd><p>get frames ix from reg_file
-frames are cropped by ops[‘yrange’] and ops[‘xrange’]</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.utils.ome_to_binary">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">ome_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#ome_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.ome_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>converts ome.tiff to <a href="#id3"><span class="problematic" id="id4">*</span></a>.bin file for non-interleaved red channel recordings
-assumes SINGLE-PAGE tiffs where first channel has string ‘Ch1’
-and also SINGLE FOLDER</p>
+<dd><dl class="simple">
+<dt>get frames ix from reg_file</dt><dd><p>frames are cropped by ops[‘yrange’] and ops[‘xrange’]</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – keys nplanes, nchannels, data_path, look_one_level_down, reg_file</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dict</em>) – requires ‘badframes’, ‘yrange’, ‘xrange’, ‘Ly’, ‘Lx’</p></li>
+<li><p><strong>ix</strong> (<em>int</em><em>, </em><em>array</em>) – frames to take</p></li>
+<li><p><strong>reg_file</strong> (<em>str</em>) – location of binary file to read (frames x Ly x Lx)</p></li>
+<li><p><strong>crop</strong> (<em>bool</em>) – whether or not to crop by ‘yrange’ and ‘xrange’</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – creates binaries ops1[j][‘reg_file’]
-assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</p>
+<dd class="field-even"><p><strong>mov</strong> – frames x Ly x Lx</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
+<dd class="field-odd"><p>int16, array</p>
 </dd>
 </dl>
 </dd></dl>

@@ -169,16 +169,6 @@
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="suite2p.run_s2p.tic">
-<code class="sig-prename descclassname">suite2p.run_s2p.</code><code class="sig-name descname">tic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/run_s2p.html#tic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.run_s2p.tic" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.run_s2p.toc">
-<code class="sig-prename descclassname">suite2p.run_s2p.</code><code class="sig-name descname">toc</code><span class="sig-paren">(</span><em class="sig-param">t0</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/run_s2p.html#toc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.run_s2p.toc" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="suite2p.run_s2p.default_ops">
 <code class="sig-prename descclassname">suite2p.run_s2p.</code><code class="sig-name descname">default_ops</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/run_s2p.html#default_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.run_s2p.default_ops" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -186,7 +176,23 @@
 <dl class="function">
 <dt id="suite2p.run_s2p.run_s2p">
 <code class="sig-prename descclassname">suite2p.run_s2p.</code><code class="sig-name descname">run_s2p</code><span class="sig-paren">(</span><em class="sig-param">ops={}</em>, <em class="sig-param">db={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/run_s2p.html#run_s2p"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.run_s2p.run_s2p" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>run suite2p pipeline</p>
+<p>need to provide a ‘data_path’ or ‘h5py’+’h5py_key’ in db or ops</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code>, optional) – specify ‘nplanes’, ‘nchannels’, ‘tau’, ‘fs’</p></li>
+<li><p><strong>db</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code>, optional) – specify ‘data_path’ or ‘h5py’+’h5py_key’ here or in ops</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ops1</strong> – list of ops for each plane</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 </div>
 </div>

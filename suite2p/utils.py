@@ -130,9 +130,25 @@ def sub2ind(array_shape, rows, cols):
     return inds
 
 def sample_frames(ops, ix, reg_file, crop=True):
-    ''' get frames ix from reg_file
+    """ get frames ix from reg_file
         frames are cropped by ops['yrange'] and ops['xrange']
-    '''
+
+    Parameters
+    ----------
+    ops : dict
+        requires 'badframes', 'yrange', 'xrange', 'Ly', 'Lx'
+    ix : int, array
+        frames to take
+    reg_file : str
+        location of binary file to read (frames x Ly x Lx)
+    crop : bool
+        whether or not to crop by 'yrange' and 'xrange'
+
+    Returns
+    -------
+        mov : int16, array
+            frames x Ly x Lx
+    """
     bad_frames = ops['badframes']
     ix = ix[bad_frames[ix]==0]
     Ly = ops['Ly']

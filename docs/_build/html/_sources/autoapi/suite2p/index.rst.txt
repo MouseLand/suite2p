@@ -4,35 +4,31 @@
 .. py:module:: suite2p
 
 
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   classify/index.rst
+   detect/index.rst
+   extract/index.rst
+   gui/index.rst
+   io/index.rst
+   register/index.rst
+
+
 Submodules
 ----------
 .. toctree::
    :titlesonly:
    :maxdepth: 1
 
-   LoadBinary/index.rst
    __main__/index.rst
-   chan2detect/index.rst
-   classgui/index.rst
-   classifier/index.rst
-   dcnv/index.rst
-   drawroi/index.rst
-   fig/index.rst
    gpu_utils/index.rst
-   gui/index.rst
-   gui2p/index.rst
-   merge/index.rst
    myutils2/index.rst
-   nonrigid/index.rst
-   reggui/index.rst
-   register/index.rst
-   regmetrics/index.rst
-   roiextract/index.rst
    run_s2p/index.rst
-   sourcery/index.rst
-   sparsedetect/index.rst
    utils/index.rst
-   visualize/index.rst
 
 
 Package Contents

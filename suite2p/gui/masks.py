@@ -26,6 +26,8 @@ def make_buttons(parent, b0):
     clabel.setFont(parent.boldfont)
     parent.l0.addWidget(clabel, b0, 0, 1, 1)
 
+    iwid = 65
+
     # add colormaps
     parent.CmapChooser = QtGui.QComboBox()
     cmaps = ['hsv', 'viridis', 'plasma', 'inferno', 'magma', 'cividis',
@@ -34,7 +36,7 @@ def make_buttons(parent, b0):
     parent.CmapChooser.setCurrentIndex(0)
     parent.CmapChooser.activated.connect(lambda: cmap_change(parent))
     parent.CmapChooser.setFont(QtGui.QFont("Arial", 8))
-    parent.CmapChooser.setFixedWidth(50)
+    parent.CmapChooser.setFixedWidth(iwid)
     parent.l0.addWidget(parent.CmapChooser, b0, 1, 1, 1)
 
     nv = b0
@@ -53,14 +55,14 @@ def make_buttons(parent, b0):
         b += 1
     parent.chan2edit = QtGui.QLineEdit(parent)
     parent.chan2edit.setText("0.6")
-    parent.chan2edit.setFixedWidth(50)
+    parent.chan2edit.setFixedWidth(iwid)
     parent.chan2edit.setAlignment(QtCore.Qt.AlignRight)
     parent.chan2edit.returnPressed.connect(lambda: chan2_prob(parent))
     parent.l0.addWidget(parent.chan2edit, nv + b - 4, 1, 1, 1)
 
     parent.probedit = QtGui.QLineEdit(parent)
     parent.probedit.setText("0.5")
-    parent.probedit.setFixedWidth(50)
+    parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
     parent.probedit.returnPressed.connect(
         lambda: classgui.apply(parent)
@@ -70,7 +72,7 @@ def make_buttons(parent, b0):
     parent.binedit = QtGui.QLineEdit(parent)
     parent.binedit.setValidator(QtGui.QIntValidator(0, 500))
     parent.binedit.setText("1")
-    parent.binedit.setFixedWidth(50)
+    parent.binedit.setFixedWidth(iwid)
     parent.binedit.setAlignment(QtCore.Qt.AlignRight)
     parent.binedit.returnPressed.connect(
         lambda: parent.mode_change(parent.activityMode)

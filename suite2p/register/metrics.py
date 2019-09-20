@@ -18,7 +18,31 @@ except ImportError:
 import time
 
 def pclowhigh(mov, nlowhigh, nPC):
-    ''' get mean of top and bottom PC weights for nPC's of mov '''
+    """ get mean of top and bottom PC weights for nPC's of mov
+
+        computes nPC PCs of mov and returns average of top and bottom
+
+        Parameters
+        ----------
+        mov : int16, array
+            subsampled frames from movie size frames x Ly x Lx
+        nlowhigh : int
+            number of frames to average at top and bottom of each PC
+        nPC : int
+            number of PCs to compute
+
+        Returns
+        -------
+            pclow : float, array
+                average of bottom of spatial PC: nPC x Ly x Lx
+            pchigh : float, array
+                average of top of spatial PC: nPC x Ly x Lx
+            w : float, array
+                singular values of decomposition of mov
+            v : float, array
+                frames x nPC, how the PCs vary across frames
+
+    """
     nframes, Ly, Lx = mov.shape
     tic=time.time()
     mov = mov.reshape((nframes, -1))
@@ -39,11 +63,33 @@ def pclowhigh(mov, nlowhigh, nPC):
         pchigh[i] = mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
     return pclow, pchigh, w, v
 
-def cov_worker(mov):
-    return mov @ mov.T
+def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, preg=False):
+    """ register top and bottom of PCs to each other
 
-def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=5, preg=True):
-    ''' register top and bottom of PCs to each other '''
+        Parameters
+        ----------
+        pclow : float, array
+            average of bottom of spatial PC: nPC x Ly x Lx
+        pchigh : float, array
+            average of top of spatial PC: nPC x Ly x Lx
+        refImg : int16, array
+            reference image from registration
+        smooth_sigma : :obj:`int`, optional
+            default 1.15, see registration settings
+        block_size : :obj:`tuple`, optional
+            default (128,128), see registration settings
+        maxregshift : :obj:`float`, optional
+            default 0.1, see registration settings
+        maxregshiftNR : :obj:`int`, optional
+            default 10, see registration settings
+        1Preg : :obj:`bool`, optional
+            default True, see 1Preg settings
+
+        Returns
+        -------
+            X : float, array
+                nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+    """
     # registration settings
     ops = {
         'num_workers': -1,
@@ -56,7 +102,7 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         'subpixel': 10,
         'smooth_sigma': smooth_sigma,
         'smooth_sigma_time': 0,
-        '1Preg': False,
+        '1Preg': preg,
         'pad_fft': False,
         'bidiphase': 0,
         'refImg': refImg
@@ -67,25 +113,35 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
     for i in range(nPC):
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
-        X[i,:] = pc_register_worker([ops, refImg, Img])
-
-    return X
-
-def pc_register_worker(inputs):
-    ops, refImg, Img = inputs
-    refAndMasks = register.prepare_refAndMasks(refImg, ops)
-    dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(Img, refAndMasks, ops)
-    X = np.zeros((3,))
-    X[1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
-    X[0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-    X[2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+        refAndMasks = register.prepare_refAndMasks(refImg, ops)
+        dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(Img, refAndMasks, ops)
+        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
+        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
+        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
     return X
 
 def get_pc_metrics(ops, use_red=False):
-    ''' computes registration metrics using top PCs of registered movie
+    """ computes registration metrics using top PCs of registered movie
+
         movie saved as binary file ops['reg_file']
         metrics saved to ops['regPC'] and ops['X']
-    '''
+        'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+        'regPC' is average of top and bottom frames for each PC
+        'tPC' is PC across time frames
+
+        Parameters
+        ----------
+        ops : dict
+            requires 'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+        use_red : :obj:`bool`, optional
+            default False, whether to use 'reg_file' or 'reg_file_chan2'
+
+        Returns
+        -------
+            ops : dict
+                adds 'regPC' and 'tPC' and 'regDX'
+
+    """
     nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
     if ops['nframes'] < 5000:
         nsamp = min(2000, ops['nframes'])
@@ -104,8 +160,15 @@ def get_pc_metrics(ops, use_red=False):
         ops['block_size']   = [128, 128]
     if 'maxregshiftNR' not in ops:
         ops['maxregshiftNR'] = 5
+    if 'smooth_sigma' not in ops:
+        ops['smooth_sigma'] = 1.15
+    if 'maxregshift' not in ops:
+        ops['maxregshift'] = 0.1
+    if '1Preg' not in ops:
+        ops['1Preg'] = False
     if 'refImg' in ops:
         refImg = ops['refImg']
+
     else:
         refImg = mov.mean(axis=0)
     X    = pc_register(pclow, pchigh, refImg,

@@ -239,7 +239,9 @@ class MergeWindow(QtGui.QDialog):
         self.compute_merge_list(parent)
 
     def do_merge(self, parent):
-        merge_ROIs(parent)
+        merge_activity_masks(parent)
+        parent.merged.append(parent.imerge)
+        parent.update_plot()
         for ilist in self.merge_list:
             for n in range(ilist.size):
                 if parent.stat[ilist[n]]['inmerge'] > 0:

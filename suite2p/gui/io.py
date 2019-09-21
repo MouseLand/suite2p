@@ -237,10 +237,10 @@ def load_proc(parent):
             print("stat.npy found, but other files not in folder")
             Text = ("stat.npy found, but other files missing, "
                     "choose another?")
-            parent.load_again(Text)
+            load_again(parent, Text)
     else:
         Text = "Incorrect file, not a stat.npy, choose another?"
-        parent.load_again(Text)
+        load_again(parent, Text)
 
 def load_behavior(parent):
     name = QtGui.QFileDialog.getOpenFileName(

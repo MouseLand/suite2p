@@ -104,7 +104,7 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
+        #statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile

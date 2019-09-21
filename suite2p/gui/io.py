@@ -83,8 +83,8 @@ def make_masks_and_enable_buttons(parent):
         parent.xyrat = 1.0
     parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
     parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)
-    parent.p2.setXLink(parent.p1)
-    parent.p2.setYLink(parent.p1)
+    #parent.p2.setXLink(parent.p1)
+    #parent.p2.setYLink(parent.p1)
     parent.loaded = True
     parent.mode_change(2)
     parent.show()
@@ -129,13 +129,18 @@ def enable_views_and_classifier(parent):
     for btn in parent.sizebtns.buttons():
         btn.setStyleSheet(parent.styleUnpressed)
         btn.setEnabled(True)
-        if b == 1:
+        if b == 0:
             btn.setChecked(True)
             btn.setStyleSheet(parent.stylePressed)
+            btn.press(parent)
         b += 1
     for b in range(3):
-        parent.topbtns.button(b).setEnabled(False)
-        parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
+        if b==0:
+            parent.topbtns.button(b).setEnabled(True)
+            parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        else:
+            parent.topbtns.button(b).setEnabled(False)
+            parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
     # enable classifier menu
     parent.loadClass.setEnabled(True)
     parent.loadTrain.setEnabled(True)

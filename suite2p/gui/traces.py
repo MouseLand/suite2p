@@ -184,13 +184,13 @@ def expand_trace(parent):
     parent.level += 1
     parent.level = np.minimum(5, parent.level)
     parent.win.ci.layout.setRowStretchFactor(1, parent.level)
-    parent.p1.zoom_plot()
+    #parent.p1.zoom_plot()
 
 def collapse_trace(parent):
     parent.level -= 1
     parent.level = np.maximum(1, parent.level)
     parent.win.ci.layout.setRowStretchFactor(1, parent.level)
-    parent.p1.zoom_plot()
+    #parent.p1.zoom_plot()
 
 def nc_chosen(parent):
     if parent.loaded:

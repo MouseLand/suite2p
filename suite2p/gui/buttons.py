@@ -112,9 +112,11 @@ class SizeButton(QtGui.QPushButton):
         self.setStyleSheet(parent.styleInactive)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid))
+        self.clicked.connect(lambda: self.press(parent))
+        self.bid = bid
         self.show()
-    def press(self, parent, bid):
+    def press(self, parent):
+        bid = self.bid
         for b in parent.sizebtns.buttons():
             b.setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)

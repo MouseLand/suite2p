@@ -1,14 +1,14 @@
 from PyQt5 import QtGui, QtCore
-from suite2p.extract import extract, dcnv, masks
-from suite2p.detect import sparsedetect
 import pyqtgraph as pg
 import os
 import sys
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
 import time
-from suite2p.gui import io
 from scipy import stats
+from ..extraction import extract, dcnv, masks
+from ..detection import sparsedetect
+from . import io
 
 
 def masks_and_traces(ops, stat, stat_orig):

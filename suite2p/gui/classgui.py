@@ -2,10 +2,10 @@ from PyQt5 import QtGui, QtCore
 import sys
 import numpy as np
 import os
-from suite2p.gui import masks, io
-from suite2p.classify import classifier
 import __main__
 import shutil
+from ..classification import classifier
+from . import masks, io
 
 #def make_buttons(parent)
 

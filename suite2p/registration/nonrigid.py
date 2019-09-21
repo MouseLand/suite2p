@@ -2,11 +2,9 @@ import numpy as np
 from numpy import fft
 from scipy.fftpack import next_fast_len
 from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
-from scipy.ndimage import gaussian_filter, map_coordinates
-from skimage.transform import warp#, PiecewiseAffineTransform
 import math
 from mkl_fft import fft2, ifft2
-from suite2p.register import utils
+from . import utils
 
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
 lpad = 3   # upsample from a square +/- lpad

@@ -6,11 +6,11 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pyqtgraph import GraphicsScene
-from suite2p.gui import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 import warnings
 import __main__
+from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -104,7 +104,7 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'D:/grive/suite2python/BootCamp/cerebellum/stat.npy'
+        statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
@@ -123,45 +123,7 @@ class MainWindow(QtGui.QMainWindow):
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.l0.addWidget(self.checkBox, 0, 0, 1, 2)
 
-        # number of ROIs in each image
-        self.lcell0 = QtGui.QLabel("")
-        self.lcell0.setStyleSheet("color: white;")
-        self.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.l0.addWidget(self.lcell0, 0, 12, 1, 2)
-        self.lcell1 = QtGui.QLabel("")
-        self.lcell1.setStyleSheet("color: white;")
-        self.l0.addWidget(self.lcell1, 0, 20, 1, 2)
-
-        # buttons to draw a square on view
-        self.topbtns = QtGui.QButtonGroup()
-        ql = QtGui.QLabel("select cells")
-        ql.setStyleSheet("color: white;")
-        ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.l0.addWidget(ql, 0, 2, 1, 2)
-        pos = [2, 3, 4]
-        for b in range(3):
-            btn = buttons.TopButton(b, self)
-            btn.setFont(QtGui.QFont("Arial", 8))
-            self.topbtns.addButton(btn, b)
-            self.l0.addWidget(btn, 0, (pos[b]) * 2, 1, 2)
-            btn.setEnabled(False)
-        self.topbtns.setExclusive(True)
-        self.isROI = False
-        self.ROIplot = 0
-        ql = QtGui.QLabel("n=")
-        ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        ql.setStyleSheet("color: white;")
-        ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.l0.addWidget(ql, 0, 10, 1, 1)
-        self.topedit = QtGui.QLineEdit(self)
-        self.topedit.setValidator(QtGui.QIntValidator(0, 500))
-        self.topedit.setText("40")
-        self.ntop = 40
-        self.topedit.setFixedWidth(35)
-        self.topedit.setAlignment(QtCore.Qt.AlignRight)
-        self.topedit.returnPressed.connect(self.top_number_chosen)
-        self.l0.addWidget(self.topedit, 0, 11, 1, 1)
-
+        buttons.make_selection(self)
         buttons.make_cellnotcell(self)
         b0=views.make_buttons(self) # b0 says how many
         b0=masks.make_buttons(self,b0)
@@ -169,6 +131,7 @@ class MainWindow(QtGui.QMainWindow):
         b0+=1
         b0=classgui.make_buttons(self, b0)
         b0+=1
+
         # ------ CELL STATS / ROI SELECTION --------
         # which stats
         self.stats_to_show = [
@@ -454,47 +417,8 @@ class MainWindow(QtGui.QMainWindow):
             if not self.sizebtns.button(1).isChecked():
                 for b in [1, 2]:
                     if self.topbtns.button(b).isChecked():
-                        self.top_selection(b)
+                        self.topbtns.button(b).top_selection(parent)
                         self.show()
-
-    def top_selection(self, bid):
-        self.ROI_remove()
-        draw = False
-        ncells = len(self.stat)
-        icells = np.minimum(ncells, self.ntop)
-        if bid == 1:
-            top = True
-        elif bid == 2:
-            top = False
-        if self.sizebtns.button(0).isChecked():
-            wplot = 0
-            draw = True
-        elif self.sizebtns.button(2).isChecked():
-            wplot = 1
-            draw = True
-        if draw:
-            if self.ops_plot['color'] != 0:
-                c = self.ops_plot['color']
-                istat = self.colors['istat'][c]
-                if wplot == 0:
-                    icell = np.array(self.iscell.nonzero()).flatten()
-                    istat = istat[self.iscell]
-                else:
-                    icell = np.array((~self.iscell).nonzero()).flatten()
-                    istat = istat[~self.iscell]
-                inds = istat.argsort()
-                if top:
-                    inds = inds[-icells:]
-                    self.ichosen = icell[inds[-1]]
-                else:
-                    inds = inds[:icells]
-                    self.ichosen = icell[inds[0]]
-                self.imerge = []
-                for n in inds:
-                    self.imerge.append(icell[n])
-                # draw choices
-                self.update_plot()
-                self.show()
 
     def ROI_selection(self):
         draw = False

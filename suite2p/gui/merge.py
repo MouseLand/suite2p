@@ -1,14 +1,14 @@
 import numpy as np
 import pyqtgraph as pg
 from scipy import stats
-from suite2p import utils
-from suite2p.extract import dcnv
-from suite2p.detect import sparsedetect
-from suite2p.gui import masks
 import math
 from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
 import time
+from .. import utils
+from ..extraction import dcnv
+from ..detection import sparsedetect
+from . import masks
 
 def distance_matrix(parent, ilist):
     idist = 1e6 * np.ones((len(ilist), len(ilist)))

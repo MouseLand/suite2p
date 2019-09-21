@@ -1,7 +1,7 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
-from suite2p.gui import reggui, drawroi, merge, io, rungui, visualize
 from pkg_resources import iter_entry_points
+from . import reggui, drawroi, merge, io, rungui, visualize
 
 def mainmenu(parent):
     main_menu = parent.menuBar()

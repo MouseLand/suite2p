@@ -2,9 +2,48 @@ from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 
+def make_selection(parent):
+    # buttons to draw a square on view
+    parent.topbtns = QtGui.QButtonGroup()
+    ql = QtGui.QLabel("select cells")
+    ql.setStyleSheet("color: white;")
+    ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+    parent.l0.addWidget(ql, 0, 2, 1, 2)
+    pos = [2, 3, 4]
+    for b in range(3):
+        btn = TopButton(b, parent)
+        btn.setFont(QtGui.QFont("Arial", 8))
+        parent.topbtns.addButton(btn, b)
+        parent.l0.addWidget(btn, 0, (pos[b]) * 2, 1, 2)
+        btn.setEnabled(False)
+    parent.topbtns.setExclusive(True)
+    parent.isROI = False
+    parent.ROIplot = 0
+    ql = QtGui.QLabel("n=")
+    ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+    ql.setStyleSheet("color: white;")
+    ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+    parent.l0.addWidget(ql, 0, 10, 1, 1)
+    parent.topedit = QtGui.QLineEdit(parent)
+    parent.topedit.setValidator(QtGui.QIntValidator(0, 500))
+    parent.topedit.setText("40")
+    parent.ntop = 40
+    parent.topedit.setFixedWidth(35)
+    parent.topedit.setAlignment(QtCore.Qt.AlignRight)
+    parent.topedit.returnPressed.connect(parent.top_number_chosen)
+    parent.l0.addWidget(parent.topedit, 0, 11, 1, 1)
 
 # minimize view
 def make_cellnotcell(parent):
+    # number of ROIs in each image
+    parent.lcell0 = QtGui.QLabel("")
+    parent.lcell0.setStyleSheet("color: white;")
+    parent.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+    parent.l0.addWidget(parent.lcell0, 0, 12, 1, 2)
+    parent.lcell1 = QtGui.QLabel("")
+    parent.lcell1.setStyleSheet("color: white;")
+    parent.l0.addWidget(parent.lcell1, 0, 20, 1, 2)
+
     parent.sizebtns = QtGui.QButtonGroup(parent)
     b = 0
     labels = [" cells", " both", " not cells"]
@@ -117,14 +156,17 @@ class TopButton(QtGui.QPushButton):
     def __init__(self, bid, parent=None):
         super(TopButton,self).__init__(parent)
         text = [' draw selection', ' select top n', ' select bottom n']
+        self.bid = bid
         self.setText(text[bid])
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
-        self.clicked.connect(lambda: self.press(parent, bid))
+        self.clicked.connect(lambda: self.press(parent))
         self.show()
-    def press(self, parent, bid):
+
+    def press(self, parent):
+        bid = self.bid
         if not parent.sizebtns.button(1).isChecked():
             if parent.ops_plot['color']==0:
                 for b in [1,2]:
@@ -142,4 +184,44 @@ class TopButton(QtGui.QPushButton):
         if bid==0:
             parent.ROI_selection()
         else:
-            parent.top_selection(bid)
+            self.top_selection(parent)
+
+    def top_selection(self, parent):
+        bid = self.bid
+        parent.ROI_remove()
+        draw = False
+        ncells = len(parent.stat)
+        icells = np.minimum(ncells, parent.ntop)
+        if bid == 1:
+            top = True
+        elif bid == 2:
+            top = False
+        if parent.sizebtns.button(0).isChecked():
+            wplot = 0
+            draw = True
+        elif parent.sizebtns.button(2).isChecked():
+            wplot = 1
+            draw = True
+        if draw:
+            if parent.ops_plot['color'] != 0:
+                c = parent.ops_plot['color']
+                istat = parent.colors['istat'][c]
+                if wplot == 0:
+                    icell = np.array(parent.iscell.nonzero()).flatten()
+                    istat = istat[parent.iscell]
+                else:
+                    icell = np.array((~parent.iscell).nonzero()).flatten()
+                    istat = istat[~parent.iscell]
+                inds = istat.argsort()
+                if top:
+                    inds = inds[-icells:]
+                    parent.ichosen = icell[inds[-1]]
+                else:
+                    inds = inds[:icells]
+                    parent.ichosen = icell[inds[0]]
+                parent.imerge = []
+                for n in inds:
+                    parent.imerge.append(icell[n])
+                # draw choices
+                parent.update_plot()
+                parent.show()

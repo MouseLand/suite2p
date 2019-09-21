@@ -1,9 +1,9 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
-from suite2p.gui import classgui, io
 from matplotlib.colors import hsv_to_rgb
 import matplotlib.cm
+from . import classgui, io
 
 def make_buttons(parent, b0):
     """ color buttons at row b0 """

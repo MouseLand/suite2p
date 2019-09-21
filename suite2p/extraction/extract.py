@@ -1,19 +1,11 @@
 import numpy as np
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from scipy import ndimage
-import math
-from suite2p import utils
-from suite2p.classify import classifier
-from suite2p.detect import sparsedetect, chan2detect, sourcery
-from suite2p.extract import masks
-import time
-from scipy.sparse import csr_matrix
+import time, os, shutil
 from scipy import stats
-import os
-import shutil
 import __main__
-
+from .. import utils
+from ..classification import classifier
+from ..detection import sparsedetect, chan2detect, sourcery
+from . import masks
 
 def extract_traces(ops, stat, neuropil_masks, reg_file):
     t0=time.time()

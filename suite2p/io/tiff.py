@@ -10,7 +10,7 @@ import scipy.io
 #from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from skimage.external.tifffile import imread, TiffFile, TiffWriter
-from suite2p.io import utils
+from . import utils
 
 def write(data, ops, k, ichan):
     """ writes frames to tiffs

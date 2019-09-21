@@ -2,10 +2,10 @@ import os
 import numpy as np
 import time, os, shutil
 from scipy.io import savemat
-from suite2p.io import tiff, h5
-from suite2p.register import register, metrics
-from suite2p.extract import extract, dcnv
-from suite2p import utils
+from .io import tiff, h5
+from .registration import register, metrics
+from .extraction import extract, dcnv
+from . import utils
 try:
     from haussmeister import haussio
     HAS_HAUS = True

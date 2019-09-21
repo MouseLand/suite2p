@@ -1,11 +1,10 @@
 import numpy as np
+import time
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
-from scipy import ndimage
 import math
-from suite2p import utils
-from suite2p.detect import sparsedetect
-import time
+from .. import utils
+from . import sparsedetect
 
 def getSVDdata(ops):
     mov, max_proj = sparsedetect.get_mov(ops)
@@ -44,7 +43,7 @@ def getSVDproj(ops, u):
     if ('smooth_masks' in ops) and ops['smooth_masks']:
         sig = np.maximum([.5, .5], ops['diameter']/20.)
         for j in range(nbins):
-            mov[j,:,:] = ndimage.gaussian_filter(mov[j,:,:], sig)
+            mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
     if 1:
         #sdmov = np.ones((Lyc*Lxc,), 'float32')
         sdmov = sparsedetect.get_sdmov(mov, ops)

@@ -1,6 +1,7 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
+from ..utils import enhanced_mean_image
 
 def make_buttons(parent):
     """ view buttons"""
@@ -51,7 +52,7 @@ def init_views(parent):
     for k in range(7):
         if k==2:
             if 'meanImgE' not in parent.ops:
-                ops = utils.enhanced_mean_image(ops)
+                parent.ops = enhanced_mean_image(parent.ops)
             mimg = parent.ops['meanImgE']
         elif k==1:
             mimg = parent.ops['meanImg']

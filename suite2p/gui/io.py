@@ -2,9 +2,9 @@ from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 import os
-from suite2p.gui import masks,classgui,traces,views, graphics
-from suite2p import utils
 import time
+from .. import utils
+from . import masks,classgui,traces,views, graphics
 
 def make_masks_and_enable_buttons(parent):
     parent.checkBox.setChecked(True)

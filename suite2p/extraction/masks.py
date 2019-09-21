@@ -1,11 +1,6 @@
 import numpy as np
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from scipy import ndimage
-import math
-from suite2p import utils
-from suite2p.classify import classifier
-from suite2p.detect import sparsedetect, chan2detect, sourcery
+from .. import utils
+from ..detection import sparsedetect
 
 def create_cell_masks(ops, stat):
     '''creates cell masks for ROIs in stat and computes radii

@@ -7,7 +7,7 @@ from scipy import signal
 from scipy import stats, signal
 from scipy.sparse import linalg
 import scipy.io
-from suite2p.io import utils
+from . import utils
 
 def h5py_to_binary(ops):
     """  finds h5 files and writes them to binaries

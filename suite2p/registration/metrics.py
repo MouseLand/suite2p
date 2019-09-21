@@ -1,13 +1,8 @@
-from numpy import fft
 import numpy as np
-import multiprocessing
-from multiprocessing import Pool
-import sys
-from suite2p.register import register, nonrigid
 from scipy.signal import convolve2d
-from scipy.sparse import linalg
 from sklearn.decomposition import PCA
 from suite2p.utils import sample_frames
+from . import register, nonrigid
 
 try:
     import cv2

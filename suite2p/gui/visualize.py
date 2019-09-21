@@ -9,8 +9,7 @@ from matplotlib import cm
 import time
 import sys,os
 from rastermap.mapping import Rastermap
-#from mapping import Rastermap
-from suite2p.gui import rungui,masks
+from . import rungui,masks
 
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):

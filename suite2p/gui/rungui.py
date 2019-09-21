@@ -3,8 +3,8 @@ import pyqtgraph as pg
 from pyqtgraph import console
 import sys, json, os, pickle, time, shutil
 import numpy as np
-from suite2p.gui import io
-from suite2p import run_s2p
+from .. import run_s2p
+from . import io
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 

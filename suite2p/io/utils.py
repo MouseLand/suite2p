@@ -7,6 +7,9 @@ def list_h5(ops):
     froot = os.path.dirname(ops['h5py'])
     lpath = os.path.join(froot, "*.h5")
     fs = natsorted(glob.glob(lpath))
+    lpath = os.path.join(froot, "*.hdf5")
+    fs2 = natsorted(glob.glob(lpath))
+    fs.extend(fs2)
     return fs
 
 def list_tifs(froot, look_one_level_down):

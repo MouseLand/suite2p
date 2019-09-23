@@ -217,7 +217,11 @@ def get_stat(ops, stat, Ucell, codes):
     d0 = d0.astype('float32')
     rs    = rs[rs<=1.]
     frac = 0.5
+
+    # Remove empty cells
+    stat = [elem for elem in stat if len(elem['ypix']) != 0]
     ncells = len(stat)
+    
     footprints = np.zeros((ncells,))
     for k in range(0,ncells):
         stat0 = stat[k]

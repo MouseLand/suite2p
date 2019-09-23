@@ -179,7 +179,7 @@ class ROIDraw(QtGui.QMainWindow):
         for names in self.views:
             btn = ViewButton(b, "&" + names, self)
             self.viewbtns.addButton(btn, b)
-            self.l0.addWidget(btn, b, 3, 1, 2)
+            self.l0.addWidget(btn, b, 4, 1, 2)
             btn.setEnabled(True)
             b += 1
         b = 0

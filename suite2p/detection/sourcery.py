@@ -221,8 +221,7 @@ def get_stat(ops, stat, Ucell, codes):
     # Remove empty cells
     stat = [elem for elem in stat if len(elem['ypix']) != 0]
     ncells = len(stat)
-    print(ncells)
-
+    
     footprints = np.zeros((ncells,))
     for k in range(0,ncells):
         stat0 = stat[k]

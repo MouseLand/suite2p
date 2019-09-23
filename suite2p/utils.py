@@ -136,7 +136,7 @@ def sample_frames(ops, ix, reg_file, crop=True):
     Parameters
     ----------
     ops : dict
-        requires 'badframes', 'yrange', 'xrange', 'Ly', 'Lx'
+        requires 'yrange', 'xrange', 'Ly', 'Lx'
     ix : int, array
         frames to take
     reg_file : str
@@ -149,8 +149,9 @@ def sample_frames(ops, ix, reg_file, crop=True):
         mov : int16, array
             frames x Ly x Lx
     """
-    bad_frames = ops['badframes']
-    ix = ix[bad_frames[ix]==0]
+    if 'badframes' in ops:
+        bad_frames = ops['badframes']
+        ix = ix[bad_frames[ix]==0]
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)

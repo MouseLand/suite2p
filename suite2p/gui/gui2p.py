@@ -95,6 +95,9 @@ class MainWindow(QtGui.QMainWindow):
         # so they're on top of plot, draw last
         buttons.make_quadrants(self)
 
+        #EnsemblePursuitButtons
+        epbuttons=buttons.ensemble_pursuit_buttons(self)
+
         # initialize merges
         self.merged = []
         self.imerge = [0]
@@ -651,6 +654,18 @@ class MainWindow(QtGui.QMainWindow):
         self.p2.setXRange(imin[1], imax[1])
         self.win.show()
         self.show()
+
+    def add_neuron_to_ensemble(self):
+        print('Fbin shape',self.Fbin.shape)
+        print('imerge',self.imerge)
+        current_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+        print('v',current_v)
+        cost_vector=np.clip(self.Fbin@current_v,a_min=0,a_max=None)**2
+        cost_vector[self.imerge]=-1000
+        new_neuron=np.argmax(cost_vector)
+        print('new neuron',new_neuron)
+        self.imerge.append(new_neuron)
+        self.update_plot()
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)

@@ -67,6 +67,8 @@ def ensemble_pursuit_buttons(parent):
         parent.l0.addWidget(btn, 0, 22 + 2 * b, 1, 2)
         if b==0:
             btn.clicked.connect(lambda: parent.add_neuron_to_ensemble())
+        if b==1:
+            btn.clicked.connect(lambda: parent.fit_one_ensemble())
         b+=1
 
 ###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############

@@ -11,6 +11,9 @@ from scipy.interpolate import interp1d
 import warnings
 import __main__
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
+import sys
+sys.path.append("..")
+from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuitNumpyFast import EnsemblePursuitNumpyFast
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -669,6 +672,49 @@ class MainWindow(QtGui.QMainWindow):
         self.imerge.append(new_neuron)
         self.update_plot()
         self.show()
+
+    def mapping_sel_to_entire_arr(self,cel_inds_to_sel):
+        i=0
+        ix_dict={}
+        for j in range(self.Fbin.shape[0]):
+            if j in cel_inds_to_sel:
+                ix_dict[i]=j
+                i+=1
+        return ix_dict
+
+
+    def fit_one_ensemble(self):
+        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+        cell_inds=np.nonzero(self.iscell==True)
+        non_cell_inds=np.nonzero(self.iscell==False)
+        if self.ichosen in non_cell_inds[0]:
+            cell_inds_not_to_select=np.sort(list(cell_inds[0])+self.imerge)
+            print(cell_inds_not_to_select)
+            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
+            print(cel_inds_to_sel)
+            X=self.Fbin[cel_inds_to_sel,:]
+            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+        if self.ichosen in cell_inds[0]:
+            cell_inds_not_to_select=np.sort(list(non_cell_inds[0])+self.imerge)
+            print(cell_inds_not_to_select)
+            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
+            X=self.Fbin[cel_inds_to_sel,:]
+            print(cel_inds_to_sel)
+            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=None)
+        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+        selected_neurons=ep_np.fit_one_ensemble_suite2p(X,starting_v)
+        sel=np.nonzero(selected_neurons==True)
+        cells_to_draw=[]
+        for cell in sel[0]:
+            cells_to_draw.append(ix_dict[cell])
+        self.imerge=self.imerge+cells_to_draw
+        self.update_plot()
+        self.show()
+
+
+
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)

@@ -107,7 +107,7 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
+        statfile = '/home/flora/Documents/plane0/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
@@ -656,16 +656,19 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
 
     def add_neuron_to_ensemble(self):
-        print('Fbin shape',self.Fbin.shape)
-        print('imerge',self.imerge)
         current_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        print('v',current_v)
         cost_vector=np.clip(self.Fbin@current_v,a_min=0,a_max=None)**2
         cost_vector[self.imerge]=-1000
+        cell_inds=np.nonzero(self.iscell==True)
+        non_cell_inds=np.nonzero(self.iscell==False)
+        if self.ichosen in non_cell_inds[0]:
+            cost_vector[cell_inds]=-1000
+        if self.ichosen in cell_inds[0]:
+            cost_vector[non_cell_inds]=-1000
         new_neuron=np.argmax(cost_vector)
-        print('new neuron',new_neuron)
         self.imerge.append(new_neuron)
         self.update_plot()
+        self.show()
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)

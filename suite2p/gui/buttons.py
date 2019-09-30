@@ -59,7 +59,7 @@ def make_cellnotcell(parent):
 
 def ensemble_pursuit_buttons(parent):
     parent.epbtns = QtGui.QButtonGroup()
-    labels=["add one cell","fit one ensemble"]
+    labels=["add one cell","fit one ensemble","select seed"]
     b=0
     for l in labels:
         btn=QtGui.QPushButton()
@@ -69,6 +69,8 @@ def ensemble_pursuit_buttons(parent):
             btn.clicked.connect(lambda: parent.add_neuron_to_ensemble())
         if b==1:
             btn.clicked.connect(lambda: parent.fit_one_ensemble())
+        #if b==2:
+            #btn.clicked.connect(lambda: parent.compute_seed())
         b+=1
 
 ###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############

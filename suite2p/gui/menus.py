@@ -1,7 +1,7 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 from pkg_resources import iter_entry_points
-from . import reggui, drawroi, merge, io, rungui, visualize
+from . import reggui, drawroi, merge, io, rungui, visualize, ensemble_pursuit
 
 def mainmenu(parent):
     main_menu = parent.menuBar()
@@ -101,6 +101,9 @@ def visualizations(parent):
     parent.custommask.triggered.connect(lambda: io.load_custom_mask(parent))
     parent.custommask.setEnabled(False)
     vis_menu.addAction(parent.custommask)
+    parent.ep = QtGui.QAction("&EnsemblePursuit", parent)
+    parent.ep.triggered.connect(lambda: ep_window(parent))
+    vis_menu.addAction(parent.ep)
 
 def registration(parent):
     # registration menuBar
@@ -163,3 +166,7 @@ def regPC_window(parent):
 def suggest_merge(parent):
     MergeWindow = merge.MergeWindow(parent)
     MergeWindow.show()
+
+def ep_window(parent):
+    EPW=ensemble_pursuit.EPWindow(parent)
+    EPW.show()

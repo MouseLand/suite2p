@@ -111,6 +111,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # load initial file
         statfile = '/home/flora/Documents/plane0/stat.npy'
+        #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
@@ -683,35 +684,70 @@ class MainWindow(QtGui.QMainWindow):
         return ix_dict
 
 
+
     def fit_one_ensemble(self):
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
         cell_inds=np.nonzero(self.iscell==True)
         non_cell_inds=np.nonzero(self.iscell==False)
         if self.ichosen in non_cell_inds[0]:
             cell_inds_not_to_select=np.sort(list(cell_inds[0])+self.imerge)
-            print(cell_inds_not_to_select)
+            #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            print(cel_inds_to_sel)
+            #print(cel_inds_to_sel)
             X=self.Fbin[cel_inds_to_sel,:]
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
         if self.ichosen in cell_inds[0]:
             cell_inds_not_to_select=np.sort(list(non_cell_inds[0])+self.imerge)
-            print(cell_inds_not_to_select)
+            #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
             X=self.Fbin[cel_inds_to_sel,:]
-            print(cel_inds_to_sel)
+            #print(cel_inds_to_sel)
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+        print(X.shape)
+        np.save('Fbin.npy',X)
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=None)
+        options_dict={'seed_neuron_av_nr':100,'min_assembly_size':8}
+        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=options_dict)
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        selected_neurons=ep_np.fit_one_ensemble_suite2p(X,starting_v)
-        sel=np.nonzero(selected_neurons==True)
+        C=X@X.T
+        selected_neurons=ep_np.fit_one_ensemble_suite2p(X,C,starting_v)
+        print(selected_neurons)
+        sel=np.nonzero(selected_neurons==1)
         cells_to_draw=[]
-        for cell in sel[0]:
+        print(list(sel[0]))
+        for cell in list(sel[0]):
             cells_to_draw.append(ix_dict[cell])
         self.imerge=self.imerge+cells_to_draw
         self.update_plot()
         self.show()
+
+    def compute_seed(self):
+        cell_inds=np.nonzero(self.iscell==True)
+        non_cell_inds=np.nonzero(self.iscell==False)
+        if self.ichosen in non_cell_inds[0]:
+            cell_inds_not_to_select=np.sort(list(cell_inds[0]))
+            #print(cell_inds_not_to_select)
+            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
+            #print(cel_inds_to_sel)
+            X=self.Fbin[cel_inds_to_sel,:]
+            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+        if self.ichosen in cell_inds[0]:
+            cell_inds_not_to_select=np.sort(list(non_cell_inds[0]))
+            #print(cell_inds_not_to_select)
+            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
+            X=self.Fbin[cel_inds_to_sel,:]
+            #print(cel_inds_to_sel)
+            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+        options_dict={'seed_neuron_av_nr':100,'min_assembly_size':8}
+        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=options_dict)
+        C=X@X.T
+        seed=ep_np.repeated_seed(C,-1)
+        print('seed',seed)
+        self.imerge=[ix_dict[seed]]
+        self.update_plot()
+        self.show()
+
+
 
 
 

@@ -13,7 +13,8 @@ import __main__
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 import sys
 sys.path.append("..")
-from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuitNumpyFast import EnsemblePursuitNumpyFast
+from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import EnsemblePursuit
+from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import new_ensemble
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -694,28 +695,24 @@ class MainWindow(QtGui.QMainWindow):
             #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
             #print(cel_inds_to_sel)
-            X=self.Fbin[cel_inds_to_sel,:]
+            X=self.Fbin[cel_inds_to_sel,:].T
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
         if self.ichosen in cell_inds[0]:
             cell_inds_not_to_select=np.sort(list(non_cell_inds[0])+self.imerge)
             #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            X=self.Fbin[cel_inds_to_sel,:]
+            X=self.Fbin[cel_inds_to_sel,:].T
             #print(cel_inds_to_sel)
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
-        print(X.shape)
-        np.save('Fbin.npy',X)
+        print('X shape',X.shape)
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        options_dict={'seed_neuron_av_nr':100,'min_assembly_size':8}
-        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=options_dict)
-        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        C=X@X.T
-        selected_neurons=ep_np.fit_one_ensemble_suite2p(X,C,starting_v)
-        print(selected_neurons)
-        sel=np.nonzero(selected_neurons==1)
+        C=X.T@X
+        selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
+        #print(selected_neurons)
+        #sel=np.nonzero(selected_neurons==1)
         cells_to_draw=[]
-        print(list(sel[0]))
-        for cell in list(sel[0]):
+        #print(list(sel[0]))
+        for cell in list(selected_neurons):
             cells_to_draw.append(ix_dict[cell])
         self.imerge=self.imerge+cells_to_draw
         self.update_plot()

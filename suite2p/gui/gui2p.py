@@ -15,6 +15,7 @@ import sys
 sys.path.append("..")
 from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import EnsemblePursuit
 from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import new_ensemble
+from scipy.stats import zscore
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -705,6 +706,7 @@ class MainWindow(QtGui.QMainWindow):
             #print(cel_inds_to_sel)
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
         print('X shape',X.shape)
+        X=zscore(X,axis=0)
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
         C=X.T@X
         selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)

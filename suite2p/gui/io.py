@@ -5,6 +5,7 @@ import os
 import time
 from .. import utils
 from . import masks,classgui,traces,views, graphics
+import scipy.io as io
 
 def make_masks_and_enable_buttons(parent):
     parent.checkBox.setChecked(True)

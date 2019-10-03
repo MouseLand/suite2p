@@ -46,6 +46,11 @@ class EPWindow(QtGui.QMainWindow):
         self.epOn.clicked.connect(lambda: self.compute_ep(parent))
         self.l0.addWidget(self.epOn,0,0,1,2)
 
+        self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
+        self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
+        self.selectBtn.setEnabled(True)
+        self.l0.addWidget(self.selectBtn,1,0,1,2)
+
     def compute_ep(self, parent):
         ops = {'n_components': 25, 'lam': 0.01}
         self.n_components=ops['n_components']
@@ -73,8 +78,10 @@ class EPWindow(QtGui.QMainWindow):
         #self.all_v.plot(self.V.T)
         self.all_v.setYRange(0, self.V.shape[1], padding=0)
         self.linep=[]
-        for j in range(self.V.shape[1]):
+        for j in range(0,self.V.shape[1]):
             self.linep.append(self.all_v.plot(self.V.T[j,:]+j, clickable=True))
+        self.selected_ensemble=0
+        self.linep[0]=self.all_v.plot(self.V.T[0,:], clickable=True,pen='b')
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         self.show()
         self.win.show()
@@ -89,5 +96,12 @@ class EPWindow(QtGui.QMainWindow):
             if ranges[j]<=pos<=ranges[j+1]:
                 print(j)
                 self.linep[j]=self.all_v.plot(self.V.T[j,:]+j, clickable=True,pen='b')
+                self.selected_ensemble=j
+            else:
+                self.linep.append(self.all_v.plot(self.V.T[j,:]+j, clickable=True))
         self.show()
         self.win.show()
+
+    def select_cells(self,parent):
+        print(self.U.shape)
+        print(self.U[:,self.selected_ensemble])

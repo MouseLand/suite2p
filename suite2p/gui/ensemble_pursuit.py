@@ -105,3 +105,12 @@ class EPWindow(QtGui.QMainWindow):
     def select_cells(self,parent):
         print(self.U.shape)
         print(self.U[:,self.selected_ensemble])
+        self.selected=np.nonzero(self.U[:,self.selected_ensemble])[0]
+        parent.imerge = []
+        if self.selected.size < 5000:
+            for n in self.selected:
+                parent.imerge.append(n)
+            parent.ichosen = parent.imerge[0]
+            parent.update_plot()
+        else:
+            print('too many cells selected')

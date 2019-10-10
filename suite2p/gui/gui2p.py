@@ -13,9 +13,12 @@ import __main__
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 import sys
 sys.path.append("..")
-from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import EnsemblePursuit
-from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import new_ensemble
+import sys
+sys.path.insert(1, '/home/maria/Documents/EnsemblePursuit')
+from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
+from EnsemblePursuit.EnsemblePursuit import new_ensemble
 from scipy.stats import zscore
+
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -112,7 +115,7 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/home/flora/Documents/plane0/stat.npy'
+        statfile = '/home/maria/Documents/plane0/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:

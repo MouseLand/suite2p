@@ -11,8 +11,8 @@ import sys,os
 from rastermap.mapping import Rastermap
 from . import rungui,masks
 import sys
-sys.path.append("..")
-from EnsemblePursuit.EnsemblePursuitModule.EnsemblePursuit import EnsemblePursuit
+sys.path.insert(1, '/home/maria/Documents/EnsemblePursuit')
+from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 
 class EPWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -59,8 +59,9 @@ class EPWindow(QtGui.QMainWindow):
         self.epOn.setEnabled(False)
         self.tic=time.time()
         #try:
-        self.model = EnsemblePursuit(n_components=ops['n_components'],lam=ops['lam'])
-        self.U,self.V=self.model.fit(self.sp)
+        self.model = EnsemblePursuit(n_components=ops['n_components'],lam=ops['lam']).fit(self.sp)
+        self.U=self.model.weights
+        self.V=self.model.components_
             #proc  = {'embedding': model.embedding, 'uv': [model.u, model.v],
             #         'ops': ops, 'filename': args.S, 'train_time': train_time}
             #basename, fname = os.path.split(args.S)

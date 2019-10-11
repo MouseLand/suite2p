@@ -61,13 +61,14 @@ class EPWindow(QtGui.QMainWindow):
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn,1,0,1,2)
         #ROI
-        nn,nt=self.sp.shape
+        nt,nn=self.sp.shape
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
                                 width=3,
                                 style=QtCore.Qt.SolidLine)
         n_ensembles=25
+        print('spshape',self.sp.shape)
         self.ROI = pg.RectROI([0,0], [nt, 25],
-                      maxBounds=QtCore.QRectF(-1.,-1.,nn+1,nt+1),
+                      maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
         self.ROI.handleSize = 10
         self.ROI.handlePen = redpen

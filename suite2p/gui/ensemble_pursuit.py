@@ -67,14 +67,14 @@ class EPWindow(QtGui.QMainWindow):
                                 style=QtCore.Qt.SolidLine)
         n_ensembles=25
         print('spshape',self.sp.shape)
-        self.ROI = pg.RectROI([0,0], [nt, 25],
+        self.ROI = pg.RectROI([0,0], [nt, 10],
                       maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
         self.ROI.handleSize = 10
         self.ROI.handlePen = redpen
         # Add top and right Handles
-        self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
-        self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
+        #self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
+        #self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
         #self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         #self.p1.addItem(self.ROI)
 
@@ -154,3 +154,18 @@ class EPWindow(QtGui.QMainWindow):
             parent.update_plot()
         else:
             print('too many cells selected')
+
+    def keyPressEvent(self, event):
+        if event.modifiers() !=  QtCore.Qt.ShiftModifier:
+            if event.key() == QtCore.Qt.Key_Down:
+                bid = 0
+            elif event.key() == QtCore.Qt.Key_Up:
+                bid=1
+            if bid >= 0:
+                move = True
+                if bid==1:
+                    pos = self.ROI.pos()
+                    posy = pos.y()
+                    posx=pos.x()
+                if move:
+                    self.ROI.setPos([posx, posy+10])

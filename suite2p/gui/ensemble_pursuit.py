@@ -36,11 +36,21 @@ class EPWindow(QtGui.QMainWindow):
 
         self.sp=parent.Fbin.T
 
-        self.all_v = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
-        self.imgROI = pg.ImageItem(autoDownsample=True)
-        #self.p2.addItem(self.imgROI)
-        self.all_v.setMouseEnabled(x=True,y=True)
-        #self.p2.setLabel('left', 'neurons')
+        self.type_of_plot='U'
+
+        if self.type_of_plot=='U':
+            self.sample_u= self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
+            self.imgROI = pg.ImageItem(autoDownsample=True)
+            #self.p2.addItem(self.imgROI)
+            self.sample_u.setMouseEnabled(x=True,y=True)
+            #self.p2.setLabel('left', 'neurons')
+
+        if self.type_of_plot=='V':
+            self.all_v = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
+            self.imgROI = pg.ImageItem(autoDownsample=True)
+            #self.p2.addItem(self.imgROI)
+            self.all_v.setMouseEnabled(x=True,y=True)
+            #self.p2.setLabel('left', 'neurons')
 
         self.epOn = QtGui.QPushButton('compute EnsemblePursuit')
         self.epOn.clicked.connect(lambda: self.compute_ep(parent))
@@ -50,6 +60,22 @@ class EPWindow(QtGui.QMainWindow):
         self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn,1,0,1,2)
+        #ROI
+        nn,nt=self.sp.shape
+        redpen = pg.mkPen(pg.mkColor(255, 0, 0),
+                                width=3,
+                                style=QtCore.Qt.SolidLine)
+        n_ensembles=25
+        self.ROI = pg.RectROI([0,0], [nt, 25],
+                      maxBounds=QtCore.QRectF(-1.,-1.,nn+1,nt+1),
+                      pen=redpen)
+        self.ROI.handleSize = 10
+        self.ROI.handlePen = redpen
+        # Add top and right Handles
+        self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
+        self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
+        #self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
+        #self.p1.addItem(self.ROI)
 
     def compute_ep(self, parent):
         ops = {'n_components': 25, 'lam': 0.01}
@@ -68,12 +94,24 @@ class EPWindow(QtGui.QMainWindow):
             #np.save(os.path.join(basename, 'embedding.npy'), proc)
         print('ep computed in %3.2f s'%(time.time()-self.tic))
             #self.activate(parent)
-        self.plot_v()
+        if self.type_of_plot=='V':
+            self.plot_v()
+        if self.type_of_plot=='U':
+            self.plot_sample_cells()
         #except:
             #print('ep issue: Interrupted by error (not finished)\n')
         #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
         #                    (spath, opspath))
         print(self.V,self.V.shape)
+
+    def plot_sample_cells(self):
+        cells_in_u=np.nonzero(self.U[:,:25])[0].flatten()[:250]
+        cell_ts=self.sp[:,cells_in_u].T
+        self.cells = pg.ImageItem(autoDownsample=True)
+        self.sample_u.addItem(self.cells)
+        self.cells.setImage(cell_ts)
+        self.sample_u.addItem(self.ROI)
+        print('ts',cell_ts.shape)
 
     def plot_v(self):
         #self.all_v.plot(self.V.T)

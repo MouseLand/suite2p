@@ -125,7 +125,8 @@ class MainWindow(QtGui.QMainWindow):
             #self.manual_label()
 
         #Flag for EnsemblePursuit
-        self.need_to_update_C=True
+        self.need_to_update_C_cells=True
+        self.need_to_update_C_ncells=True
 
 
         self.show()
@@ -351,7 +352,8 @@ class MainWindow(QtGui.QMainWindow):
                     self.ROI_remove()
                     self.update_plot()
                     #Flag for EnsemblePursuit for recomputing
-                    self.need_to_update_C=True
+                    self.need_to_update_C_cells=True
+                    self.need_to_update_C_ncells=True
 
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
@@ -718,17 +720,18 @@ class MainWindow(QtGui.QMainWindow):
             cell_inds_not_to_select=np.sort(list(cell_inds[0])+self.imerge)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
             X=self.Fbin[cel_inds_to_sel,:].T
-            if self.need_to_update_C==True:
+            if self.need_to_update_C_ncells==True:
                 self.C_noncells=self.compute_C(cells_flag=False)
+                self.need_to_update_C_ncells=False
             C=self.C_noncells[cel_inds_to_sel,cel_inds]
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
             X=zscore(X,axis=0)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in cells:
-            if self.need_to_update_C==True:
+            if self.need_to_update_C_cells==True:
                 self.C_cells=self.compute_C(cells_flag=True)
-                self.need_to_update_C=False
+                self.need_to_update_C_cells=False
             #First mapping of cells in a separate array used for EP to the
             #indices in the big array containing all data points
             ix_dict=self.mapping_sel_to_entire_arr(cells)

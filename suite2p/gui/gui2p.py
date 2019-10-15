@@ -116,12 +116,17 @@ class MainWindow(QtGui.QMainWindow):
 
         # load initial file
         statfile = '/home/maria/Documents/plane0/stat.npy'
+        #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             io.load_proc(self)
             #self.manual_label()
+
+        #Flag for EnsemblePursuit
+        self.need_to_update_C=True
+
 
         self.show()
         self.win.show()
@@ -345,6 +350,8 @@ class MainWindow(QtGui.QMainWindow):
                     self.imerge = [self.ichosen]
                     self.ROI_remove()
                     self.update_plot()
+                    #Flag for EnsemblePursuit for recomputing
+                    self.need_to_update_C=True
 
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
@@ -688,7 +695,20 @@ class MainWindow(QtGui.QMainWindow):
                 i+=1
         return ix_dict
 
+    #def mapping_sel_to_
 
+    def compute_C(self,cells_flag):
+        if cells_flag==True:
+            cell_inds=np.nonzero(self.iscell==True)[0]
+            non_cell_inds=np.nonzero(self.iscell==False)[0]
+            X_cells=self.Fbin[cell_inds,:].T
+            X_cells=zscore(X_cells,axis=0)
+            C=X_cells.T@X_cells
+        if cells_flag==False:
+            X_noncells=self.Fbin[non_cell_inds,:].T
+            X_noncells=zscore(X_noncells,axis=0)
+            C=X_noncells.T@X_noncells
+        return C
 
     def fit_one_ensemble(self):
         starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
@@ -696,25 +716,34 @@ class MainWindow(QtGui.QMainWindow):
         non_cell_inds=np.nonzero(self.iscell==False)
         if self.ichosen in non_cell_inds[0]:
             cell_inds_not_to_select=np.sort(list(cell_inds[0])+self.imerge)
-            #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            #print(cel_inds_to_sel)
             X=self.Fbin[cel_inds_to_sel,:].T
+            if self.need_to_update_C==True:
+                self.C_noncells=self.compute_C(cells_flag=False)
+            C=self.C_noncells[cel_inds_to_sel,cel_inds]
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
+            X=zscore(X,axis=0)
+            starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+            selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in cell_inds[0]:
             cell_inds_not_to_select=np.sort(list(non_cell_inds[0])+self.imerge)
             #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
             X=self.Fbin[cel_inds_to_sel,:].T
             #print(cel_inds_to_sel)
+            if self.need_to_update_C==True:
+                self.C_cells=self.compute_C(cells_flag=True)
+            #print('c cells',self.C_cells.shape)
+            #print(cel_inds_to_sel)
+            X=zscore(X,axis=0)
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
-        print('X shape',X.shape)
-        X=zscore(X,axis=0)
-        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        C=X.T@X
-        selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
-        #print(selected_neurons)
-        #sel=np.nonzero(selected_neurons==1)
+            inv_map = {v: k for k, v in ix_dict.items()}
+            cels_for_C=[inv_map[i] for i in cel_inds_to_sel]
+            ix_grid=np.ix_(cels_for_C,cels_for_C)
+            C=self.C_cells[ix_grid]
+            print(C.shape)
+            starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+            selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         cells_to_draw=[]
         #print(list(sel[0]))
         for cell in list(selected_neurons):

@@ -700,11 +700,11 @@ class MainWindow(QtGui.QMainWindow):
     def compute_C(self,cells_flag):
         if cells_flag==True:
             cell_inds=np.nonzero(self.iscell==True)[0]
-            non_cell_inds=np.nonzero(self.iscell==False)[0]
             X_cells=self.Fbin[cell_inds,:].T
             X_cells=zscore(X_cells,axis=0)
             C=X_cells.T@X_cells
         if cells_flag==False:
+            non_cell_inds=np.nonzero(self.iscell==False)[0]
             X_noncells=self.Fbin[non_cell_inds,:].T
             X_noncells=zscore(X_noncells,axis=0)
             C=X_noncells.T@X_noncells
@@ -726,22 +726,26 @@ class MainWindow(QtGui.QMainWindow):
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in cell_inds[0]:
-            cell_inds_not_to_select=np.sort(list(non_cell_inds[0])+self.imerge)
+            cell_inds_not_to_select=np.sort(list(non_cell_inds[0]))
             #print(cell_inds_not_to_select)
             cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            X=self.Fbin[cel_inds_to_sel,:].T
-            #print(cel_inds_to_sel)
             if self.need_to_update_C==True:
                 self.C_cells=self.compute_C(cells_flag=True)
             #print('c cells',self.C_cells.shape)
             #print(cel_inds_to_sel)
-            X=zscore(X,axis=0)
             ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
             inv_map = {v: k for k, v in ix_dict.items()}
-            cels_for_C=[inv_map[i] for i in cel_inds_to_sel]
-            ix_grid=np.ix_(cels_for_C,cels_for_C)
-            C=self.C_cells[ix_grid]
+            imerge_cell_inds=[inv_map[i] for i in self.imerge]
+            #print(imerge_cell_inds)
+            #print(self.imerge)
+            #ix_grid=np.ix_(~imerge_cell_inds,~imerge_cell_inds)
+            C=np.delete(self.C_cells,imerge_cell_inds,axis=0)
+            C=np.delete(C,imerge_cell_inds,axis=1)
             print(C.shape)
+            cells_to_sel=[i for i in list(cel_inds_to_sel) if i not in self.imerge]
+            X=self.Fbin[cells_to_sel,:].T
+            #print(cel_inds_to_sel)
+            X=zscore(X,axis=0)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         cells_to_draw=[]

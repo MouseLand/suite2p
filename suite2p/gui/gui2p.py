@@ -349,11 +349,11 @@ class MainWindow(QtGui.QMainWindow):
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
-                    self.ROI_remove()
-                    self.update_plot()
-                    #Flag for EnsemblePursuit for recomputing
+                    #Flags for suite2p
                     self.need_to_update_C_cells=True
                     self.need_to_update_C_ncells=True
+                    self.ROI_remove()
+                    self.update_plot()
 
                 elif event.key() == QtCore.Qt.Key_Right:
                 ##Agus
@@ -697,7 +697,14 @@ class MainWindow(QtGui.QMainWindow):
                 i+=1
         return ix_dict
 
-    #def mapping_sel_to_
+    def mapping_entire_arr_to_sel(self,cells):
+        i=0
+        ix_dict={}
+        for j in range(self.Fbin.shape[0]):
+            if j in cells:
+                ix_dict[j]=i
+                i+=1
+        return ix_dict
 
     def compute_C(self,cells_flag):
         if cells_flag==True:
@@ -713,31 +720,15 @@ class MainWindow(QtGui.QMainWindow):
         return C
 
     def fit_one_ensemble(self):
-        starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
         cells=np.sort(list(np.nonzero(self.iscell==True))[0])
         non_cells=np.sort(list(np.nonzero(self.iscell==False))[0])
-        if self.ichosen in non_cells:
-            cell_inds_not_to_select=np.sort(list(cell_inds[0])+self.imerge)
-            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            X=self.Fbin[cel_inds_to_sel,:].T
-            if self.need_to_update_C_ncells==True:
-                self.C_noncells=self.compute_C(cells_flag=False)
-                self.need_to_update_C_ncells=False
-            C=self.C_noncells[cel_inds_to_sel,cel_inds]
-            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
-            X=zscore(X,axis=0)
-            starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-            selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in cells:
             if self.need_to_update_C_cells==True:
                 self.C_cells=self.compute_C(cells_flag=True)
                 self.need_to_update_C_cells=False
-            #First mapping of cells in a separate array used for EP to the
-            #indices in the big array containing all data points
-            ix_dict=self.mapping_sel_to_entire_arr(cells)
-            #Inverse map going from cells in the small array to indices
-            #in the entire Fbin array.
-            inv_map = {v: k for k, v in ix_dict.items()}
+            #Inverse map going from the indices of Fbin to the indices
+            #of the EP array
+            inv_map =self.mapping_entire_arr_to_sel(cells)
             #Need to figure out which cells are in imerge in the coordinates
             #of the smaller cell array.
             imerge_cell_inds=[inv_map[i] for i in self.imerge]
@@ -750,47 +741,30 @@ class MainWindow(QtGui.QMainWindow):
             X=zscore(X,axis=0)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
-            #Make a new dict that maps the indices of the cells that are
-            #used to learn EP into the coordinates of Fbin, that way
-            #we draw them when we have extracted the cells with EP
-            new_arr_dict=self.mapping_sel_to_entire_arr(cells_to_sel)
+        if self.ichosen in non_cells:
+            if self.need_to_update_C_ncells==True:
+                self.C_noncells=self.compute_C(cells_flag=False)
+                self.need_to_update_C_ncells=False
+            inv_map =self.mapping_entire_arr_to_sel(non_cells)
+            imerge_cell_inds=[inv_map[i] for i in self.imerge]
+            C=np.delete(self.C_noncells,imerge_cell_inds,axis=0)
+            C=np.delete(C,imerge_cell_inds,axis=1)
+            #Exclude imerge cells from the cells to select from Fbin
+            cells_to_sel=[i for i in list(non_cells) if i not in self.imerge]
+            X=self.Fbin[cells_to_sel,:].T
+            X=zscore(X,axis=0)
+            starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+            selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
+        #Make a new dict that maps the indices of the cells that are
+        #used to learn EP into the coordinates of Fbin, that way
+        #we draw them when we have extracted the cells with EP
+        new_arr_dict=self.mapping_sel_to_entire_arr(cells_to_sel)
         cells_to_draw=[]
         for cell in list(selected_neurons):
             cells_to_draw.append(new_arr_dict[cell])
         self.imerge=self.imerge+cells_to_draw
         self.update_plot()
         self.show()
-
-    def compute_seed(self):
-        cell_inds=np.nonzero(self.iscell==True)
-        non_cell_inds=np.nonzero(self.iscell==False)
-        if self.ichosen in non_cell_inds[0]:
-            cell_inds_not_to_select=np.sort(list(cell_inds[0]))
-            #print(cell_inds_not_to_select)
-            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            #print(cel_inds_to_sel)
-            X=self.Fbin[cel_inds_to_sel,:]
-            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
-        if self.ichosen in cell_inds[0]:
-            cell_inds_not_to_select=np.sort(list(non_cell_inds[0]))
-            #print(cell_inds_not_to_select)
-            cel_inds_to_sel=[i for i in range(self.Fbin.shape[0]) if i not in cell_inds_not_to_select]
-            X=self.Fbin[cel_inds_to_sel,:]
-            #print(cel_inds_to_sel)
-            ix_dict=self.mapping_sel_to_entire_arr(cel_inds_to_sel)
-        options_dict={'seed_neuron_av_nr':100,'min_assembly_size':8}
-        ep_np=EnsemblePursuitNumpyFast(n_ensembles=1,lambd=0.01,options_dict=options_dict)
-        C=X@X.T
-        seed=ep_np.repeated_seed(C,-1)
-        print('seed',seed)
-        self.imerge=[ix_dict[seed]]
-        self.update_plot()
-        self.show()
-
-
-
-
-
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)

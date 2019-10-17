@@ -159,6 +159,8 @@ def flip_plot(parent):
         if 'imerge' in parent.stat[n]:
             for k in parent.stat[n]['imerge']:
                 parent.iscell[k] = ~parent.iscell[k]
+    parent.need_to_update_C_cells=True
+    parent.need_to_update_C_ncells=True
     parent.update_plot()
     io.save_iscell(parent)
 

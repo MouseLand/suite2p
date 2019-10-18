@@ -719,10 +719,23 @@ class MainWindow(QtGui.QMainWindow):
             C=X_noncells.T@X_noncells
         return C
 
-    def compute_new_cel_corrs(self,cells,new_inds):
-        new_columns=self.Fbin[cells,:]@self.Fbin[new_inds,:].T
+    def compute_new_cel_corrs(self,old_inds,new_inds):
+        print(self.Fbin.shape)
+        print(self.Fbin[new_inds,:].T.shape)
+        print(self.Fbin[list(old_inds)+list(new_inds),:].shape)
+        new_columns=self.Fbin[list(old_inds)+list(new_inds),:]@(self.Fbin[new_inds,:].T)
         print('new cols shp',new_columns.shape)
-        return new_columns
+        print('Ccells',self.C_cells.shape)
+        self.C_cells=np.append(self.C_cells,new_columns[:len(list(old_inds)),:],axis=1)
+        print('done',self.C_cells.shape)
+        self.C_cells=np.append(self.C_cells,new_columns.T,axis=0)
+        print(self.C_cells.shape)
+        sorted_inds=list(np.argsort(list(old_inds)+list(new_inds))[::-1])
+        print(len(sorted_inds))
+        print(sorted_inds)
+        self.C_cells=self.C_cells[:,sorted_inds]
+        self.C_cells=self.C_cells[sorted_inds,:]
+        print(self.C_cells.shape)
 
 
     def fit_one_ensemble(self):
@@ -748,15 +761,12 @@ class MainWindow(QtGui.QMainWindow):
                         self.C_cells=np.delete(self.C_cells,index,axis=1)
                         self.prev_cels=np.remove(self.prev_cels,cel)
                 if new_cels!=[]:
-                    cols=self.compute_new_cel_corrs(self.prev_cels,new_cels)
-                    i=0
-                    for cell in new_cels:
-                        print('i',i)
-                        self.C_cells=np.insert(self.C_cells,list(cells).index(cell),cols[:,i],axis=0)
-                        new_neuron=np.insert(cols[:,i],list(cells).index(cell),0,axis=0)
-                        print('nn',new_neuron.shape)
-                        self.C_cells=np.insert(self.C_cells,list(cells).index(cell),new_neuron,axis=1)
-                        i+=1
+                    self.compute_new_cel_corrs(self.prev_cels,new_cels)
+                    #self.C_cells=np.insert(self.C_cells,list(cells).index(cell),cols[:,i],axis=0)
+                    #new_neuron=np.insert(cols[:,i],list(cells).index(cell),0,axis=0)
+                    #print('nn',new_neuron.shape)
+                    #self.C_cells=np.insert(self.C_cells,list(cells).index(cell),new_neuron,axis=1)
+                    #i+=1
                 print('C_cells_shp',self.C_cells.shape)
                 print('nr of cells',len(cells))
                 self.prev_cells=cells

@@ -1,7 +1,6 @@
 import numpy as np
 import time, os, shutil
 from scipy import stats
-import __main__
 from .. import utils
 from ..classification import classifier
 from ..detection import sparsedetect, chan2detect, sourcery
@@ -89,12 +88,12 @@ def detect_and_extract(ops):
 
     ### apply default classifier ###
     if len(stat) > 0:
-        classfile = os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
-            "classifiers/classifier_user.npy",
+        classfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+            "../classifiers/classifier_user.npy",
         )
         if not os.path.isfile(classfile):
-            classorig = os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
-                "classifiers/classifier.npy"
+            classorig = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                "../classifiers/classifier.npy"
             )
             shutil.copy(classorig, classfile)
         print('NOTE: applying classifier %s'%classfile)

@@ -377,11 +377,14 @@ def register_binary(ops, refImg=None):
     # ignore user-specified bad_frames.npy
     ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
     if len(ops['data_path']) > 0:
-        if os.path.isfile(os.path.join(ops['data_path'][0], 'bad_frames.npy')):
-            badframes = np.load(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
+        badfrfile = os.path.abspath(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
+        print('bad frames file path: %s'%badfrfile)
+        if os.path.isfile(badfrfile):
+            badframes = np.load(badfrfile)
             badframes = badframes.flatten().astype(int)
+            #print('badframes[0]=%d, badframes[-1]=%d'%(badframes[0],badframes[-1]))
             ops['badframes'][badframes] = True
-            print(ops['badframes'].sum())
+            print('number of badframes: %d'%ops['badframes'].sum())
 
     # return frames which fall outside range
     ops = compute_crop(ops)

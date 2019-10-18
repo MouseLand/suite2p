@@ -125,8 +125,8 @@ class MainWindow(QtGui.QMainWindow):
             #self.manual_label()
 
         #Flag for EnsemblePursuit
-        self.need_to_update_C_cells=True
-        self.need_to_update_C_ncells=True
+        self.first_computation_cells=True
+        self.first_computation_ncells=True
 
 
         self.show()
@@ -350,8 +350,8 @@ class MainWindow(QtGui.QMainWindow):
                             break
                     self.imerge = [self.ichosen]
                     #Flags for suite2p
-                    self.need_to_update_C_cells=True
-                    self.need_to_update_C_ncells=True
+                    #self.need_to_update_C_cells=True
+                    #self.need_to_update_C_ncells=True
                     self.ROI_remove()
                     self.update_plot()
 
@@ -719,13 +719,47 @@ class MainWindow(QtGui.QMainWindow):
             C=X_noncells.T@X_noncells
         return C
 
+    def compute_new_cel_corrs(self,cells,new_inds):
+        new_columns=self.Fbin[cells,:]@self.Fbin[new_inds,:].T
+        print('new cols shp',new_columns.shape)
+        return new_columns
+
+
     def fit_one_ensemble(self):
         cells=np.sort(list(np.nonzero(self.iscell==True))[0])
         non_cells=np.sort(list(np.nonzero(self.iscell==False))[0])
         if self.ichosen in cells:
-            if self.need_to_update_C_cells==True:
+            if self.first_computation_cells==True:
                 self.C_cells=self.compute_C(cells_flag=True)
-                self.need_to_update_C_cells=False
+                self.first_computation_cells=False
+                self.prev_cels=cells
+            if not np.array_equal(self.prev_cels,cells):
+                new_cels=[i for i in cells if i not in self.prev_cels]
+                del_cels=[i for i in self.prev_cels if i not in cells]
+                print('new_cels',new_cels,len(new_cels))
+                print('prev_cels',self.prev_cels,len(self.prev_cels))
+                print('del_cels',del_cels)
+                print('cells',cells)
+                #delete cells
+                if del_cels!=[]:
+                    for cel in del_cels:
+                        index=list(self.prev_cels).index(cel)
+                        self.C_cells=np.delete(self.C_cells,index,axis=0)
+                        self.C_cells=np.delete(self.C_cells,index,axis=1)
+                        self.prev_cels=np.remove(self.prev_cels,cel)
+                if new_cels!=[]:
+                    cols=self.compute_new_cel_corrs(self.prev_cels,new_cels)
+                    i=0
+                    for cell in new_cels:
+                        print('i',i)
+                        self.C_cells=np.insert(self.C_cells,list(cells).index(cell),cols[:,i],axis=0)
+                        new_neuron=np.insert(cols[:,i],list(cells).index(cell),0,axis=0)
+                        print('nn',new_neuron.shape)
+                        self.C_cells=np.insert(self.C_cells,list(cells).index(cell),new_neuron,axis=1)
+                        i+=1
+                print('C_cells_shp',self.C_cells.shape)
+                print('nr of cells',len(cells))
+                self.prev_cells=cells
             #Inverse map going from the indices of Fbin to the indices
             #of the EP array
             inv_map =self.mapping_entire_arr_to_sel(cells)
@@ -742,9 +776,9 @@ class MainWindow(QtGui.QMainWindow):
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in non_cells:
-            if self.need_to_update_C_ncells==True:
+            if self.first_computation_ncells==True:
                 self.C_noncells=self.compute_C(cells_flag=False)
-                self.need_to_update_C_ncells=False
+                self.first_computation_ncells=False
             inv_map =self.mapping_entire_arr_to_sel(non_cells)
             imerge_cell_inds=[inv_map[i] for i in self.imerge]
             C=np.delete(self.C_noncells,imerge_cell_inds,axis=0)

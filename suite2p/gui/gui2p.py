@@ -730,7 +730,7 @@ class MainWindow(QtGui.QMainWindow):
         print('done',self.C_cells.shape)
         self.C_cells=np.append(self.C_cells,new_columns.T,axis=0)
         print(self.C_cells.shape)
-        sorted_inds=list(np.argsort(list(old_inds)+list(new_inds))[::-1])
+        sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
         print(len(sorted_inds))
         print(sorted_inds)
         self.C_cells=self.C_cells[:,sorted_inds]
@@ -762,14 +762,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.prev_cels=np.remove(self.prev_cels,cel)
                 if new_cels!=[]:
                     self.compute_new_cel_corrs(self.prev_cels,new_cels)
-                    #self.C_cells=np.insert(self.C_cells,list(cells).index(cell),cols[:,i],axis=0)
-                    #new_neuron=np.insert(cols[:,i],list(cells).index(cell),0,axis=0)
-                    #print('nn',new_neuron.shape)
-                    #self.C_cells=np.insert(self.C_cells,list(cells).index(cell),new_neuron,axis=1)
-                    #i+=1
                 print('C_cells_shp',self.C_cells.shape)
                 print('nr of cells',len(cells))
-                self.prev_cells=cells
+                self.prev_cels=cells
             #Inverse map going from the indices of Fbin to the indices
             #of the EP array
             inv_map =self.mapping_entire_arr_to_sel(cells)
@@ -783,6 +778,7 @@ class MainWindow(QtGui.QMainWindow):
             cells_to_sel=[i for i in list(cells) if i not in self.imerge]
             X=self.Fbin[cells_to_sel,:].T
             X=zscore(X,axis=0)
+            print('X shp',X.shape)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in non_cells:

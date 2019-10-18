@@ -719,24 +719,20 @@ class MainWindow(QtGui.QMainWindow):
             C=X_noncells.T@X_noncells
         return C
 
-    def compute_new_cel_corrs(self,old_inds,new_inds):
-        print(self.Fbin.shape)
-        print(self.Fbin[new_inds,:].T.shape)
-        print(self.Fbin[list(old_inds)+list(new_inds),:].shape)
+    def compute_new_cel_corrs(self,old_inds,new_inds,cell_flag):
         new_columns=self.Fbin[list(old_inds)+list(new_inds),:]@(self.Fbin[new_inds,:].T)
-        print('new cols shp',new_columns.shape)
-        print('Ccells',self.C_cells.shape)
-        self.C_cells=np.append(self.C_cells,new_columns[:len(list(old_inds)),:],axis=1)
-        print('done',self.C_cells.shape)
-        self.C_cells=np.append(self.C_cells,new_columns.T,axis=0)
-        print(self.C_cells.shape)
-        sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
-        print(len(sorted_inds))
-        print(sorted_inds)
-        self.C_cells=self.C_cells[:,sorted_inds]
-        self.C_cells=self.C_cells[sorted_inds,:]
-        print(self.C_cells.shape)
-
+        if cell_flag==True:
+            self.C_cells=np.append(self.C_cells,new_columns[:len(list(old_inds)),:],axis=1)
+            self.C_cells=np.append(self.C_cells,new_columns.T,axis=0)
+            sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
+            self.C_cells=self.C_cells[:,sorted_inds]
+            self.C_cells=self.C_cells[sorted_inds,:]
+        if cell_flag==True:
+            self.C_noncells=np.append(self.C_noncells,new_columns[:len(list(old_inds)),:],axis=1)
+            self.C_noncells=np.append(self.C_noncells,new_columns.T,axis=0)
+            sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
+            self.C_noncells=self.C_noncells[:,sorted_inds]
+            self.C_noncells=self.C_noncells[sorted_inds,:]
 
     def fit_one_ensemble(self):
         cells=np.sort(list(np.nonzero(self.iscell==True))[0])
@@ -749,10 +745,6 @@ class MainWindow(QtGui.QMainWindow):
             if not np.array_equal(self.prev_cels,cells):
                 new_cels=[i for i in cells if i not in self.prev_cels]
                 del_cels=[i for i in self.prev_cels if i not in cells]
-                print('new_cels',new_cels,len(new_cels))
-                print('prev_cels',self.prev_cels,len(self.prev_cels))
-                print('del_cels',del_cels)
-                print('cells',cells)
                 #delete cells
                 if del_cels!=[]:
                     for cel in del_cels:
@@ -761,9 +753,7 @@ class MainWindow(QtGui.QMainWindow):
                         self.C_cells=np.delete(self.C_cells,index,axis=1)
                         self.prev_cels=np.remove(self.prev_cels,cel)
                 if new_cels!=[]:
-                    self.compute_new_cel_corrs(self.prev_cels,new_cels)
-                print('C_cells_shp',self.C_cells.shape)
-                print('nr of cells',len(cells))
+                    self.compute_new_cel_corrs(self.prev_cels,new_cels,cell_flag=True)
                 self.prev_cels=cells
             #Inverse map going from the indices of Fbin to the indices
             #of the EP array
@@ -778,13 +768,26 @@ class MainWindow(QtGui.QMainWindow):
             cells_to_sel=[i for i in list(cells) if i not in self.imerge]
             X=self.Fbin[cells_to_sel,:].T
             X=zscore(X,axis=0)
-            print('X shp',X.shape)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in non_cells:
             if self.first_computation_ncells==True:
                 self.C_noncells=self.compute_C(cells_flag=False)
-                self.first_computation_ncells=False
+                self.first_computation_ncels=False
+                self.prev_ncels=non_cells
+            if not np.array_equal(self.prev_ncels,non_cells):
+                new_ncels=[i for i in non_cells if i not in self.prev_ncels]
+                delete_ncels=[i for i in self.prev_ncels if i not in non_cells]
+                #delete cells
+                if del_ncels!=[]:
+                    for ncel in del_ncels:
+                        index=list(self.prev_ncels).index(ncel)
+                        self.C_noncells=np.delete(self.C_noncells,index,axis=0)
+                        self.C_noncells=np.delete(self.C_noncells,index,axis=1)
+                        self.prev_ncels=np.remove(self.prev_ncels,cel)
+                if new_ncels!=[]:
+                    self.compute_new_cel_corrs(self.prev_ncels,new_ncels,cell_flag=False)
+                self.prev_ncels=non_cells
             inv_map =self.mapping_entire_arr_to_sel(non_cells)
             imerge_cell_inds=[inv_map[i] for i in self.imerge]
             C=np.delete(self.C_noncells,imerge_cell_inds,axis=0)

@@ -141,7 +141,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
             if parent.ops['save_path'][-8:]!='combined':
-                fileName = os.path.join(parent.basename, 'ops.npy')
+                fileName = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
                 print(fileName)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
@@ -288,7 +288,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         try:
             ops1 = np.load(fileName, allow_pickle=True)
             basefolder = ops1[0]['save_path0']
-            #opsCombined = np.load(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
+            #opsCombined = np.load(os.path.abspath(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
             #self.LY = opsCombined['Ly']
             #self.LX = opsCombined['Lx']
             self.LY = 0
@@ -312,7 +312,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if os.path.isfile(ops['reg_file']):
                     reg_file = ops['reg_file']
                 else:
-                    reg_file = os.path.join(os.path.dirname(fileName),'plane%d'%ipl, 'data.bin')
+                    reg_file = os.path.abspath(os.path.join(os.path.dirname(fileName),'plane%d'%ipl, 'data.bin'))
                 print(reg_file, os.path.isfile(reg_file))
                 self.reg_loc.append(reg_file)
                 self.reg_file.append(open(self.reg_loc[-1], 'rb'))
@@ -331,9 +331,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                 good = True
             self.Floaded = False
             if not fromgui:
-                if os.path.isfile(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy')):
-                    self.Fcell = np.load(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy'))
-                    self.stat =  np.load(os.path.join(os.path.dirname(fileName), 'combined', 'stat.npy'), allow_pickle=True)
+                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy'))):
+                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy')))
+                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'stat.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
@@ -366,7 +366,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:
-                self.reg_loc = os.path.join(os.path.dirname(fileName),'data.bin')
+                self.reg_loc = os.path.abspath(os.path.join(os.path.dirname(fileName),'data.bin'))
             self.reg_file = [open(self.reg_loc[-1],'rb')]
 
             self.wraw = False
@@ -379,7 +379,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                     else:
                         self.reg_loc_raw = ops['raw_file']
                 else:
-                    self.reg_loc_raw = os.path.join(os.path.dirname(fileName),'data_raw.bin')
+                    self.reg_loc_raw = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_raw.bin'))
                 try:
                     self.reg_file_raw = open(self.reg_loc_raw,'rb')
                     self.wraw=True
@@ -389,7 +389,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if self.reg_loc == ops['reg_file']:
                     self.reg_loc_red = ops['reg_file_chan2']
                 else:
-                    self.reg_loc_red = os.path.join(os.path.dirname(fileName),'data_chan2.bin')
+                    self.reg_loc_red = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_chan2.bin'))
                 self.reg_file_chan2 = open(self.reg_loc_red,'rb')
                 self.wred=True
             if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
@@ -399,7 +399,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                     else:
                         self.reg_loc_raw_chan2 = ops['raw_file_chan2']
                 else:
-                    self.reg_loc_raw_chan2 = os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin')
+                    self.reg_loc_raw_chan2 = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin'))
                 try:
                     self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
                     self.wraw_wred=True
@@ -407,9 +407,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.wraw_wred = False
 
             if not fromgui:
-                if os.path.isfile(os.path.join(os.path.dirname(fileName),'F.npy')):
-                    self.Fcell = np.load(os.path.join(os.path.dirname(fileName),'F.npy'))
-                    self.stat =  np.load(os.path.join(os.path.dirname(fileName),'stat.npy'), allow_pickle=True)
+                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy'))):
+                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy')))
+                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'stat.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
@@ -791,7 +791,7 @@ class PCViewer(QtGui.QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
             if parent.ops['save_path'][-8:]!='combined':
-                fileName = os.path.join(parent.basename, 'ops.npy')
+                fileName = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
                 print(fileName)
                 self.openFile(fileName)
 

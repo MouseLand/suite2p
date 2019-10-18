@@ -727,7 +727,7 @@ class MainWindow(QtGui.QMainWindow):
             sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
             self.C_cells=self.C_cells[:,sorted_inds]
             self.C_cells=self.C_cells[sorted_inds,:]
-        if cell_flag==True:
+        if cell_flag==False:
             self.C_noncells=np.append(self.C_noncells,new_columns[:len(list(old_inds)),:],axis=1)
             self.C_noncells=np.append(self.C_noncells,new_columns.T,axis=0)
             sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
@@ -751,7 +751,7 @@ class MainWindow(QtGui.QMainWindow):
                         index=list(self.prev_cels).index(cel)
                         self.C_cells=np.delete(self.C_cells,index,axis=0)
                         self.C_cells=np.delete(self.C_cells,index,axis=1)
-                        self.prev_cels=np.remove(self.prev_cels,cel)
+                        self.prev_cels=self.prev_cels[self.prev_cels!=cel]
                 if new_cels!=[]:
                     self.compute_new_cel_corrs(self.prev_cels,new_cels,cell_flag=True)
                 self.prev_cels=cells
@@ -769,6 +769,7 @@ class MainWindow(QtGui.QMainWindow):
             X=self.Fbin[cells_to_sel,:].T
             X=zscore(X,axis=0)
             starting_v=np.mean(self.Fbin[self.imerge,:],axis=0)
+            print(X.shape,C.shape,starting_v.shape)
             selected_neurons,_=new_ensemble(X,C,starting_v,lam=0.01)
         if self.ichosen in non_cells:
             if self.first_computation_ncells==True:
@@ -784,7 +785,7 @@ class MainWindow(QtGui.QMainWindow):
                         index=list(self.prev_ncels).index(ncel)
                         self.C_noncells=np.delete(self.C_noncells,index,axis=0)
                         self.C_noncells=np.delete(self.C_noncells,index,axis=1)
-                        self.prev_ncels=np.remove(self.prev_ncels,cel)
+                        self.prev_ncels=self.prev_ncels[self.prev_ncels!=ncel]
                 if new_ncels!=[]:
                     self.compute_new_cel_corrs(self.prev_ncels,new_ncels,cell_flag=False)
                 self.prev_ncels=non_cells

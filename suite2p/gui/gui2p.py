@@ -720,13 +720,14 @@ class MainWindow(QtGui.QMainWindow):
         return C
 
     def compute_new_cel_corrs(self,old_inds,new_inds,cell_flag):
-        new_columns=self.Fbin[list(old_inds)+list(new_inds),:]@(self.Fbin[new_inds,:].T)
+        new_columns=zscore(self.Fbin[list(old_inds)+list(new_inds),:],axis=1)@zscore((self.Fbin[new_inds,:].T),axis=0)
         if cell_flag==True:
             self.C_cells=np.append(self.C_cells,new_columns[:len(list(old_inds)),:],axis=1)
             self.C_cells=np.append(self.C_cells,new_columns.T,axis=0)
             sorted_inds=list(np.argsort(list(old_inds)+list(new_inds)))
             self.C_cells=self.C_cells[:,sorted_inds]
             self.C_cells=self.C_cells[sorted_inds,:]
+            assert np.array_equal(self.C_cells,self.C_cells.T)
         if cell_flag==False:
             self.C_noncells=np.append(self.C_noncells,new_columns[:len(list(old_inds)),:],axis=1)
             self.C_noncells=np.append(self.C_noncells,new_columns.T,axis=0)

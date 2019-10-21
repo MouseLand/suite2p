@@ -49,7 +49,7 @@ class C_Cache():
         sorted_inds = list(np.argsort(list(self.prev)+list(new_inds)))
         self.C = self.C[:,sorted_inds]
         self.C = self.C[sorted_inds,:]
-        assert np.array_equal(self.C,self.C.T)
+        #np.testing.assert_array_equal(self.C,self.C.T)
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, statfile=None):
@@ -728,36 +728,6 @@ class MainWindow(QtGui.QMainWindow):
                 i+=1
         return ix_dict
 
-    def compute_C(self,cells_flag):
-        if cells_flag==True:
-            cell_inds=np.nonzero(self.iscell==True)[0]
-            X_cells=self.Fbin[cell_inds,:].T
-            X_cells=zscore(X_cells,axis=0)
-            C=X_cells.T@X_cells
-        if cells_flag==False:
-            non_cell_inds=np.nonzero(self.iscell==False)[0]
-            X_noncells=self.Fbin[non_cell_inds,:].T
-            X_noncells=zscore(X_noncells,axis=0)
-            C=X_noncells.T@X_noncells
-        return C
-
-    def compute_new_cel_corrs(self,old_inds,new_inds,cell_flag):
-        new_columns = zscore(self.Fbin[list(old_inds)+list(new_inds),:],axis=1)@zscore((self.Fbin[new_inds,:].T),axis=0)
-        if cell_flag == True:
-            self.C_cells = np.append(self.C_cells,new_columns[:len(list(old_inds)),:],axis=1)
-            self.C_cells = np.append(self.C_cells,new_columns.T,axis=0)
-            sorted_inds = list(np.argsort(list(old_inds)+list(new_inds)))
-            self.C_cells = self.C_cells[:,sorted_inds]
-            self.C_cells = self.C_cells[sorted_inds,:]
-            assert np.array_equal(self.C_cells,self.C_cells.T)
-        if cell_flag == False:
-            self.C_noncells = np.append(self.C_noncells,new_columns[:len(list(old_inds)),:],axis=1)
-            self.C_noncells = np.append(self.C_noncells,new_columns.T,axis=0)
-            sorted_inds = list(np.argsort(list(old_inds)+list(new_inds)))
-            self.C_noncells = self.C_noncells[:,sorted_inds]
-            self.C_noncells = self.C_noncells[sorted_inds,:]
-
-
     def fit_one_ensemble(self):
         cells = np.sort(np.nonzero(self.iscell==True)[0])
         cache = None
@@ -794,7 +764,6 @@ class MainWindow(QtGui.QMainWindow):
         X = self.Fbin[cells_to_sel,:].T
         X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-        print(X.shape,C.shape)
         selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
         #Make a new dict that maps the indices of the cells that are
         #used to learn EP into the coordinates of Fbin, that way

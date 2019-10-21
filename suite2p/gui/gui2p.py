@@ -26,6 +26,31 @@ def resample_frames(y, x, xt):
     yt = f(xt)
     return yt
 
+class C_Cache():
+    def __init__(self):
+        self.first = True
+        self.C = None
+        self.prev = None
+
+    def first_computation(self,X):
+        self.C = X@X.T
+
+    def delete(self,del_cells):
+        for cell in del_cells:
+            index = list(self.prev).index(cell)
+            self.C = np.delete(self.C,index,axis=0)
+            self.C = np.delete(self.C,index,axis=1)
+            self.prev = self.prev[self.prev!=cell]
+
+    def update(self,X,new_inds):
+        new_columns = zscore(X[list(self.prev)+list(new_inds),:],axis=1)@zscore(X[new_inds,:].T,axis=0)
+        self.C = np.append(self.C,new_columns[:len(list(self.prev)),:],axis=1)
+        self.C = np.append(self.C,new_columns.T,axis=0)
+        sorted_inds = list(np.argsort(list(self.prev)+list(new_inds)))
+        self.C = self.C[:,sorted_inds]
+        self.C = self.C[sorted_inds,:]
+        assert np.array_equal(self.C,self.C.T)
+
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, statfile=None):
         super(MainWindow, self).__init__()
@@ -732,31 +757,6 @@ class MainWindow(QtGui.QMainWindow):
             self.C_noncells = self.C_noncells[:,sorted_inds]
             self.C_noncells = self.C_noncells[sorted_inds,:]
 
-    class C_Cache():
-        def __init__(self):
-            self.first = True
-            self.C = None
-            self.prev = None
-
-        def first_computation(self,X):
-            self.C = X.T@X
-
-        def delete(self,del_cells):
-            for cell in del_cells:
-                index = list(self.prev).index(cell)
-                self.C = np.delete(self.C,index,axis=0)
-                self.C = np.delete(self.C,index,axis=1)
-                self.prev = self.prev[self.prev!=cell]
-
-        def update(self,X,new_inds):
-            new_columns = zscore(self.X[list(self.prev)+list(new_inds),:],axis=1)@zscore((self.X[new_inds,:].T),axis=0)
-            self.C = np.append(self.C,new_columns[:len(list(self.prev)),:],axis=1)
-            self.C = np.append(self.C,new_columns.T,axis=0)
-            sorted_inds = list(np.argsort(list(self.prev)+list(new_inds)))
-            self.C = self.C[:,sorted_inds]
-            self.C = self.C[sorted_inds,:]
-            assert np.array_equal(self.C,self.C.T)
-
 
     def fit_one_ensemble(self):
         cells = np.sort(np.nonzero(self.iscell==True)[0])
@@ -767,7 +767,8 @@ class MainWindow(QtGui.QMainWindow):
             cache = self.ncells_cache
             cells = np.sort(np.nonzero(self.iscell==False)[0])
         if cache.first:
-            cache.C = cache.first_computation(cells_flag=True) #FIXME
+            X=zscore(self.Fbin[cells,:],axis=1)
+            cache.first_computation(X)
             cache.first = False
             cache.prev = cells
         if not np.array_equal(cache.prev, cells):
@@ -777,7 +778,7 @@ class MainWindow(QtGui.QMainWindow):
             if del_cells:
                 cache.delete(del_cells)
             if new_cells:
-                cache.update() #FIXME
+                cache.update(self.Fbin,new_cells)
             cache.prev = cells
         #Inverse map going from the indices of Fbin to the indices
         #of the EP array
@@ -793,6 +794,7 @@ class MainWindow(QtGui.QMainWindow):
         X = self.Fbin[cells_to_sel,:].T
         X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
+        print(X.shape,C.shape)
         selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
         #Make a new dict that maps the indices of the cells that are
         #used to learn EP into the coordinates of Fbin, that way

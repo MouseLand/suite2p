@@ -123,9 +123,8 @@ class MainWindow(QtGui.QMainWindow):
             #self.manual_label()
 
         #Flag for EnsemblePursuit
-        self.first_computation_cells=True
-        self.first_computation_ncells=True
-
+        self.cells_cache = C_Cache()
+        self.ncells_cache = C_Cache()
 
         self.show()
         self.win.show()
@@ -733,71 +732,68 @@ class MainWindow(QtGui.QMainWindow):
             self.C_noncells = self.C_noncells[:,sorted_inds]
             self.C_noncells = self.C_noncells[sorted_inds,:]
 
+    class C_Cache():
+        def __init__(self):
+            self.first = True
+            self.C = None
+            self.prev = None
+
+        def first_computation(self,X):
+            self.C = X.T@X
+
+        def delete(self,del_cells):
+            for cell in del_cells:
+                index = list(self.prev).index(cell)
+                self.C = np.delete(self.C,index,axis=0)
+                self.C = np.delete(self.C,index,axis=1)
+                self.prev = self.prev[self.prev!=cell]
+
+        def update(self,X,new_inds):
+            new_columns = zscore(self.X[list(self.prev)+list(new_inds),:],axis=1)@zscore((self.X[new_inds,:].T),axis=0)
+            self.C = np.append(self.C,new_columns[:len(list(self.prev)),:],axis=1)
+            self.C = np.append(self.C,new_columns.T,axis=0)
+            sorted_inds = list(np.argsort(list(self.prev)+list(new_inds)))
+            self.C = self.C[:,sorted_inds]
+            self.C = self.C[sorted_inds,:]
+            assert np.array_equal(self.C,self.C.T)
+
+
     def fit_one_ensemble(self):
         cells = np.sort(np.nonzero(self.iscell==True)[0])
-        non_cells = np.sort(np.nonzero(self.iscell==False)[0])
+        cache = None
         if self.ichosen in cells:
-            if self.first_computation_cells == True:
-                self.C_cells = self.compute_C(cells_flag=True)
-                self.first_computation_cells = False
-                self.prev_cells = cells
-            if not np.array_equal(self.prev_cells,cells):
-                new_cells = [i for i in cells if i not in self.prev_cells]
-                del_cells = [i for i in self.prev_cells if i not in cells]
-                #delete cells
-                if del_cells:
-                    for cell in del_cells:
-                        index = list(self.prev_cells).index(cell)
-                        self.C_cells = np.delete(self.C_cells,index,axis=0)
-                        self.C_cells = np.delete(self.C_cells,index,axis=1)
-                        self.prev_cells = self.prev_cells[self.prev_cells!=cell]
-                if new_cells:
-                    self.compute_new_cel_corrs(self.prev_cells,new_cells,cell_flag=True)
-                self.prev_cells = cells
-            #Inverse map going from the indices of Fbin to the indices
-            #of the EP array
-            inv_map = self.mapping_entire_arr_to_sel(cells)
-            #Need to figure out which cells are in imerge in the coordinates
-            #of the smaller cell array.
-            imerge_cell_inds = [inv_map[i] for i in self.imerge]
-            #Delete imerge cells from C temporarily
-            C = np.delete(self.C_cells,imerge_cell_inds,axis=0)
-            C = np.delete(C,imerge_cell_inds,axis=1)
-            #Exclude imerge cells from the cells to select from Fbin
-            cells_to_sel = [i for i in list(cells) if i not in self.imerge]
-            X = self.Fbin[cells_to_sel,:].T
-            X = zscore(X,axis=0)
-            starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-            print(X.shape,C.shape,starting_v.shape)
-            selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
-        if self.ichosen in non_cells:
-            if self.first_computation_ncells==True:
-                self.C_noncells = self.compute_C(cells_flag=False)
-                self.first_computation_ncells=False
-                self.prev_ncells = non_cells
-            if not np.array_equal(self.prev_ncells,non_cells):
-                new_ncells = [i for i in non_cells if i not in self.prev_ncells]
-                del_ncells = [i for i in self.prev_ncells if i not in non_cells]
-                #delete cells
-                if del_ncells:
-                    for ncell in del_ncells:
-                        index = list(self.prev_ncells).index(ncell)
-                        self.C_noncells = np.delete(self.C_noncells,index,axis=0)
-                        self.C_noncells = np.delete(self.C_noncells,index,axis=1)
-                        self.prev_ncells = self.prev_ncells[self.prev_ncells!=ncell]
-                if new_ncells:
-                    self.compute_new_cel_corrs(self.prev_ncells,new_ncells,cell_flag=False)
-                self.prev_ncells = non_cells
-            inv_map = self.mapping_entire_arr_to_sel(non_cells)
-            imerge_cell_inds = [inv_map[i] for i in self.imerge]
-            C = np.delete(self.C_noncells,imerge_cell_inds,axis=0)
-            C = np.delete(C,imerge_cell_inds,axis=1)
-            #Exclude imerge cells from the cells to select from Fbin
-            cells_to_sel = [i for i in list(non_cells) if i not in self.imerge]
-            X = self.Fbin[cells_to_sel,:].T
-            X = zscore(X,axis=0)
-            starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-            selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
+            cache = self.cells_cache
+        else:
+            cache = self.ncells_cache
+            cells = np.sort(np.nonzero(self.iscell==False)[0])
+        if cache.first:
+            cache.C = cache.first_computation(cells_flag=True) #FIXME
+            cache.first = False
+            cache.prev = cells
+        if not np.array_equal(cache.prev, cells):
+            new_cells = [i for i in cells if i not in cache.prev]
+            del_cells = [i for i in cache.prev if i not in cells]
+            #delete cells
+            if del_cells:
+                cache.delete(del_cells)
+            if new_cells:
+                cache.update() #FIXME
+            cache.prev = cells
+        #Inverse map going from the indices of Fbin to the indices
+        #of the EP array
+        inv_map = self.mapping_entire_arr_to_sel(cells)
+        #Need to figure out which cells are in imerge in the coordinates
+        #of the smaller cell array.
+        imerge_cell_inds = [inv_map[i] for i in self.imerge]
+        #Delete imerge cells from C temporarily
+        C = np.delete(cache.C,imerge_cell_inds,axis=0)
+        C = np.delete(C,imerge_cell_inds,axis=1)
+        #Exclude imerge cells from the cells to select from Fbin
+        cells_to_sel = [i for i in list(cells) if i not in self.imerge]
+        X = self.Fbin[cells_to_sel,:].T
+        X = zscore(X,axis=0)
+        starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
+        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
         #Make a new dict that maps the indices of the cells that are
         #used to learn EP into the coordinates of Fbin, that way
         #we draw them when we have extracted the cells with EP

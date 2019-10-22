@@ -50,6 +50,7 @@ class C_Cache():
         self.C = self.C[:,sorted_inds]
         self.C = self.C[sorted_inds,:]
         #np.testing.assert_array_equal(self.C,self.C.T)
+        print('debug',np.nonzero(np.abs(self.C-self.C.T)>1e-3))
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, statfile=None):
@@ -138,8 +139,8 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/home/maria/Documents/plane0/stat.npy'
-        #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
+        #statfile = '/home/maria/Documents/plane0/stat.npy'
+        statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
@@ -737,8 +738,7 @@ class MainWindow(QtGui.QMainWindow):
             cache = self.ncells_cache
             cells = np.sort(np.nonzero(self.iscell==False)[0])
         if cache.first:
-            X=zscore(self.Fbin[cells,:],axis=1)
-            cache.first_computation(X)
+            cache.first_computation(zscore(self.Fbin[cells,:],axis=1))
             cache.first = False
             cache.prev = cells
         if not np.array_equal(cache.prev, cells):

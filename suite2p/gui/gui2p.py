@@ -757,22 +757,37 @@ class MainWindow(QtGui.QMainWindow):
         #of the smaller cell array.
         imerge_cell_inds = [inv_map[i] for i in self.imerge]
         #Delete imerge cells from C temporarily
+        import time
+
         C = np.delete(cache.C,imerge_cell_inds,axis=0)
         C = np.delete(C,imerge_cell_inds,axis=1)
         #Exclude imerge cells from the cells to select from Fbin
         cells_to_sel = [i for i in list(cells) if i not in self.imerge]
+        print(cells_to_sel)
         X = self.Fbin[cells_to_sel,:].T
         X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.01)
+        start=time.time()
+        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.03)
+        print('selected_neurons',selected_neurons)
+        end=time.time()
+        print('time',end-start)
         #Make a new dict that maps the indices of the cells that are
         #used to learn EP into the coordinates of Fbin, that way
         #we draw them when we have extracted the cells with EP
-        new_arr_dict = self.mapping_sel_to_entire_arr(cells_to_sel)
+        start=time.time()
+        #self.arr_dict = self.mapping_sel_to_entire_arr(cells_to_sel)
+        end=time.time()
+        sel=np.array(cells_to_sel)[selected_neurons.astype(int)]
+        print(sel)
         cells_to_draw = []
-        for cell in list(selected_neurons):
-            cells_to_draw.append(new_arr_dict[cell])
-        self.imerge = self.imerge+cells_to_draw
+        #for cell in list(selected_neurons):
+            #cells_to_draw.append(self.arr_dict[cell])
+        end2=time.time()
+        print('time2',end-start)
+        print('time3',end2-end)
+        #self.imerge = self.imerge+cells_to_draw
+        self.imerge=self.imerge+list(sel)
         self.update_plot()
         self.show()
 

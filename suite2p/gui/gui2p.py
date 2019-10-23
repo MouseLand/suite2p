@@ -139,8 +139,8 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = '/home/maria/Documents/plane0/stat.npy'
-        statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
+        statfile = '/home/maria/Documents/plane0/stat.npy'
+        #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
@@ -750,39 +750,24 @@ class MainWindow(QtGui.QMainWindow):
             if new_cells:
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
-        #Inverse map going from the indices of Fbin to the indices
-        #of the EP array
-        inv_map = self.mapping_entire_arr_to_sel(cells)
-        #Need to figure out which cells are in imerge in the coordinates
-        #of the smaller cell array.
-        imerge_cell_inds = [inv_map[i] for i in self.imerge]
+        imerge_cell_inds = np.nonzero(cells==self.imerge)[0]
+        print(imerge_cell_inds)
         #Delete imerge cells from C temporarily
         import time
-
+        start=time.time()
         C = np.delete(cache.C,imerge_cell_inds,axis=0)
         C = np.delete(C,imerge_cell_inds,axis=1)
         #Exclude imerge cells from the cells to select from Fbin
-        cells_to_sel = [i for i in list(cells) if i not in self.imerge]
-        print(cells_to_sel)
+        cells_to_sel =cells[cells!=self.imerge]
         X = self.Fbin[cells_to_sel,:].T
         X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
         start=time.time()
+        print(cells.shape,X.shape,C.shape,starting_v.shape)
         selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.03)
-        print('selected_neurons',selected_neurons)
         end=time.time()
         print('time',end-start)
-        #Make a new dict that maps the indices of the cells that are
-        #used to learn EP into the coordinates of Fbin, that way
-        #we draw them when we have extracted the cells with EP
-        start=time.time()
-        #self.arr_dict = self.mapping_sel_to_entire_arr(cells_to_sel)
-        end=time.time()
         sel=np.array(cells_to_sel)[selected_neurons.astype(int)]
-        print(sel)
-        cells_to_draw = []
-        #for cell in list(selected_neurons):
-            #cells_to_draw.append(self.arr_dict[cell])
         end2=time.time()
         print('time2',end-start)
         print('time3',end2-end)

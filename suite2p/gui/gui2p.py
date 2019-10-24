@@ -455,6 +455,9 @@ class MainWindow(QtGui.QMainWindow):
                 masks.plot_colorbar(self)
             self.update_plot()
 
+    def set_lambda(self):
+        self.lam = float(self.lambd.text())
+
     def top_number_chosen(self):
         self.ntop = int(self.topedit.text())
         if self.loaded:
@@ -760,11 +763,15 @@ class MainWindow(QtGui.QMainWindow):
         #Exclude imerge cells from the cells to select from Fbin
         cells_to_sel =cells[cells!=self.imerge]
         X = self.Fbin[cells_to_sel,:].T
+        start=time.time()
         X = zscore(X,axis=0)
+        end=time.time()
+        print('zscore time',end-start)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
         start=time.time()
         print(cells.shape,X.shape,C.shape,starting_v.shape)
-        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=0.03)
+        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=self.lam)
+        print('lambda',self.lam)
         end=time.time()
         print('time',end-start)
         sel=np.array(cells_to_sel)[selected_neurons.astype(int)]

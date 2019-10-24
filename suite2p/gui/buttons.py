@@ -59,7 +59,7 @@ def make_cellnotcell(parent):
 
 def ensemble_pursuit_buttons(parent):
     parent.epbtns = QtGui.QButtonGroup()
-    labels=["add one cell","fit one ensemble","select seed"]
+    labels=["add one cell","fit one ensemble"]
     b=0
     for l in labels:
         btn=QtGui.QPushButton()
@@ -67,11 +67,37 @@ def ensemble_pursuit_buttons(parent):
         parent.l0.addWidget(btn, 0, 22 + 2 * b, 1, 2)
         if b==0:
             btn.clicked.connect(lambda: parent.add_neuron_to_ensemble())
+            btn.setText('grow cell')
+            btn.setStyleSheet(parent.styleInactive)
+            btn.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+            btn.resize(btn.minimumSizeHint())
         if b==1:
             btn.clicked.connect(lambda: parent.fit_one_ensemble())
+            btn.setText('grow ensemble')
+            btn.setStyleSheet(parent.styleInactive)
+            btn.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+            btn.resize(btn.minimumSizeHint())
         #if b==2:
             #btn.clicked.connect(lambda: parent.compute_seed())
         b+=1
+        '''
+        self.setText(text[bid])
+        self.setCheckable(True)
+        self.setStyleSheet(parent.styleInactive)
+        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.resize(self.minimumSizeHint())
+        '''
+    parent.lambd=QtGui.QLineEdit(parent)
+    lam_l = QtGui.QLabel("lam=")
+    lam_l.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+    lam_l.setStyleSheet("color: white;")
+    lam_l.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+    parent.l0.addWidget(lam_l,  0, 22 + 2 * 2, 1, 2)
+    parent.lambd.setText("0.01")
+    parent.lam=0.01
+    parent.lambd.setFixedWidth(35)
+    parent.lambd.returnPressed.connect(parent.set_lambda)
+    parent.l0.addWidget(parent.lambd, 0, 22 + 2 * 3, 1, 2)
 
 ###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############
 # quadrant buttons

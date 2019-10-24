@@ -710,7 +710,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.ichosen in cell_inds[0]:
             cost_vector[non_cell_inds]=-1000
         new_neuron=np.argmax(cost_vector)
-        self.imerge.append(new_neuron)
+        self.imerge=self.imerge+[new_neuron]
         self.update_plot()
         self.show()
 
@@ -761,9 +761,10 @@ class MainWindow(QtGui.QMainWindow):
         C = np.delete(cache.C,imerge_cell_inds,axis=0)
         C = np.delete(C,imerge_cell_inds,axis=1)
         #Exclude imerge cells from the cells to select from Fbin
-        cells_to_sel =cells[cells!=self.imerge]
+        cells_to_sel =cells[cells!=self.imerge].flatten()
         X = self.Fbin[cells_to_sel,:].T
         start=time.time()
+        print('imerge',self.imerge)
         X = zscore(X,axis=0)
         end=time.time()
         print('zscore time',end-start)

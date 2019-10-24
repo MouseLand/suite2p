@@ -80,13 +80,6 @@ def ensemble_pursuit_buttons(parent):
         #if b==2:
             #btn.clicked.connect(lambda: parent.compute_seed())
         b+=1
-        '''
-        self.setText(text[bid])
-        self.setCheckable(True)
-        self.setStyleSheet(parent.styleInactive)
-        self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.resize(self.minimumSizeHint())
-        '''
     parent.lambd=QtGui.QLineEdit(parent)
     lam_l = QtGui.QLabel("lam=")
     lam_l.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)

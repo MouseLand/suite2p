@@ -139,8 +139,8 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/home/maria/Documents/plane0/stat.npy'
-        #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
+        #statfile = '/home/maria/Documents/plane0/stat.npy'
+        statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
@@ -733,6 +733,7 @@ class MainWindow(QtGui.QMainWindow):
         return ix_dict
 
     def fit_one_ensemble(self):
+        import time
         cells = np.sort(np.nonzero(self.iscell==True)[0])
         cache = None
         if self.ichosen in cells:
@@ -740,10 +741,13 @@ class MainWindow(QtGui.QMainWindow):
         else:
             cache = self.ncells_cache
             cells = np.sort(np.nonzero(self.iscell==False)[0])
+        start=time.time()
         if cache.first:
             cache.first_computation(zscore(self.Fbin[cells,:],axis=1))
             cache.first = False
             cache.prev = cells
+        end=time.time()
+        print('Initialization cost',end-start)
         if not np.array_equal(cache.prev, cells):
             new_cells = [i for i in cells if i not in cache.prev]
             del_cells = [i for i in cache.prev if i not in cells]
@@ -753,36 +757,36 @@ class MainWindow(QtGui.QMainWindow):
             if new_cells:
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
-        imerge_cell_inds = np.nonzero(cells==self.imerge)[0]
-        print(imerge_cell_inds)
-        #Delete imerge cells from C temporarily
-        import time
         start=time.time()
+        imerge_cell_inds = np.nonzero(cells==self.imerge)[0]
+        #Delete imerge cells from C temporarily
         C = np.delete(cache.C,imerge_cell_inds,axis=0)
         C = np.delete(C,imerge_cell_inds,axis=1)
+        end=time.time()
+        print('Filtering C',end-start)
         #Exclude imerge cells from the cells to select from Fbin
+        start=time.time()
         cells_to_sel =cells[cells!=self.imerge].flatten()
         X = self.Fbin[cells_to_sel,:].T
-        start=time.time()
-        print('imerge',self.imerge)
         X = zscore(X,axis=0)
-        end=time.time()
-        print('zscore time',end-start)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-        start=time.time()
-        print(cells.shape,X.shape,C.shape,starting_v.shape)
-        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=self.lam)
-        print('lambda',self.lam)
         end=time.time()
-        print('time',end-start)
+        print('Filtering X, z-scoring, setting up V',end-start)
+        start=time.time()
+        selected_neurons,_ = new_ensemble(X,C,starting_v,lam=self.lam)
+        end=time.time()
+        print('Fitting ensemble',end-start)
+        start=time.time()
         sel=np.array(cells_to_sel)[selected_neurons.astype(int)]
-        end2=time.time()
-        print('time2',end-start)
-        print('time3',end2-end)
         #self.imerge = self.imerge+cells_to_draw
         self.imerge=self.imerge+list(sel)
+        end=time.time()
+        print('Transforming indices, adding to imerge',end-start)
+        start=time.time()
         self.update_plot()
         self.show()
+        end=time.time()
+        print('Updating plot and rendering',end-start)
 
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)

@@ -42,7 +42,7 @@ def sbx_get_shape(sbxfile):
             nplanes = len(info.otwave)
     return (int(chan),int(ncols),int(nrows),int(max_idx)),nplanes
 
-def sbx_memmap(filename,reshape_planes=True):
+def sbx_memmap(filename,plane_axis=True):
     '''
     Memory maps a scanbox file.
     sbxmmap = sbx_memmap(filename,reshape_planes=True)
@@ -51,12 +51,23 @@ def sbx_memmap(filename,reshape_planes=True):
     '''
     if filename[-3:] == 'sbx':
         sbxshape,nplanes = sbx_get_shape(filename)
-        return np.memmap(filename,dtype='uint16',shape=sbxshape,order='F').transpose([3,0,2,1]).reshape(
-            int(sbxshape[3]/nplanes),
-            nplanes,
-            sbxshape[0],
-            sbxshape[2],
-            sbxshape[1])
+        if plane_axis:
+            return np.memmap(filename,
+                             dtype='uint16',
+                             shape=sbxshape,order='F').transpose([3,0,2,1]).reshape(
+                int(sbxshape[3]/nplanes),
+                nplanes,
+                sbxshape[0],
+                sbxshape[2],
+                sbxshape[1])
+        else:
+            return np.memmap(filename,
+                             dtype='uint16',
+                             shape=sbxshape,order='F').transpose([3,0,2,1]).reshape(
+                int(sbxshape[3]),
+                sbxshape[0],
+                sbxshape[2],
+                sbxshape[1])            
     else:
         raise ValueError('Not sbx:  '+ filename)
 

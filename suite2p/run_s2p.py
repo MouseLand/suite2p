@@ -2,7 +2,7 @@ import os
 import numpy as np
 import time, os, shutil
 from scipy.io import savemat
-from .io import tiff, h5
+from .io import tiff, h5, sbx
 from .registration import register, metrics
 from .extraction import extract, dcnv
 from . import utils
@@ -21,6 +21,7 @@ def default_ops():
         'mesoscan': False, # for reading in scanimage mesoscope files
         'bruker': False, # whether or not single page BRUKER tiffs!
         'h5py': [], # take h5py as input (deactivates data_path)
+        'sbx': [], # take sbx as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
@@ -175,6 +176,9 @@ def run_s2p(ops={},db={}):
         if len(ops['h5py']):
             ops1 = h5.h5py_to_binary(ops)
             print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+        elif len(ops['sbx']):
+            ops1 = sbx.sbx_to_binary(ops)
+            print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         else:
             if 'mesoscan' in ops and ops['mesoscan']:
                 ops1 = tiff.mesoscan_to_binary(ops)
@@ -289,7 +293,8 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and roidetect:
-        utils.combined(ops1)
+        from .io.save import combined
+        combined(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

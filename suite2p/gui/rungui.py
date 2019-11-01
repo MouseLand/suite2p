@@ -63,6 +63,8 @@ class ListChooser(QtGui.QDialog):
                     badfile = False
                 elif 'h5py' in ops and len(ops['h5py']) > 0:
                     badfile = False
+                elif 'sbx' in ops and len(ops['sbx']) > 0:
+                    badfile = False
                 if badfile:
                     QtGui.QMessageBox.information(self, 'lacks any file paths')
                 else:
@@ -259,7 +261,7 @@ class RunWindow(QtGui.QDialog):
                                   n+5,0,1,2)
         # save_path0
         self.bh5py = QtGui.QPushButton('OR add h5 file path')
-        self.bh5py.clicked.connect(self.get_h5py)
+        self.bh5py.clicked.connect(self.get_sbx)
         self.layout.addWidget(self.bh5py,11,0,1,2)
         self.h5text = QtGui.QLabel('')
         self.layout.addWidget(self.h5text,12,0,1,2)
@@ -341,6 +343,8 @@ class RunWindow(QtGui.QDialog):
         if hasattr(self, 'h5_path'):
             self.h5_path = []
             self.h5_key = 'data'
+        if hasattr(self, 'sbx_path'):
+            self.sbx_path = []
         self.save_path = []
         self.fast_disk = []
         # clear labels
@@ -372,14 +376,19 @@ class RunWindow(QtGui.QDialog):
             self.db['h5py'] = self.h5_path
             self.db['h5py_key'] = self.h5_key
             self.datastr = self.h5_path
+        if hasattr(self, 'sbx_path') and len(self.sbx_path) > 0:
+            self.db['sbx'] = self.sbx_path
+            self.datastr = self.sbx_path
         else:
             self.datastr = self.data_path[0]
         print(self.datastr)
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
-            else:
+            elif hasattr(self, 'h5_path'):
                 fpath = os.path.dirname(self.db['h5py'])
+            elif hasattr(self, 'sbx_path'):
+                fpath = os.path.dirname(self.db['sbx'])
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
         if len(self.fast_disk)==0:
@@ -403,8 +412,10 @@ class RunWindow(QtGui.QDialog):
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
-            else:
+            elif len(self.db['h5py'])>0:
                 fpath = os.path.dirname(self.db['h5py'])
+            else:
+                fpath = os.path.dirname(self.db['sbx'])
             self.save_path = fpath
         save_folder = os.path.join(self.save_path, 'suite2p/')
         if not os.path.isdir(save_folder):
@@ -512,6 +523,16 @@ class RunWindow(QtGui.QDialog):
                     self.btiff.setEnabled(False)
                     self.bh5py.setEnabled(True)
                     self.listOps.setEnabled(True)
+                elif 'sbx' in ops and len(ops['sbx'])>0:
+                    self.sbx_path = ops['sbx']
+                    self.h5text.setText(ops['sbx'])
+                    self.data_path = []
+                    for n in range(7):
+                        self.qdata[n].setText('')
+                    self.runButton.setEnabled(True)
+                    self.btiff.setEnabled(False)
+                    self.bh5py.setEnabled(True)
+                    self.listOps.setEnabled(True)
                 if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)
@@ -582,6 +603,18 @@ class RunWindow(QtGui.QDialog):
                 self.h5_key = TC.h5_key
             else:
                 self.h5_key = 'data'
+            self.runButton.setEnabled(True)
+            self.listOps.setEnabled(True)
+            #self.loadDb.setEnabled(False)
+            self.btiff.setEnabled(False)
+
+    def get_sbx(self):
+        name = QtGui.QFileDialog.getOpenFileName(self, 'Open sbx file')
+        name = name[0]
+        print(name)
+        if len(name)>0:
+            self.sbx_path = name
+            self.h5text.setText(name)
             self.runButton.setEnabled(True)
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)

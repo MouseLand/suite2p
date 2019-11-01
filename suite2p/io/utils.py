@@ -3,6 +3,12 @@ import os
 from natsort import natsorted
 import glob
 
+def list_sbx(ops):
+    froot = os.path.dirname(ops['sbx'])
+    lpath = os.path.join(froot, "*.sbx")
+    fs = natsorted(glob.glob(lpath))
+    return fs
+
 def list_h5(ops):
     froot = os.path.dirname(ops['h5py'])
     lpath = os.path.join(froot, "*.h5")
@@ -82,7 +88,7 @@ def get_tif_list(ops):
             #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
-def find_files_open_binaries(ops1, ish5):
+def find_files_open_binaries(ops1, ish5=False,issbx=False):
     """  finds tiffs or h5 files and opens binaries for writing
 
     Parameters
@@ -120,6 +126,14 @@ def find_files_open_binaries(ops1, ish5):
             print(fs)
         else:
             fs = [ops1[0]['h5py']]
+    elif issbx:
+        # find sbx
+        if ops1[0]['look_one_level_down']:
+            fs = list_sbx(ops1[0])
+            print('NOTE: using a list of sbx files:')
+            print(fs)
+        else:
+            fs = [ops1[0]['sbx']]
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])

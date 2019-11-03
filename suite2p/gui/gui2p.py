@@ -16,6 +16,7 @@ from . import menus, io, merge, views, buttons, classgui, traces, graphics, mask
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 from EnsemblePursuit.EnsemblePursuit import new_ensemble
 from scipy.stats import zscore
+from .ep_matmul import calc_C
 
 
 def resample_frames(y, x, xt):
@@ -32,6 +33,7 @@ class C_Cache():
         self.C = None
         self.prev = None
 
+    #@jit(nopython=True, nogil=True)
     def first_computation(self,X):
         self.C = X@X.T
 
@@ -139,8 +141,8 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = '/home/maria/Documents/plane0/stat.npy'
-        statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
+        statfile = '/home/maria/Documents/plane0/stat.npy'
+        #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
@@ -714,24 +716,6 @@ class MainWindow(QtGui.QMainWindow):
         self.update_plot()
         self.show()
 
-    def mapping_sel_to_entire_arr(self,cel_inds_to_sel):
-        i=0
-        ix_dict={}
-        for j in range(self.Fbin.shape[0]):
-            if j in cel_inds_to_sel:
-                ix_dict[i]=j
-                i+=1
-        return ix_dict
-
-    def mapping_entire_arr_to_sel(self,cells):
-        i=0
-        ix_dict={}
-        for j in range(self.Fbin.shape[0]):
-            if j in cells:
-                ix_dict[j]=i
-                i+=1
-        return ix_dict
-
     def fit_one_ensemble(self):
         import time
         start_=time.time()
@@ -755,23 +739,15 @@ class MainWindow(QtGui.QMainWindow):
             if new_cells:
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
-        start=time.time()
         X = self.Fbin[cells,:].T
         X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
-        end=time.time()
-        print('z-scoring, setting up V',end-start)
         print(X.shape,cache.C.shape,starting_v.shape)
         start=time.time()
         selected_neurons,_ = new_ensemble(X,cache.C,starting_v,lam=self.lam)
         end=time.time()
         print('Fitting ensemble',end-start)
-        start=time.time()
-        #sel=np.array(cells_to_sel)[selected_neurons.astype(int)]
-        #self.imerge = self.imerge+cells_to_draw
-        self.imerge=self.imerge+list(selected_neurons)
-        end=time.time()
-        print('Transforming indices, adding to imerge',end-start)
+        self.imerge=list(selected_neurons)
         start=time.time()
         self.update_plot()
         self.show()

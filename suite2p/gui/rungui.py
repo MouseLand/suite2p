@@ -378,6 +378,7 @@ class RunWindow(QtGui.QDialog):
             self.datastr = self.h5_path
         if hasattr(self, 'sbx_path') and len(self.sbx_path) > 0:
             self.db['sbx'] = self.sbx_path
+            self.db['sbx_ndeadcols'] = -1
             self.datastr = self.sbx_path
         else:
             self.datastr = self.data_path[0]

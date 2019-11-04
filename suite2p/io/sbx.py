@@ -100,6 +100,18 @@ def sbx_to_binary(ops):
         ops1[j]['nframes_per_folder'] = np.zeros(len(sbxlist), np.int32)
     print(sbxlist)
     ik = 0
+    ndeadcols = 0
+    if 'sbx_ndeadcols' in ops1[0].keys():
+        ndeadcols = int(ops1[0]['sbx_ndeadcols'])
+    if ndeadcols == -1:
+        # compute dead cols from the first file
+        tmpsbx = sbx_memmap(sbxlist[0])
+        colprofile = np.mean(tmpsbx[0][0][0],axis = 0)
+        ndeadcols = np.argmax(np.diff(colprofile)) + 1
+        print('Removing {0} dead columns while loading sbx data.'.format(ndeadcols))
+        del tmpsbx
+    ops1[0]['sbx_ndeadcols'] = ndeadcols
+    
     for ifile,sbxfname in enumerate(sbxlist):
         f = sbx_memmap(sbxfname)
         nplanes = f.shape[1]
@@ -117,7 +129,8 @@ def sbx_to_binary(ops):
         # loop over all frames
         for ichunk,onset  in enumerate(iblocks[:-1]):
             offset = iblocks[ichunk+1]
-            im = np.uint16(65535)-f[onset:offset,...]
+            im = (np.uint16(65535)-f[onset:offset,:,:,:,ndeadcols:])//2
+            im = im.astype(np.int16)
             im2mean = im.mean(axis = 0).astype(np.float32)/len(iblocks) 
             for ichan in range(nchannels):
                 nframes = im.shape[0]
@@ -144,8 +157,8 @@ def sbx_to_binary(ops):
     do_registration = ops1[0]['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
-        ops['Ly'] = f.shape[3]
-        ops['Lx'] = f.shape[4]
+        ops['Ly'] = im.shape[3]
+        ops['Lx'] = im.shape[4]
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])

@@ -685,7 +685,9 @@ class MainWindow(QtGui.QMainWindow):
         if self.ichosen in cell_inds[0]:
             cost_vector[non_cell_inds]=-1000
         new_neuron=np.argmax(cost_vector)
-        self.imerge=self.imerge+[new_neuron]
+        self.imerge=[new_neuron]+self.imerge
+        print('type',type(self.imerge))
+        print('add neuron',self.imerge)
         self.update_plot()
         self.show()
 
@@ -720,7 +722,9 @@ class MainWindow(QtGui.QMainWindow):
         selected_neurons,_ = new_ensemble(X,cache.C,starting_v,lam=self.lam)
         end=time.time()
         print('Fitting ensemble',end-start)
+        #print('selected neurons type', selected_neurons.type)
         self.imerge=list(selected_neurons)
+        print('type2',type(self.imerge))
         start=time.time()
         self.update_plot()
         self.show()

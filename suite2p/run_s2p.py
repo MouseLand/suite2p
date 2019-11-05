@@ -2,7 +2,6 @@ import os
 import numpy as np
 import time, os, shutil
 from scipy.io import savemat
-from .io import tiff, h5, sbx
 from .registration import register, metrics
 from .extraction import extract, dcnv
 from . import utils
@@ -21,7 +20,6 @@ def default_ops():
         'mesoscan': False, # for reading in scanimage mesoscope files
         'bruker': False, # whether or not single page BRUKER tiffs!
         'h5py': [], # take h5py as input (deactivates data_path)
-        'sbx': [], # take sbx as input (deactivates data_path)
         'h5py_key': 'data', #key in h5py where data array is stored
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
@@ -166,6 +164,15 @@ def run_s2p(ops={},db={}):
         files_found_flag = False
         flag_binreg = False
 
+    if not 'input_format' in ops.keys():
+        ops['input_format'] = 'tif'
+    if len(ops['h5py']):
+        ops['input_format'] = 'h5'
+    elif 'mesoscan' in ops and ops['mesoscan']:
+        ops['input_format'] = 'mesoscan'
+    elif HAS_HAUS:
+        ops['input_format'] = 'haus'
+    print(ops['input_format'])
     # if not set up files and copy tiffs/h5py to binary
     if not files_found_flag:
         # get default options
@@ -173,17 +180,20 @@ def run_s2p(ops={},db={}):
         # combine with user options
         ops = {**ops0, **ops}
         # copy tiff to a binary
-        if len(ops['h5py']):
+        if ops['input_format'] == 'h5':
+            from .io import h5
             ops1 = h5.h5py_to_binary(ops)
             print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
-        elif len(ops['sbx']):
+        elif ops['input_format'] == 'sbx':
+            from .io import sbx
             ops1 = sbx.sbx_to_binary(ops)
-            print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+            print('time %4.2f sec. Wrote sbx to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         else:
-            if 'mesoscan' in ops and ops['mesoscan']:
+            from .io import tiff
+            if ops['input_format'] == 'mesoscan':
                 ops1 = tiff.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
-            elif HAS_HAUS:
+            elif ops['input_format'] == 'haus':
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
                 ops1 = dataset.tosuite2p(ops)
@@ -191,7 +201,6 @@ def run_s2p(ops={},db={}):
             else:
                 ops1 = tiff.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
-
         np.save(fpathops1, ops1) # save ops1
     else:
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])

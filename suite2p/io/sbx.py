@@ -72,13 +72,13 @@ def sbx_memmap(filename,plane_axis=True):
         raise ValueError('Not sbx:  '+ filename)
 
 
-def sbx_to_binary(ops):
+def sbx_to_binary(ops,ndeadcols = -1):
     """  finds scanbox files and writes them to binaries
 
     Parameters
     ----------
     ops : dictionary
-        'nplanes', 'sbx_path', 'sbx_key', 'save_path', 'save_folder', 'fast_disk',
+        'nplanes', 'data_path', 'save_path', 'save_folder', 'fast_disk',
         'nchannels', 'keep_movie_raw', 'look_one_level_down'
 
     Returns
@@ -93,14 +93,13 @@ def sbx_to_binary(ops):
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
-    ops1, sbxlist, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, issbx=True)
+    ops1, sbxlist, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1)
     print(sbxlist)
     iall = 0
     for j in range(ops1[0]['nplanes']):
         ops1[j]['nframes_per_folder'] = np.zeros(len(sbxlist), np.int32)
     print(sbxlist)
     ik = 0
-    ndeadcols = 0
     if 'sbx_ndeadcols' in ops1[0].keys():
         ndeadcols = int(ops1[0]['sbx_ndeadcols'])
     if ndeadcols == -1:

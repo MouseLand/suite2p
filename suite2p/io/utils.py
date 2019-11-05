@@ -3,11 +3,57 @@ import os
 from natsort import natsorted
 import glob
 
-def list_sbx(ops):
-    froot = os.path.dirname(ops['sbx'])
-    lpath = os.path.join(froot, "*.sbx")
-    fs = natsorted(glob.glob(lpath))
-    return fs
+def search_for_ext(rootdir, extension = 'tif', look_one_level_down=False):
+    filepaths = []
+    if os.path.isdir(rootdir):
+        # search root dir
+        tmp = glob.glob(os.path.join(rootdir,'*.'+extension))
+        if len(tmp):
+            filepaths.extend([t for t in natsorted(tmp)])
+        # search one level down
+        if look_one_level_down:
+            dirs = natsorted(os.listdir(rootdir))
+            for d in dirs:
+                if os.path.isdir(os.path.join(rootdir,d)):
+                    tmp = glob.glob(os.path.join(rootdir, d, '*.'+extension))
+                    if len(tmp):
+                        filepaths.extend([t for t in natsorted(tmp)])
+    if len(filepaths):
+        return filepaths
+    else:
+        raise OSError('Could not find files, check path [{0}]'.format(rootdir))
+    
+def get_sbx_list(ops):
+    """ make list of scanbox files to process
+    if ops['subfolders'], then all tiffs ops['data_path'][0] / ops['subfolders'] / *.sbx
+    if ops['look_one_level_down'], then all tiffs in all folders + one level down
+    TODO: Implement "tiff_list" functionality
+    """
+    froot = ops['data_path']
+    # use a user-specified list of tiffs
+    if len(froot)==1:
+        if 'subfolders' in ops and len(ops['subfolders'])>0:
+            fold_list = []
+            for folder_down in ops['subfolders']:
+                fold = os.path.join(froot[0], folder_down)
+                fold_list.append(fold)
+        else:
+            fold_list = ops['data_path']
+    else:
+        fold_list = froot
+    fsall = []
+    for k,fld in enumerate(fold_list):
+        fs = search_for_ext(fld,
+                            extension = 'sbx',
+                            look_one_level_down = ops['look_one_level_down'])
+        fsall.extend(fs)
+    if len(fsall)==0:
+        print(fold_list)
+        raise Exception('No files, check path.')
+    else:
+        print('** Found %d sbx - converting to binary **'%(len(fsall)))
+    return fsall, ops
+
 
 def list_h5(ops):
     froot = os.path.dirname(ops['h5py'])
@@ -88,7 +134,7 @@ def get_tif_list(ops):
             #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
-def find_files_open_binaries(ops1, ish5=False,issbx=False):
+def find_files_open_binaries(ops1, ish5=False):
     """  finds tiffs or h5 files and opens binaries for writing
 
     Parameters
@@ -118,7 +164,14 @@ def find_files_open_binaries(ops1, ish5=False,issbx=False):
             if nchannels>1:
                 reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
 
+        if 'input_format' in ops.keys():
+            input_format = ops['input_format']
+        else:
+            input_format = 'tif'
     if ish5:
+        input_format = 'h5'
+    print(input_format)
+    if input_format == 'h5':
         # find h5's
         if ops1[0]['look_one_level_down']:
             fs = list_h5(ops1[0])
@@ -126,14 +179,11 @@ def find_files_open_binaries(ops1, ish5=False,issbx=False):
             print(fs)
         else:
             fs = [ops1[0]['h5py']]
-    elif issbx:
+    elif input_format == 'sbx':
         # find sbx
-        if ops1[0]['look_one_level_down']:
-            fs = list_sbx(ops1[0])
-            print('NOTE: using a list of sbx files:')
-            print(fs)
-        else:
-            fs = [ops1[0]['sbx']]
+        fs, ops2 = get_sbx_list(ops1[0])
+        print('Scanbox files:')
+        print('\n'.join(fs))
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])

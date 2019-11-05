@@ -715,7 +715,10 @@ class MainWindow(QtGui.QMainWindow):
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
         X = self.Fbin[cells,:].T
-        X = zscore(X,axis=0)
+        X_std=self.Fstd[cells]
+        print('mean',np.mean(X[:,0]))
+        X=np.divide(X,X_std)
+        #X = zscore(X,axis=0)
         starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
         print(X.shape,cache.C.shape,starting_v.shape)
         start=time.time()

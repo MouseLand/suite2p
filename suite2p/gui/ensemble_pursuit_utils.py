@@ -1,10 +1,18 @@
+import numpy as np
+from scipy.stats import zscore
+
+
 class C_Cache():
+    '''
+    Class for holding the C matrix X@X.T and updating it when cells are flipped
+    to non-cells or non-cells are flipped to cells.
+
+    '''
     def __init__(self):
         self.first = True
         self.C = None
         self.prev = None
 
-    #@jit(nopython=True, nogil=True)
     def first_computation(self,X):
         self.C = X@X.T
 

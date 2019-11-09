@@ -691,6 +691,13 @@ class MainWindow(QtGui.QMainWindow):
         self.update_plot()
         self.show()
 
+    def inverse_dict(self,cells):
+        ix_dict={}
+        indices=range(0,cells.shape[0])
+        for ind in indices:
+            ix_dict[ind]=cells[ind]
+        return ix_dict
+
     def fit_one_ensemble(self):
         import time
         start_=time.time()
@@ -699,8 +706,9 @@ class MainWindow(QtGui.QMainWindow):
         if self.ichosen in cells:
             cache = self.cells_cache
         start=time.time()
+        X=np.divide(self.Fbin[cells,:].T,self.Fstd[cells])
         if cache.first:
-            cache.first_computation(zscore(self.Fbin[cells,:],axis=1))
+            cache.first_computation(X.T)
             cache.first = False
             cache.prev = cells
         end=time.time()
@@ -714,14 +722,17 @@ class MainWindow(QtGui.QMainWindow):
             if new_cells:
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
-        X=np.divide(self.Fbin[cells,:].T,self.Fstd[cells])
         #X = zscore(X,axis=0)
-        starting_v = np.mean(self.Fbin[self.imerge,:],axis=0)
+        ix_dict=self.inverse_dict(cells)
+        print('starting neuron',self.imerge)
+        starting_v = zscore(np.mean(self.Fbin[self.imerge,:],axis=0))
         print(X.shape,cache.C.shape,starting_v.shape)
         start=time.time()
-        selected_neurons,_ = new_ensemble(X,cache.C,starting_v,lam=self.lam)
+        selected_neurons,_ = new_ensemble(X,cache.C,starting_v,lam=self.lam,discard_first_neuron=False)
         end=time.time()
         print('Fitting ensemble',end-start)
+        print('selected neurons',selected_neurons)
+        selected_neurons=[ix_dict[i] for i in selected_neurons]
         #print('selected neurons type', selected_neurons.type)
         self.imerge=list(selected_neurons)
         print('type2',type(self.imerge))

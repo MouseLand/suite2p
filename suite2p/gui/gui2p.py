@@ -123,9 +123,8 @@ class MainWindow(QtGui.QMainWindow):
             io.load_proc(self)
             #self.manual_label()
 
-        #Flag for EnsemblePursuit
+        #Cache for EnsemblePursuit
         self.cells_cache = C_Cache()
-        self.ncells_cache = C_Cache()
 
         self.show()
         self.win.show()
@@ -701,12 +700,11 @@ class MainWindow(QtGui.QMainWindow):
     def fit_one_ensemble(self):
         import time
         start_=time.time()
-        #Select cells and sort them for convenience
+        #Select cell indices
         cells = np.nonzero(self.iscell==True)[0]
-        cache = None
         if self.ichosen in cells:
             cache = self.cells_cache
-        start=time.time()
+        #Fast zscore
         X=np.divide(self.Fbin[cells,:].T,self.Fstd[cells])
         if cache.first:
             cache.first_computation(X.T)

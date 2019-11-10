@@ -714,28 +714,28 @@ class MainWindow(QtGui.QMainWindow):
         end=time.time()
         print('Initialization cost',end-start)
         if not np.array_equal(cache.prev, cells):
-            new_cells = [i for i in cells if i not in cache.prev]
-            del_cells = [i for i in cache.prev if i not in cells]
-            #delete cells
+            new_cells=np.setdiff1d(cells,cache.prev)
+            del_cells=np.setdiff1d(cache.prev,cells)
             if del_cells:
                 cache.delete(del_cells)
             if new_cells:
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
-        #X = zscore(X,axis=0)
+        start=time.time()
         ix_dict=self.inverse_dict(cells)
-        print('starting neuron',self.imerge)
+        end=time.time()
+        print('ix dict cost',end-start)
         starting_v = zscore(np.mean(self.Fbin[self.imerge,:],axis=0))
         print(X.shape,cache.C.shape,starting_v.shape)
         start=time.time()
         selected_neurons,_ = new_ensemble(X,cache.C,starting_v,lam=self.lam,discard_first_neuron=False)
         end=time.time()
         print('Fitting ensemble',end-start)
-        print('selected neurons',selected_neurons)
+        start=time.time()
         selected_neurons=[ix_dict[i] for i in selected_neurons]
+        end=time.time()
         #print('selected neurons type', selected_neurons.type)
         self.imerge=list(selected_neurons)
-        print('type2',type(self.imerge))
         start=time.time()
         self.update_plot()
         self.show()

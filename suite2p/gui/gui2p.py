@@ -701,7 +701,8 @@ class MainWindow(QtGui.QMainWindow):
     def fit_one_ensemble(self):
         import time
         start_=time.time()
-        cells = np.sort(np.nonzero(self.iscell==True)[0])
+        #Select cells and sort them for convenience
+        cells = np.nonzero(self.iscell==True)[0]
         cache = None
         if self.ichosen in cells:
             cache = self.cells_cache
@@ -734,6 +735,7 @@ class MainWindow(QtGui.QMainWindow):
         start=time.time()
         selected_neurons=[ix_dict[i] for i in selected_neurons]
         end=time.time()
+        print('selected_neurons loop',end-start)
         #print('selected neurons type', selected_neurons.type)
         self.imerge=list(selected_neurons)
         start=time.time()

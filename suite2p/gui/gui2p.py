@@ -707,11 +707,15 @@ class MainWindow(QtGui.QMainWindow):
         #Fast zscore
         X=np.divide(self.Fbin[cells,:].T,self.Fstd[cells])
         if cache.first:
+            #The cache is initialized with first iteration being true
+            #Compute C
             cache.first_computation(X.T)
             cache.first = False
             cache.prev = cells
         end=time.time()
-        print('Initialization cost',end-start)
+        print('Initialization cost',end-start_)
+        #Update cache if the contents of the cell array have changed, e.g. cells
+        #have been flipped
         if not np.array_equal(cache.prev, cells):
             new_cells=np.setdiff1d(cells,cache.prev)
             del_cells=np.setdiff1d(cache.prev,cells)
@@ -721,6 +725,8 @@ class MainWindow(QtGui.QMainWindow):
                 cache.update(self.Fbin,new_cells)
             cache.prev = cells
         start=time.time()
+        #Establish mapping between the indices of the cells in the subarray used for EP
+        #and the full Fbin array.
         ix_dict=self.inverse_dict(cells)
         end=time.time()
         print('ix dict cost',end-start)

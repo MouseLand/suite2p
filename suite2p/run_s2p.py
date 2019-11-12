@@ -11,6 +11,7 @@ try:
 except ImportError:
     HAS_HAUS = False
 
+    
 def default_ops():
     ops = {
         # file paths
@@ -116,7 +117,7 @@ def run_s2p(ops={},db={}):
     ops0 = default_ops()
     ops = {**ops0, **ops}
     ops = {**ops, **db}
-    print(db)
+
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:
             ops['save_path0'], tail = os.path.split(ops['h5py'])
@@ -129,7 +130,7 @@ def run_s2p(ops={},db={}):
         files_found_flag = True
         flag_binreg = True
         ops1 = np.load(fpathops1, allow_pickle=True)
-        print('FOUND OPS IN %s'%ops1[0]['save_path'])
+        print('FOUND OPS IN %s'%ops1[0]['save_path'],flush=True)
         for i,op in enumerate(ops1):
             # default behavior is to look in the ops
             flag_reg = os.path.isfile(op['reg_file'])
@@ -143,7 +144,7 @@ def run_s2p(ops={},db={}):
             if 'refImg' not in op or op['do_registration']>1:
                 flag_binreg = False
                 if i==len(ops1)-1:
-                    print("NOTE: not registered / registration forced with ops['do_registration']>1")
+                    print("NOTE: not registered / registration forced with ops['do_registration']>1",flush=True)
             # use the new False
             ops1[i] = {**op, **ops}.copy()
             # for mesoscope tiffs, preserve original lines, etc
@@ -172,7 +173,7 @@ def run_s2p(ops={},db={}):
         ops['input_format'] = 'mesoscan'
     elif HAS_HAUS:
         ops['input_format'] = 'haus'
-    print(ops['input_format'])
+    print(ops['input_format'],flush=True)
     # if not set up files and copy tiffs/h5py to binary
     if not files_found_flag:
         # get default options
@@ -183,27 +184,27 @@ def run_s2p(ops={},db={}):
         if ops['input_format'] == 'h5':
             from .io import h5
             ops1 = h5.h5py_to_binary(ops)
-            print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+            print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)),flush=True)
         elif ops['input_format'] == 'sbx':
             from .io import sbx
             ops1 = sbx.sbx_to_binary(ops)
-            print('time %4.2f sec. Wrote sbx to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+            print('time %4.2f sec. Wrote sbx to binaries for %d planes'%(time.time()-(t0), len(ops1)),flush=True)
         else:
             from .io import tiff
             if ops['input_format'] == 'mesoscan':
                 ops1 = tiff.mesoscan_to_binary(ops)
-                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)),flush=True)
             elif ops['input_format'] == 'haus':
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
                 ops1 = dataset.tosuite2p(ops)
-                print('time %4.2f sec. Wrote data to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+                print('time %4.2f sec. Wrote data to binaries for %d planes'%(time.time()-(t0), len(ops1)),flush=True)
             else:
                 ops1 = tiff.tiff_to_binary(ops)
-                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)),flush=True)
         np.save(fpathops1, ops1) # save ops1
     else:
-        print('FOUND BINARIES: %s'%ops1[0]['reg_file'])
+        print('FOUND BINARIES: %s'%ops1[0]['reg_file'],flush=True)
 
     ops1 = np.array(ops1)
     #ops1 = utils.split_multiops(ops1)
@@ -212,39 +213,39 @@ def run_s2p(ops={},db={}):
 
     if ops['do_registration']>1:
         flag_binreg = False
-        print('do_registration>1 => forcing registration')
+        print('do_registration>1 => forcing registration',flush=True)
 
     if flag_binreg:
-        print('SKIPPING REGISTRATION FOR ALL PLANES...')
+        print('SKIPPING REGISTRATION FOR ALL PLANES...',flush=True)
     if flag_binreg and not files_found_flag:
-        print('NOTE: binary file created, but registration not performed')
+        print('NOTE: binary file created, but registration not performed',flush=True)
 
     # set up number of CPU workers for registration and cell detection
     ipl = 0
 
     while ipl<len(ops1):
-        print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
+        print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl,flush=True)
         t1 = time.time()
         if not flag_binreg:
             ######### REGISTRATION #########
             t11=time.time()
-            print('----------- REGISTRATION')
+            print('----------- REGISTRATION',flush=True)
             ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
-            print('----------- Total %0.2f sec'%(time.time()-t11))
+            print('----------- Total %0.2f sec'%(time.time()-t11),flush=True)
 
             if ops['two_step_registration'] and ops['keep_movie_raw']:
-                print('----------- REGISTRATION STEP 2 (making mean image (exlcuding bad frames)')
+                print('----------- REGISTRATION STEP 2 (making mean image (exlcuding bad frames)',flush=True)
                 frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']),
                                             ops1[ipl]['reg_file'], crop=False)
                 ops1[ipl]['meanImg'] = np.mean(frames, axis=0)
                 ops1[ipl]['meanImg2'] = np.percentile(frames, 90, axis=0) * np.std(frames, axis=0)
-                print('----------- REGISTRATION STEP 2 (copying raw binary)')
+                print('----------- REGISTRATION STEP 2 (copying raw binary)',flush=True)
                 os.system('cp {} {}'.format(ops1[ipl]['raw_file'], ops1[ipl]['reg_file']))
-                print('----------- REGISTRATION STEP 2')
+                print('----------- REGISTRATION STEP 2',flush=True)
                 ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg2']) # register binary
                 np.save(fpathops1, ops1) # save ops1
-                print('----------- Total %0.2f sec'%(time.time()-t11))
+                print('----------- Total %0.2f sec'%(time.time()-t11),flush=True)
 
         if not files_found_flag or not flag_binreg:
             # compute metrics for registration
@@ -255,7 +256,7 @@ def run_s2p(ops={},db={}):
             if do_regmetrics and ops1[ipl]['nframes']>=1500:
                 t0=time.time()
                 ops1[ipl] = metrics.get_pc_metrics(ops1[ipl])
-                print('Registration metrics, %0.2f sec.'%(time.time()-t0))
+                print('Registration metrics, %0.2f sec.'%(time.time()-t0),flush=True)
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         if 'roidetect' in ops1[ipl]:
             roidetect = ops['roidetect']
@@ -264,21 +265,21 @@ def run_s2p(ops={},db={}):
         if roidetect:
             ######## CELL DETECTION AND ROI EXTRACTION ##############
             t11=time.time()
-            print('----------- ROI DETECTION AND EXTRACTION')
+            print('----------- ROI DETECTION AND EXTRACTION',flush=True)
             ops1[ipl] = extract.detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
-            print('----------- Total %0.2f sec.'%(time.time()-t11))
+            print('----------- Total %0.2f sec.'%(time.time()-t11),flush=True)
 
             ######### SPIKE DECONVOLUTION ###############
             t11=time.time()
-            print('----------- SPIKE DECONVOLUTION')
+            print('----------- SPIKE DECONVOLUTION',flush=True)
             F = np.load(os.path.join(fpath,'F.npy'))
             Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
             dF = F - ops['neucoeff']*Fneu
             spks = dcnv.oasis(dF, ops)
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('----------- Total %0.2f sec.'%(time.time()-t11))
+            print('----------- Total %0.2f sec.'%(time.time()-t11),flush=True)
 
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:
@@ -292,9 +293,9 @@ def run_s2p(ops={},db={}):
                                      'spks': spks,
                                      'iscell': iscell})
         else:
-            print("WARNING: skipping cell detection (ops['roidetect']=False)")
-        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
-        print('total = %0.2f sec.'%(time.time()-t0))
+            print("WARNING: skipping cell detection (ops['roidetect']=False)",flush=True)
+        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1),flush=True)
+        print('total = %0.2f sec.'%(time.time()-t0),flush=True)
         ipl += 1 #len(ipl)
 
     # save final ops1 with all planes
@@ -307,7 +308,7 @@ def run_s2p(ops={},db={}):
 
     # running a clean up script
     if 'clean_script' in ops1[0]:
-        print('running clean-up script')
+        print('running clean-up script',flush=True)
         os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
 
     for ops in ops1:
@@ -316,5 +317,5 @@ def run_s2p(ops={},db={}):
             if ops['nchannels']>1:
                 os.remove(ops['reg_file_chan2'])
 
-    print('TOTAL RUNTIME %0.2f sec'%(time.time()-t0))
+    print('TOTAL RUNTIME %0.2f sec'%(time.time()-t0),flush=True)
     return ops1

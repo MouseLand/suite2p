@@ -39,7 +39,10 @@ def combined(ops1):
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
         meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
         if ops['nchannels']>1:
-            meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
+            if 'meanImg_chan2' in ops:
+                meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
+            else:
+                print(ops)
         if 'meanImg_chan2_corrected' in ops:
             meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
 

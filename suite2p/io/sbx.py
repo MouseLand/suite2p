@@ -122,7 +122,7 @@ def sbx_to_binary(ops,ndeadcols = -1):
 
         # data = nframes x nplanes x nchannels x pixels x pixels
         if nchannels>1:
-            nfunc = ops1['functional_chan'] - 1
+            nfunc = ops1[0]['functional_chan'] - 1
         else:
             nfunc = 0
         # loop over all frames
@@ -142,10 +142,10 @@ def sbx_to_binary(ops,ndeadcols = -1):
                         ops1[j]['nframes'] = 0
                     if ichan == nfunc:
                         ops1[j]['meanImg'] += np.squeeze(im2mean[j,ichan,:,:])
-                        reg_file[j].write(bytearray(im2write[:,j,:,:].astype('uint16')))
+                        reg_file[j].write(bytearray(im2write[:,j,:,:].astype('int16')))
                     else:
                         ops1[j]['meanImg_chan2'] += np.squeeze(im2mean[j,ichan,:,:])
-                        reg_file_chan2[j].write(bytearray(im2write[:,j,:,:].astype('uint16')))
+                        reg_file_chan2[j].write(bytearray(im2write[:,j,:,:].astype('int16')))
                         
                     ops1[j]['nframes'] += im2write.shape[0]
                     ops1[j]['nframes_per_folder'][ifile] += im2write.shape[0]

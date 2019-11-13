@@ -32,8 +32,8 @@ def compute(frames):
     # compute phase-correlation between lines in x-direction
     d1 = fft.fft(frames[:, yr1, :], axis=2)
     d2 = np.conj(fft.fft(frames[:, yr2, :], axis=2))
-    d1 = d1 / (np.abs(d1) + eps0)
-    d2 = d2 / (np.abs(d2) + eps0)
+    d1 = d1 / (np.abs(d1) + 1e-5)
+    d2 = d2 / (np.abs(d2) + 1e-5)
 
     #fhg =  gaussian_fft(1, int(np.floor(Ly/2)), Lx)
     cc = np.real(fft.ifft(d1 * d2 , axis=2))#* fhg[np.newaxis, :, :], axis=2))

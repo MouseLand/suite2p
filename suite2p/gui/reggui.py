@@ -29,7 +29,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.loaded = False
 
         # A plot area (ViewBox + axes) for displaying the image
-        self.vmain = pg.ViewBox(lockAspect=True, invertY=True)
+        self.vmain = pg.ViewBox(lockAspect=True, invertY=True, name="plot1")
         self.win.addItem(self.vmain, row=0, col=0)
         self.vmain.setMenuEnabled(False)
         self.imain = pg.ImageItem()
@@ -68,13 +68,13 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.zbox.toggled.connect(self.add_zstack)
         self.l0.addWidget(self.zbox, 0, 8, 1, 1)
 
-        self.p1 = self.win.addPlot(name='plot1',row=1,col=0)
+        self.p1 = self.win.addPlot(name='plot1',row=1,col=0,colspan=2)
         self.p1.setMouseEnabled(x=True,y=False)
         self.p1.setMenuEnabled(False)
         self.scatter1 = pg.ScatterPlotItem()
         self.p1.addItem(self.scatter1)
 
-        self.p2 = self.win.addPlot(name='plot2',row=2,col=0)
+        self.p2 = self.win.addPlot(name='plot2',row=2,col=0,colspan=2)
         self.p2.setMouseEnabled(x=True,y=False)
         self.p2.setMenuEnabled(False)
         self.scatter2 = pg.ScatterPlotItem()
@@ -134,6 +134,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.cframe = 0
         self.loaded = False
         self.Floaded = False
+        self.raw_on = False
+        self.red_on = False
         self.wraw = False
         self.wred = False
         self.wraw_wred = False
@@ -573,6 +575,13 @@ class BinaryPlayer(QtGui.QMainWindow):
                             choose=True
         if zoomImg:
             self.vmain.setRange(xRange=(0,self.LY),yRange=(0,self.LY))
+            if self.raw_on:
+                self.iside.setRange(xRange=(0,self.LY),yRange=(0,self.LY))
+                self.iside.setXLink("plot1")
+                self.iside.setYLink("plot1")
+
+
+
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
         if choose:

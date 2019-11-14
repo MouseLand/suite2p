@@ -225,11 +225,8 @@ def run_s2p(ops={},db={}):
                 frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']),
                                             ops1[ipl]['reg_file'], crop=False)
                 ops1[ipl]['meanImg'] = np.mean(frames, axis=0)
-                ops1[ipl]['meanImg2'] = np.percentile(frames, 90, axis=0) * np.std(frames, axis=0)
-                print('----------- REGISTRATION STEP 2 (copying raw binary)')
-                os.system('cp {} {}'.format(ops1[ipl]['raw_file'], ops1[ipl]['reg_file']))
                 print('----------- REGISTRATION STEP 2')
-                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg2']) # register binary
+                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg'], raw=False) # register binary
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))
 

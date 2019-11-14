@@ -18,7 +18,7 @@ def distance_matrix(parent, ilist):
                 idist[ij,ik] = (((parent.stat[j]['ypix'][np.newaxis,:] -
                                   parent.stat[k]['ypix'][:,np.newaxis])**2 +
                                  (parent.stat[j]['xpix'][np.newaxis,:] -
-                                  parent.stat[k]['xpix'][:,np.newaxis])**2) ** 0.5).min()
+                                  parent.stat[k]['xpix'][:,np.newaxis])**2) ** 0.5).mean()
     return idist
 
 def do_merge(parent):

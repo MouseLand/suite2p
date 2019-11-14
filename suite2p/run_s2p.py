@@ -145,6 +145,11 @@ def run_s2p(ops={},db={}):
                 flag_binreg = False
                 if i==len(ops1)-1:
                     print("NOTE: not registered / registration forced with ops['do_registration']>1")
+                    try:
+                        # delete previous offsets
+                        del op['yoff'], op['xoff'], op['corrXY']
+                    except:
+                        print('no offsets to delete')
             # use the new False
             ops1[i] = {**op, **ops}.copy()
             # for mesoscope tiffs, preserve original lines, etc

@@ -371,11 +371,16 @@ def register_binary(ops, refImg=None, raw=True):
         ops = apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
 
     if 'yoff' not in ops:
-        offsets0 = utils.init_offsets(ops)
-        if len(offsets0)>3:
-            ops['yoff'], ops['xoff'], ops['corrXY'], ops['yoff1'], ops['xoff1'], ops['corrXY'] = offsets0
-        else:
-            ops['yoff'], ops['xoff'], ops['corrXY'] = offsets0
+        nframes = ops['nframes']
+        ops['yoff'] = np.zeros((nframes,),np.float32)
+        ops['xoff'] = np.zeros((nframes,),np.float32)
+        ops['corrXY'] = np.zeros((nframes,),np.float32)
+        if ops['nonrigid']:
+            nb = ops['nblocks'][0] * ops['nblocks'][1]
+            ops['yoff1'] = np.zeros((nframes,nb),np.float32)
+            ops['xoff1'] = np.zeros((nframes,nb),np.float32)
+            ops['corrXY1'] = np.zeros((nframes,nb),np.float32)
+
     ops['yoff'] += offsets[0]
     ops['xoff'] += offsets[1]
     ops['corrXY'] += offsets[2]

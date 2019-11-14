@@ -91,7 +91,7 @@ class RunWindow(QtGui.QDialog):
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                          'ops/ops_user.npy')
+                                          '../ops/ops_user.npy')
         try:
             self.ops = np.load(self.opsfile, allow_pickle=True).item()
             ops0 = run_s2p.default_ops()

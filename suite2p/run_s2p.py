@@ -2,7 +2,7 @@ import os
 import numpy as np
 import time, os, shutil
 from scipy.io import savemat
-from .io import tiff, h5
+from .io import tiff, h5, save
 from .registration import register, metrics
 from .extraction import extract, dcnv
 from . import utils
@@ -291,7 +291,7 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and roidetect:
-        utils.combined(ops1)
+        save.combined(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

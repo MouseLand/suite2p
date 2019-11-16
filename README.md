@@ -25,9 +25,9 @@ The matlab version is available [here](https://github.com/cortex-lab/Suite2P). N
 
 Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.x** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 
-1. Download the `environment.yml` file from the repository
+1. Download the [`environment.yml`](https://github.com/MouseLand/suite2p/blob/master/environment.yml) file from the repository. You can do this by cloning the repository, or copy-pasting the text from the file into a text document on your local computer.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
-3. Run `conda env create -f environment.yml`
+3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. To activate this new environment, run `conda activate suite2p`
 5. You should see `(suite2p)` on the left side of the terminal line. Now run `python -m suite2p` and you're all set.
 
@@ -56,6 +56,14 @@ pip install matplotlib --upgrade
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
+
+## Installation of github version for developers and super-users :)
+
+1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
+2. Run `conda env create -f environment.yml`
+3. To activate this new environment, run `conda activate suite2p`
+4. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install -e .` to install the code in the github repository.
+5. Run `python -m suite2p`.
 
 ## Examples
 

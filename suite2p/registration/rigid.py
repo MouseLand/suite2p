@@ -141,7 +141,7 @@ def phasecorr(data, refAndMasks, ops):
     # preprocessing for 1P recordings
     if ops['1Preg']:
         #data = data.copy().astype(np.float32)
-        X = one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
+        X = utils.one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 

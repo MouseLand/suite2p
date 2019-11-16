@@ -100,7 +100,9 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         '1Preg': preg,
         'pad_fft': False,
         'bidiphase': 0,
-        'refImg': refImg
+        'refImg': refImg,
+        'spatial_taper': 50.0,
+        'spatial_smooth': 2.0
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
     ops = nonrigid.make_blocks(ops)

@@ -74,7 +74,7 @@ def compute_motion_and_shift(data, refAndMasks, ops):
 
     """
 
-    if ops['bidiphase']!=0:
+    if ops['bidiphase']!=0 and not ops['bidi_corrected']:
         bidiphase.shift(data, ops['bidiphase'])
     nr=False
     yxnr = []
@@ -255,7 +255,7 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
 
 
     """
-    if ops['bidiphase']!=0:
+    if ops['bidiphase']!=0  and not ops['bidi_corrected']:
         bidiphase.shift(data, ops['bidiphase'])
     rigid.shift_data(data, ymax, xmax)
     if ops['nonrigid']==True:
@@ -352,7 +352,8 @@ def register_binary(ops, refImg=None, raw=True):
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        refImg = reference.compute_reference_image(ops)
+        refImg, bidi = reference.compute_reference_image(ops)
+        ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
@@ -405,8 +406,8 @@ def register_binary(ops, refImg=None, raw=True):
     # return frames which fall outside range
     ops = compute_crop(ops)
 
-    if 'ops_path' in ops:
-        np.save(ops['ops_path'], ops)
+    if not raw:
+        ops['bidi_corrected'] = True
 
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)

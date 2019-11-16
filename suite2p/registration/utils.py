@@ -6,6 +6,19 @@ import math
 from scipy.ndimage import gaussian_filter1d
 from mkl_fft import fft2, ifft2
 
+def one_photon_preprocess(data, ops):
+    ''' pre filtering for one-photon data '''
+    if ops['pre_smooth'] > 0:
+        ops['pre_smooth'] = int(np.ceil(ops['pre_smooth']/2) * 2)
+        data = spatial_smooth(data, ops['pre_smooth'])
+    else:
+        data = data.astype(np.float32)
+
+    #for n in range(data.shape[0]):
+    #    data[n,:,:] = laplace(data[n,:,:])
+    ops['spatial_hp'] = int(np.ceil(ops['spatial_hp']/2) * 2)
+    data = spatial_high_pass(data, ops['spatial_hp'])
+    return data
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):
@@ -98,7 +111,7 @@ def spatial_smooth(data,N):
     pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
     dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
     # in X
-    cumsum = np.cumsum(dsmooth, axis=1)
+    cumsum = np.cumsum(dsmooth, axis=1).astype(np.float32)
     dsmooth = (cumsum[:, N:, :] - cumsum[:, :-N, :]) / float(N)
     # in Y
     cumsum = np.cumsum(dsmooth, axis=2)

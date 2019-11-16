@@ -41,6 +41,7 @@ def default_ops():
         # bidirectional phase offset
         'do_bidiphase': False,
         'bidiphase': 0,
+        'bidi_corrected': False,
         # registration settings
         'do_registration': 1, # whether to register data (2 forces re-registration)
         'two_step_registration': False,

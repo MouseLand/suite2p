@@ -20,7 +20,6 @@ def pick_initial_reference(frames):
         initial reference image (Ly x Lx)
 
     """
-
     nimg,Ly,Lx = frames.shape
     frames = np.reshape(frames, (nimg,-1)).astype('float32')
     frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
@@ -59,6 +58,8 @@ def iterative_alignment(ops, frames, refImg):
         final reference image (Ly x Lx)
 
     """
+    # do not reshift frames by bidiphase during alignment
+    ops['bidiphase'] = 0
     niter = 8
     nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
@@ -104,13 +105,15 @@ def compute_reference_image(ops):
     nFramesInit = np.minimum(ops['nimg_init'], nFrames)
     frames = subsample_frames(ops, nFramesInit)
     if ops['do_bidiphase'] and ops['bidiphase']==0:
-        ops['bidiphase'] = bidiphase.compute(frames)
-        print('NOTE: estimated bidiphase offset from data: %d pixels'%ops['bidiphase'])
-    if ops['bidiphase'] != 0:
-        bidiphase.shift(frames, ops['bidiphase'])
+        bidi = bidiphase.compute(frames)
+        print('NOTE: estimated bidiphase offset from data: %d pixels'%bidi)
+    else:
+        bidi = ops['bidiphase']
+    if bidi != 0:
+        bidiphase.shift(frames, bidi)
     refImg = pick_initial_reference(frames)
     refImg = iterative_alignment(ops, frames, refImg)
-    return refImg
+    return refImg, bidi
 
 def subsample_frames(ops, nsamps):
     """ get nsamps frames from binary file for initial reference image

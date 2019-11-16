@@ -63,7 +63,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p`
 4. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install -e .` to install the code in the github repository.
-5. Run `python -m suite2p`.
+5. Run `python -m suite2p` (<-- you can run this command from anywhere now. If you want to go back to the supported version of suite2p, then say `pip install suite2p` and that will grab the pip package of suite2p)
 
 ## Examples
 

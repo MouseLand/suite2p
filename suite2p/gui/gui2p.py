@@ -104,15 +104,28 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
+        #statfile = 'C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy'
         #statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
         if statfile is not None:
             self.fname = statfile
             io.load_proc(self)
             #self.manual_label()
-
+        self.setAcceptDrops(True)
         self.show()
         self.win.show()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        print(files)
+        self.fname = files[0]
+        io.load_proc(self)
 
     def make_buttons(self):
         # ROI CHECKBOX

@@ -26,6 +26,201 @@ class VerticalLabel(QtGui.QWidget):
             painter.drawText(0, 0, self.text)
         painter.end()
 
+class RangeSlider(QtGui.QSlider):
+    """ A slider for ranges.
+
+        This class provides a dual-slider for ranges, where there is a defined
+        maximum and minimum, as is a normal slider, but instead of having a
+        single slider value, there are 2 slider values.
+
+        This class emits the same signals as the QSlider base class, with the
+        exception of valueChanged
+
+        Found this slider here: https://www.mail-archive.com/pyqt@riverbankcomputing.com/msg22889.html
+        and modified it
+    """
+    def __init__(self, parent=None, *args):
+        super(RangeSlider, self).__init__(*args)
+
+        self._low = self.minimum()
+        self._high = self.maximum()
+
+        self.pressed_control = QtGui.QStyle.SC_None
+        self.hover_control = QtGui.QStyle.SC_None
+        self.click_offset = 0
+
+        self.setOrientation(QtCore.Qt.Vertical)
+        self.setTickPosition(QtGui.QSlider.TicksRight)
+        self.setStyleSheet(\
+                "QSlider::handle:horizontal {\
+                background-color: white;\
+                border: 1px solid #5c5c5c;\
+                border-radius: 0px;\
+                border-color: black;\
+                height: 8px;\
+                width: 6px;\
+                margin: -8px 2; \
+                }")
+        # 0 for the low, 1 for the high, -1 for both
+        self.active_slider = 0
+        self.parent = parent
+
+    def level_change(self):
+        self.saturation = [self._low, self._high]
+
+    def low(self):
+        return self._low
+
+    def setLow(self, low):
+        self._low = low
+        self.update()
+
+    def high(self):
+        return self._high
+
+    def setHigh(self, high):
+        self._high = high
+        self.update()
+
+    def paintEvent(self, event):
+        # based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp
+        painter = QtGui.QPainter(self)
+        style = QtGui.QApplication.style()
+        for i, value in enumerate([self._low, self._high]):
+            opt = QtGui.QStyleOptionSlider()
+            self.initStyleOption(opt)
+            # Only draw the groove for the first slider so it doesn't get drawn
+            # on top of the existing ones every time
+            if i == 0:
+                opt.subControls = QtGui.QStyle.SC_SliderHandle#QtGui.QStyle.SC_SliderGroove | QtGui.QStyle.SC_SliderHandle
+            else:
+                opt.subControls = QtGui.QStyle.SC_SliderHandle
+            if self.tickPosition() != self.NoTicks:
+                opt.subControls |= QtGui.QStyle.SC_SliderTickmarks
+            if self.pressed_control:
+                opt.activeSubControls = self.pressed_control
+                opt.state |= QtGui.QStyle.State_Sunken
+            else:
+                opt.activeSubControls = self.hover_control
+            opt.sliderPosition = value
+            opt.sliderValue = value
+            style.drawComplexControl(QtGui.QStyle.CC_Slider, opt, painter, self)
+
+    def mousePressEvent(self, event):
+        event.accept()
+        style = QtGui.QApplication.style()
+        button = event.button()
+        if button:
+            opt = QtGui.QStyleOptionSlider()
+            self.initStyleOption(opt)
+            self.active_slider = -1
+            for i, value in enumerate([self._low, self._high]):
+                opt.sliderPosition = value
+                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(), self)
+                if hit == style.SC_SliderHandle:
+                    self.active_slider = i
+                    self.pressed_control = hit
+                    self.triggerAction(self.SliderMove)
+                    self.setRepeatAction(self.SliderNoAction)
+                    self.setSliderDown(True)
+                    break
+            if self.active_slider < 0:
+                self.pressed_control = QtGui.QStyle.SC_SliderHandle
+                self.click_offset = self.__pixelPosToRangeValue(self.__pick(event.pos()))
+                self.triggerAction(self.SliderMove)
+                self.setRepeatAction(self.SliderNoAction)
+        else:
+            event.ignore()
+    def mouseMoveEvent(self, event):
+        if self.pressed_control != QtGui.QStyle.SC_SliderHandle:
+            event.ignore()
+            return
+        event.accept()
+        new_pos = self.__pixelPosToRangeValue(self.__pick(event.pos()))
+        opt = QtGui.QStyleOptionSlider()
+        self.initStyleOption(opt)
+        if self.active_slider < 0:
+            offset = new_pos - self.click_offset
+            self._high += offset
+            self._low += offset
+            if self._low < self.minimum():
+                diff = self.minimum() - self._low
+                self._low += diff
+                self._high += diff
+            if self._high > self.maximum():
+                diff = self.maximum() - self._high
+                self._low += diff
+                self._high += diff
+        elif self.active_slider == 0:
+            if new_pos >= self._high:
+                new_pos = self._high - 1
+            self._low = new_pos
+        else:
+            if new_pos <= self._low:
+                new_pos = self._low + 1
+            self._high = new_pos
+        self.click_offset = new_pos
+        self.update()
+    def mouseReleaseEvent(self, event):
+        self.level_change()
+    def __pick(self, pt):
+        if self.orientation() == QtCore.Qt.Horizontal:
+            return pt.x()
+        else:
+            return pt.y()
+    def __pixelPosToRangeValue(self, pos):
+        opt = QtGui.QStyleOptionSlider()
+        self.initStyleOption(opt)
+        style = QtGui.QApplication.style()
+
+        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
+        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)
+
+        if self.orientation() == QtCore.Qt.Horizontal:
+            slider_length = sr.width()
+            slider_min = gr.x()
+            slider_max = gr.right() - slider_length + 1
+        else:
+            slider_length = sr.height()
+            slider_min = gr.y()
+            slider_max = gr.bottom() - slider_length + 1
+
+        return style.sliderValueFromPosition(self.minimum(), self.maximum(),
+                                             pos-slider_min, slider_max-slider_min,
+                                             opt.upsideDown)
+
+class SatSlider(RangeSlider):
+    def __init__(self, parent=None):
+        super(SatSlider, self).__init__(parent)
+        self.parent = parent
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setLow(30)
+        self.setHigh(70)
+
+    def level_change(self):
+        self.parent.sat[0] = float(self._low)/100
+        self.parent.sat[1] = float(self._high)/100
+        self.parent.img.setLevels([self.parent.sat[0],self.parent.sat[1]])
+        self.parent.imgROI.setLevels([self.parent.sat[0],self.parent.sat[1]])
+        self.parent.win.show()
+
+class NeuronSlider(RangeSlider):
+    def __init__(self, parent=None):
+        super(SatSlider, self).__init__(parent)
+        self.parent = parent
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setLow(30)
+        self.setHigh(70)
+
+    def level_change(self):
+        self.parent.sat[0] = float(self._low)/100
+        self.parent.sat[1] = float(self._high)/100
+        self.parent.img.setLevels([self.parent.sat[0],self.parent.sat[1]])
+        self.parent.imgROI.setLevels([self.parent.sat[0],self.parent.sat[1]])
+        self.parent.win.show()
+
 class Slider(QtGui.QSlider):
     def __init__(self, bid, parent=None):
         super(self.__class__, self).__init__()
@@ -43,6 +238,8 @@ class Slider(QtGui.QSlider):
         parent.img.setLevels([parent.sat[0],parent.sat[1]])
         parent.imgROI.setLevels([parent.sat[0],parent.sat[1]])
         parent.win.show()
+
+
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
 class VisWindow(QtGui.QMainWindow):
@@ -104,6 +301,7 @@ class VisWindow(QtGui.QMainWindow):
         # zoom in on a selected image region
         nt = sp.shape[1]
         nn = sp.shape[0]
+        self.selected = np.arange(0,nn,1,int)
         self.p2 = self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
         self.imgROI = pg.ImageItem(autoDownsample=True)
         self.p2.addItem(self.imgROI)
@@ -133,19 +331,15 @@ class VisWindow(QtGui.QMainWindow):
         layout.setColumnStretchFactor(1,3)
         layout.setRowStretchFactor(1,3)
         # add slider for levels
-        self.sl = []
-        txt = ["lower saturation", 'upper saturation']
         self.sat = [0.3,0.7]
-        for j in range(2):
-            self.sl.append(Slider(j, self))
-            self.l0.addWidget(self.sl[j],0+2*(1-j),2,2,1)
-            #qlabel = VerticalLabel(text=txt[j])
-            #qlabel.setStyleSheet('color: white;')
-        qlabel = QtGui.QLabel('saturation')
+        slider = SatSlider(self)
+        slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.l0.addWidget(slider, 0,2,5,1)
+        qlabel = VerticalLabel(text='saturation')
         qlabel.setStyleSheet('color: white;')
         self.img.setLevels([self.sat[0], self.sat[1]])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
-        self.l0.addWidget(qlabel,0,3,1,2)
+        self.l0.addWidget(qlabel,2,3,3,2)
         self.isort = np.arange(0,self.cells.size).astype(np.int32)
         # ROI on main plot
         redpen = pg.mkPen(pg.mkColor(255, 0, 0),
@@ -154,14 +348,29 @@ class VisWindow(QtGui.QMainWindow):
         self.ROI = pg.RectROI([nt*.25, -1], [nt*.25, nn+1],
                       maxBounds=QtCore.QRectF(-1.,-1.,nt+1,nn+1),
                       pen=redpen)
+        self.xrange = np.arange(nt*.25, nt*.5,1,int)
         self.ROI.handleSize = 10
         self.ROI.handlePen = redpen
-        # Add top and right Handles
+        # Add right Handle
+        self.ROI.handles = []
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
-        self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
+
+        self.LINE = pg.RectROI([-1, nn*.4], [nt*.25, nn*.2],
+                      maxBounds=QtCore.QRectF(-1,-1.,nt*.25,nn+1),
+                      pen=redpen)
+        self.selected = np.arange(nn*.4, nn*.6, 1, int)
+        self.LINE.handleSize = 10
+        self.LINE.handlePen = redpen
+        # Add top handle
+        self.LINE.handles = []
+        self.LINE.addScaleHandle([0.5, 1], [0.5, 0])
+        self.LINE.sigRegionChangeFinished.connect(self.LINE_position)
+        self.p2.addItem(self.LINE)
+        self.LINE.setZValue(10)  # make sure ROI is drawn above image
+
         self.neural_sorting(2)
         # buttons for computations
         self.mapOn = QtGui.QPushButton('compute rastermap + PCs')
@@ -206,6 +415,7 @@ class VisWindow(QtGui.QMainWindow):
     def keyPressEvent(self, event):
         bid = -1
         move = False
+        nn,nt = self.sp.shape
         if event.modifiers() !=  QtCore.Qt.ShiftModifier:
             if event.key() == QtCore.Qt.Key_Down:
                 bid = 0
@@ -215,28 +425,32 @@ class VisWindow(QtGui.QMainWindow):
                 bid=2
             elif event.key() == QtCore.Qt.Key_Right:
                 bid=3
-            if bid >= 0:
-                xrange,yrange = self.ROI_range()
-                nn,nt = self.sp.shape
-                if bid<2:
-                    if yrange.size < nn:
-                        # can move
+            if bid==2 or bid==3:
+                xrange,yrange = self.roi_range(self.ROI)
+                if xrange.size < nt:
+                    # can move
+                    if bid==2:
                         move = True
-                        if bid==0:
-                            yrange = yrange - np.minimum(yrange.min(),nn*0.05)
-                        else:
-                            yrange = yrange + np.minimum(nn-yrange.max()-1,nn*0.05)
-                else:
-                    if xrange.size < nt:
-                        # can move
+                        xrange = xrange - np.minimum(xrange.min()+1,nt*0.05)
+                    else:
                         move = True
-                        if bid==2:
-                            xrange = xrange - np.minimum(xrange.min()+1,nt*0.05)
-                        else:
-                            xrange = xrange + np.minimum(nt-xrange.max()-1,nt*0.05)
-                if move:
-                    self.ROI.setPos([xrange.min()-1, yrange.min()-1])
-                    self.ROI.setSize([xrange.size+1, yrange.size+1])
+                        xrange = xrange + np.minimum(nt-xrange.max()-1,nt*0.05)
+                    if move:
+                        self.ROI.setPos([xrange.min()-1, -1])
+                        self.ROI.setSize([xrange.size+1, nn+1])
+            if bid==0 or bid==1:
+                xrange,yrange = self.roi_range(self.LINE)
+                if yrange.size < nn:
+                    # can move
+                    if bid==0:
+                        move = True
+                        yrange = yrange - np.minimum(yrange.min(),nn*0.05)
+                    else:
+                        move = True
+                        yrange = yrange + np.minimum(nn-yrange.max()-1,nn*0.05)
+                    if move:
+                        self.LINE.setPos([-1, yrange.min()])
+                        self.LINE.setSize([self.xrange.size+1,  yrange.size])
         else:
             if event.key() == QtCore.Qt.Key_Down:
                 bid = 0
@@ -246,70 +460,91 @@ class VisWindow(QtGui.QMainWindow):
                 bid=2
             elif event.key() == QtCore.Qt.Key_Right:
                 bid=3
-            if bid >= 0:
-                xrange,yrange = self.ROI_range()
-                nn,nt = self.sp.shape
-                dy = nn*0.05 / (nn/yrange.size)
+            if bid==2 or bid==3:
+                xrange,_ = self.roi_range(self.ROI)
                 dx = nt*0.05 / (nt/xrange.size)
+                if bid==2:
+                    if xrange.size > dx:
+                        # can move
+                        move = True
+                        xmax = xrange.size - dx
+                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
+                else:
+                    if xrange.size < nt-dx + 1:
+                        move = True
+                        xmax = xrange.size + dx
+                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
+                if move:
+                    self.ROI.setPos([xrange.min()-1, -1])
+                    self.ROI.setSize([xrange.size+1, nn+1])
+
+            elif bid>=0:
+                _,yrange = self.roi_range(self.LINE)
+                dy = nn*0.05 / (nn/yrange.size)
                 if bid==0:
                     if yrange.size > dy:
                         # can move
                         move = True
                         ymax = yrange.size - dy
                         yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
-                elif bid==1:
+                else:
                     if yrange.size < nn-dy + 1:
                         move = True
                         ymax = yrange.size + dy
                         yrange = yrange.min() + np.arange(0,ymax).astype(np.int32)
-                elif bid==2:
-                    if xrange.size > dx:
-                        # can move
-                        move = True
-                        xmax = xrange.size - dx
-                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
-                elif bid==3:
-                    if xrange.size < nt-dx + 1:
-                        move = True
-                        xmax = xrange.size + dx
-                        xrange = xrange.min() + np.arange(0,xmax).astype(np.int32)
                 if move:
-                    self.ROI.setPos([xrange.min()-1, yrange.min()-1])
-                    self.ROI.setSize([xrange.size+1, yrange.size+1])
+                    self.LINE.setPos([-1, yrange.min()])
+                    self.LINE.setSize([self.xrange.size+1,  yrange.size])
 
-    def ROI_range(self):
-        pos = self.ROI.pos()
+
+    def roi_range(self, roi):
+        pos = roi.pos()
         posy = pos.y()
         posx = pos.x()
-        sizex,sizey = self.ROI.size()
-        xrange = (np.arange(1,int(sizex)) + int(posx)).astype(np.int32)
-        yrange = (np.arange(1,int(sizey)) + int(posy)).astype(np.int32)
+        sizex,sizey = roi.size()
+        xrange = (np.arange(0,int(sizex)) + int(posx)).astype(np.int32)
+        yrange = (np.arange(0,int(sizey)) + int(posy)).astype(np.int32)
         xrange = xrange[xrange>=0]
         xrange = xrange[xrange<self.sp.shape[1]]
         yrange = yrange[yrange>=0]
         yrange = yrange[yrange<self.sp.shape[0]]
         return xrange,yrange
 
+    def LINE_position(self):
+        _,yrange = self.roi_range(self.LINE)
+        self.selected = yrange.astype('int')
+        avg = self.spF[np.ix_(self.selected,self.xrange)].mean(axis=0)
+        avg -= avg.min()
+        avg /= avg.max()
+        self.p3.clear()
+        self.p3.plot(self.xrange,avg,pen=(140,140,140))
+        if self.bloaded:
+            self.p3.plot(self.beh_time,self.beh,pen='w')
+        self.p3.setXRange(self.xrange[0],self.xrange[-1])
+
     def ROI_position(self):
-        xrange,yrange = self.ROI_range()
-        self.imgROI.setImage(self.spF[np.ix_(yrange,xrange)])
+        xrange,_ = self.roi_range(self.ROI)
+        self.imgROI.setImage(self.spF[:, xrange])
         # also plot range of 1D variable (if active)
         self.p3.clear()
-        avg = self.spF[np.ix_(yrange,xrange)].mean(axis=0)
+        avg = self.spF[np.ix_(self.selected,xrange)].mean(axis=0)
         avg -= avg.min()
         avg /= avg.max()
         self.p3.plot(xrange,avg,pen=(140,140,140))
         if self.bloaded:
             self.p3.plot(self.beh_time,self.beh,pen='w')
         self.p3.setXRange(xrange[0],xrange[-1])
-        #
-        #self.selected = (self.sp.shape[0]-1) - yrange
-        self.selected = yrange
         self.p2.setXRange(0,xrange.size)
-        self.p2.setYRange(0,yrange.size)
+        self.LINE.maxBounds = QtCore.QRectF(-1,-1.,
+                                xrange.size+1,self.sp.shape[0]+1)
+        #self.ROI.setPos([xrange.min()-1, yrange.min()-1])
+        #self.LINE.setPos([-1.0, self.selected[0]-1.0])
+        self.LINE.setSize([xrange.size+1, self.selected.size])
+        self.LINE.setZValue(10)
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
-        axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
+        self.xrange = xrange
+        #axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
 
     def PC_on(self, plot):

@@ -245,6 +245,7 @@ class Slider(QtGui.QSlider):
 class VisWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(VisWindow, self).__init__(parent)
+        self.parent = parent
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1100,900)
         self.setWindowTitle('Visualize data')
@@ -270,28 +271,28 @@ class VisWindow(QtGui.QMainWindow):
         self.img = pg.ImageItem(autoDownsample=True)
         self.p1.addItem(self.img)
         # cells to plot
-        if len(parent.imerge)==1:
-            icell = parent.iscell[parent.imerge[0]]
-            self.cells = np.array((parent.iscell==icell).nonzero()).flatten()
+        if len(self.parent.imerge)==1:
+            icell = self.parent.iscell[self.parent.imerge[0]]
+            self.cells = np.array((self.parent.iscell==icell).nonzero()).flatten()
         else:
-            self.cells = np.array(parent.imerge).flatten()
+            self.cells = np.array(self.parent.imerge).flatten()
         # compute spikes
-        i = parent.activityMode
+        i = self.parent.activityMode
         if i==0:
-            sp = parent.Fcell[self.cells,:]
+            sp = self.parent.Fcell[self.cells,:]
         elif i==1:
-            sp = parent.Fneu[self.cells,:]
+            sp = self.parent.Fneu[self.cells,:]
         elif i==2:
-            sp = parent.Fcell[self.cells,:] - 0.7*parent.Fneu[self.cells,:]
+            sp = self.parent.Fcell[self.cells,:] - 0.7*self.parent.Fneu[self.cells,:]
         else:
-            sp = parent.Spks[self.cells,:]
+            sp = self.parent.Spks[self.cells,:]
         sp = np.squeeze(sp)
         sp = zscore(sp, axis=1)
         self.sp = np.maximum(-4,np.minimum(8,sp)) + 4
         self.sp /= 12
         self.tsort = np.arange(0,sp.shape[1]).astype(np.int32)
         # 100 ms bins
-        self.bin = int(np.maximum(1, int(parent.ops['fs']/10)))
+        self.bin = int(np.maximum(1, int(self.parent.ops['fs']/10)))
         # draw axes
         self.p1.setXRange(0,sp.shape[1])
         self.p1.setYRange(0,sp.shape[0])
@@ -308,18 +309,11 @@ class VisWindow(QtGui.QMainWindow):
         self.p2.setMouseEnabled(x=False,y=False)
         #self.p2.setLabel('left', 'neurons')
         self.p2.hideAxis('bottom')
-        self.bloaded = parent.bloaded
+        self.bloaded = self.parent.bloaded
         self.p3 = self.win.addPlot(title='',row=2,col=0,colspan=2)
-        self.avg = self.sp.mean(axis=0)
-        self.p3.plot(np.arange(0,self.avg.size),self.avg)
         self.p3.setMouseEnabled(x=False,y=False)
         self.p3.getAxis('left').setTicks([[(0,'')]])
         self.p3.setLabel('bottom', 'time')
-        if self.bloaded:
-            self.beh = parent.beh
-            self.beh_time = parent.beh_time
-            self.p3.plot(self.beh_time,self.beh)
-            self.p3.setXRange(0,sp.shape[1])
         # set colormap to viridis
         colormap = cm.get_cmap("gray_r")
         colormap._init()
@@ -354,6 +348,7 @@ class VisWindow(QtGui.QMainWindow):
         # Add right Handle
         self.ROI.handles = []
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
+        self.ROI.addScaleHandle([0., 0.5], [1., 0.5])
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
         self.ROI.setZValue(10)  # make sure ROI is drawn above image
@@ -367,21 +362,25 @@ class VisWindow(QtGui.QMainWindow):
         # Add top handle
         self.LINE.handles = []
         self.LINE.addScaleHandle([0.5, 1], [0.5, 0])
+        self.LINE.addScaleHandle([0.5, 0], [0.5, 1])
         self.LINE.sigRegionChangeFinished.connect(self.LINE_position)
         self.p2.addItem(self.LINE)
         self.LINE.setZValue(10)  # make sure ROI is drawn above image
 
+        self.spF = self.sp
+        self.plot_traces()
+
         self.neural_sorting(2)
         # buttons for computations
         self.mapOn = QtGui.QPushButton('compute rastermap + PCs')
-        self.mapOn.clicked.connect(lambda: self.compute_map(parent))
+        self.mapOn.clicked.connect(self.compute_map)
         self.l0.addWidget(self.mapOn,0,0,1,2)
         self.comboBox = QtGui.QComboBox(self)
         self.l0.addWidget(self.comboBox,1,0,1,2)
         self.l0.addWidget(QtGui.QLabel('PC 1:'),2,0,1,2)
         #self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
         self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
-        self.selectBtn.clicked.connect(lambda: self.select_cells(parent))
+        self.selectBtn.clicked.connect(self.select_cells)
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn,3,0,1,2)
         self.sortTime = QtGui.QCheckBox('&Time sort')
@@ -397,7 +396,7 @@ class VisWindow(QtGui.QMainWindow):
         self.process.readyReadStandardError.connect(self.stderr_write)
         # disable the button when running the s2p process
         #self.process.started.connect(self.started)
-        self.process.finished.connect(lambda: self.finished(parent))
+        self.process.finished.connect(lambda: self.finished(self.parent))
 
         self.win.show()
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
@@ -510,31 +509,29 @@ class VisWindow(QtGui.QMainWindow):
         yrange = yrange[yrange<self.sp.shape[0]]
         return xrange,yrange
 
-    def LINE_position(self):
-        _,yrange = self.roi_range(self.LINE)
-        self.selected = yrange.astype('int')
+    def plot_traces(self):
         avg = self.spF[np.ix_(self.selected,self.xrange)].mean(axis=0)
         avg -= avg.min()
         avg /= avg.max()
         self.p3.clear()
-        self.p3.plot(self.xrange,avg,pen=(140,140,140))
+        self.p3.plot(self.xrange,avg,pen=(255,0,0))
         if self.bloaded:
-            self.p3.plot(self.beh_time,self.beh,pen='w')
+            self.p3.plot(self.parent.beh_time,self.parent.beh,pen='w')
         self.p3.setXRange(self.xrange[0],self.xrange[-1])
+
+    def LINE_position(self):
+        _,yrange = self.roi_range(self.LINE)
+        self.selected = yrange.astype('int')
+        self.plot_traces()
 
     def ROI_position(self):
         xrange,_ = self.roi_range(self.ROI)
         self.imgROI.setImage(self.spF[:, xrange])
-        # also plot range of 1D variable (if active)
-        self.p3.clear()
-        avg = self.spF[np.ix_(self.selected,xrange)].mean(axis=0)
-        avg -= avg.min()
-        avg /= avg.max()
-        self.p3.plot(xrange,avg,pen=(140,140,140))
-        if self.bloaded:
-            self.p3.plot(self.beh_time,self.beh,pen='w')
-        self.p3.setXRange(xrange[0],xrange[-1])
         self.p2.setXRange(0,xrange.size)
+
+        self.plot_traces()
+
+        # reset ROIs
         self.LINE.maxBounds = QtCore.QRectF(-1,-1.,
                                 xrange.size+1,self.sp.shape[0]+1)
         #self.ROI.setPos([xrange.min()-1, yrange.min()-1])
@@ -570,7 +567,7 @@ class VisWindow(QtGui.QMainWindow):
         self.comboBox.setCurrentIndex(0)
         self.neural_sorting(0)
 
-    def activate(self, parent):
+    def activate(self):
         # activate buttons
         self.PCedit = QtGui.QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
@@ -593,19 +590,19 @@ class VisWindow(QtGui.QMainWindow):
         #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
         self.raster = True
-        ncells = len(parent.stat)
+        ncells = len(self.parent.stat)
         # cells not in sorting are set to -1
-        parent.isort = -1*np.ones((ncells,),dtype=np.int64)
+        self.parent.isort = -1*np.ones((ncells,),dtype=np.int64)
         nsel = len(self.cells)
         I = np.zeros(nsel)
         I[self.isort1] = np.arange(nsel).astype('int')
-        parent.isort[self.cells] = I #self.isort1
+        self.parent.isort[self.cells] = I #self.isort1
         # set up colors for rastermap
-        masks.rastermap_masks(parent)
-        b = len(parent.color_names)-1
-        parent.colorbtns.button(b).setEnabled(True)
-        parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
-        parent.rastermap = True
+        masks.rastermap_masks(self.parent)
+        b = len(self.parent.color_names)-1
+        self.parent.colorbtns.button(b).setEnabled(True)
+        self.parent.colorbtns.button(b).setStyleSheet(self.parent.styleUnpressed)
+        self.parent.rastermap = True
 
         self.comboBox.setCurrentIndex(1)
         self.comboBox.currentIndexChanged.connect(self.neural_sorting)
@@ -613,7 +610,7 @@ class VisWindow(QtGui.QMainWindow):
         self.mapOn.setEnabled(False)
         self.sortTime.setChecked(False)
 
-    def compute_map(self, parent):
+    def compute_map(self):
         ops = {'n_components': 1, 'n_X': 100, 'alpha': 1., 'K': 1.,
                     'nPC': 200, 'constraints': 2, 'annealing': True, 'init': 'pca',
                     'start_time': 0, 'end_time': -1}
@@ -631,16 +628,16 @@ class VisWindow(QtGui.QMainWindow):
             #basename, fname = os.path.split(args.S)
             #np.save(os.path.join(basename, 'embedding.npy'), proc)
             print('raster map computed in %3.2f s'%(time.time()-self.tic))
-            self.activate(parent)
+            self.activate()
         except:
             print('Rastermap issue: Interrupted by error (not finished)\n')
         #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
         #                    (spath, opspath))
 
-    def finished(self, parent):
+    def finished(self):
         if self.finish and not self.error:
             print('raster map computed in %3.2f s'%(time.time()-self.tic))
-            self.activate(parent)
+            self.activate()
         else:
             sys.stdout.write('Interrupted by error (not finished)\n')
 
@@ -657,13 +654,13 @@ class VisWindow(QtGui.QMainWindow):
         self.error = True
         self.finish = False
 
-    def select_cells(self,parent):
-        parent.imerge = []
+    def select_cells(self):
+        self.parent.imerge = []
         if self.selected.size < 5000:
             for n in self.selected:
-                parent.imerge.append(self.cells[self.isort[n]])
-            parent.ichosen = parent.imerge[0]
-            parent.update_plot()
+                self.parent.imerge.append(self.cells[self.isort[n]])
+            self.parent.ichosen = self.parent.imerge[0]
+            self.parent.update_plot()
         else:
             print('too many cells selected')
 

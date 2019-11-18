@@ -312,7 +312,7 @@ class VisWindow(QtGui.QMainWindow):
         self.bloaded = self.parent.bloaded
         self.p3 = self.win.addPlot(title='',row=2,col=0,colspan=2)
         self.p3.setMouseEnabled(x=False,y=False)
-        self.p3.getAxis('left').setTicks([[(0,'')]])
+        #self.p3.getAxis('left').setTicks([[(0,'')]])
         self.p3.setLabel('bottom', 'time')
         # set colormap to viridis
         colormap = cm.get_cmap("gray_r")
@@ -367,6 +367,22 @@ class VisWindow(QtGui.QMainWindow):
         self.p2.addItem(self.LINE)
         self.LINE.setZValue(10)  # make sure ROI is drawn above image
 
+
+        greenpen = pg.mkPen(pg.mkColor(0, 255, 0),
+                                width=3,
+                                style=QtCore.Qt.SolidLine)
+        self.THRES = pg.RectROI([-0.5, 0], [nt*.25, 1],
+                      maxBounds=QtCore.QRectF(-1.,-10.,nt*.25,10),
+                      pen=greenpen)
+        self.THRES.handleSize = 10
+        self.THRES.handlePen = greenpen
+        # Add top handle
+        self.THRES.handles = []
+        self.THRES.addScaleHandle([0.5, 1], [0.5, 0])
+        self.THRES.addScaleHandle([0.5, 0], [0.5, 1])
+        self.THRES.sigRegionChangeFinished.connect(self.THRES_position)
+        self.tpos = -0.5
+        self.tsize = 1
         self.spF = self.sp
         self.plot_traces()
 
@@ -518,29 +534,43 @@ class VisWindow(QtGui.QMainWindow):
         if self.bloaded:
             self.p3.plot(self.parent.beh_time,self.parent.beh,pen='w')
         self.p3.setXRange(self.xrange[0],self.xrange[-1])
+        self.p3.addItem(self.THRES)
+        self.THRES.setZValue(10)  # make sure ROI is drawn above image
 
     def LINE_position(self):
         _,yrange = self.roi_range(self.LINE)
         self.selected = yrange.astype('int')
         self.plot_traces()
 
+    def THRES_position(self):
+        pos = self.THRES.pos()
+        posy = pos.y()
+        sizex,sizey = self.THRES.size()
+        self.tpos = posy
+        self.tsize = sizey
+
     def ROI_position(self):
         xrange,_ = self.roi_range(self.ROI)
-        self.imgROI.setImage(self.spF[:, xrange])
-        self.p2.setXRange(0,xrange.size)
+        self.xrange = xrange
+        self.imgROI.setImage(self.spF[:, self.xrange])
+        self.p2.setXRange(0,self.xrange.size)
 
         self.plot_traces()
 
         # reset ROIs
         self.LINE.maxBounds = QtCore.QRectF(-1,-1.,
                                 xrange.size+1,self.sp.shape[0]+1)
-        #self.ROI.setPos([xrange.min()-1, yrange.min()-1])
-        #self.LINE.setPos([-1.0, self.selected[0]-1.0])
         self.LINE.setSize([xrange.size+1, self.selected.size])
         self.LINE.setZValue(10)
+
+        self.THRES.maxBounds = QtCore.QRectF(self.xrange[0]-1,-5.,
+                                self.xrange[1]+1,10)
+        self.THRES.setPos([self.xrange[0]-1, self.tpos])
+        self.THRES.setSize([xrange.size+1, self.tsize])
+        self.THRES.setZValue(10)
+
         axy = self.p2.getAxis('left')
         axx = self.p2.getAxis('bottom')
-        self.xrange = xrange
         #axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
 

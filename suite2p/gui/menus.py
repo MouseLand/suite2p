@@ -149,8 +149,8 @@ def manual_label(parent):
     MW.show()
 
 def vis_window(parent):
-    VW = visualize.VisWindow(parent)
-    VW.show()
+    parent.VW = visualize.VisWindow(parent)
+    parent.VW.show()
 
 def reg_window(parent):
     RW = reggui.BinaryPlayer(parent)

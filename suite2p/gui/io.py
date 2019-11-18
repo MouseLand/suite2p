@@ -288,6 +288,11 @@ def load_behavior(parent):
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         masks.beh_masks(parent)
         traces.plot_trace(parent)
+        if hasattr(parent, 'VW'):
+            parent.VW.bloaded = parent.bloaded
+            parent.VW.beh = parent.beh
+            parent.VW.beh_time = parent.beh_time
+            parent.VW.plot_traces()
         parent.show()
     else:
         print("ERROR: this is not a 1D array with length of data")

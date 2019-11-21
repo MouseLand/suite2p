@@ -674,16 +674,22 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
 
     def add_neuron_to_ensemble(self):
-        current_v=np.mean(self.Fbin[self.imerge,:],axis=0)
-        cost_vector=np.clip(self.Fbin@current_v,a_min=0,a_max=None)**2
-        cost_vector[self.imerge]=-1000
+        '''
+        Uses formula from masks.py for the correlation view to select most
+        correlated neurons.
+        '''
+        sn = self.Fbin[self.imerge].mean(axis=-2).squeeze()
+        snstd = (sn**2).mean()**0.5
+        cc = np.dot(self.Fbin, sn.T) / self.Fbin.shape[-1] / (self.Fstd * snstd)
+        print('cc shape',cc.shape)
         cell_inds=np.nonzero(self.iscell==True)
         non_cell_inds=np.nonzero(self.iscell==False)
         if self.ichosen in non_cell_inds[0]:
-            cost_vector[cell_inds]=-1000
+            cc[cell_inds]=-1000
         if self.ichosen in cell_inds[0]:
-            cost_vector[non_cell_inds]=-1000
-        new_neuron=np.argmax(cost_vector)
+            cc[non_cell_inds]=-1000
+        cc[self.imerge]=-1000
+        new_neuron=np.argmax(cc)
         self.imerge=[new_neuron]+self.imerge
         print('type',type(self.imerge))
         print('add neuron',self.imerge)

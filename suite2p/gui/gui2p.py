@@ -114,7 +114,8 @@ class MainWindow(QtGui.QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        statfile = '/home/maria/Documents/plane0/stat.npy'
+        #statfile = '/home/maria/Documents/plane0/stat.npy'
+        statfile = '/home/maria/Documents/subsampled_suite2p/stat.npy'
         #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
@@ -704,6 +705,26 @@ class MainWindow(QtGui.QMainWindow):
         return ix_dict
 
     def fit_one_ensemble(self):
+        start=time.time()
+        sn = self.Fbin[self.imerge].mean(axis=-2).squeeze()
+        snstd = (sn**2).mean()**0.5
+        cc = np.dot(self.Fbin, sn.T) / self.Fbin.shape[-1] / (self.Fstd * snstd)
+        cell_inds=np.nonzero(self.iscell==True)
+        non_cell_inds=np.nonzero(self.iscell==False)
+        if self.ichosen in non_cell_inds[0]:
+            cc[cell_inds]=-1000
+        if self.ichosen in cell_inds[0]:
+            cc[non_cell_inds]=-1000
+        #cc[self.imerge]=-1000
+        new_neurons=np.where(cc>=self.lam)[0]
+        print(new_neurons)
+        self.imerge=list(new_neurons)
+        self.update_plot()
+        self.show()
+        end=time.time()
+        print('everything',end-start)
+
+    def fit_one_ensemble_(self):
         import time
         start_=time.time()
         #Select cell indices

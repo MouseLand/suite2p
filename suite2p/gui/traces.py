@@ -52,19 +52,21 @@ def plot_trace(parent):
             ttick.append((k*kspace+f.mean(), str(n)))
             k-=1
         bsc = len(pmerge)/25 + 1
+        favg -= favg.min()
+        favg /= favg.max()
         # at bottom plot behavior and avg trace
-        if parent.bloaded:
-            favg -= favg.min()
-            favg /= favg.max()
-            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+        parent.fmin=0
+        if len(pmerge)>5:
             parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
+            parent.fmin=-1*bsc
+        if parent.bloaded:
+            parent.p3.plot(parent.trange,-1*bsc+favg*bsc,pen=(140,140,140))
+            parent.p3.plot(parent.beh_time,-1*bsc+parent.beh*bsc,pen='w')
+            parent.fmin=-1*bsc
             #parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
             #parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             #parent.traceLabel[2].setText("")
-            parent.fmin=-1*bsc
-        else:
-            parent.fmin=0
-        #ttick.append((-0.5*bsc,'1D var'))
+            #ck.append((-0.5*bsc,'1D var'))
 
         parent.fmax=(len(pmerge)-1)*kspace + 1
         ax.setTicks([ttick])

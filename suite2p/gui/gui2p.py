@@ -1,6 +1,4 @@
 import sys
-sys.path.append("..")
-sys.path.insert(1, '/home/maria/Documents/EnsemblePursuit')
 import os
 import shutil
 import time
@@ -704,7 +702,7 @@ class MainWindow(QtGui.QMainWindow):
             ix_dict[ind]=cells[ind]
         return ix_dict
 
-    def fit_one_ensemble(self):
+    def fit_one_ensemble_(self):
         start=time.time()
         sn = self.Fbin[self.imerge].mean(axis=-2).squeeze()
         snstd = (sn**2).mean()**0.5
@@ -724,7 +722,7 @@ class MainWindow(QtGui.QMainWindow):
         end=time.time()
         print('everything',end-start)
 
-    def fit_one_ensemble_(self):
+    def fit_one_ensemble(self):
         import time
         start_=time.time()
         #Select cell indices

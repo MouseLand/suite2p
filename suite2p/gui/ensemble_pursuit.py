@@ -10,8 +10,6 @@ import time
 import sys,os
 from rastermap.mapping import Rastermap
 from . import rungui,masks
-import sys
-sys.path.insert(1, '/home/maria/Documents/EnsemblePursuit')
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 
 class EPWindow(QtGui.QMainWindow):

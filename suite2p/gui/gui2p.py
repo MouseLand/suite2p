@@ -113,7 +113,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # load initial file
         #statfile = '/home/maria/Documents/plane0/stat.npy'
-        statfile = '/home/maria/Documents/subsampled_suite2p/stat.npy'
+        #statfile = '/home/maria/Documents/subsampled_suite2p/stat.npy'
         #statfile = '/home/maria/Documents/data_for_suite2p/TX39/stat.npy'
         #statfile = '/home/flora/Documents/TX39/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'

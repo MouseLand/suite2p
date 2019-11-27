@@ -11,6 +11,9 @@ try:
 except ImportError:
     HAS_HAUS = False
 
+from functools import partial
+print = partial(print,flush=True)
+
     
 def default_ops():
     ops = {

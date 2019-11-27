@@ -91,6 +91,10 @@ def make_masks_and_enable_buttons(parent):
     # no classifier loaded
     classgui.activate(parent, False)
 
+def export_fig(parent):
+    parent.win.scene().contextMenuItem = parent.p1
+    parent.win.scene().showExportDialog()
+
 def enable_views_and_classifier(parent):
     for b in range(9):
         parent.quadbtns.button(b).setEnabled(True)

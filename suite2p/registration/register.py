@@ -268,16 +268,17 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread = 2 * Ly * Lx * nbatch
-    raw = 'keep_movie_raw' in ops and ops['keep_movie_raw']
     ix = 0
     meanImg = np.zeros((Ly, Lx))
     k=0
     t0 = time.time()
-    if raw:
+    if len(raw_file_alt) > 0:
         reg_file_alt = open(reg_file_alt, 'wb')
         raw_file_alt = open(raw_file_alt, 'rb')
+        raw = True
     else:
         reg_file_alt = open(reg_file_alt, 'r+b')
+        raw = False
     while True:
         if raw:
             buff = raw_file_alt.read(nbytesread)

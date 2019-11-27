@@ -378,10 +378,6 @@ class MainWindow(QtGui.QMainWindow):
         self.win.show()
         self.show()
 
-    def export_fig(self):
-        self.win.scene().contextMenuItem = self.p1
-        self.win.scene().showExportDialog()
-
     def mode_change(self, i):
         """
 

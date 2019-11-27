@@ -227,7 +227,7 @@ def run_s2p(ops={},db={}):
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
             if ops['two_step_registration'] and ops['keep_movie_raw']:
-                print('----------- REGISTRATION STEP 2 (making mean image (exlcuding bad frames)')
+                print('----------- REGISTRATION STEP 2 (making mean image (excluding bad frames)')
                 frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']),
                                             ops1[ipl]['reg_file'], crop=False)
                 ops1[ipl]['meanImg'] = np.mean(frames, axis=0)

@@ -236,45 +236,50 @@ class RunWindow(QtGui.QDialog):
             l+=1
 
         # data_path
+        key = 'datatype'
+        qlabel = QtGui.QLabel(key)
+        qlabel.setToolTip('File format (selects which parser to use)')
+        self.layout.addWidget(qlabel,1,0,1,1)
+        self.inputformat = QtGui.QComboBox()
+        [self.inputformat.addItem(f) for f in ['tif','mesoscan','haus','h5','sbx']]
+        self.inputformat.currentTextChanged.connect(self.parse_inputformat)
+        self.layout.addWidget(self.inputformat,2,0,1,1)
+
         key = 'look_one_level_down'
         qlabel = QtGui.QLabel(key)
-        qlabel.setToolTip('whether to look in all subfolders when searching for tiffs')
-        self.layout.addWidget(qlabel,1,0,1,1)
+        qlabel.setToolTip('whether to look in all subfolders when searching for files')
+        self.layout.addWidget(qlabel,3,0,1,1)
         qedit = LineEdit(wk,key,self)
         qedit.set_text(self.ops)
         qedit.setFixedWidth(95)
-        self.layout.addWidget(qedit,2,0,1,1)
+        self.layout.addWidget(qedit,4,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
         self.btiff = QtGui.QPushButton('Add directory to data_path')
         self.btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(self.btiff,3,0,1,2)
+        self.layout.addWidget(self.btiff,5,0,1,2)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
-        self.layout.addWidget(qlabel,4,0,1,1)
+        self.layout.addWidget(qlabel,6,0,1,1)
         self.qdata = []
         for n in range(7):
             self.qdata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.qdata[n],
-                                  n+5,0,1,2)
+                                  n+7,0,1,2)
         # save_path0
-        self.inputformat = QtGui.QComboBox()
-        [self.inputformat.addItem(f) for f in ['tif','mesoscan','haus','h5','sbx']]
-        self.inputformat.currentTextChanged.connect(self.parse_inputformat)
-        self.layout.addWidget(self.inputformat,11,0,1,2)
         self.h5text = QtGui.QLabel('')
-        self.layout.addWidget(self.h5text,12,0,1,2)
+        self.layout.addWidget(self.h5text,15,0,1,2)
         self.bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         self.bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(self.bsave,13,0,1,2)
+        self.layout.addWidget(self.bsave,16,0,1,2)
         self.savelabel = QtGui.QLabel('')
-        self.layout.addWidget(self.savelabel,14,0,1,2)
+        self.layout.addWidget(self.savelabel,17,0,1,2)
         # fast_disk
         self.bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
         self.bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(self.bbin,15,0,1,2)
+        self.layout.addWidget(self.bbin,18,0,1,2)
         self.binlabel = QtGui.QLabel('')
-        self.layout.addWidget(self.binlabel,16,0,1,2)
+        self.layout.addWidget(self.binlabel,19,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
         n0 = 21

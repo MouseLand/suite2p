@@ -203,6 +203,23 @@ def two_comps(mpix0, lam, Th2):
     vexp = np.sum(mpix0**2) - np.sum(mpix**2)
     return vexp/vexp0, (mu[k], xproj[k], goodframe[k])
 
+def neuropil_subtraction(mov,lx):
+    if len(mov.shape)<3:
+        mov = mov[np.newaxis, :, :]
+    nframes, Ly, Lx = mov.shape
+    c1 = uniform_filter(np.ones((Ly,Lx)), size=[lx, lx], mode = 'constant')
+    for j in range(nframes):
+        mov[j] -= uniform_filter(mov[j], size=[lx, lx], mode = 'constant') / c1
+    return mov
+
+def threshold_reduce(movu, Th2):
+    nframes, Lyx = movu.shape
+    Vt = np.zeros((1,Lyx), 'float32')
+    for t in range(nframes):
+        Vt += movu[t]**2 * (movu[t]>Th2)
+    Vt = Vt**.5
+    return Vt
+
 def downsample(mov, flag=True):
     if flag:
         nu = 2
@@ -214,16 +231,17 @@ def downsample(mov, flag=True):
 
     movd = np.zeros((nframes,int(np.ceil(Ly/2)),Lx), 'float32')
     Ly0 = 2*int(Ly/2)
-    movd[:,:int(Ly0/2),:] = (mov[:,0:Ly0:2,:] + mov[:,1:Ly0:2,:])/2
+    for t in range(nframes):
+        movd[t,:int(Ly0/2),:] = (mov[t,0:Ly0:2,:] + mov[t,1:Ly0:2,:])/2
     if Ly%2==1:
         movd[:,-1,:] = mov[:,-1,:]/nu
 
     mov2 = np.zeros((nframes,int(np.ceil(Ly/2)),int(np.ceil(Lx/2))), 'float32')
     Lx0 = 2*int(Lx/2)
-    mov2[:,:,:int(Lx0/2)] = (movd[:,:,0:Lx0:2] + movd[:,:,1:Lx0:2])/2
+    for t in range(nframes):
+        mov2[t,:,:int(Lx0/2)] = (movd[t,:,0:Lx0:2] + movd[t,:,1:Lx0:2])/2
     if Lx%2==1:
         mov2[:,:,-1] = movd[:,:,-1]/nu
-
     return mov2
 
 def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
@@ -310,13 +328,9 @@ def square_conv2(mov,lx):
         mov = mov[np.newaxis, :, :]
     nframes, Ly, Lx = mov.shape
 
-    nx = len(lx)
-    movt = np.zeros((nx,  nframes, Ly, Lx), 'float32')
-    for j in range(nx):
-        movt[j] = lx[j] * uniform_filter(mov, size=[0,lx[j], lx[j]], mode = 'constant')
-
-    if nx==1:
-        movt = movt[0]
+    movt = np.zeros((nframes, Ly, Lx), 'float32')
+    for t in range(nframes):
+        movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
     return movt
 
 def sparsery(ops):
@@ -329,11 +343,7 @@ def sparsery(ops):
     rez /= sdmov
     #rez *= -1
 
-    lx = [ops['spatial_hp']]
-    c1 = square_conv2(np.ones((Ly,Lx)), lx)
-    movu = square_conv2(rez, lx)
-
-    rez -= movu/c1
+    rez = neuropil_subtraction(rez, ops['spatial_hp'])
 
     LL = np.meshgrid(np.arange(Lx), np.arange(Ly))
     Lyp = np.zeros(5, 'int32')
@@ -343,7 +353,7 @@ def sparsery(ops):
     movu = []
 
     for j in range(5):
-        movu.append(square_conv2(dmov, [3]))
+        movu.append(square_conv2(dmov, 3))
         dmov = 2 * downsample(dmov)
         gxy0 = downsample(gxy[j], False)
         gxy.append(gxy0)
@@ -386,7 +396,8 @@ def sparsery(ops):
     ops['Vmap']  = []
     for j in range(len(movu)):
         #V0.append(np.amax(movu[j], axis=0))
-        V0.append(np.sum(movu[j]**2 * np.float32(movu[j]>Th2), axis=0)**.5)
+        #V0.append(np.sum(movu[j]**2 * np.float32(movu[j]>Th2), axis=0)**.5)
+        V0.append(threshold_reduce(movu[j], Th2))
         V0[j] = np.reshape(V0[j], (Lyp[j], Lxp[j]))
         ops['Vmap'].append(V0[j].copy())
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import convolve2d
 from sklearn.decomposition import PCA
-from suite2p.utils import sample_frames
+from ..utils import get_frames
 from . import register, nonrigid
 
 try:
@@ -148,9 +148,9 @@ def get_pc_metrics(ops, use_red=False):
     nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
     ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
     if use_red and 'reg_file_chan2' in ops:
-        mov  = sample_frames(ops, ix, ops['reg_file_chan2'])
+        mov  = get_frames(ops, ix, ops['reg_file_chan2'], crop=True, badframes=True)
     else:
-        mov  = sample_frames(ops, ix, ops['reg_file'])
+        mov  = get_frames(ops, ix, ops['reg_file'], crop=True, badframes=True)
 
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:

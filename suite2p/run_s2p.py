@@ -3,7 +3,7 @@ import numpy as np
 import time, os, shutil
 from scipy.io import savemat
 from .io import tiff, h5, save
-from .registration import register, metrics
+from .registration import register, metrics, reference
 from .extraction import extract, dcnv
 from . import utils
 try:
@@ -227,12 +227,10 @@ def run_s2p(ops={},db={}):
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
             if ops['two_step_registration'] and ops['keep_movie_raw']:
-                print('----------- REGISTRATION STEP 2 (making mean image (excluding bad frames)')
-                frames = utils.sample_frames(ops1[ipl], np.arange(ops1[ipl]['nframes']),
-                                            ops1[ipl]['reg_file'], crop=False)
-                ops1[ipl]['meanImg'] = np.mean(frames, axis=0)
                 print('----------- REGISTRATION STEP 2')
-                ops1[ipl] = register.register_binary(ops1[ipl], ops1[ipl]['meanImg'], raw=False) # register binary
+                print('(making mean image (excluding bad frames)')
+                refImg = reference.sampled_mean(ops1[ipl])
+                ops1[ipl] = register.register_binary(ops1[ipl], refImg, raw=False)
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))
 

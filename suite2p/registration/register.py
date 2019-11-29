@@ -348,20 +348,24 @@ def register_binary(ops, refImg=None, raw=True):
     if ops['nframes']<200:
         print('WARNING: number of frames is below 200, unpredictable behaviors may occur')
 
+    # get binary file paths
+    if raw:
+        raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
+                'raw_file' in ops and os.path.isfile(ops['raw_file']))
+    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = utils.bin_paths(ops, raw)
+
     # compute reference image
     if refImg is not None:
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        refImg, bidi = reference.compute_reference_image(ops)
+        if raw:
+            refImg, bidi = reference.compute_reference_image(ops, raw_file_align)
+        else:
+            refImg, bidi = reference.compute_reference_image(ops, reg_file_align)
         ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
-
-    # get binary file paths
-    if raw:
-        raw = 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file'])
-    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = utils.bin_paths(ops, raw)
 
     k = 0
     nfr = 0

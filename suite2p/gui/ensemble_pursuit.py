@@ -11,6 +11,17 @@ import sys,os
 from rastermap.mapping import Rastermap
 from . import rungui,masks
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
+from PyQt5.QtWidgets import QGridLayout, QWidget
+
+class Color(QWidget):
+
+    def __init__(self, color, *args, **kwargs):
+        super(Color, self).__init__(*args, **kwargs)
+        self.setAutoFillBackground(True)
+
+        palette = self.palette()
+        palette.setColor(QtGui.QPalette.Window, QtGui.QColor(color))
+        self.setPalette(palette)
 
 class EPWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -34,7 +45,7 @@ class EPWindow(QtGui.QMainWindow):
 
         self.sp=parent.Fbin.T
 
-        self.type_of_plot='U'
+        self.type_of_plot='boxes'
 
         if self.type_of_plot=='U':
             self.sample_u= self.win.addPlot(title='ZOOM IN',row=1,col=0,colspan=2)
@@ -49,6 +60,9 @@ class EPWindow(QtGui.QMainWindow):
             #self.p2.addItem(self.imgROI)
             self.all_v.setMouseEnabled(x=True,y=True)
             #self.p2.setLabel('left', 'neurons')
+
+        if self.type_of_plot=='boxes':
+            self.box_layout=QGridLayout()
 
         self.epOn = QtGui.QPushButton('compute EnsemblePursuit')
         self.epOn.clicked.connect(lambda: self.compute_ep(parent))
@@ -93,6 +107,9 @@ class EPWindow(QtGui.QMainWindow):
             #np.save(os.path.join(basename, 'embedding.npy'), proc)
         print('ep computed in %3.2f s'%(time.time()-self.tic))
             #self.activate(parent)
+        if self.type_of_plot=='boxes':
+            self.plot_boxes()
+
         if self.type_of_plot=='V':
             self.plot_v()
         if self.type_of_plot=='U':
@@ -102,6 +119,15 @@ class EPWindow(QtGui.QMainWindow):
         #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
         #                    (spath, opspath))
         print(self.V,self.V.shape)
+    def plot_boxes(self):
+        self.box_layout.addWidget(Color('red'),0,0)
+        self.box_layout.addWidget(Color('red'), 0, 0)
+        self.box_layout.addWidget(Color('green'), 1, 0)
+        self.box_layout.addWidget(Color('blue'), 1, 1)
+        self.box_layout.addWidget(Color('purple'), 2, 1)
+        widget=QWidget()
+        widget.setLayout(self.box_layout)
+        self.setCentralWidget(widget)
 
     def plot_sample_cells(self):
         cells_in_u=np.nonzero(self.U[:,:25])[0].flatten()[:250]

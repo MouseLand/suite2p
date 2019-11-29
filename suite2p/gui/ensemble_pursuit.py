@@ -62,7 +62,8 @@ class EPWindow(QtGui.QMainWindow):
             #self.p2.setLabel('left', 'neurons')
 
         if self.type_of_plot=='boxes':
-            self.box_layout=QGridLayout()
+            self.box_layout = pg.LayoutWidget()
+            self.l0.addWidget(self.box_layout,4,4,10,10)
 
         self.epOn = QtGui.QPushButton('compute EnsemblePursuit')
         self.epOn.clicked.connect(lambda: self.compute_ep(parent))
@@ -125,9 +126,10 @@ class EPWindow(QtGui.QMainWindow):
         self.box_layout.addWidget(Color('green'), 1, 0)
         self.box_layout.addWidget(Color('blue'), 1, 1)
         self.box_layout.addWidget(Color('purple'), 2, 1)
-        widget=QWidget()
-        widget.setLayout(self.box_layout)
-        self.setCentralWidget(widget)
+        self.win.show()
+        #widget=QWidget()
+        #self.win.addLayout(self.box_layout,row=1,col=0,colspan=2)
+        #self.setCentralWidget(widget)
 
     def plot_sample_cells(self):
         cells_in_u=np.nonzero(self.U[:,:25])[0].flatten()[:250]

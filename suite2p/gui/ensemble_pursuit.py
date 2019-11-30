@@ -11,7 +11,7 @@ import sys,os
 from rastermap.mapping import Rastermap
 from . import rungui,masks
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
-from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel
+from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel, QPushButton
 import matplotlib.pyplot as plt
 
 class Color(QLabel):
@@ -31,6 +31,11 @@ class Color(QLabel):
         palette.setColor(QtGui.QPalette.Window, QtGui.QColor(color))
 
         self.setPalette(palette)
+
+    def mousePressEvent(self, event):
+        print("test 1")
+        QtGui.QWidget.mousePressEvent(self, event)
+
 
 class EPWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):

@@ -11,16 +11,25 @@ import sys,os
 from rastermap.mapping import Rastermap
 from . import rungui,masks
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
-from PyQt5.QtWidgets import QGridLayout, QWidget
+from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel
+import matplotlib.pyplot as plt
 
-class Color(QWidget):
+class Color(QLabel):
 
     def __init__(self, color, *args, **kwargs):
         super(Color, self).__init__(*args, **kwargs)
         self.setAutoFillBackground(True)
 
+        '''
+        pltMap = plt.get_cmap('bwr')
+        colors = pltMap.colors
+        colors = [c + [1.] for c in colors]
+        positions = np.linspace(0, 1, len(colors))
+        pgMap = pg.ColorMap(positions, colors)
+        '''
         palette = self.palette()
         palette.setColor(QtGui.QPalette.Window, QtGui.QColor(color))
+
         self.setPalette(palette)
 
 class EPWindow(QtGui.QMainWindow):
@@ -121,8 +130,9 @@ class EPWindow(QtGui.QMainWindow):
         #                    (spath, opspath))
         print(self.V,self.V.shape)
     def plot_boxes(self):
-        self.box_layout.addWidget(Color('red'),0,0)
-        self.box_layout.addWidget(Color('red'), 0, 0)
+        w_1=Color('red')
+        self.box_layout.addWidget(w_1,0,0)
+        w_1.setText('Haha')
         self.box_layout.addWidget(Color('green'), 1, 0)
         self.box_layout.addWidget(Color('blue'), 1, 1)
         self.box_layout.addWidget(Color('purple'), 2, 1)

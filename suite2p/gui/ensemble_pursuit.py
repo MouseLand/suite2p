@@ -17,7 +17,7 @@ from pylab import *
 
 class Color(QLabel):
 
-    def __init__(self, color, ix,*args, **kwargs):
+    def __init__(self, parent,ensemble, U,*args, **kwargs):
         super(Color, self).__init__(*args, **kwargs)
         self.setAutoFillBackground(True)
 
@@ -28,7 +28,9 @@ class Color(QLabel):
         positions = np.linspace(0, 1, len(colors))
         pgMap = pg.ColorMap(positions, colors)
         '''
-        self.ix=ix
+        self.ensemble=ensemble
+        self.U=U
+        self.parent=parent
         palette = self.palette()
         colormap = cm.get_cmap("bwr")  # cm.get_cmap("CMRmap")
         colormap._init()
@@ -46,9 +48,16 @@ class Color(QLabel):
         self.setPalette(palette)
 
     def mousePressEvent(self, event):
-        print('ix',self.ix)
-        print("test 1")
         QtGui.QWidget.mousePressEvent(self, event)
+        self.selected=np.nonzero(self.U[:,self.ensemble])[0]
+        self.parent.imerge = []
+        if self.selected.size < 5000:
+            for n in self.selected:
+                self.parent.imerge.append(n)
+            self.parent.ichosen = self.parent.imerge[0]
+            self.parent.update_plot()
+        else:
+            print('too many cells selected')
 
 
 class EPWindow(QtGui.QMainWindow):
@@ -137,7 +146,7 @@ class EPWindow(QtGui.QMainWindow):
         print('ep computed in %3.2f s'%(time.time()-self.tic))
             #self.activate(parent)
         if self.type_of_plot=='boxes':
-            self.plot_boxes()
+            self.plot_boxes(parent)
 
         if self.type_of_plot=='V':
             self.plot_v()
@@ -148,16 +157,18 @@ class EPWindow(QtGui.QMainWindow):
         #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
         #                    (spath, opspath))
         print(self.V,self.V.shape)
-    def plot_boxes(self):
+    def plot_boxes(self,parent):
         print('U shp',self.U.shape)
         aux_U=self.U.reshape((1000,5,5))
+        ens_cntr=0
         for j in range(0,5):
             for i in range(0,5):
                 nonz=np.nonzero(aux_U[:,j,i].flatten())[0].shape[0]
                 print(nonz)
-                w_1=Color('red',2)
+                w_1=Color(parent,ens_cntr,self.U)
                 w_1.setText(str(j)+str(i)+'__'+str(nonz))
                 self.box_layout.addWidget(w_1,j,i)
+                ens_cntr+=1
         self.win.show()
         #widget=QWidget()
         #self.win.addLayout(self.box_layout,row=1,col=0,colspan=2)

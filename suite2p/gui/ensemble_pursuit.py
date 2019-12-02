@@ -30,11 +30,9 @@ class Color(QLabel):
         '''
         self.ix=ix
         palette = self.palette()
-        colormap = cm.get_cmap("nipy_spectral")  # cm.get_cmap("CMRmap")
+        colormap = cm.get_cmap("bwr")  # cm.get_cmap("CMRmap")
         colormap._init()
         lut = (colormap._lut * 255).view(np.ndarray)
-        print('LUT',lut)
-        print('LUT shp', lut.shape)
         # Get the colormap
         #colormap = cm.get_cmap("nipy_spectral")  # cm.get_cmap("CMRmap")
         #colormap._init()
@@ -151,12 +149,15 @@ class EPWindow(QtGui.QMainWindow):
         #                    (spath, opspath))
         print(self.V,self.V.shape)
     def plot_boxes(self):
-        w_1=Color('red',2)
-        self.box_layout.addWidget(w_1,0,0)
-        w_1.setText('Haha')
-        self.box_layout.addWidget(Color('green',1), 1, 0)
-        self.box_layout.addWidget(Color('blue',3), 1, 1)
-        self.box_layout.addWidget(Color('purple',4), 2, 1)
+        print('U shp',self.U.shape)
+        aux_U=self.U.reshape((1000,5,5))
+        for j in range(0,5):
+            for i in range(0,5):
+                nonz=np.nonzero(aux_U[:,j,i].flatten())[0].shape[0]
+                print(nonz)
+                w_1=Color('red',2)
+                w_1.setText(str(j)+str(i)+'__'+str(nonz))
+                self.box_layout.addWidget(w_1,j,i)
         self.win.show()
         #widget=QWidget()
         #self.win.addLayout(self.box_layout,row=1,col=0,colspan=2)

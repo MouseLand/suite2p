@@ -13,10 +13,11 @@ from . import rungui,masks
 from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel, QPushButton
 import matplotlib.pyplot as plt
+from pylab import *
 
 class Color(QLabel):
 
-    def __init__(self, color, *args, **kwargs):
+    def __init__(self, color, ix,*args, **kwargs):
         super(Color, self).__init__(*args, **kwargs)
         self.setAutoFillBackground(True)
 
@@ -27,12 +28,27 @@ class Color(QLabel):
         positions = np.linspace(0, 1, len(colors))
         pgMap = pg.ColorMap(positions, colors)
         '''
+        self.ix=ix
         palette = self.palette()
+        colormap = cm.get_cmap("nipy_spectral")  # cm.get_cmap("CMRmap")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)
+        print('LUT',lut)
+        print('LUT shp', lut.shape)
+        # Get the colormap
+        #colormap = cm.get_cmap("nipy_spectral")  # cm.get_cmap("CMRmap")
+        #colormap._init()
+        lut = (colormap._lut).view(np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+
+        # Apply the colormap
+        #self.setLookupTable(lut)
+        color=matplotlib.colors.rgb2hex(lut[100])
         palette.setColor(QtGui.QPalette.Window, QtGui.QColor(color))
 
         self.setPalette(palette)
 
     def mousePressEvent(self, event):
+        print('ix',self.ix)
         print("test 1")
         QtGui.QWidget.mousePressEvent(self, event)
 
@@ -135,12 +151,12 @@ class EPWindow(QtGui.QMainWindow):
         #                    (spath, opspath))
         print(self.V,self.V.shape)
     def plot_boxes(self):
-        w_1=Color('red')
+        w_1=Color('red',2)
         self.box_layout.addWidget(w_1,0,0)
         w_1.setText('Haha')
-        self.box_layout.addWidget(Color('green'), 1, 0)
-        self.box_layout.addWidget(Color('blue'), 1, 1)
-        self.box_layout.addWidget(Color('purple'), 2, 1)
+        self.box_layout.addWidget(Color('green',1), 1, 0)
+        self.box_layout.addWidget(Color('blue',3), 1, 1)
+        self.box_layout.addWidget(Color('purple',4), 2, 1)
         self.win.show()
         #widget=QWidget()
         #self.win.addLayout(self.box_layout,row=1,col=0,colspan=2)

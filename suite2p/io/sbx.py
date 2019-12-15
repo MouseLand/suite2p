@@ -45,9 +45,12 @@ def sbx_get_shape(sbxfile):
 def sbx_memmap(filename,plane_axis=True):
     '''
     Memory maps a scanbox file.
-    sbxmmap = sbx_memmap(filename,reshape_planes=True)
-    Reshapes file to the appropriate shape (N,nplanes,nchan,H,W).reshape_planes does nothing for now.
-    Actual 2P data is 65535 - sbxmmap.
+
+    npmap = sbx_memmap(filename,reshape_planes=True)
+    Returns a N x 1 x NChannels x H x W memory map object; data can be accessed like a numpy array.
+    Reshapes data to (N,nplanes,nchan,H,W) if plane_axis=1
+
+    Actual data are 65535 - sbxmmap; data format is uint16
     '''
     if filename[-3:] == 'sbx':
         sbxshape,nplanes = sbx_get_shape(filename)
@@ -69,7 +72,7 @@ def sbx_memmap(filename,plane_axis=True):
                 sbxshape[2],
                 sbxshape[1])            
     else:
-        raise ValueError('Not sbx:  '+ filename)
+        raise ValueError('Not sbx:  ' + filename)
 
 
 def sbx_to_binary(ops,ndeadcols = -1):

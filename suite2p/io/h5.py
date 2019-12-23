@@ -32,7 +32,7 @@ def h5py_to_binary(ops):
 
     # open all binary files for writing
     ops1, h5list, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, True)
-
+    ops1[0]['h5list'] = h5list
     keys = ops1[0]['h5py_key']
     if isinstance(keys, str):
         keys = [keys]

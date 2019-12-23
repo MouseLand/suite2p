@@ -103,6 +103,7 @@ def reset_default(parent):
 
 def load(parent, name):
     print('loading classifier ', name)
+    parent.classfile = name
     parent.model = classifier.Classifier(classfile=name)
     if parent.model.loaded:
         activate(parent, True)

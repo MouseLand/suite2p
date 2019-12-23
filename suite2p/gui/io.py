@@ -58,9 +58,13 @@ def make_masks_and_enable_buttons(parent):
     # make color arrays for various views
     masks.make_colors(parent)
 
-    parent.ichosen = int(0)
-    parent.imerge = [int(0)]
-    parent.iflip = int(0)
+    if parent.iscell.sum() > 0:
+        ich = np.nonzero(parent.iscell)[0][0]
+    else:
+        ich = 0
+    parent.ichosen = int(ich)
+    parent.imerge = [int(ich)]
+    parent.iflip = int(ich)
     parent.ichosen_stats()
     parent.comboBox.setCurrentIndex(2)
     # colorbar

@@ -190,7 +190,6 @@ def make_colorbar(parent, b0):
 
 def init_masks(parent):
     """
-
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
@@ -232,6 +231,7 @@ def init_masks(parent):
             parent.rois['iROI'][i,2,ypix,xpix] = parent.rois['iROI'][i,1,ypix,xpix]
             parent.rois['iROI'][i,1,ypix,xpix] = parent.rois['iROI'][i,0,ypix,xpix]
             parent.rois['iROI'][i,0,ypix,xpix] = n
+
             # add weighting to all layers
             parent.rois['Lam'][i,2,ypix,xpix] = parent.rois['Lam'][i,1,ypix,xpix]
             parent.rois['Lam'][i,1,ypix,xpix] = parent.rois['Lam'][i,0,ypix,xpix]
@@ -288,7 +288,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
         for n in parent.imerge:
             ypix = parent.stat[n]['ypix'].flatten()
             xpix = parent.stat[n]['xpix'].flatten()
-            v = (parent.rois['iROI'][wplot][:,ypix,xpix]>0).sum(axis=0) - 1
+            v = (parent.rois['iROI'][wplot][:,ypix,xpix]>-1).sum(axis=0) - 1
             v = 1 - v/3
             M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, v)
     else:

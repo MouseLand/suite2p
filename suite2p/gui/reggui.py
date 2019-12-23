@@ -3,6 +3,7 @@ from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import os
 import sys
+from skimage import io
 import numpy as np
 from .. import utils
 from . import masks
@@ -27,6 +28,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.l0.addWidget(self.win,1,1,13,14)
         layout = self.win.ci.layout
         self.loaded = False
+        self.zloaded = False
 
         # A plot area (ViewBox + axes) for displaying the image
         self.vmain = pg.ViewBox(lockAspect=True, invertY=True, name="plot1")
@@ -68,18 +70,30 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.zbox.toggled.connect(self.add_zstack)
         self.l0.addWidget(self.zbox, 0, 8, 1, 1)
 
-        self.p1 = self.win.addPlot(name='plot1',row=1,col=0,colspan=2)
+        zlabel = QtGui.QLabel('Z-plane:')
+        zlabel.setStyleSheet("color: white;")
+        self.l0.addWidget(zlabel, 0, 9, 1, 1)
+
+        self.Zedit = QtGui.QLineEdit(self)
+        self.Zedit.setValidator(QtGui.QIntValidator(0, 0))
+        self.Zedit.setText('0')
+        self.Zedit.setFixedWidth(30)
+        self.Zedit.setAlignment(QtCore.Qt.AlignRight)
+        self.l0.addWidget(self.Zedit, 0, 10, 1, 1)
+
+
+        self.p1 = self.win.addPlot(name='plot_shift',row=1,col=0,colspan=2)
         self.p1.setMouseEnabled(x=True,y=False)
         self.p1.setMenuEnabled(False)
         self.scatter1 = pg.ScatterPlotItem()
         self.p1.addItem(self.scatter1)
 
-        self.p2 = self.win.addPlot(name='plot2',row=2,col=0,colspan=2)
+        self.p2 = self.win.addPlot(name='plot_F',row=2,col=0,colspan=2)
         self.p2.setMouseEnabled(x=True,y=False)
         self.p2.setMenuEnabled(False)
         self.scatter2 = pg.ScatterPlotItem()
         self.p2.addItem(self.scatter2)
-        self.p2.setXLink('plot1')
+        self.p2.setXLink('plot_shift')
 
         #self.p2.autoRange(padding=0.01)
         self.win.ci.layout.setRowStretchFactor(0,5)
@@ -90,17 +104,17 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.cframe = 0
         self.createButtons()
         # create ROI chooser
-        self.l0.addWidget(QtGui.QLabel(''),2,0,1,2)
+        self.l0.addWidget(QtGui.QLabel(''),6,0,1,2)
         qlabel = QtGui.QLabel(self)
         qlabel.setText("<font color='white'>Selected ROI:</font>")
-        self.l0.addWidget(qlabel,3,0,1,2)
+        self.l0.addWidget(qlabel,7,0,1,2)
         self.ROIedit = QtGui.QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
         self.ROIedit.setText('0')
         self.ROIedit.setFixedWidth(45)
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
-        self.l0.addWidget(self.ROIedit, 4,0,1,1)
+        self.l0.addWidget(self.ROIedit, 8,0,1,1)
         # create frame slider
         self.frameLabel = QtGui.QLabel("Current frame:")
         self.frameLabel.setStyleSheet("color: white;")
@@ -136,6 +150,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.Floaded = False
         self.raw_on = False
         self.red_on = False
+        self.z_on = False
         self.wraw = False
         self.wred = False
         self.wraw_wred = False
@@ -147,6 +162,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 print(fileName)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
+                self.iscell = parent.iscell
                 self.Floaded = True
                 self.openFile(fileName, True)
 
@@ -167,11 +183,19 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.red_on = False
             self.next_frame()
 
+    def zoom_image(self):
+        self.vmain.setRange(xRange=(0,self.LY),yRange=(0,self.LX))
+        if self.raw_on or self.z_on:
+            self.vside.setRange(xRange=(0,self.zLy),yRange=(0,self.zLx))
+            self.vside.setXLink("plot1")
+            self.vside.setYLink("plot1")
+
     def add_raw(self):
         if self.loaded:
             if self.rawbox.isChecked():
                 self.raw_on = True
                 self.win.addItem(self.vside, row=0, col=1)
+                self.zoom_image()
             else:
                 self.raw_on = False
                 self.win.removeItem(self.vside)
@@ -180,6 +204,9 @@ class BinaryPlayer(QtGui.QMainWindow):
     def add_zstack(self):
         if self.loaded:
             if self.zbox.isChecked():
+                if self.rawbox.isChecked():
+                    self.rawbox.setChecked(False)
+                    self.add_raw()
                 self.z_on = True
                 self.win.addItem(self.vside, row=0, col=1)
             else:
@@ -210,10 +237,6 @@ class BinaryPlayer(QtGui.QMainWindow):
             img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[n],self.Lx[n]))
             img = img[self.ycrop[n][0]:self.ycrop[n][1], self.xcrop[n][0]:self.xcrop[n][1]]
             self.img[self.yrange[n][0]:self.yrange[n][1], self.xrange[n][0]:self.xrange[n][1]] = img
-        if 0:#self.Floaded:
-            self.img[self.yext,self.xext,0] = self.srange[0]
-            self.img[self.yext,self.xext,1] = self.srange[0]
-            self.img[self.yext,self.xext,2] = (self.srange[1]) * np.ones((self.yext.size,),np.float32)
         if self.wred and self.red_on:
             buff = self.reg_file_chan2.read(self.nbytesread[0])
             imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
@@ -226,6 +249,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                 imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
                 self.imgraw = np.concatenate((self.imgraw, imgred_raw, np.zeros_like(imgred_raw)), axis=-1)
             self.iside.setImage(self.imgraw, levels=self.srange)
+        if self.zloaded and self.z_on:
+            self.iside.setImage(self.zstack[int(self.Zedit.text())], levels=self.zrange)
+
         self.imain.setImage(self.img, levels=self.srange)
         self.frameSlider.setValue(self.cframe)
         self.frameNumber.setText(str(self.cframe))
@@ -233,24 +259,12 @@ class BinaryPlayer(QtGui.QMainWindow):
                               [self.yoff[self.cframe],self.xoff[self.cframe]],
                               size=10,brush=pg.mkBrush(255,0,0))
         if self.Floaded:
-            self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+            self.scatter2.setData([self.cframe,self.cframe],
+                                    [self.ft[self.cframe],self.ft[self.cframe]],size=10,
+                                    brush=pg.mkBrush(255,0,0))
 
     def make_masks(self):
         ncells = len(self.stat)
-        self.cellpix = np.zeros((self.LY, self.LX), np.int32)
-        self.sroi = np.zeros((self.LY, self.LX), np.uint8)
-        for n in range(0,ncells):
-            ypix = self.stat[n]['ypix'].flatten()
-            xpix = self.stat[n]['xpix'].flatten()
-            iext = utils.boundary(ypix,xpix)
-            yext = ypix[iext]
-            xext = xpix[iext]
-            goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
-            self.stat[n]['yext'] = yext[goodi]
-            self.stat[n]['xext'] = xext[goodi]
-            self.cellpix[ypix, xpix] = n
-            self.sroi[ypix, xpix] = 50
-
         np.random.seed(seed=0)
         allcols = np.random.random((ncells,))
         if hasattr(self, 'redcell'):
@@ -258,17 +272,41 @@ class BinaryPlayer(QtGui.QMainWindow):
             allcols = allcols + 0.1
             allcols[self.redcell] = 0
         self.colors = masks.hsv2rgb(allcols)
-        colormasks = self.colors[self.cellpix, :]
-        self.allmasks = np.concatenate((colormasks,
+        self.RGB = -1*np.ones((self.LY, self.LX, 3), np.int32)
+        self.cellpix = -1*np.ones((self.LY, self.LX), np.int32)
+        self.sroi = np.zeros((self.LY, self.LX), np.uint8)
+        for n in np.nonzero(self.iscell)[0]:
+            ypix = self.stat[n]['ypix'].flatten()
+            xpix = self.stat[n]['xpix'].flatten()
+            if not self.ops[0]['allow_overlap']:
+                ypix = ypix[~self.stat[n]['overlap']]
+                xpix = xpix[~self.stat[n]['overlap']]
+            iext = utils.boundary(ypix,xpix)
+            yext = ypix[iext]
+            xext = xpix[iext]
+            goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
+            self.stat[n]['yext'] = yext[goodi]
+            self.stat[n]['xext'] = xext[goodi]
+            self.cellpix[ypix, xpix] = n
+            self.sroi[yext[goodi], xext[goodi]] = 200
+            self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
+
+        self.allmasks = np.concatenate((self.RGB,
                                         self.sroi[:,:,np.newaxis]), axis=-1)
         self.maskmain.setImage(self.allmasks, levels=[0, 255])
         self.maskside.setImage(self.allmasks, levels=[0, 255])
 
     def plot_trace(self):
+        self.p2.clear()
         self.ft = self.Fcell[self.ichosen,:]
-        self.p2.plot(self.ft, pen='b')
-        self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
+        self.p2.plot(self.ft, pen=self.colors[self.ichosen])
+        self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,
+                                brush=pg.mkBrush(255,0,0))
         self.p2.setLimits(yMin=self.ft.min(), yMax=self.ft.max())
+        self.p2.setRange(xRange=(0,self.nframes),
+                         yRange=(self.ft.min(),self.ft.max()),
+                         padding=0.0)
+        self.p2.setLimits(xMin=0,xMax=self.nframes)
 
     def open(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,
@@ -336,6 +374,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy'))):
                     self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy')))
                     self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'stat.npy')), allow_pickle=True)
+                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'iscell.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
@@ -412,6 +451,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy'))):
                     self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy')))
                     self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'stat.npy')), allow_pickle=True)
+                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'iscell.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
@@ -498,10 +538,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.make_masks()
             self.cell_mask()
             self.plot_trace()
-            self.p2.setRange(xRange=(0,self.nframes),
-                             yRange=(self.ft.min(),self.ft.max()),
-                             padding=0.0)
-            self.p2.setLimits(xMin=0,xMax=self.nframes)
+
         self.cframe = -1
         self.loaded = True
         self.next_frame()
@@ -527,19 +564,18 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.pause()
 
     def number_chosen(self):
+        self.ichosen = int(self.ROIedit.text())
+        self.cell_chosen()
+
+    def cell_chosen(self):
         if self.Floaded:
-            self.ichosen = int(self.ROIedit.text())
+            self.ROIedit.setText(str(self.ichosen))
             if self.ichosen >= len(self.stat):
                 self.ichosen = len(self.stat) - 1
             self.cell_mask()
-            self.p2.clear()
             self.ft = self.Fcell[self.ichosen,:]
-            self.p2.plot(self.ft,pen='b')
-            self.p2.setRange(yRange=(self.ft.min(),self.ft.max()))
-            self.scatter2 = pg.ScatterPlotItem()
-            self.p2.addItem(self.scatter2)
-            self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,brush=pg.mkBrush(255,0,0))
-            self.p2.setXLink('plot1')
+            self.plot_trace()
+            self.p2.setXLink('plot_shift')
             self.jump_to_frame()
             self.show()
 
@@ -566,22 +602,21 @@ class BinaryPlayer(QtGui.QMainWindow):
                 elif x==self.vmain or x==self.vside:
                     if event.button()==1:
                         if event.double():
-                            zoomImg=True
+                            self.zoom_image()
+                        else:
+                            pos = x.mapSceneToView(event.scenePos())
+                            posy = int(pos.x())
+                            posx = int(pos.y())
+                            if posy>=0 and posy<self.LX and posx>=0 and posx<self.LY:
+                                if self.cellpix[posx,posy] > -1:
+                                    self.ichosen = self.cellpix[posx,posy]
+                                    self.cell_chosen()
                 if iplot==1 or iplot==2:
                     if event.button()==1:
                         if event.double():
                             zoom=True
                         else:
                             choose=True
-        if zoomImg:
-            self.vmain.setRange(xRange=(0,self.LY),yRange=(0,self.LY))
-            if self.raw_on:
-                self.iside.setRange(xRange=(0,self.LY),yRange=(0,self.LY))
-                self.iside.setXLink("plot1")
-                self.iside.setYLink("plot1")
-
-
-
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
         if choose:
@@ -589,6 +624,26 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.cframe = np.maximum(0, np.minimum(self.nframes-1, int(np.round(posx))))
                 self.frameSlider.setValue(self.cframe)
                 #self.jump_to_frame()
+
+    def load_zstack(self):
+        name = QtGui.QFileDialog.getOpenFileName(
+            self, "Open zstack", filter="*.tif"
+        )
+        self.fname = name[0]
+        try:
+            self.zstack = io.imread(self.fname)
+            self.zLy, self.zLx = self.zstack.shape[1:]
+            self.Zedit.setValidator(QtGui.QIntValidator(0, self.zstack.shape[0]))
+            self.zrange = [np.percentile(self.zstack,1), np.percentile(self.zstack,99)]
+
+            self.computeZ.setEnabled(True)
+            self.zloaded = True
+            self.zbox.setEnabled(True)
+            self.zbox.setChecked(True)
+
+        except Exception as e:
+            print('ERROR: %s'%e)
+
 
     def cell_mask(self):
         #self.cmask = np.zeros((self.Ly,self.Lx,3),np.float32)
@@ -616,17 +671,23 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def createButtons(self):
         iconSize = QtCore.QSize(30, 30)
-        openButton = QtGui.QToolButton()
-        openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
-        openButton.setIconSize(iconSize)
+        openButton = QtGui.QPushButton('load ops.npy')
+        #openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
+        #openButton.setIconSize(iconSize)
         openButton.setToolTip("Open single-plane ops.npy")
         openButton.clicked.connect(self.open)
 
-        openButton2 = QtGui.QToolButton()
-        openButton2.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DirOpenIcon))
-        openButton2.setIconSize(iconSize)
-        openButton2.setToolTip("Open multi-plane ops1.npy")
+        openButton2 = QtGui.QPushButton('load ops1.npy')
+        #openButton2.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DirOpenIcon))
+        #openButton2.setIconSize(iconSize)
+        #openButton2.setToolTip("Open multi-plane ops1.npy")
         openButton2.clicked.connect(self.open_combined)
+
+        loadZ = QtGui.QPushButton('load z-stack tiff')
+        loadZ.clicked.connect(self.load_zstack)
+
+        self.computeZ = QtGui.QPushButton('compute z position')
+        self.computeZ.setEnabled(False)
 
         self.playButton = QtGui.QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
@@ -653,8 +714,10 @@ class BinaryPlayer(QtGui.QMainWindow):
         quitButton.setToolTip("Quit")
         quitButton.clicked.connect(self.close)
 
-        self.l0.addWidget(openButton,1,0,1,1)
-        self.l0.addWidget(openButton2,1,1,1,1)
+        self.l0.addWidget(openButton,1,0,1,2)
+        self.l0.addWidget(openButton2,2,0,1,2)
+        self.l0.addWidget(loadZ,3,0,1,2)
+        self.l0.addWidget(self.computeZ,4,0,1,2)
         self.l0.addWidget(self.playButton,15,0,1,1)
         self.l0.addWidget(self.pauseButton,15,1,1,1)
         #self.l0.addWidget(quitButton,0,1,1,1)
@@ -966,6 +1029,8 @@ class PCViewer(QtGui.QMainWindow):
                         if event.double():
                             zoom=True
                             self.zoom_plot()
+
+
 
     def keyPressEvent(self, event):
         bid = -1

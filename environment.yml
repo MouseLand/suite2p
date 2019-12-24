@@ -1,6 +1,6 @@
 name: suite2p
 dependencies:
-  - python>3.5
+  - python>=3.7
   - pip
   - mkl_fft=1.0.10
   - mkl=2019.3
@@ -12,7 +12,7 @@ dependencies:
   - scikit-image
   - scikit-learn
   - pip:
-    - PyQt5<5.12
+    - PyQt5
     - pyqtgraph
     - natsort
     - scanimage-tiff-reader

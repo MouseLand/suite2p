@@ -39,7 +39,8 @@ class ViewBox(pg.ViewBox):
         self.state['yInverted'] = invertY
 
     def mouseDoubleClickEvent(self, ev):
-        self.zoom_plot()
+        if self.parent.loaded:
+            self.zoom_plot()
 
     def mouseClickEvent(self, ev):
         if self.parent.loaded:

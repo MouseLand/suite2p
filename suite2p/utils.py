@@ -22,8 +22,8 @@ def boundary(ypix,xpix):
 def circle(med, r):
     """ returns pixels of circle with radius 1.25x radius of cell (r) """
     theta = np.linspace(0.0,2*np.pi,100)
-    x = r*1.35 * np.cos(theta) + med[0]
-    y = r*1.35 * np.sin(theta) + med[1]
+    x = r*1.25 * np.cos(theta) + med[0]
+    y = r*1.25 * np.sin(theta) + med[1]
     x = x.astype(np.int32)
     y = y.astype(np.int32)
     return x,y

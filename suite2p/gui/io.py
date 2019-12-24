@@ -79,12 +79,15 @@ def make_masks_and_enable_buttons(parent):
     parent.lcell0.setText("%d" % (parent.iscell.sum()))
     graphics.init_range(parent)
     traces.plot_trace(parent)
-    if 'aspect' in parent.ops:
-        parent.xyrat = parent.ops['aspect']
-    elif 'diameter' in parent.ops and (type(parent.ops["diameter"]) is not int) and (len(parent.ops["diameter"]) > 1):
+    parent.xyrat = 1.0
+    if (isinstance(parent.ops['diameter'], list) and
+        len(parent.ops['diameter'])>1 and
+        parent.ops['aspect']==1.0):
         parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
     else:
-        parent.xyrat = 1.0
+        if 'aspect' in parent.ops:
+            parent.xyrat = parent.ops['aspect']
+
     parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
     parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)
     #parent.p2.setXLink(parent.p1)

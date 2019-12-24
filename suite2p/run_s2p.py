@@ -118,6 +118,8 @@ def run_s2p(ops={},db={}):
     ops0 = default_ops()
     ops = {**ops0, **ops}
     ops = {**ops, **db}
+    if isinstance(ops['diameter'], list) and len(ops['diameter'])>1 and ops['aspect']==1.0:
+        ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
     print(db)
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
         if ('h5py' in ops) and len(ops['h5py'])>0:

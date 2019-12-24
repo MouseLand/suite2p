@@ -128,7 +128,10 @@ def run_s2p(ops={},db={}):
             ops['save_path0'] = ops['data_path'][0]
 
     # check if there are files already registered!
-    fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
+    if len(ops['save_folder']) > 0:
+        fpathops1 = os.path.join(ops['save_path0'], ops['save_folder'], 'ops1.npy')
+    else:
+        fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
     if os.path.isfile(fpathops1):
         files_found_flag = True
         flag_binreg = True

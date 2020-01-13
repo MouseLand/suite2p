@@ -1,15 +1,13 @@
-import suite2p
 import numpy as np
 import os
-from suite2p import run_s2p
-from suite2p.gui import gui2p
 import argparse
 
 def main():
     ops = np.load('ops.npy', allow_pickle=True).item()
+    import suite2p
     suite2p.main(ops)
 
-if __name__ == '__main__':
+def parse_arguments():
     parser = argparse.ArgumentParser(description='Suite2p parameters')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
@@ -21,6 +19,12 @@ if __name__ == '__main__':
         ops = np.load(args.ops, allow_pickle=True).item()
     if len(args.db)>0:
         db = np.load(args.db, allow_pickle=True).item()
-        suite2p.run_s2p.run_s2p(ops, db)
+        from . import run_s2p
+        run_s2p.run_s2p(ops, db)
     else:
+        from .gui import gui2p
         gui2p.run()
+
+    
+if __name__ == '__main__':
+    parse_arguments()

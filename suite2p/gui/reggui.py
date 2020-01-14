@@ -4,9 +4,11 @@ import pyqtgraph as pg
 import os
 import sys
 from skimage import io
+from scipy.ndimage import gaussian_filter1d
 import numpy as np
 from .. import utils
 from . import masks
+from ..registration import zalign
 
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -25,7 +27,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600,0)
         self.win.resize(1000,500)
-        self.l0.addWidget(self.win,1,1,13,14)
+        self.l0.addWidget(self.win,1,2,13,14)
         layout = self.win.ci.layout
         self.loaded = False
         self.zloaded = False
@@ -36,6 +38,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.vmain.setMenuEnabled(False)
         self.imain = pg.ImageItem()
         self.vmain.addItem(self.imain)
+        self.cellscatter = pg.ScatterPlotItem()
+        self.vmain.addItem(self.cellscatter)
         self.maskmain = pg.ImageItem()
 
         # side box
@@ -43,6 +47,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.vside.setMenuEnabled(False)
         self.iside = pg.ImageItem()
         self.vside.addItem(self.iside)
+        self.cellscatter_side = pg.ScatterPlotItem()
+        self.vside.addItem(self.cellscatter_side)
         self.maskside = pg.ImageItem()
 
         # view red channel
@@ -86,17 +92,23 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.p1.setMouseEnabled(x=True,y=False)
         self.p1.setMenuEnabled(False)
         self.scatter1 = pg.ScatterPlotItem()
+        self.scatter1.setData([0,0],[0,0])
         self.p1.addItem(self.scatter1)
 
         self.p2 = self.win.addPlot(name='plot_F',row=2,col=0,colspan=2)
         self.p2.setMouseEnabled(x=True,y=False)
         self.p2.setMenuEnabled(False)
         self.scatter2 = pg.ScatterPlotItem()
-        self.p2.addItem(self.scatter2)
         self.p2.setXLink('plot_shift')
 
+        self.p3 = self.win.addPlot(name='plot_Z',row=3,col=0,colspan=2)
+        self.p3.setMouseEnabled(x=True,y=False)
+        self.p3.setMenuEnabled(False)
+        self.scatter3 = pg.ScatterPlotItem()
+        self.p3.setXLink('plot_shift')
+
         #self.p2.autoRange(padding=0.01)
-        self.win.ci.layout.setRowStretchFactor(0,5)
+        self.win.ci.layout.setRowStretchFactor(0,12)
         self.movieLabel = QtGui.QLabel("No ops chosen")
         self.movieLabel.setStyleSheet("color: white;")
         self.movieLabel.setAlignment(QtCore.Qt.AlignCenter)
@@ -158,13 +170,13 @@ class BinaryPlayer(QtGui.QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
             if parent.ops['save_path'][-8:]!='combined':
-                fileName = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
-                print(fileName)
+                filename = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
+                print(filename)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
                 self.iscell = parent.iscell
                 self.Floaded = True
-                self.openFile(fileName, True)
+                self.openFile(filename, True)
 
     def add_masks(self):
         if self.loaded:
@@ -184,9 +196,12 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.next_frame()
 
     def zoom_image(self):
-        self.vmain.setRange(xRange=(0,self.LY),yRange=(0,self.LX))
+        self.vmain.setRange(yRange=(0,self.LY),xRange=(0,self.LX))
         if self.raw_on or self.z_on:
-            self.vside.setRange(xRange=(0,self.zLy),yRange=(0,self.zLx))
+            if self.z_on:
+                self.vside.setRange(yRange=(0,self.zLy),xRange=(0,self.zLx))
+            else:
+                self.vside.setRange(yRange=(0,self.LY),xRange=(0,self.LX))
             self.vside.setXLink("plot1")
             self.vside.setYLink("plot1")
 
@@ -244,12 +259,15 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.wraw and self.raw_on:
             buff = self.reg_file_raw.read(self.nbytesread[0])
             self.imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))
+            print(self.imgraw.shape)
             if self.wraw_wred:
                 buff = self.reg_file_raw_chan2.read(self.nbytesread[0])
                 imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
                 self.imgraw = np.concatenate((self.imgraw, imgred_raw, np.zeros_like(imgred_raw)), axis=-1)
             self.iside.setImage(self.imgraw, levels=self.srange)
         if self.zloaded and self.z_on:
+            if hasattr(self, 'zmax'):
+                self.Zedit.setText(str(self.zmax[self.cframe]))
             self.iside.setImage(self.zstack[int(self.Zedit.text())], levels=self.zrange)
 
         self.imain.setImage(self.img, levels=self.srange)
@@ -262,7 +280,10 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.scatter2.setData([self.cframe,self.cframe],
                                     [self.ft[self.cframe],self.ft[self.cframe]],size=10,
                                     brush=pg.mkBrush(255,0,0))
-
+        if self.zloaded and self.z_on:
+            self.scatter3.setData([self.cframe,self.cframe],
+                                  [self.zmax[self.cframe],self.zmax[self.cframe]],
+                                  size=10,brush=pg.mkBrush(255,0,0))
     def make_masks(self):
         ncells = len(self.stat)
         np.random.seed(seed=0)
@@ -300,6 +321,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.p2.clear()
         self.ft = self.Fcell[self.ichosen,:]
         self.p2.plot(self.ft, pen=self.colors[self.ichosen])
+        self.p2.addItem(self.scatter2)
         self.scatter2.setData([self.cframe],[self.ft[self.cframe]],size=10,
                                 brush=pg.mkBrush(255,0,0))
         self.p2.setLimits(yMin=self.ft.min(), yMax=self.ft.max())
@@ -309,24 +331,24 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.p2.setLimits(xMin=0,xMax=self.nframes)
 
     def open(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QtGui.QFileDialog.getOpenFileName(self,
                             "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
-        if fileName:
-            print(fileName[0])
-            self.openFile(fileName[0], False)
+        if filename:
+            print(filename[0])
+            self.openFile(filename[0], False)
 
     def open_combined(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QtGui.QFileDialog.getOpenFileName(self,
                             "Open multiplane ops1.npy file",filter="ops*.npy")
         # load ops in same folder
-        if fileName:
-            print(fileName[0])
-            self.openCombined(fileName[0])
+        if filename:
+            print(filename[0])
+            self.openCombined(filename[0])
 
-    def openCombined(self, fileName):
+    def openCombined(self, filename):
         try:
-            ops1 = np.load(fileName, allow_pickle=True)
+            ops1 = np.load(filename, allow_pickle=True)
             basefolder = ops1[0]['save_path0']
             #opsCombined = np.load(os.path.abspath(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
             #self.LY = opsCombined['Ly']
@@ -352,7 +374,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if os.path.isfile(ops['reg_file']):
                     reg_file = ops['reg_file']
                 else:
-                    reg_file = os.path.abspath(os.path.join(os.path.dirname(fileName),'plane%d'%ipl, 'data.bin'))
+                    reg_file = os.path.abspath(os.path.join(os.path.dirname(filename),'plane%d'%ipl, 'data.bin'))
                 print(reg_file, os.path.isfile(reg_file))
                 self.reg_loc.append(reg_file)
                 self.reg_file.append(open(self.reg_loc[-1], 'rb'))
@@ -371,13 +393,15 @@ class BinaryPlayer(QtGui.QMainWindow):
                 good = True
             self.Floaded = False
             if not fromgui:
-                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy'))):
-                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'F.npy')))
-                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'stat.npy')), allow_pickle=True)
-                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName), 'combined', 'iscell.npy')), allow_pickle=True)
+                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy'))):
+                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy')))
+                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'stat.npy')), allow_pickle=True)
+                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'iscell.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
+            else:
+                self.Floaded = True
         except Exception as e:
             print("ERROR: incorrect ops1.npy or missing binaries")
             good = False
@@ -388,13 +412,13 @@ class BinaryPlayer(QtGui.QMainWindow):
             except:
                 print('tried to close binaries')
         if good:
-            self.filename = fileName
+            self.filename = filename
             self.ops = ops1
             self.setup_views()
 
-    def openFile(self, fileName, fromgui):
+    def openFile(self, filename, fromgui):
         try:
-            ops = np.load(fileName, allow_pickle=True).item()
+            ops = np.load(filename, allow_pickle=True).item()
             self.LY = ops['Ly']
             self.LX = ops['Lx']
             self.Ly = [ops['Ly']]
@@ -407,7 +431,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:
-                self.reg_loc = os.path.abspath(os.path.join(os.path.dirname(fileName),'data.bin'))
+                self.reg_loc = os.path.abspath(os.path.join(os.path.dirname(filename),'data.bin'))
             self.reg_file = [open(self.reg_loc[-1],'rb')]
 
             self.wraw = False
@@ -420,7 +444,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                     else:
                         self.reg_loc_raw = ops['raw_file']
                 else:
-                    self.reg_loc_raw = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_raw.bin'))
+                    self.reg_loc_raw = os.path.abspath(os.path.join(os.path.dirname(filename),'data_raw.bin'))
                 try:
                     self.reg_file_raw = open(self.reg_loc_raw,'rb')
                     self.wraw=True
@@ -430,7 +454,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if self.reg_loc == ops['reg_file']:
                     self.reg_loc_red = ops['reg_file_chan2']
                 else:
-                    self.reg_loc_red = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_chan2.bin'))
+                    self.reg_loc_red = os.path.abspath(os.path.join(os.path.dirname(filename),'data_chan2.bin'))
                 self.reg_file_chan2 = open(self.reg_loc_red,'rb')
                 self.wred=True
             if 'reg_file_raw_chan2' in ops or 'raw_file_chan2' in ops:
@@ -440,7 +464,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                     else:
                         self.reg_loc_raw_chan2 = ops['raw_file_chan2']
                 else:
-                    self.reg_loc_raw_chan2 = os.path.abspath(os.path.join(os.path.dirname(fileName),'data_raw_chan2.bin'))
+                    self.reg_loc_raw_chan2 = os.path.abspath(os.path.join(os.path.dirname(filename),'data_raw_chan2.bin'))
                 try:
                     self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2,'rb')
                     self.wraw_wred=True
@@ -448,14 +472,18 @@ class BinaryPlayer(QtGui.QMainWindow):
                     self.wraw_wred = False
 
             if not fromgui:
-                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy'))):
-                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'F.npy')))
-                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'stat.npy')), allow_pickle=True)
-                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(fileName),'iscell.npy')), allow_pickle=True)
+                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(filename),'F.npy'))):
+                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(filename),'F.npy')))
+                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename),'stat.npy')), allow_pickle=True)
+                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename),'iscell.npy')), allow_pickle=True)
                     self.Floaded = True
                 else:
                     self.Floaded = False
+            else:
+                self.Floaded = True
             good = True
+            print(self.Floaded)
+            self.filename = filename
         except Exception as e:
             print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
             print(e)
@@ -467,7 +495,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 print('tried to close binaries')
             good = False
         if good:
-            self.filename = fileName
+            self.filename = filename
             self.ops = [ops]
             self.setup_views()
 
@@ -536,8 +564,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.Floaded:
             self.maskbox.setEnabled(True)
             self.make_masks()
-            self.cell_mask()
-            self.plot_trace()
+            self.cell_chosen()
 
         self.cframe = -1
         self.loaded = True
@@ -569,7 +596,16 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def cell_chosen(self):
         if self.Floaded:
+            self.cell_mask()
             self.ROIedit.setText(str(self.ichosen))
+            rgb = np.array(self.colors[self.ichosen])
+            self.cellscatter.setData(self.xext, self.yext,
+                                     pen=pg.mkPen(list(rgb)),
+                                     brush=pg.mkBrush(list(rgb)), size=3)
+            self.cellscatter_side.setData(self.xext, self.yext,
+                                     pen=pg.mkPen(list(rgb)),
+                                     brush=pg.mkBrush(list(rgb)), size=3)
+
             if self.ichosen >= len(self.stat):
                 self.ichosen = len(self.stat) - 1
             self.cell_mask()
@@ -604,13 +640,14 @@ class BinaryPlayer(QtGui.QMainWindow):
                         if event.double():
                             self.zoom_image()
                         else:
-                            pos = x.mapSceneToView(event.scenePos())
-                            posy = int(pos.x())
-                            posx = int(pos.y())
-                            if posy>=0 and posy<self.LX and posx>=0 and posx<self.LY:
-                                if self.cellpix[posx,posy] > -1:
-                                    self.ichosen = self.cellpix[posx,posy]
-                                    self.cell_chosen()
+                            if self.Floaded:
+                                pos = x.mapSceneToView(event.scenePos())
+                                posy = int(pos.x())
+                                posx = int(pos.y())
+                                if posy>=0 and posy<self.LX and posx>=0 and posx<self.LY:
+                                    if self.cellpix[posx,posy] > -1:
+                                        self.ichosen = self.cellpix[posx,posy]
+                                        self.cell_chosen()
                 if iplot==1 or iplot==2:
                     if event.button()==1:
                         if event.double():
@@ -619,6 +656,9 @@ class BinaryPlayer(QtGui.QMainWindow):
                             choose=True
         if zoom:
             self.p1.setRange(xRange=(0,self.nframes))
+            self.p2.setRange(xRange=(0,self.nframes))
+            self.p3.setRange(xRange=(0,self.nframes))
+
         if choose:
             if self.playButton.isEnabled():
                 self.cframe = np.maximum(0, np.minimum(self.nframes-1, int(np.round(posx))))
@@ -640,6 +680,11 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.zloaded = True
             self.zbox.setEnabled(True)
             self.zbox.setChecked(True)
+            if 'zcorr' in self.ops[0]:
+                if self.zstack.shape[0]==self.ops[0]['zcorr'].shape[0]:
+                    zcorr = self.ops[0]['zcorr']
+                    self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
+                    self.plot_zcorr()
 
         except Exception as e:
             print('ERROR: %s'%e)
@@ -688,6 +733,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
         self.computeZ = QtGui.QPushButton('compute z position')
         self.computeZ.setEnabled(False)
+        self.computeZ.clicked.connect(self.compute_z)
 
         self.playButton = QtGui.QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
@@ -757,6 +803,23 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.frameSlider.setEnabled(True)
         print('paused')
 
+    def compute_z(self):
+        ops, zcorr = zalign.compute_zpos(self.zstack, self.ops[0])
+        self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
+        np.save(self.filename, ops)
+        self.plot_zcorr()
+
+    def plot_zcorr(self):
+        self.p3.clear()
+        self.p3.plot(self.zmax, pen='r')
+        self.p3.addItem(self.scatter3)
+        self.p3.setRange(xRange=(0,self.nframes),
+                         yRange=(self.zmax.min(),
+                                 self.zmax.max()+3),
+                         padding=0.0)
+        self.p3.setLimits(xMin=0,xMax=self.nframes)
+        self.p3.setXLink('plot_shift')
+
 def subsample_frames(ops, nsamps, reg_loc):
     nFrames = ops['nframes']
     Ly = ops['Ly']
@@ -773,7 +836,6 @@ def subsample_frames(ops, nsamps, reg_loc):
         frames[j,:,:] = np.reshape(data, (Ly, Lx))
     reg_file.close()
     return frames
-
 
 class PCViewer(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -863,9 +925,9 @@ class PCViewer(QtGui.QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, 'ops'):
             if parent.ops['save_path'][-8:]!='combined':
-                fileName = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
-                print(fileName)
-                self.openFile(fileName)
+                filename = os.path.abspath(os.path.join(parent.basename, 'ops.npy'))
+                print(filename)
+                self.openFile(filename)
 
     def createButtons(self):
         iconSize = QtCore.QSize(30, 30)
@@ -915,16 +977,16 @@ class PCViewer(QtGui.QMainWindow):
         self.pauseButton.setEnabled(False)
 
     def open(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QtGui.QFileDialog.getOpenFileName(self,
                             "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
-        if fileName:
-            print(fileName[0])
-            self.openFile(fileName[0])
+        if filename:
+            print(filename[0])
+            self.openFile(filename[0])
 
-    def openFile(self, fileName):
+    def openFile(self, filename):
         try:
-            ops = np.load(fileName, allow_pickle=True).item()
+            ops = np.load(filename, allow_pickle=True).item()
             self.PC = ops['regPC']
             self.Ly, self.Lx = self.PC.shape[2:]
             self.DX = ops['regDX']
@@ -1015,6 +1077,7 @@ class PCViewer(QtGui.QMainWindow):
         self.p1.setYRange(0,self.Ly)
         self.p2.setXRange(0,self.Lx)
         self.p2.setYRange(0,self.Ly)
+
 
     def plot_clicked(self,event):
         items = self.win.scene().items(event.scenePos())

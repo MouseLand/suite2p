@@ -7,6 +7,7 @@ def sampled_mean(ops):
     nframes = ops['nframes']
     nsamps = min(nframes, 1000)
     ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
+    bin_file = ops['reg_file']
     if ops['nchannels']>1:
         if ops['functional_chan'] == ops['align_by_chan']:
             bin_file = ops['reg_file']

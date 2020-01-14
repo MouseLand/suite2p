@@ -24,7 +24,7 @@ def h5py_to_binary(ops):
             'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
 
     """
-
+    ops['data_path'] = [os.path.dirname(ops['h5_path'])]
     ops1 = utils.init_ops(ops)
 
     nplanes = ops1[0]['nplanes']

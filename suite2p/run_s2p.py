@@ -207,12 +207,16 @@ def run_s2p(ops={},db={}):
             from .io import tiff
             if ops['input_format'] == 'mesoscan':
                 ops1 = tiff.mesoscan_to_binary(ops)
-                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+                print('time %4.2f sec. Wrote mesoscope tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             elif ops['input_format'] == 'haus':
                 print('time %4.2f sec. Using HAUSIO')
                 dataset = haussio.load_haussio(ops['data_path'][0])
                 ops1 = dataset.tosuite2p(ops)
                 print('time %4.2f sec. Wrote data to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+            elif ops['input_format'] == 'bruker':
+                ops['bruker'] = True
+                ops1 = tiff.ome_to_binary(ops)
+                print('time %4.2f sec. Wrote bruker tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             else:
                 ops1 = tiff.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))

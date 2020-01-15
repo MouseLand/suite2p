@@ -109,10 +109,10 @@ class RunWindow(QtGui.QDialog):
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
-                     'save_mat', 'combined', '1Preg', 'nonrigid', 'bruker',
+                     'save_mat', 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect','bruker']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
@@ -133,7 +133,6 @@ class RunWindow(QtGui.QDialog):
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
-                    'if you have bruker single-page tiffs with Ch1 and Ch2, say 1',
                     "if 1, registration is performed if it wasn't performed already",
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
@@ -236,12 +235,13 @@ class RunWindow(QtGui.QDialog):
             l+=1
 
         # data_path
-        key = 'datatype'
+        key = 'input_format'
         qlabel = QtGui.QLabel(key)
+        qlabel.setFont(bigfont)
         qlabel.setToolTip('File format (selects which parser to use)')
         self.layout.addWidget(qlabel,1,0,1,1)
         self.inputformat = QtGui.QComboBox()
-        [self.inputformat.addItem(f) for f in ['tif','mesoscan','haus','h5','sbx']]
+        [self.inputformat.addItem(f) for f in ['tif','bruker','sbx', 'h5','mesoscan','haus','sbx']]
         self.inputformat.currentTextChanged.connect(self.parse_inputformat)
         self.layout.addWidget(self.inputformat,2,0,1,1)
 
@@ -262,10 +262,13 @@ class RunWindow(QtGui.QDialog):
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,6,0,1,1)
         self.qdata = []
-        for n in range(7):
+        for n in range(6):
             self.qdata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.qdata[n],
                                   n+7,0,1,2)
+        qlabel = QtGui.QLabel('h5_path')
+        qlabel.setFont(bigfont)
+        self.layout.addWidget(qlabel,14,0,1,1)
         # save_path0
         self.h5text = QtGui.QLabel('')
         self.layout.addWidget(self.h5text,15,0,1,2)
@@ -528,7 +531,7 @@ class RunWindow(QtGui.QDialog):
                     self.runButton.setEnabled(True)
                     self.btiff.setEnabled(False)
                     self.listOps.setEnabled(True)
-                    
+
                 if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)
@@ -591,6 +594,7 @@ class RunWindow(QtGui.QDialog):
         name = name[0]
         if len(name)>0:
             self.h5_path = name
+            self.data_path = [os.path.dirname(name)]
             self.h5text.setText(name)
             TC = TextChooser(self)
             result = TC.exec_()
@@ -611,7 +615,7 @@ class RunWindow(QtGui.QDialog):
             self.get_h5py()
         else:
             pass
-        
+
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")

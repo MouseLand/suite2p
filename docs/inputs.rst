@@ -129,9 +129,21 @@ Then if ops['look_one_level_down'] = 1, it processes ALL the h5 files in
 that same directory. Also make sure they all have the same key for the
 data.
 
+
+sbx binary files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Scanbox binary files (*.sbx) work out of the box if you set ``ops['input_format'] = "sbx"``.
+
+When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set ``ops['sbx_ndeadcols']``. Set this option to ``-1`` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
+Joao Couto (@jcouto) wrote the binary sbx parser.
+
+
 .. _repository: https://github.com/dgreenberg/read_patterned_tifdata
 .. _haussmeister: https://github.com/neurodroid/haussmeister
 .. _notebook: https://github.com/MouseLand/suite2p/blob/master/jupyter/run_pipeline_tiffs_or_batch.ipynb
 .. _scanimage-tiff-reader: http://scanimage.gitlab.io/ScanImageTiffReaderDocs/
 .. _sklearn.external.tifffile: http://scikit-image.org/docs/dev/api/skimage.external.tifffile.html
 .. _here: https://github.com/MouseLand/suite2p/issues/135#issuecomment-467244278
+
+

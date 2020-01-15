@@ -106,7 +106,7 @@ def enhanced_mean_image(ops):
         ops['spatscale_pix'] = diameter[1]
         ops['aspect'] = diameter[0]/diameter[1]
 
-    diameter = 4*np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']]) + 1
+    diameter = 4*np.ceil(np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']])) + 1
     diameter = diameter.flatten().astype(np.int64)
     Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
     I = I - Imed

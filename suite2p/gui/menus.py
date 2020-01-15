@@ -136,9 +136,11 @@ def plugins(parent):
     parent.plugins = {}
     plugin_menu = main_menu.addMenu('&Plugins')
     for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
-        parent.plugins[entry_pt.name] = QtGui.QAction(entry_pt.menu, parent)
-        parent.plugins[entry_pt.name].triggered.connect(entry_pt.window)
-        plugin_menu.addAction(parent.plugins[entry_pt.name])
+        plugin_obj = entry_pt.load() # load the advertised class from entry_points
+        parent.plugins[entry_pt.name] = plugin_obj(parent) # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
+        action = QtGui.QAction(parent.plugins[entry_pt.name].name, parent) # create plugin menu item with the name property of the loaded class
+        action.triggered.connect(parent.plugins[entry_pt.name].trigger) # attach class method 'trigger' to plugin menu action
+        plugin_menu.addAction(action)
 
 def run_suite2p(parent):
     RW = rungui.RunWindow(parent)

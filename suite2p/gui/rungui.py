@@ -236,44 +236,50 @@ class RunWindow(QtGui.QDialog):
             l+=1
 
         # data_path
+        key = 'datatype'
+        qlabel = QtGui.QLabel(key)
+        qlabel.setToolTip('File format (selects which parser to use)')
+        self.layout.addWidget(qlabel,1,0,1,1)
+        self.inputformat = QtGui.QComboBox()
+        [self.inputformat.addItem(f) for f in ['tif','mesoscan','haus','h5','sbx']]
+        self.inputformat.currentTextChanged.connect(self.parse_inputformat)
+        self.layout.addWidget(self.inputformat,2,0,1,1)
+
         key = 'look_one_level_down'
         qlabel = QtGui.QLabel(key)
-        qlabel.setToolTip('whether to look in all subfolders when searching for tiffs')
-        self.layout.addWidget(qlabel,1,0,1,1)
+        qlabel.setToolTip('whether to look in all subfolders when searching for files')
+        self.layout.addWidget(qlabel,3,0,1,1)
         qedit = LineEdit(wk,key,self)
         qedit.set_text(self.ops)
         qedit.setFixedWidth(95)
-        self.layout.addWidget(qedit,2,0,1,1)
+        self.layout.addWidget(qedit,4,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
         self.btiff = QtGui.QPushButton('Add directory to data_path')
         self.btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(self.btiff,3,0,1,2)
+        self.layout.addWidget(self.btiff,5,0,1,2)
         qlabel = QtGui.QLabel('data_path')
         qlabel.setFont(bigfont)
-        self.layout.addWidget(qlabel,4,0,1,1)
+        self.layout.addWidget(qlabel,6,0,1,1)
         self.qdata = []
         for n in range(7):
             self.qdata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.qdata[n],
-                                  n+5,0,1,2)
+                                  n+7,0,1,2)
         # save_path0
-        self.bh5py = QtGui.QPushButton('OR add h5 file path')
-        self.bh5py.clicked.connect(self.get_h5py)
-        self.layout.addWidget(self.bh5py,11,0,1,2)
         self.h5text = QtGui.QLabel('')
-        self.layout.addWidget(self.h5text,12,0,1,2)
+        self.layout.addWidget(self.h5text,15,0,1,2)
         self.bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         self.bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(self.bsave,13,0,1,2)
+        self.layout.addWidget(self.bsave,16,0,1,2)
         self.savelabel = QtGui.QLabel('')
-        self.layout.addWidget(self.savelabel,14,0,1,2)
+        self.layout.addWidget(self.savelabel,17,0,1,2)
         # fast_disk
         self.bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
         self.bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(self.bbin,15,0,1,2)
+        self.layout.addWidget(self.bbin,18,0,1,2)
         self.binlabel = QtGui.QLabel('')
-        self.layout.addWidget(self.binlabel,16,0,1,2)
+        self.layout.addWidget(self.binlabel,19,0,1,2)
         self.runButton = QtGui.QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(lambda: self.run_S2P(parent))
         n0 = 21
@@ -341,6 +347,8 @@ class RunWindow(QtGui.QDialog):
         if hasattr(self, 'h5_path'):
             self.h5_path = []
             self.h5_key = 'data'
+        if hasattr(self, 'sbx_path'):
+            self.sbx_path = []
         self.save_path = []
         self.fast_disk = []
         # clear labels
@@ -353,7 +361,6 @@ class RunWindow(QtGui.QDialog):
         self.ops = np.load(self.opsfile, allow_pickle=True).item()
         self.save_text() # grab ops in GUI
         # enable all the file loaders again
-        self.bh5py.setEnabled(True)
         self.btiff.setEnabled(True)
         self.bsave.setEnabled(True)
         self.bbin.setEnabled(True)
@@ -368,24 +375,25 @@ class RunWindow(QtGui.QDialog):
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
+        self.datastr = self.data_path[0]
         if hasattr(self, 'h5_path') and len(self.h5_path) > 0:
             self.db['h5py'] = self.h5_path
             self.db['h5py_key'] = self.h5_key
             self.datastr = self.h5_path
-        else:
-            self.datastr = self.data_path[0]
-        print(self.datastr)
+        elif self.inputformat.currentText() == 'sbx':
+            self.db['sbx_ndeadcols'] = -1
+
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
-            else:
+            elif hasattr(self, 'h5_path'):
                 fpath = os.path.dirname(self.db['h5py'])
             self.save_path = fpath
         self.db['save_path0'] = self.save_path
         if len(self.fast_disk)==0:
             self.fast_disk = self.save_path
         self.db['fast_disk'] = self.fast_disk
-
+        self.db['input_format'] = self.inputformat.currentText()
     def run_S2P(self, parent):
         self.finish = True
         self.error = False
@@ -403,7 +411,7 @@ class RunWindow(QtGui.QDialog):
         if len(self.save_path)==0:
             if len(self.db['data_path'])>0:
                 fpath = self.db['data_path'][0]
-            else:
+            elif len(self.db['h5py'])>0:
                 fpath = os.path.dirname(self.db['h5py'])
             self.save_path = fpath
         save_folder = os.path.join(self.save_path, 'suite2p/')
@@ -447,7 +455,7 @@ class RunWindow(QtGui.QDialog):
                 self.run_S2P(parent)
 
     def save_ops(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
+        name = QtGui.QFileDialog.getSveFileName(self,'Ops name (*.npy)')
         name = name[0]
         self.save_text()
         if name:
@@ -487,6 +495,8 @@ class RunWindow(QtGui.QDialog):
                         if key in self.keylist:
                             self.editlist[self.keylist.index(key)].set_text(ops)
                         self.ops[key] = ops[key]
+                if not 'input_format' in self.ops.keys():
+                    self.ops['input_format'] = 'tif'
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     self.data_path = ops['data_path']
                     for n in range(7):
@@ -495,7 +505,6 @@ class RunWindow(QtGui.QDialog):
                         else:
                             self.qdata[n].setText('')
                     self.runButton.setEnabled(True)
-                    self.bh5py.setEnabled(False)
                     self.btiff.setEnabled(True)
                     self.listOps.setEnabled(True)
                     if hasattr(self,'h5_path'):
@@ -508,10 +517,18 @@ class RunWindow(QtGui.QDialog):
                     self.data_path = []
                     for n in range(7):
                         self.qdata[n].setText('')
+                    self.ops['input_format'] = 'h5'
                     self.runButton.setEnabled(True)
                     self.btiff.setEnabled(False)
-                    self.bh5py.setEnabled(True)
                     self.listOps.setEnabled(True)
+                self.inputformat.currentTextChanged.connect(lambda x:x)
+                self.inputformat.setCurrentText(self.ops['input_format'])
+                self.inputformat.currentTextChanged.connect(self.parse_inputformat)
+                if self.ops['input_format'] == 'sbx':
+                    self.runButton.setEnabled(True)
+                    self.btiff.setEnabled(False)
+                    self.listOps.setEnabled(True)
+                    
                 if 'save_path0' in ops and len(ops['save_path0'])>0:
                     self.save_path = ops['save_path0']
                     self.savelabel.setText(self.save_path)
@@ -568,7 +585,6 @@ class RunWindow(QtGui.QDialog):
             self.runButton.setEnabled(True)
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
-            self.bh5py.setEnabled(False)
 
     def get_h5py(self):
         name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
@@ -586,6 +602,16 @@ class RunWindow(QtGui.QDialog):
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
             self.btiff.setEnabled(False)
+
+    def parse_inputformat(self):
+        inputformat = self.inputformat.currentText()
+        print('Input format:' + inputformat)
+        if inputformat == 'h5':
+            # replace functionality of "old" button
+            self.get_h5py()
+        else:
+            pass
+        
 
     def save_folder(self):
         name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")

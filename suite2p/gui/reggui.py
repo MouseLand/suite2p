@@ -431,9 +431,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:
-                self.reg_loc = os.path.abspath(os.path.join(os.path.dirname(filename),'data.bin'))
+                self.reg_loc = [os.path.abspath(os.path.join(os.path.dirname(fileName),'data.bin'))]
             self.reg_file = [open(self.reg_loc[-1],'rb')]
-
             self.wraw = False
             self.wred = False
             self.wraw_wred = False

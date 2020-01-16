@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.registration.register &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.register</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/registration/register/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.registration.register">
+<span id="suite2p-registration-register"></span><h1><a class="reference internal" href="#module-suite2p.registration.register" title="suite2p.registration.register"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.register</span></code></a><a class="headerlink" href="#module-suite2p.registration.register" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.registration.register.prepare_refAndMasks">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">prepare_refAndMasks</code><span class="sig-paren">(</span><em class="sig-param">refImg</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#prepare_refAndMasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.prepare_refAndMasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>prepares refAndMasks for phasecorr using refImg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refImg</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘smooth_sigma’
+(if <code class="docutils literal notranslate"><span class="pre">`ops['1Preg']`</span></code>, need ‘spatial_taper’, ‘spatial_hp’, ‘pre_smooth’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refAndMasks</strong> – maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.compute_motion_and_shift">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">compute_motion_and_shift</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#compute_motion_and_shift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.compute_motion_and_shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>register data matrix to reference image and shift</p>
+<p>need to run <code class="docutils literal notranslate"><span class="pre">`refAndMasks</span> <span class="pre">=</span> <span class="pre">register.prepare_refAndMasks(ops)`</span></code> to get fft’ed masks;
+if <code class="docutils literal notranslate"><span class="pre">`ops['nonrigid']`</span></code> need to run <code class="docutils literal notranslate"><span class="pre">`ops</span> <span class="pre">=</span> <span class="pre">nonrigid.make_blocks(ops)`</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>refAndMasks</strong> (<em>list</em>) – maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nonrigid’, ‘bidiphase’, ‘1Preg’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – registered frames x Ly x Lx</p></li>
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cmax</strong> (<em>float</em>) – maximum of phase correlation for each frame</p></li>
+<li><p><strong>yxnr</strong> (<em>list</em>) – ymax, xmax and cmax from the non-rigid registration</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.compute_crop">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">compute_crop</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#compute_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.compute_crop" title="Permalink to this definition">¶</a></dt>
+<dd><p>determines ops[‘badframes’] (using ops[‘th_badframes’])
+and excludes these ops[‘badframes’] when computing valid ranges
+from registration in y and x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.register_binary_to_ref">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">register_binary_to_ref</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">refImg</em>, <em class="sig-param">reg_file_align</em>, <em class="sig-param">raw_file_align</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#register_binary_to_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.register_binary_to_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>register binary data to reference image refImg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – </p></li>
+<li><p><strong>refImg</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>reg_file_align</strong> (<em>string</em>) – file to (read if raw_file_align empty, and) write registered binary to</p></li>
+<li><p><strong>raw_file_align</strong> (<em>string</em>) – file to read raw binary from (if not empty)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – sets ‘meanImg’ or ‘meanImg_chan2’
+maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p></li>
+<li><p><strong>offsets</strong> (<em>list</em>) – [ymax, xmax, cmax, yxnr] &lt;- shifts and correlations</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.apply_shifts">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">apply_shifts</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em>, <em class="sig-param">ymax1</em>, <em class="sig-param">xmax1</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#apply_shifts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.apply_shifts" title="Permalink to this definition">¶</a></dt>
+<dd><p>apply rigid and nonrigid shifts to data (for chan that’s not ‘align_by_chan’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>int16</em>) – </p>
+</dd>
+</dl>
+<p>ops : dictionary</p>
+<dl class="simple">
+<dt>refImg<span class="classifier">int16</span></dt><dd><p>reference image</p>
+</dd>
+<dt>reg_file_align<span class="classifier">string</span></dt><dd><p>file to (read if raw_file_align empty, and) write registered binary to</p>
+</dd>
+<dt>raw_file_align<span class="classifier">string</span></dt><dd><p>file to read raw binary from (if not empty)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – sets ‘meanImg’ or ‘meanImg_chan2’
+maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</p></li>
+<li><p><strong>offsets</strong> (<em>list</em>) – [ymax, xmax, cmax, yxnr] &lt;- shifts and correlations</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.apply_shifts_to_binary">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">apply_shifts_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">offsets</em>, <em class="sig-param">reg_file_alt</em>, <em class="sig-param">raw_file_alt</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#apply_shifts_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.apply_shifts_to_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>apply registration shifts to binary data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.register_binary">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">register_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">refImg=None</em>, <em class="sig-param">raw=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#register_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.register_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>registration of binary files</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.register.register_npy">
+<code class="sig-prename descclassname">suite2p.registration.register.</code><code class="sig-name descname">register_npy</code><span class="sig-paren">(</span><em class="sig-param">Z</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/register.html#register_npy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.register.register_npy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

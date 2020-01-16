@@ -1,0 +1,178 @@
+:mod:`suite2p.gui.reggui`
+=========================
+
+.. py:module:: suite2p.gui.reggui
+
+
+Module Contents
+---------------
+
+.. py:class:: BinaryPlayer(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QMainWindow`
+
+   .. method:: add_masks(self)
+
+
+
+   .. method:: add_red(self)
+
+
+
+   .. method:: zoom_image(self)
+
+
+
+   .. method:: add_raw(self)
+
+
+
+   .. method:: add_zstack(self)
+
+
+
+   .. method:: next_frame(self)
+
+
+
+   .. method:: make_masks(self)
+
+
+
+   .. method:: plot_trace(self)
+
+
+
+   .. method:: open(self)
+
+
+
+   .. method:: open_combined(self)
+
+
+
+   .. method:: openCombined(self, filename)
+
+
+
+   .. method:: openFile(self, filename, fromgui)
+
+
+
+   .. method:: setup_views(self)
+
+
+
+   .. method:: keyPressEvent(self, event)
+
+
+
+   .. method:: number_chosen(self)
+
+
+
+   .. method:: cell_chosen(self)
+
+
+
+   .. method:: plot_clicked(self, event)
+
+
+
+   .. method:: load_zstack(self)
+
+
+
+   .. method:: cell_mask(self)
+
+
+
+   .. method:: go_to_frame(self)
+
+
+
+   .. method:: fitToWindow(self)
+
+
+
+   .. method:: updateFrameSlider(self)
+
+
+
+   .. method:: updateButtons(self)
+
+
+
+   .. method:: createButtons(self)
+
+
+
+   .. method:: jump_to_frame(self)
+
+
+
+   .. method:: start(self)
+
+
+
+   .. method:: pause(self)
+
+
+
+   .. method:: compute_z(self)
+
+
+
+   .. method:: plot_zcorr(self)
+
+
+
+
+.. function:: subsample_frames(ops, nsamps, reg_loc)
+
+
+.. py:class:: PCViewer(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QMainWindow`
+
+   .. method:: createButtons(self)
+
+
+
+   .. method:: start(self)
+
+
+
+   .. method:: pause(self)
+
+
+
+   .. method:: open(self)
+
+
+
+   .. method:: openFile(self, filename)
+
+
+
+   .. method:: next_frame(self)
+
+
+
+   .. method:: plot_frame(self)
+
+
+
+   .. method:: zoom_plot(self)
+
+
+
+   .. method:: plot_clicked(self, event)
+
+
+
+   .. method:: keyPressEvent(self, event)
+
+
+
+

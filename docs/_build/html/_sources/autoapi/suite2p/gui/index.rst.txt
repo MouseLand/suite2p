@@ -1,0 +1,28 @@
+:mod:`suite2p.gui`
+==================
+
+.. py:module:: suite2p.gui
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   buttons/index.rst
+   classgui/index.rst
+   drawroi/index.rst
+   graphics/index.rst
+   gui2p/index.rst
+   io/index.rst
+   masks/index.rst
+   menus/index.rst
+   merge/index.rst
+   reggui/index.rst
+   rungui/index.rst
+   traces/index.rst
+   views/index.rst
+   visualize/index.rst
+
+

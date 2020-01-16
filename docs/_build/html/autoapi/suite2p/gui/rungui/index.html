@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.rungui &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.rungui</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/gui/rungui/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.gui.rungui">
+<span id="suite2p-gui-rungui"></span><h1><a class="reference internal" href="#module-suite2p.gui.rungui" title="suite2p.gui.rungui"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.rungui</span></code></a><a class="headerlink" href="#module-suite2p.gui.rungui" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="suite2p.gui.rungui.TextChooser">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">TextChooser</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#TextChooser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.TextChooser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QDialog</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.TextChooser.exit_list">
+<code class="sig-name descname">exit_list</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#TextChooser.exit_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.TextChooser.exit_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.rungui.ListChooser">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">ListChooser</code><span class="sig-paren">(</span><em class="sig-param">Text</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#ListChooser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.ListChooser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QDialog</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.ListChooser.load_ops">
+<code class="sig-name descname">load_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#ListChooser.load_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.ListChooser.load_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.ListChooser.exit_list">
+<code class="sig-name descname">exit_list</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#ListChooser.exit_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.ListChooser.exit_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.rungui.RunWindow">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">RunWindow</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QDialog</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.remove_ops">
+<code class="sig-name descname">remove_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.remove_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.remove_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.list_ops">
+<code class="sig-name descname">list_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.list_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.list_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.compile_ops_db">
+<code class="sig-name descname">compile_ops_db</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.compile_ops_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.compile_ops_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.run_S2P">
+<code class="sig-name descname">run_S2P</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.run_S2P"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.run_S2P" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.stop">
+<code class="sig-name descname">stop</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.started">
+<code class="sig-name descname">started</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.started"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.finished">
+<code class="sig-name descname">finished</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.finished" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.save_ops">
+<code class="sig-name descname">save_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.save_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.save_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.save_default_ops">
+<code class="sig-name descname">save_default_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.save_default_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.save_default_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.save_text">
+<code class="sig-name descname">save_text</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.save_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.save_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.load_ops">
+<code class="sig-name descname">load_ops</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.load_ops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.load_ops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.load_db">
+<code class="sig-name descname">load_db</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.load_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.load_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.stdout_write">
+<code class="sig-name descname">stdout_write</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.stdout_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.stdout_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.stderr_write">
+<code class="sig-name descname">stderr_write</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.stderr_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.stderr_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.clean_script">
+<code class="sig-name descname">clean_script</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.clean_script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.clean_script" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.get_folders">
+<code class="sig-name descname">get_folders</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.get_folders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.get_folders" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.get_h5py">
+<code class="sig-name descname">get_h5py</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.get_h5py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.get_h5py" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.parse_inputformat">
+<code class="sig-name descname">parse_inputformat</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.parse_inputformat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.parse_inputformat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.save_folder">
+<code class="sig-name descname">save_folder</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.save_folder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.save_folder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.RunWindow.bin_folder">
+<code class="sig-name descname">bin_folder</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#RunWindow.bin_folder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.RunWindow.bin_folder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.rungui.LineEdit">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">LineEdit</code><span class="sig-paren">(</span><em class="sig-param">k</em>, <em class="sig-param">key</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#LineEdit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.LineEdit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QLineEdit</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.LineEdit.get_text">
+<code class="sig-name descname">get_text</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">intkeys</em>, <em class="sig-param">boolkeys</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#LineEdit.get_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.LineEdit.get_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.rungui.LineEdit.set_text">
+<code class="sig-name descname">set_text</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#LineEdit.set_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.LineEdit.set_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.rungui.OpsButton">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">OpsButton</code><span class="sig-paren">(</span><em class="sig-param">bid</em>, <em class="sig-param">Text</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#OpsButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.OpsButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QPushButton</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.OpsButton.press">
+<code class="sig-name descname">press</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em>, <em class="sig-param">bid</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#OpsButton.press"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.OpsButton.press" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.rungui.VerticalLabel">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.rungui.</code><code class="sig-name descname">VerticalLabel</code><span class="sig-paren">(</span><em class="sig-param">text=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#VerticalLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.VerticalLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QWidget</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.rungui.VerticalLabel.paintEvent">
+<code class="sig-name descname">paintEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/rungui.html#VerticalLabel.paintEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.rungui.VerticalLabel.paintEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

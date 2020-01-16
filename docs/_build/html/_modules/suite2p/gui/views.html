@@ -1,0 +1,536 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.views &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.views</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.views</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">enhanced_mean_image</span>
+
+<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; view buttons&quot;&quot;&quot;</span>
+    <span class="c1"># view buttons</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">view_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;Q: ROIs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;W: mean img&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;E: mean img (enhanced)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;R: correlation map&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;T: max projection&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Y: mean img chan2, corr&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;U: mean img chan2&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QButtonGroup</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">vlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">vlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;Background&lt;/font&gt;&quot;</span><span class="p">)</span>
+    <span class="n">vlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">boldfont</span><span class="p">)</span>
+    <span class="n">vlabel</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">vlabel</span><span class="o">.</span><span class="n">minimumSizeHint</span><span class="p">())</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">vlabel</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">view_names</span><span class="p">:</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">ViewButton</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;&amp;&quot;</span> <span class="o">+</span> <span class="n">names</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">addButton</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;sat: &quot;</span><span class="p">)</span>
+            <span class="n">label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: white;&quot;</span><span class="p">)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">b</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">setExclusive</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">slider</span> <span class="o">=</span> <span class="n">RangeSlider</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">slider</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">slider</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">slider</span><span class="o">.</span><span class="n">setLow</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">slider</span><span class="o">.</span><span class="n">setHigh</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">slider</span><span class="o">.</span><span class="n">setTickPosition</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="o">.</span><span class="n">TicksBelow</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">slider</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">view_names</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">b</span><span class="o">+=</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">b</span></div>
+
+<div class="viewcode-block" id="init_views"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.init_views">[docs]</a><span class="k">def</span> <span class="nf">init_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Ly&quot;</span><span class="p">],</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Lx&quot;</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">views</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">7</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;meanImgE&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">enhanced_mean_image</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImgE&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">k</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span>
+            <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+            <span class="n">mimg</span>     <span class="o">=</span> <span class="p">(</span><span class="n">mimg</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">k</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+            <span class="n">vcorr</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Vcorr&#39;</span><span class="p">]</span>
+            <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vcorr</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vcorr</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+            <span class="n">vcorr</span> <span class="o">=</span> <span class="p">(</span><span class="n">vcorr</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">mimg1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">mimg</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">vcorr</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">k</span><span class="o">==</span><span class="mi">4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;max_proj&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                <span class="n">mproj</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;max_proj&#39;</span><span class="p">]</span>
+                <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mproj</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mproj</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+                <span class="n">mproj</span> <span class="o">=</span> <span class="p">(</span><span class="n">mproj</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">mimg</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mproj</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;maxproj not in combined view&#39;</span><span class="p">)</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">k</span><span class="o">==</span><span class="mi">5</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;meanImg_chan2_corrected&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2_corrected&#39;</span><span class="p">]</span>
+                <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+                <span class="n">mimg</span>     <span class="o">=</span> <span class="p">(</span><span class="n">mimg</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">k</span><span class="o">==</span><span class="mi">6</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;meanImg_chan2&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span>
+                <span class="n">mimg1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mimg99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">mimg</span><span class="p">,</span><span class="mi">99</span><span class="p">)</span>
+                <span class="n">mimg</span>     <span class="o">=</span> <span class="p">(</span><span class="n">mimg</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mimg99</span> <span class="o">-</span> <span class="n">mimg1</span><span class="p">)</span>
+                <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">mimg</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mimg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="n">mimg</span> <span class="o">*=</span> <span class="mi">255</span>
+        <span class="n">mimg</span> <span class="o">=</span> <span class="n">mimg</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mimg</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="plot_views"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.plot_views">[docs]</a><span class="k">def</span> <span class="nf">plot_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">k</span>    <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;view&#39;</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<span class="c1">### custom QPushButton class that plots image when clicked</span>
+<span class="c1"># requires buttons to put into a QButtonGroup (parent.viewbtns)</span>
+<span class="c1"># allows only 1 button to pressed at a time</span>
+<div class="viewcode-block" id="ViewButton"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.ViewButton">[docs]</a><span class="k">class</span> <span class="nc">ViewButton</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ViewButton</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimumSizeHint</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="viewcode-block" id="ViewButton.press"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.ViewButton.press">[docs]</a>    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">():</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stylePressed</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;view&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bid</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="RangeSlider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider">[docs]</a><span class="k">class</span> <span class="nc">RangeSlider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A slider for ranges.</span>
+
+<span class="sd">        This class provides a dual-slider for ranges, where there is a defined</span>
+<span class="sd">        maximum and minimum, as is a normal slider, but instead of having a</span>
+<span class="sd">        single slider value, there are 2 slider values.</span>
+
+<span class="sd">        This class emits the same signals as the QSlider base class, with the</span>
+<span class="sd">        exception of valueChanged</span>
+
+<span class="sd">        Found this slider here: https://www.mail-archive.com/pyqt@riverbankcomputing.com/msg22889.html</span>
+<span class="sd">        and modified it</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RangeSlider</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hover_control</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setOrientation</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Vertical</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTickPosition</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="o">.</span><span class="n">TicksRight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span>\
+                <span class="s2">&quot;QSlider::handle:horizontal {</span><span class="se">\</span>
+<span class="s2">                background-color: white;</span><span class="se">\</span>
+<span class="s2">                border: 1px solid #5c5c5c;</span><span class="se">\</span>
+<span class="s2">                border-radius: 0px;</span><span class="se">\</span>
+<span class="s2">                border-color: black;</span><span class="se">\</span>
+<span class="s2">                height: 8px;</span><span class="se">\</span>
+<span class="s2">                width: 6px;</span><span class="se">\</span>
+<span class="s2">                margin: -8px 2; </span><span class="se">\</span>
+<span class="s2">                }&quot;</span><span class="p">)</span>
+
+
+        <span class="c1">#self.opt = QtGui.QStyleOptionSlider()</span>
+        <span class="c1">#self.opt.orientation=QtCore.Qt.Vertical</span>
+        <span class="c1">#self.initStyleOption(self.opt)</span>
+        <span class="c1"># 0 for the low, 1 for the high, -1 for both</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+
+<div class="viewcode-block" id="RangeSlider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.low"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.low">[docs]</a>    <span class="k">def</span> <span class="nf">low</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span></div>
+
+<div class="viewcode-block" id="RangeSlider.setLow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.setLow">[docs]</a>    <span class="k">def</span> <span class="nf">setLow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">=</span> <span class="n">low</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.high"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.high">[docs]</a>    <span class="k">def</span> <span class="nf">high</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span></div>
+
+<div class="viewcode-block" id="RangeSlider.setHigh"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.setHigh">[docs]</a>    <span class="k">def</span> <span class="nf">setHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="n">high</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.paintEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="c1"># based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp</span>
+        <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">]):</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+
+            <span class="c1"># Only draw the groove for the first slider so it doesn&#39;t get drawn</span>
+            <span class="c1"># on top of the existing ones every time</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">subControls</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="c1">#QtGui.QStyle.SC_SliderGroove | QtGui.QStyle.SC_SliderHandle</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">subControls</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tickPosition</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NoTicks</span><span class="p">:</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">subControls</span> <span class="o">|=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderTickmarks</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span><span class="p">:</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">activeSubControls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">state</span> <span class="o">|=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">State_Sunken</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">activeSubControls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_control</span>
+
+            <span class="n">opt</span><span class="o">.</span><span class="n">sliderPosition</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">opt</span><span class="o">.</span><span class="n">sliderValue</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">style</span><span class="o">.</span><span class="n">drawComplexControl</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">painter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RangeSlider.mousePressEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mousePressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+
+        <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
+        <span class="n">button</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span>
+        <span class="c1"># In a normal slider control, when the user clicks on a point in the</span>
+        <span class="c1"># slider&#39;s total range, but not on the slider part of the control the</span>
+        <span class="c1"># control would jump the slider value to where the user clicked.</span>
+        <span class="c1"># For this control, clicks which are not direct hits will slide both</span>
+        <span class="c1"># slider parts</span>
+        <span class="k">if</span> <span class="n">button</span><span class="p">:</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">]):</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">sliderPosition</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">hit</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">hitTestComplexControl</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">hit</span> <span class="o">==</span> <span class="n">style</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">=</span> <span class="n">hit</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">triggerAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SliderMove</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setRepeatAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SliderNoAction</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setSliderDown</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__pick</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">()))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">triggerAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SliderMove</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setRepeatAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SliderNoAction</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.mouseMoveEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mouseMoveEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">!=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="p">:</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__pick</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">()))</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">new_pos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">+=</span> <span class="n">offset</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">():</span>
+                <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">+=</span> <span class="n">diff</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">+=</span> <span class="n">diff</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">():</span>
+                <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">+=</span> <span class="n">diff</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">+=</span> <span class="n">diff</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">new_pos</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">:</span>
+                <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">=</span> <span class="n">new_pos</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">new_pos</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">:</span>
+                <span class="n">new_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="n">new_pos</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span> <span class="o">=</span> <span class="n">new_pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.mouseReleaseEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mouseReleaseEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level_change</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RangeSlider.__pick"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.__pick">[docs]</a>    <span class="k">def</span> <span class="nf">__pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RangeSlider.__pixelPosToRangeValue"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.__pixelPosToRangeValue">[docs]</a>    <span class="k">def</span> <span class="nf">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
+
+        <span class="n">gr</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">subControlRect</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">SC_SliderGroove</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">subControlRect</span><span class="p">(</span><span class="n">style</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">:</span>
+            <span class="n">slider_length</span> <span class="o">=</span> <span class="n">sr</span><span class="o">.</span><span class="n">width</span><span class="p">()</span>
+            <span class="n">slider_min</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+            <span class="n">slider_max</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">right</span><span class="p">()</span> <span class="o">-</span> <span class="n">slider_length</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slider_length</span> <span class="o">=</span> <span class="n">sr</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+            <span class="n">slider_min</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+            <span class="n">slider_max</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">bottom</span><span class="p">()</span> <span class="o">-</span> <span class="n">slider_length</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">style</span><span class="o">.</span><span class="n">sliderValueFromPosition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">(),</span>
+                                             <span class="n">pos</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span> <span class="n">slider_max</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span>
+                                             <span class="n">opt</span><span class="o">.</span><span class="n">upsideDown</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+:mod:`suite2p.io.save`
+======================
+
+.. py:module:: suite2p.io.save
+
+
+Module Contents
+---------------
+
+.. function:: combined(ops1)
+
+   Combines all the entries in ops1 into a single result file.
+
+   Multi-plane recordings are arranged to best tile a square.
+   Multi-roi recordings are arranged by their dx,dy physical localization.
+
+

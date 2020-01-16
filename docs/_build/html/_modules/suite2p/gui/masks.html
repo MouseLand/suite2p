@@ -1,0 +1,786 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.masks &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.masks</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.masks</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">hsv_to_rgb</span>
+<span class="kn">import</span> <span class="nn">matplotlib.cm</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">classgui</span><span class="p">,</span> <span class="n">io</span>
+
+<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">b0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; color buttons at row b0 &quot;&quot;&quot;</span>
+    <span class="c1"># color buttons</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">color_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;A: random&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;S: skew&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;D: compact&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;F: footprint&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;G: aspect_ratio&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;H: chan2_prob&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;J: classifier, cell prob=&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;K: correlations, bin=&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;L: corr with 1D var, bin=^^^&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;M: rastermap / custom&quot;</span>
+    <span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colorbtns</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QButtonGroup</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">clabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">clabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;Colors&lt;/font&gt;&quot;</span><span class="p">)</span>
+    <span class="n">clabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">boldfont</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">clabel</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">iwid</span> <span class="o">=</span> <span class="mi">65</span>
+
+    <span class="c1"># add colormaps</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QComboBox</span><span class="p">()</span>
+    <span class="n">cmaps</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hsv&#39;</span><span class="p">,</span> <span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="s1">&#39;plasma&#39;</span><span class="p">,</span> <span class="s1">&#39;inferno&#39;</span><span class="p">,</span> <span class="s1">&#39;magma&#39;</span><span class="p">,</span> <span class="s1">&#39;cividis&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;viridis_r&#39;</span><span class="p">,</span> <span class="s1">&#39;plasma_r&#39;</span><span class="p">,</span> <span class="s1">&#39;inferno_r&#39;</span><span class="p">,</span> <span class="s1">&#39;magma_r&#39;</span><span class="p">,</span> <span class="s1">&#39;cividis_r&#39;</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">addItems</span><span class="p">(</span><span class="n">cmaps</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">activated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">cmap_change</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="n">iwid</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">nv</span> <span class="o">=</span> <span class="n">b0</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># colorbars for different statistics</span>
+    <span class="n">colorsAll</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">colorsAll</span><span class="p">:</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">ColorButton</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;&amp;&quot;</span> <span class="o">+</span> <span class="n">names</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">addButton</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">&gt;</span><span class="mi">4</span> <span class="ow">and</span> <span class="n">b</span><span class="o">&lt;</span><span class="mi">8</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">nv</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">nv</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="mi">3</span><span class="p">:]</span>
+        <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;0.6&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="n">iwid</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="o">.</span><span class="n">returnPressed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">chan2_prob</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="p">,</span> <span class="n">nv</span> <span class="o">+</span> <span class="n">b</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">probedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="n">iwid</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="o">.</span><span class="n">returnPressed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+        <span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="p">,</span> <span class="n">nv</span> <span class="o">+</span> <span class="n">b</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">setValidator</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIntValidator</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="n">iwid</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">returnPressed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+        <span class="k">lambda</span><span class="p">:</span> <span class="n">parent</span><span class="o">.</span><span class="n">mode_change</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">activityMode</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">binedit</span><span class="p">,</span> <span class="n">nv</span> <span class="o">+</span> <span class="n">b</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">b0</span> <span class="o">=</span> <span class="n">nv</span><span class="o">+</span><span class="n">b</span><span class="o">+</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">b0</span></div>
+
+<div class="viewcode-block" id="cmap_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.cmap_change">[docs]</a><span class="k">def</span> <span class="nf">cmap_change</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">CmapChooser</span><span class="o">.</span><span class="n">itemText</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;colormap changed to </span><span class="si">%s</span><span class="s1">, loading...&#39;</span><span class="o">%</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+        <span class="n">istat</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">istat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+            <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">],</span> <span class="n">c</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colormat</span> <span class="o">=</span> <span class="n">draw_colorbar</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="hsv2rgb"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.hsv2rgb">[docs]</a><span class="k">def</span> <span class="nf">hsv2rgb</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">cols</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">cols</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">cols</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">hsv_to_rgb</span><span class="p">(</span><span class="n">cols</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cols</span></div>
+
+<div class="viewcode-block" id="make_colors"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.make_colors">[docs]</a><span class="k">def</span> <span class="nf">make_colors</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">),</span> <span class="n">ncells</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">),</span> <span class="n">ncells</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">allcols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">ncells</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="s1">&#39;meanImg_chan2&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+        <span class="n">allcols</span> <span class="o">=</span> <span class="n">allcols</span> <span class="o">/</span> <span class="mf">1.4</span>
+        <span class="n">allcols</span> <span class="o">=</span> <span class="n">allcols</span> <span class="o">+</span> <span class="mf">0.1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">redcell</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">randcols</span> <span class="o">=</span> <span class="n">allcols</span>
+        <span class="n">allcols</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">redcell</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">randcols</span> <span class="o">=</span> <span class="n">allcols</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">randcols</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">hsv2rgb</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">randcols</span><span class="p">)</span>
+
+    <span class="n">b</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">istat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ncells</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ncells</span><span class="p">):</span>
+                        <span class="n">istat</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">names</span><span class="p">]</span>
+                <span class="n">istat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">istat99</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span><span class="mi">98</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">istat1</span><span class="p">,</span>
+                                    <span class="p">(</span><span class="n">istat99</span><span class="o">-</span><span class="n">istat1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">istat1</span><span class="p">,</span>
+                                    <span class="n">istat99</span><span class="p">])</span>
+                <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">-</span> <span class="n">istat1</span>
+                <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="p">(</span><span class="n">istat99</span><span class="o">-</span><span class="n">istat1</span><span class="p">)</span>
+                <span class="n">istat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">istat</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">istat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">probcell</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">b</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span></div>
+
+    <span class="c1">#parent.ops_plot[4] = corrcols</span>
+    <span class="c1">#parent.cc = cc</span>
+
+<div class="viewcode-block" id="flip_plot"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.flip_plot">[docs]</a><span class="k">def</span> <span class="nf">flip_plot</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">iflip</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">:</span>
+        <span class="n">iscell</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="o">~</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="n">flip_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;imerge&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;imerge&#39;</span><span class="p">]:</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">~</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">save_iscell</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="chan2_prob"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.chan2_prob">[docs]</a><span class="k">def</span> <span class="nf">chan2_prob</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">chan2prob</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">chan2edit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">chan2prob</span> <span class="o">-</span> <span class="n">chan2prob</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-3</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">chan2prob</span> <span class="o">=</span> <span class="n">chan2prob</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">redcell</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">probredcell</span> <span class="o">&gt;</span> <span class="n">parent</span><span class="o">.</span><span class="n">chan2prob</span>
+        <span class="n">chan2_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">save_redcell</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="make_colorbar"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.make_colorbar">[docs]</a><span class="k">def</span> <span class="nf">make_colorbar</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">b0</span><span class="p">):</span>
+    <span class="n">colorbarW</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">GraphicsLayoutWidget</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">colorbarW</span><span class="o">.</span><span class="n">setMaximumHeight</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">colorbarW</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">150</span><span class="p">)</span>
+    <span class="n">colorbarW</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setRowStretchFactor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">colorbarW</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">colorbarW</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colorbar</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">ImageItem</span><span class="p">()</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">colorbarW</span><span class="o">.</span><span class="n">addViewBox</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">colspan</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">setMenuEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">colorbar</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">clabel</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">colorbarW</span><span class="o">.</span><span class="n">addLabel</span><span class="p">(</span><span class="s2">&quot;0.0&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">],</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">colorbarW</span><span class="o">.</span><span class="n">addLabel</span><span class="p">(</span><span class="s2">&quot;0.5&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">],</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">colorbarW</span><span class="o">.</span><span class="n">addLabel</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">],</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span></div>
+    <span class="p">]</span>
+
+<div class="viewcode-block" id="init_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.init_masks">[docs]</a><span class="k">def</span> <span class="nf">init_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    creates RGB masks using stat and puts them in M0 or M1 depending on</span>
+<span class="sd">    whether or not iscell is True for a given ROI</span>
+<span class="sd">    args:</span>
+<span class="sd">        ops: mean_image, Vcorr</span>
+<span class="sd">        stat: xpix,ypix,xext,yext</span>
+<span class="sd">        iscell: vector with True if ROI is cell</span>
+<span class="sd">        ops_plot: plotROI, view, color, randcols</span>
+<span class="sd">    outputs:</span>
+<span class="sd">        M0: ROIs that are True in iscell</span>
+<span class="sd">        M1: ROIs that are False in iscell</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stat</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span>
+    <span class="n">iscell</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">]</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Ly</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Sroi&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">LamAll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="c1"># these have 3 layers</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">]</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="c1"># ignore merged cells</span>
+    <span class="n">iignore</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ncells</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ncells</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">):</span>
+        <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ypix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">iignore</span><span class="p">[</span><span class="n">n</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;imerge&#39;</span> <span class="ow">in</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;imerge&#39;</span><span class="p">]:</span>
+                    <span class="n">iignore</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+            <span class="c1"># add cell on top</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+
+            <span class="c1"># add weighting to all layers</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">lam</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Sroi&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">LamAll</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">lam</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamMean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LamAll</span><span class="p">[</span><span class="n">LamAll</span><span class="o">&gt;</span><span class="mf">1e-10</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamNorm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.75</span><span class="o">*</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][:,</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamMean&#39;</span><span class="p">]))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="n">cols</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cols</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">cols</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="rgb_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.rgb_masks">[docs]</a><span class="k">def</span> <span class="nf">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="c1">#S = np.expand_dims(parent.rois[&#39;Sroi&#39;][i],axis=2)</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">:]</span>
+        <span class="c1">#H = np.expand_dims(H,axis=2)</span>
+        <span class="c1">#hsv = np.concatenate((H,S,S),axis=2)</span>
+        <span class="c1">#rgb = (hsv_to_rgb(hsv)*255).astype(np.uint8)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">c</span><span class="p">,:,:,:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">H</span></div>
+
+<div class="viewcode-block" id="draw_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.draw_masks">[docs]</a><span class="k">def</span> <span class="nf">draw_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span> <span class="c1">#ops, stat, ops_plot, iscell, ichosen):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">    creates RGB masks using stat and puts them in M0 or M1 depending on</span>
+<span class="sd">    whether or not iscell is True for a given ROI</span>
+<span class="sd">    args:</span>
+<span class="sd">        ops: mean_image, Vcorr</span>
+<span class="sd">        stat: xpix,ypix</span>
+<span class="sd">        iscell: vector with True if ROI is cell</span>
+<span class="sd">        ops_plot: plotROI, view, color, randcols</span>
+<span class="sd">    outputs:</span>
+<span class="sd">        M0: ROIs that are True in iscell</span>
+<span class="sd">        M1: ROIs that are False in iscell</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ncells</span>  <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">plotROI</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;ROIs_on&#39;</span><span class="p">]</span>
+    <span class="n">view</span>    <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;view&#39;</span><span class="p">]</span>
+    <span class="n">color</span>   <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+    <span class="n">opacity</span>    <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;opacity&#39;</span><span class="p">]</span>
+
+    <span class="n">wplot</span>   <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span><span class="p">])</span>
+    <span class="c1"># reset transparency</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">color</span><span class="p">,:,:,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">opacity</span><span class="p">[</span><span class="n">view</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span>
+                                               <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Sroi&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span>
+                                               <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamNorm&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span><span class="n">color</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span><span class="n">color</span><span class="p">])]</span>
+
+    <span class="k">if</span> <span class="n">view</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">:</span>
+            <span class="n">ypix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">xpix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">wplot</span><span class="p">][:,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span><span class="o">&gt;-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="o">/</span><span class="mi">3</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">wplot</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_chosen_ROI</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">wplot</span><span class="p">],</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">:</span>
+            <span class="n">ycirc</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ycirc&#39;</span><span class="p">]</span>
+            <span class="n">xcirc</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xcirc&#39;</span><span class="p">]</span>
+            <span class="n">ypix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">xpix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">wplot</span><span class="p">][</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">color</span><span class="p">,</span><span class="n">n</span><span class="p">]</span>
+            <span class="n">sat</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">wplot</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_chosen_circle</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">wplot</span><span class="p">],</span> <span class="n">ycirc</span><span class="p">,</span> <span class="n">xcirc</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">sat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="make_chosen_ROI"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.make_chosen_ROI">[docs]</a><span class="k">def</span> <span class="nf">make_chosen_ROI</span><span class="p">(</span><span class="n">M0</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="n">M0</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">((</span><span class="mi">255</span><span class="o">*</span><span class="n">v</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">M0</span></div>
+
+<div class="viewcode-block" id="make_chosen_circle"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.make_chosen_circle">[docs]</a><span class="k">def</span> <span class="nf">make_chosen_circle</span><span class="p">(</span><span class="n">M0</span><span class="p">,</span> <span class="n">ycirc</span><span class="p">,</span> <span class="n">xcirc</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">sat</span><span class="p">):</span>
+    <span class="n">ncirc</span> <span class="o">=</span> <span class="n">ycirc</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">M0</span><span class="p">[</span><span class="n">ycirc</span><span class="p">,</span><span class="n">xcirc</span><span class="p">,:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="c1">#[np.newaxis,:]</span>
+    <span class="n">M0</span><span class="p">[</span><span class="n">ycirc</span><span class="p">,</span><span class="n">xcirc</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">255</span>
+    <span class="k">return</span> <span class="n">M0</span></div>
+
+<div class="viewcode-block" id="chan2_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.chan2_masks">[docs]</a><span class="k">def</span> <span class="nf">chan2_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">randcols</span>
+    <span class="n">col</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">redcell</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">hsv2rgb</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="custom_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.custom_masks">[docs]</a><span class="k">def</span> <span class="nf">custom_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">custom_mask</span>
+    <span class="n">istat1</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">istat99</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">cl</span> <span class="o">=</span> <span class="p">[</span><span class="n">istat1</span><span class="p">,</span> <span class="p">(</span><span class="n">istat99</span><span class="o">-</span><span class="n">istat1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">istat1</span><span class="p">,</span> <span class="n">istat99</span><span class="p">]</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">-</span> <span class="n">istat1</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="p">(</span><span class="n">istat99</span><span class="o">-</span><span class="n">istat1</span><span class="p">)</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">istat</span><span class="p">))</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">cl</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="rastermap_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.rastermap_masks">[docs]</a><span class="k">def</span> <span class="nf">rastermap_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">isort</span>
+    <span class="c1"># no 1D variable loaded -- leave blank</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()])</span>
+
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+    <span class="n">col</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">isort</span><span class="o">==-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="beh_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.beh_masks">[docs]</a><span class="k">def</span> <span class="nf">beh_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">beh_resampled</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="n">parent</span><span class="o">.</span><span class="n">bin</span><span class="p">))</span>
+    <span class="n">sn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">beh_resampled</span><span class="p">[:</span><span class="n">nb</span><span class="o">*</span><span class="n">parent</span><span class="o">.</span><span class="n">bin</span><span class="p">],</span> <span class="p">(</span><span class="n">nb</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">bin</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">sn</span> <span class="o">-=</span> <span class="n">sn</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">snstd</span> <span class="o">=</span> <span class="p">(</span><span class="n">sn</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">Fbin</span><span class="p">,</span> <span class="n">sn</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fbin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">Fstd</span> <span class="o">*</span> <span class="n">snstd</span><span class="p">)</span>
+    <span class="n">cc</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="n">inactive</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">istat_min</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">istat_max</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">-</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">istat_min</span><span class="p">,</span>
+                          <span class="p">(</span><span class="n">istat_max</span><span class="o">-</span><span class="n">istat_min</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">istat_min</span><span class="p">,</span>
+                          <span class="n">istat_max</span><span class="p">]</span>
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="corr_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.corr_masks">[docs]</a><span class="k">def</span> <span class="nf">corr_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span>
+    <span class="n">sn</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fbin</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">snstd</span> <span class="o">=</span> <span class="p">(</span><span class="n">sn</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">Fbin</span><span class="p">,</span> <span class="n">sn</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fbin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">Fstd</span> <span class="o">*</span> <span class="n">snstd</span><span class="p">)</span>
+    <span class="n">cc</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                         <span class="p">(</span><span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">-</span><span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                         <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">-</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="class_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.class_masks">[docs]</a><span class="k">def</span> <span class="nf">class_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">probcell</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="p">(</span><span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">-</span><span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">-</span> <span class="n">istat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="n">istat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;colormap&#39;</span><span class="p">])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;istat&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">istat</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">rgb_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="flip_for_class"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.flip_for_class">[docs]</a><span class="k">def</span> <span class="nf">flip_for_class</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">iscell</span><span class="p">):</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="n">iscell</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">iscell</span><span class="o">==</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">!=</span> <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]:</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="n">n</span>
+                <span class="n">flip_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">iscell</span> <span class="o">=</span> <span class="n">iscell</span>
+        <span class="n">init_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="plot_colorbar"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.plot_colorbar">[docs]</a><span class="k">def</span> <span class="nf">plot_colorbar</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">bid</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">bid</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">20</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">3</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">colormat</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">clabel</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%1.2f</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;colorbar&#39;</span><span class="p">][</span><span class="n">bid</span><span class="p">][</span><span class="n">k</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="plot_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.plot_masks">[docs]</a><span class="k">def</span> <span class="nf">plot_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+    <span class="c1">#M = parent.RGB[:,:,np.newaxis], parent.Alpha[]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">color1</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">255.</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">color2</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">255.</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">color1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">color2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="remove_roi"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.remove_roi">[docs]</a><span class="k">def</span> <span class="nf">remove_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">i0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    removes roi n from view i0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ypix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+    <span class="n">xpix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+    <span class="c1"># cell indices</span>
+    <span class="n">ipix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">0</span><span class="p">,:,:]</span><span class="o">==</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">())</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">ipix1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,:,:]</span><span class="o">==</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">())</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">ipix2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,:,:]</span><span class="o">==</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">())</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="c1"># get rid of cell and push up overlaps on main views</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix2</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix2</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix1</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ipix2</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">ipix2</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c1"># remove +/- 1 ROI exists</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Sroi&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamNorm&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="mf">0.75</span><span class="o">*</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span><span class="o">/</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamMean&#39;</span><span class="p">]))</span></div>
+
+<div class="viewcode-block" id="add_roi"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.add_roi">[docs]</a><span class="k">def</span> <span class="nf">add_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    add roi n to view i</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ypix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+    <span class="n">xpix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+    <span class="n">lam</span>  <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>  <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>  <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span>  <span class="o">=</span> <span class="n">lam</span> <span class="c1">#/ lam.sum()</span>
+
+    <span class="c1"># set whether or not an ROI + weighting of pixels</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Sroi&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamNorm&#39;</span><span class="p">][:,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.75</span><span class="o">*</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;Lam&#39;</span><span class="p">][:,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span><span class="o">/</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;LamMean&#39;</span><span class="p">]))</span></div>
+
+<div class="viewcode-block" id="redraw_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.redraw_masks">[docs]</a><span class="k">def</span> <span class="nf">redraw_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    redraw masks after roi added/removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span>
+            <span class="n">rgb</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">],:]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;RGB&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">,:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">rgb</span></div>
+
+<div class="viewcode-block" id="flip_roi"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.flip_roi">[docs]</a><span class="k">def</span> <span class="nf">flip_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    flips roi to other plot</span>
+<span class="sd">    there are 3 levels of overlap so this may be buggy if more than 3 cells are on</span>
+<span class="sd">    top of each other</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+    <span class="n">i0</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span><span class="n">i</span>
+    <span class="c1"># remove ROI</span>
+    <span class="n">remove_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">i0</span><span class="p">)</span>
+    <span class="c1"># add cell to other side (on top) and push down overlaps</span>
+    <span class="n">add_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="c1"># redraw colors</span>
+    <span class="n">ypix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+    <span class="n">xpix</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+    <span class="n">redraw_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="draw_colorbar"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.draw_colorbar">[docs]</a><span class="k">def</span> <span class="nf">draw_colorbar</span><span class="p">(</span><span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;hsv&#39;</span><span class="p">):</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">rgb</span> <span class="o">=</span> <span class="n">istat_transform</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">colormap</span><span class="p">)</span>
+    <span class="n">colormat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">colormat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">colormat</span><span class="p">,(</span><span class="mi">20</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">colormat</span></div>
+
+<div class="viewcode-block" id="istat_hsv"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.istat_hsv">[docs]</a><span class="k">def</span> <span class="nf">istat_hsv</span><span class="p">(</span><span class="n">istat</span><span class="p">):</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">/</span> <span class="mf">1.4</span>
+    <span class="n">istat</span> <span class="o">=</span> <span class="n">istat</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.4</span><span class="o">/</span><span class="mf">1.4</span><span class="p">)</span>
+    <span class="n">icols</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">istat</span>
+    <span class="n">icols</span> <span class="o">=</span> <span class="n">hsv2rgb</span><span class="p">(</span><span class="n">icols</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">icols</span></div>
+
+<div class="viewcode-block" id="istat_transform"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.istat_transform">[docs]</a><span class="k">def</span> <span class="nf">istat_transform</span><span class="p">(</span><span class="n">istat</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;hsv&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">colormap</span><span class="o">==</span><span class="s1">&#39;hsv&#39;</span><span class="p">:</span>
+        <span class="n">icols</span> <span class="o">=</span> <span class="n">istat_hsv</span><span class="p">(</span><span class="n">istat</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">colormap</span><span class="p">)</span>
+            <span class="n">icols</span> <span class="o">=</span> <span class="n">istat</span>
+            <span class="n">icols</span> <span class="o">=</span> <span class="n">cmap</span><span class="p">(</span><span class="n">icols</span><span class="p">)[:,:</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">icols</span> <span class="o">*=</span> <span class="mi">255</span>
+            <span class="n">icols</span> <span class="o">=</span> <span class="n">icols</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;bad colormap, using hsv&#39;</span><span class="p">)</span>
+            <span class="n">icols</span> <span class="o">=</span> <span class="n">istat_hsv</span><span class="p">(</span><span class="n">istat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">icols</span></div>
+
+
+<span class="c1">### Changes colors of ROIs</span>
+<span class="c1"># button group is exclusive (at least one color is always chosen)</span>
+<div class="viewcode-block" id="ColorButton"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.ColorButton">[docs]</a><span class="k">class</span> <span class="nc">ColorButton</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ColorButton</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimumSizeHint</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="viewcode-block" id="ColorButton.press"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/masks/index.html#suite2p.gui.masks.ColorButton.press">[docs]</a>    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">color_names</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">():</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stylePressed</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bid</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parent</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">bid</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

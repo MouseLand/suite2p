@@ -1,0 +1,37 @@
+:mod:`suite2p.run_s2p`
+======================
+
+.. py:module:: suite2p.run_s2p
+
+
+Module Contents
+---------------
+
+.. data:: HAS_HAUS
+   :annotation: = True
+
+   
+
+.. data:: print
+   
+
+   
+
+.. function:: default_ops()
+
+
+.. function:: run_s2p(ops={}, db={})
+
+   run suite2p pipeline
+
+   need to provide a 'data_path' or 'h5py'+'h5py_key' in db or ops
+
+   :param ops: specify 'nplanes', 'nchannels', 'tau', 'fs'
+   :type ops: :obj:`dict`, optional
+   :param db: specify 'data_path' or 'h5py'+'h5py_key' here or in ops
+   :type db: :obj:`dict`, optional
+
+   :returns: **ops1** -- list of ops for each plane
+   :rtype: list
+
+

@@ -1,0 +1,541 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.classgui &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.classgui</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.classgui</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">__main__</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">..classification</span> <span class="kn">import</span> <span class="n">classifier</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">masks</span><span class="p">,</span> <span class="n">io</span>
+
+<span class="c1">#def make_buttons(parent)</span>
+
+<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">b0</span><span class="p">):</span>
+    <span class="c1"># ----- CLASSIFIER BUTTONS -------</span>
+    <span class="n">cllabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">cllabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">boldfont</span><span class="p">)</span>
+    <span class="n">cllabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;Classifier&lt;/font&gt;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">classLabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;not loaded (using prob from iscell.npy)&lt;/font&gt;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">classLabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">cllabel</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">classLabel</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot; add current data to classifier&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">add_to</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+    <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">b0</span></div>
+
+<div class="viewcode-block" id="load_classifier"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load_classifier">[docs]</a><span class="k">def</span> <span class="nf">load_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;Open File&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+        <span class="n">load</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">class_activated</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;no classifier&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="load_s2p_classifier"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load_s2p_classifier">[docs]</a><span class="k">def</span> <span class="nf">load_s2p_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">load</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">classorig</span><span class="p">)</span>
+    <span class="n">class_file</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="load_default_classifier"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load_default_classifier">[docs]</a><span class="k">def</span> <span class="nf">load_default_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">load</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+            <span class="s2">&quot;classifiers/classifier_user.npy&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">class_activated</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="class_file"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.class_file">[docs]</a><span class="k">def</span> <span class="nf">class_file</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+        <span class="s2">&quot;classifiers/classifier_user.npy&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">cfile</span> <span class="o">=</span> <span class="s2">&quot;default classifier&quot;</span>
+    <span class="k">elif</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+        <span class="s2">&quot;classifiers/classifier.npy&quot;</span>
+    <span class="p">):</span>
+        <span class="n">cfile</span> <span class="o">=</span> <span class="s2">&quot;suite2p classifier&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cfile</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span>
+    <span class="n">cstr</span> <span class="o">=</span> <span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;&quot;</span> <span class="o">+</span> <span class="n">cfile</span> <span class="o">+</span> <span class="s2">&quot;&lt;/font&gt;&quot;</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">classLabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">cstr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="class_activated"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.class_activated">[docs]</a><span class="k">def</span> <span class="nf">class_activated</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">class_file</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addtoclass</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="class_default"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.class_default">[docs]</a><span class="k">def</span> <span class="nf">class_default</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
+        <span class="n">parent</span><span class="p">,</span>
+        <span class="s2">&quot;Default classifier&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Are you sure you want to overwrite your default classifier?&quot;</span><span class="p">,</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span> <span class="o">|</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">dm</span> <span class="o">==</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+        <span class="n">classfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+            <span class="s2">&quot;classifiers/classifier_user.npy&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">save_model</span><span class="p">(</span><span class="n">classfile</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">iscell</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="reset_default"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.reset_default">[docs]</a><span class="k">def</span> <span class="nf">reset_default</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
+        <span class="n">parent</span><span class="p">,</span>
+        <span class="s2">&quot;Default classifier&quot;</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;Are you sure you want to reset the default classifier &quot;</span>
+         <span class="s2">&quot;to the built-in suite2p classifier?&quot;</span><span class="p">),</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span> <span class="o">|</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">dm</span> <span class="o">==</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+        <span class="n">classfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+            <span class="s2">&quot;classifiers/classifier_user.npy&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">classorig</span><span class="p">,</span> <span class="n">classfile</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loading classifier &#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">Classifier</span><span class="p">(</span><span class="n">classfile</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="n">activate</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="save_model"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.save_model">[docs]</a><span class="k">def</span> <span class="nf">save_model</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">train_iscell</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">model</span><span class="p">[</span><span class="s1">&#39;stats&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">train_stats</span>
+    <span class="n">model</span><span class="p">[</span><span class="s1">&#39;iscell&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_iscell</span>
+    <span class="n">model</span><span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">keys</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;saving classifier in &#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="load_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load_list">[docs]</a><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># will return</span>
+    <span class="n">LC</span> <span class="o">=</span> <span class="n">ListChooser</span><span class="p">(</span><span class="s1">&#39;classifier training files&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">LC</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="load_data"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.load_data">[docs]</a><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">keys</span><span class="p">,</span><span class="n">trainfiles</span><span class="p">):</span>
+    <span class="n">train_stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">train_iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">trainfiles_good</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">loaded</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">trainfiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">trainfiles</span><span class="p">:</span>
+            <span class="n">badfile</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">basename</span><span class="p">,</span> <span class="n">bname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">iscells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="n">ncells</span> <span class="o">=</span> <span class="n">iscells</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="s1">&#39;: not a numpy array of booleans&#39;</span><span class="p">)</span>
+                <span class="n">badfile</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">badfile</span><span class="p">:</span>
+                <span class="n">basename</span><span class="p">,</span> <span class="n">bname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="n">lstat</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">basename</span><span class="o">+</span><span class="s1">&#39;/stat.npy&#39;</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+                    <span class="n">lstat</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">basename</span><span class="o">+</span><span class="s1">&#39;: incorrect or missing stat.npy file :(&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">lstat</span> <span class="o">!=</span> <span class="n">ncells</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">basename</span><span class="o">+</span><span class="s1">&#39;: stat.npy is not the same length as iscell.npy&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># add iscell and stat to classifier</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="s1">&#39; was added to classifier&#39;</span><span class="p">)</span>
+                    <span class="n">iscell</span> <span class="o">=</span> <span class="n">iscells</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                    <span class="n">stats</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">get_stat_keys</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">default_keys</span><span class="p">)</span>
+                    <span class="n">train_stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">train_stats</span><span class="p">,</span><span class="n">stats</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">train_iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">train_iscell</span><span class="p">,</span><span class="n">iscell</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">trainfiles_good</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trainfiles_good</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">classfile</span><span class="p">,</span> <span class="n">saved</span> <span class="o">=</span> <span class="n">save</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">train_stats</span><span class="p">,</span><span class="n">train_iscell</span><span class="p">,</span><span class="n">keys</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">saved</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span> <span class="o">=</span> <span class="n">classfile</span>
+            <span class="n">loaded</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Incorrect file path&#39;</span><span class="p">,</span>
+                                                <span class="s1">&#39;Incorrect save path for classifier, classifier not built.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Incorrect files&#39;</span><span class="p">,</span>
+                                            <span class="s1">&#39;No valid datasets chosen to build classifier, classifier not built.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loaded</span></div>
+
+<div class="viewcode-block" id="add_to"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.add_to">[docs]</a><span class="k">def</span> <span class="nf">add_to</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">basename</span><span class="o">+</span><span class="s1">&#39;/iscell.npy&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adding current dataset to classifier&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+                     <span class="s1">&#39;classifiers/classifier_user.npy&#39;</span><span class="p">):</span>
+        <span class="n">cfile</span> <span class="o">=</span> <span class="s1">&#39;the default classifier&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cfile</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Default classifier&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;Current classifier is &#39;</span><span class="o">+</span><span class="n">cfile</span><span class="o">+</span><span class="s1">&#39;. Add to this classifier?&#39;</span><span class="p">,</span>
+                                    <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span> <span class="o">|</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dm</span> <span class="o">==</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">get_stat_keys</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span><span class="n">stats</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">iscell</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">save_model</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">classfile</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">iscell</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span>
+        <span class="n">activate</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Classifier saved and loaded&#39;</span><span class="p">,</span>
+                                            <span class="s1">&#39;Current dataset added to classifier, and cell probabilities computed and in GUI&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="apply"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.apply">[docs]</a><span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">classval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">probedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+    <span class="n">iscell</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">probcell</span> <span class="o">&gt;</span> <span class="n">classval</span>
+    <span class="n">masks</span><span class="o">.</span><span class="n">flip_for_class</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">iscell</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+    <span class="n">io</span><span class="o">.</span><span class="n">save_iscell</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="save"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.save">[docs]</a><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">train_iscell</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getSaveFileName</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Classifier name (*.npy)&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">saved</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">save_model</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">train_iscell</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+            <span class="n">saved</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">,</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: incorrect filename for saving&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">saved</span></div>
+
+<div class="viewcode-block" id="save_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.save_list">[docs]</a><span class="k">def</span> <span class="nf">save_list</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getSaveFileName</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Save list of iscell.npy&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span><span class="p">:</span>
+                    <span class="n">fid</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="n">fid</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">,</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: incorrect filename for saving&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="activate"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.activate">[docs]</a><span class="k">def</span> <span class="nf">activate</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">inactive</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">inactive</span><span class="p">:</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">probcell</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">masks</span><span class="o">.</span><span class="n">class_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="disable"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.disable">[docs]</a><span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">classbtn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveClass</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveTrain</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">btns</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">classbtns</span><span class="o">.</span><span class="n">buttons</span><span class="p">():</span>
+        <span class="n">btns</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
+
+<span class="c1">### custom QDialog which makes a list of items you can include/exclude</span>
+<div class="viewcode-block" id="ListChooser"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser">[docs]</a><span class="k">class</span> <span class="nc">ListChooser</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ListChooser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">300</span><span class="p">,</span><span class="mi">500</span><span class="p">,</span><span class="mi">320</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+        <span class="c1">#self.setCentralWidget(self.win)</span>
+        <span class="n">loadcell</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Load iscell.npy&#39;</span><span class="p">)</span>
+        <span class="n">loadcell</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>
+        <span class="n">loadcell</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_cell</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">loadcell</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">loadtext</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Load txt file list&#39;</span><span class="p">)</span>
+        <span class="n">loadtext</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_text</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">loadtext</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;(select multiple using ctrl)&#39;</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QListWidget</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="c1">#self.list.resize(450,250)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">setSelectionMode</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QAbstractItemView</span><span class="o">.</span><span class="n">MultiSelection</span><span class="p">)</span>
+        <span class="n">save</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;build classifier&#39;</span><span class="p">)</span>
+        <span class="n">save</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">save</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;load in GUI&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_class</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveasdefault</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;save as default&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveasdefault</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_default</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveasdefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saveasdefault</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;close&#39;</span><span class="p">)</span>
+        <span class="n">done</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_list</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">done</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ListChooser.load_cell"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.load_cell">[docs]</a>    <span class="k">def</span> <span class="nf">load_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Open iscell.npy file&#39;</span><span class="p">,</span><span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;iscell.npy&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">badfile</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">iscell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">iscell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">iscell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="n">badfile</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">badfile</span><span class="p">:</span>
+                    <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;iscell.npy should be 0/1&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;iscell.npy should be 0/1&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;iscell.npy should be 0/1&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.load_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.load_text">[docs]</a>    <span class="k">def</span> <span class="nf">load_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Open *.txt file&#39;</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;text file (*.txt)&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">txtfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+                <span class="n">files</span> <span class="o">=</span> <span class="n">txtfile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">txtfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">files</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;not a text file&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;not a good list&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.build_classifier"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.build_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">build_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">():</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">count</span><span class="p">()):</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Populating classifier:&#39;</span><span class="p">)</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">default_keys</span>
+            <span class="n">loaded</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">loaded</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="s1">&#39;Classifier saved&#39;</span><span class="p">,</span>
+                                                    <span class="s1">&#39;Classifier built from valid files and saved.&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">saveasdefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.apply_class"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.apply_class">[docs]</a>    <span class="k">def</span> <span class="nf">apply_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">Classifier</span><span class="p">(</span><span class="n">classfile</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">classfile</span><span class="p">)</span>
+        <span class="n">activate</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.save_default"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.save_default">[docs]</a>    <span class="k">def</span> <span class="nf">save_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">dm</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;Default classifier&#39;</span><span class="p">,</span>
+                                        <span class="s1">&#39;Are you sure you want to overwrite your default classifier?&#39;</span><span class="p">,</span>
+                                        <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span> <span class="o">|</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dm</span> <span class="o">==</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+            <span class="n">classorig</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">classfile</span>
+            <span class="n">classfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)),</span>
+                             <span class="s1">&#39;classifiers/classifier_user.npy&#39;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">classorig</span><span class="p">,</span> <span class="n">classfile</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.exit_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/classgui/index.html#suite2p.gui.classgui.ListChooser.exit_list">[docs]</a>    <span class="k">def</span> <span class="nf">exit_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

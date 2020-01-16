@@ -1,0 +1,538 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.run_s2p &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.run_s2p</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.run_s2p</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">savemat</span>
+<span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">tiff</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">save</span>
+<span class="kn">from</span> <span class="nn">.registration</span> <span class="kn">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">reference</span>
+<span class="kn">from</span> <span class="nn">.extraction</span> <span class="kn">import</span> <span class="n">extract</span><span class="p">,</span> <span class="n">dcnv</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">haussmeister</span> <span class="kn">import</span> <span class="n">haussio</span>
+<div class="viewcode-block" id="HAS_HAUS"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.HAS_HAUS">[docs]</a>    <span class="n">HAS_HAUS</span> <span class="o">=</span> <span class="kc">True</span></div>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_HAUS</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<div class="viewcode-block" id="print"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.print">[docs]</a><span class="nb">print</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span><span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="default_ops"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.default_ops">[docs]</a><span class="k">def</span> <span class="nf">default_ops</span><span class="p">():</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># file paths</span>
+        <span class="s1">&#39;look_one_level_down&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to look in all subfolders when searching for tiffs</span>
+        <span class="s1">&#39;fast_disk&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># used to store temporary binary file, defaults to save_path0</span>
+        <span class="s1">&#39;delete_bin&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to delete binary file after processing</span>
+        <span class="s1">&#39;mesoscan&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># for reading in scanimage mesoscope files</span>
+        <span class="s1">&#39;bruker&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether or not single page BRUKER tiffs!</span>
+        <span class="s1">&#39;h5py&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># take h5py as input (deactivates data_path)</span>
+        <span class="s1">&#39;h5py_key&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="c1">#key in h5py where data array is stored</span>
+        <span class="s1">&#39;save_path0&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># stores results, defaults to first item in data_path</span>
+        <span class="s1">&#39;save_folder&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s1">&#39;subfolders&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="c1"># main settings</span>
+        <span class="s1">&#39;nplanes&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="c1"># each tiff has these many planes in sequence</span>
+        <span class="s1">&#39;nchannels&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="c1"># each tiff has these many channels per plane</span>
+        <span class="s1">&#39;functional_chan&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="c1"># this channel is used to extract functional ROIs (1-based)</span>
+        <span class="s1">&#39;tau&#39;</span><span class="p">:</span>  <span class="mf">1.</span><span class="p">,</span> <span class="c1"># this is the main parameter for deconvolution</span>
+        <span class="s1">&#39;fs&#39;</span><span class="p">:</span> <span class="mf">10.</span><span class="p">,</span>  <span class="c1"># sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)</span>
+        <span class="s1">&#39;force_sktiff&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether or not to use scikit-image for tiff reading</span>
+        <span class="s1">&#39;frames_include&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="c1"># output settings</span>
+        <span class="s1">&#39;preclassify&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span> <span class="c1"># apply classifier before signal extraction with probability 0.3</span>
+        <span class="s1">&#39;save_mat&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to save output as matlab files</span>
+        <span class="s1">&#39;combined&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># combine multiple planes into a single result /single canvas for GUI</span>
+        <span class="s1">&#39;aspect&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="c1"># um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)</span>
+        <span class="c1"># bidirectional phase offset</span>
+        <span class="s1">&#39;do_bidiphase&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;bidiphase&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;bidi_corrected&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="c1"># registration settings</span>
+        <span class="s1">&#39;do_registration&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="c1"># whether to register data (2 forces re-registration)</span>
+        <span class="s1">&#39;two_step_registration&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;nimg_init&#39;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="c1"># subsampled frames for finding reference image</span>
+        <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="c1"># number of frames per batch</span>
+        <span class="s1">&#39;maxregshift&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="c1"># max allowed registration shift, as a fraction of frame max(width and height)</span>
+        <span class="s1">&#39;align_by_chan&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="c1"># when multi-channel, you can align by non-functional channel (1-based)</span>
+        <span class="s1">&#39;reg_tif&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to save registered tiffs</span>
+        <span class="s1">&#39;reg_tif_chan2&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to save channel 2 registered tiffs</span>
+        <span class="s1">&#39;subpixel&#39;</span> <span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="c1"># precision of subpixel registration (1/subpixel steps)</span>
+        <span class="s1">&#39;smooth_sigma_time&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="c1"># gaussian smoothing in time</span>
+        <span class="s1">&#39;smooth_sigma&#39;</span><span class="p">:</span> <span class="mf">1.15</span><span class="p">,</span> <span class="c1"># ~1 good for 2P recordings, recommend &gt;5 for 1P recordings</span>
+        <span class="s1">&#39;th_badframes&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="c1"># this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames</span>
+        <span class="s1">&#39;pad_fft&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="c1"># non rigid registration settings</span>
+        <span class="s1">&#39;nonrigid&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># whether to use nonrigid registration</span>
+        <span class="s1">&#39;block_size&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span> <span class="c1"># block size to register (** keep this a multiple of 2 **)</span>
+        <span class="s1">&#39;snr_thresh&#39;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span> <span class="c1"># if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing</span>
+        <span class="s1">&#39;maxregshiftNR&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="c1"># maximum pixel shift allowed for nonrigid, relative to rigid</span>
+        <span class="c1"># 1P settings</span>
+        <span class="s1">&#39;1Preg&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># whether to perform high-pass filtering and tapering</span>
+        <span class="s1">&#39;spatial_hp&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="c1"># window for spatial high-pass filtering before registration</span>
+        <span class="s1">&#39;pre_smooth&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="c1"># whether to smooth before high-pass filtering before registration</span>
+        <span class="s1">&#39;spatial_taper&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="c1"># how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops[&#39;smooth_sigma&#39;])</span>
+        <span class="c1"># cell detection settings</span>
+        <span class="s1">&#39;roidetect&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># whether or not to run ROI extraction</span>
+        <span class="s1">&#39;sparse_mode&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># whether or not to run sparse_mode</span>
+        <span class="s1">&#39;diameter&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="c1"># if not sparse_mode, use diameter for filtering and extracting</span>
+        <span class="s1">&#39;spatial_scale&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="c1"># 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels</span>
+        <span class="s1">&#39;connected&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="c1"># whether or not to keep ROIs fully connected (set to 0 for dendrites)</span>
+        <span class="s1">&#39;nbinned&#39;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span> <span class="c1"># max number of binned frames for cell detection</span>
+        <span class="s1">&#39;max_iterations&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="c1"># maximum number of iterations to do cell detection</span>
+        <span class="s1">&#39;threshold_scaling&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="c1"># adjust the automatically determined threshold by this scalar multiplier</span>
+        <span class="s1">&#39;max_overlap&#39;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span> <span class="c1"># cells with more overlap than this get removed during triage, before refinement</span>
+        <span class="s1">&#39;high_pass&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="c1"># running mean subtraction with window of size &#39;high_pass&#39; (use low values for 1P)</span>
+        <span class="c1"># ROI extraction parameters</span>
+        <span class="s1">&#39;inner_neuropil_radius&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="c1"># number of pixels to keep between ROI and neuropil donut</span>
+        <span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">:</span> <span class="mi">350</span><span class="p">,</span> <span class="c1"># minimum number of pixels in the neuropil</span>
+        <span class="s1">&#39;allow_overlap&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># pixels that are overlapping are thrown out (False) or added to both ROIs (True)</span>
+        <span class="c1"># channel 2 detection settings (stat[n][&#39;chan2&#39;], stat[n][&#39;not_chan2&#39;])</span>
+        <span class="s1">&#39;chan2_thres&#39;</span><span class="p">:</span> <span class="mf">0.65</span><span class="p">,</span> <span class="c1"># minimum for detection of brightness on channel 2</span>
+        <span class="c1"># deconvolution settings</span>
+        <span class="s1">&#39;baseline&#39;</span><span class="p">:</span> <span class="s1">&#39;maximin&#39;</span><span class="p">,</span> <span class="c1"># baselining mode (can also choose &#39;prctile&#39;)</span>
+        <span class="s1">&#39;win_baseline&#39;</span><span class="p">:</span> <span class="mf">60.</span><span class="p">,</span> <span class="c1"># window for maximin</span>
+        <span class="s1">&#39;sig_baseline&#39;</span><span class="p">:</span> <span class="mf">10.</span><span class="p">,</span> <span class="c1"># smoothing constant for gaussian filter</span>
+        <span class="s1">&#39;prctile_baseline&#39;</span><span class="p">:</span> <span class="mf">8.</span><span class="p">,</span><span class="c1"># optional (whether to use a percentile baseline)</span>
+        <span class="s1">&#39;neucoeff&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">7</span><span class="p">,</span>  <span class="c1"># neuropil coefficient</span>
+        <span class="s1">&#39;xrange&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+        <span class="s1">&#39;yrange&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="run_s2p"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.run_s2p">[docs]</a><span class="k">def</span> <span class="nf">run_s2p</span><span class="p">(</span><span class="n">ops</span><span class="o">=</span><span class="p">{},</span><span class="n">db</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot; run suite2p pipeline</span>
+
+<span class="sd">        need to provide a &#39;data_path&#39; or &#39;h5py&#39;+&#39;h5py_key&#39; in db or ops</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ops : :obj:`dict`, optional</span>
+<span class="sd">            specify &#39;nplanes&#39;, &#39;nchannels&#39;, &#39;tau&#39;, &#39;fs&#39;</span>
+<span class="sd">        db : :obj:`dict`, optional</span>
+<span class="sd">            specify &#39;data_path&#39; or &#39;h5py&#39;+&#39;h5py_key&#39; here or in ops</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            ops1 : list</span>
+<span class="sd">                list of ops for each plane</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">ops0</span> <span class="o">=</span> <span class="n">default_ops</span><span class="p">()</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops0</span><span class="p">,</span> <span class="o">**</span><span class="n">ops</span><span class="p">}</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops</span><span class="p">,</span> <span class="o">**</span><span class="n">db</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span><span class="o">==</span><span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;save_path0&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;h5py&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># check if there are files already registered!</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fpathops1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">],</span> <span class="s1">&#39;ops1.npy&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fpathops1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;ops1.npy&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">):</span>
+        <span class="n">files_found_flag</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">flag_binreg</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">ops1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;FOUND OPS IN </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;save_path&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">op</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
+            <span class="c1"># default behavior is to look in the ops</span>
+            <span class="n">flag_reg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">flag_reg</span><span class="p">:</span>
+                <span class="c1"># otherwise look in the user defined save_path0</span>
+                <span class="n">op</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;plane</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">op</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span>
+                <span class="n">op</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span> <span class="s1">&#39;data.bin&#39;</span><span class="p">)</span>
+                <span class="n">flag_reg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">op</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">])</span>
+            <span class="n">files_found_flag</span> <span class="o">&amp;=</span> <span class="n">flag_reg</span>
+            <span class="k">if</span> <span class="s1">&#39;refImg&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">op</span> <span class="ow">or</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">flag_binreg</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: not registered / registration forced with ops[&#39;do_registration&#39;]&gt;1&quot;</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c1"># delete previous offsets</span>
+                        <span class="k">del</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">],</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">],</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">]</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;no offsets to delete&#39;</span><span class="p">)</span>
+            <span class="c1"># use the new False</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">op</span><span class="p">,</span> <span class="o">**</span><span class="n">ops</span><span class="p">}</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># for mesoscope tiffs, preserve original lines, etc</span>
+            <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">op</span><span class="p">:</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;nrois&#39;</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;dy&#39;</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span>
+
+            <span class="c1">#ops1[i] = ops1[i].copy()</span>
+            <span class="c1"># except for registration results</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">files_found_flag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">flag_binreg</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;input_format&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tif&#39;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">]):</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;h5&#39;</span>
+    <span class="k">elif</span> <span class="s1">&#39;mesoscan&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;mesoscan&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mesoscan&#39;</span>
+    <span class="k">elif</span> <span class="n">HAS_HAUS</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;haus&#39;</span>
+    <span class="c1"># if not set up files and copy tiffs/h5py to binary</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">files_found_flag</span><span class="p">:</span>
+        <span class="c1"># get default options</span>
+        <span class="n">ops0</span> <span class="o">=</span> <span class="n">default_ops</span><span class="p">()</span>
+        <span class="c1"># combine with user options</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops0</span><span class="p">,</span> <span class="o">**</span><span class="n">ops</span><span class="p">}</span>
+        <span class="c1"># copy tiff to a binary</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;h5&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">h5</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">h5py_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote h5py to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sbx&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">sbx</span>
+            <span class="n">ops1</span> <span class="o">=</span> <span class="n">sbx</span><span class="o">.</span><span class="n">sbx_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote sbx to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">tiff</span>
+            <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;mesoscan&#39;</span><span class="p">:</span>
+                <span class="n">ops1</span> <span class="o">=</span> <span class="n">tiff</span><span class="o">.</span><span class="n">mesoscan_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote mesoscope tifs to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+            <span class="k">elif</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;haus&#39;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Using HAUSIO&#39;</span><span class="p">)</span>
+                <span class="n">dataset</span> <span class="o">=</span> <span class="n">haussio</span><span class="o">.</span><span class="n">load_haussio</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">ops1</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">tosuite2p</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote data to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+            <span class="k">elif</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bruker&#39;</span><span class="p">:</span>
+                <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bruker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">ops1</span> <span class="o">=</span> <span class="n">tiff</span><span class="o">.</span><span class="n">ome_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote bruker tifs to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ops1</span> <span class="o">=</span> <span class="n">tiff</span><span class="o">.</span><span class="n">tiff_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote tifs to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">,</span> <span class="n">ops1</span><span class="p">)</span> <span class="c1"># save ops1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;FOUND BINARIES: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;reg_file&#39;</span><span class="p">])</span>
+
+    <span class="n">ops1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ops1</span><span class="p">)</span>
+    <span class="c1">#ops1 = utils.split_multiops(ops1)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]:</span>
+        <span class="n">flag_binreg</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">flag_binreg</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;do_registration&gt;1 =&gt; forcing registration&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">flag_binreg</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SKIPPING REGISTRATION FOR ALL PLANES...&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">flag_binreg</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">files_found_flag</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NOTE: binary file created, but registration not performed&#39;</span><span class="p">)</span>
+
+    <span class="c1"># set up number of CPU workers for registration and cell detection</span>
+    <span class="n">ipl</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">ipl</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; PLANE </span><span class="si">%d</span><span class="s1"> &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&#39;</span><span class="o">%</span><span class="n">ipl</span><span class="p">)</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag_binreg</span><span class="p">:</span>
+            <span class="c1">######### REGISTRATION #########</span>
+            <span class="n">t11</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- REGISTRATION&#39;</span><span class="p">)</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]</span> <span class="o">=</span> <span class="n">register</span><span class="o">.</span><span class="n">register_binary</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">])</span> <span class="c1"># register binary</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">,</span> <span class="n">ops1</span><span class="p">)</span> <span class="c1"># save ops1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- Total </span><span class="si">%0.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t11</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;two_step_registration&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- REGISTRATION STEP 2&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;(making mean image (excluding bad frames)&#39;</span><span class="p">)</span>
+                <span class="n">refImg</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">sampled_mean</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">])</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]</span> <span class="o">=</span> <span class="n">register</span><span class="o">.</span><span class="n">register_binary</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">],</span> <span class="n">refImg</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">,</span> <span class="n">ops1</span><span class="p">)</span> <span class="c1"># save ops1</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- Total </span><span class="si">%0.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t11</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">files_found_flag</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">flag_binreg</span><span class="p">:</span>
+            <span class="c1"># compute metrics for registration</span>
+            <span class="k">if</span> <span class="s1">&#39;do_regmetrics&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+                <span class="n">do_regmetrics</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;do_regmetrics&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">do_regmetrics</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">do_regmetrics</span> <span class="ow">and</span> <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">][</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">1500</span><span class="p">:</span>
+                <span class="n">t0</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get_pc_metrics</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Registration metrics, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">][</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">),</span> <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;roidetect&#39;</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]:</span>
+            <span class="n">roidetect</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;roidetect&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">roidetect</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">roidetect</span><span class="p">:</span>
+            <span class="c1">######## CELL DETECTION AND ROI EXTRACTION ##############</span>
+            <span class="n">t11</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- ROI DETECTION AND EXTRACTION&#39;</span><span class="p">)</span>
+            <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]</span> <span class="o">=</span> <span class="n">extract</span><span class="o">.</span><span class="n">detect_and_extract</span><span class="p">(</span><span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">])</span>
+            <span class="n">ops</span> <span class="o">=</span> <span class="n">ops1</span><span class="p">[</span><span class="n">ipl</span><span class="p">]</span>
+            <span class="n">fpath</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- Total </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t11</span><span class="p">))</span>
+
+            <span class="c1">######### SPIKE DECONVOLUTION ###############</span>
+            <span class="n">t11</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- SPIKE DECONVOLUTION&#39;</span><span class="p">)</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;F.npy&#39;</span><span class="p">))</span>
+            <span class="n">Fneu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;Fneu.npy&#39;</span><span class="p">))</span>
+            <span class="n">dF</span> <span class="o">=</span> <span class="n">F</span> <span class="o">-</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;neucoeff&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">Fneu</span>
+            <span class="n">spks</span> <span class="o">=</span> <span class="n">dcnv</span><span class="o">.</span><span class="n">oasis</span><span class="p">(</span><span class="n">dF</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;spks.npy&#39;</span><span class="p">),</span> <span class="n">spks</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----------- Total </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t11</span><span class="p">))</span>
+
+            <span class="c1"># save as matlab file</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;save_mat&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_mat&#39;</span><span class="p">]:</span>
+                <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;stat.npy&#39;</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="s1">&#39;iscell.npy&#39;</span><span class="p">))</span>
+                <span class="n">matpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path&#39;</span><span class="p">],</span><span class="s1">&#39;Fall.mat&#39;</span><span class="p">)</span>
+                <span class="n">savemat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;stat&#39;</span><span class="p">:</span> <span class="n">stat</span><span class="p">,</span>
+                                     <span class="s1">&#39;ops&#39;</span><span class="p">:</span> <span class="n">ops</span><span class="p">,</span>
+                                     <span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="n">F</span><span class="p">,</span>
+                                     <span class="s1">&#39;Fneu&#39;</span><span class="p">:</span> <span class="n">Fneu</span><span class="p">,</span>
+                                     <span class="s1">&#39;spks&#39;</span><span class="p">:</span> <span class="n">spks</span><span class="p">,</span>
+                                     <span class="s1">&#39;iscell&#39;</span><span class="p">:</span> <span class="n">iscell</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: skipping cell detection (ops[&#39;roidetect&#39;]=False)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plane </span><span class="si">%d</span><span class="s1"> processed in </span><span class="si">%0.2f</span><span class="s1"> sec (can open in GUI).&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">ipl</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t1</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;total = </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+        <span class="n">ipl</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1">#len(ipl)</span>
+
+    <span class="c1"># save final ops1 with all planes</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpathops1</span><span class="p">,</span> <span class="n">ops1</span><span class="p">)</span>
+
+    <span class="c1">#### COMBINE PLANES or FIELDS OF VIEW ####</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;combined&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">roidetect</span><span class="p">:</span>
+        <span class="n">save</span><span class="o">.</span><span class="n">combined</span><span class="p">(</span><span class="n">ops1</span><span class="p">)</span>
+
+    <span class="c1"># running a clean up script</span>
+    <span class="k">if</span> <span class="s1">&#39;clean_script&#39;</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;running clean-up script&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;python &#39;</span><span class="o">+</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">fpathops1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ops</span> <span class="ow">in</span> <span class="n">ops1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;delete_bin&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;delete_bin&#39;</span><span class="p">]:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file_chan2&#39;</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;TOTAL RUNTIME </span><span class="si">%0.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ops1</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

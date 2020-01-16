@@ -1,0 +1,136 @@
+:mod:`suite2p.gui.masks`
+========================
+
+.. py:module:: suite2p.gui.masks
+
+
+Module Contents
+---------------
+
+.. function:: make_buttons(parent, b0)
+
+   color buttons at row b0
+
+
+.. function:: cmap_change(parent)
+
+
+.. function:: hsv2rgb(cols)
+
+
+.. function:: make_colors(parent)
+
+
+.. function:: flip_plot(parent)
+
+
+.. function:: chan2_prob(parent)
+
+
+.. function:: make_colorbar(parent, b0)
+
+
+.. function:: init_masks(parent)
+
+   creates RGB masks using stat and puts them in M0 or M1 depending on
+   whether or not iscell is True for a given ROI
+   :param ops: mean_image, Vcorr
+   :param stat: xpix,ypix,xext,yext
+   :param iscell: vector with True if ROI is cell
+   :param ops_plot: plotROI, view, color, randcols
+
+   outputs:
+       M0: ROIs that are True in iscell
+       M1: ROIs that are False in iscell
+
+
+.. function:: rgb_masks(parent, col, c)
+
+
+.. function:: draw_masks(parent)
+
+   creates RGB masks using stat and puts them in M0 or M1 depending on
+   whether or not iscell is True for a given ROI
+   :param ops: mean_image, Vcorr
+   :param stat: xpix,ypix
+   :param iscell: vector with True if ROI is cell
+   :param ops_plot: plotROI, view, color, randcols
+
+   outputs:
+       M0: ROIs that are True in iscell
+       M1: ROIs that are False in iscell
+
+
+.. function:: make_chosen_ROI(M0, ypix, xpix, v)
+
+
+.. function:: make_chosen_circle(M0, ycirc, xcirc, col, sat)
+
+
+.. function:: chan2_masks(parent)
+
+
+.. function:: custom_masks(parent)
+
+
+.. function:: rastermap_masks(parent)
+
+
+.. function:: beh_masks(parent)
+
+
+.. function:: corr_masks(parent)
+
+
+.. function:: class_masks(parent)
+
+
+.. function:: flip_for_class(parent, iscell)
+
+
+.. function:: plot_colorbar(parent)
+
+
+.. function:: plot_masks(parent, M)
+
+
+.. function:: remove_roi(parent, n, i0)
+
+   removes roi n from view i0
+
+
+.. function:: add_roi(parent, n, i)
+
+   add roi n to view i
+
+
+.. function:: redraw_masks(parent, ypix, xpix)
+
+   redraw masks after roi added/removed
+
+
+.. function:: flip_roi(parent)
+
+   flips roi to other plot
+   there are 3 levels of overlap so this may be buggy if more than 3 cells are on
+   top of each other
+
+
+.. function:: draw_colorbar(colormap='hsv')
+
+
+.. function:: istat_hsv(istat)
+
+
+.. function:: istat_transform(istat, colormap='hsv')
+
+
+.. py:class:: ColorButton(bid, Text, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QPushButton`
+
+   .. method:: press(self, parent, bid)
+
+
+
+

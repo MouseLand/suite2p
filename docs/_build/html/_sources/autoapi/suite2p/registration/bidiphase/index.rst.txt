@@ -1,0 +1,39 @@
+:mod:`suite2p.registration.bidiphase`
+=====================================
+
+.. py:module:: suite2p.registration.bidiphase
+
+
+Module Contents
+---------------
+
+.. function:: compute(frames)
+
+   computes the bidirectional phase offset
+
+   sometimes in line scanning there will be offsets between lines;
+   if ops['do_bidiphase'], then bidiphase is computed and applied
+
+   :param frames: random subsample of frames in binary (frames x Ly x Lx)
+   :type frames: int16
+
+   :returns: **bidiphase** -- bidirectional phase offset in pixels
+   :rtype: int
+
+
+.. function:: shift(frames, bidiphase)
+
+   shift frames by bidirectional phase offset, bidiphase
+
+   sometimes in line scanning there will be offsets between lines;
+   shifts last axis by bidiphase
+
+   :param frames: frames from binary (frames x Ly x Lx)
+   :type frames: int16
+   :param bidiphase: bidirectional phase offset in pixels
+   :type bidiphase: int
+
+   :returns: **frames** -- shifted frames from binary (frames x Ly x Lx)
+   :rtype: int16
+
+

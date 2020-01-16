@@ -1,0 +1,893 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.gui2p &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.gui2p</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.gui2p</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">from</span> <span class="nn">pyqtgraph</span> <span class="kn">import</span> <span class="n">GraphicsScene</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">menus</span><span class="p">,</span> <span class="n">io</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">views</span><span class="p">,</span> <span class="n">buttons</span><span class="p">,</span> <span class="n">classgui</span><span class="p">,</span> <span class="n">traces</span><span class="p">,</span> <span class="n">graphics</span><span class="p">,</span> <span class="n">masks</span>
+
+<div class="viewcode-block" id="resample_frames"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.resample_frames">[docs]</a><span class="k">def</span> <span class="nf">resample_frames</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">xt</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; resample y (defined at x) at times xt &#39;&#39;&#39;</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">xt</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">ts</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)</span>
+    <span class="n">yt</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">xt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">yt</span></div>
+
+<div class="viewcode-block" id="MainWindow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow">[docs]</a><span class="k">class</span> <span class="nc">MainWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MainWindow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">setConfigOptions</span><span class="p">(</span><span class="n">imageAxisOrder</span><span class="o">=</span><span class="s2">&quot;row-major&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">800</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;suite2p (run pipeline or load stat.npy)&quot;</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">suite2p</span>
+        <span class="n">s2ppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">suite2p</span><span class="o">.</span><span class="vm">__file__</span><span class="p">))</span>
+
+        <span class="n">icon_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">s2ppath</span><span class="p">,</span> <span class="s2">&quot;logo&quot;</span><span class="p">,</span><span class="s2">&quot;logo.png&quot;</span>
+        <span class="p">)</span>
+        <span class="n">app_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">()</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">))</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">))</span>
+        <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">app_icon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;QMainWindow {background: &#39;black&#39;;}&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stylePressed</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;QPushButton {Text-align: left; &quot;</span>
+                             <span class="s2">&quot;background-color: rgb(100,50,100); &quot;</span>
+                             <span class="s2">&quot;color:white;}&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">styleUnpressed</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;QPushButton {Text-align: left; &quot;</span>
+                               <span class="s2">&quot;background-color: rgb(50,50,50); &quot;</span>
+                               <span class="s2">&quot;color:white;}&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">styleInactive</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;QPushButton {Text-align: left; &quot;</span>
+                              <span class="s2">&quot;background-color: rgb(50,50,50); &quot;</span>
+                              <span class="s2">&quot;color:gray;}&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">### first time running, need to check for user files</span>
+        <span class="c1"># check for classifier file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s2ppath</span><span class="p">,</span>
+                                      <span class="s2">&quot;classifiers&quot;</span><span class="p">,</span><span class="s2">&quot;classifier_user.npy&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classorig</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s2ppath</span><span class="p">,</span>
+                                      <span class="s2">&quot;classifiers&quot;</span><span class="p">,</span><span class="s2">&quot;classifier.npy&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classfile</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classorig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">classfile</span><span class="p">)</span>
+        <span class="c1"># check for ops file (for running suite2p)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opsorig</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s2ppath</span><span class="p">,</span>
+                                    <span class="s1">&#39;ops&#39;</span><span class="p">,</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s2ppath</span><span class="p">,</span>
+                                          <span class="s1">&#39;ops&#39;</span><span class="p">,</span><span class="s1">&#39;ops_user.npy&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opsorig</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span><span class="p">)</span>
+
+        <span class="n">menus</span><span class="o">.</span><span class="n">mainmenu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">menus</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">menus</span><span class="o">.</span><span class="n">visualizations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">menus</span><span class="o">.</span><span class="n">registration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">menus</span><span class="o">.</span><span class="n">mergebar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">menus</span><span class="o">.</span><span class="n">plugins</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">boldfont</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">)</span>
+
+        <span class="c1"># default plot options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ROIs_on&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;view&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                         <span class="s1">&#39;opacity&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">127</span><span class="p">,</span><span class="mi">255</span><span class="p">],</span> <span class="s1">&#39;saturation&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">],</span>
+                         <span class="s1">&#39;colormap&#39;</span><span class="p">:</span> <span class="s1">&#39;hsv&#39;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rois</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iROI&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Sroi&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Lam&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;LamMean&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;LamNorm&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RGB&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;cols&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;colorbar&#39;</span><span class="p">:[]}</span>
+
+        <span class="c1"># --------- MAIN WIDGET LAYOUT ---------------------</span>
+        <span class="n">cwidget</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="n">cwidget</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">cwidget</span><span class="p">)</span>
+
+        <span class="n">b0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_buttons</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_graphics</span><span class="p">(</span><span class="n">b0</span><span class="p">)</span>
+        <span class="c1"># so they&#39;re on top of plot, draw last</span>
+        <span class="n">buttons</span><span class="o">.</span><span class="n">make_quadrants</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># initialize merges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">merged</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rastermap</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classorig</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_keys</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;keys&quot;</span><span class="p">]</span>
+
+        <span class="c1"># load initial file</span>
+        <span class="c1">#statfile = &#39;C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy&#39;</span>
+        <span class="c1">#statfile = &#39;D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy&#39;</span>
+        <span class="c1">#statfile = &#39;/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy&#39;</span>
+        <span class="k">if</span> <span class="n">statfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">statfile</span>
+            <span class="n">io</span><span class="o">.</span><span class="n">load_proc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="c1">#self.manual_label()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAcceptDrops</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MainWindow.dragEnterEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.dragEnterEvent">[docs]</a>    <span class="k">def</span> <span class="nf">dragEnterEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">mimeData</span><span class="p">()</span><span class="o">.</span><span class="n">hasUrls</span><span class="p">():</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.dropEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.dropEvent">[docs]</a>    <span class="k">def</span> <span class="nf">dropEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">toLocalFile</span><span class="p">()</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">mimeData</span><span class="p">()</span><span class="o">.</span><span class="n">urls</span><span class="p">()]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">load_proc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainWindow.make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.make_buttons">[docs]</a>    <span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># ROI CHECKBOX</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;ROIs On [space bar]&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: white;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROIs_on</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">buttons</span><span class="o">.</span><span class="n">make_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">buttons</span><span class="o">.</span><span class="n">make_cellnotcell</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">b0</span><span class="o">=</span><span class="n">views</span><span class="o">.</span><span class="n">make_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="c1"># b0 says how many</span>
+        <span class="n">b0</span><span class="o">=</span><span class="n">masks</span><span class="o">.</span><span class="n">make_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">b0</span><span class="p">)</span>
+        <span class="n">masks</span><span class="o">.</span><span class="n">make_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b0</span><span class="p">)</span>
+        <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="n">b0</span><span class="o">=</span><span class="n">classgui</span><span class="o">.</span><span class="n">make_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b0</span><span class="p">)</span>
+        <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+
+        <span class="c1"># ------ CELL STATS / ROI SELECTION --------</span>
+        <span class="c1"># which stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats_to_show</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;med&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;npix&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;skew&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;compact&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;footprint&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aspect_ratio&quot;</span>
+        <span class="p">]</span>
+        <span class="n">lilfont</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boldfont</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;Selected ROI:&lt;/font&gt;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">setValidator</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIntValidator</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">returnPressed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_chosen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qlabel</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_to_show</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">llabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_to_show</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">llabel</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">lilfont</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: white;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">minimumSizeHint</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">b0</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">b0</span> <span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setRowStretch</span><span class="p">(</span><span class="n">b0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">b0</span><span class="o">+=</span><span class="mi">2</span>
+        <span class="n">b0</span> <span class="o">=</span> <span class="n">traces</span><span class="o">.</span><span class="n">make_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b0</span><span class="p">)</span>
+
+        <span class="c1"># zoom to cell CHECKBOX</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxz</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;zoom to cell&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxz</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: white;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoomtocell</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxz</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom_cell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkBoxz</span><span class="p">,</span>
+        <span class="n">b0</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">b0</span></div>
+
+<div class="viewcode-block" id="MainWindow.zoom_cell"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.zoom_cell">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Checked</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zoomtocell</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zoomtocell</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.make_graphics"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.make_graphics">[docs]</a>    <span class="k">def</span> <span class="nf">make_graphics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b0</span><span class="p">):</span>
+        <span class="c1">##### -------- MAIN PLOTTING AREA ---------- ####################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">GraphicsLayoutWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b0</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span>
+        <span class="c1"># --- cells image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span> <span class="o">=</span> <span class="n">graphics</span><span class="o">.</span><span class="n">ViewBox</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">lockAspect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;plot1&quot;</span><span class="p">,</span> <span class="n">border</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span> <span class="n">invertY</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">setMenuEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">scene</span><span class="p">()</span><span class="o">.</span><span class="n">contextMenuItem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view1</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">ImageItem</span><span class="p">(</span><span class="n">viewbox</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">autoDownsample</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color1</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">ImageItem</span><span class="p">(</span><span class="n">viewbox</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color1</span><span class="o">.</span><span class="n">autoDownsample</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color1</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">])</span>
+        <span class="c1">#self.view1.setImage(np.random.rand(500,500,3))</span>
+        <span class="c1">#x = np.arange(0,500)</span>
+        <span class="c1">#img = np.concatenate((np.zeros((500,500,3)), 127*(1+np.tile(np.sin(x/100)[:,np.newaxis,np.newaxis],(1,500,1)))),axis=-1)</span>
+        <span class="c1">#self.color1.setImage(img)</span>
+        <span class="c1"># --- noncells image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span> <span class="o">=</span> <span class="n">graphics</span><span class="o">.</span><span class="n">ViewBox</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">lockAspect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;plot2&quot;</span><span class="p">,</span> <span class="n">border</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span> <span class="n">invertY</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setMenuEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">scene</span><span class="p">()</span><span class="o">.</span><span class="n">contextMenuItem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view2</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">ImageItem</span><span class="p">(</span><span class="n">viewbox</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">autoDownsample</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color2</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">ImageItem</span><span class="p">(</span><span class="n">viewbox</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color2</span><span class="o">.</span><span class="n">autoDownsample</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color2</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">])</span>
+
+        <span class="c1"># LINK TWO VIEWS!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setXLink</span><span class="p">(</span><span class="s2">&quot;plot1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setYLink</span><span class="p">(</span><span class="s2">&quot;plot1&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- fluorescence trace plot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p3</span> <span class="o">=</span> <span class="n">graphics</span><span class="o">.</span><span class="n">TraceBox</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">invertY</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">setMouseEnabled</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">enableAutoRange</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p3</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">colspan</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1">#self.p3 = pg.PlotItem()</span>
+        <span class="c1">#self.v3.addItem(self.p3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setRowStretchFactor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setColumnMinimumWidth</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setColumnMinimumWidth</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setHorizontalSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span></div>
+        <span class="c1">#self.win.scene().sigMouseClicked.connect(self.plot_clicked)</span>
+
+<div class="viewcode-block" id="MainWindow.keyPressEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.keyPressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">keyPressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">!=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ControlModifier</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">!=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ShiftModifier</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Return</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span><span class="o">==</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AltModifier</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">merge</span><span class="o">.</span><span class="n">do_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Escape</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">zoom_plot</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">zoom_plot</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Delete</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Q</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_W</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_E</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_R</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_T</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_U</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">&quot;meanImg_chan2&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Y</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">&quot;meanImg_chan2_corrected&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Space</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">checkBox</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+                <span class="c1">#Agus</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_N</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxd</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_B</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxn</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_V</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">checkBoxt</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+                <span class="c1">#</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_A</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_S</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_D</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_F</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_G</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_H</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasred</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_J</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_K</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_L</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bloaded</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_M</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rastermap</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">colorbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Left</span><span class="p">:</span>
+                    <span class="n">ctype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span>
+                    <span class="k">while</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span> <span class="ow">is</span> <span class="n">ctype</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Right</span><span class="p">:</span>
+                <span class="c1">##Agus</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span>
+                    <span class="n">ctype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span>
+                    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span> <span class="ow">is</span> <span class="n">ctype</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1">##Agus</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Key_Up</span><span class="p">:</span>
+                    <span class="n">masks</span><span class="o">.</span><span class="n">flip_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_plot"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.update_plot">[docs]</a>    <span class="k">def</span> <span class="nf">update_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="n">masks</span><span class="o">.</span><span class="n">corr_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">masks</span><span class="o">.</span><span class="n">plot_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen_stats</span><span class="p">()</span>
+        <span class="n">views</span><span class="o">.</span><span class="n">plot_views</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">masks</span><span class="o">.</span><span class="n">draw_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">masks</span><span class="o">.</span><span class="n">plot_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
+        <span class="n">traces</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zoomtocell</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zoom_to_cell</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.mode_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.mode_change">[docs]</a>    <span class="k">def</span> <span class="nf">mode_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">            changes the activity mode that is used when multiple neurons are selected</span>
+<span class="sd">            or in visualization windows like rastermap or for correlation computation!</span>
+
+<span class="sd">            activityMode =</span>
+<span class="sd">            0 : F</span>
+<span class="sd">            1 : Fneu</span>
+<span class="sd">            2 : F - 0.7 * Fneu (default)</span>
+<span class="sd">            3 : spks</span>
+
+<span class="sd">            uses binning set by self.bin</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activityMode</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="c1"># activity used for correlations</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+            <span class="n">nb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Fcell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fcell</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fneu</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fcell</span> <span class="o">-</span> <span class="mf">0.7</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fneu</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Spks</span>
+            <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Fbin</span> <span class="o">=</span> <span class="n">f</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">nb</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">ncells</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">Fbin</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fbin</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Fstd</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Fbin</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Fcell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># if in behavior-view, recompute</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                <span class="n">masks</span><span class="o">.</span><span class="n">beh_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="n">masks</span><span class="o">.</span><span class="n">plot_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.top_number_chosen"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.top_number_chosen">[docs]</a>    <span class="k">def</span> <span class="nf">top_number_chosen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ntop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">top_selection</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.ROI_selection"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.ROI_selection">[docs]</a>    <span class="k">def</span> <span class="nf">ROI_selection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="n">wplot</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">viewRange</span><span class="p">()</span>
+            <span class="n">draw</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="n">wplot</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">viewRange</span><span class="p">()</span>
+            <span class="n">draw</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">draw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stylePressed</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROIplot</span> <span class="o">=</span> <span class="n">wplot</span>
+            <span class="n">imx</span> <span class="o">=</span> <span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">view</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">imy</span> <span class="o">=</span> <span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">view</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">view</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">4</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">view</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">4</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+            <span class="n">imx</span> <span class="o">=</span> <span class="n">imx</span> <span class="o">-</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">imy</span> <span class="o">=</span> <span class="n">imy</span> <span class="o">-</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">RectROI</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">imx</span><span class="p">,</span> <span class="n">imy</span><span class="p">],</span> <span class="p">[</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">],</span>
+                <span class="n">pen</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">sideScalers</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">wplot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROI_position</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">sigRegionChangeFinished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI_position</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isROI</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="MainWindow.ROI_remove"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.ROI_remove">[docs]</a>    <span class="k">def</span> <span class="nf">ROI_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isROI</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROIplot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isROI</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">styleInactive</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainWindow.ROI_position"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.ROI_position">[docs]</a>    <span class="k">def</span> <span class="nf">ROI_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pos0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">getSceneHandlePositions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROIplot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">mapSceneToView</span><span class="p">(</span><span class="n">pos0</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">mapSceneToView</span><span class="p">(</span><span class="n">pos0</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">posy</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+        <span class="n">posx</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+        <span class="n">sizex</span><span class="p">,</span> <span class="n">sizey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">xrange</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">sizex</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">posx</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">yrange</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">sizey</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">posy</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">xrange</span> <span class="o">=</span> <span class="n">xrange</span><span class="p">[</span><span class="n">xrange</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">xrange</span> <span class="o">=</span> <span class="n">xrange</span><span class="p">[</span><span class="n">xrange</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Lx&quot;</span><span class="p">]]</span>
+        <span class="n">yrange</span> <span class="o">=</span> <span class="n">yrange</span><span class="p">[</span><span class="n">yrange</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">yrange</span> <span class="o">=</span> <span class="n">yrange</span><span class="p">[</span><span class="n">yrange</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Ly&quot;</span><span class="p">]]</span>
+        <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">yrange</span><span class="p">,</span> <span class="n">xrange</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_cells</span><span class="p">(</span><span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainWindow.select_cells"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.select_cells">[docs]</a>    <span class="k">def</span> <span class="nf">select_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROIplot</span>
+        <span class="n">iROI0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">]</span>
+        <span class="n">icells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">iROI0</span><span class="p">[</span><span class="n">iROI0</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">icells</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rois</span><span class="p">[</span><span class="s1">&#39;iROI&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">]</span> <span class="o">==</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;npix&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.number_chosen"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.number_chosen">[docs]</a>    <span class="k">def</span> <span class="nf">number_chosen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="MainWindow.ROIs_on"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.ROIs_on">[docs]</a>    <span class="k">def</span> <span class="nf">ROIs_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Checked</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;ROIs_on&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;ROIs_on&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">color2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MainWindow.plot_clicked"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.plot_clicked">[docs]</a>    <span class="k">def</span> <span class="nf">plot_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;left-click chooses a cell, right-click flips cell to other view&quot;&quot;&quot;</span>
+        <span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">choose</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">zoom</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">replot</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">scene</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">scenePos</span><span class="p">())</span>
+        <span class="n">posx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">posy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">iplot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+            <span class="c1"># print(event.modifiers() == QtCore.Qt.ControlModifier)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">img1</span><span class="p">:</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">mapSceneToView</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">scenePos</span><span class="p">())</span>
+                    <span class="n">posy</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+                    <span class="n">posx</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+                    <span class="n">iplot</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">img2</span><span class="p">:</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">mapSceneToView</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">scenePos</span><span class="p">())</span>
+                    <span class="n">posy</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+                    <span class="n">posx</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+                    <span class="n">iplot</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">elif</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">p3</span><span class="p">:</span>
+                    <span class="n">iplot</span> <span class="o">=</span> <span class="mi">3</span>
+                <span class="k">elif</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="n">x</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img1</span> <span class="ow">and</span>
+                    <span class="n">x</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img2</span>
+                <span class="p">):</span>
+                    <span class="n">iplot</span> <span class="o">=</span> <span class="mi">4</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">double</span><span class="p">():</span>
+                        <span class="n">zoom</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">flip</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">double</span><span class="p">():</span>
+                            <span class="n">zoom</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">choose</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">double</span><span class="p">():</span>
+                    <span class="n">zoom</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">posy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">posy</span><span class="p">)</span>
+                <span class="n">posx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">posx</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">zoom</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">zoom_plot</span><span class="p">(</span><span class="n">iplot</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">choose</span> <span class="ow">or</span> <span class="n">flip</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">iplot</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="n">ichosen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iROI</span><span class="p">[</span><span class="n">iplot</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">posx</span><span class="p">,</span> <span class="n">posy</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">ichosen</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">choose</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">choose</span><span class="p">:</span>
+                    <span class="n">merged</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ShiftModifier</span> <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ControlModifier</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">ichosen</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">ichosen</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ichosen</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="n">ichosen</span>
+                                <span class="n">merged</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">elif</span> <span class="n">ichosen</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ichosen</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                                <span class="n">merged</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">merged</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="n">ichosen</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="n">ichosen</span>
+                <span class="k">if</span> <span class="n">flip</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ichosen</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[</span><span class="n">ichosen</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="n">ichosen</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flip_plot</span><span class="p">(</span><span class="n">iplot</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">choose</span> <span class="ow">or</span> <span class="n">flip</span> <span class="ow">or</span> <span class="n">replot</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isROI</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_remove</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizebtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+                        <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topbtns</span><span class="o">.</span><span class="n">buttons</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="n">btn</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+                                <span class="n">btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">event</span><span class="o">.</span><span class="n">acceptedItem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">raiseContextMenu</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">iplot</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">event</span><span class="o">.</span><span class="n">acceptedItem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p2</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">raiseContextMenu</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainWindow.ichosen_stats"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.ichosen_stats">[docs]</a>    <span class="k">def</span> <span class="nf">ichosen_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROIedit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stats_to_show</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats_to_show</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">ival</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span>
+                    <span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;: [</span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ival</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ival</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ival</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ROIstats</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;: </span><span class="si">%2.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ival</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="MainWindow.zoom_to_cell"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.MainWindow.zoom_to_cell">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_to_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">irange</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">apix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imerge</span><span class="p">):</span>
+                <span class="n">apix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apix</span><span class="p">,</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">imin</span> <span class="o">=</span> <span class="n">apix</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">imax</span> <span class="o">=</span> <span class="n">apix</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">icent</span> <span class="o">=</span> <span class="n">apix</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">imin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">icent</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">irange</span><span class="p">,</span> <span class="n">imin</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">imin</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">icent</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">irange</span><span class="p">,</span> <span class="n">imin</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">imax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">icent</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">irange</span><span class="p">,</span> <span class="n">imax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">imax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">icent</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">irange</span><span class="p">,</span> <span class="n">imax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">icent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ichosen</span><span class="p">][</span><span class="s1">&#39;med&#39;</span><span class="p">])</span>
+            <span class="n">imin</span> <span class="o">=</span> <span class="n">icent</span> <span class="o">-</span> <span class="n">irange</span>
+            <span class="n">imax</span> <span class="o">=</span> <span class="n">icent</span> <span class="o">+</span> <span class="n">irange</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="n">imin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">imax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="n">imin</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">imax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="n">imin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">imax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="n">imin</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">imax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/gui2p/index.html#suite2p.gui.gui2p.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">statfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># Always start by initializing Qt (only once per application)</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">suite2p</span>
+    <span class="n">s2ppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">suite2p</span><span class="o">.</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">icon_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s2ppath</span><span class="p">,</span> <span class="s2">&quot;logo&quot;</span><span class="p">,</span><span class="s2">&quot;logo.png&quot;</span>
+    <span class="p">)</span>
+    <span class="n">app_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">()</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">))</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">))</span>
+    <span class="n">app_icon</span><span class="o">.</span><span class="n">addFile</span><span class="p">(</span><span class="n">icon_path</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">app_icon</span><span class="p">)</span>
+    <span class="n">GUI</span> <span class="o">=</span> <span class="n">MainWindow</span><span class="p">(</span><span class="n">statfile</span><span class="o">=</span><span class="n">statfile</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+    <span class="c1"># GUI.save_gui_data()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span></div>
+
+
+<span class="c1"># run()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

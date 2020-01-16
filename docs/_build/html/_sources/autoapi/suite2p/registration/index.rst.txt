@@ -1,0 +1,22 @@
+:mod:`suite2p.registration`
+===========================
+
+.. py:module:: suite2p.registration
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   bidiphase/index.rst
+   metrics/index.rst
+   nonrigid/index.rst
+   reference/index.rst
+   register/index.rst
+   rigid/index.rst
+   utils/index.rst
+   zalign/index.rst
+
+

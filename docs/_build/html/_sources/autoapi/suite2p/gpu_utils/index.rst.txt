@@ -1,0 +1,24 @@
+:mod:`suite2p.gpu_utils`
+========================
+
+.. py:module:: suite2p.gpu_utils
+
+
+Module Contents
+---------------
+
+.. data:: HAS_GPU
+   :annotation: = False
+
+   
+
+.. data:: HAS_GPU
+   :annotation: = True
+
+   
+
+.. function:: phasecorr_gpu(X, cfRefImg, lcorr)
+
+   not being used - no speed up - may be faster with cuda.jit
+
+

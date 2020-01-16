@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.io &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.io</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/gui/io/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.gui.io">
+<span id="suite2p-gui-io"></span><h1><a class="reference internal" href="#module-suite2p.gui.io" title="suite2p.gui.io"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.io</span></code></a><a class="headerlink" href="#module-suite2p.gui.io" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.gui.io.make_masks_and_enable_buttons">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">make_masks_and_enable_buttons</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#make_masks_and_enable_buttons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.make_masks_and_enable_buttons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.export_fig">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">export_fig</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#export_fig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.export_fig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.enable_views_and_classifier">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">enable_views_and_classifier</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#enable_views_and_classifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.enable_views_and_classifier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.load_dialog">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">load_dialog</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#load_dialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.load_dialog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.load_proc">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">load_proc</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#load_proc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.load_proc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.load_behavior">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">load_behavior</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#load_behavior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.load_behavior" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.save_redcell">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">save_redcell</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#save_redcell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.save_redcell" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.save_iscell">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">save_iscell</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#save_iscell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.save_iscell" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.save_mat">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">save_mat</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#save_mat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.save_mat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.save_merge">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">save_merge</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#save_merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.save_merge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.load_custom_mask">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">load_custom_mask</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#load_custom_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.load_custom_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.gui.io.load_again">
+<code class="sig-prename descclassname">suite2p.gui.io.</code><code class="sig-name descname">load_again</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">Text</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/io.html#load_again"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.io.load_again" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

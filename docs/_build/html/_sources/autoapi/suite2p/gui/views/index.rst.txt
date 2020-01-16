@@ -1,0 +1,90 @@
+:mod:`suite2p.gui.views`
+========================
+
+.. py:module:: suite2p.gui.views
+
+
+Module Contents
+---------------
+
+.. function:: make_buttons(parent)
+
+   view buttons
+
+
+.. function:: init_views(parent)
+
+
+.. function:: plot_views(parent)
+
+
+.. py:class:: ViewButton(bid, Text, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QPushButton`
+
+   .. method:: press(self, parent, bid)
+
+
+
+
+.. py:class:: RangeSlider(parent=None, *args)
+
+   Bases: :class:`PyQt5.QtGui.QSlider`
+
+   A slider for ranges.
+
+   This class provides a dual-slider for ranges, where there is a defined
+   maximum and minimum, as is a normal slider, but instead of having a
+   single slider value, there are 2 slider values.
+
+   This class emits the same signals as the QSlider base class, with the
+   exception of valueChanged
+
+   Found this slider here: https://www.mail-archive.com/pyqt@riverbankcomputing.com/msg22889.html
+   and modified it
+
+   .. method:: level_change(self)
+
+
+
+   .. method:: low(self)
+
+
+
+   .. method:: setLow(self, low)
+
+
+
+   .. method:: high(self)
+
+
+
+   .. method:: setHigh(self, high)
+
+
+
+   .. method:: paintEvent(self, event)
+
+
+
+   .. method:: mousePressEvent(self, event)
+
+
+
+   .. method:: mouseMoveEvent(self, event)
+
+
+
+   .. method:: mouseReleaseEvent(self, event)
+
+
+
+   .. method:: __pick(self, pt)
+
+
+
+   .. method:: __pixelPosToRangeValue(self, pos)
+
+
+
+

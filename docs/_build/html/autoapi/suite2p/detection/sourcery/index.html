@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.detection.sourcery &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.detection.sourcery</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/detection/sourcery/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.detection.sourcery">
+<span id="suite2p-detection-sourcery"></span><h1><a class="reference internal" href="#module-suite2p.detection.sourcery" title="suite2p.detection.sourcery"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.detection.sourcery</span></code></a><a class="headerlink" href="#module-suite2p.detection.sourcery" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.detection.sourcery.getSVDdata">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">getSVDdata</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#getSVDdata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.getSVDdata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.getSVDproj">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">getSVDproj</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">u</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#getSVDproj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.getSVDproj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.getStU">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">getStU</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">U</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#getStU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.getStU" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.drawClusters">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">drawClusters</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#drawClusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.drawClusters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.create_neuropil_basis">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">create_neuropil_basis</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#create_neuropil_basis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.create_neuropil_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes neuropil basis functions
+inputs:</p>
+<blockquote>
+<div><p>ops, Ly, Lx
+from ops: ratio_neuropil, tile_factor, diameter, neuropil_type</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>basis functions (pixels x nbasis functions)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.circleMask">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">circleMask</code><span class="sig-paren">(</span><em class="sig-param">d0</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#circleMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.circleMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates array with indices which are the radius of that x,y point
+inputs:</p>
+<blockquote>
+<div><p>d0 (patch of (-d0,d0+1) over which radius computed</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>rs: array (2*d0+1,2*d0+1) of radii
+dx,dy: indices in rs where the radius is less than d0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.morphOpen">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">morphOpen</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">footprint</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#morphOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.morphOpen" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the morphological opening of V (correlation map) with circular footprint</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.localMax">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">localMax</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">footprint</em>, <em class="sig-param">thres</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#localMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.localMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>find local maxima of V (correlation map) using a filter with (usually circular) footprint
+inputs:</p>
+<blockquote>
+<div><p>V, footprint, thres</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>i,j: indices of local max greater than thres</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.localRegion">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">localRegion</code><span class="sig-paren">(</span><em class="sig-param">i</em>, <em class="sig-param">j</em>, <em class="sig-param">dy</em>, <em class="sig-param">dx</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#localRegion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.localRegion" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.pairwiseDistance">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">pairwiseDistance</code><span class="sig-paren">(</span><em class="sig-param">y</em>, <em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#pairwiseDistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.pairwiseDistance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.get_stat">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">get_stat</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">stat</em>, <em class="sig-param">Ucell</em>, <em class="sig-param">codes</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#get_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.get_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes statistics of cells found using sourcery
+inputs:</p>
+<blockquote>
+<div><p>Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>stat
+assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.getVmap">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">getVmap</code><span class="sig-paren">(</span><em class="sig-param">Ucell</em>, <em class="sig-param">sig</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#getVmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.getVmap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.sub2ind">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">sub2ind</code><span class="sig-paren">(</span><em class="sig-param">array_shape</em>, <em class="sig-param">rows</em>, <em class="sig-param">cols</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#sub2ind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.sub2ind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.minDistance">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">minDistance</code><span class="sig-paren">(</span><em class="sig-param">inputs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#minDistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.minDistance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.get_connected">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">get_connected</code><span class="sig-paren">(</span><em class="sig-param">Ly</em>, <em class="sig-param">Lx</em>, <em class="sig-param">stat</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#get_connected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.get_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>grow i0 until it cannot grow any more</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.connected_region">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">connected_region</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#connected_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.connected_region" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.extendROI">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">extendROI</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em>, <em class="sig-param">niter=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#extendROI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.extendROI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.iter_extend">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">iter_extend</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em>, <em class="sig-param">Ucell</em>, <em class="sig-param">code</em>, <em class="sig-param">refine=-1</em>, <em class="sig-param">change_codes=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#iter_extend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.iter_extend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.sourcery">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">sourcery</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#sourcery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.sourcery" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sourcery.postprocess">
+<code class="sig-prename descclassname">suite2p.detection.sourcery.</code><code class="sig-name descname">postprocess</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">stat</em>, <em class="sig-param">Ucell</em>, <em class="sig-param">codes</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sourcery.html#postprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sourcery.postprocess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

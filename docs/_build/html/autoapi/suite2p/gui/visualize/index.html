@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.visualize &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.visualize</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/gui/visualize/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.gui.visualize">
+<span id="suite2p-gui-visualize"></span><h1><a class="reference internal" href="#module-suite2p.gui.visualize" title="suite2p.gui.visualize"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.gui.visualize</span></code></a><a class="headerlink" href="#module-suite2p.gui.visualize" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="suite2p.gui.visualize.VerticalLabel">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">VerticalLabel</code><span class="sig-paren">(</span><em class="sig-param">text=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VerticalLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VerticalLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QWidget</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.VerticalLabel.paintEvent">
+<code class="sig-name descname">paintEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VerticalLabel.paintEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VerticalLabel.paintEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.visualize.RangeSlider">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">RangeSlider</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em>, <em class="sig-param">*args</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QSlider</span></code></p>
+<p>A slider for ranges.</p>
+<p>This class provides a dual-slider for ranges, where there is a defined
+maximum and minimum, as is a normal slider, but instead of having a
+single slider value, there are 2 slider values.</p>
+<p>This class emits the same signals as the QSlider base class, with the
+exception of valueChanged</p>
+<p>Found this slider here: <a class="reference external" href="https://www.mail-archive.com/pyqt&#64;riverbankcomputing.com/msg22889.html">https://www.mail-archive.com/pyqt&#64;riverbankcomputing.com/msg22889.html</a>
+and modified it</p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.level_change">
+<code class="sig-name descname">level_change</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.level_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.level_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.low">
+<code class="sig-name descname">low</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.low"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.low" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.setLow">
+<code class="sig-name descname">setLow</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">low</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.setLow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.setLow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.high">
+<code class="sig-name descname">high</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.high"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.high" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.setHigh">
+<code class="sig-name descname">setHigh</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">high</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.setHigh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.setHigh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.paintEvent">
+<code class="sig-name descname">paintEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.paintEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.paintEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.mousePressEvent">
+<code class="sig-name descname">mousePressEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.mousePressEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.mousePressEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.mouseMoveEvent">
+<code class="sig-name descname">mouseMoveEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.mouseMoveEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.mouseMoveEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.mouseReleaseEvent">
+<code class="sig-name descname">mouseReleaseEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.mouseReleaseEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.mouseReleaseEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.__pick">
+<code class="sig-name descname">__pick</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pt</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.__pick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.__pick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.RangeSlider.__pixelPosToRangeValue">
+<code class="sig-name descname">__pixelPosToRangeValue</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pos</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#RangeSlider.__pixelPosToRangeValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.RangeSlider.__pixelPosToRangeValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.visualize.SatSlider">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">SatSlider</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#SatSlider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.SatSlider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#suite2p.gui.visualize.RangeSlider" title="suite2p.gui.visualize.RangeSlider"><code class="xref py py-class docutils literal notranslate"><span class="pre">suite2p.gui.visualize.RangeSlider</span></code></a></p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.SatSlider.level_change">
+<code class="sig-name descname">level_change</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#SatSlider.level_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.SatSlider.level_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.visualize.NeuronSlider">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">NeuronSlider</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#NeuronSlider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.NeuronSlider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#suite2p.gui.visualize.RangeSlider" title="suite2p.gui.visualize.RangeSlider"><code class="xref py py-class docutils literal notranslate"><span class="pre">suite2p.gui.visualize.RangeSlider</span></code></a></p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.NeuronSlider.level_change">
+<code class="sig-name descname">level_change</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#NeuronSlider.level_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.NeuronSlider.level_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.visualize.Slider">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">Slider</code><span class="sig-paren">(</span><em class="sig-param">bid</em>, <em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#Slider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.Slider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QSlider</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.Slider.level_change">
+<code class="sig-name descname">level_change</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">parent</em>, <em class="sig-param">bid</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#Slider.level_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.Slider.level_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="suite2p.gui.visualize.VisWindow">
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.gui.visualize.</code><code class="sig-name descname">VisWindow</code><span class="sig-paren">(</span><em class="sig-param">parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtGui.QMainWindow</span></code></p>
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.plot_clicked">
+<code class="sig-name descname">plot_clicked</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.plot_clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.plot_clicked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.keyPressEvent">
+<code class="sig-name descname">keyPressEvent</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.keyPressEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.keyPressEvent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.roi_range">
+<code class="sig-name descname">roi_range</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">roi</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.roi_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.roi_range" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.plot_traces">
+<code class="sig-name descname">plot_traces</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.plot_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.plot_traces" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.LINE_position">
+<code class="sig-name descname">LINE_position</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.LINE_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.LINE_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.THRES_position">
+<code class="sig-name descname">THRES_position</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.THRES_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.THRES_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.ROI_position">
+<code class="sig-name descname">ROI_position</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.ROI_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.ROI_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.PC_on">
+<code class="sig-name descname">PC_on</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">plot</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.PC_on"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.PC_on" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.PCreturn">
+<code class="sig-name descname">PCreturn</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.PCreturn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.PCreturn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.activate">
+<code class="sig-name descname">activate</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.activate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.activate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.compute_map">
+<code class="sig-name descname">compute_map</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.compute_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.compute_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.finished">
+<code class="sig-name descname">finished</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.finished"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.finished" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.stdout_write">
+<code class="sig-name descname">stdout_write</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.stdout_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.stdout_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.stderr_write">
+<code class="sig-name descname">stderr_write</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.stderr_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.stderr_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.select_cells">
+<code class="sig-name descname">select_cells</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.select_cells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.select_cells" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.sort_time">
+<code class="sig-name descname">sort_time</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.sort_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.sort_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="suite2p.gui.visualize.VisWindow.neural_sorting">
+<code class="sig-name descname">neural_sorting</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">i</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/gui/visualize.html#VisWindow.neural_sorting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.gui.visualize.VisWindow.neural_sorting" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

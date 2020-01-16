@@ -1,0 +1,892 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.rungui &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.rungui</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.rungui</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">from</span> <span class="nn">pyqtgraph</span> <span class="kn">import</span> <span class="n">console</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pickle</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">run_s2p</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">io</span>
+
+<span class="c1">### ---- this file contains helper functions for GUI and the RUN window ---- ###</span>
+
+<span class="c1"># type in h5py key</span>
+<div class="viewcode-block" id="TextChooser"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.TextChooser">[docs]</a><span class="k">class</span> <span class="nc">TextChooser</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextChooser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">300</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s1">&#39;h5 key&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;h5 key for data field&#39;</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qedit</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;OK&#39;</span><span class="p">)</span>
+        <span class="n">done</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_list</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">done</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TextChooser.exit_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.TextChooser.exit_list">[docs]</a>    <span class="k">def</span> <span class="nf">exit_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qedit</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div></div>
+
+<span class="c1">### choose files for batch processing</span>
+<span class="c1">### custom QDialog which makes a list of items you can include/exclude</span>
+<div class="viewcode-block" id="ListChooser"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.ListChooser">[docs]</a><span class="k">class</span> <span class="nc">ListChooser</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ListChooser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">300</span><span class="p">,</span><span class="mi">500</span><span class="p">,</span><span class="mi">320</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+        <span class="c1">#self.setCentralWidget(self.win)</span>
+        <span class="n">loadcell</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Load ops.npy / db.npy&#39;</span><span class="p">)</span>
+        <span class="n">loadcell</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">opslist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">loadcell</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_ops</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">loadcell</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;(any ops not in loaded file will be pulled from GUI)&#39;</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#layout.addWidget(QtGui.QLabel(&#39;select multiple files using ctrl&#39;),2,0,1,1)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QListWidget</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="c1">#self.list.resize(450,250)</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;OK&#39;</span><span class="p">)</span>
+        <span class="n">done</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">exit_list</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">done</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ListChooser.load_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.ListChooser.load_ops">[docs]</a>    <span class="k">def</span> <span class="nf">load_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Open ops.npy / db.npy file&#39;</span><span class="p">,</span><span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;*.npy&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">badfile</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="s1">&#39;data_path&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">badfile</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">elif</span> <span class="s1">&#39;h5py&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">badfile</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">badfile</span><span class="p">:</span>
+                    <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;lacks any file paths&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">opslist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;not a dict&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;no file selected&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ListChooser.exit_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.ListChooser.exit_list">[docs]</a>    <span class="k">def</span> <span class="nf">exit_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">opslist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div></div>
+
+<span class="c1">### custom QDialog which allows user to fill in ops and run suite2p!</span>
+<div class="viewcode-block" id="RunWindow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow">[docs]</a><span class="k">class</span> <span class="nc">RunWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RunWindow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1500</span><span class="p">,</span><span class="mi">900</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s1">&#39;Choose run options (hold mouse over parameters to see descriptions)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setHorizontalSpacing</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span>
+        <span class="c1"># initial ops values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+                                          <span class="s1">&#39;../ops/ops_user.npy&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">ops0</span> <span class="o">=</span> <span class="n">run_s2p</span><span class="o">.</span><span class="n">default_ops</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops0</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">}</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loaded default ops&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;could not load default ops, using built-in ops settings&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">run_s2p</span><span class="o">.</span><span class="n">default_ops</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opslist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">,</span> <span class="s1">&#39;nchannels&#39;</span><span class="p">,</span> <span class="s1">&#39;functional_chan&#39;</span><span class="p">,</span> <span class="s1">&#39;align_by_chan&#39;</span><span class="p">,</span> <span class="s1">&#39;nimg_init&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;batch_size&#39;</span><span class="p">,</span> <span class="s1">&#39;max_iterations&#39;</span><span class="p">,</span> <span class="s1">&#39;nbinned&#39;</span><span class="p">,</span><span class="s1">&#39;inner_neuropil_radius&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">,</span> <span class="s1">&#39;spatial_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;do_registration&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boolkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;delete_bin&#39;</span><span class="p">,</span> <span class="s1">&#39;do_bidiphase&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_tif&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_tif_chan2&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;save_mat&#39;</span><span class="p">,</span> <span class="s1">&#39;combined&#39;</span><span class="p">,</span> <span class="s1">&#39;1Preg&#39;</span><span class="p">,</span> <span class="s1">&#39;nonrigid&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;connected&#39;</span><span class="p">,</span> <span class="s1">&#39;roidetect&#39;</span><span class="p">,</span> <span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">,</span> <span class="s1">&#39;allow_overlap&#39;</span><span class="p">,</span> <span class="s1">&#39;sparse_mode&#39;</span><span class="p">]</span>
+        <span class="n">tifkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nplanes&#39;</span><span class="p">,</span><span class="s1">&#39;nchannels&#39;</span><span class="p">,</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">,</span><span class="s1">&#39;tau&#39;</span><span class="p">,</span><span class="s1">&#39;fs&#39;</span><span class="p">,</span><span class="s1">&#39;delete_bin&#39;</span><span class="p">,</span><span class="s1">&#39;do_bidiphase&#39;</span><span class="p">,</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">]</span>
+        <span class="n">outkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;preclassify&#39;</span><span class="p">,</span><span class="s1">&#39;save_mat&#39;</span><span class="p">,</span><span class="s1">&#39;combined&#39;</span><span class="p">,</span><span class="s1">&#39;reg_tif&#39;</span><span class="p">,</span><span class="s1">&#39;reg_tif_chan2&#39;</span><span class="p">,</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span>
+        <span class="n">regkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;do_registration&#39;</span><span class="p">,</span><span class="s1">&#39;align_by_chan&#39;</span><span class="p">,</span><span class="s1">&#39;nimg_init&#39;</span><span class="p">,</span><span class="s1">&#39;batch_size&#39;</span><span class="p">,</span><span class="s1">&#39;smooth_sigma&#39;</span><span class="p">,</span> <span class="s1">&#39;smooth_sigma_time&#39;</span><span class="p">,</span><span class="s1">&#39;maxregshift&#39;</span><span class="p">,</span><span class="s1">&#39;th_badframes&#39;</span><span class="p">,</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">,</span><span class="s1">&#39;two_step_registration&#39;</span><span class="p">]</span>
+        <span class="n">nrkeys</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">,</span><span class="s1">&#39;block_size&#39;</span><span class="p">,</span><span class="s1">&#39;snr_thresh&#39;</span><span class="p">,</span><span class="s1">&#39;maxregshiftNR&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;1Preg&#39;</span><span class="p">,</span><span class="s1">&#39;spatial_hp&#39;</span><span class="p">,</span><span class="s1">&#39;pre_smooth&#39;</span><span class="p">,</span><span class="s1">&#39;spatial_taper&#39;</span><span class="p">]]</span>
+        <span class="n">cellkeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;roidetect&#39;</span><span class="p">,</span><span class="s1">&#39;sparse_mode&#39;</span><span class="p">,</span><span class="s1">&#39;diameter&#39;</span><span class="p">,</span><span class="s1">&#39;spatial_scale&#39;</span><span class="p">,</span><span class="s1">&#39;connected&#39;</span><span class="p">,</span><span class="s1">&#39;threshold_scaling&#39;</span><span class="p">,</span><span class="s1">&#39;max_overlap&#39;</span><span class="p">,</span><span class="s1">&#39;max_iterations&#39;</span><span class="p">,</span><span class="s1">&#39;high_pass&#39;</span><span class="p">]</span>
+        <span class="n">neudeconvkeys</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;allow_overlap&#39;</span><span class="p">,</span><span class="s1">&#39;inner_neuropil_radius&#39;</span><span class="p">,</span><span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;win_baseline&#39;</span><span class="p">,</span><span class="s1">&#39;sig_baseline&#39;</span><span class="p">,</span><span class="s1">&#39;neucoeff&#39;</span><span class="p">]]</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">tifkeys</span><span class="p">,</span> <span class="n">outkeys</span><span class="p">,</span> <span class="n">regkeys</span><span class="p">,</span> <span class="n">nrkeys</span><span class="p">,</span> <span class="n">cellkeys</span><span class="p">,</span> <span class="n">neudeconvkeys</span><span class="p">]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Main settings&#39;</span><span class="p">,</span><span class="s1">&#39;Output settings&#39;</span><span class="p">,</span><span class="s1">&#39;Registration&#39;</span><span class="p">,[</span><span class="s1">&#39;Nonrigid&#39;</span><span class="p">,</span><span class="s1">&#39;1P&#39;</span><span class="p">],</span><span class="s1">&#39;ROI detection&#39;</span><span class="p">,[</span><span class="s1">&#39;Extraction/Neuropil&#39;</span><span class="p">,</span><span class="s1">&#39;Deconvolution&#39;</span><span class="p">]]</span>
+        <span class="n">tooltips</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;each tiff has this many planes in sequence&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;each tiff has this many channels per plane&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;this channel is used to extract functional ROIs (1-based)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;timescale of sensor in deconvolution (in seconds)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;sampling rate (per plane)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if 1, binary file is deleted after processing is complete&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether or not to compute bidirectional phase offset of recording (from line scanning)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;set a fixed number (in pixels) for the bidirectional phase offset&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;save output also as mat file &quot;Fall.mat&quot;&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;combine results across planes in separate folder &quot;combined&quot; at end of processing&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if 1, registered tiffs are saved&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if 1, registered tiffs of channel 2 (non-functional channel) are saved&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)&#39;</span><span class="p">,</span>
+                    <span class="s2">&quot;if 1, registration is performed if it wasn&#39;t performed already&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;when multi-channel, you can align by non-functional channel (1-based)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;# of subsampled frames for finding reference image&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;number of frames per batch&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;gaussian smoothing after phase corr: 1.15 good for 2P recordings, recommend 2-5 for 1P recordings&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;gaussian smoothing in time, useful for low SNR data&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;max allowed registration shift, as a fraction of frame max(width and height)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if 1, unregistered binary is kept in a separate file data_raw.bin&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;run registration twice (useful if data is really noisy), *keep_movie_raw must be 1*&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether to use nonrigid registration (splits FOV into blocks of size block_size)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;block size in number of pixels in Y and X (two numbers separated by a comma)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;maximum *pixel* shift allowed for nonrigid, relative to rigid&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether to perform high-pass filtering and tapering for registration (necessary for 1P recordings)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;window for spatial high-pass filtering before registration&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether to smooth before high-pass filtering before registration&#39;</span><span class="p">,</span>
+                    <span class="s2">&quot;how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether or not to run cell (ROI) detection&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;adjust the automatically determined threshold by this scalar multiplier&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;ROIs with greater than this overlap as a fraction of total pixels will be discarded&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;maximum number of iterations for ROI detection&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;running mean subtraction with window of size &quot;high_pass&quot; (use low values for 1P)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;number of pixels between ROI and neuropil donut&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;minimum number of pixels in the neuropil&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;window for maximin&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;smoothing constant for gaussian filter&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;neuropil coefficient&#39;</span><span class="p">]</span>
+
+        <span class="n">bigfont</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">)</span>
+        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;File paths&#39;</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">bigfont</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#self.loadDb = QtGui.QPushButton(&#39;Load db.npy&#39;)</span>
+        <span class="c1">#self.loadDb.clicked.connect(self.load_db)</span>
+        <span class="c1">#self.layout.addWidget(self.loadDb,0,1,1,1)</span>
+
+        <span class="n">loadOps</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Load ops file&#39;</span><span class="p">)</span>
+        <span class="n">loadOps</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_ops</span><span class="p">)</span>
+        <span class="n">saveDef</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Save ops as default&#39;</span><span class="p">)</span>
+        <span class="n">saveDef</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_default_ops</span><span class="p">)</span>
+        <span class="n">saveOps</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Save ops to file&#39;</span><span class="p">)</span>
+        <span class="n">saveOps</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_ops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">loadOps</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">saveDef</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">saveOps</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;Load example ops&#39;</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">qw</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Save ops to file&#39;</span><span class="p">)</span>
+        <span class="n">saveOps</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_ops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opsbtns</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QButtonGroup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">opsstr</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1P imaging&#39;</span><span class="p">,</span> <span class="s1">&#39;dendrites/axons&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opsname</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1P&#39;</span><span class="p">,</span> <span class="s1">&#39;dendrite&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">opsstr</span><span class="p">)):</span>
+            <span class="n">btn</span> <span class="o">=</span> <span class="n">OpsButton</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">opsstr</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opsbtns</span><span class="o">.</span><span class="n">addButton</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="mi">5</span><span class="o">+</span><span class="n">b</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">l</span><span class="o">=</span><span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keylist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">kk</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">wk</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">lkey</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">kl</span><span class="o">=</span><span class="mi">0</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">l</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="n">labs</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+                <span class="n">keyl</span> <span class="o">=</span> <span class="n">lkey</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">labs</span> <span class="o">=</span> <span class="p">[</span><span class="n">labels</span><span class="p">[</span><span class="n">l</span><span class="p">]]</span>
+                <span class="n">keyl</span> <span class="o">=</span> <span class="p">[</span><span class="n">lkey</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labs</span><span class="p">:</span>
+                <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+                <span class="n">qlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">bigfont</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="n">k</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyl</span><span class="p">[</span><span class="n">kl</span><span class="p">]:</span>
+                    <span class="n">lops</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="n">qedit</span> <span class="o">=</span> <span class="n">LineEdit</span><span class="p">(</span><span class="n">wk</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+                        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                        <span class="n">qlabel</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">tooltips</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
+                        <span class="n">qedit</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+                        <span class="n">qedit</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">tooltips</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
+                        <span class="n">qedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="n">k</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qedit</span><span class="p">,</span><span class="n">k</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qedit</span><span class="p">)</span>
+                        <span class="n">wk</span><span class="o">+=</span><span class="mi">1</span>
+                    <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+                    <span class="n">kk</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="n">kl</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="n">l</span><span class="o">+=</span><span class="mi">1</span>
+
+        <span class="c1"># data_path</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;input_format&#39;</span>
+        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">bigfont</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s1">&#39;File format (selects which parser to use)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QComboBox</span><span class="p">()</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tif&#39;</span><span class="p">,</span><span class="s1">&#39;bruker&#39;</span><span class="p">,</span><span class="s1">&#39;sbx&#39;</span><span class="p">,</span> <span class="s1">&#39;h5&#39;</span><span class="p">,</span><span class="s1">&#39;mesoscan&#39;</span><span class="p">,</span><span class="s1">&#39;haus&#39;</span><span class="p">,</span><span class="s1">&#39;sbx&#39;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_inputformat</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;look_one_level_down&#39;</span>
+        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s1">&#39;whether to look in all subfolders when searching for files&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">qedit</span> <span class="o">=</span> <span class="n">LineEdit</span><span class="p">(</span><span class="n">wk</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">qedit</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+        <span class="n">qedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">95</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qedit</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qedit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btiff</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Add directory to data_path&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btiff</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_folders</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">btiff</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;data_path&#39;</span><span class="p">)</span>
+        <span class="n">qlabel</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">bigfont</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="n">n</span><span class="p">],</span>
+                                  <span class="n">n</span><span class="o">+</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsave</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Add save_path (default is 1st data_path)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsave</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bsave</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">savelabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">savelabel</span><span class="p">,</span><span class="mi">17</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># fast_disk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bbin</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Add fast_disk (default is save_path)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bbin</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bbin</span><span class="p">,</span><span class="mi">18</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binlabel</span><span class="p">,</span><span class="mi">19</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;RUN SUITE2P&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_S2P</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="n">n0</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="p">,</span><span class="n">n0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QTextEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="p">,</span> <span class="n">n0</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">l</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">setFixedHeight</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QProcess</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readyReadStandardOutput</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stdout_write</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readyReadStandardError</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stderr_write</span><span class="p">)</span>
+        <span class="c1"># disable the button when running the s2p process</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">started</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="c1"># stop process</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;STOP&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span><span class="p">,</span> <span class="n">n0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+        <span class="c1"># cleanup button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;Add a clean-up *.py&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s1">&#39;will run at end of processing&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="p">,</span> <span class="n">n0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clean_script</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanLabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cleanLabel</span><span class="p">,</span><span class="n">n0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;save settings and</span><span class="se">\n</span><span class="s1"> add more (batch)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_ops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="p">,</span><span class="n">n0</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s1">&#39;remove last added&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remove_ops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span><span class="p">,</span><span class="n">n0</span><span class="p">,</span><span class="mi">14</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">odata</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">odata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">odata</span><span class="p">[</span><span class="n">n</span><span class="p">],</span>
+                                  <span class="n">n0</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">n</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="RunWindow.remove_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.remove_ops">[docs]</a>    <span class="k">def</span> <span class="nf">remove_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opslist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">L</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opslist</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">opslist</span><span class="p">[</span><span class="n">L</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">odata</span><span class="p">[</span><span class="n">L</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.list_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.list_ops">[docs]</a>    <span class="k">def</span> <span class="nf">list_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile_ops_db</span><span class="p">()</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opslist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">odata</span><span class="p">[</span><span class="n">L</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datastr</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;ops</span><span class="si">%d</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;db</span><span class="si">%d</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opslist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;ops</span><span class="si">%d</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="n">L</span><span class="p">)</span>
+        <span class="c1"># clear file fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;h5_path&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;sbx_path&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sbx_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># clear labels</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">savelabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h5text</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># clear ops not in GUI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_text</span><span class="p">()</span> <span class="c1"># grab ops in GUI</span>
+        <span class="c1"># enable all the file loaders again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btiff</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bsave</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bbin</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># and enable the run button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.compile_ops_db"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.compile_ops_db">[docs]</a>    <span class="k">def</span> <span class="nf">compile_ops_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intkeys</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boolkeys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;subfolders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datastr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;h5_key&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;h5py_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;h5_path&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">datastr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sbx&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;sbx_ndeadcols&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;h5_path&#39;</span><span class="p">):</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">fpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span></div>
+<div class="viewcode-block" id="RunWindow.run_S2P"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.run_S2P">[docs]</a>    <span class="k">def</span> <span class="nf">run_S2P</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;ops</span><span class="si">%d</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;db</span><span class="si">%d</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;db.npy&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;db.npy&#39;</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compile_ops_db</span><span class="p">()</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;db.npy&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running suite2p!&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;starting process&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">fpath</span>
+        <span class="n">save_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="s1">&#39;suite2p/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">save_folder</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">save_folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">save_folder</span><span class="p">,</span> <span class="s1">&#39;run.log&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="c1">#self.logfile.close()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s1">&#39;python -u -W ignore -m suite2p --ops ops.npy --db db.npy&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.stop"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RunWindow.started"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.started">[docs]</a>    <span class="k">def</span> <span class="nf">started</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.finished"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.finished">[docs]</a>    <span class="k">def</span> <span class="nf">finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">finish</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cleanButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">textCursor</span><span class="p">()</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">movePosition</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">End</span><span class="p">)</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="s1">&#39;Opening in GUI (can close this window)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">],</span> <span class="s1">&#39;suite2p&#39;</span><span class="p">,</span> <span class="s1">&#39;plane0&#39;</span><span class="p">,</span><span class="s1">&#39;stat.npy&#39;</span><span class="p">)</span>
+            <span class="n">io</span><span class="o">.</span><span class="n">load_proc</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">textCursor</span><span class="p">()</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">movePosition</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">End</span><span class="p">)</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="s1">&#39;Interrupted by user (not finished)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">textCursor</span><span class="p">()</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">movePosition</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">End</span><span class="p">)</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="s1">&#39;Interrupted by error (not finished)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opslist</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_S2P</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.save_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.save_ops">[docs]</a>    <span class="k">def</span> <span class="nf">save_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getSveFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;Ops name (*.npy)&#39;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_text</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;saved current settings to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="RunWindow.save_default_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.save_default_ops">[docs]</a>    <span class="k">def</span> <span class="nf">save_default_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opsfile</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">run_s2p</span><span class="o">.</span><span class="n">default_ops</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_text</span><span class="p">()</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">ops</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;saved current settings in GUI as default ops&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.save_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.save_text">[docs]</a>    <span class="k">def</span> <span class="nf">save_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="p">)):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intkeys</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">boolkeys</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.load_ops"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.load_ops">[docs]</a>    <span class="k">def</span> <span class="nf">load_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loading ops&#39;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Open ops file (npy or json)&#39;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">name</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+                    <span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.json&#39;</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">ops</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">ops0</span> <span class="o">=</span> <span class="n">run_s2p</span><span class="o">.</span><span class="n">default_ops</span><span class="p">()</span>
+                <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops0</span><span class="p">,</span> <span class="o">**</span><span class="n">ops</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;data_path&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;save_path&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;fast_disk&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;cleanup&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;save_path0&#39;</span> <span class="ow">and</span> <span class="n">key</span><span class="o">!=</span><span class="s1">&#39;h5py&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;input_format&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tif&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;data_path&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">n</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">btiff</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;h5_path&#39;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">h5text</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span>
+                <span class="k">elif</span> <span class="s1">&#39;h5py&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;h5py_key&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h5_path</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;h5&#39;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_inputformat</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sbx&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">btiff</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s1">&#39;save_path0&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;save_path0&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">savelabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;fast_disk&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;fast_disk&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">binlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;clean_script&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cleanLabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">])</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;could not load ops file&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.load_db"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.load_db">[docs]</a>    <span class="k">def</span> <span class="nf">load_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loading db&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.stdout_write"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.stdout_write">[docs]</a>    <span class="k">def</span> <span class="nf">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">textCursor</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">movePosition</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">End</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readAllStandardOutput</span><span class="p">(),</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">ensureCursorVisible</span><span class="p">()</span>
+        <span class="c1">#self.logfile = open(os.path.join(self.save_path, &#39;suite2p/run.log&#39;), &#39;a&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+        <span class="c1">#self.logfile.close()</span>
+
+<div class="viewcode-block" id="RunWindow.stderr_write"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.stderr_write">[docs]</a>    <span class="k">def</span> <span class="nf">stderr_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">textCursor</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">movePosition</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">End</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;ERROR&lt;&lt;&lt;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readAllStandardError</span><span class="p">(),</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">insertText</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textEdit</span><span class="o">.</span><span class="n">ensureCursorVisible</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1">#self.logfile = open(os.path.join(self.save_path, &#39;suite2p/run.log&#39;), &#39;a&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;ERROR&lt;&lt;&lt;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.clean_script"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.clean_script">[docs]</a>    <span class="k">def</span> <span class="nf">clean_script</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Open clean up file&#39;</span><span class="p">,</span><span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;*.py&#39;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cleanScript</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cleanLabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;clean_script&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span></div>
+
+<div class="viewcode-block" id="RunWindow.get_folders"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.get_folders">[docs]</a>    <span class="k">def</span> <span class="nf">get_folders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Add directory to data path&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qdata</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_path</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runButton</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listOps</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span></div>
+            <span class="c1">#self.loadDb.setEnabled(False)</span>
+
+<div class="viewcode-block" id="RunWindow.get_h5py"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.get_h5py">[docs]</a>    <span class="k">def</span> <span class="nf">get_h5py</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># used to choose file, now just choose key</span>
+        <span class="n">TC</span> <span class="o">=</span> <span class="n">TextChooser</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">TC</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span> <span class="o">=</span> <span class="n">TC</span><span class="o">.</span><span class="n">h5_key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h5_key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span></div>
+
+<div class="viewcode-block" id="RunWindow.parse_inputformat"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.parse_inputformat">[docs]</a>    <span class="k">def</span> <span class="nf">parse_inputformat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">inputformat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputformat</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Input format:&#39;</span> <span class="o">+</span> <span class="n">inputformat</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inputformat</span> <span class="o">==</span> <span class="s1">&#39;h5&#39;</span><span class="p">:</span>
+            <span class="c1"># replace functionality of &quot;old&quot; button</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_h5py</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="RunWindow.save_folder"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.save_folder">[docs]</a>    <span class="k">def</span> <span class="nf">save_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Save folder for data&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">savelabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RunWindow.bin_folder"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.RunWindow.bin_folder">[docs]</a>    <span class="k">def</span> <span class="nf">bin_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Folder for binary file&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fast_disk</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="LineEdit"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.LineEdit">[docs]</a><span class="k">class</span> <span class="nc">LineEdit</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LineEdit</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="c1">#self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))</span>
+
+<div class="viewcode-block" id="LineEdit.get_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.LineEdit.get_text">[docs]</a>    <span class="k">def</span> <span class="nf">get_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">intkeys</span><span class="p">,</span><span class="n">boolkeys</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s1">&#39;diameter&#39;</span> <span class="ow">or</span> <span class="n">key</span><span class="o">==</span><span class="s1">&#39;block_size&#39;</span><span class="p">:</span>
+            <span class="n">diams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">diams</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">okey</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">diams</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">diams</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">okey</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">diams</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">intkeys</span><span class="p">:</span>
+                <span class="n">okey</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">()))</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">boolkeys</span><span class="p">:</span>
+                <span class="n">okey</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">()))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">okey</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">okey</span></div>
+
+<div class="viewcode-block" id="LineEdit.set_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.LineEdit.set_text">[docs]</a>    <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ops</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s1">&#39;diameter&#39;</span> <span class="ow">or</span> <span class="n">key</span><span class="o">==</span><span class="s1">&#39;block_size&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">dstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="n">dstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">dstr</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="OpsButton"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.OpsButton">[docs]</a><span class="k">class</span> <span class="nc">OpsButton</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">OpsButton</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="viewcode-block" id="OpsButton.press"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.OpsButton.press">[docs]</a>    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">opsdef</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+                                              <span class="s1">&#39;ops/ops_</span><span class="si">%s</span><span class="s1">.npy&#39;</span><span class="o">%</span><span class="n">parent</span><span class="o">.</span><span class="n">opsname</span><span class="p">[</span><span class="n">bid</span><span class="p">])</span>
+            <span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">opsdef</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">keylist</span><span class="p">:</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">editlist</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">keylist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+                    <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;could not load ops file&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># custom vertical label</span>
+<div class="viewcode-block" id="VerticalLabel"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.VerticalLabel">[docs]</a><span class="k">class</span> <span class="nc">VerticalLabel</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+
+<div class="viewcode-block" id="VerticalLabel.paintEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/rungui/index.html#suite2p.gui.rungui.VerticalLabel.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">painter</span><span class="o">.</span><span class="n">end</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

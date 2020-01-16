@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.menus &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.menus</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.menus</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="kn">import</span> <span class="n">iter_entry_points</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">reggui</span><span class="p">,</span> <span class="n">drawroi</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">io</span><span class="p">,</span> <span class="n">rungui</span><span class="p">,</span> <span class="n">visualize</span><span class="p">,</span> <span class="n">classgui</span>
+
+<div class="viewcode-block" id="mainmenu"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.mainmenu">[docs]</a><span class="k">def</span> <span class="nf">mainmenu</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="c1"># --------------- MENU BAR --------------------------</span>
+    <span class="c1"># run suite2p from scratch</span>
+    <span class="n">runS2P</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Run suite2p &quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">runS2P</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+R&quot;</span><span class="p">)</span>
+    <span class="n">runS2P</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">run_suite2p</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">runS2P</span><span class="p">)</span>
+
+    <span class="c1"># load processed data</span>
+    <span class="n">loadProc</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Load processed data&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">loadProc</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+L&quot;</span><span class="p">)</span>
+    <span class="n">loadProc</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">load_dialog</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">loadProc</span><span class="p">)</span>
+
+    <span class="c1"># load a behavioral trace</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadBeh</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span>
+        <span class="s2">&quot;Load behavior or stim trace (1D only)&quot;</span><span class="p">,</span> <span class="n">parent</span>
+    <span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadBeh</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">load_behavior</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadBeh</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadBeh</span><span class="p">)</span>
+
+    <span class="c1"># save to matlab file</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Save to mat file (*.mat)&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+S&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">save_mat</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span><span class="p">)</span>
+
+
+    <span class="c1"># export figure</span>
+    <span class="n">exportFig</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Export as image (svg)&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">exportFig</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">export_fig</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">exportFig</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">exportFig</span><span class="p">)</span>
+
+    <span class="c1"># export figure</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">manual</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Manual labelling&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">manual</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">manual_label</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">manual</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># make mainmenu!</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="n">file_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;File&quot;</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">runS2P</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">loadProc</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadBeh</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">saveMat</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">exportFig</span><span class="p">)</span>
+    <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">manual</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="classifier"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.classifier">[docs]</a><span class="k">def</span> <span class="nf">classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="c1"># classifier menu</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">trainfiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">statlabels</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadMenu</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMenu</span><span class="p">(</span><span class="s2">&quot;Load&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadClass</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;from file&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadClass</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">load_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadClass</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadMenu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadClass</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadUClass</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;default classifier&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadUClass</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">load_default_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadUClass</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadMenu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadUClass</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadSClass</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;built-in classifier&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadSClass</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">load_s2p_classifier</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadSClass</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadMenu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadSClass</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadTrain</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Build&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadTrain</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">load_list</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">loadTrain</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Save loaded as default&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">class_default</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">resetDefault</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Reset default to built-in&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">resetDefault</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">classgui</span><span class="o">.</span><span class="n">reset_default</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">resetDefault</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">class_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Classifier&quot;</span><span class="p">)</span>
+    <span class="n">class_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadMenu</span><span class="p">)</span>
+    <span class="n">class_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadTrain</span><span class="p">)</span>
+    <span class="n">class_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">resetDefault</span><span class="p">)</span>
+    <span class="n">class_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">saveDefault</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="visualizations"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.visualizations">[docs]</a><span class="k">def</span> <span class="nf">visualizations</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># visualizations menuBar</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="n">vis_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Visualizations&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">visualizations</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Visualize selected cells&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">visualizations</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">vis_window</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">visualizations</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">vis_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">visualizations</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">visualizations</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+V&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">custommask</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Load custom hue for ROIs (*.npy)&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">custommask</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">load_custom_mask</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">custommask</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">vis_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">custommask</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="registration"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.registration">[docs]</a><span class="k">def</span> <span class="nf">registration</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># registration menuBar</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="n">reg_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Registration&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;View registered &amp;binary&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">reg_window</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+B&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">reg</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">regPC</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;View registration &amp;Metrics&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">regPC</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">regPC_window</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">regPC</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="s2">&quot;Ctrl+M&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">regPC</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">reg_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span>
+    <span class="n">reg_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">regPC</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mergebar"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.mergebar">[docs]</a><span class="k">def</span> <span class="nf">mergebar</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># merge menuBar</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="n">merge_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Merge ROIs&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sugMerge</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;Auto-suggest merges&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sugMerge</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">suggest_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sugMerge</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMerge</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Append merges to npy files&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMerge</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">save_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">saveMerge</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">merge_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">sugMerge</span><span class="p">)</span>
+    <span class="n">merge_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">saveMerge</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="plugins"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.plugins">[docs]</a><span class="k">def</span> <span class="nf">plugins</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># plugin menu</span>
+    <span class="n">main_menu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">menuBar</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">plugins</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">plugin_menu</span> <span class="o">=</span> <span class="n">main_menu</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s1">&#39;&amp;Plugins&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">entry_pt</span> <span class="ow">in</span> <span class="n">iter_entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;suite2p.plugin&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">plugin_obj</span> <span class="o">=</span> <span class="n">entry_pt</span><span class="o">.</span><span class="n">load</span><span class="p">()</span> <span class="c1"># load the advertised class from entry_points</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">plugins</span><span class="p">[</span><span class="n">entry_pt</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">plugin_obj</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> <span class="c1"># initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">plugins</span><span class="p">[</span><span class="n">entry_pt</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span> <span class="c1"># create plugin menu item with the name property of the loaded class</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">plugins</span><span class="p">[</span><span class="n">entry_pt</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">trigger</span><span class="p">)</span> <span class="c1"># attach class method &#39;trigger&#39; to plugin menu action</span>
+        <span class="n">plugin_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">action</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="run_suite2p"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.run_suite2p">[docs]</a><span class="k">def</span> <span class="nf">run_suite2p</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">RW</span> <span class="o">=</span> <span class="n">rungui</span><span class="o">.</span><span class="n">RunWindow</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">RW</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="manual_label"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.manual_label">[docs]</a><span class="k">def</span> <span class="nf">manual_label</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">MW</span> <span class="o">=</span> <span class="n">drawroi</span><span class="o">.</span><span class="n">ROIDraw</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">MW</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="vis_window"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.vis_window">[docs]</a><span class="k">def</span> <span class="nf">vis_window</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">VW</span> <span class="o">=</span> <span class="n">visualize</span><span class="o">.</span><span class="n">VisWindow</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">VW</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="reg_window"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.reg_window">[docs]</a><span class="k">def</span> <span class="nf">reg_window</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">RW</span> <span class="o">=</span> <span class="n">reggui</span><span class="o">.</span><span class="n">BinaryPlayer</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">RW</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="regPC_window"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.regPC_window">[docs]</a><span class="k">def</span> <span class="nf">regPC_window</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">RW</span> <span class="o">=</span> <span class="n">reggui</span><span class="o">.</span><span class="n">PCViewer</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">RW</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="suggest_merge"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/menus/index.html#suite2p.gui.menus.suggest_merge">[docs]</a><span class="k">def</span> <span class="nf">suggest_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">MergeWindow</span> <span class="o">=</span> <span class="n">merge</span><span class="o">.</span><span class="n">MergeWindow</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">MergeWindow</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

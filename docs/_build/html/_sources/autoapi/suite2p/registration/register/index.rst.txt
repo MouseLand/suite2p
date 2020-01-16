@@ -1,0 +1,105 @@
+:mod:`suite2p.registration.register`
+====================================
+
+.. py:module:: suite2p.registration.register
+
+
+Module Contents
+---------------
+
+.. function:: prepare_refAndMasks(refImg, ops)
+
+   prepares refAndMasks for phasecorr using refImg
+
+   :param refImg: reference image
+   :type refImg: int16
+   :param ops: requires 'smooth_sigma'
+               (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
+   :type ops: dictionary
+
+   :returns: **refAndMasks** -- maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+   :rtype: list
+
+
+.. function:: compute_motion_and_shift(data, refAndMasks, ops)
+
+   register data matrix to reference image and shift
+
+   need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft'ed masks;
+   if ```ops['nonrigid']``` need to run ```ops = nonrigid.make_blocks(ops)```
+
+   :param data: array that's frames x Ly x Lx
+   :type data: int16
+   :param refAndMasks: maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
+   :type refAndMasks: list
+   :param ops: requires 'nonrigid', 'bidiphase', '1Preg'
+   :type ops: dictionary
+
+   :returns: * **data** (*int16*) -- registered frames x Ly x Lx
+             * **ymax** (*int*) -- shifts in y from cfRefImg to data for each frame
+             * **xmax** (*int*) -- shifts in x from cfRefImg to data for each frame
+             * **cmax** (*float*) -- maximum of phase correlation for each frame
+             * **yxnr** (*list*) -- ymax, xmax and cmax from the non-rigid registration
+
+
+.. function:: compute_crop(ops)
+
+   determines ops['badframes'] (using ops['th_badframes'])
+   and excludes these ops['badframes'] when computing valid ranges
+   from registration in y and x
+
+
+.. function:: register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align)
+
+   register binary data to reference image refImg
+
+   :param ops:
+   :type ops: dictionary
+   :param refImg: reference image
+   :type refImg: int16
+   :param reg_file_align: file to (read if raw_file_align empty, and) write registered binary to
+   :type reg_file_align: string
+   :param raw_file_align: file to read raw binary from (if not empty)
+   :type raw_file_align: string
+
+   :returns: * **ops** (*dictionary*) -- sets 'meanImg' or 'meanImg_chan2'
+               maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+             * **offsets** (*list*) -- [ymax, xmax, cmax, yxnr] <- shifts and correlations
+
+
+.. function:: apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
+
+   apply rigid and nonrigid shifts to data (for chan that's not 'align_by_chan')
+
+   :param data:
+   :type data: int16
+
+   ops : dictionary
+
+   refImg : int16
+       reference image
+
+   reg_file_align : string
+       file to (read if raw_file_align empty, and) write registered binary to
+
+   raw_file_align : string
+       file to read raw binary from (if not empty)
+
+   :returns: * **ops** (*dictionary*) -- sets 'meanImg' or 'meanImg_chan2'
+               maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
+             * **offsets** (*list*) -- [ymax, xmax, cmax, yxnr] <- shifts and correlations
+
+
+.. function:: apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
+
+   apply registration shifts to binary data
+
+
+.. function:: register_binary(ops, refImg=None, raw=True)
+
+   registration of binary files
+
+
+.. function:: register_npy(Z, ops)
+
+

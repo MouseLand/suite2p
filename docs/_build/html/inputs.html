@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Inputs &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Settings (ops.npy)" href="settings.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#input-format">Input format</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#directory-structure">Directory structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#frame-ordering">Frame ordering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recordings-with-photostim-other-artifacts">Recordings with photostim / other artifacts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#different-file-types">Different file types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tiffs">Tiffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bruker">Bruker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mesoscope-tiffs">Mesoscope tiffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thorlabs-raw-files">Thorlabs raw files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hdf5-files-and-sbx">HDF5 files (and *.sbx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sbx-binary-files">sbx binary files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Inputs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/inputs.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="inputs">
+<h1>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="input-format">
+<h2>Input format<a class="headerlink" href="#input-format" title="Permalink to this headline">¶</a></h2>
+<p>This applies to all file types!</p>
+<div class="section" id="directory-structure">
+<h3>Directory structure<a class="headerlink" href="#directory-structure" title="Permalink to this headline">¶</a></h3>
+<p>suite2p looks for all tiffs/hdf5 in the folders listed in
+<code class="docutils literal notranslate"><span class="pre">ops['data_path']</span></code>. If you want suite2p to look in those folders AND
+all their children folders, set <code class="docutils literal notranslate"><span class="pre">ops['look_one_level_down']=True</span></code>. If
+you want suite2p to only look at some of the folder’s children, then set
+<code class="docutils literal notranslate"><span class="pre">ops['subfolders']</span></code> to those folder names.</p>
+<p>If you want suite2p to only use specific tiffs in ONE folder, then set
+the data path to only have one folder
+(<code class="docutils literal notranslate"><span class="pre">ops['data_path']=['my_folder_path']</span></code>), and name the tiffs you want
+processed in <code class="docutils literal notranslate"><span class="pre">ops['tiff_list']</span></code>.</p>
+<p>See examples in this <a class="reference external" href="https://github.com/MouseLand/suite2p/blob/master/jupyter/run_pipeline_tiffs_or_batch.ipynb">notebook</a>.</p>
+</div>
+<div class="section" id="frame-ordering">
+<h3>Frame ordering<a class="headerlink" href="#frame-ordering" title="Permalink to this headline">¶</a></h3>
+<p>If you have data with multiple planes and/or multiple channels, suite2p
+expects the frames to be interleaved, e.g.</p>
+<ul class="simple">
+<li><p>frame0 = time0_plane0_channel1</p></li>
+<li><p>frame1 = time0_plane0_channel2</p></li>
+<li><p>frame2 = time0_plane1_channel1</p></li>
+<li><p>frame3 = time0_plane1_channel2</p></li>
+<li><p>frame4 = time1_plane0_channel1</p></li>
+<li><p>frame5 = time1_plane0_channel2</p></li>
+<li><p>…</p></li>
+</ul>
+<p>channels are ones-based (channel 1 and 2 NOT 0 and 1).</p>
+</div>
+<div class="section" id="recordings-with-photostim-other-artifacts">
+<span id="id1"></span><h3>Recordings with photostim / other artifacts<a class="headerlink" href="#recordings-with-photostim-other-artifacts" title="Permalink to this headline">¶</a></h3>
+<p>Photostim and other artifacts require you to exclude these frames during
+ROI detection. Otherwise there will be “ROIs” that are related to the
+stimulation, not actually cells. To exclude them, make an array of
+integers corresponding to the frame times of the photostimulation. Save
+this array into a numpy array called <code class="docutils literal notranslate"><span class="pre">bad_frames.npy</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">bad_frames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">])</span>
+<span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;bad_frames.npy&#39;</span><span class="p">,</span> <span class="n">bad_frames</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Put this file into the first folder in your ops[‘data_path’] (the first
+folder you choose in the GUI).</p>
+</div>
+</div>
+<div class="section" id="different-file-types">
+<h2>Different file types<a class="headerlink" href="#different-file-types" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="tiffs">
+<h3>Tiffs<a class="headerlink" href="#tiffs" title="Permalink to this headline">¶</a></h3>
+<p>Most tiffs should work out of the box. suite2p relies on two external
+tiff readers: <a class="reference external" href="http://scanimage.gitlab.io/ScanImageTiffReaderDocs/">scanimage-tiff-reader</a> and <a class="reference external" href="http://scikit-image.org/docs/dev/api/skimage.external.tifffile.html">sklearn.external.tifffile</a>.
+The default is the scanimage one, but it will use the other one if it
+errors.</p>
+<p>You can use single-page tiffs. These will work out of the box if they
+end in *.tif or *.tiff. If they have a different ending then use the
+flag <code class="docutils literal notranslate"><span class="pre">ops['all_files_are_tiffs']</span> <span class="pre">=</span> <span class="pre">True</span></code> and the pipeline will assume
+any files in your folders are tiffs. NOTE that these will be slower to
+load in and create the binary, so if you’re planning on using the
+pipeline extensively you may want to change your acquisition output.</p>
+<p>If you save a stack of tiffs using ImageJ, and it’s larger than 4GB,
+then it won’t run through suite2p anymore. A work-around is to save as
+an OME-TIFF in FIJI: “File-&gt;save as-&gt;OME-TIFF-&gt;compression type
+uncompressed” in FIJI (thanks &#64;kylemxm! see issue <a class="reference external" href="https://github.com/MouseLand/suite2p/issues/149#issuecomment-473862374">here</a>).</p>
+<p>If you have old Scanimage tiffs (version &lt;5) that are larger than 2GB,
+then most tiff readers will not work. &#64;elhananby has recommended this <a class="reference external" href="https://github.com/dgreenberg/read_patterned_tifdata">repository</a> for reading the data into matlab (see issue <a href="#id6"><span class="problematic" id="id7">`here`_</span></a>).
+After reading it into matlab, you can re-save the tiff in a format that
+imageJ and suite2p can recognize (see matlab tiff writing
+<a class="reference external" href="https://www.mathworks.com/help/matlab/ref/tiff.write.html">here</a>).</p>
+</div>
+<div class="section" id="bruker">
+<h3>Bruker<a class="headerlink" href="#bruker" title="Permalink to this headline">¶</a></h3>
+<p>Using Bruker Prairie View system, .RAW files are batch converted to single .ome.tifs.
+Now, you can load the resulting multiple tif files (i.e. one per frame per channel) to suite2p to be converted to binary.
+This looks for files containing ‘Ch1’, and will assume all additional files are ‘Ch2’.
+Select “input_format” as “bruker” in the drop down menu in the GUI or set <code class="docutils literal notranslate"><span class="pre">ops['input_format']</span> <span class="pre">=</span> <span class="pre">&quot;bruker&quot;</span></code>.</p>
+</div>
+<div class="section" id="mesoscope-tiffs">
+<h3>Mesoscope tiffs<a class="headerlink" href="#mesoscope-tiffs" title="Permalink to this headline">¶</a></h3>
+<p>We have a matlab script
+<a class="reference external" href="https://github.com/MouseLand/suite2p/blob/master/helpers/mesoscope_json_from_scanimage.m">here</a>
+for extracting the parameters from scanimage tiffs collected from the
+Thorlabs mesoscope. The script creates an <code class="docutils literal notranslate"><span class="pre">ops.json</span></code> file that you can
+then load into the run GUI using the button “load ops file”. This should
+populate the run GUI with the appropriate parameters. Behind the scenes
+there are <code class="docutils literal notranslate"><span class="pre">ops['lines']</span></code> loaded and <code class="docutils literal notranslate"><span class="pre">ops['dy'],ops['dx']</span></code> that
+specify which lines in the tiff correspond to each ROI and where in
+space each ROI is respectively. <code class="docutils literal notranslate"><span class="pre">ops['nplanes']</span></code> will only be greater
+than 1 if you collected in multi-plane mode. Once the pipeline starts
+running, this parameter will change to “nplanes * nrois” and each
+“plane” is now an ROI from a specific plane. Please open issues if
+you’re using this and having trouble because it’s not straightforward.</p>
+</div>
+<div class="section" id="thorlabs-raw-files">
+<h3>Thorlabs raw files<a class="headerlink" href="#thorlabs-raw-files" title="Permalink to this headline">¶</a></h3>
+<p>Christoph Schmidt-Hieber (&#64;neurodroid) has written <a class="reference external" href="https://github.com/neurodroid/haussmeister">haussmeister</a> which
+can load and convert ThorLabs *.raw files to suite2p binary files!
+suite2p will automatically use this if you have pip installed it
+(<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">haussmeister</span></code>).</p>
+</div>
+<div class="section" id="hdf5-files-and-sbx">
+<span id="id2"></span><h3>HDF5 files (and *.sbx)<a class="headerlink" href="#hdf5-files-and-sbx" title="Permalink to this headline">¶</a></h3>
+<p>These should work out of the box, but are less well-tested. Dario
+Ringach has a utility to convert neurolabware *.sbx files to *.h5
+files (see blog post
+<a class="reference external" href="https://scanbox.org/2018/08/29/using-suite2p-with-scanbox/">here</a>).</p>
+<p>The H5 loading from the GUI now works the same as it always has for tiffs. Select
+“h5” from the drop-down menu and input the h5 KEY for the data as a string. Now
+choose the folder with your *.h5 or *.hdf5 files and the pipeline will use all
+h5 files in that folder. You can use ops[‘look_one_level_down’] to process all
+subfolders of the data_path.</p>
+</div>
+<div class="section" id="sbx-binary-files">
+<h3>sbx binary files<a class="headerlink" href="#sbx-binary-files" title="Permalink to this headline">¶</a></h3>
+<p>Scanbox binary files (<a href="#id3"><span class="problematic" id="id4">*</span></a>.sbx) work out of the box if you set <code class="docutils literal notranslate"><span class="pre">ops['input_format']</span> <span class="pre">=</span> <span class="pre">&quot;sbx&quot;</span></code>.</p>
+<p>When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set <code class="docutils literal notranslate"><span class="pre">ops['sbx_ndeadcols']</span></code>. Set this option to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
+Joao Couto (&#64;jcouto) wrote the binary sbx parser.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="settings.html" class="btn btn-neutral float-right" title="Settings (ops.npy)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

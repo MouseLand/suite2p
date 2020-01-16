@@ -66,25 +66,26 @@ def list_h5(ops):
 def list_files(froot, look_one_level_down, exts):
     """ get list of files with exts in folder froot + one level down maybe
     """
-    first_tiffs = []
     fs = []
     for e in exts:
         lpath = os.path.join(froot, e)
         fs.extend(natsorted(glob.glob(lpath)))
     if len(fs) > 0:
-        first_tiffs.extend(np.zeros((len(fs),), 'bool'))
+        first_tiffs = np.zeros((len(fs),), np.bool)
         first_tiffs[0] = True
+    else:
+        first_tiffs = np.zeros(0, np.bool)
     lfs = len(fs)
     if look_one_level_down:
-        fdir = glob.glob(os.path.join(froot, "*", ""))
+        fdir = glob.glob(os.path.join(froot, "*/"))
         for folder_down in fdir:
             fsnew = []
             for e in exts:
-                lpath = os.path.join(froot, e)
+                lpath = os.path.join(folder_down, e)
                 fsnew.extend(natsorted(glob.glob(lpath)))
-                fs.extend(fsnew)
             if len(fsnew) > 0:
-                first_tiffs.extend(np.zeros((len(fsnew),), 'bool'))
+                fs.extend(fsnew)
+                first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), np.bool))
                 first_tiffs[lfs] = True
                 lfs = len(fs)
     return fs, first_tiffs
@@ -102,12 +103,12 @@ def get_h5_list(ops):
         fs, ftiffs = list_files(fld, ops['look_one_level_down'],
                                 ["*.h5", "*.hdf5"])
         fsall.extend(fs)
-        first_tiffs.extend(ftiffs)
+        first_tiffs.extend(list(ftiffs))
     if len(fs)==0:
         print('Could not find any h5 files')
         raise Exception('no h5s')
     else:
-        ops['first_tiffs'] = np.array(first_tiffs)
+        ops['first_tiffs'] = np.array(first_tiffs).astype(np.bool)
         print('** Found %d h5 files - converting to binary **'%(len(fsall)))
         #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
@@ -146,14 +147,13 @@ def get_tif_list(ops):
             fs, ftiffs = list_files(fld, ops['look_one_level_down'],
                                     ["*.tif", "*.tiff"])
             fsall.extend(fs)
-            first_tiffs.extend(ftiffs)
-        if len(fs)==0:
+            first_tiffs.extend(list(ftiffs))
+        if len(fsall)==0:
             print('Could not find any tiffs')
             raise Exception('no tiffs')
         else:
-            ops['first_tiffs'] = np.array(first_tiffs)
+            ops['first_tiffs'] = np.array(first_tiffs).astype(np.bool)
             print('** Found %d tifs - converting to binary **'%(len(fsall)))
-            #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
 def find_files_open_binaries(ops1, ish5=False):

@@ -459,7 +459,7 @@ def ome_to_binary(ops):
 
         ops1[j]['meanImg'] += im
         ops1[j]['nframes'] += 1
-        ops1[j]['nframes_per_folder'] += 1
+        ops1[j]['frames_per_folder'][0] += 1
 
         reg_file[j].write(bytearray(im))
         ix+=1

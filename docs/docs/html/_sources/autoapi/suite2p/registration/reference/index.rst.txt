@@ -1,0 +1,76 @@
+:mod:`suite2p.registration.reference`
+=====================================
+
+.. py:module:: suite2p.registration.reference
+
+
+Module Contents
+---------------
+
+.. function:: sampled_mean(ops)
+
+
+.. function:: pick_initial_reference(frames)
+
+   computes the initial reference image
+
+   the seed frame is the frame with the largest correlations with other frames;
+   the average of the seed frame with its top 20 correlated pairs is the
+   inital reference frame returned
+
+   :param frames: frames from binary (frames x Ly x Lx)
+   :type frames: int16
+
+   :returns: **refImg** -- initial reference image (Ly x Lx)
+   :rtype: int16
+
+
+.. function:: iterative_alignment(ops, frames, refImg)
+
+   iterative alignment of initial frames to compute reference image
+
+   the seed frame is the frame with the largest correlations with other frames;
+   the average of the seed frame with its top 20 correlated pairs is the
+   inital reference frame returned
+
+   :param ops: requires 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg'
+   :type ops: dictionary
+   :param frames: frames from binary (frames x Ly x Lx)
+   :type frames: int16
+   :param refImg: initial reference image (Ly x Lx)
+   :type refImg: int16
+
+   :returns: **refImg** -- final reference image (Ly x Lx)
+   :rtype: int16
+
+
+.. function:: compute_reference_image(ops, bin_file)
+
+   compute the reference image
+
+   computes initial reference image using ops['nimg_init'] frames
+
+   :param ops: requires 'nimg_init', 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg',
+               'reg_file', (optional 'keep_movie_raw', 'raw_movie')
+   :type ops: dictionary
+   :param bin_file: location of binary file with data
+   :type bin_file: str
+
+   :returns: **refImg** -- initial reference image (Ly x Lx)
+   :rtype: int16
+
+
+.. function:: subsample_frames(ops, bin_file, nsamps)
+
+   get nsamps frames from binary file for initial reference image
+   :param ops: requires 'Ly', 'Lx', 'nframes'
+   :type ops: dictionary
+   :param bin_file:
+   :type bin_file: open binary file
+   :param nsamps: number of frames to return
+   :type nsamps: int
+
+   :returns: **frames** -- frames x Ly x Lx
+   :rtype: int16
+
+

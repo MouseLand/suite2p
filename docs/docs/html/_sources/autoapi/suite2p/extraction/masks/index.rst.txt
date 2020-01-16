@@ -1,0 +1,45 @@
+:mod:`suite2p.extraction.masks`
+===============================
+
+.. py:module:: suite2p.extraction.masks
+
+
+Module Contents
+---------------
+
+.. function:: create_cell_masks(ops, stat)
+
+   creates cell masks for ROIs in stat and computes radii
+   inputs:
+       stat, Ly, Lx, allow_overlap
+           from stat: ypix, xpix, lam
+           allow_overlap: boolean whether or not to include overlapping pixels in cell masks (default: False)
+   outputs:
+       stat, cell_pix (Ly,Lx), cell_masks (ncells, Ly, Lx)
+           assigned to stat: ipix (non-overlapping if chosen), radius (minimum of 3 pixels)
+
+
+.. function:: circle_neuropil_masks(ops, stat, cell_pix)
+
+   creates surround neuropil masks for ROIs in stat using gradually extending circles
+   inputs:
+       ops, stat, cell_pix
+           from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell
+           from stat: med, radius
+           cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
+   outputs:
+       neuropil_masks (ncells,Ly,Lx)
+
+
+.. function:: create_neuropil_masks(ops, stat, cell_pix)
+
+   creates surround neuropil masks for ROIs in stat by EXTENDING ROI (SLOW!!)
+   inputs:
+       ops, stat, cell_pix
+           from ops: inner_neuropil_radius, min_neuropil_pixels
+           from stat: ypix, xpix
+           cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells
+   outputs:
+       neuropil_masks (ncells,Ly,Lx)
+
+

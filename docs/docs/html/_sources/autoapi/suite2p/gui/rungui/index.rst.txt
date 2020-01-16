@@ -1,0 +1,147 @@
+:mod:`suite2p.gui.rungui`
+=========================
+
+.. py:module:: suite2p.gui.rungui
+
+
+Module Contents
+---------------
+
+.. py:class:: TextChooser(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QDialog`
+
+   .. method:: exit_list(self)
+
+
+
+
+.. py:class:: ListChooser(Text, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QDialog`
+
+   .. method:: load_ops(self, parent)
+
+
+
+   .. method:: exit_list(self, parent)
+
+
+
+
+.. py:class:: RunWindow(parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QDialog`
+
+   .. method:: remove_ops(self)
+
+
+
+   .. method:: list_ops(self)
+
+
+
+   .. method:: compile_ops_db(self)
+
+
+
+   .. method:: run_S2P(self, parent)
+
+
+
+   .. method:: stop(self)
+
+
+
+   .. method:: started(self)
+
+
+
+   .. method:: finished(self, parent)
+
+
+
+   .. method:: save_ops(self)
+
+
+
+   .. method:: save_default_ops(self)
+
+
+
+   .. method:: save_text(self)
+
+
+
+   .. method:: load_ops(self)
+
+
+
+   .. method:: load_db(self)
+
+
+
+   .. method:: stdout_write(self)
+
+
+
+   .. method:: stderr_write(self)
+
+
+
+   .. method:: clean_script(self)
+
+
+
+   .. method:: get_folders(self)
+
+
+
+   .. method:: get_h5py(self)
+
+
+
+   .. method:: parse_inputformat(self)
+
+
+
+   .. method:: save_folder(self)
+
+
+
+   .. method:: bin_folder(self)
+
+
+
+
+.. py:class:: LineEdit(k, key, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QLineEdit`
+
+   .. method:: get_text(self, intkeys, boolkeys)
+
+
+
+   .. method:: set_text(self, ops)
+
+
+
+
+.. py:class:: OpsButton(bid, Text, parent=None)
+
+   Bases: :class:`PyQt5.QtGui.QPushButton`
+
+   .. method:: press(self, parent, bid)
+
+
+
+
+.. py:class:: VerticalLabel(text=None)
+
+   Bases: :class:`PyQt5.QtGui.QWidget`
+
+   .. method:: paintEvent(self, event)
+
+
+
+

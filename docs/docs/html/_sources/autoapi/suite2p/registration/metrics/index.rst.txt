@@ -1,0 +1,102 @@
+:mod:`suite2p.registration.metrics`
+===================================
+
+.. py:module:: suite2p.registration.metrics
+
+
+Module Contents
+---------------
+
+.. data:: HAS_CV2
+   :annotation: = True
+
+   
+
+.. function:: pclowhigh(mov, nlowhigh, nPC)
+
+   get mean of top and bottom PC weights for nPC's of mov
+
+   computes nPC PCs of mov and returns average of top and bottom
+
+   :param mov: subsampled frames from movie size frames x Ly x Lx
+   :type mov: int16, array
+   :param nlowhigh: number of frames to average at top and bottom of each PC
+   :type nlowhigh: int
+   :param nPC: number of PCs to compute
+   :type nPC: int
+
+   :returns: * **pclow** (*float, array*) -- average of bottom of spatial PC: nPC x Ly x Lx
+             * **pchigh** (*float, array*) -- average of top of spatial PC: nPC x Ly x Lx
+             * **w** (*float, array*) -- singular values of decomposition of mov
+             * **v** (*float, array*) -- frames x nPC, how the PCs vary across frames
+
+
+.. function:: pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128, 128), maxregshift=0.1, maxregshiftNR=10, preg=False)
+
+   register top and bottom of PCs to each other
+
+   :param pclow: average of bottom of spatial PC: nPC x Ly x Lx
+   :type pclow: float, array
+   :param pchigh: average of top of spatial PC: nPC x Ly x Lx
+   :type pchigh: float, array
+   :param refImg: reference image from registration
+   :type refImg: int16, array
+   :param smooth_sigma: default 1.15, see registration settings
+   :type smooth_sigma: :obj:`int`, optional
+   :param block_size: default (128,128), see registration settings
+   :type block_size: :obj:`tuple`, optional
+   :param maxregshift: default 0.1, see registration settings
+   :type maxregshift: :obj:`float`, optional
+   :param maxregshiftNR: default 10, see registration settings
+   :type maxregshiftNR: :obj:`int`, optional
+   :param 1Preg: default True, see 1Preg settings
+   :type 1Preg: :obj:`bool`, optional
+
+   :returns: **X** -- nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+   :rtype: float, array
+
+
+.. function:: get_pc_metrics(ops, use_red=False)
+
+   computes registration metrics using top PCs of registered movie
+
+   movie saved as binary file ops['reg_file']
+   metrics saved to ops['regPC'] and ops['X']
+   'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+   'regPC' is average of top and bottom frames for each PC
+   'tPC' is PC across time frames
+
+   :param ops: requires 'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+   :type ops: dict
+   :param use_red: default False, whether to use 'reg_file' or 'reg_file_chan2'
+   :type use_red: :obj:`bool`, optional
+
+   :returns: **ops** -- adds 'regPC' and 'tPC' and 'regDX'
+   :rtype: dict
+
+
+.. function:: filt_worker(inputs)
+
+
+.. function:: filt_parallel(data, filt, num_cores)
+
+
+.. function:: local_corr(mov, batch_size, num_cores)
+
+   computes correlation image on mov (nframes x pixels x pixels)
+
+
+.. function:: bin_median(mov, window=10)
+
+
+.. function:: corr_to_template(mov, tmpl)
+
+
+.. function:: optic_flow(mov, tmpl, nflows)
+
+
+.. function:: get_flow_metrics(ops)
+
+   get farneback optical flow and some other stats from normcorre paper
+
+

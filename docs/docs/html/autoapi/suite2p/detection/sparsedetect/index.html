@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.detection.sparsedetect &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.detection.sparsedetect</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/detection/sparsedetect/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.detection.sparsedetect">
+<span id="suite2p-detection-sparsedetect"></span><h1><a class="reference internal" href="#module-suite2p.detection.sparsedetect" title="suite2p.detection.sparsedetect"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.detection.sparsedetect</span></code></a><a class="headerlink" href="#module-suite2p.detection.sparsedetect" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.my_max">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">my_max</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">b</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#my_max"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.my_max" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.my_sum">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">my_sum</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">b</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#my_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.my_sum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.get_mov">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">get_mov</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#get_mov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.get_mov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.get_sdmov">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">get_sdmov</code><span class="sig-paren">(</span><em class="sig-param">mov</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#get_sdmov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.get_sdmov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.get_overlaps">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">get_overlaps</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#get_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.get_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes overlapping pixels from ROIs in stat
+inputs:</p>
+<blockquote>
+<div><p>stat, Ly, Lx</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>stat
+assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.remove_overlaps">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">remove_overlaps</code><span class="sig-paren">(</span><em class="sig-param">stat</em>, <em class="sig-param">ops</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#remove_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.remove_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>removes overlaps iteratively</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.two_comps">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">two_comps</code><span class="sig-paren">(</span><em class="sig-param">mpix0</em>, <em class="sig-param">lam</em>, <em class="sig-param">Th2</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#two_comps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.two_comps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.neuropil_subtraction">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">neuropil_subtraction</code><span class="sig-paren">(</span><em class="sig-param">mov</em>, <em class="sig-param">lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#neuropil_subtraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.neuropil_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.threshold_reduce">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">threshold_reduce</code><span class="sig-paren">(</span><em class="sig-param">movu</em>, <em class="sig-param">Th2</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#threshold_reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.threshold_reduce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.downsample">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">downsample</code><span class="sig-paren">(</span><em class="sig-param">mov</em>, <em class="sig-param">flag=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#downsample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.downsample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.multiscale_mask">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">multiscale_mask</code><span class="sig-paren">(</span><em class="sig-param">ypix0</em>, <em class="sig-param">xpix0</em>, <em class="sig-param">lam0</em>, <em class="sig-param">Lyp</em>, <em class="sig-param">Lxp</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#multiscale_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.multiscale_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.add_square">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">add_square</code><span class="sig-paren">(</span><em class="sig-param">yi</em>, <em class="sig-param">xi</em>, <em class="sig-param">lx</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#add_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.add_square" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.extend_mask">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">extend_mask</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em>, <em class="sig-param">lam</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#extend_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.extend_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.extendROI">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">extendROI</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em>, <em class="sig-param">Ly</em>, <em class="sig-param">Lx</em>, <em class="sig-param">niter=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#extendROI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.extendROI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.iter_extend">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">iter_extend</code><span class="sig-paren">(</span><em class="sig-param">ypix</em>, <em class="sig-param">xpix</em>, <em class="sig-param">Ucell</em>, <em class="sig-param">Lyc</em>, <em class="sig-param">Lxc</em>, <em class="sig-param">iframes</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#iter_extend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.iter_extend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.square_conv2">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">square_conv2</code><span class="sig-paren">(</span><em class="sig-param">mov</em>, <em class="sig-param">lx</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#square_conv2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.square_conv2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.sparsery">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">sparsery</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#sparsery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.sparsery" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.circleMask">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">circleMask</code><span class="sig-paren">(</span><em class="sig-param">d0</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#circleMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.circleMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates array with indices which are the radius of that x,y point
+inputs:</p>
+<blockquote>
+<div><p>d0 (patch of (-d0,d0+1) over which radius computed</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>rs: array (2*d0+1,2*d0+1) of radii
+dx,dy: indices in rs where the radius is less than d0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.detection.sparsedetect.get_stat">
+<code class="sig-prename descclassname">suite2p.detection.sparsedetect.</code><code class="sig-name descname">get_stat</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">stat</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/detection/sparsedetect.html#get_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.detection.sparsedetect.get_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes statistics of cells found using sourcery
+inputs:</p>
+<blockquote>
+<div><p>Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>outputs:</dt><dd><p>stat
+assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

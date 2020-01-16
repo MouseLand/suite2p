@@ -1,0 +1,439 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.gui.traces &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.gui.traces</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.gui.traces</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt5</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="plot_trace"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.plot_trace">[docs]</a><span class="k">def</span> <span class="nf">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">getAxis</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+        <span class="n">fneu</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fneu</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+        <span class="n">sp</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Spks</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">fneu</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">fmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">fneu</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="c1">#sp from 0 to fmax</span>
+        <span class="n">sp</span> <span class="o">/=</span> <span class="n">sp</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="c1">#agus</span>
+        <span class="n">sp</span> <span class="o">*=</span> <span class="n">fmax</span> <span class="o">-</span> <span class="n">fmin</span>
+        <span class="c1">#sp += fmin*0.95</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">tracesOn</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">neuropilOn</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,</span><span class="n">fneu</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">deconvOn</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,(</span><span class="n">sp</span><span class="o">+</span><span class="n">fmin</span><span class="p">),</span><span class="n">pen</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">100</span><span class="p">))</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="o">=</span> <span class="n">fmin</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">fmax</span><span class="o">=</span><span class="n">fmax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">setTicks</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="n">kspace</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">parent</span><span class="o">.</span><span class="n">sc</span>
+        <span class="n">ttick</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">pmerge</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">[:</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">),</span><span class="n">nmax</span><span class="p">)]</span>
+        <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pmerge</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">activityMode</span>
+        <span class="n">favg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">pmerge</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="k">elif</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fneu</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="k">elif</span> <span class="n">i</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span> <span class="o">-</span> <span class="mf">0.7</span><span class="o">*</span><span class="n">parent</span><span class="o">.</span><span class="n">Fneu</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Spks</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="n">favg</span> <span class="o">+=</span> <span class="n">f</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">fmax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">fmin</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span> <span class="o">-</span> <span class="n">fmin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">fmax</span> <span class="o">-</span> <span class="n">fmin</span><span class="p">)</span>
+            <span class="n">rgb</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;cols&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,</span><span class="n">f</span><span class="o">+</span><span class="n">k</span><span class="o">*</span><span class="n">kspace</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="n">rgb</span><span class="p">)</span>
+            <span class="n">ttick</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">k</span><span class="o">*</span><span class="n">kspace</span><span class="o">+</span><span class="n">f</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)))</span>
+            <span class="n">k</span><span class="o">-=</span><span class="mi">1</span>
+        <span class="n">bsc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pmerge</span><span class="p">)</span><span class="o">/</span><span class="mi">25</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">favg</span> <span class="o">-=</span> <span class="n">favg</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">favg</span> <span class="o">/=</span> <span class="n">favg</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="c1"># at bottom plot behavior and avg trace</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pmerge</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">5</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">bsc</span><span class="o">+</span><span class="n">favg</span><span class="o">*</span><span class="n">bsc</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="p">(</span><span class="mi">140</span><span class="p">,</span><span class="mi">140</span><span class="p">,</span><span class="mi">140</span><span class="p">))</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="o">=-</span><span class="mi">1</span><span class="o">*</span><span class="n">bsc</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">bloaded</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">trange</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">bsc</span><span class="o">+</span><span class="n">favg</span><span class="o">*</span><span class="n">bsc</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="p">(</span><span class="mi">140</span><span class="p">,</span><span class="mi">140</span><span class="p">,</span><span class="mi">140</span><span class="p">))</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">beh_time</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">bsc</span><span class="o">+</span><span class="n">parent</span><span class="o">.</span><span class="n">beh</span><span class="o">*</span><span class="n">bsc</span><span class="p">,</span><span class="n">pen</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="o">=-</span><span class="mi">1</span><span class="o">*</span><span class="n">bsc</span>
+            <span class="c1">#parent.traceLabel[0].setText(&quot;&lt;font color=&#39;gray&#39;&gt;mean activity&lt;/font&gt;&quot;)</span>
+            <span class="c1">#parent.traceLabel[1].setText(&quot;&lt;font color=&#39;white&#39;&gt;1D variable&lt;/font&gt;&quot;)</span>
+            <span class="c1">#parent.traceLabel[2].setText(&quot;&quot;)</span>
+            <span class="c1">#ck.append((-0.5*bsc,&#39;1D var&#39;))</span>
+
+        <span class="n">parent</span><span class="o">.</span><span class="n">fmax</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pmerge</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">kspace</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">setTicks</span><span class="p">([</span><span class="n">ttick</span><span class="p">])</span>
+    <span class="c1">#parent.p3.setXRange(0,parent.Fcell.shape[1])</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">fmax</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">b0</span><span class="p">):</span>
+    <span class="c1"># combo box to decide what kind of activity to view</span>
+    <span class="n">qlabel</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">qlabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;Activity mode:&lt;/font&gt;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">qlabel</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QComboBox</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="p">,</span> <span class="n">b0</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="s2">&quot;Fneu&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="s2">&quot;F - 0.7*Fneu&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="s2">&quot;deconvolved&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">activityMode</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">activityMode</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">mode_change</span><span class="p">)</span>
+
+    <span class="c1"># up/down arrows to resize view</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">arrowButtons</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot; </span><span class="se">\u25b2</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot; </span><span class="se">\u25bc</span><span class="s2">&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">arrowButtons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">expand_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">arrowButtons</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">collapse_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">arrowButtons</span><span class="p">:</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">22</span><span class="p">)</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">))</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span>
+            <span class="n">btn</span><span class="p">,</span>
+            <span class="n">b0</span><span class="o">+</span><span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span>
+        <span class="p">)</span>
+        <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">parent</span><span class="o">.</span><span class="n">pmButtons</span> <span class="o">=</span> <span class="p">[</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot; +&quot;</span><span class="p">),</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot; -&quot;</span><span class="p">)]</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">pmButtons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">expand_scale</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">pmButtons</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">collapse_scale</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sc</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">pmButtons</span><span class="p">:</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">22</span><span class="p">)</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="p">(</span><span class="s2">&quot;Arial&quot;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QFont</span><span class="o">.</span><span class="n">Bold</span><span class="p">))</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># choose max # of cells plotted</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span>
+        <span class="n">QtGui</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;&lt;font color=&#39;white&#39;&gt;max # plotted:&lt;/font&gt;&quot;</span><span class="p">),</span>
+        <span class="n">b0</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">b0</span><span class="o">+=</span><span class="mi">3</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">setValidator</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIntValidator</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;40&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="o">.</span><span class="n">returnPressed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">nc_chosen</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ncedit</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#Agus</span>
+    <span class="c1"># Deconv CHECKBOX</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;deconv [N]&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: white;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span><span class="o">.</span><span class="n">toggled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">deconv_on</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">deconvOn</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span><span class="p">,</span>
+    <span class="n">b0</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># neuropil CHECKBOX</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;neuropil [B]&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: red;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span><span class="o">.</span><span class="n">toggled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">neuropil_on</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">neuropilOn</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span><span class="p">,</span>
+    <span class="n">b0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># traces CHECKBOX</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">setVerticalSpacing</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;raw fluor [V]&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: blue;&quot;</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span><span class="o">.</span><span class="n">toggled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">traces_on</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">tracesOn</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">l0</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span><span class="p">,</span>
+    <span class="n">b0</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">b0</span></div>
+
+<div class="viewcode-block" id="expand_scale"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.expand_scale">[docs]</a><span class="k">def</span> <span class="nf">expand_scale</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sc</span> <span class="o">+=</span> <span class="mf">0.5</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">sc</span><span class="p">)</span>
+    <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="collapse_scale"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.collapse_scale">[docs]</a><span class="k">def</span> <span class="nf">collapse_scale</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sc</span> <span class="o">-=</span> <span class="mf">0.5</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">sc</span><span class="p">)</span>
+    <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="expand_trace"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.expand_trace">[docs]</a><span class="k">def</span> <span class="nf">expand_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setRowStretchFactor</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">level</span><span class="p">)</span></div>
+    <span class="c1">#parent.p1.zoom_plot()</span>
+
+<div class="viewcode-block" id="collapse_trace"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.collapse_trace">[docs]</a><span class="k">def</span> <span class="nf">collapse_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">level</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ci</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">setRowStretchFactor</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">level</span><span class="p">)</span></div>
+    <span class="c1">#parent.p1.zoom_plot()</span>
+
+<div class="viewcode-block" id="nc_chosen"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.nc_chosen">[docs]</a><span class="k">def</span> <span class="nf">nc_chosen</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<span class="c1">#Agus</span>
+<div class="viewcode-block" id="deconv_on"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.deconv_on">[docs]</a><span class="k">def</span> <span class="nf">deconv_on</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxd</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">deconvOn</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">deconvOn</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="neuropil_on"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.neuropil_on">[docs]</a><span class="k">def</span> <span class="nf">neuropil_on</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxn</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">neuropilOn</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">neuropilOn</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="traces_on"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/traces/index.html#suite2p.gui.traces.traces_on">[docs]</a><span class="k">def</span> <span class="nf">traces_on</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">checkBoxt</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">tracesOn</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">tracesOn</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">plot_trace</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

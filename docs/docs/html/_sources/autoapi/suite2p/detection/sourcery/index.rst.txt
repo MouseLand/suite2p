@@ -1,0 +1,102 @@
+:mod:`suite2p.detection.sourcery`
+=================================
+
+.. py:module:: suite2p.detection.sourcery
+
+
+Module Contents
+---------------
+
+.. function:: getSVDdata(ops)
+
+
+.. function:: getSVDproj(ops, u)
+
+
+.. function:: getStU(ops, U)
+
+
+.. function:: drawClusters(stat, ops)
+
+
+.. function:: create_neuropil_basis(ops, Ly, Lx)
+
+   computes neuropil basis functions
+   inputs:
+       ops, Ly, Lx
+       from ops: ratio_neuropil, tile_factor, diameter, neuropil_type
+   outputs:
+       basis functions (pixels x nbasis functions)
+
+
+.. function:: circleMask(d0)
+
+   creates array with indices which are the radius of that x,y point
+   inputs:
+       d0 (patch of (-d0,d0+1) over which radius computed
+   outputs:
+       rs: array (2*d0+1,2*d0+1) of radii
+       dx,dy: indices in rs where the radius is less than d0
+
+
+.. function:: morphOpen(V, footprint)
+
+   computes the morphological opening of V (correlation map) with circular footprint
+
+
+.. function:: localMax(V, footprint, thres)
+
+   find local maxima of V (correlation map) using a filter with (usually circular) footprint
+   inputs:
+       V, footprint, thres
+   outputs:
+       i,j: indices of local max greater than thres
+
+
+.. function:: localRegion(i, j, dy, dx, Ly, Lx)
+
+   returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)
+
+
+.. function:: pairwiseDistance(y, x)
+
+
+.. function:: get_stat(ops, stat, Ucell, codes)
+
+   computes statistics of cells found using sourcery
+   inputs:
+       Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
+   outputs:
+       stat
+       assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
+
+
+.. function:: getVmap(Ucell, sig)
+
+
+.. function:: sub2ind(array_shape, rows, cols)
+
+
+.. function:: minDistance(inputs)
+
+
+.. function:: get_connected(Ly, Lx, stat)
+
+   grow i0 until it cannot grow any more
+
+
+.. function:: connected_region(stat, ops)
+
+
+.. function:: extendROI(ypix, xpix, Ly, Lx, niter=1)
+
+
+.. function:: iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False)
+
+
+.. function:: sourcery(ops)
+
+
+.. function:: postprocess(ops, stat, Ucell, codes)
+
+

@@ -1,0 +1,24 @@
+:mod:`suite2p.extraction.extract`
+=================================
+
+.. py:module:: suite2p.extraction.extract
+
+
+Module Contents
+---------------
+
+.. function:: extract_traces(ops, stat, neuropil_masks, reg_file)
+
+
+.. function:: compute_masks_and_extract_traces(ops, stat)
+
+   main extraction function
+   inputs: ops and stat
+   creates cell and neuropil masks and extracts traces
+   returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
+   F_chan2 and Fneu_chan2 will be empty if no second channel
+
+
+.. function:: detect_and_extract(ops)
+
+

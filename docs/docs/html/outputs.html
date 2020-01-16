@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Outputs &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Multiday recordings" href="multiday.html" />
+    <link rel="prev" title="Using the GUI" href="gui.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Outputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#matlab-output">MATLAB output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multichannel-recordings">Multichannel recordings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#stat-npy-fields">stat.npy fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ops-npy-fields">ops.npy fields</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Outputs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/outputs.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="outputs">
+<h1>Outputs<a class="headerlink" href="#outputs" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">F.npy</span></code>: array of fluorescence traces (ROIs by timepoints)</p>
+<p><code class="docutils literal notranslate"><span class="pre">Fneu.npy</span></code>: array of neuropil fluorescence traces (ROIs by timepoints)</p>
+<p><code class="docutils literal notranslate"><span class="pre">spks.npy</span></code>: array of deconvolved traces (ROIs by timepoints)</p>
+<p><code class="docutils literal notranslate"><span class="pre">stat.npy</span></code>: list of statistics computed for each cell (ROIs by 1)</p>
+<p><code class="docutils literal notranslate"><span class="pre">ops.npy</span></code>: options and intermediate outputs (dictionary)</p>
+<p><code class="docutils literal notranslate"><span class="pre">iscell.npy</span></code>: specifies whether an ROI is a cell, first column is 0/1,
+and second column is probability that the ROI is a cell based on the
+default classifier</p>
+<p>All can be loaded in python with numpy</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;F.npy&#39;</span><span class="p">)</span>
+<span class="n">Fneu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;F.npy&#39;</span><span class="p">)</span>
+<span class="n">spks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;spks.npy&#39;</span><span class="p">)</span>
+<span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;stat.npy&#39;</span><span class="p">)</span>
+<span class="n">ops</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span>
+<span class="n">ops</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">iscell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;iscell.npy&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="matlab-output">
+<h2>MATLAB output<a class="headerlink" href="#matlab-output" title="Permalink to this headline">¶</a></h2>
+<p>If <code class="docutils literal notranslate"><span class="pre">'save_mat'=1</span></code>, then a MATLAB file is created <code class="docutils literal notranslate"><span class="pre">Fall.mat</span></code>. This
+will contain ops, F, Fneu, stat, spks and iscell. The “iscell”
+assignments are only saved ONCE when the pipeline is finished running.
+If you make changes in the GUI to the cell assignments, ONLY
+<code class="docutils literal notranslate"><span class="pre">iscell.npy</span></code> changes. To load a modified <code class="docutils literal notranslate"><span class="pre">iscell.npy</span></code> into MATLAB, I
+recommend using this package: <a class="reference external" href="https://github.com/kwikteam/npy-matlab">npy-matlab</a>. Alternatively there is a
+<em>new</em> save button in the GUI (in the file menu) that allows you to save
+the iscell again to the <code class="docutils literal notranslate"><span class="pre">Fall.mat</span></code> file.</p>
+</div>
+<div class="section" id="multichannel-recordings">
+<h2>Multichannel recordings<a class="headerlink" href="#multichannel-recordings" title="Permalink to this headline">¶</a></h2>
+<p>Cells are detected on the ops[‘functional_chan’] and the fluorescence
+signals are extracted from both channels. The functional channel signals
+are saved to <code class="docutils literal notranslate"><span class="pre">F.npy</span></code> and <code class="docutils literal notranslate"><span class="pre">F_neu.npy</span></code>, and non-functional channel
+signals are saved to <code class="docutils literal notranslate"><span class="pre">F_chan2.npy</span></code> and <code class="docutils literal notranslate"><span class="pre">Fneu_chan2.npy</span></code>.</p>
+</div>
+<div class="section" id="stat-npy-fields">
+<span id="statnpy-fields"></span><h2>stat.npy fields<a class="headerlink" href="#stat-npy-fields" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>ypix: y-pixels of cell</p></li>
+<li><p>xpix: x-pixels of cell</p></li>
+<li><p>med: (y,x) center of cell</p></li>
+<li><p>lam: pixel mask (sum(lam * frames[ypix,xpix,:]) = fluorescence)</p></li>
+<li><p>npix: number of pixels in ROI</p></li>
+<li><p>npix_norm: number of pixels in ROI normalized by the mean of npix
+across all ROIs</p></li>
+<li><p>radius: estimated radius of cell from 2D Gaussian fit to mask</p></li>
+<li><p>aspect_ratio: ratio between major and minor axes of a 2D Gaussian fit
+to mask</p></li>
+<li><p>compact: how compact the ROI is (1 is a disk, &gt;1 means less compact)</p></li>
+<li><p>footprint: spatial extent of an ROI’s functional signal, including
+pixels not assigned to the ROI; a threshold of 1/5 of the max is used
+as a threshold, and the average distance of these pixels from the
+center is defined as the footprint</p></li>
+<li><p>skew: skewness of neuropil-corrected fluorescence trace</p></li>
+<li><p>std: standard deviation of neuropil-corrected fluorescence trace</p></li>
+<li><p>overlap: which pixels overlap with other ROIs (these are excluded
+from fluorescence computation)</p></li>
+<li><p>ipix_neuropil: pixels of neuropil mask for this cell</p></li>
+</ul>
+<p>Here is example code to make an image where each cell (without its
+overlapping pixels) is a different “number”:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;stat.npy&#39;</span><span class="p">)</span>
+<span class="n">ops</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;ops.npy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+<span class="n">im</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]))</span>
+
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ncells</span><span class="p">):</span>
+    <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">][</span><span class="o">~</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;overlap&#39;</span><span class="p">]]</span>
+    <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">][</span><span class="o">~</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;overlap&#39;</span><span class="p">]]</span>
+    <span class="n">im</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(There is no longer ipix like in the matlab version. In python note you
+can access a 2D array like X[ys, xs] = lam. In Matlab, this would cause
+a broadcast of all the pairs of ys and xs, which is why ipix = ys +
+(xs-1) * Ly was a useful temporary variable to have around for linear
+indexing into arrays. In Python, the equivalent ipix would be ipix = yx
++ xs * Lxy.)</p>
+</div>
+<div class="section" id="ops-npy-fields">
+<span id="opsnpy-fields"></span><h2>ops.npy fields<a class="headerlink" href="#ops-npy-fields" title="Permalink to this headline">¶</a></h2>
+<p>This will include all of the options you ran the pipeline with,
+including file paths. During the running of the pipeline, some outputs
+are added to <code class="docutils literal notranslate"><span class="pre">ops.npy</span></code>:</p>
+<ul class="simple">
+<li><p>reg_file: location of registered binary file</p></li>
+<li><p>Ly: size of Y dimension of tiffs/h5</p></li>
+<li><p>Lx: size of X dimension of tiffs/h5</p></li>
+<li><p>nframes: number of frames in recording</p></li>
+<li><p>yrange: valid y-range used for cell detection (excludes edges that
+were shifted out of the FOV during registration)</p></li>
+<li><p>xrange: valid x-range used for cell detection (excludes edges that
+were shifted out of the FOV during registration)</p></li>
+<li><p>refImg: reference image used for registration</p></li>
+<li><p>yoff: y-shifts of recording at each timepoint</p></li>
+<li><p>xoff: x-shifts of recording at each timepoint</p></li>
+<li><p>corrXY: peak of phase correlation between frame and reference image
+at each timepoint</p></li>
+<li><p>meanImg: mean of registered frames</p></li>
+<li><p>meanImgE: a median-filtered version of the mean image</p></li>
+<li><p>Vcorr: correlation map (computed during cell detection)</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="multiday.html" class="btn btn-neutral float-right" title="Multiday recordings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="gui.html" class="btn btn-neutral float-left" title="Using the GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

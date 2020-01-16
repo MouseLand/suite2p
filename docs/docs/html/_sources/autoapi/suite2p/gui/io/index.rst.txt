@@ -1,0 +1,45 @@
+:mod:`suite2p.gui.io`
+=====================
+
+.. py:module:: suite2p.gui.io
+
+
+Module Contents
+---------------
+
+.. function:: make_masks_and_enable_buttons(parent)
+
+
+.. function:: export_fig(parent)
+
+
+.. function:: enable_views_and_classifier(parent)
+
+
+.. function:: load_dialog(parent)
+
+
+.. function:: load_proc(parent)
+
+
+.. function:: load_behavior(parent)
+
+
+.. function:: save_redcell(parent)
+
+
+.. function:: save_iscell(parent)
+
+
+.. function:: save_mat(parent)
+
+
+.. function:: save_merge(parent)
+
+
+.. function:: load_custom_mask(parent)
+
+
+.. function:: load_again(parent, Text)
+
+

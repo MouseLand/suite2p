@@ -259,7 +259,6 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.wraw and self.raw_on:
             buff = self.reg_file_raw.read(self.nbytesread[0])
             self.imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))
-            print(self.imgraw.shape)
             if self.wraw_wred:
                 buff = self.reg_file_raw_chan2.read(self.nbytesread[0])
                 imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]

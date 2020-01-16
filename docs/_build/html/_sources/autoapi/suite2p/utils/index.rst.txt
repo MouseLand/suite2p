@@ -53,18 +53,18 @@ Module Contents
 .. function:: sub2ind(array_shape, rows, cols)
 
 
-.. function:: sample_frames(ops, ix, reg_file, crop=True)
+.. function:: get_frames(ops, ix, bin_file, crop=False, badframes=False)
 
-   get frames ix from reg_file
+   get frames ix from bin_file
        frames are cropped by ops['yrange'] and ops['xrange']
 
-   :param ops: requires 'badframes', 'yrange', 'xrange', 'Ly', 'Lx'
+   :param ops: requires 'Ly', 'Lx'
    :type ops: dict
    :param ix: frames to take
    :type ix: int, array
-   :param reg_file: location of binary file to read (frames x Ly x Lx)
-   :type reg_file: str
-   :param crop: whether or not to crop by 'yrange' and 'xrange'
+   :param bin_file: location of binary file to read (frames x Ly x Lx)
+   :type bin_file: str
+   :param crop: whether or not to crop by 'yrange' and 'xrange' - if True, needed in ops
    :type crop: bool
 
    :returns: **mov** -- frames x Ly x Lx

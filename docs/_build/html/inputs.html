@@ -93,9 +93,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#different-file-types">Different file types</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#tiffs">Tiffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bruker">Bruker</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mesoscope-tiffs">Mesoscope tiffs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#thorlabs-raw-files">Thorlabs raw files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#hdf5-files-and-sbx">HDF5 files (and *.sbx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sbx-binary-files">sbx binary files</a></li>
 </ul>
 </li>
 </ul>
@@ -245,10 +247,17 @@ then it won’t run through suite2p anymore. A work-around is to save as
 an OME-TIFF in FIJI: “File-&gt;save as-&gt;OME-TIFF-&gt;compression type
 uncompressed” in FIJI (thanks &#64;kylemxm! see issue <a class="reference external" href="https://github.com/MouseLand/suite2p/issues/149#issuecomment-473862374">here</a>).</p>
 <p>If you have old Scanimage tiffs (version &lt;5) that are larger than 2GB,
-then most tiff readers will not work. &#64;elhananby has recommended this <a class="reference external" href="https://github.com/dgreenberg/read_patterned_tifdata">repository</a> for reading the data into matlab (see issue <a href="#id4"><span class="problematic" id="id5">`here`_</span></a>).
+then most tiff readers will not work. &#64;elhananby has recommended this <a class="reference external" href="https://github.com/dgreenberg/read_patterned_tifdata">repository</a> for reading the data into matlab (see issue <a href="#id6"><span class="problematic" id="id7">`here`_</span></a>).
 After reading it into matlab, you can re-save the tiff in a format that
 imageJ and suite2p can recognize (see matlab tiff writing
 <a class="reference external" href="https://www.mathworks.com/help/matlab/ref/tiff.write.html">here</a>).</p>
+</div>
+<div class="section" id="bruker">
+<h3>Bruker<a class="headerlink" href="#bruker" title="Permalink to this headline">¶</a></h3>
+<p>Using Bruker Prairie View system, .RAW files are batch converted to single .ome.tifs.
+Now, you can load the resulting multiple tif files (i.e. one per frame per channel) to suite2p to be converted to binary.
+This looks for files containing ‘Ch1’, and will assume all additional files are ‘Ch2’.
+Select “input_format” as “bruker” in the drop down menu in the GUI or set <code class="docutils literal notranslate"><span class="pre">ops['input_format']</span> <span class="pre">=</span> <span class="pre">&quot;bruker&quot;</span></code>.</p>
 </div>
 <div class="section" id="mesoscope-tiffs">
 <h3>Mesoscope tiffs<a class="headerlink" href="#mesoscope-tiffs" title="Permalink to this headline">¶</a></h3>
@@ -279,11 +288,17 @@ suite2p will automatically use this if you have pip installed it
 Ringach has a utility to convert neurolabware *.sbx files to *.h5
 files (see blog post
 <a class="reference external" href="https://scanbox.org/2018/08/29/using-suite2p-with-scanbox/">here</a>).</p>
-<p>If you have multiple *.h5 files, then put them all in the same
-directory. Then for your ‘h5path’ set it to one of those *.h5 files.
-Then if ops[‘look_one_level_down’] = 1, it processes ALL the h5 files in
-that same directory. Also make sure they all have the same key for the
-data.</p>
+<p>The H5 loading from the GUI now works the same as it always has for tiffs. Select
+“h5” from the drop-down menu and input the h5 KEY for the data as a string. Now
+choose the folder with your *.h5 or *.hdf5 files and the pipeline will use all
+h5 files in that folder. You can use ops[‘look_one_level_down’] to process all
+subfolders of the data_path.</p>
+</div>
+<div class="section" id="sbx-binary-files">
+<h3>sbx binary files<a class="headerlink" href="#sbx-binary-files" title="Permalink to this headline">¶</a></h3>
+<p>Scanbox binary files (<a href="#id3"><span class="problematic" id="id4">*</span></a>.sbx) work out of the box if you set <code class="docutils literal notranslate"><span class="pre">ops['input_format']</span> <span class="pre">=</span> <span class="pre">&quot;sbx&quot;</span></code>.</p>
+<p>When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set <code class="docutils literal notranslate"><span class="pre">ops['sbx_ndeadcols']</span></code>. Set this option to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
+Joao Couto (&#64;jcouto) wrote the binary sbx parser.</p>
 </div>
 </div>
 </div>

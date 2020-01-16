@@ -88,6 +88,14 @@ After reading it into matlab, you can re-save the tiff in a format that
 imageJ and suite2p can recognize (see matlab tiff writing
 `here <https://www.mathworks.com/help/matlab/ref/tiff.write.html>`__).
 
+Bruker
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using Bruker Prairie View system, .RAW files are batch converted to single .ome.tifs.
+Now, you can load the resulting multiple tif files (i.e. one per frame per channel) to suite2p to be converted to binary.
+This looks for files containing 'Ch1', and will assume all additional files are 'Ch2'.
+Select "input_format" as "bruker" in the drop down menu in the GUI or set ``ops['input_format'] = "bruker"``.
+
 Mesoscope tiffs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -123,11 +131,11 @@ Ringach has a utility to convert neurolabware \*.sbx files to \*.h5
 files (see blog post
 `here <https://scanbox.org/2018/08/29/using-suite2p-with-scanbox/>`__).
 
-If you have multiple \*.h5 files, then put them all in the same
-directory. Then for your 'h5path' set it to one of those \*.h5 files.
-Then if ops['look_one_level_down'] = 1, it processes ALL the h5 files in
-that same directory. Also make sure they all have the same key for the
-data.
+The H5 loading from the GUI now works the same as it always has for tiffs. Select
+"h5" from the drop-down menu and input the h5 KEY for the data as a string. Now
+choose the folder with your \*.h5 or \*.hdf5 files and the pipeline will use all
+h5 files in that folder. You can use ops['look_one_level_down'] to process all
+subfolders of the data_path.
 
 
 sbx binary files
@@ -145,5 +153,3 @@ Joao Couto (@jcouto) wrote the binary sbx parser.
 .. _scanimage-tiff-reader: http://scanimage.gitlab.io/ScanImageTiffReaderDocs/
 .. _sklearn.external.tifffile: http://scikit-image.org/docs/dev/api/skimage.external.tifffile.html
 .. _here: https://github.com/MouseLand/suite2p/issues/135#issuecomment-467244278
-
-

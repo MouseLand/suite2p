@@ -12,6 +12,11 @@ Module Contents
 
    
 
+.. data:: print
+   
+
+   
+
 .. function:: default_ops()
 
 

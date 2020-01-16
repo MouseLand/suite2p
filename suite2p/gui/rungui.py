@@ -262,16 +262,11 @@ class RunWindow(QtGui.QDialog):
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,6,0,1,1)
         self.qdata = []
-        for n in range(6):
+        for n in range(9):
             self.qdata.append(QtGui.QLabel(''))
             self.layout.addWidget(self.qdata[n],
                                   n+7,0,1,2)
-        qlabel = QtGui.QLabel('h5_path')
-        qlabel.setFont(bigfont)
-        self.layout.addWidget(qlabel,14,0,1,1)
-        # save_path0
-        self.h5text = QtGui.QLabel('')
-        self.layout.addWidget(self.h5text,15,0,1,2)
+
         self.bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
         self.bsave.clicked.connect(self.save_folder)
         self.layout.addWidget(self.bsave,16,0,1,2)
@@ -355,7 +350,7 @@ class RunWindow(QtGui.QDialog):
         self.save_path = []
         self.fast_disk = []
         # clear labels
-        for n in range(7):
+        for n in range(9):
             self.qdata[n].setText('')
         self.savelabel.setText('')
         self.binlabel.setText('')
@@ -379,10 +374,11 @@ class RunWindow(QtGui.QDialog):
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
         self.datastr = self.data_path[0]
-        if hasattr(self, 'h5_path') and len(self.h5_path) > 0:
-            self.db['h5py'] = self.h5_path
+        if hasattr(self, 'h5_key') and len(self.h5_key) > 0:
             self.db['h5py_key'] = self.h5_key
-            self.datastr = self.h5_path
+            if hasattr(self, 'h5_path') and len(self.h5_path) > 0:
+                self.db['h5py'] = self.h5_path
+                self.datastr = self.h5_path
         elif self.inputformat.currentText() == 'sbx':
             self.db['sbx_ndeadcols'] = -1
 
@@ -502,7 +498,7 @@ class RunWindow(QtGui.QDialog):
                     self.ops['input_format'] = 'tif'
                 if 'data_path' in ops and len(ops['data_path'])>0:
                     self.data_path = ops['data_path']
-                    for n in range(7):
+                    for n in range(9):
                         if n<len(self.data_path):
                             self.qdata[n].setText(self.data_path[n])
                         else:
@@ -516,13 +512,12 @@ class RunWindow(QtGui.QDialog):
                 elif 'h5py' in ops and len(ops['h5py'])>0:
                     self.h5_path = ops['h5py']
                     self.h5_key = ops['h5py_key']
-                    self.h5text.setText(ops['h5py'])
-                    self.data_path = []
-                    for n in range(7):
+                    self.data_path = [os.path.dirname(self.h5_path)]
+                    for n in range(9):
                         self.qdata[n].setText('')
+                    self.qdata[0].setText(self.data_path[0])
                     self.ops['input_format'] = 'h5'
                     self.runButton.setEnabled(True)
-                    self.btiff.setEnabled(False)
                     self.listOps.setEnabled(True)
                 self.inputformat.currentTextChanged.connect(lambda x:x)
                 self.inputformat.setCurrentText(self.ops['input_format'])
@@ -590,22 +585,13 @@ class RunWindow(QtGui.QDialog):
             #self.loadDb.setEnabled(False)
 
     def get_h5py(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open h5 file')
-        name = name[0]
-        if len(name)>0:
-            self.h5_path = name
-            self.data_path = [os.path.dirname(name)]
-            self.h5text.setText(name)
-            TC = TextChooser(self)
-            result = TC.exec_()
-            if result:
-                self.h5_key = TC.h5_key
-            else:
-                self.h5_key = 'data'
-            self.runButton.setEnabled(True)
-            self.listOps.setEnabled(True)
-            #self.loadDb.setEnabled(False)
-            self.btiff.setEnabled(False)
+        # used to choose file, now just choose key
+        TC = TextChooser(self)
+        result = TC.exec_()
+        if result:
+            self.h5_key = TC.h5_key
+        else:
+            self.h5_key = 'data'
 
     def parse_inputformat(self):
         inputformat = self.inputformat.currentText()

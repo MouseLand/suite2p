@@ -29,6 +29,9 @@ To turn off ROIs in views 2-4, uncheck *ROIs on*
 Colors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. image:: _static/colorbar.PNG
+   :width: 600
+
 |colorbar|
 
 Randomly colored ROI view is the default view. The ROIs in the random

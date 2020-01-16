@@ -24,7 +24,6 @@ def h5py_to_binary(ops):
             'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
 
     """
-    ops['data_path'] = [os.path.dirname(ops['h5py'])]
     ops1 = utils.init_ops(ops)
 
     nplanes = ops1[0]['nplanes']
@@ -32,6 +31,11 @@ def h5py_to_binary(ops):
 
     # open all binary files for writing
     ops1, h5list, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, True)
+    for ops in ops1:
+        if 'data_path' in ops and len(ops['data_path'])==0:
+            ops['data_path'] = [os.path.dirname(ops['h5py'])]
+        elif 'data_path' not in ops:
+            ops['data_path'] = [os.path.dirname(ops['h5py'])]
     ops1[0]['h5list'] = h5list
     keys = ops1[0]['h5py_key']
     if isinstance(keys, str):

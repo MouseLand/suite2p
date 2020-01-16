@@ -10,12 +10,12 @@ Subpackages
    :titlesonly:
    :maxdepth: 3
 
-   classify/index.rst
-   detect/index.rst
-   extract/index.rst
+   classification/index.rst
+   detection/index.rst
+   extraction/index.rst
    gui/index.rst
    io/index.rst
-   register/index.rst
+   registration/index.rst
 
 
 Submodules
@@ -26,7 +26,6 @@ Submodules
 
    __main__/index.rst
    gpu_utils/index.rst
-   myutils2/index.rst
    run_s2p/index.rst
    utils/index.rst
 

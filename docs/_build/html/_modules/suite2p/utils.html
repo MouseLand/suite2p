@@ -184,8 +184,8 @@
 <div class="viewcode-block" id="circle"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.circle">[docs]</a><span class="k">def</span> <span class="nf">circle</span><span class="p">(</span><span class="n">med</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; returns pixels of circle with radius 1.25x radius of cell (r) &quot;&quot;&quot;</span>
     <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="mf">1.35</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="mf">1.35</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="mf">1.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="mf">1.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">med</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span></div>
@@ -268,7 +268,7 @@
         <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">diameter</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]])</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">diameter</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;spatscale_pix&#39;</span><span class="p">]]))</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">Imed</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">medfilt2d</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="p">[</span><span class="n">diameter</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">diameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
     <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">-</span> <span class="n">Imed</span>
@@ -291,28 +291,33 @@
     <span class="n">inds</span> <span class="o">=</span> <span class="n">rows</span> <span class="o">*</span> <span class="n">array_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">cols</span>
     <span class="k">return</span> <span class="n">inds</span></div>
 
-<div class="viewcode-block" id="sample_frames"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.sample_frames">[docs]</a><span class="k">def</span> <span class="nf">sample_frames</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; get frames ix from reg_file</span>
+<div class="viewcode-block" id="get_frames"><a class="viewcode-back" href="../../autoapi/suite2p/utils/index.html#suite2p.utils.get_frames">[docs]</a><span class="k">def</span> <span class="nf">get_frames</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">bin_file</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">badframes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; get frames ix from bin_file</span>
 <span class="sd">        frames are cropped by ops[&#39;yrange&#39;] and ops[&#39;xrange&#39;]</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ops : dict</span>
-<span class="sd">        requires &#39;badframes&#39;, &#39;yrange&#39;, &#39;xrange&#39;, &#39;Ly&#39;, &#39;Lx&#39;</span>
+<span class="sd">        requires &#39;Ly&#39;, &#39;Lx&#39;</span>
 <span class="sd">    ix : int, array</span>
 <span class="sd">        frames to take</span>
-<span class="sd">    reg_file : str</span>
+<span class="sd">    bin_file : str</span>
 <span class="sd">        location of binary file to read (frames x Ly x Lx)</span>
 <span class="sd">    crop : bool</span>
-<span class="sd">        whether or not to crop by &#39;yrange&#39; and &#39;xrange&#39;</span>
+<span class="sd">        whether or not to crop by &#39;yrange&#39; and &#39;xrange&#39; - if True, needed in ops</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        mov : int16, array</span>
 <span class="sd">            frames x Ly x Lx</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">bad_frames</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[</span><span class="n">bad_frames</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">badframes</span> <span class="ow">and</span> <span class="s1">&#39;badframes&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">bad_frames</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ixx</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[</span><span class="n">bad_frames</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="n">ixx</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">notbad</span><span class="o">=</span><span class="kc">True</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
     <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
     <span class="n">nbytesread</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
@@ -323,10 +328,10 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">mov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">),</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="c1"># load and bin data</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reg_file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">bin_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bfile</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ix</span><span class="p">)):</span>
-            <span class="n">reg_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">nbytesread</span><span class="o">*</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+            <span class="n">bfile</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">nbytesread</span><span class="o">*</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">bfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">crop</span><span class="p">:</span>

@@ -226,19 +226,19 @@ image ops[‘meanImgE’]</p>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="suite2p.utils.sample_frames">
-<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">sample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">ix</em>, <em class="sig-param">reg_file</em>, <em class="sig-param">crop=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#sample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.sample_frames" title="Permalink to this definition">¶</a></dt>
+<dt id="suite2p.utils.get_frames">
+<code class="sig-prename descclassname">suite2p.utils.</code><code class="sig-name descname">get_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">ix</em>, <em class="sig-param">bin_file</em>, <em class="sig-param">crop=False</em>, <em class="sig-param">badframes=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/suite2p/utils.html#get_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.utils.get_frames" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
-<dt>get frames ix from reg_file</dt><dd><p>frames are cropped by ops[‘yrange’] and ops[‘xrange’]</p>
+<dt>get frames ix from bin_file</dt><dd><p>frames are cropped by ops[‘yrange’] and ops[‘xrange’]</p>
 </dd>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ops</strong> (<em>dict</em>) – requires ‘badframes’, ‘yrange’, ‘xrange’, ‘Ly’, ‘Lx’</p></li>
+<li><p><strong>ops</strong> (<em>dict</em>) – requires ‘Ly’, ‘Lx’</p></li>
 <li><p><strong>ix</strong> (<em>int</em><em>, </em><em>array</em>) – frames to take</p></li>
-<li><p><strong>reg_file</strong> (<em>str</em>) – location of binary file to read (frames x Ly x Lx)</p></li>
-<li><p><strong>crop</strong> (<em>bool</em>) – whether or not to crop by ‘yrange’ and ‘xrange’</p></li>
+<li><p><strong>bin_file</strong> (<em>str</em>) – location of binary file to read (frames x Ly x Lx)</p></li>
+<li><p><strong>crop</strong> (<em>bool</em>) – whether or not to crop by ‘yrange’ and ‘xrange’ - if True, needed in ops</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

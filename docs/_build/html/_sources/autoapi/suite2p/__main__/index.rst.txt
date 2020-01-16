@@ -10,8 +10,6 @@ Module Contents
 .. function:: main()
 
 
-.. data:: parser
-   
+.. function:: parse_arguments()
 
-   
 

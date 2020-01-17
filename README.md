@@ -29,7 +29,8 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. To activate this new environment, run `conda activate suite2p`
-5. You should see `(suite2p)` on the left side of the terminal line. Now run `python -m suite2p` and you're all set.
+5. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install suite2p --upgrade`.
+6. Now run `python -m suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 

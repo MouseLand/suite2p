@@ -13,8 +13,5 @@ dependencies:
   - scikit-learn
   - pyqt
   - pip:
-    - pyqtgraph
-    - natsort
-    - scanimage-tiff-reader
-    - rastermap>0.1.2
     - suite2p
+    

@@ -1,6 +1,6 @@
 name: suite2p
 dependencies:
-  - python>=3.7
+  - python>=3.7,<3.8
   - pip
   - mkl_fft=1.0.10
   - mkl=2019.3
@@ -14,4 +14,5 @@ dependencies:
   - pyqt
   - pip:
     - suite2p
+    - rastermap>0.1.0
     

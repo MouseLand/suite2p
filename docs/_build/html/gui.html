@@ -108,12 +108,17 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visualizing-activity">Visualizing activity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#view-registered-binary">View registered binary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#manual-adding-of-rois">Manual adding of ROIs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#view-registered-binary">View registered binary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#z-stack-alignment">Z-stack Alignment</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#view-registration-metrics">View registration metrics</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
 <ul>
@@ -196,6 +201,7 @@ automatically identify the cells as one of these two classes. Note that
 these categories do not have to be ‘cells’ and ‘NOT cells’, they could
 be ‘boutons’ and ‘NOT boutons’, we just chose to say ‘cells’ because
 that’s the most common ROI studied.</p>
+<p>You can now <strong>drag and drop</strong> your <code class="docutils literal notranslate"><span class="pre">stat.npy</span></code> files into the GUI!</p>
 <div class="section" id="different-views-and-colors-for-roi-panels">
 <h2>Different views and colors for ROI panels<a class="headerlink" href="#different-views-and-colors-for-roi-panels" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="views">
@@ -213,8 +219,7 @@ background (if nchannels=2)</p></li>
 </div>
 <div class="section" id="colors">
 <h3>Colors<a class="headerlink" href="#colors" title="Permalink to this headline">¶</a></h3>
-<a class="reference internal image-reference" href="_images/colorbar.PNG"><img alt="_images/colorbar.PNG" src="_images/colorbar.PNG" style="width: 600px;" /></a>
-<p><img alt="colorbar" src="https://github.com/MouseLand/suite2p/blob/master/gui_images/newcolors.PNG" /></p>
+<a class="reference internal image-reference" href="_images/colorbar.png"><img alt="_images/colorbar.png" src="_images/colorbar.png" style="width: 600px;" /></a>
 <p>Randomly colored ROI view is the default view. The ROIs in the random
 view are colored between purple and yellow, with red reserved for ROIs
 assigned to be RED based on the non-functional channel (you can change
@@ -264,10 +269,10 @@ vice versa this will overwrite the rastermap colors.</p>
 <div class="section" id="mouse-control">
 <h3>Mouse control<a class="headerlink" href="#mouse-control" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
+<li><p><strong>double left click = returns to full view in ALL PLOTS</strong></p></li>
 <li><p>left click = select cell</p></li>
 <li><p>left click + CTRL = select multiple cells</p></li>
 <li><p>left click + drag = moves field of view</p></li>
-<li><p>double left click = returns to full view</p></li>
 <li><p>right click = flip selected cell(s) from left&lt;-&gt;right, – or if
 clicked in trace view, will open up “export” option</p></li>
 <li><p>scroll wheel = zoom in and out</p></li>
@@ -280,13 +285,14 @@ clicked in trace view, will open up “export” option</p></li>
 <li><p>Delete = removes box from <em>draw selection</em> from window For the
 letters, just press the letter (do not capitalize)</p></li>
 <li><p>O = turn of ROIs in non-ROI view</p></li>
-<li><p>Q = ROI view</p></li>
-<li><p>W = mean image</p></li>
-<li><p>E = enhanced mean image</p></li>
-<li><p>R = correlation map</p></li>
-<li><p>A-K = different color maps</p></li>
+<li><p>Q-U = different views (can change saturation with slider)</p></li>
+<li><p>A-M = different color maps</p></li>
 <li><p>Left and right keys = cycle between cells of same panel</p></li>
 <li><p>Up Key = flip selected cell to other panel</p></li>
+<li><p>Alt+Enter = merge selected ROIs</p></li>
+</ul>
+<ul class="simple">
+<li><p>note you can also ask the GUI to auto-suggest merges with the Merge&gt;Auto-suggest merges window *</p></li>
 </ul>
 </div>
 <div class="section" id="multi-cell-selection">
@@ -294,7 +300,7 @@ letters, just press the letter (do not capitalize)</p></li>
 <p>You can select multiple cells by holding down CTRL while left-clicking
 on cells. If you are in ‘cells’ or ‘NOT cells’ view (not ‘both’ view),
 then several buttons for multi-cell selection activate.</p>
-<p><img alt="multi_select" src="https://github.com/MouseLand/suite2p/blob/master/gui_images/multi_select.PNG" /></p>
+<a class="reference internal image-reference" href="_images/multi_select.PNG"><img alt="_images/multi_select.PNG" src="_images/multi_select.PNG" style="width: 600px;" /></a>
 <p>The <em>draw selection</em> button activates a box that you can drag and resize
 to select multiple cells. To delete the box, click the Delete key.
 <em>select top n</em> selects n=X top neurons from the current colormap. For
@@ -367,18 +373,26 @@ save it as your default classifier.</p>
 only one ROI is selected, then all ROIs in that view (cell or not cell)
 will be plotted. Otherwise the selected cells are plotted. You can sort
 the neurons by their principal component weights, or by our algorithm
-<a class="reference external" href="https://github.com/MouseLand/rastermap">rastermap</a> by clicking the compute buttons. Once you click the
+<a class="reference external" href="http://www.github.com/mouseland/rastermap">rastermap</a> by clicking the compute buttons. Once you click the
 <em>compute</em> buttons, they will be grayed out, because you can’t compute
 them again (they won’t change). The plot below shows a mesoscope
 recording sorted by rastermap. You can change between sorting by
 rastermap and by the PCs by using the drop-down menu.</p>
-<p><img alt="neural_activity" src="https://github.com/MouseLand/suite2p/blob/master/gui_images/visualize.PNG" /></p>
+<a class="reference internal image-reference" href="_images/visualize.png"><img alt="_images/visualize.png" src="_images/visualize.png" style="width: 600px;" /></a>
 <p>The red box allows you to zoom in on specific segments of the recording.
 You can move it by dragging the mouse when in the box, or with the arrow
 keys. You can resize it by using the diamond handles on the sides of the
 box, or by holding down the shift key and using the arrow keys.</p>
 <p>If you click the <em>show selected cells in GUI</em> button, then the cells
 surrounded by the red box will show up as white in the GUI.</p>
+<a class="reference internal image-reference" href="_images/visualize_selected.png"><img alt="_images/visualize_selected.png" src="_images/visualize_selected.png" style="width: 600px;" /></a>
+</div>
+<div class="section" id="manual-adding-of-rois">
+<h2>Manual adding of ROIs<a class="headerlink" href="#manual-adding-of-rois" title="Permalink to this headline">¶</a></h2>
+<p>You can add ROIs in the File&gt;Manual labelling. You MUST keep the binary file for the
+computing of the mask’s activity across time. When you save and exit the ROIs will be
+added to the <a href="#id3"><span class="problematic" id="id4">*</span></a>.npy files as the first N ROIs (where N is the number that you drew).</p>
+<a class="reference internal image-reference" href="_images/manual_roi.png"><img alt="_images/manual_roi.png" src="_images/manual_roi.png" style="width: 600px;" /></a>
 </div>
 <div class="section" id="view-registered-binary">
 <h2>View registered binary<a class="headerlink" href="#view-registered-binary" title="Permalink to this headline">¶</a></h2>
@@ -395,7 +409,17 @@ double-click on the plot that you want to recenter.</p>
 fluorescence plot to go to a specific point in time in the movie. You
 can also seek through the movie by clicking the slide bar. The left and
 right arrow keys will move the slide bar incrementally. The space bar will pause and play the movie.</p>
-<p><img alt="regbin" src="https://github.com/MouseLand/suite2p/blob/master/gui_images/binary.png" /></p>
+<a class="reference internal image-reference" href="_images/binary.png"><img alt="_images/binary.png" src="_images/binary.png" style="width: 600px;" /></a>
+<p>You can also view all the masks, and go from cell to cell by clicking on them.</p>
+<a class="reference internal image-reference" href="_images/binary_masks.png"><img alt="_images/binary_masks.png" src="_images/binary_masks.png" style="width: 600px;" /></a>
+<div class="section" id="z-stack-alignment">
+<h3>Z-stack Alignment<a class="headerlink" href="#z-stack-alignment" title="Permalink to this headline">¶</a></h3>
+<p>You can also now load a Z-stack into this view. You can compute the z-position of the recording across time
+IF you keep the registered binary file. It expects the Z-stack to be a tiff with number of planes
+by number of pixels in Y by number of pixels in X. The results of the correlation between z-stack and each frame are saved in
+ops[‘zcorr’] which is number of planes (in Z) x number of frames. The GUI smooths this matrix across Z and then takes the max
+and plots the max across time in the third row.</p>
+</div>
 </div>
 <div class="section" id="view-registration-metrics">
 <h2>View registration metrics<a class="headerlink" href="#view-registration-metrics" title="Permalink to this headline">¶</a></h2>
@@ -420,7 +444,7 @@ in a number). The space bar will pause and play the movie.</p>
 <p>The example below shows a movie that has been rigid registered but not
 non-rigid registered. The metrics suggest that non-rigid registration
 should also be performed on this recording.</p>
-<p><img alt="regmetrics" src="https://github.com/MouseLand/suite2p/blob/master/gui_images/reg_metrics.png" /></p>
+<a class="reference internal image-reference" href="_images/reg_metrics.png"><img alt="_images/reg_metrics.png" src="_images/reg_metrics.png" style="width: 600px;" /></a>
 </div>
 </div>
 

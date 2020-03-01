@@ -87,6 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../gui.html">Using the GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../outputs.html">Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">Frequently Asked Questions</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
 <ul>
@@ -173,7 +174,7 @@
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Suite2p parameters&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--ops&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;options&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--db&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;options&#39;</span><span class="p">)</span>
-    <span class="kn">from</span> <span class="nn">.run_s2p</span> <span class="k">import</span> <span class="n">default_ops</span>
+    <span class="kn">from</span> <span class="nn">.run_s2p</span> <span class="kn">import</span> <span class="n">default_ops</span>
     <span class="n">ops0</span> <span class="o">=</span> <span class="n">default_ops</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ops0</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">v</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">default</span> <span class="o">=</span> <span class="n">ops0</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
@@ -213,10 +214,10 @@
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">db</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
         <span class="n">db</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">db</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">run_s2p</span>
+        <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">run_s2p</span>
         <span class="n">run_s2p</span><span class="o">.</span><span class="n">run_s2p</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">.gui</span> <span class="k">import</span> <span class="n">gui2p</span>
+        <span class="kn">from</span> <span class="nn">.gui</span> <span class="kn">import</span> <span class="n">gui2p</span>
         <span class="n">gui2p</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
 
     

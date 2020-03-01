@@ -1,0 +1,301 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.registration.reference &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.reference</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/registration/reference/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.registration.reference">
+<span id="suite2p-registration-reference"></span><h1><a class="reference internal" href="#module-suite2p.registration.reference" title="suite2p.registration.reference"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.reference</span></code></a><a class="headerlink" href="#module-suite2p.registration.reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.registration.reference.sampled_mean">
+<code class="sig-prename descclassname">suite2p.registration.reference.</code><code class="sig-name descname">sampled_mean</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/reference.html#sampled_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.reference.sampled_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.reference.pick_initial_reference">
+<code class="sig-prename descclassname">suite2p.registration.reference.</code><code class="sig-name descname">pick_initial_reference</code><span class="sig-paren">(</span><em class="sig-param">frames</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/reference.html#pick_initial_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.reference.pick_initial_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the initial reference image</p>
+<p>the seed frame is the frame with the largest correlations with other frames;
+the average of the seed frame with its top 20 correlated pairs is the
+inital reference frame returned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frames</strong> (<em>int16</em>) – frames from binary (frames x Ly x Lx)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – initial reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.reference.iterative_alignment">
+<code class="sig-prename descclassname">suite2p.registration.reference.</code><code class="sig-name descname">iterative_alignment</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">frames</em>, <em class="sig-param">refImg</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/reference.html#iterative_alignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.reference.iterative_alignment" title="Permalink to this definition">¶</a></dt>
+<dd><p>iterative alignment of initial frames to compute reference image</p>
+<p>the seed frame is the frame with the largest correlations with other frames;
+the average of the seed frame with its top 20 correlated pairs is the
+inital reference frame returned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nonrigid’, ‘smooth_sigma’, ‘bidiphase’, ‘1Preg’</p></li>
+<li><p><strong>frames</strong> (<em>int16</em>) – frames from binary (frames x Ly x Lx)</p></li>
+<li><p><strong>refImg</strong> (<em>int16</em>) – initial reference image (Ly x Lx)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – final reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.reference.compute_reference_image">
+<code class="sig-prename descclassname">suite2p.registration.reference.</code><code class="sig-name descname">compute_reference_image</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">bin_file</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/reference.html#compute_reference_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.reference.compute_reference_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the reference image</p>
+<p>computes initial reference image using ops[‘nimg_init’] frames</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘nimg_init’, ‘nonrigid’, ‘smooth_sigma’, ‘bidiphase’, ‘1Preg’,
+‘reg_file’, (optional ‘keep_movie_raw’, ‘raw_movie’)</p></li>
+<li><p><strong>bin_file</strong> (<em>str</em>) – location of binary file with data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>refImg</strong> – initial reference image (Ly x Lx)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int16</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.reference.subsample_frames">
+<code class="sig-prename descclassname">suite2p.registration.reference.</code><code class="sig-name descname">subsample_frames</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">bin_file</em>, <em class="sig-param">nsamps</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/reference.html#subsample_frames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.reference.subsample_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>get nsamps frames from binary file for initial reference image
+:param ops: requires ‘Ly’, ‘Lx’, ‘nframes’
+:type ops: dictionary
+:param bin_file:
+:type bin_file: open binary file
+:param nsamps: number of frames to return
+:type nsamps: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>frames</strong> – frames x Ly x Lx</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int16</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

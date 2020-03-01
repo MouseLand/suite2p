@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.registration.zalign &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.registration.zalign</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.registration.zalign</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.fftpack</span> <span class="kn">import</span> <span class="n">next_fast_len</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">fft</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">vectorize</span><span class="p">,</span> <span class="n">complex64</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">int16</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">medfilt</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+<span class="kn">from</span> <span class="nn">suite2p.io</span> <span class="kn">import</span> <span class="n">tiff</span>
+<span class="kn">from</span> <span class="nn">mkl_fft</span> <span class="kn">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">reference</span><span class="p">,</span> <span class="n">bidiphase</span><span class="p">,</span> <span class="n">nonrigid</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">rigid</span>
+
+<div class="viewcode-block" id="compute_zpos"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/zalign/index.html#suite2p.registration.zalign.compute_zpos">[docs]</a><span class="k">def</span> <span class="nf">compute_zpos</span><span class="p">(</span><span class="n">Zreg</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; compute z position &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;reg_file&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: no binary&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">nbatch</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">nbytesread</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Ly</span> <span class="o">*</span> <span class="n">Lx</span> <span class="o">*</span> <span class="n">nbatch</span>
+
+    <span class="n">ops_orig</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">nplanes</span><span class="p">,</span> <span class="n">zLy</span><span class="p">,</span> <span class="n">zLx</span> <span class="o">=</span> <span class="n">Zreg</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">Zreg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">Ly</span> <span class="ow">or</span> <span class="n">Zreg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">Lx</span><span class="p">:</span>
+        <span class="c1"># padding</span>
+        <span class="k">if</span> <span class="n">Zreg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">Ly</span><span class="p">:</span>
+            <span class="n">Zreg</span> <span class="o">=</span> <span class="n">Zreg</span><span class="p">[:,</span> <span class="p">]</span>
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="n">dsmooth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pad</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">pad</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dsmooth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dsmooth</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">)))</span>
+        <span class="n">dsmooth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pad</span><span class="p">,</span> <span class="n">dsmooth</span><span class="p">,</span> <span class="n">pad</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">nbytes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">])</span>
+    <span class="n">nFrames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbytes</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Ly</span> <span class="o">*</span> <span class="n">Lx</span><span class="p">))</span>
+
+    <span class="n">reg_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_file&#39;</span><span class="p">],</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">refAndMasks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="n">Zreg</span><span class="p">:</span>
+        <span class="n">refAndMasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rigid</span><span class="o">.</span><span class="n">phasecorr_reference</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">ops</span><span class="p">))</span>
+
+    <span class="n">zcorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Zreg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nFrames</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nfr</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">nfr</span> <span class="o">&gt;=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]):</span>
+            <span class="k">break</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">)))</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">nfr</span><span class="o">+</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">z</span><span class="p">,</span><span class="n">ref</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refAndMasks</span><span class="p">):</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">zcorr</span><span class="p">[</span><span class="n">z</span><span class="p">,</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">rigid</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">z</span><span class="o">%</span><span class="mi">10</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> planes, </span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> planes, </span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+        <span class="n">nfr</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+
+    <span class="n">reg_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">ops_orig</span><span class="p">[</span><span class="s1">&#39;zcorr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">zcorr</span>
+    <span class="k">return</span> <span class="n">ops_orig</span><span class="p">,</span> <span class="n">zcorr</span></div>
+
+
+<div class="viewcode-block" id="register_stack"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/zalign/index.html#suite2p.registration.zalign.register_stack">[docs]</a><span class="k">def</span> <span class="nf">register_stack</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;refImg&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;refImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">make_blocks</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+
+    <span class="n">nbatch</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">meanImg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span> <span class="c1"># mean of this stack</span>
+
+    <span class="n">yoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">xoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">corrXY</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">yoff1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">xoff1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">corrXY1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span> <span class="o">=</span> <span class="n">prepare_masks</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span> <span class="c1"># prepare masks for rigid registration</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="c1"># prepare masks for non- rigid registration</span>
+        <span class="n">maskMulNR</span><span class="p">,</span> <span class="n">maskOffsetNR</span><span class="p">,</span> <span class="n">cfRefImgNR</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">prepare_masks</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="n">refAndMasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span><span class="p">,</span> <span class="n">maskMulNR</span><span class="p">,</span> <span class="n">maskOffsetNR</span><span class="p">,</span> <span class="n">cfRefImgNR</span><span class="p">]</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">refAndMasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span><span class="p">]</span>
+
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nfr</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">Zreg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,),</span> <span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">irange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">nfr</span><span class="o">+</span><span class="n">nbatch</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">Z</span><span class="p">[</span><span class="n">irange</span><span class="p">,</span> <span class="p">:,:]</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
+        <span class="n">dwrite</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">cmax</span><span class="p">,</span> <span class="n">yxnr</span> <span class="o">=</span> <span class="n">phasecorr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="n">dwrite</span> <span class="o">=</span> <span class="n">dwrite</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span> <span class="c1"># need to hold on to this</span>
+        <span class="n">meanImg</span> <span class="o">+=</span> <span class="n">dwrite</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">yoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">yoff</span><span class="p">,</span> <span class="n">ymax</span><span class="p">))</span>
+        <span class="n">xoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">xoff</span><span class="p">,</span> <span class="n">xmax</span><span class="p">))</span>
+        <span class="n">corrXY</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">corrXY</span><span class="p">,</span> <span class="n">cmax</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+            <span class="n">yoff1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">yoff1</span><span class="p">,</span> <span class="n">yxnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">xoff1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">xoff1</span><span class="p">,</span> <span class="n">yxnr</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">corrXY1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">corrXY1</span><span class="p">,</span> <span class="n">yxnr</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="n">nfr</span> <span class="o">+=</span> <span class="n">dwrite</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Zreg</span><span class="p">[</span><span class="n">irange</span><span class="p">]</span> <span class="o">=</span> <span class="n">dwrite</span>
+
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">%</span><span class="mi">5</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames </span><span class="si">%4.2f</span><span class="s1"> sec&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">k0</span><span class="p">))</span>
+
+    <span class="c1"># compute some potentially useful info</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;th_badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">xoff</span> <span class="o">-</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">xoff</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">yoff</span> <span class="o">-</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">yoff</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="n">dxy</span> <span class="o">=</span> <span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**.</span><span class="mi">5</span>
+    <span class="n">cXY</span> <span class="o">=</span> <span class="n">corrXY</span> <span class="o">/</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">corrXY</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="n">px</span> <span class="o">=</span> <span class="n">dxy</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dxy</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cXY</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">px</span> <span class="o">&gt;</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;th_badframes&#39;</span><span class="p">]</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">yoff</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])])))</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">yoff</span><span class="p">)))</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">xoff</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])])))</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">xoff</span><span class="p">)))</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ymin</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ymax</span><span class="p">)]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">xmin</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">xmax</span><span class="p">)]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrXY</span>
+
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">yoff</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xoff</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">yoff1</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xoff1</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrXY1</span>
+
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">Zreg</span><span class="p">,</span> <span class="n">ops</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -47,6 +47,7 @@ can install it as ``pip install suite2p``
    gui
    outputs
    multiday
+   FAQ
 
 .. toctree::
    :maxdepth: 3

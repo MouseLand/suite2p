@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.detection.chan2detect &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
+        
+      <li>suite2p.detection.chan2detect</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.detection.chan2detect</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter</span>
+<span class="kn">from</span> <span class="nn">suite2p</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">suite2p.extraction</span> <span class="kn">import</span> <span class="n">extract</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">identify cells with channel 2 brightness (aka red cells)</span>
+
+<span class="sd">main function is detect</span>
+<span class="sd">takes from ops: &#39;meanImg&#39;, &#39;meanImg_chan2&#39;, &#39;Ly&#39;, &#39;Lx&#39;</span>
+<span class="sd">takes from stat: &#39;ypix&#39;, &#39;xpix&#39;, &#39;lam&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="quadrant_mask"><a class="viewcode-back" href="../../../autoapi/suite2p/detection/chan2detect/index.html#suite2p.detection.chan2detect.quadrant_mask">[docs]</a><span class="k">def</span> <span class="nf">quadrant_mask</span><span class="p">(</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">nx</span><span class="p">,</span><span class="n">sT</span><span class="p">):</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">mask</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span><span class="n">nx</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">gaussian_filter</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">sT</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+<div class="viewcode-block" id="correct_bleedthrough"><a class="viewcode-back" href="../../../autoapi/suite2p/detection/chan2detect/index.html#suite2p.detection.chan2detect.correct_bleedthrough">[docs]</a><span class="k">def</span> <span class="nf">correct_bleedthrough</span><span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">nblks</span><span class="p">,</span> <span class="n">mimg</span><span class="p">,</span> <span class="n">mimg2</span><span class="p">):</span>
+    <span class="c1"># subtract bleedthrough of green into red channel</span>
+    <span class="c1"># non-rigid regression with nblks x nblks pieces</span>
+    <span class="n">sT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">Ly</span> <span class="o">+</span> <span class="n">Lx</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nblks</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.25</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">nblks</span><span class="p">,</span> <span class="n">nblks</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nblks</span><span class="p">,</span> <span class="n">nblks</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">yb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">nblks</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">xb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">nblks</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nblks</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nblks</span><span class="p">):</span>
+            <span class="n">ny</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">yb</span><span class="p">[</span><span class="n">iy</span><span class="p">],</span> <span class="n">yb</span><span class="p">[</span><span class="n">iy</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xb</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">xb</span><span class="p">[</span><span class="n">ix</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">mask</span><span class="p">[:,:,</span><span class="n">iy</span><span class="p">,</span><span class="n">ix</span><span class="p">]</span> <span class="o">=</span> <span class="n">quadrant_mask</span><span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">sT</span><span class="p">)</span>
+            <span class="n">x</span>  <span class="o">=</span> <span class="n">mimg</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span><span class="n">nx</span><span class="p">)]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">x2</span>  <span class="o">=</span> <span class="n">mimg2</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span><span class="n">nx</span><span class="p">)]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="c1"># predict chan2 from chan1</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">iy</span><span class="p">,</span><span class="n">ix</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+    <span class="n">mask</span> <span class="o">/=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="n">mask</span> <span class="o">*=</span> <span class="n">weights</span>
+    <span class="n">mask</span> <span class="o">*=</span> <span class="n">mimg</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="n">mimg2</span> <span class="o">-=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">mimg2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mimg2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mimg2</span></div>
+
+<div class="viewcode-block" id="detect"><a class="viewcode-back" href="../../../autoapi/suite2p/detection/chan2detect/index.html#suite2p.detection.chan2detect.detect">[docs]</a><span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
+    <span class="c1">#ops2 = ops.copy()</span>
+    <span class="n">mimg</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">mimg2</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># subtract bleedthrough of green into red channel</span>
+    <span class="c1"># non-rigid regression with nblks x nblks pieces</span>
+    <span class="n">nblks</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">mimg2_corr</span> <span class="o">=</span> <span class="n">correct_bleedthrough</span><span class="p">(</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">nblks</span><span class="p">,</span> <span class="n">mimg</span><span class="p">,</span> <span class="n">mimg2</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2_corrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mimg2_corr</span>
+
+    <span class="c1"># compute pixels in cell and in area around cell (including overlaps)</span>
+    <span class="c1"># (exclude pixels from other cells)</span>
+    <span class="c1"># ops[&#39;min_neuropil_pixels&#39;] = 80</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">,</span> <span class="n">cell_masks</span> <span class="o">=</span> <span class="n">extract</span><span class="o">.</span><span class="n">masks</span><span class="o">.</span><span class="n">create_cell_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">)</span>
+    <span class="n">neuropil_masks</span> <span class="o">=</span> <span class="n">extract</span><span class="o">.</span><span class="n">masks</span><span class="o">.</span><span class="n">create_neuropil_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">)</span>
+    <span class="n">neuropil_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">neuropil_masks</span><span class="p">,(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="p">))</span>
+    <span class="n">cell_masks</span>     <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cell_masks</span><span class="p">,(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="p">))</span>
+
+    <span class="n">inpix</span> <span class="o">=</span> <span class="n">cell_masks</span> <span class="o">@</span> <span class="n">mimg2</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">extpix</span> <span class="o">=</span> <span class="n">neuropil_masks</span> <span class="o">@</span> <span class="n">mimg2</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">inpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">inpix</span><span class="p">)</span>
+    <span class="n">redprob</span> <span class="o">=</span> <span class="n">inpix</span> <span class="o">/</span> <span class="p">(</span><span class="n">inpix</span> <span class="o">+</span> <span class="n">extpix</span><span class="p">)</span>
+    <span class="n">redcell</span> <span class="o">=</span> <span class="n">redprob</span> <span class="o">&gt;</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;chan2_thres&#39;</span><span class="p">]</span>
+
+    <span class="n">redcell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">redcell</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">redprob</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ops</span><span class="p">,</span> <span class="n">redcell</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -87,6 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../gui.html">Using the GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../outputs.html">Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQ.html">Frequently Asked Questions</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
 <ul>
@@ -163,18 +164,18 @@
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">shutil</span>
-<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="k">import</span> <span class="n">savemat</span>
-<span class="kn">from</span> <span class="nn">.io</span> <span class="k">import</span> <span class="n">tiff</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">save</span>
-<span class="kn">from</span> <span class="nn">.registration</span> <span class="k">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">reference</span>
-<span class="kn">from</span> <span class="nn">.extraction</span> <span class="k">import</span> <span class="n">extract</span><span class="p">,</span> <span class="n">dcnv</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">savemat</span>
+<span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">tiff</span><span class="p">,</span> <span class="n">h5</span><span class="p">,</span> <span class="n">save</span>
+<span class="kn">from</span> <span class="nn">.registration</span> <span class="kn">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">reference</span>
+<span class="kn">from</span> <span class="nn">.extraction</span> <span class="kn">import</span> <span class="n">extract</span><span class="p">,</span> <span class="n">dcnv</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">haussmeister</span> <span class="k">import</span> <span class="n">haussio</span>
+    <span class="kn">from</span> <span class="nn">haussmeister</span> <span class="kn">import</span> <span class="n">haussio</span>
 <div class="viewcode-block" id="HAS_HAUS"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.HAS_HAUS">[docs]</a>    <span class="n">HAS_HAUS</span> <span class="o">=</span> <span class="kc">True</span></div>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">HAS_HAUS</span> <span class="o">=</span> <span class="kc">False</span>
 
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <div class="viewcode-block" id="print"><a class="viewcode-back" href="../../autoapi/suite2p/run_s2p/index.html#suite2p.run_s2p.print">[docs]</a><span class="nb">print</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span><span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
@@ -358,15 +359,15 @@
         <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">ops0</span><span class="p">,</span> <span class="o">**</span><span class="n">ops</span><span class="p">}</span>
         <span class="c1"># copy tiff to a binary</span>
         <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;h5&#39;</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.io</span> <span class="k">import</span> <span class="n">h5</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">h5</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">h5py_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote h5py to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
         <span class="k">elif</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sbx&#39;</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.io</span> <span class="k">import</span> <span class="n">sbx</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">sbx</span>
             <span class="n">ops1</span> <span class="o">=</span> <span class="n">sbx</span><span class="o">.</span><span class="n">sbx_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote sbx to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.io</span> <span class="k">import</span> <span class="n">tiff</span>
+            <span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">tiff</span>
             <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;mesoscan&#39;</span><span class="p">:</span>
                 <span class="n">ops1</span> <span class="o">=</span> <span class="n">tiff</span><span class="o">.</span><span class="n">mesoscan_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;time </span><span class="si">%4.2f</span><span class="s1"> sec. Wrote mesoscope tifs to binaries for </span><span class="si">%d</span><span class="s1"> planes&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops1</span><span class="p">)))</span>

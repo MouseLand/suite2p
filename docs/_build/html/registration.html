@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Cell detection" href="celldetection.html" />
-    <link rel="prev" title="Multiday recordings" href="multiday.html" /> 
+    <link rel="prev" title="Frequently Asked Questions" href="FAQ.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="outputs.html">Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a></li>
 </ul>
 <p class="caption"><span class="caption-text">How it works:</span></p>
 <ul class="current">
@@ -198,9 +199,9 @@ needs the reg_file, Ly, Lx, and nimg_init parameters):</p>
 <span class="n">refImg</span> <span class="o">=</span> <span class="n">register</span><span class="o">.</span><span class="n">pick_init</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Here is an example reference image on the left, compared to just taking
-the average of a random subset of frames (on the right):</p>
-<p><img alt="bad-refImg" src="badrefImg.PNG" /></p>
+<p>Here is an example reference image on the right, compared to just taking
+the average of a random subset of frames (on the left):</p>
+<a class="reference internal image-reference" href="_images/badrefimg.png"><img alt="_images/badrefimg.png" src="_images/badrefimg.png" style="width: 600px;" /></a>
 <p>If the reference image doesn’t look good, try increasing
 <code class="docutils literal notranslate"><span class="pre">ops['nimg_init']</span></code>.</p>
 </div>
@@ -219,15 +220,21 @@ registration step below.</p>
 <div class="section" id="rigid-registration">
 <span id="id1"></span><h2>1. Rigid registration<a class="headerlink" href="#rigid-registration" title="Permalink to this headline">¶</a></h2>
 <p>Rigid registration computes the shifts between the frame and the
-reference image using phase-correlation. For upsampling (subpixel
-shifts), we use Kriging interpolation. We have found on simulated data
+reference image using phase-correlation. We have found on simulated data
 that phase-correlation is more accurate than cross-correlation.
-<a class="reference external" href="https://en.wikipedia.org/wiki/Phase_correlation">Phase-correlation</a> is a well-established method to compute the
+<a class="reference external" href="https://en.wikipedia.org/wiki/Phase_correlation">Phase-correlation</a>
+is a well-established method to compute the
 relative movement between two images. Phase-correlation normalizes the
 Fourier spectra of the images before multiplying them (whereas
 cross-correlation would just multiply them). This normalization
 emphasizes the correlation between the higher frequency components of
 the images, which in most cases makes it more robust to noise.</p>
+<p>Cross-correlation</p>
+<a class="reference internal image-reference" href="_images/rigid_cross.png"><img alt="_images/rigid_cross.png" src="_images/rigid_cross.png" style="width: 600px;" /></a>
+<p>Phase-correlation</p>
+<a class="reference internal image-reference" href="_images/rigid_phase.png"><img alt="_images/rigid_phase.png" src="_images/rigid_phase.png" style="width: 600px;" /></a>
+<p>Comparison</p>
+<a class="reference internal image-reference" href="_images/phase_vs_cross.png"><img alt="_images/phase_vs_cross.png" src="_images/phase_vs_cross.png" style="width: 600px;" /></a>
 <p>You can set a maximum shift size using the option
 <code class="docutils literal notranslate"><span class="pre">ops['maxregshift']</span></code>. By default, it is 0.1, which means that the
 maximum shift of the frame from the reference in the Y direction is
@@ -246,7 +253,7 @@ num_workers, and maxregshift):</p>
 <span class="n">aligned_data</span><span class="p">,</span> <span class="n">yshift</span><span class="p">,</span> <span class="n">xshift</span><span class="p">,</span> <span class="n">corrXY</span><span class="p">,</span> <span class="n">yxnr</span> <span class="o">=</span> <span class="n">register</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>(figure from bioRxiv preprint <a class="reference external" href="https://www.biorxiv.org/content/early/2016/06/30/061507">here</a>)</p>
+<p>(see bioRxiv preprint comparing cross/phase <a class="reference external" href="https://www.biorxiv.org/content/early/2016/06/30/061507">here</a>)</p>
 </div>
 <div class="section" id="non-rigid-registration-optional">
 <span id="id2"></span><h2>2. Non-rigid registration (optional)<a class="headerlink" href="#non-rigid-registration-optional" title="Permalink to this headline">¶</a></h2>
@@ -259,20 +266,31 @@ will approximately double the registration time.</p>
 <code class="docutils literal notranslate"><span class="pre">ops['block_size']</span> <span class="pre">=</span> <span class="pre">[128,128]</span></code> which is the size in Y and X in
 pixels. If Y is the direction of line-scanning for 2p imaging, you may
 want to divide it into smaller blocks in that direction.</p>
+<a class="reference internal image-reference" href="_images/overlapping_blocks.png"><img alt="_images/overlapping_blocks.png" src="_images/overlapping_blocks.png" style="width: 600px;" /></a>
 <p>Each block is able to shift up to <code class="docutils literal notranslate"><span class="pre">ops['maxregshiftNR']</span></code> pixels in Y
 and X. We recommend to keep this small unless you’re in a very high
-signal-to-noise ratio regime and your motion is very large.</p>
+signal-to-noise ratio regime and your motion is very large. For subpixel shifts,
+we use Kriging interpolation and run it on each block.</p>
+<p>Phase correlation of each block:</p>
+<a class="reference internal image-reference" href="_images/block_phasecorr.png"><img alt="_images/block_phasecorr.png" src="_images/block_phasecorr.png" style="width: 600px;" /></a>
+<p>Shift of each block from phase corr:</p>
+<a class="reference internal image-reference" href="_images/block_arrows.png"><img alt="_images/block_arrows.png" src="_images/block_arrows.png" style="width: 600px;" /></a>
 <p>In a low signal-to-noise ratio regime, there may be blocks which on a
 given frame do not have sufficient information from which to align with
 the reference image. We compute a given block’s maximum phase
-correlation with the reference block, and determine how much greater this max is than the surrounding phase correlations. The ratio
+correlation with the reference block, and determine how much greater this max is than
+the surrounding phase correlations. The ratio
 between these two is defined as the <code class="docutils literal notranslate"><span class="pre">snr</span></code> of that block at that given
-time point.</p>
+time point. We smooth over high snr blocks and use bilinear interpolation
+to upsample create the final shifts:</p>
+<a class="reference internal image-reference" href="_images/block_upsample.png"><img alt="_images/block_upsample.png" src="_images/block_upsample.png" style="width: 600px;" /></a>
+<p>We then use bilinear interpolation to warp the frame using these shifts.</p>
 </div>
 <div class="section" id="metrics-for-registration-quality">
 <h2>Metrics for registration quality<a class="headerlink" href="#metrics-for-registration-quality" title="Permalink to this headline">¶</a></h2>
-<p>Here’s a twitter <a class="reference external" href="https://twitter.com/marius10p/status/1051494533786193920">thread</a> with multiple examples.</p>
-</div>
+<p>Here’s a twitter <a class="reference external" href="https://twitter.com/marius10p/status/1051494533786193920">thread</a>
+with multiple examples.</p>
+<span class="target" id="id4"></span></div>
 </div>
 
 
@@ -286,7 +304,7 @@ time point.</p>
         <a href="celldetection.html" class="btn btn-neutral float-right" title="Cell detection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="multiday.html" class="btn btn-neutral float-left" title="Multiday recordings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="FAQ.html" class="btn btn-neutral float-left" title="Frequently Asked Questions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

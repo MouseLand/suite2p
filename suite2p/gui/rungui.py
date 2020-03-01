@@ -336,6 +336,7 @@ class RunWindow(QtGui.QDialog):
         self.compile_ops_db()
         L = len(self.opslist)
         self.odata[L].setText(self.datastr)
+        print(self.ops['lines'])
         np.save('ops%d.npy'%L, self.ops)
         np.save('db%d.npy'%L, self.db)
         self.opslist.append('ops%d.npy'%L)
@@ -354,7 +355,6 @@ class RunWindow(QtGui.QDialog):
             self.qdata[n].setText('')
         self.savelabel.setText('')
         self.binlabel.setText('')
-        self.h5text.setText('')
         # clear ops not in GUI
         self.ops = np.load(self.opsfile, allow_pickle=True).item()
         self.save_text() # grab ops in GUI
@@ -393,6 +393,7 @@ class RunWindow(QtGui.QDialog):
             self.fast_disk = self.save_path
         self.db['fast_disk'] = self.fast_disk
         self.db['input_format'] = self.inputformat.currentText()
+
     def run_S2P(self, parent):
         self.finish = True
         self.error = False
@@ -454,7 +455,7 @@ class RunWindow(QtGui.QDialog):
                 self.run_S2P(parent)
 
     def save_ops(self):
-        name = QtGui.QFileDialog.getSveFileName(self,'Ops name (*.npy)')
+        name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
         name = name[0]
         self.save_text()
         if name:

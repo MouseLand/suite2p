@@ -1,0 +1,51 @@
+:mod:`suite2p.gui.graphics`
+===========================
+
+.. py:module:: suite2p.gui.graphics
+
+
+Module Contents
+---------------
+
+.. py:class:: TraceBox(parent=None, border=None, lockAspect=False, enableMouse=True, invertY=False, enableMenu=True, name=None, invertX=False)
+
+   Bases: :class:`pyqtgraph.PlotItem`
+
+   .. method:: mouseDoubleClickEvent(self, ev)
+
+
+
+   .. method:: zoom_plot(self)
+
+
+
+
+.. py:class:: ViewBox(parent=None, border=None, lockAspect=False, enableMouse=True, invertY=False, enableMenu=True, name=None, invertX=False)
+
+   Bases: :class:`pyqtgraph.ViewBox`
+
+   .. method:: mouseDoubleClickEvent(self, ev)
+
+
+
+   .. method:: mouseClickEvent(self, ev)
+
+
+
+   .. method:: mouseDragEvent(self, ev, axis=None)
+
+
+
+   .. method:: zoom_plot(self)
+
+
+
+
+.. function:: init_range(parent)
+
+
+.. function:: ROI_index(ops, stat)
+
+   matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)
+
+

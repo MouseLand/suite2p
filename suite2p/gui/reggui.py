@@ -255,15 +255,14 @@ class BinaryPlayer(QtGui.QMainWindow):
         if self.wred and self.red_on:
             buff = self.reg_file_chan2.read(self.nbytesread[0])
             imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
-            self.img = np.concatenate((self.img, imgred, np.zeros_like(imgred)), axis=-1)
+            self.img = np.concatenate((self.img[:,:,np.newaxis], imgred, np.zeros_like(imgred)), axis=-1)
         if self.wraw and self.raw_on:
             buff = self.reg_file_raw.read(self.nbytesread[0])
             self.imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))
-            print(self.imgraw.shape)
             if self.wraw_wred:
                 buff = self.reg_file_raw_chan2.read(self.nbytesread[0])
                 imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
-                self.imgraw = np.concatenate((self.imgraw, imgred_raw, np.zeros_like(imgred_raw)), axis=-1)
+                self.imgraw = np.concatenate((self.imgraw[:,:,np.newaxis], imgred_raw, np.zeros_like(imgred_raw)), axis=-1)
             self.iside.setImage(self.imgraw, levels=self.srange)
         if self.zloaded and self.z_on:
             if hasattr(self, 'zmax'):
@@ -306,8 +305,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             yext = ypix[iext]
             xext = xpix[iext]
             goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
-            self.stat[n]['yext'] = yext[goodi]
-            self.stat[n]['xext'] = xext[goodi]
+            self.stat[n]['yext'] = yext[goodi] + 0.5
+            self.stat[n]['xext'] = xext[goodi] + 0.5
             self.cellpix[ypix, xpix] = n
             self.sroi[yext[goodi], xext[goodi]] = 200
             self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
@@ -431,7 +430,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:
-                self.reg_loc = [os.path.abspath(os.path.join(os.path.dirname(fileName),'data.bin'))]
+                self.reg_loc = [os.path.abspath(os.path.join(os.path.dirname(filename),'data.bin'))]
             self.reg_file = [open(self.reg_loc[-1],'rb')]
             self.wraw = False
             self.wred = False

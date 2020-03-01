@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="suite2p",
-    version="0.6.15",
+    version="0.7.1",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
     description="Pipeline for calcium imaging",
@@ -13,8 +13,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
-    install_requires = ['pyqtgraph', 'PyQt5', 'numpy>=1.13.0', 'scipy', 'h5py', 'natsort','mkl_fft',
-                        'numba','scikit-image', 'scikit-learn', 'matplotlib','rastermap>=0.1.0',
+    install_requires = ['pyqtgraph', 'numpy>=1.13.0', 'scipy', 'h5py', 'natsort','mkl_fft',
+                        'numba','scikit-image', 'scikit-learn', 'matplotlib',
                         'scanimage-tiff-reader'],
     include_package_data=True,
     classifiers=(

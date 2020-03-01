@@ -66,8 +66,6 @@ def compute_zpos(Zreg, ops):
     return ops_orig, zcorr
 
 
-
-
 def register_stack(Z, ops):
     if 'refImg' not in ops:
         ops['refImg'] = Z.mean(axis=0)

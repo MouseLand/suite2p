@@ -1,0 +1,15 @@
+:mod:`suite2p.classification`
+=============================
+
+.. py:module:: suite2p.classification
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   classifier/index.rst
+
+

@@ -34,10 +34,11 @@ needs the reg_file, Ly, Lx, and nimg_init parameters):
 
    refImg = register.pick_init(ops)
 
-Here is an example reference image on the left, compared to just taking
-the average of a random subset of frames (on the right):
+Here is an example reference image on the right, compared to just taking
+the average of a random subset of frames (on the left):
 
-|bad-refImg|
+.. image:: _static/badrefimg.png
+   :width: 600
 
 If the reference image doesn't look good, try increasing
 ``ops['nimg_init']``.
@@ -62,15 +63,30 @@ registration step below.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Rigid registration computes the shifts between the frame and the
-reference image using phase-correlation. For upsampling (subpixel
-shifts), we use Kriging interpolation. We have found on simulated data
+reference image using phase-correlation. We have found on simulated data
 that phase-correlation is more accurate than cross-correlation.
-`Phase-correlation`_ is a well-established method to compute the
+`Phase-correlation <https://en.wikipedia.org/wiki/Phase_correlation>`_ 
+is a well-established method to compute the
 relative movement between two images. Phase-correlation normalizes the
 Fourier spectra of the images before multiplying them (whereas
 cross-correlation would just multiply them). This normalization
 emphasizes the correlation between the higher frequency components of
 the images, which in most cases makes it more robust to noise.
+
+Cross-correlation
+
+.. image:: _static/rigid_cross.png
+   :width: 600
+
+Phase-correlation
+
+.. image:: _static/rigid_phase.png
+   :width: 600
+
+Comparison
+
+.. image:: _static/phase_vs_cross.png
+   :width: 600
 
 You can set a maximum shift size using the option
 ``ops['maxregshift']``. By default, it is 0.1, which means that the
@@ -94,7 +110,7 @@ num_workers, and maxregshift):
    refAndMasks = [maskMul,maskOffset,cfRefImg]
    aligned_data, yshift, xshift, corrXY, yxnr = register.phasecorr(data, refAndMasks, ops)
 
-(figure from bioRxiv preprint `here`_)
+(see bioRxiv preprint comparing cross/phase `here <https://www.biorxiv.org/content/early/2016/06/30/061507>`_)
 
 .. _2-non-rigid-registration-optional:
 
@@ -112,23 +128,46 @@ The size of the blocks to divide the image into is defined by
 pixels. If Y is the direction of line-scanning for 2p imaging, you may
 want to divide it into smaller blocks in that direction.
 
+.. image:: _static/overlapping_blocks.png
+   :width: 600
+
 Each block is able to shift up to ``ops['maxregshiftNR']`` pixels in Y
 and X. We recommend to keep this small unless you're in a very high
-signal-to-noise ratio regime and your motion is very large.
+signal-to-noise ratio regime and your motion is very large. For subpixel shifts, 
+we use Kriging interpolation and run it on each block. 
+
+Phase correlation of each block:
+
+.. image:: _static/block_phasecorr.png
+   :width: 600
+
+Shift of each block from phase corr:
+
+.. image:: _static/block_arrows.png
+   :width: 600
 
 In a low signal-to-noise ratio regime, there may be blocks which on a
 given frame do not have sufficient information from which to align with
 the reference image. We compute a given block's maximum phase
-correlation with the reference block, and determine how much greater this max is than the surrounding phase correlations. The ratio
+correlation with the reference block, and determine how much greater this max is than 
+the surrounding phase correlations. The ratio
 between these two is defined as the ``snr`` of that block at that given
-time point.
+time point. We smooth over high snr blocks and use bilinear interpolation 
+to upsample create the final shifts:
+
+.. image:: _static/block_upsample.png
+   :width: 600
+
+We then use bilinear interpolation to warp the frame using these shifts.
+
+
 
 Metrics for registration quality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's a twitter `thread`_ with multiple examples.
+Here's a twitter `thread <https://twitter.com/marius10p/status/1051494533786193920>`_ 
+with multiple examples.
 
-.. _thread: https://twitter.com/marius10p/status/1051494533786193920
-.. _Phase-correlation: https://en.wikipedia.org/wiki/Phase_correlation
-.. _here: https://www.biorxiv.org/content/early/2016/06/30/061507
+.. _Phase-correlation: 
+.. _here: 
 .. |bad-refImg| image:: badrefImg.PNG

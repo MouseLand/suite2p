@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.registration.rigid &mdash; suite2p 0.6.17 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../deconvolution.html">Spike deconvolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.rigid</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../../_sources/autoapi/suite2p/registration/rigid/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-suite2p.registration.rigid">
+<span id="suite2p-registration-rigid"></span><h1><a class="reference internal" href="#module-suite2p.registration.rigid" title="suite2p.registration.rigid"><code class="xref py py-mod docutils literal notranslate"><span class="pre">suite2p.registration.rigid</span></code></a><a class="headerlink" href="#module-suite2p.registration.rigid" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="suite2p.registration.rigid.phasecorr_reference">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">phasecorr_reference</code><span class="sig-paren">(</span><em class="sig-param">refImg0</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#phasecorr_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.phasecorr_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes masks and fft’ed reference image for phasecorr</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refImg0</strong> (<em>int16</em>) – reference image</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘smooth_sigma’
+(if <code class="docutils literal notranslate"><span class="pre">`ops['1Preg']`</span></code>, need ‘spatial_taper’, ‘spatial_hp’, ‘pre_smooth’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>maskMul</strong> (<em>float32</em>) – mask that is multiplied to spatially taper frames</p></li>
+<li><p><strong>maskOffset</strong> (<em>float32</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cfRefImg</strong> (<em>complex64</em>) – reference image fft’ed and complex conjugate and multiplied by gaussian
+filter in the fft domain with standard deviation ‘smooth_sigma’</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.addmultiplytype">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">addmultiplytype</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#addmultiplytype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.addmultiplytype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.clip">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">clip</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">lcorr</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#clip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.clip" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform 2D fftshift and crop with lcorr</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.phasecorr_cpu">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">phasecorr_cpu</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">lcorr</em>, <em class="sig-param">smooth_sigma_time</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#phasecorr_cpu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.phasecorr_cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute phase correlation between data and reference image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>refAndMasks</strong> (<em>list</em>) – maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)</p></li>
+<li><p><strong>lcorr</strong> (<em>int</em>) – maximum shift in pixels</p></li>
+<li><p><strong>smooth_sigma_time</strong> (<em>float</em>) – how many frames to smooth in time</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+<li><p><strong>cmax</strong> (<em>float</em>) – maximum of phase correlation for each frame</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.phasecorr">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">phasecorr</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">refAndMasks</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#phasecorr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.phasecorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute registration offsets</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.shift_data">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">shift_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">ymax</em>, <em class="sig-param">xmax</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#shift_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.shift_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>rigid shift X by integer shifts ymax and xmax in place (no return)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>int16</em>) – array that’s frames x Ly x Lx</p></li>
+<li><p><strong>ymax</strong> (<em>int</em>) – shifts in y from cfRefImg to data for each frame</p></li>
+<li><p><strong>xmax</strong> (<em>int</em>) – shifts in x from cfRefImg to data for each frame</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="suite2p.registration.rigid.shift_data_subpixel">
+<code class="sig-prename descclassname">suite2p.registration.rigid.</code><code class="sig-name descname">shift_data_subpixel</code><span class="sig-paren">(</span><em class="sig-param">inputs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/suite2p/registration/rigid.html#shift_data_subpixel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.registration.rigid.shift_data_subpixel" title="Permalink to this definition">¶</a></dt>
+<dd><p>rigid shift of X by ymax and xmax</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

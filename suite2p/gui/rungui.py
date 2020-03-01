@@ -394,13 +394,16 @@ class RunWindow(QtGui.QDialog):
         self.logfile.close()
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
-        if self.finish and not self.error and len(self.opslist)==1:
+        if self.finish and not self.error:
             self.cleanButton.setEnabled(True)
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)
-            cursor.insertText('Opening in GUI (can close this window)\n')
-            self.parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
-            io.load_proc(self.parent)
+            if len(self.opslist)==1:
+                cursor.insertText('Opening in GUI (can close this window)\n')
+                self.parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
+                io.load_proc(self.parent)
+            else:
+                cursor.insertText('BATCH MODE: %d more recordings remaining \n'%(len(self.opslist)-self.f+1))
         elif not self.error:
             cursor = self.textEdit.textCursor()
             cursor.movePosition(cursor.End)

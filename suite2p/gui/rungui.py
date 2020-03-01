@@ -110,12 +110,12 @@ class RunWindow(QtGui.QDialog):
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'combined', '1Preg', 'nonrigid',
-                    'connected', 'roidetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
+                    'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        cellkeys = ['roidetect','spikedetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
@@ -151,7 +151,8 @@ class RunWindow(QtGui.QDialog):
                     'window for spatial high-pass filtering before registration',
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
-                    'whether or not to run cell (ROI) detection',
+                    'if 1, run cell (ROI) detection',
+                    'if 1, run spike detection (deconvolution)',
                     'whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)',
                     'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
                     'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',

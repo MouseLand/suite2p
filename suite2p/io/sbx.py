@@ -97,21 +97,24 @@ def sbx_to_binary(ops,ndeadcols = -1):
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
     ops1, sbxlist, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1)
-    print(sbxlist)
     iall = 0
     for j in range(ops1[0]['nplanes']):
         ops1[j]['nframes_per_folder'] = np.zeros(len(sbxlist), np.int32)
-    print(sbxlist)
     ik = 0
     if 'sbx_ndeadcols' in ops1[0].keys():
         ndeadcols = int(ops1[0]['sbx_ndeadcols'])
     if ndeadcols == -1:
-        # compute dead cols from the first file
-        tmpsbx = sbx_memmap(sbxlist[0])
-        colprofile = np.mean(tmpsbx[0][0][0],axis = 0)
-        ndeadcols = np.argmax(np.diff(colprofile)) + 1
-        print('Removing {0} dead columns while loading sbx data.'.format(ndeadcols))
-        del tmpsbx
+        sbxinfo = sbx_get_info(sbxlist[0])
+        if sbxinfo.scanmode == 1:
+            # do not remove dead columns in unidirectional scanning mode
+            ndeadcols = 0
+        else:
+            # compute dead cols from the first file
+            tmpsbx = sbx_memmap(sbxlist[0])
+            colprofile = np.mean(tmpsbx[0][0][0],axis = 0)
+            ndeadcols = np.argmax(np.diff(colprofile)) + 1
+            del tmpsbx
+            print('Removing {0} dead columns while loading sbx data.'.format(ndeadcols))
     ops1[0]['sbx_ndeadcols'] = ndeadcols
     
     for ifile,sbxfname in enumerate(sbxlist):

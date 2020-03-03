@@ -8,7 +8,11 @@ def combined(ops1):
     Multi-plane recordings are arranged to best tile a square.
     Multi-roi recordings are arranged by their dx,dy physical localization.
     '''
-    ops = ops1[0]
+    ops = ops1[0].copy()
+    dx = np.array([o['dx'] for o in ops1])
+    dy = np.array([o['dy'] for o in ops1])
+    unq = np.unique(np.vstack((dy,dx)), axis=1)
+    nrois = unq.shape[1]
     if ('dx' not in ops) or ('dy' not in ops):
         Lx = ops['Lx']
         Ly = ops['Ly']
@@ -18,6 +22,20 @@ def combined(ops1):
         for j in range(len(ops1)):
             ops1[j]['dx'] = (j%nX) * Lx
             ops1[j]['dy'] = int(j/nX) * Ly
+    elif nrois < len(ops1):
+        nplanes = len(ops1) // nrois
+        Lx = np.array([o['Lx'] for o in ops1])
+        Ly = np.array([o['Ly'] for o in ops1])
+        ymax = (dy+Ly).max()
+        xmax = (dx+Lx).max()
+        nX = np.ceil(np.sqrt(ymax * xmax * nplanes)/xmax)
+        nX = int(nX)
+        nY = int(np.ceil(len(ops1)/nX))
+        for j in range(nplanes):
+            for k in range(nrois):
+                ops1[j*nrois + k]['dx'] += (j%nX) * xmax
+                ops1[j*nrois + k]['dy'] += int(j/nX) * ymax
+
     LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
     LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
     meanImg = np.zeros((LY, LX))
@@ -41,8 +59,6 @@ def combined(ops1):
         if ops['nchannels']>1:
             if 'meanImg_chan2' in ops:
                 meanImg_chan2[np.ix_(yrange, xrange)] = ops['meanImg_chan2']
-            else:
-                print(ops)
         if 'meanImg_chan2_corrected' in ops:
             meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
 

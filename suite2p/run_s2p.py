@@ -73,6 +73,7 @@ def default_ops():
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
         'roidetect': True, # whether or not to run ROI extraction
+        'spikedetect': True, # whether or not to run spike deconvolution
         'sparse_mode': True, # whether or not to run sparse_mode
         'diameter': 12, # if not sparse_mode, use diameter for filtering and extracting
         'spatial_scale': 0, # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
@@ -271,10 +272,13 @@ def run_s2p(ops={},db={}):
                 ops1[ipl] = metrics.get_pc_metrics(ops1[ipl])
                 print('Registration metrics, %0.2f sec.'%(time.time()-t0))
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
+        roidetect = True
+        spikedetect = True
         if 'roidetect' in ops1[ipl]:
             roidetect = ops['roidetect']
-        else:
-            roidetect = True
+        if 'spikedetect' in ops1[ipl]:
+            spikedetect = ops['spikedetect']
+
         if roidetect:
             ######## CELL DETECTION AND ROI EXTRACTION ##############
             t11=time.time()
@@ -285,14 +289,19 @@ def run_s2p(ops={},db={}):
             print('----------- Total %0.2f sec.'%(time.time()-t11))
 
             ######### SPIKE DECONVOLUTION ###############
-            t11=time.time()
-            print('----------- SPIKE DECONVOLUTION')
             F = np.load(os.path.join(fpath,'F.npy'))
             Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-            dF = F - ops['neucoeff']*Fneu
-            spks = dcnv.oasis(dF, ops)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('----------- Total %0.2f sec.'%(time.time()-t11))
+            if spikedetect:
+                t11=time.time()
+                print('----------- SPIKE DECONVOLUTION')
+                dF = F - ops['neucoeff']*Fneu
+                spks = dcnv.oasis(dF, ops)
+                np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+                print('----------- Total %0.2f sec.'%(time.time()-t11))
+            else:
+                print('hey')
+                spks = np.zeros_like(F)
+                np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 
             # save as matlab file
             if ('save_mat' in ops) and ops['save_mat']:

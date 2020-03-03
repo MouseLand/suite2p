@@ -135,7 +135,7 @@ def phasecorr(data, refAndMasks, ops):
     nimg, Ly, Lx = data.shape
 
     # maximum registration shift allowed
-    maxregshift = np.round(ops['maxregshift'] *np.maximum(Ly, Lx))
+    maxregshift = np.round(ops['maxregshift'] * np.minimum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)))
 
     # preprocessing for 1P recordings

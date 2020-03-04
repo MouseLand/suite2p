@@ -330,7 +330,6 @@ class RunWindow(QtGui.QDialog):
         self.f = 0
         self.compile_ops_db()
         L = len(self.opslist)
-        print(self.ops['lines'])
         np.save('ops%d.npy'%L, self.ops)
         np.save('db%d.npy'%L, self.db)
         self.opslist.append('ops%d.npy'%L)

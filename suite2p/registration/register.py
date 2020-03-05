@@ -118,10 +118,14 @@ def compute_crop(ops):
     ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
     ops['badframes'] = np.logical_or(abs(ops['xoff']) > (ops['maxregshift'] * ops['Lx'] * 0.95), ops['badframes'])
     ops['badframes'] = np.logical_or(abs(ops['yoff']) > (ops['maxregshift'] * ops['Ly'] * 0.95), ops['badframes'])
-    ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
-    ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
-    xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
-    xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(ops['xoff'])))
+    ymin = np.ceil(np.abs(ops['yoff'][np.logical_not(ops['badframes'])]).max())
+    ymax = ops['Ly'] - ymin 
+    xmin = np.ceil(np.abs(ops['xoff'][np.logical_not(ops['badframes'])]).max())
+    xmax = ops['Lx'] - xmin
+    # ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
+    # ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
+    # xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
+    # xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(ops['xoff'])))
     ops['yrange'] = [int(ymin), int(ymax)]
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops

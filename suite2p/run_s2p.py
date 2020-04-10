@@ -295,11 +295,12 @@ def run_s2p(ops={},db={}):
                 t11=time.time()
                 print('----------- SPIKE DECONVOLUTION')
                 dF = F - ops['neucoeff']*Fneu
+                dF = dcnv.preprocess(dF,ops)
                 spks = dcnv.oasis(dF, ops)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
                 print('----------- Total %0.2f sec.'%(time.time()-t11))
             else:
-                print('hey')
+                print('spike detection turned off')
                 spks = np.zeros_like(F)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 

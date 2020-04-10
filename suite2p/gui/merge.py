@@ -89,6 +89,8 @@ def merge_activity_masks(parent):
 
     ### compute statistics of merges
     stat0["imerge"] = merged_cells
+    if 'iplane' in parent.stat[merged_cells[0]]:
+        stat0['iplane'] = parent.stat[merged_cells[0]]['iplane']
     stat0["ypix"] = ypix
     stat0["xpix"] = xpix
     stat0["lam"] = lam / lam.sum() * merged_cells.size

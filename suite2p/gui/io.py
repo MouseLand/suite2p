@@ -164,8 +164,11 @@ def enable_views_and_classifier(parent):
     # parent.p1.scene().showExportDialog()
 
 def load_dialog(parent):
+    options=QtGui.QFileDialog.Options()
+    options |= QtGui.QFileDialog.DontUseNativeDialog
     name = QtGui.QFileDialog.getOpenFileName(
-        parent, "Open stat.npy", filter="stat.npy"
+        parent, "Open stat.npy", filter="stat.npy",
+        options=options
     )
     parent.fname = name[0]
     load_proc(parent)

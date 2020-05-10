@@ -124,8 +124,8 @@ def get_overlaps(stat, ops):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         stat[n]['overlap'] = mask[ypix,xpix] > 1.5
-        ypix = stat[n]['ypix'][~stat[n]['overlap']]
-        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        #ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        #xpix = stat[n]['xpix'][~stat[n]['overlap']]
         stat2.append(stat[n])
     return stat2
 

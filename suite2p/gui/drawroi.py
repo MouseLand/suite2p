@@ -38,6 +38,7 @@ def masks_and_traces(ops, stat, stat_orig):
 
     F, Fneu, ops = extract.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
+        print('red channel:')
         F_chan2, Fneu_chan2, ops2 = extract.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
@@ -91,9 +92,10 @@ class ViewButton(QtGui.QPushButton):
 
 
 class ROIDraw(QtGui.QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super(ROIDraw, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
+        self.parent = parent
         self.setGeometry(70, 70, 1400, 800)
         self.setWindowTitle('extract ROI activity')
         self.cwidget = QtGui.QWidget(self)
@@ -151,19 +153,23 @@ class ROIDraw(QtGui.QMainWindow):
         self.diam.setFixedWidth(35)
         self.diam.setAlignment(QtCore.Qt.AlignRight)
         self.l0.addWidget(self.diam, 2, 2, 1, 1)
+        self.ROIs = []
+        self.cell_pos = []
+        self.extracted = False
         self.procROI = QtGui.QPushButton("extract ROIs")
         self.procROI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.procROI.clicked.connect(lambda: self.proc_ROI(parent))
         self.procROI.setStyleSheet(self.styleUnpressed)
-        self.procROI.setEnabled(True)
+        self.procROI.setCheckable(False)
+        self.procROI.clicked.connect(self.proc_ROI)
         self.l0.addWidget(self.procROI, 3, 0, 1, 3)
         self.l0.addWidget(QtGui.QLabel(""), 4, 0, 1, 3)
         self.l0.setRowStretch(4, 1)
 
         # CloseGUI button - once done save the ROIs to stat.npy
+        self.saveGUI = False
         self.closeGUI = QtGui.QPushButton("Save and Quit")
         self.closeGUI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.closeGUI.clicked.connect(lambda: self.close_GUI(parent))
+        self.closeGUI.clicked.connect(self.close_GUI)
         self.closeGUI.setEnabled(False)
         self.closeGUI.setFixedWidth(100)
         self.closeGUI.setStyleSheet(self.styleUnpressed)
@@ -188,93 +194,126 @@ class ROIDraw(QtGui.QMainWindow):
 
         self.l0.addWidget(QtGui.QLabel("neuropil"), 13, 13, 1, 1)
 
-        self.ops = parent.ops
-        self.Ly = self.ops['Ly']
-        self.Lx = self.ops['Lx']
-        self.ROIs = []
-        self.cell_pos = []
-        self.extracted = False
-        self.iscell = parent.iscell
+        self.Ly = self.parent.ops['Ly']
+        self.Lx = self.parent.ops['Lx']
+        self.iscell = self.parent.iscell
 
         # Get maskf for pixels that are cells
-        self.masked_images = self.normalize_img_add_masks(parent)
+        self.masked_images = self.normalize_img_add_masks()
         # Mean image as default
         self.img0.setImage(self.masked_images[:, :, :, 0])
 
-    def close_GUI(self, parent):
+    def closeEvent(self, event):
+        print('closing GUI')
+        # if user didn't click "save & quit" button
+        if not self.saveGUI:
+            self.check_proc(event)
+
+    def check_proc(self, event):
+        cproc = QtGui.QMessageBox.question(
+            self, "PROC", 'Would you like to save traces before closing? (if you havent extracted the traces, click Cancel and extract!)', 
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel 
+        )
+        if cproc == QtGui.QMessageBox.Yes:
+            self.close_GUI()
+        elif cproc == QtGui.QMessageBox.Cancel:
+            event.ignore()
+
+    def close_GUI(self):
         # Replace old stat file
         print('Saving old stat')
-        np.save(os.path.join(parent.basename, 'stat_orig.npy'), parent.stat)
+        np.save(os.path.join(self.parent.basename, 'stat_orig.npy'), self.parent.stat)
 
         # Save iscell
         print('Num cells', self.nROIs)
 
-        # Save fluorescence traces
-        Fcell = np.concatenate((self.Fcell, parent.Fcell), axis=0)
-        Fneu = np.concatenate((self.Fneu, parent.Fneu), axis=0)
-        Spks = np.concatenate((self.Spks, parent.Spks),
-                              axis=0)  # For now convert spikes to 0 for the new ROIS and then fix it later
-        np.save(os.path.join(parent.basename, 'F.npy'), Fcell)
-        np.save(os.path.join(parent.basename, 'Fneu.npy'), Fneu)
-        np.save(os.path.join(parent.basename, 'spks.npy'), Spks)
-
         # Append new stat file with old and save
         print('Saving new stat')
         stat_all = self.new_stat.copy()
-        for n in range(len(parent.stat)):
-            stat_all.append(parent.stat[n])
+        for n in range(len(self.parent.stat)):
+            stat_all.append(self.parent.stat[n])
         # Calculate overlap before saving
-        stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, parent.ops)
-        np.save(os.path.join(parent.basename, 'stat.npy'), stat_all_w_overlap)
-        iscell_prob = np.concatenate((parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
+        stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, self.parent.ops)
+        np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all_w_overlap)
+        iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]), axis=1)
 
         new_iscell = np.ones((self.nROIs, 2))
         new_iscell = np.concatenate((new_iscell, iscell_prob),
                                     axis=0)
-        np.save(os.path.join(parent.basename, 'iscell.npy'), new_iscell)
+        np.save(os.path.join(self.parent.basename, 'iscell.npy'), new_iscell)
+
+        # Save fluorescence traces
+        Fcell = np.concatenate((self.Fcell, self.parent.Fcell), axis=0)
+        Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
+        Spks = np.concatenate((self.Spks, self.parent.Spks),
+                              axis=0)  # For now convert spikes to 0 for the new ROIS and then fix it later
+        np.save(os.path.join(self.parent.basename, 'F.npy'), Fcell)
+        np.save(os.path.join(self.parent.basename, 'Fneu.npy'), Fneu)
+        np.save(os.path.join(self.parent.basename, 'spks.npy'), Spks)
+
+        if 'reg_file_chan2' in self.parent.ops:
+            F_chan2 = np.load(os.path.join(self.parent.basename, 'F_chan2.npy'))
+            Fneu_chan2 = np.load(os.path.join(self.parent.basename, 'Fneu_chan2.npy'))
+            redorig = np.load(os.path.join(self.parent.basename, 'redcell.npy'))
+            F_chan2 = np.concatenate((self.F_chan2, F_chan2), axis=0)
+            Fneu_chan2 = np.concatenate((self.Fneu_chan2, Fneu_chan2), axis=0)
+            Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
+            new_redcell = np.zeros((self.nROIs, 2))
+            new_redcell = np.concatenate((new_redcell, redorig),
+                                    axis=0)
+            np.save(os.path.join(self.parent.basename, 'F_chan2.npy'), F_chan2)
+            np.save(os.path.join(self.parent.basename, 'Fneu_chan2.npy'), Fneu_chan2)
+            np.save(os.path.join(self.parent.basename, 'redcell.npy'), new_redcell)
+
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell), np.shape(stat_all))
 
         # close GUI
-        io.load_proc(parent)
+        io.load_proc(self.parent)
+        self.saveGUI = True
         self.close()
 
-    def normalize_img_add_masks(self, parent):
+    def normalize_img_add_masks(self):
         masked_image = np.zeros(((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
         for i in np.arange(4):  # 4 because 4 buttons
-            print(i)
             if i == 0:
-                mimg = parent.ops['meanImg']
+                mimg = np.zeros((self.Ly, self.Lx), np.float32)
+                mimg[self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                    self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]] = self.parent.ops['meanImg'][self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                                                                                                            self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]]
+                
             elif i == 1:
-                mimg = parent.ops['meanImgE']
+                mimg = np.zeros((self.Ly, self.Lx), np.float32)
+                mimg[self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                    self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]] = self.parent.ops['meanImgE'][self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                                                                                                            self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]]
             elif i == 2:
-                im0 = np.zeros((self.Ly, self.Lx), np.float32)
-                im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['Vcorr']
-                mimg = im0
+                mimg = np.zeros((self.Ly, self.Lx), np.float32)
+                mimg[self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                    self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]] = self.parent.ops['Vcorr']
+                
             else:
-                im0 = np.zeros((self.Ly, self.Lx), np.float32)
-                if 'max_proj' in parent.ops:
-                    im0[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                        parent.ops['xrange'][0]:parent.ops['xrange'][1]] = parent.ops['max_proj']
-                mimg = im0
-
+                mimg = np.zeros((self.Ly, self.Lx), np.float32)
+                if 'max_proj' in self.parent.ops:
+                    mimg[self.parent.ops['yrange'][0]:self.parent.ops['yrange'][1],
+                        self.parent.ops['xrange'][0]:self.parent.ops['xrange'][1]] = self.parent.ops['max_proj']
+                
             mimg1 = np.percentile(mimg, 1)
             mimg99 = np.percentile(mimg, 99)
             mimg = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0, np.minimum(1, mimg))
-            masked_image[:, :, :, i] = self.create_masks_of_cells(parent, mimg)
+            masked_image[:, :, :, i] = self.create_masks_of_cells(mimg)
 
         return masked_image
 
-    def create_masks_of_cells(self, parent, mean_img):
+    def create_masks_of_cells(self, mean_img):
         H = np.zeros_like(mean_img)
         S = np.zeros_like(mean_img)
-        columncol = parent.colors['istat'][0]
+        columncol = self.parent.colors['istat'][0]
 
-        for n in np.arange(np.shape(parent.iscell)[0]):
-            if parent.iscell[n] == 1:
-                ypix = parent.stat[n]['ypix'].flatten()
-                xpix = parent.stat[n]['xpix'].flatten()
+        for n in np.arange(np.shape(self.parent.iscell)[0]):
+            if self.parent.iscell[n] == 1:
+                ypix = self.parent.stat[n]['ypix'].flatten()
+                xpix = self.parent.stat[n]['xpix'].flatten()
                 H[ypix, xpix] = np.random.rand()
                 S[ypix, xpix] = 1
 
@@ -335,7 +374,7 @@ class ROIDraw(QtGui.QMainWindow):
                     self.p1.setXRange(0, self.trange.size)
                     self.p1.setYRange(self.fmin, self.fmax)
 
-    def proc_ROI(self, parent):
+    def proc_ROI(self):
         stat0 = []
         if self.extracted:
             for t, s in zip(self.scatter, self.tlabel):
@@ -358,15 +397,17 @@ class ROIDraw(QtGui.QMainWindow):
             self.scatter.append(pg.ScatterPlotItem([xpix.mean()], [ypix.mean()],
                                                    pen=self.ROIs[n].color, symbol='+'))
             self.p0.addItem(self.scatter[-1])
-        if not os.path.isfile(parent.ops['reg_file']):
-            parent.ops['reg_file'] = os.path.join(parent.basename, 'data.bin')
+        if not os.path.isfile(self.parent.ops['reg_file']):
+            self.parent.ops['reg_file'] = os.path.join(self.parent.basename, 'data.bin')
 
-        F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(parent.ops, stat0, parent.stat)
+        F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(self.parent.ops, stat0, self.parent.stat)
         print(spks.shape)
         # print('After', stat[0].keys())
-        # print('Orig', parent.stat[0].keys())
+        # print('Orig', self.parent.stat[0].keys())
         self.Fcell = F
         self.Fneu = Fneu
+        self.F_chan2 = F_chan2
+        self.Fneu_chan2 = Fneu_chan2
         self.Spks = spks
         self.plot_trace()
         self.extracted = True
@@ -392,7 +433,6 @@ class ROIDraw(QtGui.QMainWindow):
             self.p1.plot(self.trange, f + k * kspace, pen=rgb)
             fneu = (fneu - fmin) / (fmax - fmin)
             if self.nROIs == 1:
-                print('Printing')
                 self.p1.plot(self.trange, fneu + k * kspace, pen='r')
             ttick.append((k * kspace + f.mean(), str(n)))
             k -= 1

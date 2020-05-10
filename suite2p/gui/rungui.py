@@ -42,7 +42,7 @@ class RunWindow(QtGui.QDialog):
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
-        self.opsfile = self.opsuser
+        self.opsfile = parent.opsuser
         try:
             self.reset_ops()
             print('loaded default ops')

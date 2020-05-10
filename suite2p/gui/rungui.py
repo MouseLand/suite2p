@@ -79,15 +79,15 @@ class RunWindow(QtGui.QDialog):
         self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
-        self.boolkeys = ['delete_bin', 'do_bidiphase', 'reg_tif', 'reg_tif_chan2',
+        self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
-        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','delete_bin','do_bidiphase','bidiphase']
-        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect']
+        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase']
+        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','spikedetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
-        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['win_baseline','sig_baseline','neucoeff']]
+        cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
@@ -95,7 +95,6 @@ class RunWindow(QtGui.QDialog):
                     'this channel is used to extract functional ROIs (1-based)',
                     'timescale of sensor in deconvolution (in seconds)',
                     'sampling rate (per plane)',
-                    'if 1, binary file is deleted after processing is complete',
                     'whether or not to compute bidirectional phase offset of recording (from line scanning)',
                     'set a fixed number (in pixels) for the bidirectional phase offset',
                     'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
@@ -104,6 +103,8 @@ class RunWindow(QtGui.QDialog):
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
                     'um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)',
+                    'if 1, binary file is deleted after processing is complete',
+                    'if 1, and fast_disk is different than save_disk, binary file is moved to save_disk',
                     "if 1, registration is performed if it wasn't performed already",
                     'when multi-channel, you can align by non-functional channel (1-based)',
                     '# of subsampled frames for finding reference image',
@@ -123,7 +124,6 @@ class RunWindow(QtGui.QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'if 1, run cell (ROI) detection',
-                    'if 1, run spike detection (deconvolution)',
                     'whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)',
                     'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
                     'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
@@ -135,6 +135,7 @@ class RunWindow(QtGui.QDialog):
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
+                    'if 1, run spike detection (deconvolution)',
                     'window for maximin',
                     'smoothing constant for gaussian filter',
                     'neuropil coefficient']

@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import time, os, shutil
 from scipy.io import savemat
@@ -29,6 +28,7 @@ def default_ops():
         'save_path0': [], # stores results, defaults to first item in data_path
         'save_folder': [],
         'subfolders': [],
+        'move_bin': False, # if 1, and fast_disk is different than save_disk, binary file is moved to save_disk
         # main settings
         'nplanes' : 1, # each tiff has these many planes in sequence
         'nchannels' : 1, # each tiff has these many channels per plane
@@ -295,11 +295,12 @@ def run_s2p(ops={},db={}):
                 t11=time.time()
                 print('----------- SPIKE DECONVOLUTION')
                 dF = F - ops['neucoeff']*Fneu
+                dF = dcnv.preprocess(dF,ops)
                 spks = dcnv.oasis(dF, ops)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
                 print('----------- Total %0.2f sec.'%(time.time()-t11))
             else:
-                print('hey')
+                print("WARNING: skipping spike detection (ops['spikedetect']=False)")
                 spks = np.zeros_like(F)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 
@@ -332,11 +333,25 @@ def run_s2p(ops={},db={}):
         print('running clean-up script')
         os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
 
+    i=0
     for ops in ops1:
-        if ('delete_bin' in ops) and ops['delete_bin']:
+        if 'move_bin' in ops and ops['move_bin'] and ops['save_path']!=ops['fast_disk']:
+            shutil.move(ops['reg_file'], os.path.join(ops['save_path'], 'data.bin'))
+            if ops['nchannels']>1:
+                shutil.move(ops['reg_file_chan2'], os.path.join(ops['save_path'], 'data_chan2.bin'))
+            if 'raw_file' in ops:
+                shutil.move(ops['raw_file'], os.path.join(ops['save_path'], 'data_raw.bin'))
+                if ops['nchannels']>1:
+                    shutil.move(ops['raw_file_chan2'], os.path.join(ops['save_path'], 'data_chan2_raw.bin'))
+            if i==0:
+                print('moving binary files to save_path')
+        elif ('delete_bin' in ops) and ops['delete_bin']:
             os.remove(ops['reg_file'])
             if ops['nchannels']>1:
                 os.remove(ops['reg_file_chan2'])
+            if i==0:
+                print('deleting binary files')
+        i+=1
 
     print('TOTAL RUNTIME %0.2f sec'%(time.time()-t0))
     return ops1

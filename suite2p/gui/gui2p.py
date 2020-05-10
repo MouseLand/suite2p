@@ -55,18 +55,20 @@ class MainWindow(QtGui.QMainWindow):
         # check for classifier file
         class_dir = user_dir.joinpath('classifiers')
         class_dir.mkdir(exist_ok=True)
-        self.classfile = os.fspath(class_dir.joinpath('classifier_user.npy'))
+        self.classuser = os.fspath(class_dir.joinpath('classifier_user.npy'))
         self.classorig = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
-        if not os.path.isfile(self.classfile):
-            shutil.copy(self.classorig, self.classfile)
+        if not os.path.isfile(self.classuser):
+            shutil.copy(self.classorig, self.classuser)
+        self.classfile = self.classuser
 
         # check for ops file (for running suite2p)
         ops_dir = user_dir.joinpath('ops')
         ops_dir.mkdir(exist_ok=True)
-        self.opsfile = os.fspath(ops_dir.joinpath('ops_user.npy'))
+        self.opsuser = os.fspath(ops_dir.joinpath('ops_user.npy'))
         self.opsorig = os.fspath(s2p_dir.joinpath('ops', 'ops.npy'))
-        if not os.path.isfile(self.opsfile):
-            shutil.copy(self.opsorig, self.opsfile)
+        if not os.path.isfile(self.opsuser):
+            shutil.copy(self.opsorig, self.opsuser)
+        self.opsfile = self.opsuser
 
         menus.mainmenu(self)
         menus.classifier(self)

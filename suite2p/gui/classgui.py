@@ -41,24 +41,13 @@ def load_s2p_classifier(parent):
     parent.saveDefault.setEnabled(True)
 
 def load_default_classifier(parent):
-    load(parent,
-        os.path.join(
-            os.path.abspath(os.path.dirname(__main__.__file__)),
-            "classifiers/classifier_user.npy",
-        ),
-    )
+    load(parent, parent.classuser)
     class_activated(parent)
 
 def class_file(parent):
-    if parent.classfile == os.path.join(
-        os.path.abspath(os.path.dirname(__main__.__file__)),
-        "classifiers/classifier_user.npy",
-    ):
+    if parent.classfile == parent.classuser:
         cfile = "default classifier"
-    elif parent.classfile == os.path.join(
-        os.path.abspath(os.path.dirname(__main__.__file__)),
-        "classifiers/classifier.npy"
-    ):
+    elif parent.classfile == parent.classorig:
         cfile = "suite2p classifier"
     else:
         cfile = parent.classfile
@@ -79,10 +68,7 @@ def class_default(parent):
         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
     )
     if dm == QtGui.QMessageBox.Yes:
-        classfile = os.path.join(
-            os.path.abspath(os.path.dirname(__main__.__file__)),
-            "classifiers/classifier_user.npy",
-        )
+        classfile = parent.classuser
         save_model(classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
 
 def reset_default(parent):
@@ -94,12 +80,7 @@ def reset_default(parent):
         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
     )
     if dm == QtGui.QMessageBox.Yes:
-        classfile = os.path.join(
-            os.path.abspath(os.path.dirname(__main__.__file__)),
-            "classifiers/classifier_user.npy",
-        )
-        shutil.copy(parent.classorig, classfile)
-
+        shutil.copy(parent.classorig, parent.classuser)
 
 def load(parent, name):
     print('loading classifier ', name)
@@ -171,8 +152,7 @@ def load_data(parent,keys,trainfiles):
 def add_to(parent):
     fname = parent.basename+'/iscell.npy'
     print('Adding current dataset to classifier')
-    if parent.classfile == os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
-                     'classifiers/classifier_user.npy'):
+    if parent.classfile == parent.classuser:
         cfile = 'the default classifier'
     else:
         cfile = parent.classfile
@@ -327,10 +307,7 @@ class ListChooser(QtGui.QDialog):
                                         'Are you sure you want to overwrite your default classifier?',
                                         QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if dm == QtGui.QMessageBox.Yes:
-            classorig = parent.classfile
-            classfile = os.path.join(os.path.abspath(os.path.dirname(__main__.__file__)),
-                             'classifiers/classifier_user.npy')
-            shutil.copy(classorig, classfile)
+            shutil.copy(parent.classfile, parent.classuser)
 
     def exit_list(self):
         self.accept()

@@ -42,8 +42,7 @@ class RunWindow(QtGui.QDialog):
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
         # initial ops values
-        self.opsfile = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                          '../ops/ops_user.npy')
+        self.opsfile = self.opsuser
         try:
             self.reset_ops()
             print('loaded default ops')

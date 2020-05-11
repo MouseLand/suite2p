@@ -31,15 +31,17 @@ def sbx_get_shape(sbxfile):
         chan = 1
     elif chan == 3:
         chan = 1
-    max_idx = os.path.getsize(sbxfile)/nrows/ncols/chan/2
+    max_idx = fsize/nrows/ncols/chan/2
     if max_idx != info.config.frames:
-        raise(Warning('sbx filesize doesnt match mat [{0},{1}]'.format(
-                    max_idx,
-                    info.config.frames)))
+        print('SBX filesize doesnt match accompaning MAT [{0},{1}]. Check recording.'.format(
+            max_idx,
+            info.config.frames))
     nplanes = 1
     if not isinstance(info.otwave,int):
         if len(info.otwave) and info.volscan:
             nplanes = len(info.otwave)
+    # make sure that if there are multiple planes it works regardless of the number of recorded  frames
+    max_idx = np.floor((max_idx/nplanes)) * nplanes
     return (int(chan),int(ncols),int(nrows),int(max_idx)),nplanes
 
 def sbx_memmap(filename,plane_axis=True):

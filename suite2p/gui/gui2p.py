@@ -127,7 +127,13 @@ class MainWindow(QtGui.QMainWindow):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         print(files)
         self.fname = files[0]
-        io.load_proc(self)
+        if os.path.splitext(self.fname)[-1]=='.npy':
+            io.load_proc(self)
+        elif os.path.splitext(self.fname)[-1]=='.nwb':
+            io.load_NWB(self)
+        else:
+            print('invalid extension %s, use .nwb or .npy'%os.path.splitext(self.fname)[-1])
+
 
     def make_buttons(self):
         # ROI CHECKBOX

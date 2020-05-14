@@ -1,7 +1,7 @@
 import numpy as np
 import time, os, shutil, datetime
 from scipy.io import savemat
-from .io import tiff, h5, save
+from .io import tiff, h5, save, nwb
 from .registration import register, metrics, reference
 from .extraction import extract, dcnv
 from . import utils
@@ -334,7 +334,7 @@ def run_s2p(ops={},db={}):
     
     # save to NWB
     if 'save_NWB' in ops and ops['save_NWB']:
-        save.NWB_output(ops1)
+        nwb.save(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

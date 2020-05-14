@@ -4,6 +4,7 @@ import numpy as np
 import os
 import time
 from .. import utils
+from ..io import nwb
 from . import masks,classgui,traces,views, graphics
 import scipy.io
 
@@ -173,6 +174,31 @@ def load_dialog(parent):
     parent.fname = name[0]
     load_proc(parent)
 
+def load_dialog_NWB(parent):
+    options=QtGui.QFileDialog.Options()
+    options |= QtGui.QFileDialog.DontUseNativeDialog
+    name = QtGui.QFileDialog.getOpenFileName(
+        parent, "Open ophys.nwb", filter="*.npy",
+        options=options
+    )
+    parent.fname = name[0]
+    load_NWB(parent)
+
+def load_NWB(parent):
+    name = parent.fname
+    print(name)
+    try:
+        procs = nwb.read(name)
+        if procs[1]['nchannels']==2:
+            parent.hasred = True
+        else:
+            parent.hasred = False
+        load_to_GUI(parent, os.path.split(name)[0], procs)
+            
+        parent.loaded = True
+    except Exception as e:
+        print('ERROR with NWB: %s'%e)
+
 def load_proc(parent):
     name = parent.fname
     print(name)
@@ -231,27 +257,9 @@ def load_proc(parent):
                 probredcell = np.zeros((NN,), np.float32)
 
         if goodfolder:
-            parent.basename = basename
-            parent.stat = stat
-            parent.ops = ops
-            parent.Fcell = Fcell
-            parent.Fneu = Fneu
-            parent.Spks = Spks
-            parent.iscell = iscell
-            parent.probcell = probcell
-            parent.redcell = redcell
-            parent.probredcell = probredcell
-            parent.notmerged = np.ones_like(parent.iscell).astype(np.bool)
-            for n in range(len(parent.stat)):
-                parent.stat[n]['chan2_prob'] = parent.probredcell[n]
-                parent.stat[n]['inmerge'] = 0
-            parent.stat = np.array(parent.stat)
-            make_masks_and_enable_buttons(parent)
-            parent.ichosen = 0
-            parent.imerge = [0]
-            for n in range(len(parent.stat)):
-                if 'imerge' not in parent.stat[n]:
-                    parent.stat[n]['imerge'] = []
+            load_to_GUI(parent, basename, [stat, ops, Fcell, Fneu, Spks, 
+                                            iscell, probcell, redcell, probredcell])
+            
             parent.loaded = True
         else:
             print("stat.npy found, but other files not in folder")
@@ -261,6 +269,30 @@ def load_proc(parent):
     else:
         Text = "Incorrect file, not a stat.npy, choose another?"
         load_again(parent, Text)
+
+def load_to_GUI(parent, basename, procs):
+    stat, ops, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell = procs
+    parent.basename = basename
+    parent.stat = stat
+    parent.ops = ops
+    parent.Fcell = Fcell
+    parent.Fneu = Fneu
+    parent.Spks = Spks
+    parent.iscell = iscell
+    parent.probcell = probcell
+    parent.redcell = redcell
+    parent.probredcell = probredcell
+    parent.notmerged = np.ones_like(parent.iscell).astype(np.bool)
+    for n in range(len(parent.stat)):
+        parent.stat[n]['chan2_prob'] = parent.probredcell[n]
+        parent.stat[n]['inmerge'] = 0
+    parent.stat = np.array(parent.stat)
+    make_masks_and_enable_buttons(parent)
+    parent.ichosen = 0
+    parent.imerge = [0]
+    for n in range(len(parent.stat)):
+        if 'imerge' not in parent.stat[n]:
+            parent.stat[n]['imerge'] = []
 
 def load_behavior(parent):
     name = QtGui.QFileDialog.getOpenFileName(

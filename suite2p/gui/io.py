@@ -178,7 +178,7 @@ def load_dialog_NWB(parent):
     options=QtGui.QFileDialog.Options()
     options |= QtGui.QFileDialog.DontUseNativeDialog
     name = QtGui.QFileDialog.getOpenFileName(
-        parent, "Open ophys.nwb", filter="*.npy",
+        parent, "Open ophys.nwb", filter="*.nwb",
         options=options
     )
     parent.fname = name[0]

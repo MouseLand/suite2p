@@ -18,6 +18,11 @@ def mainmenu(parent):
     loadProc.triggered.connect(lambda: io.load_dialog(parent))
     parent.addAction(loadProc)
 
+    # load processed data
+    loadNWB = QtGui.QAction("Load NWB file", parent)
+    loadNWB.triggered.connect(lambda: io.load_dialog_NWB(parent))
+    parent.addAction(loadNWB)
+
     # load a behavioral trace
     parent.loadBeh = QtGui.QAction(
         "Load behavior or stim trace (1D only)", parent
@@ -50,6 +55,7 @@ def mainmenu(parent):
     file_menu = main_menu.addMenu("&File")
     file_menu.addAction(runS2P)
     file_menu.addAction(loadProc)
+    file_menu.addAction(loadNWB)
     file_menu.addAction(parent.loadBeh)
     file_menu.addAction(parent.saveMat)
     file_menu.addAction(exportFig)

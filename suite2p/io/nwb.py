@@ -226,7 +226,7 @@ def save(ops1):
         )
 
 
-        # FLUORESCENCE
+        # FLUORESCENCE (all are required)
         file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
         name_strs = ['Fluorescence', 'Neuropil', 'Deconvolved']
 
@@ -243,6 +243,7 @@ def save(ops1):
             ophys_module.add(fl)
 
         # BACKGROUNDS
+        # (meanImg, Vcorr and max_proj are REQUIRED)
         bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
         nplanes = ops['nplanes']
         for iplane in range(nplanes):

@@ -79,10 +79,10 @@ class RunWindow(QtGui.QDialog):
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
-                     'save_mat', 'combined', '1Preg', 'nonrigid',
+                     'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid',
                     'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase']
-        outkeys = ['preclassify','save_mat','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
+        outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
@@ -98,6 +98,7 @@ class RunWindow(QtGui.QDialog):
                     'set a fixed number (in pixels) for the bidirectional phase offset',
                     'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
                     'save output also as mat file "Fall.mat"',
+                    'save output also as NWB file "ophys.nwb"',
                     'combine results across planes in separate folder "combined" at end of processing',
                     'if 1, registered tiffs are saved',
                     'if 1, registered tiffs of channel 2 (non-functional channel) are saved',
@@ -388,34 +389,32 @@ class RunWindow(QtGui.QDialog):
         dstring = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         self.logfile.write('\n >>>>> started run at %s'%dstring)
 
-
     def finished(self):
         self.logfile.close()
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(cursor.End)    
         if self.finish and not self.error:
             self.cleanButton.setEnabled(True)
-            cursor = self.textEdit.textCursor()
-            cursor.movePosition(cursor.End)
             if len(self.opslist)==1:
                 cursor.insertText('Opening in GUI (can close this window)\n')
                 self.parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
                 io.load_proc(self.parent)
             else:
                 cursor.insertText('BATCH MODE: %d more recordings remaining \n'%(len(self.opslist)-self.f-1))
+                self.f += 1
+                if self.f < len(self.opslist):
+                    self.run_S2P()
         elif not self.error:
-            cursor = self.textEdit.textCursor()
-            cursor.movePosition(cursor.End)
             cursor.insertText('Interrupted by user (not finished)\n')
         else:
-            cursor = self.textEdit.textCursor()
-            cursor.movePosition(cursor.End)
             cursor.insertText('Interrupted by error (not finished)\n')
-        if len(self.opslist)>1:
-            self.f += 1
-            if self.f < len(self.opslist):
-                self.run_S2P()
 
+        # remove current ops from processing list        
+        if len(self.opslist)==1:
+            del self.opslist[0]
+    
     def save_ops(self):
         name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
         name = name[0]

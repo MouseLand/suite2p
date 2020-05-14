@@ -5,15 +5,30 @@ from scipy.ndimage.filters import uniform_filter
 import numpy as np
 import time
 from numba import vectorize, float32
+from .. import utils
 
-@vectorize('float32(float32, float32)', target = 'parallel', nopython=True)
-def my_max(a, b):
-    return max(a,b)
-@vectorize('float32(float32, float32)', target = 'parallel', nopython=True)
-def my_sum(a, b):
-    return a+b
+def bin_movie(ops):
+    """ bin registered frames in 'reg_file' for ROI detection
 
-def get_mov(ops):
+    movie is binned then high-pass filtered to move slow changes
+
+    Parameters
+    ----------------
+
+    ops : dictionary
+        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'high_pass', 'batch_size'
+        (optional 'badframes')
+
+    Returns
+    ----------------
+
+    mov : 3D array
+        binned movie, size [nbins x Ly x Lx]
+
+    max_proj : 2D array
+        max projection image (mov.max(axis=0)) size [Ly x Lx]
+
+    """
     t0 = time.time()
     badframes = False
     if 'badframes' in ops:
@@ -24,9 +39,9 @@ def get_mov(ops):
     bin_min = np.floor(nframes / ops['nbinned']).astype('int32');
     bin_min = max(bin_min, 1)
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
-    nt0 = max(bin_min, bin_tau)
-    ops['nbinned'] = np.floor(nframes/nt0).astype('int32')
-    print('Binning movie in chunks of length %2.2d'%(nt0))
+    bin_size = max(bin_min, bin_tau)
+    ops['nbinned'] = nframes // bin_size
+    print('Binning movie in chunks of length %2.2d'%bin_size)
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
@@ -34,7 +49,7 @@ def get_mov(ops):
 
     nimgbatch = 500
     nimgbatch = min(nframes, nimgbatch)
-    nimgbatch = nt0 * np.floor(nimgbatch/nt0)
+    nimgbatch = bin_size * (nimgbatch // bin_size)
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['nbinned'], Lyc, Lxc), np.float32)
     max_proj = np.zeros((Lyc, Lxc), np.float32)
@@ -46,8 +61,8 @@ def get_mov(ops):
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             buff = []
-            nimgd = int(np.floor(data.size / (Ly*Lx)))
-            if nimgd < nt0:
+            nimgd = data.size // (Ly*Lx)
+            if nimgd < bin_size:
                 break
             data = np.reshape(data, (-1, Ly, Lx))
             dinds = idata + np.arange(0,data.shape[0],1,int)
@@ -58,34 +73,58 @@ def get_mov(ops):
                 data = data[~ops['badframes'][dinds],:,:]
             nimgd = data.shape[0]
             if nimgd < nimgbatch:
-                nmax = int(np.floor(nimgd / nt0) * nt0)
+                nmax = (nimgd // bin_size) * bin_size
                 data = data[:nmax,:,:]
-            dbin = np.reshape(data, (-1,nt0,Ly,Lx))
-            DD = dbin.mean(axis=1)
+            dbin = np.reshape(data, (-1, bin_size, Ly, Lx))
             # crop into valid area
-            mov[ix:ix+dbin.shape[0],:,:] = DD[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            mov[ix:ix+dbin.shape[0],:,:] = dbin[:, :, 
+                                                ops['yrange'][0]:ops['yrange'][-1], 
+                                                ops['xrange'][0]:ops['xrange'][-1]].mean(axis=1)
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
-    max_proj = np.max(mov, axis=0)
+    max_proj = mov.max(axis=0)
     print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
 
     #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
+
+    # data is high-pass filtered
     if ops['high_pass']<10:
+        # slow high-pass
         for j in range(mov.shape[1]):
             mov[:,j,:] -= gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
     else:
-        ki0 = 0
-        while 1:
-            irange = ki0 + np.arange(0,int(ops['high_pass']))
-            irange = irange[irange<mov.shape[0]]
-            if len(irange)>0:
-                mov[ki0:ki0+int(ops['high_pass']),:,:] -= mov[ki0:ki0+int(ops['high_pass']),:,:].mean(axis=0)
-                ki0 += len(irange)
-            else:
-                break
+        # fast approx high-pass
+        hp = int(ops['high_pass'])
+        for i in np.arange(0, mov.shape[0], hp):
+            mov[i:i+hp,:,:] -= mov[i:i+hp,:,:].mean(axis=0)
+                
     return mov, max_proj
 
 def get_sdmov(mov, ops):
+    """ computes standard deviation of difference between pixels across time
+
+    difference between frames in binned movie computed then stddev
+    helps to normalize image across pixels
+    
+    Parameters
+    ----------------
+
+    mov : 3D array
+        size [nbins x Ly x Lx]
+
+    ops : dictionary
+        'batch_size'
+
+    stat : array of dicts 
+        'ypix', 'xpix'
+        
+    Returns
+    ----------------
+
+    stat : array of dicts
+        adds 'overlap'
+
+    """
     ix = 0
 
     if len(mov.shape)>2:
@@ -93,71 +132,305 @@ def get_sdmov(mov, ops):
         npix = (Ly , Lx)
     else:
         nbins, npix = mov.shape
-    batch_size = min(500,nbins)
+    batch_size = min(ops['batch_size'], nbins)
     sdmov = np.zeros(npix, 'float32')
     while 1:
         if ix>=nbins:
             break
-        sdmov += np.sum(np.diff(mov[ix:ix+batch_size,:, :], axis = 0)**2, axis = 0)
+        sdmov += (np.diff(mov[ix:ix+batch_size,:, :], axis = 0)**2).sum(axis=0)
         ix = ix + batch_size
     sdmov = np.maximum(1e-10, (sdmov/nbins)**0.5)
     return sdmov
 
+def neuropil_subtraction(mov,lx):
+    """ subtract low-pass filtered version of binned movie
 
-def get_overlaps(stat, ops):
-    '''computes overlapping pixels from ROIs in stat
-    inputs:
-        stat, Ly, Lx
-    outputs:
-        stat
-        assigned to stat: overlap: (npix,1) boolean whether or not pixels also in another cell
-    '''
-    Ly, Lx = ops['Ly'], ops['Lx']
-    stat2 = []
-    ncells = len(stat)
-    mask = np.zeros((Ly,Lx))
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        stat[n]['overlap'] = mask[ypix,xpix] > 1.5
-        #ypix = stat[n]['ypix'][~stat[n]['overlap']]
-        #xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        stat2.append(stat[n])
-    return stat2
+    low-pass filtered version ~ neuropil
+    subtract to help ignore neuropil
+    
+    Parameters
+    ----------------
 
-def remove_overlaps(stat, ops, Ly, Lx):
-    '''removes overlaps iteratively
-    '''
-    ncells = len(stat)
-    mask = np.zeros((Ly,Lx))
-    ix = [k for k in range(ncells)]
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
-    while 1:
-        O = np.zeros((len(stat),1))
-        for n in range(len(stat)):
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
-            O[n] = np.mean(mask[ypix,xpix] > 1.5)
-        #i = np.argmax(O)
-        inds = (O > ops['max_overlap']).nonzero()[0]
-        if len(inds) > 0:
-            i = np.max(inds)
-            ypix = stat[i]['ypix']
-            xpix = stat[i]['xpix']
-            mask[ypix,xpix] -= 1
-            del stat[i], ix[i]
-        else:
+    mov : 3D array
+        binned movie, size [nbins x Ly x Lx]
+
+    lx : int
+        size of filter
+
+    Returns
+    ----------------
+
+    mov : 3D array
+        binned movie with "neuropil" subtracted, size [nbins x Ly x Lx]
+
+    """
+    if len(mov.shape)<3:
+        mov = mov[np.newaxis, :, :]
+    nbinned, Ly, Lx = mov.shape
+    c1 = uniform_filter(np.ones((Ly,Lx)), size=[lx, lx], mode = 'constant')
+    for j in range(nbinned):
+        mov[j] -= uniform_filter(mov[j], size=[lx, lx], mode = 'constant') / c1
+    return mov
+
+def square_conv2(mov,lx):
+    """ convolve in pixels binned movie
+    
+    Parameters
+    ----------------
+
+    mov : 3D array
+        binned movie, size [nbinned x Lyc x Lxc]
+
+    lx : int
+        filter size
+
+    Returns
+    ----------------
+
+    movt : 3D array
+        convolved + binned movie, size [nbinned x Lyc x Lxc]
+
+    """
+    if len(mov.shape)<3:
+        mov = mov[np.newaxis, :, :]
+    nbinned, Ly, Lx = mov.shape
+
+    movt = np.zeros((nbinned, Ly, Lx), 'float32')
+    for t in range(nbinned):
+        movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
+    return movt
+
+def downsample(mov, flag=True):
+    """ downsample in pixels binned movie
+    
+    Parameters
+    ----------------
+
+    mov : 3D array
+        binned movie, size [nbinned x Lyc x Lxc]
+
+    flag : bool (optional, default True)
+        whether or not to edge taper
+
+    Returns
+    ----------------
+
+    mov2 : 2D array
+        downsampled + binned movie, size [nbinned x Lyp x Lxp]
+
+    """
+    if flag:
+        nu = 2
+    else:
+        nu = 1
+    if len(mov.shape)<3:
+        mov = mov[np.newaxis, :, :]
+    nbinned, Ly, Lx = mov.shape
+
+    # bin along Y
+    movd = np.zeros((nbinned,int(np.ceil(Ly/2)),Lx), 'float32')
+    Ly0 = 2*int(Ly/2)
+    for t in range(nbinned):
+        movd[t,:int(Ly0/2),:] = (mov[t,0:Ly0:2,:] + mov[t,1:Ly0:2,:])/2
+    if Ly%2==1:
+        movd[:,-1,:] = mov[:,-1,:]/nu
+
+    # bin along X
+    mov2 = np.zeros((nbinned,int(np.ceil(Ly/2)),int(np.ceil(Lx/2))), 'float32')
+    Lx0 = 2*int(Lx/2)
+    for t in range(nbinned):
+        mov2[t,:,:int(Lx0/2)] = (movd[t,:,0:Lx0:2] + movd[t,:,1:Lx0:2])/2
+    if Lx%2==1:
+        mov2[:,:,-1] = movd[:,:,-1]/nu
+    return mov2
+
+def threshold_reduce(movu, Th2):
+    """ thresholded stddev of spatially downsampled binned movie
+    
+    is function faster without loop?
+
+    Parameters
+    ----------------
+
+    movu : 3D array
+        downsampled binned movie, size [nbinned x Lyp x Lxp]
+
+    Th2 : float
+        threshold on pixel intensity
+
+    Returns
+    ----------------
+
+    Vt : 2D array
+        stddev of pixels across time above threshold Th2
+
+    """
+    nbinned, Lyp, Lxp = movu.shape
+    #Vt = np.zeros((1,Lyp,Lxp), 'float32')
+    Vt = (((movu>Th2) * movu)**2).sum(axis=0)**0.5
+   
+    #for t in range(nbinned):
+    #    Vt += movu[t]**2 * (movu[t]>Th2)
+    #Vt = Vt**.5
+    return Vt
+
+def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
+    # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales
+    xs = [xpix0]
+    ys = [ypix0]
+    lms = [lam0]
+    for j in range(1,len(Lyp)):
+        ipix, ind = np.unique(np.int32(xs[j-1]/2)+np.int32(ys[j-1]/2)*Lxp[j], return_inverse=True)
+        LAM = np.zeros(len(ipix))
+        for i in range(len(xs[j-1])):
+            LAM[ind[i]] += lms[j-1][i]/2
+        lms.append(LAM)
+        ys.append(np.int32(ipix/Lxp[j]))
+        xs.append(np.int32(ipix%Lxp[j]))
+    for j in range(len(Lyp)):
+        ys[j], xs[j], lms[j] = extend_mask(ys[j], xs[j], lms[j], Lyp[j], Lxp[j])
+    return ys, xs, lms
+
+def add_square(yi,xi,lx,Ly,Lx):
+    """ return square of pixels around peak with norm 1
+    
+    Parameters
+    ----------------
+
+    yi : int
+        y-center
+
+    xi : int
+        x-center
+
+    lx : int
+        x-width
+
+    ly : int
+        y-width
+
+    Ly : int
+        full y frame
+
+    Lx : int
+        full x frame
+
+    Returns
+    ----------------
+
+    y0 : array
+        pixels in y
+    
+    x0 : array
+        pixels in x
+    
+    mask : array
+        pixel weightings
+
+    """
+    lhf = int((lx-1)/2)
+    ipix = np.arange(-lhf,-lhf+lx)+ np.zeros(lx, 'int32')[:, np.newaxis]
+    x0 = xi + ipix
+    y0 = yi + ipix.T
+    mask  = np.ones((lx,lx), 'float32')
+    ix = np.all((y0>=0, y0<Ly, x0>=0 , x0<Lx), axis=0)
+    x0 = x0[ix]
+    y0 = y0[ix]
+    mask = mask[ix]
+    mask = mask / (mask**2).sum()**.5
+    return y0.flatten(), x0.flatten(), mask.flatten()
+
+def iter_extend(ypix, xpix, rez, Lyc,Lxc):
+    """ extend mask based on activity of pixels on active frames
+
+    ACTIVE frames determined by threshold
+    
+    Parameters
+    ----------------
+    
+    ypix : array
+        pixels in y
+    
+    xpix : array
+        pixels in x
+    
+    rez : 2D array
+        binned movie on active frames [nactive x Lyc*Lxc]
+
+    Returns
+    ----------------
+
+    ypix : array
+        extended pixels in y
+    
+    xpix : array
+        extended pixels in x
+
+    lam : array
+        pixel weighting
+
+    """
+    npix = 0
+    iter = 0
+    while npix<10000:
+        npix = ypix.size
+        # extend ROI by 1 pixel on each side
+        ypix, xpix = extendROI(ypix, xpix, Lyc, Lxc, 1)
+        # activity in proposed ROI on ACTIVE frames
+        usub = rez[:, ypix*Lxc+ xpix]
+        lam = np.mean(usub,axis=0)
+        ix = lam>max(0, lam.max()/5.0)
+        if ix.sum()==0:
+            print('break')
+            break;
+        ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
+        if iter == 0:
+            sgn = 1.
+        if np.sign(sgn * (ix.sum()-npix))<=0:
             break
-    return stat, ix
+        else:
+            npix = ypix.size
+        iter += 1
+    lam = lam/np.sum(lam**2)**.5
+    return ypix, xpix, lam
+
+def extendROI(ypix, xpix, Ly, Lx,niter=1):
+    """ extend ypix and xpix by niter pixel(s) on each side """
+    for k in range(niter):
+        yx = ((ypix, ypix, ypix, ypix-1, ypix+1), (xpix, xpix+1,xpix-1,xpix,xpix))
+        yx = np.array(yx)
+        yx = yx.reshape((2,-1))
+        yu = np.unique(yx, axis=1)
+        ix = np.all((yu[0]>=0, yu[0]<Ly, yu[1]>=0 , yu[1]<Lx), axis = 0)
+        ypix,xpix = yu[:, ix]
+    return ypix,xpix
 
 def two_comps(mpix0, lam, Th2):
+    """ check if splitting ROI increases variance explained
+
+    Parameters
+    ----------------
+    
+    mpix0 : 2D array
+        binned movie for pixels in ROI [nbinned x npix]
+
+    lam : array
+        pixel weighting
+
+    Th2 : float
+        intensity threshold
+
+
+    Returns
+    ----------------
+
+    vrat : array
+        extended pixels in y
+    
+    ipick : tuple
+        new ROI
+
+    """
     mpix = mpix0.copy()
     xproj = mpix @ lam
     gf0 = xproj>Th2
@@ -201,80 +474,11 @@ def two_comps(mpix0, lam, Th2):
             mpix[goodframe[k],:] -= np.outer(xproj[k], mu[k])
     k = np.argmax(V)
     vexp = np.sum(mpix0**2) - np.sum(mpix**2)
-    return vexp/vexp0, (mu[k], xproj[k], goodframe[k])
-
-def neuropil_subtraction(mov,lx):
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nframes, Ly, Lx = mov.shape
-    c1 = uniform_filter(np.ones((Ly,Lx)), size=[lx, lx], mode = 'constant')
-    for j in range(nframes):
-        mov[j] -= uniform_filter(mov[j], size=[lx, lx], mode = 'constant') / c1
-    return mov
-
-def threshold_reduce(movu, Th2):
-    nframes, Lyx = movu.shape
-    Vt = np.zeros((1,Lyx), 'float32')
-    for t in range(nframes):
-        Vt += movu[t]**2 * (movu[t]>Th2)
-    Vt = Vt**.5
-    return Vt
-
-def downsample(mov, flag=True):
-    if flag:
-        nu = 2
-    else:
-        nu = 1
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nframes, Ly, Lx = mov.shape
-
-    movd = np.zeros((nframes,int(np.ceil(Ly/2)),Lx), 'float32')
-    Ly0 = 2*int(Ly/2)
-    for t in range(nframes):
-        movd[t,:int(Ly0/2),:] = (mov[t,0:Ly0:2,:] + mov[t,1:Ly0:2,:])/2
-    if Ly%2==1:
-        movd[:,-1,:] = mov[:,-1,:]/nu
-
-    mov2 = np.zeros((nframes,int(np.ceil(Ly/2)),int(np.ceil(Lx/2))), 'float32')
-    Lx0 = 2*int(Lx/2)
-    for t in range(nframes):
-        mov2[t,:,:int(Lx0/2)] = (movd[t,:,0:Lx0:2] + movd[t,:,1:Lx0:2])/2
-    if Lx%2==1:
-        mov2[:,:,-1] = movd[:,:,-1]/nu
-    return mov2
-
-def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
-    # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales
-    xs = [xpix0]
-    ys = [ypix0]
-    lms = [lam0]
-    for j in range(1,len(Lyp)):
-        ipix, ind = np.unique(np.int32(xs[j-1]/2)+np.int32(ys[j-1]/2)*Lxp[j], return_inverse=True)
-        LAM = np.zeros(len(ipix))
-        for i in range(len(xs[j-1])):
-            LAM[ind[i]] += lms[j-1][i]/2
-        lms.append(LAM)
-        ys.append(np.int32(ipix/Lxp[j]))
-        xs.append(np.int32(ipix%Lxp[j]))
-    for j in range(len(Lyp)):
-        ys[j], xs[j], lms[j] = extend_mask(ys[j], xs[j], lms[j], Lyp[j], Lxp[j])
-    return ys, xs, lms
-
-def add_square(yi,xi,lx,Ly,Lx):
-    lhf = int((lx-1)/2)
-    ipix = np.arange(-lhf,-lhf+lx)+ np.zeros(lx, 'int32')[:, np.newaxis]
-    x0 = xi + ipix
-    y0 = yi + ipix.T
-    mask  = np.ones((lx,lx), 'float32')
-    ix = np.all((y0>=0, y0<Ly, x0>=0 , x0<Lx), axis=0)
-    x0 = x0[ix]
-    y0 = y0[ix]
-    mask = mask[ix]
-    mask = mask/np.sum(mask**2)**.5
-    return y0.flatten(), x0.flatten(), mask.flatten()
+    vrat = vexp / vexp0
+    return vrat, (mu[k], xproj[k], goodframe[k])
 
 def extend_mask(ypix, xpix, lam, Ly, Lx):
+    """ extend mask into 8 surrrounding pixels """
     nel = len(xpix)
     yx = ((ypix, ypix, ypix, ypix-1, ypix-1,ypix-1, ypix+1,ypix+1,ypix+1),
           (xpix, xpix+1,xpix-1,xpix, xpix+1,xpix-1,xpix, xpix+1,xpix-1))
@@ -289,92 +493,74 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     lam1 = LAM[ix]
     return ypix1,xpix1,lam1
 
-def extendROI(ypix, xpix, Ly, Lx,niter=1):
-    for k in range(niter):
-        yx = ((ypix, ypix, ypix, ypix-1, ypix+1), (xpix, xpix+1,xpix-1,xpix,xpix))
-        yx = np.array(yx)
-        yx = yx.reshape((2,-1))
-        yu = np.unique(yx, axis=1)
-        ix = np.all((yu[0]>=0, yu[0]<Ly, yu[1]>=0 , yu[1]<Lx), axis = 0)
-        ypix,xpix = yu[:, ix]
-    return ypix,xpix
-
-def iter_extend(ypix, xpix, Ucell, Lyc,Lxc, iframes):
-    #nsvd, Lyc, Lxc = Ucell.shape
-    npix = 0
-    iter = 0
-    while npix<10000:
-        npix = ypix.size
-        ypix, xpix = extendROI(ypix,xpix,Lyc,Lxc, 1)
-        usub = Ucell[np.ix_(iframes, ypix*Lxc+ xpix)]
-        lam = np.mean(usub,axis=0)
-        ix = lam>max(0, lam.max()/5.0)
-        if ix.sum()==0:
-            print('break')
-            break;
-        ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
-        if iter == 0:
-            sgn = 1.
-        if np.sign(sgn * (ix.sum()-npix))<=0:
-            break
-        else:
-            npix = ypix.size
-        iter += 1
-    lam = lam/np.sum(lam**2)**.5
-    return ypix, xpix, lam
-
-def square_conv2(mov,lx):
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nframes, Ly, Lx = mov.shape
-
-    movt = np.zeros((nframes, Ly, Lx), 'float32')
-    for t in range(nframes):
-        movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
-    return movt
 
 def sparsery(ops):
-    rez, max_proj = get_mov(ops)
+    """ bin ops['reg_file'] then detect ROIs using correlations in time
+    
+    Parameters
+    ----------------
+
+    ops : dictionary
+        'reg_file', 'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'high_pass', 'batch_size'
+
+
+    Returns
+    ----------------
+
+    ops : dictionary
+        adds 'max_proj', 'Vcorr', 'Vmap', 'Vsplit'
+    
+    stat : array of dicts
+        list of ROIs
+
+    """
+    rez, max_proj = bin_movie(ops)
     ops['max_proj'] = max_proj
-    nframes, Ly, Lx = rez.shape
-    ops['Lyc'] = Ly
-    ops['Lxc'] = Lx
+    nbinned, Lyc, Lxc = rez.shape
+    # cropped size
+    ops['Lyc'] = Lyc
+    ops['Lxc'] = Lxc
     sdmov = get_sdmov(rez, ops)
     rez /= sdmov
-    #rez *= -1
-
+    
+    # subtract low-pass filtered version of binned movie
     rez = neuropil_subtraction(rez, ops['spatial_hp'])
 
-    LL = np.meshgrid(np.arange(Lx), np.arange(Ly))
-    Lyp = np.zeros(5, 'int32')
-    Lxp = np.zeros(5,'int32')
+    LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]
     dmov = rez
     movu = []
 
+    # downsample movie at various spatial scales
+    # downsampled sizes
+    Lyp = np.zeros(5, 'int32')
+    Lxp = np.zeros(5,'int32')
     for j in range(5):
+        # convolve
         movu.append(square_conv2(dmov, 3))
+        # downsample
         dmov = 2 * downsample(dmov)
         gxy0 = downsample(gxy[j], False)
         gxy.append(gxy0)
-        nfr, Lyp[j], Lxp[j] = movu[j].shape
-        movu[j] = np.reshape(movu[j], (nfr,-1))
-
-    nfr, Lyc,Lxc = rez.shape
+        nbinned, Lyp[j], Lxp[j] = movu[j].shape
+        
+    # find maximum spatial scale for each pixel
     V0 = []
     ops['Vmap']  = []
     for j in range(len(movu)):
-        V0.append(np.amax(movu[j], axis=0))
-        #V0.append(np.sum(movu[j]**2 * np.float32(movu[j]>Th2), axis=0)**.5)
-        V0[j] = np.reshape(V0[j], (Lyp[j], Lxp[j]))
+        V0.append(movu[j].max(axis=0))
         ops['Vmap'].append(V0[j].copy())
+    # spline over scales
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
     for t in range(1,len(gxy)-1):
         gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t],
                                      kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
         I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
-    I0 = np.amax(I, axis=0)
+    I0 = I.max(axis=0)
     ops['Vcorr'] = I0
+
+    # find best scale based on scale of top peaks
+    # (used  to set threshold)
     imap = np.argmax(I, axis=0).flatten()
     ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
@@ -384,9 +570,10 @@ def sparsery(ops):
         fstr = 'FORCED'
     else:
         fstr = 'estimated'
-
     if im==0:
         print('ERROR: best scale was 0, everything should break now!')
+
+    # threshold for accepted peaks (scale it by spatial scale)
     Th2 = ops['threshold_scaling']*5*max(1,im)
     vmultiplier = max(1, np.float32(rez.shape[0])/1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
@@ -394,23 +581,14 @@ def sparsery(ops):
 
     V0 = []
     ops['Vmap']  = []
+    # get standard deviation for pixels for all values > Th2
     for j in range(len(movu)):
-        #V0.append(np.amax(movu[j], axis=0))
-        #V0.append(np.sum(movu[j]**2 * np.float32(movu[j]>Th2), axis=0)**.5)
         V0.append(threshold_reduce(movu[j], Th2))
-        V0[j] = np.reshape(V0[j], (Lyp[j], Lxp[j]))
         ops['Vmap'].append(V0[j].copy())
-    I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
-    for t in range(1,len(gxy)-1):
-        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], ops['Vmap'][t],
-                                     kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
-        I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
-    I0 = np.amax(I, axis=0)
-    ops['Vcorr'] = I0
-
+        movu[j] = np.reshape(movu[j], (movu[j].shape[0], -1))
 
     xpix,ypix,lam = [],[],[]
-    rez = np.reshape(rez, (-1,Ly*Lx))
+    rez = np.reshape(rez, (-1, Lyc*Lxc))
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
@@ -423,124 +601,68 @@ def sparsery(ops):
     t0 = time.time()
 
     for tj in range(niter):
-        v0max = np.array([np.amax(V0[j]) for j in range(5)])
+        # find peaks in stddev's
+        v0max = np.array([V0[j].max() for j in range(5)])
         imap = np.argmax(v0max)
         imax = np.argmax(V0[imap])
         yi, xi = np.unravel_index(imax, (Lyp[imap], Lxp[imap]))
+        # position of peak
         yi, xi = gxy[imap][1,yi,xi], gxy[imap][0,yi,xi]
 
-        Vmax[tj] = np.amax(v0max)
+        # check if peak is larger than threshold * max(1,nbinned/1200)
+        Vmax[tj] = v0max.max()
         if Vmax[tj] < vmultiplier*Th2:
             break
         ls = lxs[imap]
 
         ihop[tj] = imap
 
-        ypix0, xpix0, lam0 = add_square(int(yi),int(xi),ls,Ly,Lx)
-        xproj = rez[:, ypix0*Lx+ xpix0] @ lam0
-        goodframe = np.nonzero(xproj>Th2)[0]
+        # make square of initial pixels based on spatial scale of peak
+        ypix0, xpix0, lam0 = add_square(int(yi), int(xi), ls, Lyc, Lxc)
+        
+        # project movie into square to get time series
+        tproj = rez[:, ypix0*Lxc + xpix0] @ lam0
+        goodframe = np.nonzero(tproj>Th2)[0] # frames with activity > Th2
+        
+        # extend mask based on activity similarity
         for j in range(3):
-            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, rez, Ly,Lx, goodframe)
-            xproj = rez[:, ypix0*Lx+ xpix0] @ lam0
-            goodframe = np.nonzero(xproj>Th2)[0]
+            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, rez[goodframe], Lyc, Lxc)
+            tproj = rez[:, ypix0*Lxc+ xpix0] @ lam0
+            goodframe = np.nonzero(tproj>Th2)[0]
             if len(goodframe)<1:
                 break
         if len(goodframe)<1:
             break
-        vrat[tj], ipack = two_comps(rez[:, ypix0*Lx+ xpix0], lam0, Th2)
+
+        # check if ROI should be split
+        vrat[tj], ipack = two_comps(rez[:, ypix0*Lxc+ xpix0], lam0, Th2)
         if vrat[tj]>1.25:
             lam0, xp, goodframe = ipack
-            xproj[goodframe] = xp
+            tproj[goodframe] = xp
             ix = lam0>lam0.max()/5
             xpix0 = xpix0[ix]
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
+
         # update residual on raw movie
-        rez[np.ix_(goodframe, ypix0*Lx+ xpix0)] -= xproj[goodframe][:,np.newaxis] * lam0
+        rez[np.ix_(goodframe, ypix0*Lxc+ xpix0)] -= tproj[goodframe][:,np.newaxis] * lam0
         # update filtered movie
         ys, xs, lms = multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp)
         for j in range(nscales):
-            movu[j][np.ix_(goodframe,xs[j]+Lxp[j]*ys[j])] -= np.outer(xproj[goodframe], lms[j])
-            #V0[j][xs[j] + Lxp[j]*ys[j]] = np.amax(movu[j][:,xs[j]+Lxp[j]*ys[j]], axis=0)
+            movu[j][np.ix_(goodframe, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[goodframe], lms[j])
             Mx = movu[j][:,xs[j]+Lxp[j]*ys[j]]
-            #V0[j][xs[j] + Lxp[j]*ys[j]] = np.sum(Mx**2 * np.float32(Mx>Th2), axis=0)**.5
-            V0[j][ys[j], xs[j]] = np.sum(Mx**2 * np.float32(Mx>Th2), axis=0)**.5
-            #V0[j][xs[j] + Lxp[j]*ys[j]] = np.sum(movu[j][:,xs[j]+Lxp[j]*ys[j]]**2 * np.float32(movu[j][:,xs[j]+Lxp[j]*ys[j]]>Th2), axis=0)**.5
-
+            V0[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
+            
         xpix.append(xpix0)
         ypix.append(ypix0)
         lam.append(lam0)
         if tj%1000==0:
             print('%d ROIs, score=%2.2f'%(tj, Vmax[tj]))
-    #print(tj, time.time()-t0, Vmax[tj])
+    
     ops['Vmax'] = Vmax
     ops['ihop'] = ihop
     ops['Vsplit'] = vrat
-    stat  = [{'ypix':ypix[n], 'lam':lam[n]*sdmov[ypix[n], xpix[n]], 'xpix':xpix[n]} for n in range(len(xpix))]
+    stat  = [{'ypix':ypix[n] + ops['yrange'][0], 'lam':lam[n]*sdmov[ypix[n], xpix[n]], 
+              'xpix':xpix[n] + ops['xrange'][0], 'footprint': ops['ihop'][n]} for n in range(len(xpix))]
 
-    stat = get_stat(ops, stat)
-    return ops,stat
-
-def circleMask(d0):
-    ''' creates array with indices which are the radius of that x,y point
-        inputs:
-            d0 (patch of (-d0,d0+1) over which radius computed
-        outputs:
-            rs: array (2*d0+1,2*d0+1) of radii
-            dx,dy: indices in rs where the radius is less than d0
-    '''
-    dx  = np.tile(np.arange(-d0[1],d0[1]+1), (2*d0[0]+1,1))
-    dy  = np.tile(np.arange(-d0[0],d0[0]+1), (2*d0[1]+1,1))
-    dy  = dy.transpose()
-
-    rs  = (dy**2 + dx**2) ** 0.5
-    return rs, dx, dy
-
-def get_stat(ops, stat):
-    '''computes statistics of cells found using sourcery
-    inputs:
-        Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
-    outputs:
-        stat
-        assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
-    '''
-    Ly = ops['Lyc']
-    Lx = ops['Lxc']
-    Ly = ops['Lyc']
-    Lx = ops['Lxc']
-    rs,dy,dx = circleMask(np.array([30, 30]))
-    rsort = np.sort(rs.flatten())
-
-    ncells = len(stat)
-    mrs = np.zeros((ncells,))
-    for k in range(0,ncells):
-        stat0 = stat[k]
-        ypix = stat0['ypix']
-        xpix = stat0['xpix']
-        lam = stat0['lam']
-        # compute footprint of ROI
-        y0 = np.median(ypix)
-        x0 = np.median(xpix)
-
-        # compute compactness of ROI
-        r2 = ((ypix-y0))**2 + ((xpix-x0))**2
-        r2 = r2**.5
-        stat0['mrs']  = np.mean(r2)
-        mrs[k] = stat0['mrs']
-        stat0['mrs0'] = np.mean(rsort[:r2.size])
-        stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
-        stat0['ypix'] += ops['yrange'][0]
-        stat0['xpix'] += ops['xrange'][0]
-        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
-        stat0['npix'] = xpix.size
-        stat0['footprint'] = ops['ihop'][k]
-
-    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
-    npix /= np.mean(npix[:100])
-
-    mmrs = np.nanmedian(mrs[:100])
-    for n in range(len(stat)):
-        stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)
-        stat[n]['npix_norm'] = npix[n]
-    stat = np.array(stat)
-    return stat
+    return ops, stat

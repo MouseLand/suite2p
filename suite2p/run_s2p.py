@@ -1,5 +1,5 @@
 import numpy as np
-import time, os, shutil
+import time, os, shutil, datetime
 from scipy.io import savemat
 from .io import tiff, h5, save
 from .registration import register, metrics, reference
@@ -16,6 +16,7 @@ print = partial(print,flush=True)
 
 
 def default_ops():
+    """ default options to run pipeline """
     ops = {
         # file paths
         'look_one_level_down': False, # whether to look in all subfolders when searching for tiffs
@@ -40,6 +41,7 @@ def default_ops():
         # output settings
         'preclassify': 0., # apply classifier before signal extraction with probability 0.3
         'save_mat': False, # whether to save output as matlab files
+        'save_NWB': False, # whether to save output as NWB file
         'combined': True, # combine multiple planes into a single result /single canvas for GUI
         'aspect': 1.0, # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
         # bidirectional phase offset
@@ -180,7 +182,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-
+        ops['date_proc'] = datetime.datetime.now()
     if not 'input_format' in ops.keys():
         ops['input_format'] = 'tif'
     if len(ops['h5py']):
@@ -305,7 +307,7 @@ def run_s2p(ops={},db={}):
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 
             # save as matlab file
-            if ('save_mat' in ops) and ops['save_mat']:
+            if 'save_mat' in ops and ops['save_mat']:
                 stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
                 iscell = np.load(os.path.join(fpath,'iscell.npy'))
                 matpath = os.path.join(ops['save_path'],'Fall.mat')
@@ -315,6 +317,8 @@ def run_s2p(ops={},db={}):
                                      'Fneu': Fneu,
                                      'spks': spks,
                                      'iscell': iscell})
+            
+                
         else:
             print("WARNING: skipping cell detection (ops['roidetect']=False)")
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
@@ -327,6 +331,10 @@ def run_s2p(ops={},db={}):
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and roidetect:
         save.combined(ops1)
+    
+    # save to NWB
+    if 'save_NWB' in ops and ops['save_NWB']:
+        save.NWB_output(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

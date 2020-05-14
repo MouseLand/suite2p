@@ -211,7 +211,6 @@ def tiff_to_binary(ops):
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']
-    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'],ops['Lx'] = ops['meanImg'].shape
 

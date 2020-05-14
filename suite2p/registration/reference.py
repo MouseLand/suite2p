@@ -26,13 +26,13 @@ def pick_initial_reference(frames):
 
     Parameters
     ----------
-    frames : int16
-        frames from binary (frames x Ly x Lx)
+    frames : 3D array, int16
+        size [frames x Ly x Lx], frames from binary 
 
     Returns
     -------
-    refImg : int16
-        initial reference image (Ly x Lx)
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
 
     """
     nimg,Ly,Lx = frames.shape

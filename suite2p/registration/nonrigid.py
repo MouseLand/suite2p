@@ -87,39 +87,36 @@ def make_blocks(ops):
 
     return ops
 
-def getXYup(cc, Ls, ops):
-    """ get subpixel registration shifts from phase-correlation matrix cc """
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    #X1max  = np.amax(cc0, axis = 1)
-    # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)].copy()
-    for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    mxpt = [ymax+Lyhalf-lcorr, xmax + Lxhalf-lcorr]
-    ccmat = np.zeros((nimg, 2*lpad+1, 2*lpad+1))
-    for j in range(0, nimg):
-        ccmat[j,:,:] = cc[j, (mxpt[0][j] -lpad):(mxpt[0][j] +lpad+1), (mxpt[1][j] -lpad):(mxpt[1][j] +lpad+1)]
-    ccmat = np.reshape(ccmat, (nimg,-1))
-    ccb = np.dot(ccmat, Kmat)
-    imax = np.argmax(ccb, axis=1)
-    cmax = np.amax(ccb, axis=1)
-    ymax, xmax = np.unravel_index(imax, (nup,nup))
-    mdpt = np.floor(nup/2)
-    ymax,xmax = (ymax-mdpt)/subpixel, (xmax-mdpt)/subpixel
-    ymax, xmax = ymax + mxpt[0] - Lyhalf, xmax + mxpt[1] - Lxhalf
-    return ymax, xmax, cmax
-
 def phasecorr_reference(refImg1, ops):
-    """ create blocked reference image and take its fft and multiply by gaussian smoothing mask """
+    """ computes taper and fft'ed reference image for phasecorr
+    
+    Parameters
+    ----------
+
+    refImg1 : 2D array, int16
+        reference image
+
+    ops : dictionary
+        'smooth_sigma'
+        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
+
+    Returns
+    -------
+    maskMul : 2D array
+        mask that is multiplied to spatially taper
+
+    maskOffset : 2D array
+        shifts in x from cfRefImg to data for each frame
+
+    cfRefImg : 2D array, complex64
+        reference image fft'ed and complex conjugate and multiplied by gaussian
+        filter in the fft domain with standard deviation 'smooth_sigma'
+    
+
+    """
 
     if 'yblock' not in ops:
-        ops = utils.make_blocks(ops)
+        ops = make_blocks(ops)
 
     refImg0=refImg1.copy()
     if ops['1Preg']:
@@ -177,15 +174,16 @@ def addmultiply(x,y,z):
     return np.complex64(x*y + z)
 
 def getSNR(cc, Ls, ops):
-    (lcorr, lpad, Lyhalf, Lxhalf) = Ls
+    """ compute SNR of phase-correlation - is it an accurate predicted shift? """
+    (lcorr, lpad) = Ls
     nimg = cc.shape[0]
-    cc0 = cc[:, (Lyhalf-lcorr):(Lyhalf+lcorr+1), (Lxhalf-lcorr):(Lxhalf+lcorr+1)]
+    cc0 = cc[:, lpad:-lpad, lpad:-lpad]
     cc0 = np.reshape(cc0, (nimg, -1))
     X1max  = np.amax(cc0, axis = 1)
     ix  = np.argmax(cc0, axis = 1)
     ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
     # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc[:, (Lyhalf-lcorr-lpad):(Lyhalf+lcorr+1+lpad), (Lxhalf-lcorr-lpad):(Lxhalf+lcorr+1+lpad)]
+    cc0 = cc.copy()
     for j in range(nimg):
         cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
     cc0 = np.reshape(cc0, (nimg, -1))
@@ -203,7 +201,34 @@ def clip(X, lhalf):
 
 
 def phasecorr(data, refAndMasks, ops):
-    ''' loop through blocks and compute phase correlations'''
+    """ compute phase correlations for each block 
+    
+    Parameters
+    -------------
+
+    data : int16 or float32, 3D array
+        size [nimg x Ly x Lx]
+
+    refAndMasks : list
+        gaussian filter, mask offset, FFT of reference image
+
+    ops : dictionary
+        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
+
+    ymax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+
+    xmax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+
+    cmax1 : 2D array
+        size [nimg x nblocks], value of peak of phase correlation
+
+    ccsm : 4D array
+        size [nimg x nblocks x ly x lx], smoothed phase correlations
+
+
+    """
     nimg, Ly, Lx = data.shape
     maskMul    = refAndMasks[0].squeeze()
     maskOffset = refAndMasks[1].squeeze()
@@ -281,33 +306,16 @@ def phasecorr(data, refAndMasks, ops):
         imax = np.argmax(ccb, axis=1)
         cmax = np.amax(ccb, axis=1)
         ymax1[t], xmax1[t] = np.unravel_index(imax, (nup,nup))
+        cmax1[t] = cmax
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
     #ccmat = np.reshape(ccmat, (nb, 2*lpad+1, 2*lpad+1))
     return ymax1, xmax1, cmax1, ccsm
 
-def getSNR(cc, Ls, ops):
-    ''' compute SNR of phase-correlation - is it an accurate predicted shift? '''
-    (lcorr, lpad) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, lpad:-lpad, lpad:-lpad]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    X1max  = np.amax(cc0, axis = 1)
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
-    # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc.copy()
-    for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
-    snr = X1max / Xmax # computes snr
-    return snr
-
 def linear_interp(iy, ix, yb, xb, f):
-    ''' 2d interpolation of f on grid of yb, xb into grid of iy, ix '''
-    ''' assumes f is 3D and last two dimensions are yb,xb '''
+    """ 2d interpolation of f on grid of yb, xb into grid of iy, ix 
+        assumes f is 3D and last two dimensions are yb,xb """
     fup = f.copy().astype(np.float32)
     Lax = [iy.size, ix.size]
     for n in range(2):
@@ -328,18 +336,31 @@ def linear_interp(iy, ix, yb, xb, f):
     fup = np.transpose(fup, (1,2,0))
     return fup
 
-#@vectorize([float32(float32,float32,float32,float32,float32,float32)], nopython=True)
-#def bilinear_interp(d00, d01, d10, d11, yc, xc):
-#    out = (d00 * (1 - yc) * (1 - xc) +
-#           d01 * (1 - yc) * xc +
-#           d10 * yc * (1 - xc) +
-#           d11 * yc * xc)
-#    #out = d00 * (1-yc)* (1-xc)
-#    return out
-
-@njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'])
+@njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
+        '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'])
 def map_coordinates(I, yc, xc, Y):
-    ''' bilinear transform of image with ycoordinates yc and xcoordinates xc to Y'''
+    """ bilinear transform of image with ycoordinates yc and xcoordinates xc to Y 
+    
+    Parameters
+    -------------
+
+    I : int16 or float32, 2D array
+        size [Ly x Lx]     
+
+    yc : 2D array
+        size [Ly x Lx], new y coordinates
+
+    xc : 2D array
+        size [Ly x Lx], new x coordinates
+
+    Returns
+    -----------
+
+    Y : float32, 2D array
+        size [Ly x Lx], shifted I
+
+
+    """
     Ly,Lx = I.shape
     yc_floor = yc.copy().astype(np.int32)
     xc_floor = xc.copy().astype(np.int32)
@@ -365,19 +386,39 @@ def nfloor(y):
 @njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
        'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
-    ''' shift data by yup and xup
-        data is nimg x Ly x Lx
-        yup, xup are shift matrices of nimg x Ly x Lx
-        mshy, mshx are mesh grids of Ly x Lx
-        Y is matrix to return
-    '''
+    """ shift data into yup and xup coordinates
+
+    Parameters
+    -------------
+
+    data : int16 or float32, 3D array
+        size [nimg x Ly x Lx]     
+
+    yup : 3D array
+        size [nimg x Ly x Lx], y shifts for each coordinate
+
+    xup : 3D array
+        size [nimg x Ly x Lx], x shifts for each coordinate
+
+    mshy : 2D array
+        size [Ly x Lx], meshgrid in y
+
+    mshx : 2D array
+        size [Ly x Lx], meshgrid in x
+        
+    Returns
+    -----------
+    Y : float32, 3D array
+        size [nimg x Ly x Lx], shifted data
+
+    """
     Ly,Lx = data.shape[1:]
     for t in prange(data.shape[0]):
         map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
 
 @njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
-    ''' interpolate from ymax1 to mshy to create coordinate transforms '''
+    """ interpolate from ymax1 to mshy to create coordinate transforms """
     for t in prange(ymax1.shape[0]):
         # y shifts for blocks to coordinate map
         map_coordinates(ymax1[t], mshy.copy(), mshx.copy(), yup[t])
@@ -385,12 +426,34 @@ def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
         map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])
 
 def upsample_block_shifts(ops, ymax1, xmax1):
-    '''
-        ymax1,xmax1 are shifts in Y and X of blocks of size nimg x nblocks
-        this function upsamples ymax1, xmax1 so that they are nimg x Ly x Lx
-        for later bilinear interpolation
-        returns yup, xup <- nimg x Ly x Lx
-    '''
+    """ upsample blocks of shifts into full pixel-wise maps for shifting
+
+    this function upsamples ymax1, xmax1 so that they are nimg x Ly x Lx
+    for later bilinear interpolation
+        
+
+    Parameters
+    ------------
+
+    ops : dictionary
+        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
+
+    ymax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+
+    xmax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+    
+    Returns
+    -----------
+
+    yup : 3D array
+        size [nimg x Ly x Lx], y shifts for each coordinate
+
+    xup : 3D array
+        size [nimg x Ly x Lx], x shifts for each coordinate
+
+    """
     Ly,Lx = ops['Ly'],ops['Lx']
     nblocks = ops['nblocks']
     nimg = ymax1.shape[0]
@@ -417,7 +480,29 @@ def upsample_block_shifts(ops, ymax1, xmax1):
     return yup, xup
 
 def transform_data(data, ops, ymax1, xmax1):
-    ''' piecewise affine transformation of data using block shifts ymax1, xmax1 '''
+    """ piecewise affine transformation of data using block shifts ymax1, xmax1 
+    
+    Parameters
+    -------------
+
+    data : int16 or float32, 3D array
+        size [nimg x Ly x Lx]
+
+    ops : dictionary
+        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
+
+    ymax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+
+    xmax1 : 2D array
+        size [nimg x nblocks], y shifts of blocks
+
+    Returns
+    -----------
+    Y : float32, 3D array
+        size [nimg x Ly x Lx], shifted data
+
+    """
     nblocks = ops['nblocks']
     if data.ndim<3:
         data = data[np.newaxis,:,:]

@@ -13,22 +13,21 @@ def phasecorr_reference(refImg0, ops):
 
     Parameters
     ----------
-    refImg0 : int16
+    refImg0 : 2D array, int16
         reference image
     ops : dictionary
-        requires 'smooth_sigma'
+        'smooth_sigma'
         (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
 
     Returns
     -------
-    maskMul : float32
-        mask that is multiplied to spatially taper frames
-    maskOffset : float32
+    maskMul : 2D array
+        mask that is multiplied to spatially taper
+    maskOffset : 2D array
         shifts in x from cfRefImg to data for each frame
-    cfRefImg : complex64
+    cfRefImg : 2D array, complex64
         reference image fft'ed and complex conjugate and multiplied by gaussian
         filter in the fft domain with standard deviation 'smooth_sigma'
-
     """
     refImg = refImg0.copy()
     if '1Preg' in ops and ops['1Preg']:

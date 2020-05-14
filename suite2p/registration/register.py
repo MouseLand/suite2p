@@ -61,7 +61,7 @@ def compute_motion_and_shift(data, refAndMasks, ops):
 
     Returns
     -------
-    data : int16
+    data : int16 (or float32, if ops['nonrigid'])
         registered frames x Ly x Lx
     ymax : int
         shifts in y from cfRefImg to data for each frame
@@ -102,10 +102,25 @@ def compute_motion_and_shift(data, refAndMasks, ops):
     return data, ymax, xmax, cmax, yxnr
 
 def compute_crop(ops):
-    ''' determines ops['badframes'] (using ops['th_badframes'])
-        and excludes these ops['badframes'] when computing valid ranges
-        from registration in y and x
-    '''
+    """ determines how much to crop FOV based on motion
+    
+    determines ops['badframes'] which are frames with large outlier shifts
+    (threshold of outlier is ops['th_badframes']) and
+    it excludes these ops['badframes'] when computing valid ranges
+    from registration in y and x
+
+    Parameters
+    ----------
+    ops : dictionary
+        'yoff', 'xoff', 'corrXY', 'badframes', 'maxregshift'
+
+    Returns
+    ----------
+    ops : dictionary
+        'badframes', 'yrange', 'xrange'
+
+
+    """
     dx = ops['xoff'] - medfilt(ops['xoff'], 101)
     dy = ops['yoff'] - medfilt(ops['yoff'], 101)
     # offset in x and y (normed by mean offset)
@@ -153,7 +168,8 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
 
     offsets : list
-        [ymax, xmax, cmax, yxnr] <- shifts and correlations
+        [ymax, xmax, corrXY, ymax1, xmax1, corrXY1] <- shifts and correlations, 
+        last 3 for nonrigid
     """
     offsets = utils.init_offsets(ops)
     refAndMasks = prepare_refAndMasks(refImg,ops)
@@ -235,28 +251,27 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
     Parameters
     ----------
     data : int16
-
+        size [nframes x Ly x Lx]
 
     ops : dictionary
+        'Ly', 'Lx', 'batch_size', 'bidiphase'
 
-    refImg : int16
-        reference image
+    ymax : array
+        y shifts
 
-    reg_file_align : string
-        file to (read if raw_file_align empty, and) write registered binary to
+    ymax : array
+        x shifts
 
-    raw_file_align : string
-        file to read raw binary from (if not empty)
+    ymax1 : array
+        nonrigid y shifts
+
+    xmax1 : 2D array
+        nonrigid x shifts
 
     Returns
     -------
-    ops : dictionary
-        sets 'meanImg' or 'meanImg_chan2'
-        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
-
-    offsets : list
-        [ymax, xmax, cmax, yxnr] <- shifts and correlations
-
+    data : int16 (or float32 if ops['nonrigid']
+        size [nframes x Ly x Lx], shifted data
 
     """
     if ops['bidiphase']!=0  and not ops['bidi_corrected']:
@@ -267,7 +282,31 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
     return data
 
 def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
-    ''' apply registration shifts to binary data'''
+    """ apply registration shifts computed on one binary file to another
+    
+    Parameters
+    ----------
+    
+    ops : dictionary
+        'Ly', 'Lx', 'batch_size', 'align_by_chan'
+
+    offsets : list of arrays
+        shifts computed from reg_file_align/raw_file_align, 
+        rigid shifts in Y are offsets[0] and in X are offsets[1], 
+        nonrigid shifts in Y are offsets[3] and in X are offsets[4]
+
+    reg_file_alt : string
+        file to (read if raw_file_align empty, and) write registered binary to
+
+    raw_file_align : string
+        file to read raw binary from (if not empty)
+
+    Returns
+    -------
+    ops : dictionary
+        sets 'meanImg' or 'meanImg_chan2'
+        
+    """
     nbatch = ops['batch_size']
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -330,8 +369,30 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
     return ops
 
 def register_binary(ops, refImg=None, raw=True):
-    ''' registration of binary files '''
-    # if ops is a list of dictionaries, each will be registered separately
+    """ main registration function 
+    
+    if ops is a list of dictionaries, each will be registered separately
+    
+    Parameters
+    ----------
+    
+    ops : dictionary or list of dicts
+        'Ly', 'Lx', 'batch_size', 'align_by_chan', 'nonrigid'
+        (optional 'keep_movie_raw', 'raw_file')
+
+    refImg : 2D array (optional, default None)
+
+    raw : bool (optional, default True)
+        use raw_file for registration if available, if False forces reg_file to be used
+
+    Returns
+    --------
+
+    ops : dictionary
+        'nframes', 'yoff', 'xoff', 'corrXY', 'yoff1', 'xoff1', 'corrXY1', 'badframes'
+
+    
+    """
     if (type(ops) is list) or (type(ops) is np.ndarray):
         for op in ops:
             op = register_binary(op)
@@ -371,8 +432,6 @@ def register_binary(ops, refImg=None, raw=True):
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
-    k = 0
-    nfr = 0
 
     # register binary to reference image
     ops, offsets = register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align)
@@ -421,89 +480,3 @@ def register_binary(ops, refImg=None, raw=True):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
-
-def register_npy(Z, ops):
-    # if ops does not have refImg, get a new refImg
-    if 'refImg' not in ops:
-        ops['refImg'] = Z.mean(axis=0)
-    ops['nframes'], ops['Ly'], ops['Lx'] = Z.shape
-
-    if ops['nonrigid']:
-        ops = nonrigid.make_blocks(ops)
-
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-
-    nbatch = ops['batch_size']
-    meanImg = np.zeros((Ly, Lx)) # mean of this stack
-
-    yoff = np.zeros((0,),np.float32)
-    xoff = np.zeros((0,),np.float32)
-    corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
-
-    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops) # prepare masks for rigid registration
-    if ops['nonrigid']:
-        # prepare masks for non- rigid registration
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-    else:
-        refAndMasks = [maskMul, maskOffset, cfRefImg]
-
-    k = 0
-    nfr = 0
-    Zreg = np.zeros((nframes, Ly, Lx,), 'int16')
-    while True:
-        irange = np.arange(nfr, nfr+nbatch)
-        data = Z[irange, :,:]
-        if data.size==0:
-            break
-        data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
-        dwrite = dwrite.astype('int16') # need to hold on to this
-        meanImg += dwrite.sum(axis=0)
-        yoff = np.hstack((yoff, ymax))
-        xoff = np.hstack((xoff, xmax))
-        corrXY = np.hstack((corrXY, cmax))
-        if ops['nonrigid']:
-            yoff1 = np.vstack((yoff1, yxnr[0]))
-            xoff1 = np.vstack((xoff1, yxnr[1]))
-            corrXY1 = np.vstack((corrXY1, yxnr[2]))
-        nfr += dwrite.shape[0]
-        Zreg[irange] = dwrite
-
-        k += 1
-        if k%5==0:
-            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], time.time()-k0))
-
-    # compute some potentially useful info
-    ops['th_badframes'] = 100
-    dx = xoff - medfilt(xoff, 101)
-    dy = yoff - medfilt(yoff, 101)
-    dxy = (dx**2 + dy**2)**.5
-    cXY = corrXY / medfilt(corrXY, 101)
-    px = dxy/np.mean(dxy) / np.maximum(0, cXY)
-    ops['badframes'] = px > ops['th_badframes']
-    ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(ops['badframes'])])))
-    ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(yoff)))
-    xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(ops['badframes'])])))
-    xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(xoff)))
-    ops['yrange'] = [int(ymin), int(ymax)]
-    ops['xrange'] = [int(xmin), int(xmax)]
-    ops['corrXY'] = corrXY
-
-    ops['yoff'] = yoff
-    ops['xoff'] = xoff
-
-    if ops['nonrigid']:
-        ops['yoff1'] = yoff1
-        ops['xoff1'] = xoff1
-        ops['corrXY1'] = corrXY1
-
-    ops['meanImg'] = meanImg/ops['nframes']
-
-    return Zreg, ops

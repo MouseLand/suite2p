@@ -6,6 +6,7 @@ from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 
 @njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'])
 def oasis_trace(F, v, w, t, l, s, tau, fs):
+    """ spike deconvolution on a single neuron """
     NT = F.shape[0]
     g = -1./(tau * fs)
 
@@ -33,10 +34,30 @@ def oasis_trace(F, v, w, t, l, s, tau, fs):
 
 @njit(['float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32'], parallel=True)
 def oasis_matrix(F, v, w, t, l, s, tau, fs):
+    """ spike deconvolution on many neurons parallelized with prange  """
     for n in prange(F.shape[0]):
         oasis_trace(F[n], v[n], w[n], t[n], l[n], s[n], tau, fs)
 
 def oasis(F, ops):
+    """ computes non-negative deconvolution
+
+    no sparsity constraints
+    
+    Parameters
+    ----------------
+
+    F : float, 2D array
+        size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
+
+    ops : dictionary
+        'batch_size', 'tau', 'fs'
+    Returns
+    ----------------
+
+    S : float, 2D array
+        size [neurons x time], deconvolved fluorescence
+
+    """
     NN,NT = F.shape
     F = F.astype(np.float32)
     batch_size = ops['batch_size']
@@ -53,6 +74,27 @@ def oasis(F, ops):
     return S
 
 def preprocess(F,ops):
+    """ preprocesses fluorescence traces for spike deconvolution
+
+    baseline-subtraction with window 'win_baseline'
+    
+    Parameters
+    ----------------
+
+    F : float, 2D array
+        size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
+
+    ops : dictionary
+        'baseline', 'win_baseline', 'sig_baseline', 'fs',
+        (optional 'prctile_baseline' needed if ops['baseline']=='constant_prctile')
+    
+    Returns
+    ----------------
+
+    F : float, 2D array
+        size [neurons x time], baseline-corrected fluorescence
+
+    """
     sig = ops['sig_baseline']
     win = int(ops['win_baseline']*ops['fs'])
     if ops['baseline']=='maximin':

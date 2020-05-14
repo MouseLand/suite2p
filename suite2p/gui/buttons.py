@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import numpy as np
 
 def make_selection(parent):
-    # buttons to draw a square on view
+    """ buttons to draw a square on view """
     parent.topbtns = QtGui.QButtonGroup()
     ql = QtGui.QLabel("select cells")
     ql.setStyleSheet("color: white;")
@@ -35,6 +35,7 @@ def make_selection(parent):
 
 # minimize view
 def make_cellnotcell(parent):
+    """ buttons for cell / not cell views at top """
     # number of ROIs in each image
     parent.lcell0 = QtGui.QLabel("")
     parent.lcell0.setStyleSheet("color: white;")
@@ -57,9 +58,8 @@ def make_cellnotcell(parent):
         b += 1
     parent.sizebtns.setExclusive(True)
 
-###### --------- QUADRANT AND VIEW AND COLOR BUTTONS ---------- #############
-# quadrant buttons
 def make_quadrants(parent):
+    """ make quadrant buttons """
     parent.quadbtns = QtGui.QButtonGroup(parent)
     for b in range(9):
         btn = QuadButton(b, ' '+str(b+1), parent)
@@ -69,11 +69,11 @@ def make_quadrants(parent):
         b += 1
     parent.quadbtns.setExclusive(True)
 
-
-### custom QPushButton class for quadrant plotting
-# requires buttons to put into a QButtonGroup (parent.viewbtns)
-# allows only 1 button to pressed at a time
 class QuadButton(QtGui.QPushButton):
+    """ custom QPushButton class for quadrant plotting
+        requires buttons to put into a QButtonGroup (parent.quadbtns)
+         allows only 1 button to pressed at a time
+    """
     def __init__(self, bid, Text, parent=None):
         super(QuadButton,self).__init__(parent)
         self.setText(Text)
@@ -105,6 +105,7 @@ class QuadButton(QtGui.QPushButton):
 
 # size of view
 class SizeButton(QtGui.QPushButton):
+    """ buttons to make trace box bigger or smaller """
     def __init__(self, bid, Text, parent=None):
         super(SizeButton,self).__init__(parent)
         self.setText(Text)
@@ -153,8 +154,9 @@ class SizeButton(QtGui.QPushButton):
         parent.win.show()
         parent.show()
 
-# selection of top neurons
+# 
 class TopButton(QtGui.QPushButton):
+    """ selection of top neurons"""
     def __init__(self, bid, parent=None):
         super(TopButton,self).__init__(parent)
         text = [' draw selection', ' select top n', ' select bottom n']

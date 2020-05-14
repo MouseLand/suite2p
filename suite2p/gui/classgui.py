@@ -132,7 +132,8 @@ def load_data(parent,keys,trainfiles):
                     # add iscell and stat to classifier
                     print('\t'+fname+' was added to classifier')
                     iscell = iscells[:,0].astype(np.float32)
-                    stats = classifier.get_stat_keys(stat,parent.default_keys)
+                    stats = np.reshape(np.array([stat[j][k] for j in range(len(stat)) for k in parent.default_keys]),
+                                (len(stat),-1))
                     train_stats = np.concatenate((train_stats,stats),axis=0)
                     train_iscell = np.concatenate((train_iscell,iscell),axis=0)
                     trainfiles_good.append(fname)
@@ -160,7 +161,8 @@ def add_to(parent):
                                     'Current classifier is '+cfile+'. Add to this classifier?',
                                     QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     if dm == QtGui.QMessageBox.Yes:
-        stats = classifier.get_stat_keys(parent.stat, parent.model.keys)
+        stats = np.reshape(np.array([parent.stat[j][k] for j in range(len(parent.stat)) for k in parent.model.keys]),
+                                (len(parent.stat),-1))
         parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
         parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
         save_model(parent.classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
@@ -200,7 +202,7 @@ def save_list(parent):
 
 def activate(parent, inactive):
     if inactive:
-        parent.probcell = parent.model.apply(parent.stat)
+        parent.probcell = parent.model.predict_proba(parent.stat)
     masks.class_masks(parent)
     parent.update_plot()
 

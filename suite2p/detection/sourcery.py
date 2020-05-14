@@ -7,7 +7,7 @@ from .. import utils
 from . import sparsedetect
 
 def getSVDdata(ops):
-    mov, max_proj = sparsedetect.get_mov(ops)
+    mov, max_proj = sparsedetect.bin_movie(ops)
     ops['max_proj'] = max_proj
     nbins, Lyc, Lxc = np.shape(mov)
 
@@ -37,7 +37,7 @@ def getSVDdata(ops):
     return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
-    mov, _ = sparsedetect.get_mov(ops)
+    mov, _ = sparsedetect.bin_movie(ops)
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
@@ -248,6 +248,11 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['xpix'] += ops['xrange'][0]
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
+        if 'radius' not in stat0:
+            radius = utils.fitMVGaus(ypix/d0[0], xpix/d0[1], lam, 2)[2]
+            stat0['radius'] = radius[0] * d0.mean()
+            stat0['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+
     mfoot = np.nanmedian(footprints)
     for n in range(len(stat)):
         stat[n]['footprint'] = footprints[n] / mfoot

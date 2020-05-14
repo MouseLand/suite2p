@@ -6,7 +6,7 @@ from PyQt5 import QtGui
 from matplotlib.colors import hsv_to_rgb
 import time
 from .. import utils
-from ..extraction import dcnv
+from .. import extraction
 from ..detection import sparsedetect
 from . import masks
 
@@ -79,13 +79,6 @@ def merge_activity_masks(parent):
     xpix = xpix[goodi]
     lam = lam[goodi]
 
-    stat0 = {}
-    if 'aspect' in parent.ops:
-        d0 = np.array([int(parent.ops['aspect']*10), 10])
-    else:
-        d0 = parent.ops['diameter']
-        if isinstance(d0, int):
-            d0 = [d0,d0]
 
     ### compute statistics of merges
     stat0["imerge"] = merged_cells
@@ -94,23 +87,13 @@ def merge_activity_masks(parent):
     stat0["ypix"] = ypix
     stat0["xpix"] = xpix
     stat0["lam"] = lam / lam.sum() * merged_cells.size
-    stat0['med']  = [np.median(stat0["ypix"]), np.median(stat0["xpix"])]
-    stat0["npix"] = ypix.size
-    radius = utils.fitMVGaus(ypix/d0[0], xpix/d0[1], lam, 2)[2]
-    stat0["radius"] = radius[0] * d0.mean()
-    stat0["aspect_ratio"] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+
+    stat0 = extraction.masks.roi_stats(ops, [stat0])[0]
+
+    # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')
     stat0["npix_norm"] = stat0["npix"] / npix.mean()
-    # compactness
-    rs,dy,dx = sparsedetect.circleMask(d0)
-    rsort = np.sort(rs.flatten())
-    r2 = ((ypix - stat0["med"][0])/d0[0])**2 + ((xpix - stat0["med"][1])/d0[1])**2
-    r2 = r2**.5
-    stat0["mrs"]  = np.mean(r2)
-    stat0["mrs0"] = np.mean(rsort[:r2.size])
-    stat0["compact"] = stat0["mrs"] / (1e-10 + stat0["mrs0"])
-    # footprint
-    stat0["footprint"] = footprints.mean()
+    
     # red prob
     stat0['chan2_prob'] = prmean
     # inmerge
@@ -139,7 +122,7 @@ def merge_activity_masks(parent):
     stat0["ycirc"] = ycirc[goodi]
     stat0["xcirc"] = xcirc[goodi]
     # deconvolve activity
-    spks = dcnv.oasis(dF[np.newaxis, :], parent.ops)
+    spks = masks.dcnv.oasis(dF[np.newaxis, :], parent.ops)
 
     ### remove previously merged cell from FOV (do not replace)
     for k in remove_merged:

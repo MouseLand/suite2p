@@ -47,6 +47,20 @@ def make_buttons(parent):
     return b
 
 def init_views(parent):
+    """ make views using parent.ops
+
+    views in order:
+        "Q: ROIs",
+        "W: mean img",
+        "E: mean img (enhanced)",
+        "R: correlation map",
+        "T: max projection",
+        "Y: mean img chan2, corr",
+        "U: mean img chan2",
+
+    assigns parent.views
+
+    """
     parent.Ly, parent.Lx = parent.ops["Ly"], parent.ops["Lx"]
     parent.views   = np.zeros((7,parent.Ly, parent.Lx, 3), np.float32)
     for k in range(7):
@@ -106,16 +120,18 @@ def init_views(parent):
         parent.views[k] = np.tile(mimg[:,:,np.newaxis], (1,1,3))
 
 def plot_views(parent):
+    """ set parent.view1 and parent.view2 image based on parent.ops_plot['view']"""
     k    = parent.ops_plot['view']
     parent.view1.setImage(parent.views[k], levels=parent.ops_plot['saturation'])
     parent.view2.setImage(parent.views[k], levels=parent.ops_plot['saturation'])
     parent.view1.show()
     parent.view2.show()
 
-### custom QPushButton class that plots image when clicked
-# requires buttons to put into a QButtonGroup (parent.viewbtns)
-# allows only 1 button to pressed at a time
 class ViewButton(QtGui.QPushButton):
+    """ custom QPushButton class for quadrant plotting
+        requires buttons to put into a QButtonGroup (parent.viewbtns)
+         allows only 1 button to pressed at a time
+    """
     def __init__(self, bid, Text, parent=None):
         super(ViewButton,self).__init__(parent)
         self.setText(Text)

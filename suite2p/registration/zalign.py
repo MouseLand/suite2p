@@ -11,7 +11,20 @@ from mkl_fft import fft2, ifft2
 from . import reference, bidiphase, nonrigid, utils, rigid
 
 def compute_zpos(Zreg, ops):
-    """ compute z position """
+    """ compute z position of frames given z-stack Zreg
+    
+    Parameters
+    ------------
+
+    Zreg : 3D array
+        size [nplanes x Ly x Lx], z-stack
+
+    ops : dictionary
+        'reg_file' <- binary to register to z-stack, 'smooth_sigma', 
+        'Ly', 'Lx', 'batch_size'
+
+    
+    """
     if 'reg_file' not in ops:
         print('ERROR: no binary')
         return
@@ -88,7 +101,7 @@ def register_stack(Z, ops):
         xoff1 = np.zeros((0,nb),np.float32)
         corrXY1 = np.zeros((0,nb),np.float32)
 
-    maskMul, maskOffset, cfRefImg = prepare_masks(refImg, ops) # prepare masks for rigid registration
+    maskMul, maskOffset, cfRefImg = rigid.prepare_masks(refImg, ops) # prepare masks for rigid registration
     if ops['nonrigid']:
         # prepare masks for non- rigid registration
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)

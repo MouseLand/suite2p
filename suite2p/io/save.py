@@ -203,7 +203,7 @@ def NWB_output(ops1):
         image_series = TwoPhotonSeries(
             name='TwoPhotonSeries', 
             dimension=[ops['Ly'], ops['Lx']],
-            external_file=(ops['filelist'] if 'filelist' in ops else ''), 
+            external_file=(ops['filelist'] if 'filelist' in ops else ['']), 
             imaging_plane=imaging_plane,
             starting_frame=[0], 
             format='external', 

@@ -187,7 +187,7 @@ def load_dialog_NWB(parent):
 def load_NWB(parent):
     name = parent.fname
     print(name)
-    try:
+    if 1:
         procs = nwb.read(name)
         if procs[1]['nchannels']==2:
             parent.hasred = True
@@ -196,8 +196,8 @@ def load_NWB(parent):
         load_to_GUI(parent, os.path.split(name)[0], procs)
             
         parent.loaded = True
-    except Exception as e:
-        print('ERROR with NWB: %s'%e)
+    #except Exception as e:
+    #    print('ERROR with NWB: %s'%e)
 
 def load_proc(parent):
     name = parent.fname

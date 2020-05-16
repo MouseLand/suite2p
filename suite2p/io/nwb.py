@@ -3,6 +3,7 @@ import os
 import scipy
 import datetime
 from ..extraction import masks
+from .. import run_s2p
 try:
     from pynwb import NWBFile
     from pynwb.base import Images
@@ -36,11 +37,11 @@ def read(fpath):
                          'xpix': rois[n][:,1].astype('int'), 
                          'lam': rois[n][:,-1]})
             if multiplane:
-                stat[-1]['iplane'] = rois[n][:,-2]
-        ops = {'aspect': 1.0, 'diameter': 10}
+                stat[-1]['iplane'] = int(rois[n][0,-2])
+        ops = run_s2p.default_ops()
         stat = masks.roi_stats(ops, stat)
         if multiplane:
-            nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))
+            nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:
             nplanes = 1
         stat = np.array(stat)
@@ -48,7 +49,7 @@ def read(fpath):
         # ops with backgrounds
         ops1 = []
         for iplane in range(nplanes):
-            ops = {'aspect': 1.0, 'diameter': 12, 'neucoeff': 0.7}
+            ops = run_s2p.default_ops()
             bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
             ops['nchannels'] = 1
             for bstr in bg_strs:
@@ -69,9 +70,8 @@ def read(fpath):
         Fneu = np.array(nwbfile.processing['ophys']['Neuropil']['roi_response_series'].data)
         spks = np.array(nwbfile.processing['ophys']['Deconvolved']['roi_response_series'].data)
         dF = F - ops['neucoeff'] * Fneu
-
         for n in range(len(stat)):
-            stat[n]['skew'] = scipy.stats.skew(F[n])
+            stat[n]['skew'] = scipy.stats.skew(dF[n])
 
         # cell probabilities
         iscell = [nwbfile.processing['ophys']['ImageSegmentation']['PlaneSegmentation']['iscell'][n] 
@@ -96,7 +96,7 @@ def read(fpath):
             LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
             LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
             meanImg = np.zeros((LY, LX))
-            meanImgE = np.zeros((LY, LX))
+            #meanImgE = np.zeros((LY, LX))
             max_proj = np.zeros((LY, LX))
             if ops['nchannels']>1:
                 meanImg_chan2 = np.zeros((LY, LX))
@@ -106,7 +106,7 @@ def read(fpath):
                 xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
                 yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
                 meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
-                meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
+                #meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
                 Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
                 max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
                 if ops['nchannels']>1:
@@ -117,7 +117,14 @@ def read(fpath):
                     stat[j]['ypix'] += ops['dy']
                     stat[j]['med'][0] += ops['dy']
                     stat[j]['med'][1] += ops['dx']
-
+            ops['Vcorr'] = Vcorr
+            ops['max_proj'] = max_proj
+            ops['meanImg'] = meanImg
+            if 'meanImg_chan2' in ops:
+                ops['meanImg_chan2'] = meanImg_chan2
+            ops['Ly'], ops['Lx'] = LY, LX
+            ops['yrange'] = [0, LY]
+            ops['xrange'] = [0, LX]
     return stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 
@@ -129,6 +136,7 @@ def save(ops1):
             multiplane = False
 
         ops = ops1[0]
+
         ### INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description='suite2p_proc',
@@ -137,7 +145,6 @@ def save(ops1):
                                 else datetime.datetime.now())
         )
         print(nwbfile)
-
 
         device = nwbfile.create_device(
             name='Microscope', 
@@ -193,9 +200,8 @@ def save(ops1):
         file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
         traces = []
         
-        k=0
         for iplane, ops in enumerate(ops1):
-            if k==0:
+            if iplane==0:
                 iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
                 for fstr in file_strs:
                     traces.append(np.load(os.path.join(ops['save_path'], fstr)))
@@ -225,16 +231,14 @@ def save(ops1):
             description='all ROIs'
         )
 
-
         # FLUORESCENCE (all are required)
         file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
         name_strs = ['Fluorescence', 'Neuropil', 'Deconvolved']
 
-        for fstr,nstr in zip(file_strs, name_strs):
-            traces = np.load(os.path.join(ops['save_path'], fstr))
+        for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
             roi_resp_series = RoiResponseSeries(
                 name=nstr,
-                data=traces,
+                data=traces[i],
                 rois=rt_region,
                 unit='lumens',
                 rate=ops['fs']

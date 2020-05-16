@@ -7,7 +7,6 @@ from matplotlib.colors import hsv_to_rgb
 import time
 from .. import utils
 from .. import extraction
-from ..detection import sparsedetect
 from . import masks
 
 def distance_matrix(parent, ilist):
@@ -81,14 +80,15 @@ def merge_activity_masks(parent):
 
 
     ### compute statistics of merges
-    stat0["imerge"] = merged_cells
+    stat0 = {}
+    stat0['imerge'] = merged_cells
     if 'iplane' in parent.stat[merged_cells[0]]:
         stat0['iplane'] = parent.stat[merged_cells[0]]['iplane']
-    stat0["ypix"] = ypix
-    stat0["xpix"] = xpix
-    stat0["lam"] = lam / lam.sum() * merged_cells.size
+    stat0['ypix'] = ypix
+    stat0['xpix'] = xpix
+    stat0['lam'] = lam / lam.sum() * merged_cells.size
 
-    stat0 = extraction.masks.roi_stats(ops, [stat0])[0]
+    stat0 = extraction.masks.roi_stats(parent.ops, [stat0])[0]
 
     # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')
@@ -122,7 +122,7 @@ def merge_activity_masks(parent):
     stat0["ycirc"] = ycirc[goodi]
     stat0["xcirc"] = xcirc[goodi]
     # deconvolve activity
-    spks = masks.dcnv.oasis(dF[np.newaxis, :], parent.ops)
+    spks = extraction.dcnv.oasis(dF[np.newaxis, :], parent.ops)
 
     ### remove previously merged cell from FOV (do not replace)
     for k in remove_merged:
@@ -139,7 +139,7 @@ def merge_activity_masks(parent):
 
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
-    parent.stat = sparsedetect.get_overlaps(parent.stat, parent.ops)
+    parent.stat = extraction.masks.get_overlaps(parent.stat, parent.ops)
     parent.stat = np.array(parent.stat)
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)

@@ -2,16 +2,16 @@ import numpy as np
 import os
 import argparse
 
-def main():
-    ops = np.load('ops.npy', allow_pickle=True).item()
-    import suite2p
-    suite2p.main(ops)
+#def main():
+#    ops = np.load('ops.npy', allow_pickle=True).item()
+#    import suite2p
+#    suite2p.main(ops)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Suite2p parameters')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
-    from .run_s2p import default_ops
+    from .utils import default_ops
     ops0 = default_ops()
     for k in ops0.keys():
         v = dict(default = ops0[k],

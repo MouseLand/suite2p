@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 import warnings
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from .. import run_s2p
+from ..utils import default_ops
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''
@@ -67,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
         ops_dir.mkdir(exist_ok=True)
         self.opsuser = os.fspath(ops_dir.joinpath('ops_user.npy'))
         if not os.path.isfile(self.opsuser):
-            np.save(self.opsuser, run_s2p.default_ops())
+            np.save(self.opsuser, default_ops())
         self.opsfile = self.opsuser
 
         menus.mainmenu(self)

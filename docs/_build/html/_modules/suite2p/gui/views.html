@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.gui.views &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.gui.views &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.gui.views</li>
     
     
@@ -166,7 +176,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">enhanced_mean_image</span>
 
-<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="make_buttons"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.make_buttons">[docs]</a><span class="k">def</span> <span class="nf">make_buttons</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; view buttons&quot;&quot;&quot;</span>
     <span class="c1"># view buttons</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">view_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -209,7 +219,21 @@
     <span class="n">b</span><span class="o">+=</span><span class="mi">2</span>
     <span class="k">return</span> <span class="n">b</span></div>
 
-<div class="viewcode-block" id="init_views"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.init_views">[docs]</a><span class="k">def</span> <span class="nf">init_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="init_views"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.init_views">[docs]</a><span class="k">def</span> <span class="nf">init_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; make views using parent.ops</span>
+
+<span class="sd">    views in order:</span>
+<span class="sd">        &quot;Q: ROIs&quot;,</span>
+<span class="sd">        &quot;W: mean img&quot;,</span>
+<span class="sd">        &quot;E: mean img (enhanced)&quot;,</span>
+<span class="sd">        &quot;R: correlation map&quot;,</span>
+<span class="sd">        &quot;T: max projection&quot;,</span>
+<span class="sd">        &quot;Y: mean img chan2, corr&quot;,</span>
+<span class="sd">        &quot;U: mean img chan2&quot;,</span>
+
+<span class="sd">    assigns parent.views</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Ly&quot;</span><span class="p">],</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Lx&quot;</span><span class="p">]</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">views</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">7</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
@@ -268,17 +292,19 @@
         <span class="n">mimg</span> <span class="o">=</span> <span class="n">mimg</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mimg</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="plot_views"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.plot_views">[docs]</a><span class="k">def</span> <span class="nf">plot_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="plot_views"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.plot_views">[docs]</a><span class="k">def</span> <span class="nf">plot_views</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; set parent.view1 and parent.view2 image based on parent.ops_plot[&#39;view&#39;]&quot;&quot;&quot;</span>
     <span class="n">k</span>    <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;view&#39;</span><span class="p">]</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">])</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">])</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">view1</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">view2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
-<span class="c1">### custom QPushButton class that plots image when clicked</span>
-<span class="c1"># requires buttons to put into a QButtonGroup (parent.viewbtns)</span>
-<span class="c1"># allows only 1 button to pressed at a time</span>
-<div class="viewcode-block" id="ViewButton"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.ViewButton">[docs]</a><span class="k">class</span> <span class="nc">ViewButton</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewButton"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.ViewButton">[docs]</a><span class="k">class</span> <span class="nc">ViewButton</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; custom QPushButton class for quadrant plotting</span>
+<span class="sd">        requires buttons to put into a QButtonGroup (parent.viewbtns)</span>
+<span class="sd">         allows only 1 button to pressed at a time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ViewButton</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">Text</span><span class="p">)</span>
@@ -288,7 +314,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimumSizeHint</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">press</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<div class="viewcode-block" id="ViewButton.press"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.ViewButton.press">[docs]</a>    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewButton.press"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.ViewButton.press">[docs]</a>    <span class="k">def</span> <span class="nf">press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">views</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">():</span>
                 <span class="n">parent</span><span class="o">.</span><span class="n">viewbtns</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
@@ -297,7 +323,7 @@
         <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div></div>
 
 
-<div class="viewcode-block" id="RangeSlider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider">[docs]</a><span class="k">class</span> <span class="nc">RangeSlider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider">[docs]</a><span class="k">class</span> <span class="nc">RangeSlider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; A slider for ranges.</span>
 
 <span class="sd">        This class provides a dual-slider for ranges, where there is a defined</span>
@@ -341,27 +367,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
 
-<div class="viewcode-block" id="RangeSlider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.level_change"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">ops_plot</span><span class="p">[</span><span class="s1">&#39;saturation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.low"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.low">[docs]</a>    <span class="k">def</span> <span class="nf">low</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.low"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.low">[docs]</a>    <span class="k">def</span> <span class="nf">low</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span></div>
 
-<div class="viewcode-block" id="RangeSlider.setLow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.setLow">[docs]</a>    <span class="k">def</span> <span class="nf">setLow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.setLow"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.setLow">[docs]</a>    <span class="k">def</span> <span class="nf">setLow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">=</span> <span class="n">low</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.high"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.high">[docs]</a>    <span class="k">def</span> <span class="nf">high</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.high"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.high">[docs]</a>    <span class="k">def</span> <span class="nf">high</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span></div>
 
-<div class="viewcode-block" id="RangeSlider.setHigh"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.setHigh">[docs]</a>    <span class="k">def</span> <span class="nf">setHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.setHigh"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.setHigh">[docs]</a>    <span class="k">def</span> <span class="nf">setHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="n">high</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.paintEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.paintEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="c1"># based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp</span>
         <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
@@ -391,7 +417,7 @@
             <span class="n">style</span><span class="o">.</span><span class="n">drawComplexControl</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">painter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RangeSlider.mousePressEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mousePressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mousePressEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.mousePressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
 
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
@@ -428,7 +454,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.mouseMoveEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mouseMoveEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mouseMoveEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.mouseMoveEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">!=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="p">:</span>
             <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span>
             <span class="k">return</span>
@@ -462,17 +488,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span> <span class="o">=</span> <span class="n">new_pos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.mouseReleaseEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.mouseReleaseEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mouseReleaseEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.views.RangeSlider.mouseReleaseEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">level_change</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.__pick"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.__pick">[docs]</a>    <span class="k">def</span> <span class="nf">__pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">()</span></div>
+            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="RangeSlider.__pixelPosToRangeValue"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/views/index.html#suite2p.gui.views.RangeSlider.__pixelPosToRangeValue">[docs]</a>    <span class="k">def</span> <span class="nf">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
         <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
@@ -491,7 +517,7 @@
 
         <span class="k">return</span> <span class="n">style</span><span class="o">.</span><span class="n">sliderValueFromPosition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">(),</span>
                                              <span class="n">pos</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span> <span class="n">slider_max</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span>
-                                             <span class="n">opt</span><span class="o">.</span><span class="n">upsideDown</span><span class="p">)</span></div></div>
+                                             <span class="n">opt</span><span class="o">.</span><span class="n">upsideDown</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -504,7 +530,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -529,6 +555,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

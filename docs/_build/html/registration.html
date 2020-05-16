@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Registration &mdash; suite2p 0.6.17 documentation</title>
+  <title>Registration &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Cell detection" href="celldetection.html" />
@@ -47,13 +48,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -104,7 +108,15 @@
 <li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -163,6 +175,15 @@
     
   </ul>
 
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="celldetection.html" class="btn btn-neutral float-right" title="Cell detection" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="FAQ.html" class="btn btn-neutral float-left" title="Frequently Asked Questions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+  </div>
   
   <hr/>
 </div>
@@ -299,21 +320,12 @@ with multiple examples.</p>
           </div>
           <footer>
   
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="celldetection.html" class="btn btn-neutral float-right" title="Cell detection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="FAQ.html" class="btn btn-neutral float-left" title="Frequently Asked Questions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -338,6 +350,18 @@ with multiple examples.</p>
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

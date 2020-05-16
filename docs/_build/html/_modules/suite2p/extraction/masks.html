@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.extraction.masks &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.extraction.masks &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.extraction.masks</li>
     
     
@@ -165,101 +175,255 @@
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
 <span class="kn">from</span> <span class="nn">..detection</span> <span class="kn">import</span> <span class="n">sparsedetect</span>
 
-<div class="viewcode-block" id="create_cell_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/extraction/masks/index.html#suite2p.extraction.masks.create_cell_masks">[docs]</a><span class="k">def</span> <span class="nf">create_cell_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;creates cell masks for ROIs in stat and computes radii</span>
-<span class="sd">    inputs:</span>
-<span class="sd">        stat, Ly, Lx, allow_overlap</span>
-<span class="sd">            from stat: ypix, xpix, lam</span>
-<span class="sd">            allow_overlap: boolean whether or not to include overlapping pixels in cell masks (default: False)</span>
-<span class="sd">    outputs:</span>
-<span class="sd">        stat, cell_pix (Ly,Lx), cell_masks (ncells, Ly, Lx)</span>
-<span class="sd">            assigned to stat: ipix (non-overlapping if chosen), radius (minimum of 3 pixels)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">Ly</span><span class="o">=</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
-    <span class="n">Lx</span><span class="o">=</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="get_overlaps"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.get_overlaps">[docs]</a><span class="k">def</span> <span class="nf">get_overlaps</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; computes overlapping pixels from ROIs in stat</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------------</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;Ly&#39;, &#39;Lx&#39;</span>
+
+<span class="sd">    stat : array of dicts </span>
+<span class="sd">        &#39;ypix&#39;, &#39;xpix&#39;</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    ----------------</span>
+
+<span class="sd">    stat : array of dicts</span>
+<span class="sd">        adds &#39;overlap&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
+        <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+        <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+        <span class="n">mask</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
+        <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+        <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+        <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;overlap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.5</span>
+    <span class="k">return</span> <span class="n">stat</span></div>
+
+<div class="viewcode-block" id="remove_overlappers"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.remove_overlappers">[docs]</a><span class="k">def</span> <span class="nf">remove_overlappers</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; removes ROIs that are overlapping more than fraction ops[&#39;max_overlap&#39;] with other ROIs</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------------</span>
+
+<span class="sd">    stat : array of dicts</span>
+<span class="sd">        &#39;ypix&#39;, &#39;xpix&#39;</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;max_overlap&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------------</span>
+
+<span class="sd">    stat : array of dicts</span>
+<span class="sd">        ROIs with ops[&#39;max_overlap&#39;] overlapped ROIs removed</span>
+<span class="sd">    </span>
+<span class="sd">    ix : list</span>
+<span class="sd">        list of ROIs that were kept</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
+        <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+        <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+        <span class="n">mask</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">),</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)):</span>
+            <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+            <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+            <span class="n">O</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.5</span><span class="p">)</span>
+        <span class="c1">#i = np.argmax(O)</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="p">(</span><span class="n">O</span> <span class="o">&gt;</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;max_overlap&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span>
+            <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+            <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">del</span> <span class="n">stat</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">stat</span><span class="p">,</span> <span class="n">ix</span></div>
+
+<div class="viewcode-block" id="circle_mask"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.circle_mask">[docs]</a><span class="k">def</span> <span class="nf">circle_mask</span><span class="p">(</span><span class="n">d0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; creates array (2*d0+1, 2*d0+1) with indices and radii from center point</span>
+<span class="sd">        </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    d0 : int</span>
+<span class="sd">        patch of (-d0,d0+1) over which radius computed</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        rs : array, float </span>
+<span class="sd">            (2*d0+1,2*d0+1) of radii</span>
+
+<span class="sd">        dx,dy: indices in rs where the radius is less than d0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dx</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">dy</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">dy</span>  <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="n">rs</span>  <span class="o">=</span> <span class="p">(</span><span class="n">dy</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="k">return</span> <span class="n">rs</span></div>
+
+<div class="viewcode-block" id="roi_stats"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.roi_stats">[docs]</a><span class="k">def</span> <span class="nf">roi_stats</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; computes statistics of ROIs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;aspect&#39;, &#39;diameter&#39;</span>
+
+<span class="sd">    stat : dictionary</span>
+<span class="sd">        &#39;ypix&#39;, &#39;xpix&#39;, &#39;lam&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stat : dictionary</span>
+<span class="sd">        adds &#39;npix&#39;, &#39;npix_norm&#39;, &#39;med&#39;, &#39;footprint&#39;, &#39;compact&#39;, &#39;radius&#39;, &#39;aspect_ratio&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;aspect&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">d0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span><span class="p">),</span> <span class="mi">10</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">d0</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d0</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">d0</span> <span class="o">=</span> <span class="p">[</span><span class="n">d0</span><span class="p">,</span><span class="n">d0</span><span class="p">]</span>
+
+    <span class="n">rs</span> <span class="o">=</span> <span class="n">circle_mask</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">]))</span>
+    <span class="n">rsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rs</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+
+    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+    <span class="n">mrs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ncells</span><span class="p">,))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ncells</span><span class="p">):</span>
+        <span class="n">stat0</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span>
+        <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
+        <span class="c1"># compute footprint of ROI</span>
+        <span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">ypix</span><span class="p">)</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">xpix</span><span class="p">)</span>
+
+        <span class="c1"># compute compactness of ROI</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="p">((</span><span class="n">ypix</span><span class="o">-</span><span class="n">y0</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">((</span><span class="n">xpix</span><span class="o">-</span><span class="n">x0</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">r2</span><span class="o">**.</span><span class="mi">5</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;mrs&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r2</span><span class="p">)</span>
+        <span class="n">mrs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;mrs&#39;</span><span class="p">]</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;mrs0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rsort</span><span class="p">[:</span><span class="n">r2</span><span class="o">.</span><span class="n">size</span><span class="p">])</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;compact&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;mrs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span><span class="o">+</span><span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;mrs0&#39;</span><span class="p">])</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;med&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;ypix&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;xpix&#39;</span><span class="p">])]</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;npix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xpix</span><span class="o">.</span><span class="n">size</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;footprint&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stat0</span><span class="p">:</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;footprint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="s1">&#39;med&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stat</span><span class="p">:</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;ypix&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;xpix&#39;</span><span class="p">])]</span>
+        <span class="k">if</span> <span class="s1">&#39;radius&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stat0</span><span class="p">:</span>
+            <span class="n">radius</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fitMVGaus</span><span class="p">(</span><span class="n">ypix</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xpix</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lam</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">d0</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;aspect_ratio&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="o">.</span><span class="mi">01</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">npix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;npix&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">))])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="n">npix</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">npix</span><span class="p">[:</span><span class="mi">100</span><span class="p">])</span>
+
+    <span class="n">mmrs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">mrs</span><span class="p">[:</span><span class="mi">100</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)):</span>
+        <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;mrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;mrs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span><span class="o">+</span><span class="n">mmrs</span><span class="p">)</span>
+        <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;npix_norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">npix</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+    <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stat</span></div>
+
+<div class="viewcode-block" id="create_cell_masks"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.create_cell_masks">[docs]</a><span class="k">def</span> <span class="nf">create_cell_masks</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">allow_overlap</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; creates cell masks for ROIs in stat and computes radii</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    stat : dictionary</span>
+<span class="sd">        &#39;ypix&#39;, &#39;xpix&#39;, &#39;lam&#39;</span>
+
+<span class="sd">    Ly : float</span>
+<span class="sd">        y size of frame</span>
+
+<span class="sd">    Lx : float</span>
+<span class="sd">        x size of frame</span>
+
+<span class="sd">    allow_overlap : bool (optional, default False)</span>
+<span class="sd">        whether or not to include overlapping pixels in cell masks</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    </span>
+<span class="sd">    cell_pix : 2D array</span>
+<span class="sd">        size [Ly x Lx] where 1 if pixel belongs to cell</span>
+<span class="sd">    </span>
+<span class="sd">    cell_masks : list </span>
+<span class="sd">        len ncells, each has tuple of pixels belonging to each cell and weights</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
     <span class="n">cell_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span>
-    <span class="n">cell_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ncells</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">cell_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncells</span><span class="p">):</span>
-        <span class="c1">#if allow_overlap:</span>
-        <span class="n">overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;npix&#39;</span><span class="p">],),</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">allow_overlap</span><span class="p">:</span>
+            <span class="n">overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;npix&#39;</span><span class="p">],),</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">overlap</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;overlap&#39;</span><span class="p">]</span>
         <span class="n">ypix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">][</span><span class="o">~</span><span class="n">overlap</span><span class="p">]</span>
         <span class="n">xpix</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">][</span><span class="o">~</span><span class="n">overlap</span><span class="p">]</span>
         <span class="n">lam</span>  <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;lam&#39;</span><span class="p">][</span><span class="o">~</span><span class="n">overlap</span><span class="p">]</span>
-        <span class="n">ipix</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">sub2ind</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ypix&#39;</span><span class="p">],</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">])</span>
-        <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;ipix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipix</span>
         <span class="k">if</span> <span class="n">xpix</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-            <span class="c1"># compute radius of neuron (used for neuropil scaling)</span>
-            <span class="k">if</span> <span class="s1">&#39;aspect&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
-                <span class="n">radius</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fitMVGaus</span><span class="p">(</span><span class="n">ypix</span><span class="o">/</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">],</span> <span class="n">xpix</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">radius</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fitMVGaus</span><span class="p">(</span><span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="c1">#stat[n][&#39;radius&#39;] = radius[0] * np.mean(ops[&#39;diameter&#39;])</span>
-            <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;aspect_ratio&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="o">.</span><span class="mi">01</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="c1"># add pixels of cell to cell_pix (pixels to exclude in neuropil computation)</span>
             <span class="n">cell_pix</span><span class="p">[</span><span class="n">ypix</span><span class="p">[</span><span class="n">lam</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">],</span><span class="n">xpix</span><span class="p">[</span><span class="n">lam</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">cell_masks</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">]</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">ipix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">),</span> <span class="p">(</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+            <span class="c1">#utils.sub2ind((Ly,Lx), ypix, xpix)</span>
+            <span class="n">cell_masks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ipix</span><span class="p">,</span> <span class="n">lam</span><span class="o">/</span><span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;aspect_ratio&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">cell_masks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+
     <span class="n">cell_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">stat</span><span class="p">,</span> <span class="n">cell_pix</span> <span class="p">,</span> <span class="n">cell_masks</span></div>
+    <span class="k">return</span> <span class="n">cell_pix</span><span class="p">,</span> <span class="n">cell_masks</span></div>
 
-<div class="viewcode-block" id="circle_neuropil_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/extraction/masks/index.html#suite2p.extraction.masks.circle_neuropil_masks">[docs]</a><span class="k">def</span> <span class="nf">circle_neuropil_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;creates surround neuropil masks for ROIs in stat using gradually extending circles</span>
-<span class="sd">    inputs:</span>
-<span class="sd">        ops, stat, cell_pix</span>
-<span class="sd">            from ops: inner_neuropil_radius, outer_neuropil_radius, min_neuropil_pixels, ratio_neuropil_to_cell</span>
-<span class="sd">            from stat: med, radius</span>
-<span class="sd">            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells</span>
-<span class="sd">    outputs:</span>
-<span class="sd">        neuropil_masks (ncells,Ly,Lx)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">inner_radius</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;inner_neuropil_radius&#39;</span><span class="p">])</span>
-    <span class="n">outer_radius</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;outer_neuropil_radius&#39;</span><span class="p">]</span>
-    <span class="c1"># if outer_radius is infinite, define outer radius as a multiple of the cell radius</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;outer_neuropil_radius&#39;</span><span class="p">]):</span>
-        <span class="n">min_pixels</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">]</span>
-        <span class="n">ratio</span>      <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ratio_neuropil_to_cell&#39;</span><span class="p">]</span>
-    <span class="c1"># dilate the cell pixels by inner_radius to create ring around cells</span>
-    <span class="n">expanded_cell_pix</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">grey_dilation</span><span class="p">(</span><span class="n">cell_pix</span><span class="p">,</span> <span class="p">(</span><span class="n">inner_radius</span><span class="p">,</span><span class="n">inner_radius</span><span class="p">))</span>
+<div class="viewcode-block" id="create_neuropil_masks"><a class="viewcode-back" href="../../../api/suite2p.extraction.html#suite2p.extraction.masks.create_neuropil_masks">[docs]</a><span class="k">def</span> <span class="nf">create_neuropil_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slow!)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 
-    <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
-    <span class="n">Ly</span> <span class="o">=</span> <span class="n">cell_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">Lx</span> <span class="o">=</span> <span class="n">cell_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">neuropil_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ncells</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Lx</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Ly</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ncells</span><span class="p">):</span>
-        <span class="n">cell_center</span> <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;med&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;outer_neuropil_radius&#39;</span><span class="p">]):</span>
-                <span class="n">cell_radius</span>  <span class="o">=</span> <span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
-                <span class="n">outer_radius</span> <span class="o">=</span> <span class="n">ratio</span> <span class="o">*</span> <span class="n">cell_radius</span>
-                <span class="n">npixels</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="c1"># continue increasing outer_radius until minimum pixel value reached</span>
-                <span class="k">while</span> <span class="n">npixels</span> <span class="o">&lt;</span> <span class="n">min_pixels</span><span class="p">:</span>
-                    <span class="n">neuropil_on</span>       <span class="o">=</span> <span class="p">(((</span><span class="n">y</span> <span class="o">-</span> <span class="n">cell_center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">cell_center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">outer_radius</span>
-                    <span class="n">neuropil_no_cells</span> <span class="o">=</span> <span class="n">neuropil_on</span> <span class="o">-</span> <span class="n">expanded_cell_pix</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                    <span class="n">npixels</span> <span class="o">=</span> <span class="n">neuropil_no_cells</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                    <span class="n">outer_radius</span> <span class="o">*=</span> <span class="mf">1.25</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">neuropil_on</span>       <span class="o">=</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">cell_center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">cell_center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">&lt;=</span> <span class="n">outer_radius</span>
-                <span class="n">neuropil_no_cells</span> <span class="o">=</span> <span class="n">neuropil_on</span> <span class="o">-</span> <span class="n">expanded_cell_pix</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="n">npixels</span> <span class="o">=</span> <span class="n">neuropil_no_cells</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="n">neuropil_masks</span><span class="p">[</span><span class="n">n</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">neuropil_no_cells</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="n">npixels</span>
-    <span class="k">return</span> <span class="n">neuropil_masks</span></div>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;inner_neuropil_radius&#39;, &#39;min_neuropil_pixels&#39;</span>
 
-<div class="viewcode-block" id="create_neuropil_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/extraction/masks/index.html#suite2p.extraction.masks.create_neuropil_masks">[docs]</a><span class="k">def</span> <span class="nf">create_neuropil_masks</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">cell_pix</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;creates surround neuropil masks for ROIs in stat by EXTENDING ROI (SLOW!!)</span>
-<span class="sd">    inputs:</span>
-<span class="sd">        ops, stat, cell_pix</span>
-<span class="sd">            from ops: inner_neuropil_radius, min_neuropil_pixels</span>
-<span class="sd">            from stat: ypix, xpix</span>
-<span class="sd">            cell_pix: (Ly,Lx) matrix in which non-zero elements indicate cells</span>
-<span class="sd">    outputs:</span>
-<span class="sd">        neuropil_masks (ncells,Ly,Lx)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    stat : dictionary</span>
+<span class="sd">        &#39;ypix&#39;, &#39;xpix&#39;, &#39;lam&#39;</span>
+
+<span class="sd">    cellpix : 2D array</span>
+<span class="sd">        1 if ROI exists in pixel, 0 if not; </span>
+<span class="sd">        pixels ignored for neuropil computation</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    neuropil_masks : 3D array</span>
+<span class="sd">        size [ncells x Ly x Lx] where each pixel is weight of neuropil mask</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">cell_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">Lx</span> <span class="o">=</span> <span class="n">cell_pix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -274,9 +438,8 @@
         <span class="n">ypix1</span><span class="p">,</span><span class="n">xpix1</span> <span class="o">=</span> <span class="n">ypix</span><span class="p">,</span><span class="n">xpix</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">):</span>
             <span class="n">ypix1</span><span class="p">,</span> <span class="n">xpix1</span> <span class="o">=</span> <span class="n">sparsedetect</span><span class="o">.</span><span class="n">extendROI</span><span class="p">(</span><span class="n">ypix1</span><span class="p">,</span> <span class="n">xpix1</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="c1"># keep extending</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">cell_pix</span><span class="p">[</span><span class="n">ypix1</span><span class="p">,</span><span class="n">xpix1</span><span class="p">]</span><span class="o">&lt;.</span><span class="mi">5</span><span class="p">)</span><span class="o">-</span><span class="n">nring</span><span class="o">&gt;</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">cell_pix</span><span class="p">[</span><span class="n">ypix1</span><span class="p">,</span><span class="n">xpix1</span><span class="p">]</span><span class="o">&lt;.</span><span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="n">nring</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;min_neuropil_pixels&#39;</span><span class="p">]:</span>
                 <span class="k">break</span> <span class="c1"># break if there are at least a minimum number of valid pixels</span>
-
         <span class="n">ix</span> <span class="o">=</span> <span class="n">cell_pix</span><span class="p">[</span><span class="n">ypix1</span><span class="p">,</span><span class="n">xpix1</span><span class="p">]</span><span class="o">&lt;.</span><span class="mi">5</span>
         <span class="n">ypix1</span><span class="p">,</span> <span class="n">xpix1</span> <span class="o">=</span> <span class="n">ypix1</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">xpix1</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
         <span class="n">neuropil_masks</span><span class="p">[</span><span class="n">n</span><span class="p">,</span><span class="n">ypix1</span><span class="p">,</span><span class="n">xpix1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
@@ -284,12 +447,6 @@
     <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">neuropil_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
     <span class="n">neuropil_masks</span> <span class="o">/=</span> <span class="n">S</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">neuropil_masks</span></div>
-
-<span class="c1">#from numba import njit, float32, prange, boolean</span>
-<span class="c1">#@njit((float32[:,:], int32[:], float32[:]), parallel=True)</span>
-<span class="c1">#def matmul_index(X, inds, Y):</span>
-<span class="c1">#    for t in prange(inds.shape[0]):</span>
-<span class="c1">#        Y[n] = X[inds[:], t]</span>
 </pre></div>
 
            </div>
@@ -302,7 +459,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -327,6 +484,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

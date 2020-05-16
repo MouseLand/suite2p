@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.gui.graphics &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.gui.graphics &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.gui.graphics</li>
     
     
@@ -169,20 +179,20 @@
 <span class="kn">from</span> <span class="nn">pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu</span> <span class="kn">import</span> <span class="n">ViewBoxMenu</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">classgui</span><span class="p">,</span> <span class="n">masks</span>
 
-<div class="viewcode-block" id="TraceBox"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.TraceBox">[docs]</a><span class="k">class</span> <span class="nc">TraceBox</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">PlotItem</span><span class="p">):</span>
+<div class="viewcode-block" id="TraceBox"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.TraceBox">[docs]</a><span class="k">class</span> <span class="nc">TraceBox</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">PlotItem</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">border</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lockAspect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enableMouse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">invertY</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enableMenu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invertX</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TraceBox</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
 
-<div class="viewcode-block" id="TraceBox.mouseDoubleClickEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.TraceBox.mouseDoubleClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDoubleClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
+<div class="viewcode-block" id="TraceBox.mouseDoubleClickEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.TraceBox.mouseDoubleClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDoubleClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zoom_plot</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="TraceBox.zoom_plot"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.TraceBox.zoom_plot">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TraceBox.zoom_plot"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.TraceBox.zoom_plot">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">fmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">fmax</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="ViewBox"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ViewBox">[docs]</a><span class="k">class</span> <span class="nc">ViewBox</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">ViewBox</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewBox"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ViewBox">[docs]</a><span class="k">class</span> <span class="nc">ViewBox</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">ViewBox</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">border</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lockAspect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enableMouse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">invertY</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enableMenu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invertX</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1">#pg.ViewBox.__init__(self, border, lockAspect, enableMouse,</span>
@@ -201,11 +211,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;enableMenu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enableMenu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;yInverted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">invertY</span>
 
-<div class="viewcode-block" id="ViewBox.mouseDoubleClickEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ViewBox.mouseDoubleClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDoubleClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewBox.mouseDoubleClickEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ViewBox.mouseDoubleClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDoubleClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">zoom_plot</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ViewBox.mouseClickEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ViewBox.mouseClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewBox.mouseClickEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ViewBox.mouseClickEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseClickEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">loaded</span><span class="p">:</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapSceneToView</span><span class="p">(</span><span class="n">ev</span><span class="o">.</span><span class="n">scenePos</span><span class="p">())</span>
             <span class="n">posy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">())</span>
@@ -250,7 +260,7 @@
                                 <span class="n">btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">styleUnpressed</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ViewBox.mouseDragEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ViewBox.mouseDragEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDragEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewBox.mouseDragEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ViewBox.mouseDragEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseDragEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ev</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1">## if axis is specified, event will only affect that axis.</span>
         <span class="n">ev</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>  <span class="c1">## we accept all buttons</span>
 
@@ -290,14 +300,14 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">translateBy</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sigRangeChangedManually</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;mouseEnabled&#39;</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="ViewBox.zoom_plot"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ViewBox.zoom_plot">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ViewBox.zoom_plot"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ViewBox.zoom_plot">[docs]</a>    <span class="k">def</span> <span class="nf">zoom_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Lx&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s2">&quot;Ly&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setXLink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setYLink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="init_range"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.init_range">[docs]</a><span class="k">def</span> <span class="nf">init_range</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="init_range"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.init_range">[docs]</a><span class="k">def</span> <span class="nf">init_range</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">])</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">setYRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">])</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">p2</span><span class="o">.</span><span class="n">setXRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">])</span>
@@ -306,7 +316,7 @@
     <span class="n">parent</span><span class="o">.</span><span class="n">trange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
 
 
-<div class="viewcode-block" id="ROI_index"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/graphics/index.html#suite2p.gui.graphics.ROI_index">[docs]</a><span class="k">def</span> <span class="nf">ROI_index</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
+<div class="viewcode-block" id="ROI_index"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.graphics.ROI_index">[docs]</a><span class="k">def</span> <span class="nf">ROI_index</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">stat</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)&#39;&#39;&#39;</span>
     <span class="n">ncells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
@@ -330,7 +340,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -355,6 +365,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

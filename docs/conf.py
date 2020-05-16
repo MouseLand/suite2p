@@ -18,11 +18,11 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'suite2p'
-copyright = '2019, Carsen Stringer, Marius Pachitariu'
+copyright = '2020, Carsen Stringer, Marius Pachitariu'
 author = 'Carsen Stringer, Marius Pachitariu'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6.17'
+release = '0.7.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,14 +30,18 @@ release = '0.6.17'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-            'sphinx.ext.mathjax',
-            'sphinx.ext.viewcode',
-            'sphinx.ext.autosummary',
-            'sphinx.ext.doctest',
-            'sphinx.ext.inheritance_diagram',
-            'autoapi.extension',
-            'sphinx.ext.napoleon']
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    'sphinx.ext.napoleon',
+    'sphinx.ext.coverage',
+    'sphinxcontrib.apidoc']
+ #   'sphinx.ext.autosummary']
+
+#autodoc_default_flags = ['members']
+#autosummary_generate = True
 
 autoapi_dirs = ['../suite2p']
 
@@ -45,6 +49,9 @@ source_suffix='.rst'
 
 master_doc = 'index'
 
+#autoapi_add_toctree_entry = True
+apidoc_module_dir = '../suite2p'
+apidoc_output_dir = 'api/'
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -55,6 +62,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 # -- Options for HTML output -------------------------------------------------
+html_logo = '_static/favicon.ico'
+html_favicon = '_static/favicon.ico'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -66,9 +75,9 @@ html_theme_options = {
     'analytics_id': 'UA-XXXXXXX-1',  #  Provided by Google in your dashboard
     'logo_only': False,
     'display_version': True,
-    'prev_next_buttons_location': 'bottom',
+    'prev_next_buttons_location': 'top',
     'style_external_links': False,
-    'style_nav_header_background': 'green',
+    'style_nav_header_background': 'black',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,

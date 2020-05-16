@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.gui.merge &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.gui.merge &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.gui.merge</li>
     
     
@@ -169,11 +179,10 @@
 <span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">hsv_to_rgb</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">..extraction</span> <span class="kn">import</span> <span class="n">dcnv</span>
-<span class="kn">from</span> <span class="nn">..detection</span> <span class="kn">import</span> <span class="n">sparsedetect</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">extraction</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">masks</span>
 
-<div class="viewcode-block" id="distance_matrix"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">distance_matrix</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">ilist</span><span class="p">):</span>
+<div class="viewcode-block" id="distance_matrix"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">distance_matrix</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">ilist</span><span class="p">):</span>
     <span class="n">idist</span> <span class="o">=</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ilist</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">ilist</span><span class="p">)))</span>
     <span class="k">for</span> <span class="n">ij</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ilist</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">ik</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ilist</span><span class="p">):</span>
@@ -184,7 +193,7 @@
                                   <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;xpix&#39;</span><span class="p">][:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">idist</span></div>
 
-<div class="viewcode-block" id="do_merge"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.do_merge">[docs]</a><span class="k">def</span> <span class="nf">do_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="do_merge"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.do_merge">[docs]</a><span class="k">def</span> <span class="nf">do_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
     <span class="n">dm</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
         <span class="n">parent</span><span class="p">,</span>
         <span class="s2">&quot;Merge cells&quot;</span><span class="p">,</span>
@@ -198,7 +207,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">merged</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;merged ROIs&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="merge_activity_masks"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.merge_activity_masks">[docs]</a><span class="k">def</span> <span class="nf">merge_activity_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="merge_activity_masks"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.merge_activity_masks">[docs]</a><span class="k">def</span> <span class="nf">merge_activity_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;merging activity... this may take some time&#39;</span><span class="p">)</span>
     <span class="n">i0</span>      <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">parent</span><span class="o">.</span><span class="n">iscell</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span><span class="p">])</span>
     <span class="n">ypix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -242,36 +251,22 @@
     <span class="n">xpix</span> <span class="o">=</span> <span class="n">xpix</span><span class="p">[</span><span class="n">goodi</span><span class="p">]</span>
     <span class="n">lam</span> <span class="o">=</span> <span class="n">lam</span><span class="p">[</span><span class="n">goodi</span><span class="p">]</span>
 
-    <span class="n">stat0</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="s1">&#39;aspect&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
-        <span class="n">d0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;aspect&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span><span class="p">),</span> <span class="mi">10</span><span class="p">])</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">d0</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;diameter&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d0</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">d0</span> <span class="o">=</span> <span class="p">[</span><span class="n">d0</span><span class="p">,</span><span class="n">d0</span><span class="p">]</span>
 
     <span class="c1">### compute statistics of merges</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;imerge&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_cells</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;ypix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ypix</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;xpix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xpix</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;lam&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">merged_cells</span><span class="o">.</span><span class="n">size</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;med&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;ypix&quot;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;xpix&quot;</span><span class="p">])]</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;npix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ypix</span><span class="o">.</span><span class="n">size</span>
-    <span class="n">radius</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fitMVGaus</span><span class="p">(</span><span class="n">ypix</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xpix</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lam</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;radius&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">d0</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;aspect_ratio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="o">.</span><span class="mi">01</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">radius</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">stat0</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;imerge&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_cells</span>
+    <span class="k">if</span> <span class="s1">&#39;iplane&#39;</span> <span class="ow">in</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">merged_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]]:</span>
+        <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">merged_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;iplane&#39;</span><span class="p">]</span>
+    <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;ypix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ypix</span>
+    <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;xpix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xpix</span>
+    <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">lam</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">merged_cells</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="n">stat0</span> <span class="o">=</span> <span class="n">extraction</span><span class="o">.</span><span class="n">masks</span><span class="o">.</span><span class="n">roi_stats</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">,</span> <span class="p">[</span><span class="n">stat0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># npix_norm</span>
     <span class="n">npix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s1">&#39;npix&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">))])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
     <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;npix_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;npix&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">npix</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-    <span class="c1"># compactness</span>
-    <span class="n">rs</span><span class="p">,</span><span class="n">dy</span><span class="p">,</span><span class="n">dx</span> <span class="o">=</span> <span class="n">sparsedetect</span><span class="o">.</span><span class="n">circleMask</span><span class="p">(</span><span class="n">d0</span><span class="p">)</span>
-    <span class="n">rsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rs</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
-    <span class="n">r2</span> <span class="o">=</span> <span class="p">((</span><span class="n">ypix</span> <span class="o">-</span> <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;med&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">((</span><span class="n">xpix</span> <span class="o">-</span> <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;med&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">d0</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
-    <span class="n">r2</span> <span class="o">=</span> <span class="n">r2</span><span class="o">**.</span><span class="mi">5</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;mrs&quot;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">r2</span><span class="p">)</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;mrs0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rsort</span><span class="p">[:</span><span class="n">r2</span><span class="o">.</span><span class="n">size</span><span class="p">])</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;compact&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;mrs&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1e-10</span> <span class="o">+</span> <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;mrs0&quot;</span><span class="p">])</span>
-    <span class="c1"># footprint</span>
-    <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;footprint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">footprints</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    
     <span class="c1"># red prob</span>
     <span class="n">stat0</span><span class="p">[</span><span class="s1">&#39;chan2_prob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prmean</span>
     <span class="c1"># inmerge</span>
@@ -300,7 +295,7 @@
     <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;ycirc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ycirc</span><span class="p">[</span><span class="n">goodi</span><span class="p">]</span>
     <span class="n">stat0</span><span class="p">[</span><span class="s2">&quot;xcirc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xcirc</span><span class="p">[</span><span class="n">goodi</span><span class="p">]</span>
     <span class="c1"># deconvolve activity</span>
-    <span class="n">spks</span> <span class="o">=</span> <span class="n">dcnv</span><span class="o">.</span><span class="n">oasis</span><span class="p">(</span><span class="n">dF</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">spks</span> <span class="o">=</span> <span class="n">extraction</span><span class="o">.</span><span class="n">dcnv</span><span class="o">.</span><span class="n">oasis</span><span class="p">(</span><span class="n">dF</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
 
     <span class="c1">### remove previously merged cell from FOV (do not replace)</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">remove_merged</span><span class="p">:</span>
@@ -317,7 +312,7 @@
 
     <span class="c1"># add cell to structs</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat0</span><span class="p">])),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">parent</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">sparsedetect</span><span class="o">.</span><span class="n">get_overlaps</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">parent</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">extraction</span><span class="o">.</span><span class="n">masks</span><span class="o">.</span><span class="n">get_overlaps</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Fcell</span><span class="p">,</span> <span class="n">F</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">parent</span><span class="o">.</span><span class="n">Fneu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">parent</span><span class="o">.</span><span class="n">Fneu</span><span class="p">,</span> <span class="n">Fneu</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -339,7 +334,7 @@
     <span class="n">masks</span><span class="o">.</span><span class="n">add_roi</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i0</span><span class="p">)</span>
     <span class="n">masks</span><span class="o">.</span><span class="n">redraw_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">ypix</span><span class="p">,</span> <span class="n">xpix</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MergeWindow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.MergeWindow">[docs]</a><span class="k">class</span> <span class="nc">MergeWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+<div class="viewcode-block" id="MergeWindow"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.MergeWindow">[docs]</a><span class="k">class</span> <span class="nc">MergeWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MergeWindow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span><span class="mi">300</span><span class="p">,</span><span class="mi">700</span><span class="p">,</span><span class="mi">700</span><span class="p">)</span>
@@ -401,7 +396,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">compute_merge_list</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MergeWindow.do_merge"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.MergeWindow.do_merge">[docs]</a>    <span class="k">def</span> <span class="nf">do_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="MergeWindow.do_merge"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.MergeWindow.do_merge">[docs]</a>    <span class="k">def</span> <span class="nf">do_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="n">merge_activity_masks</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span><span class="p">)</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span>
@@ -424,7 +419,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">doMerge</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">update_plot</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="MergeWindow.compute_merge_list"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.MergeWindow.compute_merge_list">[docs]</a>    <span class="k">def</span> <span class="nf">compute_merge_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="MergeWindow.compute_merge_list"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.MergeWindow.compute_merge_list">[docs]</a>    <span class="k">def</span> <span class="nf">compute_merge_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;computing automated merge suggestions...&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keylist</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">editlist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span>
@@ -459,7 +454,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">unmerged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merge_list</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">suggest_merge</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MergeWindow.suggest_merge"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.MergeWindow.suggest_merge">[docs]</a>    <span class="k">def</span> <span class="nf">suggest_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<div class="viewcode-block" id="MergeWindow.suggest_merge"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.MergeWindow.suggest_merge">[docs]</a>    <span class="k">def</span> <span class="nf">suggest_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">ichosen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">imerge</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merge_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unmerged</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]:</span>
@@ -492,18 +487,18 @@
         <span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="LineEdit"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.LineEdit">[docs]</a><span class="k">class</span> <span class="nc">LineEdit</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">):</span>
+<div class="viewcode-block" id="LineEdit"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.LineEdit">[docs]</a><span class="k">class</span> <span class="nc">LineEdit</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LineEdit</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
         <span class="c1">#self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))</span>
 
-<div class="viewcode-block" id="LineEdit.get_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.LineEdit.get_text">[docs]</a>    <span class="k">def</span> <span class="nf">get_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LineEdit.get_text"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.LineEdit.get_text">[docs]</a>    <span class="k">def</span> <span class="nf">get_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span>
         <span class="n">okey</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">okey</span></div>
 
-<div class="viewcode-block" id="LineEdit.set_text"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/merge/index.html#suite2p.gui.merge.LineEdit.set_text">[docs]</a>    <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ops</span><span class="p">):</span>
+<div class="viewcode-block" id="LineEdit.set_text"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.merge.LineEdit.set_text">[docs]</a>    <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ops</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span>
         <span class="n">dstr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">dstr</span><span class="p">)</span></div></div>
@@ -519,7 +514,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -544,6 +539,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

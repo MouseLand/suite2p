@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.registration.metrics &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.registration.metrics &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.registration.metrics</li>
     
     
@@ -169,13 +179,13 @@
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">cv2</span>
-<div class="viewcode-block" id="HAS_CV2"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.HAS_CV2">[docs]</a>    <span class="n">HAS_CV2</span> <span class="o">=</span> <span class="kc">True</span></div>
+    <span class="n">HAS_CV2</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">HAS_CV2</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
 
-<div class="viewcode-block" id="pclowhigh"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.pclowhigh">[docs]</a><span class="k">def</span> <span class="nf">pclowhigh</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">nlowhigh</span><span class="p">,</span> <span class="n">nPC</span><span class="p">):</span>
+<div class="viewcode-block" id="pclowhigh"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.pclowhigh">[docs]</a><span class="k">def</span> <span class="nf">pclowhigh</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">nlowhigh</span><span class="p">,</span> <span class="n">nPC</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; get mean of top and bottom PC weights for nPC&#39;s of mov</span>
 
 <span class="sd">        computes nPC PCs of mov and returns average of top and bottom</span>
@@ -221,7 +231,7 @@
         <span class="n">pchigh</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mov</span><span class="p">[:,:,</span><span class="n">isort</span><span class="p">[</span><span class="o">-</span><span class="n">nlowhigh</span><span class="p">:,</span> <span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">pclow</span><span class="p">,</span> <span class="n">pchigh</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span></div>
 
-<div class="viewcode-block" id="pc_register"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.pc_register">[docs]</a><span class="k">def</span> <span class="nf">pc_register</span><span class="p">(</span><span class="n">pclow</span><span class="p">,</span> <span class="n">pchigh</span><span class="p">,</span> <span class="n">refImg</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">1.15</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">),</span> <span class="n">maxregshift</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">maxregshiftNR</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preg</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="pc_register"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.pc_register">[docs]</a><span class="k">def</span> <span class="nf">pc_register</span><span class="p">(</span><span class="n">pclow</span><span class="p">,</span> <span class="n">pchigh</span><span class="p">,</span> <span class="n">refImg</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="o">=</span><span class="mf">1.15</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">),</span> <span class="n">maxregshift</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">maxregshiftNR</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">preg</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; register top and bottom of PCs to each other</span>
 
 <span class="sd">        Parameters</span>
@@ -280,7 +290,7 @@
         <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">((</span><span class="n">yxnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">yxnr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**.</span><span class="mi">5</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X</span></div>
 
-<div class="viewcode-block" id="get_pc_metrics"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.get_pc_metrics">[docs]</a><span class="k">def</span> <span class="nf">get_pc_metrics</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">use_red</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="get_pc_metrics"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.get_pc_metrics">[docs]</a><span class="k">def</span> <span class="nf">get_pc_metrics</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">use_red</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; computes registration metrics using top PCs of registered movie</span>
 
 <span class="sd">        movie saved as binary file ops[&#39;reg_file&#39;]</span>
@@ -340,13 +350,13 @@
     <span class="k">return</span> <span class="n">ops</span></div>
 
 
-<div class="viewcode-block" id="filt_worker"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.filt_worker">[docs]</a><span class="k">def</span> <span class="nf">filt_worker</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+<div class="viewcode-block" id="filt_worker"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.filt_worker">[docs]</a><span class="k">def</span> <span class="nf">filt_worker</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
     <span class="n">X</span><span class="p">,</span> <span class="n">filt</span> <span class="o">=</span> <span class="n">inputs</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">convolve2d</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">n</span><span class="p">,:,:],</span> <span class="n">filt</span><span class="p">,</span> <span class="s1">&#39;same&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">X</span></div>
 
-<div class="viewcode-block" id="filt_parallel"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.filt_parallel">[docs]</a><span class="k">def</span> <span class="nf">filt_parallel</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">):</span>
+<div class="viewcode-block" id="filt_parallel"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.filt_parallel">[docs]</a><span class="k">def</span> <span class="nf">filt_parallel</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">):</span>
     <span class="n">nimg</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">nbatch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">nimg</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">num_cores</span><span class="p">)))</span>
     <span class="n">inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nimg</span><span class="p">,</span> <span class="n">nbatch</span><span class="p">)</span>
@@ -364,7 +374,7 @@
         <span class="n">results</span> <span class="o">=</span> <span class="n">filt_worker</span><span class="p">(</span><span class="n">dsplit</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">results</span></div>
 
-<div class="viewcode-block" id="local_corr"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.local_corr">[docs]</a><span class="k">def</span> <span class="nf">local_corr</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">):</span>
+<div class="viewcode-block" id="local_corr"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.local_corr">[docs]</a><span class="k">def</span> <span class="nf">local_corr</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_cores</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; computes correlation image on mov (nframes x pixels x pixels)&#39;&#39;&#39;</span>
     <span class="n">nframes</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span> <span class="o">=</span> <span class="n">mov</span><span class="o">.</span><span class="n">shape</span>
 
@@ -397,7 +407,7 @@
     <span class="n">img_corr</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">img_corr</span></div>
 
-<div class="viewcode-block" id="bin_median"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.bin_median">[docs]</a><span class="k">def</span> <span class="nf">bin_median</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<div class="viewcode-block" id="bin_median"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.bin_median">[docs]</a><span class="k">def</span> <span class="nf">bin_median</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
     <span class="n">nframes</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span> <span class="o">=</span> <span class="n">mov</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="n">nframes</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">:</span>
         <span class="n">window</span> <span class="o">=</span> <span class="n">nframes</span>
@@ -405,7 +415,7 @@
                                   <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">window</span><span class="p">,</span><span class="n">Ly</span><span class="p">,</span><span class="n">Lx</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mov</span></div>
 
-<div class="viewcode-block" id="corr_to_template"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.corr_to_template">[docs]</a><span class="k">def</span> <span class="nf">corr_to_template</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">):</span>
+<div class="viewcode-block" id="corr_to_template"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.corr_to_template">[docs]</a><span class="k">def</span> <span class="nf">corr_to_template</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">):</span>
     <span class="n">nframes</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span> <span class="o">=</span> <span class="n">mov</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">tmpl_flat</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
     <span class="n">tmpl_flat</span> <span class="o">-=</span> <span class="n">tmpl_flat</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
@@ -419,7 +429,7 @@
 
     <span class="k">return</span> <span class="n">correlations</span></div>
 
-<div class="viewcode-block" id="optic_flow"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.optic_flow">[docs]</a><span class="k">def</span> <span class="nf">optic_flow</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">,</span> <span class="n">nflows</span><span class="p">):</span>
+<div class="viewcode-block" id="optic_flow"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.optic_flow">[docs]</a><span class="k">def</span> <span class="nf">optic_flow</span><span class="p">(</span><span class="n">mov</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">,</span> <span class="n">nflows</span><span class="p">):</span>
     <span class="n">window</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">0.2</span><span class="p">)</span> <span class="c1"># window size</span>
     <span class="n">nframes</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span> <span class="o">=</span> <span class="n">mov</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">mov</span> <span class="o">=</span> <span class="n">mov</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -450,7 +460,7 @@
     <span class="k">return</span> <span class="n">flows</span><span class="p">,</span> <span class="n">norms</span></div>
 
 
-<div class="viewcode-block" id="get_flow_metrics"><a class="viewcode-back" href="../../../autoapi/suite2p/registration/metrics/index.html#suite2p.registration.metrics.get_flow_metrics">[docs]</a><span class="k">def</span> <span class="nf">get_flow_metrics</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+<div class="viewcode-block" id="get_flow_metrics"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.metrics.get_flow_metrics">[docs]</a><span class="k">def</span> <span class="nf">get_flow_metrics</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; get farneback optical flow and some other stats from normcorre paper&#39;&#39;&#39;</span>
     <span class="c1"># done in batches for memory reasons</span>
     <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
@@ -528,7 +538,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -553,6 +563,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

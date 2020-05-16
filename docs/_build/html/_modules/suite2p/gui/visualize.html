@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>suite2p.gui.visualize &mdash; suite2p 0.6.17 documentation</title>
+  <title>suite2p.gui.visualize &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -45,13 +46,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="../../../index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -95,7 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -143,8 +155,6 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-          <li><a href="../../suite2p.html">suite2p</a> &raquo;</li>
-        
       <li>suite2p.gui.visualize</li>
     
     
@@ -175,12 +185,12 @@
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">rungui</span><span class="p">,</span><span class="n">masks</span>
 
 <span class="c1"># custom vertical label</span>
-<div class="viewcode-block" id="VerticalLabel"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VerticalLabel">[docs]</a><span class="k">class</span> <span class="nc">VerticalLabel</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+<div class="viewcode-block" id="VerticalLabel"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VerticalLabel">[docs]</a><span class="k">class</span> <span class="nc">VerticalLabel</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
 
-<div class="viewcode-block" id="VerticalLabel.paintEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VerticalLabel.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="VerticalLabel.paintEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VerticalLabel.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
         <span class="n">painter</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -189,7 +199,7 @@
             <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
         <span class="n">painter</span><span class="o">.</span><span class="n">end</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="RangeSlider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider">[docs]</a><span class="k">class</span> <span class="nc">RangeSlider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider">[docs]</a><span class="k">class</span> <span class="nc">RangeSlider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; A slider for ranges.</span>
 
 <span class="sd">        This class provides a dual-slider for ranges, where there is a defined</span>
@@ -228,24 +238,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">active_slider</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
 
-<div class="viewcode-block" id="RangeSlider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.level_change"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">saturation</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="RangeSlider.low"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.low">[docs]</a>    <span class="k">def</span> <span class="nf">low</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.low"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.low">[docs]</a>    <span class="k">def</span> <span class="nf">low</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_low</span></div>
 
-<div class="viewcode-block" id="RangeSlider.setLow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.setLow">[docs]</a>    <span class="k">def</span> <span class="nf">setLow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.setLow"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.setLow">[docs]</a>    <span class="k">def</span> <span class="nf">setLow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_low</span> <span class="o">=</span> <span class="n">low</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.high"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.high">[docs]</a>    <span class="k">def</span> <span class="nf">high</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.high"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.high">[docs]</a>    <span class="k">def</span> <span class="nf">high</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_high</span></div>
 
-<div class="viewcode-block" id="RangeSlider.setHigh"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.setHigh">[docs]</a>    <span class="k">def</span> <span class="nf">setHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.setHigh"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.setHigh">[docs]</a>    <span class="k">def</span> <span class="nf">setHigh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="n">high</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="RangeSlider.paintEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.paintEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.paintEvent">[docs]</a>    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="c1"># based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp</span>
         <span class="n">painter</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
@@ -269,7 +279,7 @@
             <span class="n">opt</span><span class="o">.</span><span class="n">sliderValue</span> <span class="o">=</span> <span class="n">value</span>
             <span class="n">style</span><span class="o">.</span><span class="n">drawComplexControl</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">CC_Slider</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">painter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="RangeSlider.mousePressEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.mousePressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mousePressEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.mousePressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
         <span class="n">button</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span>
@@ -294,7 +304,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">setRepeatAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SliderNoAction</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span></div>
-<div class="viewcode-block" id="RangeSlider.mouseMoveEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.mouseMoveEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mouseMoveEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.mouseMoveEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressed_control</span> <span class="o">!=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyle</span><span class="o">.</span><span class="n">SC_SliderHandle</span><span class="p">:</span>
             <span class="n">event</span><span class="o">.</span><span class="n">ignore</span><span class="p">()</span>
             <span class="k">return</span>
@@ -324,14 +334,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_high</span> <span class="o">=</span> <span class="n">new_pos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">click_offset</span> <span class="o">=</span> <span class="n">new_pos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
-<div class="viewcode-block" id="RangeSlider.mouseReleaseEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.mouseReleaseEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="RangeSlider.mouseReleaseEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.RangeSlider.mouseReleaseEvent">[docs]</a>    <span class="k">def</span> <span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">level_change</span><span class="p">()</span></div>
-<div class="viewcode-block" id="RangeSlider.__pick"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.__pick">[docs]</a>    <span class="k">def</span> <span class="nf">__pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">()</span> <span class="o">==</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">()</span></div>
-<div class="viewcode-block" id="RangeSlider.__pixelPosToRangeValue"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.RangeSlider.__pixelPosToRangeValue">[docs]</a>    <span class="k">def</span> <span class="nf">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__pixelPosToRangeValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
         <span class="n">opt</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QStyleOptionSlider</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initStyleOption</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
         <span class="n">style</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
@@ -350,9 +360,9 @@
 
         <span class="k">return</span> <span class="n">style</span><span class="o">.</span><span class="n">sliderValueFromPosition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum</span><span class="p">(),</span>
                                              <span class="n">pos</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span> <span class="n">slider_max</span><span class="o">-</span><span class="n">slider_min</span><span class="p">,</span>
-                                             <span class="n">opt</span><span class="o">.</span><span class="n">upsideDown</span><span class="p">)</span></div></div>
+                                             <span class="n">opt</span><span class="o">.</span><span class="n">upsideDown</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SatSlider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.SatSlider">[docs]</a><span class="k">class</span> <span class="nc">SatSlider</span><span class="p">(</span><span class="n">RangeSlider</span><span class="p">):</span>
+<div class="viewcode-block" id="SatSlider"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.SatSlider">[docs]</a><span class="k">class</span> <span class="nc">SatSlider</span><span class="p">(</span><span class="n">RangeSlider</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SatSlider</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
@@ -361,14 +371,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setLow</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setHigh</span><span class="p">(</span><span class="mi">70</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SatSlider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.SatSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SatSlider.level_change"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.SatSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">img</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">imgROI</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="NeuronSlider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.NeuronSlider">[docs]</a><span class="k">class</span> <span class="nc">NeuronSlider</span><span class="p">(</span><span class="n">RangeSlider</span><span class="p">):</span>
+<div class="viewcode-block" id="NeuronSlider"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.NeuronSlider">[docs]</a><span class="k">class</span> <span class="nc">NeuronSlider</span><span class="p">(</span><span class="n">RangeSlider</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SatSlider</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
@@ -377,14 +387,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setLow</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setHigh</span><span class="p">(</span><span class="mi">70</span><span class="p">)</span>
 
-<div class="viewcode-block" id="NeuronSlider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.NeuronSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="NeuronSlider.level_change"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.NeuronSlider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_low</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_high</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">img</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">imgROI</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="Slider"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.Slider">[docs]</a><span class="k">class</span> <span class="nc">Slider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
+<div class="viewcode-block" id="Slider"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.Slider">[docs]</a><span class="k">class</span> <span class="nc">Slider</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QSlider</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bid</span> <span class="o">=</span> <span class="n">bid</span>
@@ -396,7 +406,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">level_change</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="n">bid</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setTracking</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Slider.level_change"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.Slider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
+<div class="viewcode-block" id="Slider.level_change"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.Slider.level_change">[docs]</a>    <span class="k">def</span> <span class="nf">level_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">bid</span><span class="p">):</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">())</span><span class="o">/</span><span class="mi">100</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">img</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">imgROI</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">parent</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
@@ -405,7 +415,7 @@
 
 
 <span class="c1">### custom QDialog which allows user to fill in ops and run suite2p!</span>
-<div class="viewcode-block" id="VisWindow"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow">[docs]</a><span class="k">class</span> <span class="nc">VisWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow">[docs]</a><span class="k">class</span> <span class="nc">VisWindow</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QMainWindow</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">VisWindow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
@@ -581,7 +591,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">scene</span><span class="p">()</span><span class="o">.</span><span class="n">sigMouseClicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plot_clicked</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-<div class="viewcode-block" id="VisWindow.plot_clicked"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.plot_clicked">[docs]</a>    <span class="k">def</span> <span class="nf">plot_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.plot_clicked"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.plot_clicked">[docs]</a>    <span class="k">def</span> <span class="nf">plot_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">scene</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">scenePos</span><span class="p">())</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">x</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">:</span>
@@ -590,7 +600,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">setPos</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">setSize</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="VisWindow.keyPressEvent"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.keyPressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">keyPressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.keyPressEvent"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.keyPressEvent">[docs]</a>    <span class="k">def</span> <span class="nf">keyPressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">bid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">move</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">nn</span><span class="p">,</span><span class="n">nt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span>
@@ -675,7 +685,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">LINE</span><span class="o">.</span><span class="n">setSize</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">xrange</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">yrange</span><span class="o">.</span><span class="n">size</span><span class="p">])</span></div>
 
 
-<div class="viewcode-block" id="VisWindow.roi_range"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.roi_range">[docs]</a>    <span class="k">def</span> <span class="nf">roi_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roi</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.roi_range"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.roi_range">[docs]</a>    <span class="k">def</span> <span class="nf">roi_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roi</span><span class="p">):</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
         <span class="n">posy</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
         <span class="n">posx</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
@@ -688,7 +698,7 @@
         <span class="n">yrange</span> <span class="o">=</span> <span class="n">yrange</span><span class="p">[</span><span class="n">yrange</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
         <span class="k">return</span> <span class="n">xrange</span><span class="p">,</span><span class="n">yrange</span></div>
 
-<div class="viewcode-block" id="VisWindow.plot_traces"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.plot_traces">[docs]</a>    <span class="k">def</span> <span class="nf">plot_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.plot_traces"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.plot_traces">[docs]</a>    <span class="k">def</span> <span class="nf">plot_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">avg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spF</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selected</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">xrange</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">avg</span> <span class="o">-=</span> <span class="n">avg</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
         <span class="n">avg</span> <span class="o">/=</span> <span class="n">avg</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
@@ -700,19 +710,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">p3</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">THRES</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">THRES</span><span class="o">.</span><span class="n">setZValue</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># make sure ROI is drawn above image</span></div>
 
-<div class="viewcode-block" id="VisWindow.LINE_position"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.LINE_position">[docs]</a>    <span class="k">def</span> <span class="nf">LINE_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.LINE_position"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.LINE_position">[docs]</a>    <span class="k">def</span> <span class="nf">LINE_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">_</span><span class="p">,</span><span class="n">yrange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">LINE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">selected</span> <span class="o">=</span> <span class="n">yrange</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot_traces</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="VisWindow.THRES_position"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.THRES_position">[docs]</a>    <span class="k">def</span> <span class="nf">THRES_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.THRES_position"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.THRES_position">[docs]</a>    <span class="k">def</span> <span class="nf">THRES_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">THRES</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
         <span class="n">posy</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
         <span class="n">sizex</span><span class="p">,</span><span class="n">sizey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">THRES</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tpos</span> <span class="o">=</span> <span class="n">posy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tsize</span> <span class="o">=</span> <span class="n">sizey</span></div>
 
-<div class="viewcode-block" id="VisWindow.ROI_position"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.ROI_position">[docs]</a>    <span class="k">def</span> <span class="nf">ROI_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.ROI_position"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.ROI_position">[docs]</a>    <span class="k">def</span> <span class="nf">ROI_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">xrange</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xrange</span> <span class="o">=</span> <span class="n">xrange</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">imgROI</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spF</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xrange</span><span class="p">])</span>
@@ -737,7 +747,7 @@
         <span class="c1">#axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">imgROI</span><span class="o">.</span><span class="n">setLevels</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">sat</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span></div>
 
-<div class="viewcode-block" id="VisWindow.PC_on"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.PC_on">[docs]</a>    <span class="k">def</span> <span class="nf">PC_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.PC_on"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.PC_on">[docs]</a>    <span class="k">def</span> <span class="nf">PC_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot</span><span class="p">):</span>
         <span class="c1"># edit buttons</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PCedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PCedit</span><span class="o">.</span><span class="n">setValidator</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIntValidator</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
@@ -756,11 +766,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">neural_sorting</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PCOn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VisWindow.PCreturn"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.PCreturn">[docs]</a>    <span class="k">def</span> <span class="nf">PCreturn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.PCreturn"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.PCreturn">[docs]</a>    <span class="k">def</span> <span class="nf">PCreturn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">neural_sorting</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VisWindow.activate"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.activate">[docs]</a>    <span class="k">def</span> <span class="nf">activate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.activate"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.activate">[docs]</a>    <span class="k">def</span> <span class="nf">activate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># activate buttons</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PCedit</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PCedit</span><span class="o">.</span><span class="n">setValidator</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIntValidator</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
@@ -803,7 +813,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mapOn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sortTime</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VisWindow.compute_map"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.compute_map">[docs]</a>    <span class="k">def</span> <span class="nf">compute_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.compute_map"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.compute_map">[docs]</a>    <span class="k">def</span> <span class="nf">compute_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;n_components&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;n_X&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span>
                     <span class="s1">&#39;nPC&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s1">&#39;constraints&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;annealing&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="s1">&#39;pca&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span>
@@ -827,27 +837,27 @@
         <span class="c1">#self.process.start(&#39;python -u -W ignore -m rastermap --S %s --ops %s&#39;%</span>
         <span class="c1">#                    (spath, opspath))</span>
 
-<div class="viewcode-block" id="VisWindow.finished"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.finished">[docs]</a>    <span class="k">def</span> <span class="nf">finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.finished"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.finished">[docs]</a>    <span class="k">def</span> <span class="nf">finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">finish</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;raster map computed in </span><span class="si">%3.2f</span><span class="s1"> s&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">tic</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Interrupted by error (not finished)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VisWindow.stdout_write"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.stdout_write">[docs]</a>    <span class="k">def</span> <span class="nf">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.stdout_write"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.stdout_write">[docs]</a>    <span class="k">def</span> <span class="nf">stdout_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">output</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readAllStandardOutput</span><span class="p">(),</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
         <span class="c1">#self.logfile = open(os.path.join(self.save_path, &#39;suite2p/run.log&#39;), &#39;a&#39;)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
         <span class="c1">#self.logfile.close()</span>
 
-<div class="viewcode-block" id="VisWindow.stderr_write"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.stderr_write">[docs]</a>    <span class="k">def</span> <span class="nf">stderr_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.stderr_write"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.stderr_write">[docs]</a>    <span class="k">def</span> <span class="nf">stderr_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;ERROR&lt;&lt;&lt;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">output</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">readAllStandardError</span><span class="p">(),</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">finish</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="VisWindow.select_cells"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.select_cells">[docs]</a>    <span class="k">def</span> <span class="nf">select_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.select_cells"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.select_cells">[docs]</a>    <span class="k">def</span> <span class="nf">select_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">imerge</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">5000</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected</span><span class="p">:</span>
@@ -857,7 +867,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;too many cells selected&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VisWindow.sort_time"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.sort_time">[docs]</a>    <span class="k">def</span> <span class="nf">sort_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.sort_time"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.sort_time">[docs]</a>    <span class="k">def</span> <span class="nf">sort_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raster</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sortTime</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
                 <span class="n">ops</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;n_components&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;n_X&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span>
@@ -875,7 +885,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">tsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">neural_sorting</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comboBox</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="VisWindow.neural_sorting"><a class="viewcode-back" href="../../../autoapi/suite2p/gui/visualize/index.html#suite2p.gui.visualize.VisWindow.neural_sorting">[docs]</a>    <span class="k">def</span> <span class="nf">neural_sorting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+<div class="viewcode-block" id="VisWindow.neural_sorting"><a class="viewcode-back" href="../../../api/suite2p.gui.html#suite2p.gui.visualize.VisWindow.neural_sorting">[docs]</a>    <span class="k">def</span> <span class="nf">neural_sorting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">isort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">[:,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PCedit</span><span class="o">.</span><span class="n">text</span><span class="p">())</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
@@ -905,7 +915,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -930,6 +940,18 @@
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

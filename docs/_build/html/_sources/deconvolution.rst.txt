@@ -12,7 +12,7 @@ run your own data separately if you want):
 ::
 
    # compute deconvolution
-   from suite2p import dcnv
+   from suite2p.extraction import dcnv
    import numpy as np
 
    tau = 1.0 # timescale of indicator

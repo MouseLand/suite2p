@@ -8,10 +8,12 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Outputs &mdash; suite2p 0.6.17 documentation</title>
+  <title>Outputs &mdash; suite2p 0.7.2 documentation</title>
   
 
   
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -21,10 +23,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -33,7 +35,6 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Multiday recordings" href="multiday.html" />
@@ -47,13 +48,16 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: black" >
           
 
           
             <a href="index.html" class="icon icon-home"> suite2p
           
 
+          
+            
+            <img src="_static/favicon.ico" class="logo" alt="Logo"/>
           
           </a>
 
@@ -89,6 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gui.html">Using the GUI</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Outputs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#matlab-output">MATLAB output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nwb-output">NWB Output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#multichannel-recordings">Multichannel recordings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#stat-npy-fields">stat.npy fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ops-npy-fields">ops.npy fields</a></li>
@@ -103,7 +108,15 @@
 <li class="toctree-l1"><a class="reference internal" href="celldetection.html">Cell detection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="roiextraction.html">Signal extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Spike deconvolution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/suite2p.gui.html">suite2p.gui package</a></li>
 </ul>
 
             
@@ -163,6 +176,15 @@
   </ul>
 
   
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="multiday.html" class="btn btn-neutral float-right" title="Multiday recordings" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="gui.html" class="btn btn-neutral float-left" title="Using the GUI" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+  </div>
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -200,6 +222,20 @@ If you make changes in the GUI to the cell assignments, ONLY
 recommend using this package: <a class="reference external" href="https://github.com/kwikteam/npy-matlab">npy-matlab</a>. Alternatively there is a
 <em>new</em> save button in the GUI (in the file menu) that allows you to save
 the iscell again to the <code class="docutils literal notranslate"><span class="pre">Fall.mat</span></code> file.</p>
+</div>
+<div class="section" id="nwb-output">
+<h2>NWB Output<a class="headerlink" href="#nwb-output" title="Permalink to this headline">¶</a></h2>
+<p>If <code class="docutils literal notranslate"><span class="pre">ops['save_NWB']=1</span></code>, then an NWB file is created <code class="docutils literal notranslate"><span class="pre">ophys.nwb</span></code>. This
+will contain the fields from ops and stat required to load back into the GUI, along
+with F, Fneu, spks and iscell. If
+the recording has multiple planes, then they are all saved together like in
+combined view. See fields below:</p>
+<p>stat: stat[‘ypix’], stat[‘xpix’] (if multiplane <cite>stat[‘iplane’]</cite>) are saved in
+‘pixel_mask’ (called <cite>‘voxel_mask’</cite> in multiplane).</p>
+<p>ops: ‘meanImg’, ‘max_proj’, ‘Vcorr’ are saved in Images ‘Backgrounds_k’ where k is the plane
+number, and have the same names. optionally if two channels, ‘meanImg_chan2’ is saved.</p>
+<p>iscell: saved as an array ‘iscell’</p>
+<p>F,Fneu,spks are saved as roi_response_series ‘Fluorescence’, ‘Neuropil’, and ‘Deconvolved’.</p>
 </div>
 <div class="section" id="multichannel-recordings">
 <h2>Multichannel recordings<a class="headerlink" href="#multichannel-recordings" title="Permalink to this headline">¶</a></h2>
@@ -287,21 +323,12 @@ at each timepoint</p></li>
           </div>
           <footer>
   
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="multiday.html" class="btn btn-neutral float-right" title="Multiday recordings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="gui.html" class="btn btn-neutral float-left" title="Using the GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Carsen Stringer, Marius Pachitariu
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
 
     </p>
   </div>
@@ -326,6 +353,18 @@ at each timepoint</p></li>
 
   
   
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
     
    
 

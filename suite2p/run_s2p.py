@@ -120,7 +120,6 @@ def run_s2p(ops={},db={}):
                 list of ops for each plane
 
     """
-
     t0 = time.time()
     ops0 = default_ops()
     ops = {**ops0, **ops}
@@ -222,7 +221,8 @@ def run_s2p(ops={},db={}):
                 print('time %4.2f sec. Wrote bruker tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             else:
                 ops1 = tiff.tiff_to_binary(ops)
-                print('time %4.2f sec. Wrote tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
+                print('time %4.2f sec. Wrote %d tiff frames to binaries for %d planes'%
+                            (ops1[0]['nframes'], time.time()-(t0), len(ops1)))
         np.save(fpathops1, ops1) # save ops1
     else:
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])

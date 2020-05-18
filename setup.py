@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
     install_requires = ['pyqtgraph', 'numpy>=1.13.0', 'scipy', 'h5py', 'natsort','mkl_fft',
-                        'numba', 'scikit-learn', 'matplotlib', 'rastermap',
+                        'numba', 'scikit-learn', 'matplotlib', 'rastermap>0.10.0',
                         'scanimage-tiff-reader'],
     include_package_data=True,
     classifiers=(

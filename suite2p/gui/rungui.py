@@ -47,6 +47,7 @@ class RunWindow(QtGui.QDialog):
             self.reset_ops()
             print('loaded default ops')
         except Exception as e:
+            print('ERROR: %s'%e)
             print('could not load default ops, using built-in ops settings')
             self.ops = run_s2p.default_ops()
 

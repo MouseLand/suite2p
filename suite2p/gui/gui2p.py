@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 import warnings
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from ..utils import default_ops
+from ..run_s2p import default_ops
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''

@@ -222,7 +222,7 @@ def run_s2p(ops={},db={}):
             else:
                 ops1 = tiff.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote %d tiff frames to binaries for %d planes'%
-                            (ops1[0]['nframes'], time.time()-(t0), len(ops1)))
+                            (time.time()-(t0), ops1[0]['nframes'], len(ops1)))
         np.save(fpathops1, ops1) # save ops1
     else:
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])

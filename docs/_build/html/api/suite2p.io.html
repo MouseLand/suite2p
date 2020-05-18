@@ -107,12 +107,12 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">suite2p.io package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.h5">suite2p.io.h5 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.nwb">suite2p.io.nwb module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#suite2p-io-nwb-module">suite2p.io.nwb module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.save">suite2p.io.save module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.sbx">suite2p.io.sbx module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.tiff">suite2p.io.tiff module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#suite2p-io-sbx-module">suite2p.io.sbx module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#suite2p-io-tiff-module">suite2p.io.tiff module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io.utils">suite2p.io.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.io">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="suite2p.registration.html">suite2p.registration package</a></li>
@@ -219,18 +219,8 @@
 </dd></dl>
 
 </div>
-<div class="section" id="module-suite2p.io.nwb">
-<span id="suite2p-io-nwb-module"></span><h2>suite2p.io.nwb module<a class="headerlink" href="#module-suite2p.io.nwb" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="suite2p.io.nwb.read">
-<code class="sig-prename descclassname">suite2p.io.nwb.</code><code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">fpath</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/nwb.html#read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.nwb.read" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.nwb.save">
-<code class="sig-prename descclassname">suite2p.io.nwb.</code><code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">ops1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/nwb.html#save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.nwb.save" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="suite2p-io-nwb-module">
+<h2>suite2p.io.nwb module<a class="headerlink" href="#suite2p-io-nwb-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-suite2p.io.save">
 <span id="suite2p-io-save-module"></span><h2>suite2p.io.save module<a class="headerlink" href="#module-suite2p.io.save" title="Permalink to this headline">¶</a></h2>
@@ -243,157 +233,11 @@ Multi-roi recordings are arranged by their dx,dy physical localization.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-suite2p.io.sbx">
-<span id="suite2p-io-sbx-module"></span><h2>suite2p.io.sbx module<a class="headerlink" href="#module-suite2p.io.sbx" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="suite2p.io.sbx.sbx_get_info">
-<code class="sig-prename descclassname">suite2p.io.sbx.</code><code class="sig-name descname">sbx_get_info</code><span class="sig-paren">(</span><em class="sig-param">sbxfile</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/sbx.html#sbx_get_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.sbx.sbx_get_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read info from a scanbox mat file [pass the sbx extension].
-info = sbx_get_info(sbxfile)</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.sbx.sbx_get_shape">
-<code class="sig-prename descclassname">suite2p.io.sbx.</code><code class="sig-name descname">sbx_get_shape</code><span class="sig-paren">(</span><em class="sig-param">sbxfile</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/sbx.html#sbx_get_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.sbx.sbx_get_shape" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get shape from scanbox file.
-Reads it from the file size and the info mat file.
-(chan,ncols,nrows,max_idx),nplanes = sbx_get_shape(sbxfile)</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.sbx.sbx_memmap">
-<code class="sig-prename descclassname">suite2p.io.sbx.</code><code class="sig-name descname">sbx_memmap</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">plane_axis=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/sbx.html#sbx_memmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.sbx.sbx_memmap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Memory maps a scanbox file.</p>
-<p>npmap = sbx_memmap(filename,reshape_planes=True)
-Returns a N x 1 x NChannels x H x W memory map object; data can be accessed like a numpy array.
-Reshapes data to (N,nplanes,nchan,H,W) if plane_axis=1</p>
-<p>Actual data are 65535 - sbxmmap; data format is uint16</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.sbx.sbx_to_binary">
-<code class="sig-prename descclassname">suite2p.io.sbx.</code><code class="sig-name descname">sbx_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em>, <em class="sig-param">ndeadcols=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/sbx.html#sbx_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.sbx.sbx_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds scanbox files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘data_path’, ‘save_path’, ‘save_folder’, ‘fast_disk’,
-‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ‘Ly’, ‘Lx’, ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
+<div class="section" id="suite2p-io-sbx-module">
+<h2>suite2p.io.sbx module<a class="headerlink" href="#suite2p-io-sbx-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-suite2p.io.tiff">
-<span id="suite2p-io-tiff-module"></span><h2>suite2p.io.tiff module<a class="headerlink" href="#module-suite2p.io.tiff" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="suite2p.io.tiff.choose_tiff_reader">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">choose_tiff_reader</code><span class="sig-paren">(</span><em class="sig-param">fs0</em>, <em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#choose_tiff_reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.choose_tiff_reader" title="Permalink to this definition">¶</a></dt>
-<dd><p>chooses tiff reader (ScanImageTiffReader is default)</p>
-<p>tries to open tiff with ScanImageTiffReader and if it fails sets sktiff to True</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fs0</strong> (<em>string</em>) – path to first tiff in list</p></li>
-<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘batch_size’</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>sktiff</strong> – whether or not to use scikit-image tiff reader</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.tiff.mesoscan_to_binary">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">mesoscan_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#mesoscan_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.mesoscan_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds mesoscope tiff files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘data_path’, ‘save_path’, ‘save_folder’, ‘fast_disk’,
-‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’, ‘lines’, ‘dx’, ‘dy’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary
-assigns keys ‘Ly’, ‘Lx’, ‘tiffreader’, ‘first_tiffs’, ‘frames_per_folder’,
-‘nframes’, ‘meanImg’, ‘meanImg_chan2’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.tiff.ome_to_binary">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">ome_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#ome_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.ome_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>converts ome.tiff to <a href="#id1"><span class="problematic" id="id2">*</span></a>.bin file for non-interleaved red channel recordings
-assumes SINGLE-PAGE tiffs where first channel has string ‘Ch1’
-and also SINGLE FOLDER</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – keys nplanes, nchannels, data_path, look_one_level_down, reg_file</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – creates binaries ops1[j][‘reg_file’]
-assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.tiff.open_tiff">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">open_tiff</code><span class="sig-paren">(</span><em class="sig-param">file</em>, <em class="sig-param">sktiff</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#open_tiff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.open_tiff" title="Permalink to this definition">¶</a></dt>
-<dd><p>opens tiff with either ScanImageTiffReader or skimage
-returns tiff and its length</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.tiff.tiff_to_binary">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">tiff_to_binary</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#tiff_to_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.tiff_to_binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>finds tiff files and writes them to binaries</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ops</strong> (<em>dictionary</em>) – ‘nplanes’, ‘data_path’, ‘save_path’, ‘save_folder’, ‘fast_disk’, ‘nchannels’, ‘keep_movie_raw’, ‘look_one_level_down’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ops1</strong> – ops1[j][‘reg_file’] or ops1[j][‘raw_file’] is created binary
-assigns keys ‘Ly’, ‘Lx’, ‘tiffreader’, ‘first_tiffs’,
-‘frames_per_folder’, ‘nframes’, ‘meanImg’, ‘meanImg_chan2’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of dictionaries</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="suite2p.io.tiff.write">
-<code class="sig-prename descclassname">suite2p.io.tiff.</code><code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ops</em>, <em class="sig-param">k</em>, <em class="sig-param">ichan</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/tiff.html#write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.tiff.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>writes frames to tiffs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>int16</em>) – frames x Ly x Lx</p></li>
-<li><p><strong>ops</strong> (<em>dictionary</em>) – requires ‘functional_chan’, ‘align_by_chan’</p></li>
-<li><p><strong>k</strong> (<em>int</em>) – number of tiff</p></li>
-<li><p><strong>ichan</strong> (<em>bool</em>) – channel is ops[‘align_by_chan’]</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
+<div class="section" id="suite2p-io-tiff-module">
+<h2>suite2p.io.tiff module<a class="headerlink" href="#suite2p-io-tiff-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-suite2p.io.utils">
 <span id="suite2p-io-utils-module"></span><h2>suite2p.io.utils module<a class="headerlink" href="#module-suite2p.io.utils" title="Permalink to this headline">¶</a></h2>
@@ -425,7 +269,7 @@ if ops[‘look_one_level_down’], then all h5’s in all folders + one level do
 <dt id="suite2p.io.utils.get_sbx_list">
 <code class="sig-prename descclassname">suite2p.io.utils.</code><code class="sig-name descname">get_sbx_list</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/utils.html#get_sbx_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.utils.get_sbx_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>make list of scanbox files to process
-if ops[‘subfolders’], then all tiffs ops[‘data_path’][0] / ops[‘subfolders’] / <a href="#id3"><span class="problematic" id="id4">*</span></a>.sbx
+if ops[‘subfolders’], then all tiffs ops[‘data_path’][0] / ops[‘subfolders’] / <a href="#id1"><span class="problematic" id="id2">*</span></a>.sbx
 if ops[‘look_one_level_down’], then all tiffs in all folders + one level down
 TODO: Implement “tiff_list” functionality</p>
 </dd></dl>
@@ -434,7 +278,7 @@ TODO: Implement “tiff_list” functionality</p>
 <dt id="suite2p.io.utils.get_tif_list">
 <code class="sig-prename descclassname">suite2p.io.utils.</code><code class="sig-name descname">get_tif_list</code><span class="sig-paren">(</span><em class="sig-param">ops</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/io/utils.html#get_tif_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.io.utils.get_tif_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>make list of tiffs to process
-if ops[‘subfolders’], then all tiffs ops[‘data_path’][0] / ops[‘subfolders’] / <a href="#id5"><span class="problematic" id="id6">*</span></a>.tif
+if ops[‘subfolders’], then all tiffs ops[‘data_path’][0] / ops[‘subfolders’] / <a href="#id3"><span class="problematic" id="id4">*</span></a>.tif
 if ops[‘look_one_level_down’], then all tiffs in all folders + one level down
 if ops[‘tiff_list’], then ops[‘data_path’][0] / ops[‘tiff_list’] ONLY</p>
 </dd></dl>
@@ -475,8 +319,8 @@ if ops[‘tiff_list’], then ops[‘data_path’][0] / ops[‘tiff_list’] ONL
 <dd></dd></dl>
 
 </div>
-<div class="section" id="module-suite2p.io">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-suite2p.io" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

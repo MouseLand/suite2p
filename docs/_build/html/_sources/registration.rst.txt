@@ -30,7 +30,7 @@ needs the reg_file, Ly, Lx, and nimg_init parameters):
 
 .. code:: python
 
-   from suite2p import register
+   from suite2p.registration import register
 
    refImg = register.pick_init(ops)
 
@@ -160,10 +160,33 @@ to upsample create the final shifts:
 
 We then use bilinear interpolation to warp the frame using these shifts.
 
-
-
 Metrics for registration quality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The inputs required for PC metrics are the fields in ops:
+'nframes', 'Ly', 'Lx', 'reg_file'. You can run on the red channel 
+(ops['reg_file_chan2']) if use_red=True.
+The outputs saved from the PC metrics are ops['regDX'], ops['tPC'] and ops['regPC']. 
+
+::
+   
+   from suite2p.registration import metrics 
+
+   ops = metrics.get_pc_metrics(ops, use_red=False)
+   
+``ops['tPC']`` are the time courses of each of the principal 
+components of the registered movie. Note 
+the time-course is not the entire movie, it's only the subset of frames used to 
+compute the PCs (2000-5000 frames equally sampled throughout the movie). 
+
+``ops['regPC']`` are computed from the spatial principal components of the
+registered movie. ``ops['regPC'][0,0,:,:]`` is the average of the top
+500 frames of the 1st PC, ``ops['regPC'][1,0,:,:]`` is the average of
+the bottom 500 frames of the 1st PC. ``ops['regDX']`` quantifies the
+movement in each PC (``iPC``) by registering ``ops['regPC'][0,iPC,:,:]``
+and ``ops['regPC'][1,iPC,:,:]`` to the reference image ``ops['refImg']`` (if available, 
+if not the mean of all the frames is used as the reference image)
+and computing the registration shifts.
 
 Here's a twitter `thread <https://twitter.com/marius10p/status/1051494533786193920>`_ 
 with multiple examples.

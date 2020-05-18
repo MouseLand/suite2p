@@ -215,7 +215,7 @@ by aligning all the random frames to the reference image, and then
 recomputing the reference image as the mean of the best aligned frames.</p>
 <p>The function that performs these steps can be run as follows (where ops
 needs the reg_file, Ly, Lx, and nimg_init parameters):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">suite2p</span> <span class="kn">import</span> <span class="n">register</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">suite2p.registration</span> <span class="kn">import</span> <span class="n">register</span>
 
 <span class="n">refImg</span> <span class="o">=</span> <span class="n">register</span><span class="o">.</span><span class="n">pick_init</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
 </pre></div>
@@ -309,6 +309,27 @@ to upsample create the final shifts:</p>
 </div>
 <div class="section" id="metrics-for-registration-quality">
 <h2>Metrics for registration quality<a class="headerlink" href="#metrics-for-registration-quality" title="Permalink to this headline">¶</a></h2>
+<p>The inputs required for PC metrics are the fields in ops:
+‘nframes’, ‘Ly’, ‘Lx’, ‘reg_file’. You can run on the red channel
+(ops[‘reg_file_chan2’]) if use_red=True.
+The outputs saved from the PC metrics are ops[‘regDX’], ops[‘tPC’] and ops[‘regPC’].</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">suite2p.registration</span> <span class="kn">import</span> <span class="n">metrics</span>
+
+<span class="n">ops</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get_pc_metrics</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">use_red</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ops['tPC']</span></code> are the time courses of each of the principal
+components of the registered movie. Note
+the time-course is not the entire movie, it’s only the subset of frames used to
+compute the PCs (2000-5000 frames equally sampled throughout the movie).</p>
+<p><code class="docutils literal notranslate"><span class="pre">ops['regPC']</span></code> are computed from the spatial principal components of the
+registered movie. <code class="docutils literal notranslate"><span class="pre">ops['regPC'][0,0,:,:]</span></code> is the average of the top
+500 frames of the 1st PC, <code class="docutils literal notranslate"><span class="pre">ops['regPC'][1,0,:,:]</span></code> is the average of
+the bottom 500 frames of the 1st PC. <code class="docutils literal notranslate"><span class="pre">ops['regDX']</span></code> quantifies the
+movement in each PC (<code class="docutils literal notranslate"><span class="pre">iPC</span></code>) by registering <code class="docutils literal notranslate"><span class="pre">ops['regPC'][0,iPC,:,:]</span></code>
+and <code class="docutils literal notranslate"><span class="pre">ops['regPC'][1,iPC,:,:]</span></code> to the reference image <code class="docutils literal notranslate"><span class="pre">ops['refImg']</span></code> (if available,
+if not the mean of all the frames is used as the reference image)
+and computing the registration shifts.</p>
 <p>Here’s a twitter <a class="reference external" href="https://twitter.com/marius10p/status/1051494533786193920">thread</a>
 with multiple examples.</p>
 <span class="target" id="id4"></span></div>

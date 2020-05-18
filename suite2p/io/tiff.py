@@ -53,7 +53,7 @@ def write(data, ops, k, ichan):
 
 
 def open_tiff(file, sktiff):
-    """ opens tiff with either ScanImageTiffReader or skimage
+    """ opens tiff with either ScanImageTiffReader or tifffile
     returns tiff and its length
 
     """
@@ -86,7 +86,7 @@ def choose_tiff_reader(fs0, ops):
     Returns
     -------
     sktiff : bool
-        whether or not to use scikit-image tiff reader
+        whether or not to use tifffile tiff reader
 
     """
 
@@ -102,10 +102,10 @@ def choose_tiff_reader(fs0, ops):
         sktiff=False
     except:
         sktiff = True
-        print('NOTE: ScanImageTiffReader not working for this tiff type, using scikit-image')
+        print('NOTE: ScanImageTiffReader not working for this tiff type, using tifffile')
     if 'force_sktiff' in ops and ops['force_sktiff']:
         sktiff=True
-        print('NOTE: user chose scikit-image for tiff reading')
+        print('NOTE: user chose tifffile for tiff reading')
     return sktiff
 
 def tiff_to_binary(ops):
@@ -467,7 +467,7 @@ def ome_to_binary(ops):
         gc.collect()
         j+=1
         j = j%nplanes
-
+    
     if nchannels>1:
 
         ix=0

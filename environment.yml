@@ -12,6 +12,4 @@ dependencies:
   - scikit-learn
   - pyqt
   - pip:
-    - tifffile
-    - rastermap>0.1.0
-    
+    - suite2p

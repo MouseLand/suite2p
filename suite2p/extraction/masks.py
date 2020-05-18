@@ -222,7 +222,7 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
             #utils.sub2ind((Ly,Lx), ypix, xpix)
             cell_masks.append((ipix, lam/lam.sum()))
         else:
-            cell_masks.append((np.zeros(0), np.zeros(0)))
+            cell_masks.append((np.zeros(0).astype('int'), np.zeros(0)))
 
     cell_pix = np.minimum(1, cell_pix)
     return cell_pix, cell_masks

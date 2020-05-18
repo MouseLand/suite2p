@@ -33,7 +33,7 @@ class TextChooser(QtGui.QDialog):
 class RunWindow(QtGui.QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(0,0,1500,900)
+        self.setGeometry(10,10,1500,900)
         self.setWindowTitle('Choose run options (hold mouse over parameters to see descriptions)')
         self.parent = parent
         self.win = QtGui.QWidget(self)

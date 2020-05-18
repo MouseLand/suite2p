@@ -3,6 +3,7 @@ from scipy.signal import convolve2d
 from sklearn.decomposition import PCA
 from ..utils import get_frames
 from . import register, nonrigid
+from multiprocessing import Pool
 
 try:
     import cv2
@@ -128,14 +129,15 @@ def get_pc_metrics(ops, use_red=False):
 
         Parameters
         ----------
-        ops : dict
-            requires 'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+        ops : dictionary
+            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2') 
+            (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
         use_red : :obj:`bool`, optional
             default False, whether to use 'reg_file' or 'reg_file_chan2'
 
         Returns
         -------
-            ops : dict
+            ops : dictionary
                 adds 'regPC' and 'tPC' and 'regDX'
 
     """
@@ -202,7 +204,7 @@ def filt_parallel(data, filt, num_cores):
     return results
 
 def local_corr(mov, batch_size, num_cores):
-    ''' computes correlation image on mov (nframes x pixels x pixels)'''
+    """ computes correlation image on mov (nframes x pixels x pixels) """
     nframes, Ly, Lx = mov.shape
 
     filt = np.ones((3,3),np.float32)
@@ -257,6 +259,7 @@ def corr_to_template(mov, tmpl):
     return correlations
 
 def optic_flow(mov, tmpl, nflows):
+    """ optic flow computation using farneback """
     window = int(1 / 0.2) # window size
     nframes, Ly, Lx = mov.shape
     mov = mov.astype(np.float32)
@@ -288,7 +291,7 @@ def optic_flow(mov, tmpl, nflows):
 
 
 def get_flow_metrics(ops):
-    ''' get farneback optical flow and some other stats from normcorre paper'''
+    """ get farneback optical flow and some other stats from normcorre paper """
     # done in batches for memory reasons
     Ly = ops['Ly']
     Lx = ops['Lx']

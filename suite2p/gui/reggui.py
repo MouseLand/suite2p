@@ -3,7 +3,7 @@ from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import os
 import sys
-from skimage import io
+from tifffile import imread
 from scipy.ndimage import gaussian_filter1d
 import numpy as np
 from .. import utils
@@ -669,7 +669,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         )
         self.fname = name[0]
         try:
-            self.zstack = io.imread(self.fname)
+            self.zstack = imread(self.fname)
             self.zLy, self.zLx = self.zstack.shape[1:]
             self.Zedit.setValidator(QtGui.QIntValidator(0, self.zstack.shape[0]))
             self.zrange = [np.percentile(self.zstack,1), np.percentile(self.zstack,99)]

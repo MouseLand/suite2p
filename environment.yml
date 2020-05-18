@@ -9,10 +9,9 @@ dependencies:
   - matplotlib
   - scipy
   - h5py
-  - scikit-image
   - scikit-learn
   - pyqt
   - pip:
-    - suite2p
+    - tifffile
     - rastermap>0.1.0
     

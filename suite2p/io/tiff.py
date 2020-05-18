@@ -9,7 +9,7 @@ from scipy.sparse import linalg
 import scipy.io
 #from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
-from skimage.external.tifffile import imread, TiffFile, TiffWriter
+from tifffile import imread, TiffFile, TiffWriter
 from . import utils
 
 def write(data, ops, k, ichan):
@@ -58,8 +58,8 @@ def open_tiff(file, sktiff):
 
     """
     if sktiff:
-        tif = TiffFile(file, fastij = False)
-        Ltif = len(tif)
+        tif = TiffFile(file)
+        Ltif = len(tif.pages)
     else:
         tif = ScanImageTiffReader(file)
         tsize = tif.shape()
@@ -137,7 +137,7 @@ def tiff_to_binary(ops):
     ops = ops1[0]
     # try tiff readers
     sktiff = choose_tiff_reader(fs[0], ops1[0])
-
+    
     batch_size = ops['batch_size']
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
 
@@ -159,7 +159,7 @@ def tiff_to_binary(ops):
             nfr = min(Ltif - ix, batch_size)
             # tiff reading
             if sktiff:
-                im = imread(file, pages = range(ix, ix + nfr), fastij = False)
+                im = imread(file, pages = range(ix, ix + nfr))
             else:
                 if Ltif==1:
                     im = tif.data()
@@ -320,7 +320,7 @@ def mesoscan_to_binary(ops):
                 break
             nfr = min(Ltif - ix, batch_size)
             if sktiff:
-                im = imread(file, pages = range(ix, ix + nfr), fastij = False)
+                im = imread(file, pages = range(ix, ix + nfr))
             else:
                 if Ltif==1:
                     im = tif.data()

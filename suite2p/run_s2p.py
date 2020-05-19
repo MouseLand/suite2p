@@ -181,7 +181,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-        ops['date_proc'] = datetime.datetime.now()
+        #ops['date_proc'] = datetime.datetime.now()
     if not 'input_format' in ops.keys():
         ops['input_format'] = 'tif'
     if len(ops['h5py']):

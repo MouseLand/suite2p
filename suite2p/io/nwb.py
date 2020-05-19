@@ -141,8 +141,7 @@ def save(ops1):
         nwbfile = NWBFile(
             session_description='suite2p_proc',
             identifier=ops['data_path'][0],
-            session_start_time=(ops['date_proc'] if 'date_proc' in ops 
-                                else datetime.datetime.now())
+            session_start_time=datetime.datetime.now()
         )
         print(nwbfile)
 

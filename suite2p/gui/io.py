@@ -366,6 +366,8 @@ def save_iscell(parent):
 def save_mat(parent):
     print('saving to mat')
     matpath = os.path.join(parent.basename,'Fall.mat')
+    if 'date_proc' in ops:
+        ops['date_proc'] = []
     scipy.io.savemat(matpath, {'stat': parent.stat,
                          'ops': parent.ops,
                          'F': parent.Fcell,

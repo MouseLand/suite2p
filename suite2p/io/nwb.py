@@ -199,7 +199,7 @@ def save(ops1):
         
         file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
         traces = []
-        
+        ncells_all = 0
         for iplane, ops in enumerate(ops1):
             if iplane==0:
                 iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
@@ -223,11 +223,12 @@ def save(ops1):
                     pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'], 
                                         stat[n]['lam']])
                     ps.add_roi(pixel_mask=pixel_mask.T)
+            ncells_all+=ncells
 
         ps.add_column('iscell', 'two columns - iscell & probcell', iscell)
             
         rt_region = ps.create_roi_table_region(
-            region=list(np.arange(0, ncells)),
+            region=list(np.arange(0, ncells_all)),
             description='all ROIs'
         )
 

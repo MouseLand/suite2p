@@ -181,7 +181,7 @@ def run_s2p(ops={},db={}):
     else:
         files_found_flag = False
         flag_binreg = False
-        #ops['date_proc'] = datetime.datetime.now()
+        ops['date_proc'] = datetime.datetime.now()
     if not 'input_format' in ops.keys():
         ops['input_format'] = 'tif'
     if len(ops['h5py']):
@@ -308,6 +308,8 @@ def run_s2p(ops={},db={}):
 
             # save as matlab file
             if 'save_mat' in ops and ops['save_mat']:
+                if 'date_proc' in ops:
+                    ops['date_proc'] = []
                 stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
                 iscell = np.load(os.path.join(fpath,'iscell.npy'))
                 matpath = os.path.join(ops['save_path'],'Fall.mat')

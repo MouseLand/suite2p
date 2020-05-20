@@ -29,8 +29,7 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. To activate this new environment, run `conda activate suite2p`
-5. You should see `(suite2p)` on the left side of the terminal line. Now run `python setup.py install`.
-6. Now run `python -m suite2p` and you're all set.
+5. Now run `python -m suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 
@@ -48,14 +47,12 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
 
-## Installation of github version for developers and super-users :)
+## Installation of github version for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
-2. Run `conda env create -f environment.yml`
-3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. Install the testing and docs dependencies from the requirements_dev.txt file: `pip install -r requirements_dev.txt`
-5. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install -e .` to install the code in the github repository.
-6. Run `python -m suite2p` (<-- you can run this command from anywhere now. If you want to go back to the supported version of suite2p, then say `pip install suite2p` and that will grab the pip package of suite2p)
+2. Run `conda env create -f environment_dev.yml`
+3. To activate this new environment, run `conda activate suite2p-dev` (you will have to activate every time you want to run suite2p)
+4. Run `python -m suite2p` (<-- you can run this command from anywhere now.)
 
 ## Examples
 

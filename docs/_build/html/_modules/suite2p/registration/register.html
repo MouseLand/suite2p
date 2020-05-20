@@ -1,0 +1,709 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>suite2p.registration.register &mdash; suite2p 0.7.2 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: black" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> suite2p
+          
+
+          
+            
+            <img src="../../../_static/favicon.ico" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Basics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../settings.html">Settings (ops.npy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Using the GUI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../outputs.html">Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../multiday.html">Multiday recordings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQ.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">How it works:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../registration.html">Registration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../celldetection.html">Cell detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../roiextraction.html">Signal extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deconvolution.html">Spike deconvolution</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.io.html">suite2p.io package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.registration.html">suite2p.registration package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.detection.html">suite2p.detection package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.extraction.html">suite2p.extraction package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.classification.html">suite2p.classification package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/suite2p.gui.html">suite2p.gui package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">suite2p</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>suite2p.registration.register</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for suite2p.registration.register</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.fftpack</span> <span class="kn">import</span> <span class="n">next_fast_len</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">fft</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">vectorize</span><span class="p">,</span> <span class="n">complex64</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">int16</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">medfilt</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+<span class="kn">from</span> <span class="nn">suite2p.io</span> <span class="kn">import</span> <span class="n">tiff</span>
+<span class="kn">from</span> <span class="nn">mkl_fft</span> <span class="kn">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">reference</span><span class="p">,</span> <span class="n">bidiphase</span><span class="p">,</span> <span class="n">nonrigid</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">rigid</span>
+
+<span class="c1">#HAS_GPU=False</span>
+<span class="c1">#try:</span>
+<span class="c1">#    import cupy as cp</span>
+<span class="c1">#    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan</span>
+<span class="c1">#    HAS_GPU=True</span>
+<span class="c1">#except ImportError:</span>
+<span class="c1">#    HAS_GPU=False</span>
+
+<div class="viewcode-block" id="prepare_refAndMasks"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.prepare_refAndMasks">[docs]</a><span class="k">def</span> <span class="nf">prepare_refAndMasks</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; prepares refAndMasks for phasecorr using refImg</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    refImg : int16</span>
+<span class="sd">        reference image</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        requires &#39;smooth_sigma&#39;</span>
+<span class="sd">        (if ```ops[&#39;1Preg&#39;]```, need &#39;spatial_taper&#39;, &#39;spatial_hp&#39;, &#39;pre_smooth&#39;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    refAndMasks : list</span>
+<span class="sd">        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span> <span class="o">=</span> <span class="n">rigid</span><span class="o">.</span><span class="n">phasecorr_reference</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;nonrigid&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">maskMulNR</span><span class="p">,</span> <span class="n">maskOffsetNR</span><span class="p">,</span> <span class="n">cfRefImgNR</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">phasecorr_reference</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="n">refAndMasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span><span class="p">,</span> <span class="n">maskMulNR</span><span class="p">,</span> <span class="n">maskOffsetNR</span><span class="p">,</span> <span class="n">cfRefImgNR</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">refAndMasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">maskMul</span><span class="p">,</span> <span class="n">maskOffset</span><span class="p">,</span> <span class="n">cfRefImg</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">refAndMasks</span></div>
+
+<div class="viewcode-block" id="compute_motion_and_shift"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.compute_motion_and_shift">[docs]</a><span class="k">def</span> <span class="nf">compute_motion_and_shift</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">,</span> <span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; register data matrix to reference image and shift</span>
+
+<span class="sd">    need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft&#39;ed masks;</span>
+<span class="sd">    if ```ops[&#39;nonrigid&#39;]``` need to run ```ops = nonrigid.make_blocks(ops)```</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : int16</span>
+<span class="sd">        array that&#39;s frames x Ly x Lx</span>
+<span class="sd">    refAndMasks : list</span>
+<span class="sd">        maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        requires &#39;nonrigid&#39;, &#39;bidiphase&#39;, &#39;1Preg&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data : int16 (or float32, if ops[&#39;nonrigid&#39;])</span>
+<span class="sd">        registered frames x Ly x Lx</span>
+<span class="sd">    ymax : int</span>
+<span class="sd">        shifts in y from cfRefImg to data for each frame</span>
+<span class="sd">    xmax : int</span>
+<span class="sd">        shifts in x from cfRefImg to data for each frame</span>
+<span class="sd">    cmax : float</span>
+<span class="sd">        maximum of phase correlation for each frame</span>
+<span class="sd">    yxnr : list</span>
+<span class="sd">        ymax, xmax and cmax from the non-rigid registration</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidi_corrected&#39;</span><span class="p">]:</span>
+        <span class="n">bidiphase</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">])</span>
+    <span class="n">nr</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">yxnr</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">refAndMasks</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">3</span><span class="p">:</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">nr</span><span class="o">=</span><span class="kc">True</span>
+
+    <span class="c1"># rigid registration</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;smooth_sigma_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># temporal smoothing:</span>
+        <span class="n">data_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">sigma</span><span class="o">=</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;smooth_sigma_time&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">cmax</span> <span class="o">=</span> <span class="n">rigid</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data_smooth</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">cmax</span> <span class="o">=</span> <span class="n">rigid</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="n">rigid</span><span class="o">.</span><span class="n">shift_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
+
+    <span class="c1"># non-rigid registration</span>
+    <span class="k">if</span> <span class="n">nr</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;smooth_sigma_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># temporal smoothing:</span>
+            <span class="n">data_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">sigma</span><span class="o">=</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;smooth_sigma_time&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">,</span> <span class="n">cmax1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data_smooth</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">[</span><span class="mi">3</span><span class="p">:],</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">,</span> <span class="n">cmax1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">phasecorr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">[</span><span class="mi">3</span><span class="p">:],</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="n">yxnr</span> <span class="o">=</span> <span class="p">[</span><span class="n">ymax1</span><span class="p">,</span><span class="n">xmax1</span><span class="p">,</span><span class="n">cmax1</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">transform_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">cmax</span><span class="p">,</span> <span class="n">yxnr</span></div>
+
+<div class="viewcode-block" id="compute_crop"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.compute_crop">[docs]</a><span class="k">def</span> <span class="nf">compute_crop</span><span class="p">(</span><span class="n">ops</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; determines how much to crop FOV based on motion</span>
+<span class="sd">    </span>
+<span class="sd">    determines ops[&#39;badframes&#39;] which are frames with large outlier shifts</span>
+<span class="sd">    (threshold of outlier is ops[&#39;th_badframes&#39;]) and</span>
+<span class="sd">    it excludes these ops[&#39;badframes&#39;] when computing valid ranges</span>
+<span class="sd">    from registration in y and x</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;yoff&#39;, &#39;xoff&#39;, &#39;corrXY&#39;, &#39;badframes&#39;, &#39;maxregshift&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;badframes&#39;, &#39;yrange&#39;, &#39;xrange&#39;</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">],</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">],</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="c1"># offset in x and y (normed by mean offset)</span>
+    <span class="n">dxy</span> <span class="o">=</span> <span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**.</span><span class="mi">5</span>
+    <span class="n">dxy</span> <span class="o">/=</span> <span class="n">dxy</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="c1"># phase-corr of each frame with reference (normed by median phase-corr)</span>
+    <span class="n">cXY</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">medfilt</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">],</span> <span class="mi">101</span><span class="p">)</span>
+    <span class="c1"># exclude frames which have a large deviation and/or low correlation</span>
+    <span class="n">px</span> <span class="o">=</span> <span class="n">dxy</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cXY</span><span class="p">)</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">px</span> <span class="o">&gt;</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;th_badframes&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;maxregshift&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">),</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;maxregshift&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">),</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])])</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymin</span> 
+    <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">])])</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmin</span>
+    <span class="c1"># ymin = np.maximum(0, np.ceil(np.amax(ops[&#39;yoff&#39;][np.logical_not(ops[&#39;badframes&#39;])])))</span>
+    <span class="c1"># ymax = ops[&#39;Ly&#39;] + np.minimum(0, np.floor(np.amin(ops[&#39;yoff&#39;])))</span>
+    <span class="c1"># xmin = np.maximum(0, np.ceil(np.amax(ops[&#39;xoff&#39;][np.logical_not(ops[&#39;badframes&#39;])])))</span>
+    <span class="c1"># xmax = ops[&#39;Lx&#39;] + np.minimum(0, np.floor(np.amin(ops[&#39;xoff&#39;])))</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ymin</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">ymax</span><span class="p">)]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">xmin</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">xmax</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="register_binary_to_ref"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.register_binary_to_ref">[docs]</a><span class="k">def</span> <span class="nf">register_binary_to_ref</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">refImg</span><span class="p">,</span> <span class="n">reg_file_align</span><span class="p">,</span> <span class="n">raw_file_align</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; register binary data to reference image refImg</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ops : dictionary</span>
+
+<span class="sd">    refImg : int16</span>
+<span class="sd">        reference image</span>
+
+<span class="sd">    reg_file_align : string</span>
+<span class="sd">        file to (read if raw_file_align empty, and) write registered binary to</span>
+
+<span class="sd">    raw_file_align : string</span>
+<span class="sd">        file to read raw binary from (if not empty)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        sets &#39;meanImg&#39; or &#39;meanImg_chan2&#39;</span>
+<span class="sd">        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)</span>
+
+<span class="sd">    offsets : list</span>
+<span class="sd">        [ymax, xmax, corrXY, ymax1, xmax1, corrXY1] &lt;- shifts and correlations, </span>
+<span class="sd">        last 3 for nonrigid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">offsets</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">init_offsets</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">refAndMasks</span> <span class="o">=</span> <span class="n">prepare_refAndMasks</span><span class="p">(</span><span class="n">refImg</span><span class="p">,</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="n">nbatch</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">nbytesread</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Ly</span> <span class="o">*</span> <span class="n">Lx</span> <span class="o">*</span> <span class="n">nbatch</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_file_align</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1">#raw = &#39;keep_movie_raw&#39; in ops and ops[&#39;keep_movie_raw&#39;] and &#39;raw_file&#39; in ops and os.path.isfile(ops[&#39;raw_file&#39;])</span>
+    <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">reg_file_align</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file_align</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="n">raw_file_align</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">raw_file_align</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reg_file_align</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file_align</span><span class="p">,</span> <span class="s1">&#39;r+b&#39;</span><span class="p">)</span>
+
+    <span class="n">meanImg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">nfr</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">raw_file_align</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file_align</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">nfr</span> <span class="o">&gt;=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]):</span>
+            <span class="k">break</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">)))</span>
+
+        <span class="n">dout</span> <span class="o">=</span> <span class="n">compute_motion_and_shift</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">refAndMasks</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">dout</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">meanImg</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+
+        <span class="c1"># write to reg_file_align</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">reg_file_align</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">reg_file_align</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># compile offsets (dout[1:])</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dout</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">offsets</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">offsets</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">dout</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># add on nonrigid stats</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dout</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])):</span>
+                    <span class="n">offsets</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">offsets</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="n">m</span><span class="p">],</span> <span class="n">dout</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">m</span><span class="p">]))</span>
+
+        <span class="c1"># write registered tiffs</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_tif&#39;</span><span class="p">]:</span>
+            <span class="n">tiff</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">nfr</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">%</span><span class="mi">5</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1"> frames, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nfr</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+
+    <span class="c1"># mean image across all frames</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;align_by_chan&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+
+    <span class="n">reg_file_align</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">raw_file_align</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops</span><span class="p">,</span> <span class="n">offsets</span></div>
+
+<div class="viewcode-block" id="apply_shifts"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.apply_shifts">[docs]</a><span class="k">def</span> <span class="nf">apply_shifts</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; apply rigid and nonrigid shifts to data (for chan that&#39;s not &#39;align_by_chan&#39;)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : int16</span>
+<span class="sd">        size [nframes x Ly x Lx]</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;Ly&#39;, &#39;Lx&#39;, &#39;batch_size&#39;, &#39;bidiphase&#39;</span>
+
+<span class="sd">    ymax : array</span>
+<span class="sd">        y shifts</span>
+
+<span class="sd">    ymax : array</span>
+<span class="sd">        x shifts</span>
+
+<span class="sd">    ymax1 : array</span>
+<span class="sd">        nonrigid y shifts</span>
+
+<span class="sd">    xmax1 : 2D array</span>
+<span class="sd">        nonrigid x shifts</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data : int16 (or float32 if ops[&#39;nonrigid&#39;]</span>
+<span class="sd">        size [nframes x Ly x Lx], shifted data</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span>  <span class="ow">and</span> <span class="ow">not</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidi_corrected&#39;</span><span class="p">]:</span>
+        <span class="n">bidiphase</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">])</span>
+    <span class="n">rigid</span><span class="o">.</span><span class="n">shift_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]</span><span class="o">==</span><span class="kc">True</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">transform_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="apply_shifts_to_binary"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.apply_shifts_to_binary">[docs]</a><span class="k">def</span> <span class="nf">apply_shifts_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="n">reg_file_alt</span><span class="p">,</span> <span class="n">raw_file_alt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; apply registration shifts computed on one binary file to another</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    </span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;Ly&#39;, &#39;Lx&#39;, &#39;batch_size&#39;, &#39;align_by_chan&#39;</span>
+
+<span class="sd">    offsets : list of arrays</span>
+<span class="sd">        shifts computed from reg_file_align/raw_file_align, </span>
+<span class="sd">        rigid shifts in Y are offsets[0] and in X are offsets[1], </span>
+<span class="sd">        nonrigid shifts in Y are offsets[3] and in X are offsets[4]</span>
+
+<span class="sd">    reg_file_alt : string</span>
+<span class="sd">        file to (read if raw_file_align empty, and) write registered binary to</span>
+
+<span class="sd">    raw_file_align : string</span>
+<span class="sd">        file to read raw binary from (if not empty)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        sets &#39;meanImg&#39; or &#39;meanImg_chan2&#39;</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nbatch</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span>
+    <span class="n">Lx</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span>
+    <span class="n">nbytesread</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Ly</span> <span class="o">*</span> <span class="n">Lx</span> <span class="o">*</span> <span class="n">nbatch</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">meanImg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_file_alt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">reg_file_alt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file_alt</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="n">raw_file_alt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">raw_file_alt</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reg_file_alt</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">reg_file_alt</span><span class="p">,</span> <span class="s1">&#39;r+b&#39;</span><span class="p">)</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">raw_file_alt</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">reg_file_alt</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nbytesread</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">ix</span> <span class="o">&gt;=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]):</span>
+            <span class="k">break</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">Ly</span><span class="o">/</span><span class="n">Lx</span><span class="p">)</span><span class="o">*</span><span class="n">Ly</span><span class="o">*</span><span class="n">Lx</span><span class="p">)],</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lx</span><span class="p">))</span>
+        <span class="n">nframes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">iframes</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nframes</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="c1"># get shifts</span>
+        <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">iframes</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">iframes</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">ymax1</span><span class="p">,</span><span class="n">xmax1</span> <span class="o">=</span> <span class="p">[],[]</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+            <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="n">iframes</span><span class="p">],</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="n">iframes</span><span class="p">]</span>
+
+        <span class="c1"># apply shifts</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">apply_shifts</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax1</span><span class="p">,</span> <span class="n">xmax1</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">meanImg</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+        <span class="c1"># write to binary</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">reg_file_alt</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">reg_file_alt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># write registered tiffs</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;reg_tif_chan2&#39;</span><span class="p">]:</span>
+            <span class="n">tiff</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">ix</span> <span class="o">+=</span> <span class="n">nframes</span>
+        <span class="n">k</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;functional_chan&#39;</span><span class="p">]</span><span class="o">!=</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;align_by_chan&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">k</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;meanImg_chan2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanImg</span><span class="o">/</span><span class="n">k</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Registered second channel in </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+
+    <span class="n">reg_file_alt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">raw_file_alt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+
+<div class="viewcode-block" id="register_binary"><a class="viewcode-back" href="../../../api/suite2p.registration.html#suite2p.registration.register.register_binary">[docs]</a><span class="k">def</span> <span class="nf">register_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">refImg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; main registration function </span>
+<span class="sd">    </span>
+<span class="sd">    if ops is a list of dictionaries, each will be registered separately</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    </span>
+<span class="sd">    ops : dictionary or list of dicts</span>
+<span class="sd">        &#39;Ly&#39;, &#39;Lx&#39;, &#39;batch_size&#39;, &#39;align_by_chan&#39;, &#39;nonrigid&#39;</span>
+<span class="sd">        (optional &#39;keep_movie_raw&#39;, &#39;raw_file&#39;)</span>
+
+<span class="sd">    refImg : 2D array (optional, default None)</span>
+
+<span class="sd">    raw : bool (optional, default True)</span>
+<span class="sd">        use raw_file for registration if available, if False forces reg_file to be used</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    ops : dictionary</span>
+<span class="sd">        &#39;nframes&#39;, &#39;yoff&#39;, &#39;xoff&#39;, &#39;corrXY&#39;, &#39;yoff1&#39;, &#39;xoff1&#39;, &#39;corrXY1&#39;, &#39;badframes&#39;</span>
+
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">register_binary</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ops</span>
+
+    <span class="c1"># make blocks for nonrigid</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="n">nonrigid</span><span class="o">.</span><span class="n">make_blocks</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_nFrames</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;frames_include&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;frames_include&#39;</span><span class="p">]))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;registering </span><span class="si">%d</span><span class="s1"> frames&#39;</span><span class="o">%</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">])</span>
+    <span class="c1"># check number of frames and print warnings</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="mi">50</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;ERROR: the total number of frames should be at least 50 &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="mi">200</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: number of frames is below 200, unpredictable behaviors may occur&#39;</span><span class="p">)</span>
+
+    <span class="c1"># get binary file paths</span>
+    <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;keep_movie_raw&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;keep_movie_raw&#39;</span><span class="p">]</span> <span class="ow">and</span>
+                <span class="s1">&#39;raw_file&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;raw_file&#39;</span><span class="p">]))</span>
+    <span class="n">reg_file_align</span><span class="p">,</span> <span class="n">reg_file_alt</span><span class="p">,</span> <span class="n">raw_file_align</span><span class="p">,</span> <span class="n">raw_file_alt</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">bin_paths</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">raw</span><span class="p">)</span>
+
+    <span class="c1"># compute reference image</span>
+    <span class="k">if</span> <span class="n">refImg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NOTE: user reference frame given&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">refImg</span><span class="p">,</span> <span class="n">bidi</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">compute_reference_image</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">raw_file_align</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">refImg</span><span class="p">,</span> <span class="n">bidi</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">compute_reference_image</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">reg_file_align</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidiphase&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bidi</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reference frame, </span><span class="si">%0.2f</span><span class="s1"> sec.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">))</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;refImg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">refImg</span>
+
+
+    <span class="c1"># register binary to reference image</span>
+    <span class="n">ops</span><span class="p">,</span> <span class="n">offsets</span> <span class="o">=</span> <span class="n">register_binary_to_ref</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">refImg</span><span class="p">,</span> <span class="n">reg_file_align</span><span class="p">,</span> <span class="n">raw_file_align</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nchannels&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="n">apply_shifts_to_binary</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="n">reg_file_alt</span><span class="p">,</span> <span class="n">raw_file_alt</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;yoff&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">nframes</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+            <span class="n">nb</span> <span class="o">=</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nblocks&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nframes</span><span class="p">,</span><span class="n">nb</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nonrigid&#39;</span><span class="p">]:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;yoff1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;xoff1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;corrXY1&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+    <span class="c1"># compute valid region</span>
+    <span class="c1"># ignore user-specified bad_frames.npy</span>
+    <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;nframes&#39;</span><span class="p">],),</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;data_path&#39;</span> <span class="ow">in</span> <span class="n">ops</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">badfrfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;bad_frames.npy&#39;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;bad frames file path: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">badfrfile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">badfrfile</span><span class="p">):</span>
+            <span class="n">badframes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">badfrfile</span><span class="p">)</span>
+            <span class="n">badframes</span> <span class="o">=</span> <span class="n">badframes</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="c1">#print(&#39;badframes[0]=%d, badframes[-1]=%d&#39;%(badframes[0],badframes[-1]))</span>
+            <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">][</span><span class="n">badframes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;number of badframes: </span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;badframes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="c1"># return frames which fall outside range</span>
+    <span class="n">ops</span> <span class="o">=</span> <span class="n">compute_crop</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">ops</span><span class="p">[</span><span class="s1">&#39;bidi_corrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="s1">&#39;ops_path&#39;</span> <span class="ow">in</span> <span class="n">ops</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ops</span><span class="p">[</span><span class="s1">&#39;ops_path&#39;</span><span class="p">],</span> <span class="n">ops</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ops</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Carsen Stringer, Marius Pachitariu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+    <!-- Theme Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXXXX-1', 'auto');
+    ga('send', 'pageview');
+    </script>
+
+    
+   
+
+</body>
+</html>

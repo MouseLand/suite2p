@@ -109,10 +109,10 @@
 <li class="toctree-l1"><a class="reference internal" href="suite2p.detection.html">suite2p.detection package</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">suite2p.extraction package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#suite2p-extraction-dcnv-module">suite2p.extraction.dcnv module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#suite2p-extraction-extract-module">suite2p.extraction.extract module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#suite2p-extraction-masks-module">suite2p.extraction.masks module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.extraction.dcnv">suite2p.extraction.dcnv module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.extraction.extract">suite2p.extraction.extract module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.extraction.masks">suite2p.extraction.masks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-suite2p.extraction">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="suite2p.classification.html">suite2p.classification package</a></li>
@@ -195,17 +195,281 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="suite2p-extraction-dcnv-module">
-<h2>suite2p.extraction.dcnv module<a class="headerlink" href="#suite2p-extraction-dcnv-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-suite2p.extraction.dcnv">
+<span id="suite2p-extraction-dcnv-module"></span><h2>suite2p.extraction.dcnv module<a class="headerlink" href="#module-suite2p.extraction.dcnv" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="suite2p.extraction.dcnv.oasis">
+<code class="sig-prename descclassname">suite2p.extraction.dcnv.</code><code class="sig-name descname">oasis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">F</span></em>, <em class="sig-param"><span class="n">ops</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/dcnv.html#oasis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.dcnv.oasis" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes non-negative deconvolution</p>
+<p>no sparsity constraints</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>F</strong> (<em>float</em><em>, </em><em>2D array</em>) – size [neurons x time], in pipeline uses neuropil-subtracted fluorescence</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘batch_size’, ‘tau’, ‘fs’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>S</strong> – size [neurons x time], deconvolved fluorescence</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float, 2D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.dcnv.oasis_matrix">
+<code class="sig-prename descclassname">suite2p.extraction.dcnv.</code><code class="sig-name descname">oasis_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">F</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">w</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">l</span></em>, <em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="n">tau</span></em>, <em class="sig-param"><span class="n">fs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/dcnv.html#oasis_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.dcnv.oasis_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>spike deconvolution on many neurons parallelized with prange</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.dcnv.oasis_trace">
+<code class="sig-prename descclassname">suite2p.extraction.dcnv.</code><code class="sig-name descname">oasis_trace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">F</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">w</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">l</span></em>, <em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="n">tau</span></em>, <em class="sig-param"><span class="n">fs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/dcnv.html#oasis_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.dcnv.oasis_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>spike deconvolution on a single neuron</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.dcnv.preprocess">
+<code class="sig-prename descclassname">suite2p.extraction.dcnv.</code><code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">F</span></em>, <em class="sig-param"><span class="n">ops</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/dcnv.html#preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.dcnv.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>preprocesses fluorescence traces for spike deconvolution</p>
+<p>baseline-subtraction with window ‘win_baseline’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>F</strong> (<em>float</em><em>, </em><em>2D array</em>) – size [neurons x time], in pipeline uses neuropil-subtracted fluorescence</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘baseline’, ‘win_baseline’, ‘sig_baseline’, ‘fs’,
+(optional ‘prctile_baseline’ needed if ops[‘baseline’]==’constant_prctile’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>F</strong> – size [neurons x time], baseline-corrected fluorescence</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float, 2D array</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="suite2p-extraction-extract-module">
-<h2>suite2p.extraction.extract module<a class="headerlink" href="#suite2p-extraction-extract-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-suite2p.extraction.extract">
+<span id="suite2p-extraction-extract-module"></span><h2>suite2p.extraction.extract module<a class="headerlink" href="#module-suite2p.extraction.extract" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="suite2p.extraction.extract.compute_masks_and_extract_traces">
+<code class="sig-prename descclassname">suite2p.extraction.extract.</code><code class="sig-name descname">compute_masks_and_extract_traces</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">stat</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/extract.html#compute_masks_and_extract_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.extract.compute_masks_and_extract_traces" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts activity from ops[‘reg_file’] using masks in stat</p>
+<p>computes fluorescence F as sum of pixels weighted by ‘lam’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘Ly’, ‘Lx’, ‘reg_file’, ‘neucoeff’, ‘ops_path’,
+‘save_path’, ‘sparse_mode’, ‘nframes’, ‘batch_size’
+(optional ‘reg_file_chan2’, ‘chan2_thres’)</p></li>
+<li><p><strong>stat</strong> (<em>array of dicts</em>) – ‘ipix’, ‘lam’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>F</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>Fneu</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>F_chan2</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>Fneu_chan2</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>ops</strong> (<em>dictionaray</em>) – adds ‘meanImg’ (optional ‘meanImg_chan2’)</p></li>
+<li><p><strong>stat</strong> (<em>array of dicts</em>) – adds ‘skew’, ‘std’</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.extract.detect_and_extract">
+<code class="sig-prename descclassname">suite2p.extraction.extract.</code><code class="sig-name descname">detect_and_extract</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">stat</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/extract.html#detect_and_extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.extract.detect_and_extract" title="Permalink to this definition">¶</a></dt>
+<dd><p>detects ROIs, computes fluorescence, applies default classifier and saves to <a href="#id1"><span class="problematic" id="id2">*</span></a>.npy</p>
+<p>if stat is None, ROIs are computed from ‘reg_file’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘Ly’, ‘Lx’, ‘reg_file’, ‘neucoeff’, ‘ops_path’,
+‘save_path’, ‘sparse_mode’, ‘nframes’, ‘batch_size’
+(optional ‘reg_file_chan2’, ‘chan2_thres’)</p></li>
+<li><p><strong>stat</strong> (<em>array of dicts</em><em> (</em><em>optional</em><em>, </em><em>default None</em><em>)</em>) – ‘lam’ - pixel weights, ‘ypix’ - pixels in y, ‘xpix’ - pixels in x</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ops</strong> – adds ‘meanImg’ (optional ‘meanImg_chan2’)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dictionaray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.extract.extract_traces">
+<code class="sig-prename descclassname">suite2p.extraction.extract.</code><code class="sig-name descname">extract_traces</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">cell_masks</span></em>, <em class="sig-param"><span class="n">neuropil_masks</span></em>, <em class="sig-param"><span class="n">reg_file</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/extract.html#extract_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.extract.extract_traces" title="Permalink to this definition">¶</a></dt>
+<dd><p>extracts activity from reg_file using masks in stat and neuropil_masks</p>
+<p>computes fluorescence F as sum of pixels weighted by ‘lam’
+computes neuropil fluorescence Fneu as sum of pixels in neuropil_masks</p>
+<p>data is from reg_file ops[‘batch_size’] by pixels:
+.. code-block:: python</p>
+<blockquote>
+<div><p>F[n] = data[:, stat[n][‘ipix’]] &#64; stat[n][‘lam’]
+Fneu = neuropil_masks &#64; data.T</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘Ly’, ‘Lx’, ‘nframes’, ‘batch_size’
+(optional ‘reg_file_chan2’, ‘chan2_thres’)</p></li>
+<li><p><strong>cell_masks</strong> (<em>list</em>) – each is a tuple where first element are cell pixels (flattened), and
+second element are pixel weights normalized to sum 1 (lam)</p></li>
+<li><p><strong>neuropil_masks</strong> (<em>2D array</em>) – size [ncells x npixels] where weights of each mask are elements</p></li>
+<li><p><strong>reg_file</strong> (<em>string</em>) – path to registered binary file</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>F</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>Fneu</strong> (<em>float, 2D array</em>) – size [ROIs x time]</p></li>
+<li><p><strong>ops</strong> (<em>dictionaray</em>) – adds ‘meanImg’</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="suite2p-extraction-masks-module">
-<h2>suite2p.extraction.masks module<a class="headerlink" href="#suite2p-extraction-masks-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-suite2p.extraction.masks">
+<span id="suite2p-extraction-masks-module"></span><h2>suite2p.extraction.masks module<a class="headerlink" href="#module-suite2p.extraction.masks" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="suite2p.extraction.masks.circle_mask">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">circle_mask</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#circle_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.circle_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates array (2*d0+1, 2*d0+1) with indices and radii from center point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>d0</strong> (<em>int</em>) – patch of (-d0,d0+1) over which radius computed</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rs</strong> (<em>array, float</em>) – (2*d0+1,2*d0+1) of radii</p></li>
+<li><p><strong>dx,dy</strong> (<em>indices in rs where the radius is less than d0</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.masks.create_cell_masks">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">create_cell_masks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">Ly</span></em>, <em class="sig-param"><span class="n">Lx</span></em>, <em class="sig-param"><span class="n">allow_overlap</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#create_cell_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.create_cell_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates cell masks for ROIs in stat and computes radii</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stat</strong> (<em>dictionary</em>) – ‘ypix’, ‘xpix’, ‘lam’</p></li>
+<li><p><strong>Ly</strong> (<em>float</em>) – y size of frame</p></li>
+<li><p><strong>Lx</strong> (<em>float</em>) – x size of frame</p></li>
+<li><p><strong>allow_overlap</strong> (<em>bool</em><em> (</em><em>optional</em><em>, </em><em>default False</em><em>)</em>) – whether or not to include overlapping pixels in cell masks</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>cell_pix</strong> (<em>2D array</em>) – size [Ly x Lx] where 1 if pixel belongs to cell</p></li>
+<li><p><strong>cell_masks</strong> (<em>list</em>) – len ncells, each has tuple of pixels belonging to each cell and weights</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.masks.create_neuropil_masks">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">create_neuropil_masks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">cell_pix</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#create_neuropil_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.create_neuropil_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slow!)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘inner_neuropil_radius’, ‘min_neuropil_pixels’</p></li>
+<li><p><strong>stat</strong> (<em>dictionary</em>) – ‘ypix’, ‘xpix’, ‘lam’</p></li>
+<li><p><strong>cellpix</strong> (<em>2D array</em>) – 1 if ROI exists in pixel, 0 if not;
+pixels ignored for neuropil computation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>neuropil_masks</strong> – size [ncells x Ly x Lx] where each pixel is weight of neuropil mask</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>3D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.masks.get_overlaps">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">get_overlaps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">ops</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#get_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.get_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes overlapping pixels from ROIs in stat</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘Ly’, ‘Lx’</p></li>
+<li><p><strong>stat</strong> (<em>array of dicts</em>) – ‘ypix’, ‘xpix’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>stat</strong> – adds ‘overlap’</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array of dicts</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.masks.remove_overlappers">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">remove_overlappers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em>, <em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">Ly</span></em>, <em class="sig-param"><span class="n">Lx</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#remove_overlappers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.remove_overlappers" title="Permalink to this definition">¶</a></dt>
+<dd><p>removes ROIs that are overlapping more than fraction ops[‘max_overlap’] with other ROIs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stat</strong> (<em>array of dicts</em>) – ‘ypix’, ‘xpix’</p></li>
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘max_overlap’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>stat</strong> (<em>array of dicts</em>) – ROIs with ops[‘max_overlap’] overlapped ROIs removed</p></li>
+<li><p><strong>ix</strong> (<em>list</em>) – list of ROIs that were kept</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="suite2p.extraction.masks.roi_stats">
+<code class="sig-prename descclassname">suite2p.extraction.masks.</code><code class="sig-name descname">roi_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops</span></em>, <em class="sig-param"><span class="n">stat</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/extraction/masks.html#roi_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.extraction.masks.roi_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes statistics of ROIs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ops</strong> (<em>dictionary</em>) – ‘aspect’, ‘diameter’</p></li>
+<li><p><strong>stat</strong> (<em>dictionary</em>) – ‘ypix’, ‘xpix’, ‘lam’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>stat</strong> – adds ‘npix’, ‘npix_norm’, ‘med’, ‘footprint’, ‘compact’, ‘radius’, ‘aspect_ratio’</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-suite2p.extraction">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-suite2p.extraction" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

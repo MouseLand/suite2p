@@ -195,9 +195,9 @@
 </div>
 <div class="section" id="module-suite2p.classification.classifier">
 <span id="suite2p-classification-classifier-module"></span><h2>suite2p.classification.classifier module<a class="headerlink" href="#module-suite2p.classification.classifier" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="py class">
 <dt id="suite2p.classification.classifier.Classifier">
-<em class="property">class </em><code class="sig-prename descclassname">suite2p.classification.classifier.</code><code class="sig-name descname">Classifier</code><span class="sig-paren">(</span><em class="sig-param">classfile=None</em>, <em class="sig-param">keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">suite2p.classification.classifier.</code><code class="sig-name descname">Classifier</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">classfile</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">keys</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>ROI classifier model that uses logistic regression</p>
 <dl class="field-list simple">
@@ -208,9 +208,9 @@
 </ul>
 </dd>
 </dl>
-<dl class="method">
+<dl class="py method">
 <dt id="suite2p.classification.classifier.Classifier.load">
-<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param">classfile</em>, <em class="sig-param">keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.load" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">classfile</span></em>, <em class="sig-param"><span class="n">keys</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>data loader</p>
 <p>saved classifier contains stat with classification labels</p>
 <dl class="field-list simple">
@@ -223,9 +223,9 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="suite2p.classification.classifier.Classifier.predict_proba">
-<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param">stat</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.predict_proba"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.predict_proba" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.predict_proba"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.predict_proba" title="Permalink to this definition">¶</a></dt>
 <dd><p>apply logistic regression model and predict probabilities</p>
 <p>model contains stat with classification labels</p>
 <dl class="field-list simple">
@@ -235,14 +235,14 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="suite2p.classification.classifier.Classifier.run">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">stat</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.run" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stat</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="suite2p.classification.classifier.Classifier.save">
-<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.save" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/suite2p/classification/classifier.html#Classifier.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#suite2p.classification.classifier.Classifier.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>save classifier to filename</p>
 </dd></dl>
 

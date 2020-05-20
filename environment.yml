@@ -13,7 +13,6 @@ dependencies:
   - pyqt
   - pip:
     - pyqtgraph
-    - h5py
     - natsort
     - rastermap>0.1.0
     - tifffile

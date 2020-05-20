@@ -1,4 +1,4 @@
-name: suite2p3
+name: suite2p4
 dependencies:
   - python>=3.7,<3.8
   - pip
@@ -12,4 +12,10 @@ dependencies:
   - scikit-learn
   - pyqt
   - pip:
+    - pyqtgraph
+    - h5py
+    - natsort
+    - rastermap>0.1.0
+    - tifffile
+    - scanimage-tiff-reader
     - .

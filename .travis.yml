@@ -9,9 +9,9 @@ before_install:
   - echo `ls`
   - chmod 777 ./miniconda.sh
   - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH
+  - export PATH=$HOME/miniconda/bin:$PATH
   - echo $PATH
-  - echo `ls /home/travis/miniconda/bin`
+  - echo `ls $HOME/miniconda/bin`
   - conda update --yes conda
 install:
   - conda env create -f environment.yml

@@ -48,10 +48,7 @@ class TestCommonPipelineUseCases:
                 # Load output files as numpy arrays and check if equal element-wise.
                 curr_plane_gt_arr = np.load(os.path.join(gt_dir, 'plane{}'.format(i), output))
                 curr_plane_output_arr = np.load(os.path.join(output_dir, 'plane{}'.format(i), output))
-                assert (curr_plane_gt_arr == curr_plane_output_arr).all()
-                print(os.path.join(gt_dir, 'plane{}'.format(i), output))
-                print('equal')
-                print(os.path.join(output_dir, 'plane{}'.format(i), output))
+                assert np.array_equal(curr_plane_gt_arr, curr_plane_output_arr)
 
     def test_1plane_1chan(self, setup_and_teardown):
         """

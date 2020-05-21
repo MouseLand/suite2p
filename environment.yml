@@ -11,9 +11,9 @@ dependencies:
   - h5py
   - scikit-learn
   - pyqt
-  - pyqtgraph
   - natsort
   - pip:
+    - pyqtgraph==0.11.0rc
     - rastermap>0.1.0
     - tifffile
     - scanimage-tiff-reader

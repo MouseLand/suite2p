@@ -41,6 +41,9 @@ doctrees/
 .AppleDouble
 .LSOverride
 
+# visual studio code
+.vscode
+
 # Thumbnails
 ._*
 

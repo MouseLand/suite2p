@@ -16,14 +16,6 @@ sphinx:
 formats:
   - pdf
 
- 
 # specify conda environment
 conda:
-  environment: environment.yml
-
-  
-# specify extra requirements
-python:
-  version: 3.7
-  install:
-    - requirements: docs/requirements.txt
+  environment: environment_dev.yml

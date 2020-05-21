@@ -1,6 +1,6 @@
 import pytest
 import shutil
-import numpy as np
+import filecmp
 import os
 from suite2p import run_s2p
 
@@ -37,18 +37,19 @@ class TestCommonPipelineUseCases:
         """
         gt_dir = os.path.join(str(gt_root), "{}plane{}chan".format(nplanes, nchannels))
         output_dir = os.path.join(str(output_root), "suite2p")
-        # TODO: Check ops.npy, stats.npy, and data.bin too
-        outputs_to_check = ['F.npy', 'Fneu.npy', 'iscell.npy', 'spks.npy']
+        outputs_to_check = ['F.npy', 'Fneu.npy', 'iscell.npy', 'spks.npy', 'stat.npy', 'data.bin']
         # Check channel2 outputs if necessary
         if nchannels == 2:
-            outputs_to_check.extend(['F_chan2.npy', 'Fneu_chan2.npy'])
+            outputs_to_check.extend(['F_chan2.npy', 'Fneu_chan2.npy', 'data_chan2.bin'])
         # Go through each plane folder and compare contents
         for i in range(nplanes):
             for output in outputs_to_check:
-                # Load output files as numpy arrays and check if equal element-wise.
-                curr_plane_gt_arr = np.load(os.path.join(gt_dir, 'plane{}'.format(i), output))
-                curr_plane_output_arr = np.load(os.path.join(output_dir, 'plane{}'.format(i), output))
-                assert np.array_equal(curr_plane_gt_arr, curr_plane_output_arr)
+                # Non-shallow comparison of both files to make sure their contents are identical
+                assert filecmp.cmp(
+                    os.path.join(gt_dir, 'plane{}'.format(i), output),
+                    os.path.join(output_dir, 'plane{}'.format(i), output),
+                    shallow=False
+                )
 
     def test_1plane_1chan(self, setup_and_teardown):
         """

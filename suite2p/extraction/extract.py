@@ -5,6 +5,7 @@ from .. import utils
 from ..classification.classifier import Classifier
 from ..detection import sparsedetect, chan2detect, sourcery
 from . import masks
+import suite2p
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks

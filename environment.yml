@@ -17,5 +17,3 @@ dependencies:
     - rastermap>0.1.0
     - tifffile
     - scanimage-tiff-reader
-    # '.' Installs suite2p from the local directory
-    - '.'

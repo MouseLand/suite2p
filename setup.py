@@ -36,7 +36,12 @@ setuptools.setup(
         'sphinx>=3.0',
         'sphinxcontrib-apidoc',
         'sphinx_rtd_theme',
-      ]
+      ],
+      "gui": [
+        "pyqt5",
+        "pyqt5-tools",
+        "pyqt5.sip",
+      ],
     },
     include_package_data=True,
     classifiers=[

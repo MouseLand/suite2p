@@ -38,7 +38,7 @@ pyqt5
 ::
 
    pip uninstall pyqt5 pyqt5-tools
-   pip install pyqt5 pyqt5-tools pyqt5.sip
+   pip install suite2p
 
 If when running ``python -m suite2p``, you receive an error associated
 with **matplotlib**, try upgrading it:

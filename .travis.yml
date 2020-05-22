@@ -12,6 +12,7 @@ before_install:
 install:
   - conda env create -f environment.yml
   - source activate suite2p
+  - find . -name '*.pyc' -delete
   - python setup.py install
 script:
   - python setup.py test

@@ -1,3 +1,6 @@
 sphinx>=3.0
 sphinxcontrib-apidoc
 sphinx_rtd_theme
+pyqt5
+pyqt5-tools
+pyqt5.sip

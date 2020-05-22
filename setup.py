@@ -31,6 +31,13 @@ setuptools.setup(
     tests_require=[
       'pytest'
     ],
+    extras_require={
+      "docs": [
+        'sphinx>=3.0',
+        'sphinxcontrib-apidoc',
+        'sphinx_rtd_theme',
+      ]
+    },
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",

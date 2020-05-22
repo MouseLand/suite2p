@@ -1,17 +1,14 @@
 language: python
 os:
   - linux
+  - windows
 python:
   - '3.7'
 before_install:
   # Example from https://github.com/astrofrog/example-travis-conda/
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - echo `ls`
-  - chmod 777 ./miniconda.sh
-  - ./miniconda.sh -b
-  - export PATH=$HOME/miniconda/bin:$PATH
-  - echo $PATH
-  - echo `ls $HOME/miniconda/bin`
+  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash ./miniconda.sh -b
+  - export PATH=~/miniconda3/bin:$PATH
   - conda update --yes conda
 install:
   - conda env create -f environment.yml

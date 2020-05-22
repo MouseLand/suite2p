@@ -10,7 +10,7 @@ before_install:
   - export PATH=~/miniconda3/bin:$PATH
   - conda update --yes conda
 install:
-  - conda env create -f environment.yml
+  - conda env create -f environment_dev.yml
   - source activate suite2p
   - conda env list
   - python setup.py install

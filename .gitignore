@@ -16,6 +16,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# builds
+.eggs
+
 # python and jupyter
 jupyter/.ipynb_checkpoints/
 jupyter/__pycache__/

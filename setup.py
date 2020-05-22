@@ -13,7 +13,24 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
-    install_requires = [],
+    setup_requires=[
+      'pytest-runner',
+    ],
+    install_requires=[
+      'numpy>=1.16',
+      'numba>=0.43.1',
+      'matplotlib',
+      'scipy',
+      'h5py',
+      'scikit-learn',
+      'natsort',
+      'rastermap>0.1.0',
+      'tifffile',
+      'scanimage-tiff-reader',
+    ],
+    tests_require=[
+      'pytest'
+    ],
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",

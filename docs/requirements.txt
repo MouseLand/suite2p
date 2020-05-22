@@ -4,3 +4,4 @@ sphinx_rtd_theme
 pyqt5
 pyqt5-tools
 pyqt5.sip
+pyqtgraph

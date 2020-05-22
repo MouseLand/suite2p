@@ -33,7 +33,8 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. To activate this new environment, run `conda activate suite2p`
-5. Now run `python -m suite2p` and you're all set.
+5. Install suite2p into the environment by running `python setup.py install`
+6. Now run `python -m suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 
@@ -56,7 +57,8 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create -f environment_dev.yml`
 3. To activate this new environment, run `conda activate suite2p-dev` (you will have to activate every time you want to run suite2p)
-4. Run `python -m suite2p` (<-- you can run this command from anywhere now.)
+4. Install suite2p in develop mode with `python setup.py develop`
+5. Run `python -m suite2p` (<-- you can run this command from anywhere now.)
 
 ## Examples
 

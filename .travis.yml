@@ -14,4 +14,4 @@ install:
   - source activate suite2p
   - conda env list
 script:
-  - pytest
+  - pytest tests/test_import.py

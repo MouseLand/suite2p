@@ -5,7 +5,10 @@ from numpy import fft
 from numba import vectorize, complex64, float32, int16
 import math
 from scipy.ndimage import gaussian_filter1d
-from mkl_fft import fft2, ifft2
+try:
+    from mkl_fft import fft2, ifft2
+except ImportError:
+    raise ImportWarning("mkl_fft not installed.  Install it with conda: conda install mkl_fft")
 from . import utils
 
 def phasecorr_reference(refImg0, ops):

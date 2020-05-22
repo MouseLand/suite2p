@@ -12,6 +12,6 @@ before_install:
   - conda update --yes conda
 install:
   - conda env create -f environment.yml
-  - source activate suite2p
+  - conda activate suite2p
 script:
   - pytest

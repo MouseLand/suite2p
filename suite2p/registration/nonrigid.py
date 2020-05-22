@@ -170,10 +170,10 @@ def phasecorr_reference(refImg1, ops):
         cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
 
-@vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel')
+@vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel', cache=True)
 def apply_masks(Y, maskMul, maskOffset):
     return Y*maskMul + maskOffset
-@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
+@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel', cache=True)
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
 
@@ -341,7 +341,7 @@ def linear_interp(iy, ix, yb, xb, f):
     return fup
 
 @njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
-        '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'])
+        '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'], cache=True)
 def map_coordinates(I, yc, xc, Y):
     """ bilinear transform of image with ycoordinates yc and xcoordinates xc to Y 
     
@@ -383,12 +383,12 @@ def map_coordinates(I, yc, xc, Y):
                       np.float32(I[yf1, xf]) * y * (1 - x) +
                       np.float32(I[yf1, xf1]) * y * x )
 
-@vectorize([int32(float32)], nopython=True)
+@vectorize([int32(float32)], nopython=True, cache=True)
 def nfloor(y):
     return math.floor(y) #np.int32(np.floor(y))
 
 @njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
-       'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True)
+       'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True, cache=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     """ shift data into yup and xup coordinates
 
@@ -420,7 +420,7 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     for t in prange(data.shape[0]):
         map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
 
-@njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True)
+@njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True, cache=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
     """ interpolate from ymax1 to mshy to create coordinate transforms """
     for t in prange(ymax1.shape[0]):

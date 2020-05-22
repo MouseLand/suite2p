@@ -4,7 +4,7 @@ from scipy.ndimage import filters
 from multiprocessing import Pool
 from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 
-@njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'])
+@njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'], cache=True)
 def oasis_trace(F, v, w, t, l, s, tau, fs):
     """ spike deconvolution on a single neuron """
     NT = F.shape[0]
@@ -32,7 +32,7 @@ def oasis_trace(F, v, w, t, l, s, tau, fs):
 
     s[t[1:ip]] = v[1:ip] - v[:ip-1] * np.exp(g * l[:ip-1])
 
-@njit(['float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32'], parallel=True)
+@njit(['float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32'], parallel=True, cache=True)
 def oasis_matrix(F, v, w, t, l, s, tau, fs):
     """ spike deconvolution on many neurons parallelized with prange  """
     for n in prange(F.shape[0]):

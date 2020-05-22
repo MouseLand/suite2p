@@ -8,10 +8,10 @@ before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash ./miniconda.sh -b
   - export PATH=~/miniconda3/bin:$PATH
-  - conda init bash
   - conda update --yes conda
 install:
   - conda env create -f environment.yml
-  - conda activate suite2p
+  - source activate suite2p
+  - conda env list
 script:
   - pytest

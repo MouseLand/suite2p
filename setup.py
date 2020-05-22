@@ -26,7 +26,7 @@ setuptools.setup(
       'natsort',
       'rastermap>0.1.0',
       'tifffile',
-      'scanimage-tiff-reader==1.4.0',
+      'scanimage-tiff-reader!=1.4.1',
     ],
     tests_require=[
       'pytest'
@@ -44,7 +44,6 @@ setuptools.setup(
       ],
     },
     include_package_data=True,
-    zip_safe=True,  # To solve "bad marshall data" bug: https://stackoverflow.com/questions/37814654/python-setuptools-bad-marshal-data
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

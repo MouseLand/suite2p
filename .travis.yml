@@ -12,7 +12,9 @@ before_install:
 install:
   - conda env create -f environment.yml
   - source activate suite2p
-  - pip install --upgrade setuptools  # https://github.com/pypa/setuptools/issues/1257
+  - which pip
+  - pip install --upgrade --force-reinstall setuptools  # https://github.com/pypa/setuptools/issues/1257
+  - which python
   - python setup.py install
 script:
   - python setup.py test

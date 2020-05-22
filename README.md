@@ -32,8 +32,7 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 1. Download the [`environment.yml`](https://github.com/MouseLand/suite2p/blob/master/environment.yml) file from the repository. You can do this by cloning the repository, or copy-pasting the text from the file into a text document on your local computer.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
-4. To activate this new environment, run `conda activate suite2p`
-5. Install suite2p into the environment by running `python setup.py install`
+4. Pip install suite2p into the environment: `pip install suite2p`
 6. Now run `python -m suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
@@ -55,10 +54,11 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 ## Installation of github version for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
-2. Run `conda env create -f environment_dev.yml`
-3. To activate this new environment, run `conda activate suite2p-dev` (you will have to activate every time you want to run suite2p)
-4. Install suite2p in develop mode with `python setup.py develop`
-5. Run `python -m suite2p` (<-- you can run this command from anywhere now.)
+2. Run `conda env create -f environment.yml`
+3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
+4. Install the local version of suite2p into this environment in develop mode: `python setup.py develop`
+5. Run tests: `python setup.py test`
+
 
 ## Examples
 

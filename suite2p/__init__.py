@@ -1,3 +1,3 @@
-from .gui import gui2p
+from . import run_s2p
 
 name = "suite2p"

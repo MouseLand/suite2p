@@ -8,3 +8,4 @@ include suite2p/ops/ops_user.npy
 include suite2p/ops/ops_1P.npy
 include README.md
 include LICENSE
+recursive-exclude * __pycache__

@@ -1,10 +1,14 @@
+import warnings
 import time, os
 import numpy as np
 from numpy import fft
 from numba import vectorize, complex64, float32, int16
 import math
 from scipy.ndimage import gaussian_filter1d
-from mkl_fft import fft2, ifft2
+try:
+    from mkl_fft import fft2, ifft2
+except ModuleNotFoundError:
+    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 def one_photon_preprocess(data, ops):
     ''' pre filtering for one-photon data '''

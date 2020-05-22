@@ -1,9 +1,13 @@
+import warnings
 import numpy as np
 from numpy import fft
 from scipy.fftpack import next_fast_len
 from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
 import math
-from mkl_fft import fft2, ifft2
+try:
+    from mkl_fft import fft2, ifft2
+except ModuleNotFoundError:
+    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 from . import utils
 
 sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...

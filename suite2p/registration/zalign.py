@@ -7,7 +7,6 @@ import math
 from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter1d
 from suite2p.io import tiff
-from mkl_fft import fft2, ifft2
 from . import reference, bidiphase, nonrigid, utils, rigid
 
 def compute_zpos(Zreg, ops):

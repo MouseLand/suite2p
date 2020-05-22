@@ -1,5 +1,7 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
+[![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=latest)](https://suite2p.readthedocs.io/en/latest/?badge=latest)
+
 [![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
 
 Pipeline for processing two-photon calcium imaging data.  

@@ -1,8 +1,8 @@
 Frequently Asked Questions
---------------
+--------------------------
 
 Cropped field-of-view
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Some issues on this: `#273 <https://github.com/MouseLand/suite2p/issues/273>`_, 
 `#207 <https://github.com/MouseLand/suite2p/issues/207>`_,
@@ -29,7 +29,7 @@ See this page :ref:`inputs`
 for more info.
 
 Deconvolution means what?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is a lot of misinformation about what deconvolution is and what it isn't. Some issues on this:
 `#267 <https://github.com/MouseLand/suite2p/issues/267>`_,
@@ -83,14 +83,14 @@ know of many papers that make such statements.
 
 
 Multiple functional channels
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have two channels and they both have functional activity, then to 
 process both you need to run suite2p in a jupyter notebook. Here is an example
 notebook for that purpose: `multiple_functional_channels.ipynb <https://github.com/MouseLand/suite2p/blob/master/jupyter/multiple_functional_channels.ipynb>`_
 
 Z-drift
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
 
 It's not frequently asked about but it should be :) 
 

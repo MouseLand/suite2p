@@ -37,10 +37,16 @@ setuptools.setup(
         'sphinxcontrib-apidoc',
         'sphinx_rtd_theme',
       ],
+      # Note: Available in pypi, but cleaner to install as pyqt from conda.
       "gui": [
         "pyqt5",
         "pyqt5-tools",
         "pyqt5.sip",
+      ],
+      # Note: Not currently available in pip: use conda to install.
+      "mkl": [
+        "mkl_fft>=1.0.10",
+        "mkl>=2019.3",
       ],
     },
     include_package_data=True,

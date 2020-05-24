@@ -197,17 +197,14 @@ def run_s2p(ops={},db={}):
         ops = {**ops0, **ops}
         # copy tiff to a binary
         if ops['input_format'] == 'h5':
-            from .io import h5
-            ops1 = h5.h5py_to_binary(ops)
+            ops1 = io.h5py_to_binary(ops)
             print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         elif ops['input_format'] == 'sbx':
-            from .io import sbx
-            ops1 = sbx.sbx_to_binary(ops)
+            ops1 = io.sbx_to_binary(ops)
             print('time %4.2f sec. Wrote sbx to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         else:
-            from .io import tiff
             if ops['input_format'] == 'mesoscan':
-                ops1 = tiff.mesoscan_to_binary(ops)
+                ops1 = io.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote mesoscope tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             elif ops['input_format'] == 'haus':
                 print('time %4.2f sec. Using HAUSIO')
@@ -216,10 +213,10 @@ def run_s2p(ops={},db={}):
                 print('time %4.2f sec. Wrote data to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             elif ops['input_format'] == 'bruker':
                 ops['bruker'] = True
-                ops1 = tiff.ome_to_binary(ops)
+                ops1 = io.ome_to_binary(ops)
                 print('time %4.2f sec. Wrote bruker tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             else:
-                ops1 = tiff.tiff_to_binary(ops)
+                ops1 = io.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote %d tiff frames to binaries for %d planes'%
                             (time.time()-(t0), ops1[0]['nframes'], len(ops1)))
         np.save(fpathops1, ops1) # save ops1

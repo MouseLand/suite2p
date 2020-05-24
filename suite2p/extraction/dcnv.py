@@ -1,8 +1,6 @@
 import numpy as np
-import multiprocessing
 from scipy.ndimage import filters
-from multiprocessing import Pool
-from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
+from numba import njit, prange
 
 @njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'], cache=True)
 def oasis_trace(F, v, w, t, l, s, tau, fs):

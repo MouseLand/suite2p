@@ -1,7 +1,6 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import os
-import sys
 import numpy as np
 from matplotlib.colors import hsv_to_rgb
 import time

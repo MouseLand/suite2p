@@ -1,7 +1,5 @@
 import numpy as np
-import time
 from scipy.ndimage import gaussian_filter
-from suite2p import utils
 from suite2p.extraction import extract
 
 '''

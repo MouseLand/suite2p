@@ -1,7 +1,5 @@
 from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-from pyqtgraph import console
-import sys, json, os, pickle, time, shutil, glob
+import json, os, shutil, glob
 from datetime import datetime
 import numpy as np
 from .. import run_s2p

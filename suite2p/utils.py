@@ -1,12 +1,6 @@
-import gc
 import numpy as np
-from natsort import natsorted
-import math, time
-import glob, h5py, os, json
+import math
 from scipy import signal
-from scipy import stats, signal
-from scipy.sparse import linalg
-import scipy.io
 
 def boundary(ypix,xpix):
     """ returns pixels of mask that are on the exterior of the mask """

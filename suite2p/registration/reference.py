@@ -1,6 +1,5 @@
-import time, os
 import numpy as np
-from . import bidiphase,utils,rigid,register
+from . import bidiphase, rigid, register
 from ..utils import get_frames
 
 def sampled_mean(ops):

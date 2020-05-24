@@ -1,8 +1,6 @@
-from PyQt5 import QtGui, QtCore
-import sys
+from PyQt5 import QtGui
 import numpy as np
 import os
-import __main__
 import shutil
 from ..classification import classifier
 from . import masks, io

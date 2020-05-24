@@ -1,10 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
 from scipy import stats
-import math
 from PyQt5 import QtGui
-from matplotlib.colors import hsv_to_rgb
-import time
 from .. import utils
 from .. import extraction
 from . import masks

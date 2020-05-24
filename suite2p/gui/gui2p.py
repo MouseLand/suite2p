@@ -2,7 +2,6 @@ import sys, os, shutil, time, pathlib
 import numpy as np
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
-from pyqtgraph import GraphicsScene
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import interp1d
 import warnings

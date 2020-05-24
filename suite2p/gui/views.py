@@ -1,5 +1,4 @@
 from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
 import numpy as np
 from ..utils import enhanced_mean_image
 

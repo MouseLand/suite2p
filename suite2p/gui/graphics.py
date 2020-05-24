@@ -1,10 +1,10 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore
 import pyqtgraph as pg
 import numpy as np
 from pyqtgraph import functions as fn
 from pyqtgraph import Point
 from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
-from . import classgui, masks
+from . import masks
 
 class TraceBox(pg.PlotItem):
     def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True, invertY=False, enableMenu=True, name=None, invertX=False):

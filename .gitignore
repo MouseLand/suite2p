@@ -47,6 +47,9 @@ doctrees/
 # visual studio code
 .vscode
 
+# pycharm
+.idea
+
 # Thumbnails
 ._*
 

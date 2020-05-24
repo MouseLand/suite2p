@@ -2,7 +2,6 @@
 from PyQt5 import QtGui, QtCore
 import pyqtgraph as pg
 import os
-import sys
 from tifffile import imread
 from scipy.ndimage import gaussian_filter1d
 import numpy as np

@@ -1,10 +1,9 @@
 import numpy as np
 import time, os, shutil, datetime
 from scipy.io import savemat
-from .io import tiff, h5, save, nwb
+from .io import save, nwb
 from .registration import register, metrics, reference
 from .extraction import extract, dcnv
-from . import utils
 try:
     from haussmeister import haussio
     HAS_HAUS = True

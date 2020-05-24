@@ -2,14 +2,12 @@ from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
 from scipy.ndimage import gaussian_filter1d
-from scipy.sparse.linalg import eigsh
 from scipy.stats import zscore
-from matplotlib.colors import hsv_to_rgb
 from matplotlib import cm
 import time
-import sys,os
+import sys
 from rastermap.mapping import Rastermap
-from . import rungui,masks
+from . import masks
 
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):

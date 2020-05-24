@@ -1,10 +1,8 @@
 import warnings
-import time, os
 import numpy as np
 from scipy.fftpack import next_fast_len
 from numpy import fft
-from numba import vectorize, complex64, float32, int16
-import math
+from numba import vectorize
 from scipy.ndimage import gaussian_filter1d
 try:
     from mkl_fft import fft2, ifft2

@@ -1,9 +1,5 @@
 import time, os
 import numpy as np
-from scipy.fftpack import next_fast_len
-from numpy import fft
-from numba import vectorize, complex64, float32, int16
-import math
 from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter1d
 from suite2p.io import tiff

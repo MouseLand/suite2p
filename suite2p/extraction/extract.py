@@ -1,5 +1,5 @@
 import numpy as np
-import time, os, shutil, pathlib
+import time, os, pathlib
 from scipy import stats
 from .. import utils
 from ..classification.classifier import Classifier

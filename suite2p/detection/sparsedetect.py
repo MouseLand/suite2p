@@ -4,7 +4,6 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage.filters import uniform_filter
 import numpy as np
 import time
-from .. import utils
 
 def bin_movie(ops):
     """ bin registered frames in 'reg_file' for ROI detection

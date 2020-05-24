@@ -1,5 +1,4 @@
 import numpy as np
-import time, os
 import argparse
 
 def main(ops1):

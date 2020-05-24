@@ -1,5 +1,4 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
+from PyQt5 import QtGui
 import numpy as np
 import os
 import time

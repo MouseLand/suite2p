@@ -1,5 +1,5 @@
 from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
+import pyqtgraph as pg  # unused, but prevents the AttributeError: module 'PyQt5.QtGui' has no attribute 'QPushButton'
 import numpy as np
 
 def make_selection(parent):

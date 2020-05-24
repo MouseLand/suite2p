@@ -668,7 +668,7 @@ class MainWindow(QtGui.QMainWindow):
         self.win.show()
         self.show()
 
-def run(statfile=None):
+def run_gui(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QtGui.QApplication(sys.argv)

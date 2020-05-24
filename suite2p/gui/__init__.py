@@ -1,1 +1,1 @@
-from .gui2p import run
+from .gui2p import run_gui

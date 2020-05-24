@@ -66,7 +66,7 @@ def download_test_data():
             download_url_to_file(data_url, str(cached_file), progress=True)
 
 
-def compare_npy_arrays(arr1, arr2, atol):
+def compare_npy_arrays(arr1, arr2, rtol, atol):
     """
     Compares contents of two numpy arrays. Checks that the elements are within an absolute tolerance of 0.008.
 
@@ -88,10 +88,12 @@ def compare_npy_arrays(arr1, arr2, atol):
             output_curr_dict = arr2[i]
             # Iterate through keys and make sure values are same
             for k in gt_curr_dict.keys():
-                assert np.allclose(gt_curr_dict[k], output_curr_dict[k], rtol=0, atol=atol)
+                assert np.allclose(gt_curr_dict[k], output_curr_dict[k], rtol=rtol, atol=atol)
     # Assume all other cases have arrays that contain numbers
     else:
-        assert np.allclose(arr1, arr2, rtol=0, atol=atol)
+        print("Max Absolute diff is : {}".format(np.max(np.abs(arr1-arr2))))
+        print("Min rtol*(abs(arr2)) is : {}".format(np.min(rtol*np.abs(arr2))))
+        assert np.allclose(arr1, arr2, rtol=rtol, atol=atol)
 
 
 @pytest.fixture()
@@ -109,8 +111,7 @@ def setup_and_teardown(tmpdir):
     if tmpdir_path.is_dir():
         shutil.rmtree(tmpdir)
         print('Successful removal of tmp_path {}.'.format(tmpdir))
-
-
+    
 class TestCommonPipelineUseCases:
     """
     Class that tests common use cases for pipeline.
@@ -138,7 +139,8 @@ class TestCommonPipelineUseCases:
                 output_data = np.load(
                     str(output_dir.joinpath('plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
                 )
-                compare_npy_arrays(test_data, output_data, 0.008)
+                print("Comparing {} for plane {}".format(output, i))
+                compare_npy_arrays(test_data, output_data, rtol=1e-6, atol=5e-2)
 
     def test_1plane_1chan(self, setup_and_teardown):
         """

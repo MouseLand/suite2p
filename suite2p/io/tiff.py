@@ -1,13 +1,7 @@
 import gc
 import numpy as np
-from natsort import natsorted
 import math, time
 import glob, os, json
-from scipy import signal
-from scipy import stats, signal
-from scipy.sparse import linalg
-import scipy.io
-#from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter
 from . import utils

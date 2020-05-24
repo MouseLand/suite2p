@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import scipy
-import datetime
 
 def combined(ops1):
     """ Combines all the entries in ops1 into a single result file.

@@ -1,12 +1,6 @@
-import gc
 import numpy as np
-from natsort import natsorted
-import math, time
-import glob, h5py, os, json
-from scipy import signal
-from scipy import stats, signal
-from scipy.sparse import linalg
-import scipy.io
+import math
+import h5py, os
 from . import utils
 
 def h5py_to_binary(ops):

@@ -1,4 +1,3 @@
-from . import utils
 from .tiff import write_tiff, mesoscan_to_binary, ome_to_binary, tiff_to_binary
 from .save import save_combined
 from .nwb import save_nwb, read_nwb

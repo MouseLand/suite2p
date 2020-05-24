@@ -1,4 +1,4 @@
-from . import bidiphase, metrics, nonrigid, rigid, utils
+from . import bidiphase, nonrigid, rigid
 from .zalign import compute_zpos
 from .register import register_binary
 from .metrics import get_pc_metrics

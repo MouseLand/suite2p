@@ -157,7 +157,7 @@ def subsample_frames(ops, bin_file, nsamps):
     #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
     for j in range(0,nsamps):
         reg_file.seek(nbytesread * istart[j], 0)
-        buff = reg_file.read(nbytesread)
+        buff = reg_file.read_nwb(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
         buff = []
         frames[j,:,:] = np.reshape(data, (Ly, Lx))

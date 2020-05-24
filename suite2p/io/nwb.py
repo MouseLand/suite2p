@@ -2,7 +2,7 @@ import numpy as np
 import os
 import scipy
 import datetime
-from ..extraction import masks
+from .. import extraction
 from .. import run_s2p
 try:
     from pynwb import NWBFile
@@ -20,9 +20,9 @@ except:
     NWB = False
 
 
-def read(fpath):
+def read_nwb(fpath):
     with NWBHDF5IO(fpath, 'r') as fio:
-        nwbfile = fio.read()
+        nwbfile = fio.read_nwb()
         
         # ROIs
         try:
@@ -39,7 +39,7 @@ def read(fpath):
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0,-2])
         ops = run_s2p.default_ops()
-        stat = masks.roi_stats(ops, stat)
+        stat = extraction.roi_stats(ops, stat)
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:
@@ -128,7 +128,7 @@ def read(fpath):
     return stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 
-def save(ops1):
+def save_nwb(ops1):
     if NWB and not ops1[0]['mesoscan']:
         if len(ops1)>1:
             multiplane = True

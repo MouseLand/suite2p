@@ -1,7 +1,7 @@
 import numpy as np
 import time, os, shutil, datetime
 from scipy.io import savemat
-from .io import save, nwb
+from . import io
 from . import registration
 from . import extraction
 try:
@@ -331,11 +331,11 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and roidetect:
-        save.combined(ops1)
+        io.save_combined(ops1)
     
     # save to NWB
     if 'save_NWB' in ops and ops['save_NWB']:
-        nwb.save(ops1)
+        io.save_nwb(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

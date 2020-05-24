@@ -187,7 +187,7 @@ def load_NWB(parent):
     name = parent.fname
     print(name)
     if 1:
-        procs = nwb.read(name)
+        procs = nwb.read_nwb(name)
         if procs[1]['nchannels']==2:
             parent.hasred = True
         else:

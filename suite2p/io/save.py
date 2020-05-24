@@ -2,7 +2,8 @@ import numpy as np
 import os
 import scipy
 
-def combined(ops1):
+
+def save_combined(ops1):
     """ Combines all the entries in ops1 into a single result file.
 
     Multi-plane recordings are arranged to best tile a square.

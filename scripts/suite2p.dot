@@ -18,7 +18,7 @@ subgraph cluster_suite2p {
     suite2p_extraction [fillcolor="#e50505",fontcolor="#ffffff",label="suite2p\.\nextraction"];
     suite2p_extraction_dcnv [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\nextraction\.\ndcnv"];
     suite2p_extraction_extract [fillcolor="#993333",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nextract"];
-    suite2p_extraction_masks [fillcolor="#c82323",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nmasks"];
+    suite2p_extraction_masks [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nmasks"];
     suite2p_gui [fillcolor="#f91010",fontcolor="#ffffff",label="suite2p.gui"];
     suite2p_gui_buttons [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\ngui\.\nbuttons"];
     suite2p_gui_classgui [fillcolor="#b81414",fontcolor="#ffffff",label="suite2p\.\ngui\.\nclassgui"];
@@ -34,11 +34,11 @@ subgraph cluster_suite2p {
     suite2p_gui_traces [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p\.\ngui\.\ntraces"];
     suite2p_gui_views [fillcolor="#c43131",fontcolor="#ffffff",label="suite2p\.\ngui\.\nviews"];
     suite2p_gui_visualize [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p\.\ngui\.\nvisualize"];
-    suite2p_io [fillcolor="#c70505",fontcolor="#ffffff",label="suite2p.io"];
+    suite2p_io [fillcolor="#b30404",fontcolor="#ffffff",label="suite2p.io"];
     suite2p_io_h5 [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p.io.h5"];
-    suite2p_io_nwb [fillcolor="#b42d2d",fontcolor="#ffffff",label="suite2p.io.nwb"];
-    suite2p_io_save [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p\.\nio\.\nsave"];
-    suite2p_io_sbx [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p.io.sbx"];
+    suite2p_io_nwb [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p.io.nwb"];
+    suite2p_io_save [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\nio\.\nsave"];
+    suite2p_io_sbx [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p.io.sbx"];
     suite2p_io_tiff [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p\.\nio\.\ntiff"];
     suite2p_io_utils [fillcolor="#e72222",fontcolor="#ffffff",label="suite2p\.\nio\.\nutils"];
     suite2p_registration [fillcolor="#9f0404",fontcolor="#ffffff",label="suite2p\.\nregistration"];
@@ -50,7 +50,7 @@ subgraph cluster_suite2p {
     suite2p_registration_rigid [fillcolor="#d31717",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nrigid"];
     suite2p_registration_utils [fillcolor="#e72222",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nutils"];
     suite2p_registration_zalign [fillcolor="#a83838",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nzalign"];
-    suite2p_run_s2p [fillcolor="#a50808",fontcolor="#ffffff",label="suite2p\.\nrun_s2p"];
+    suite2p_run_s2p [fillcolor="#b80909",fontcolor="#ffffff",label="suite2p\.\nrun_s2p"];
     suite2p_utils [fillcolor="#f91010",fontcolor="#ffffff",label="suite2p.utils"];
 }
     suite2p_classification -> suite2p_extraction_extract [fillcolor="#000000",minlen="2"];
@@ -74,7 +74,6 @@ subgraph cluster_suite2p {
     suite2p_extraction_extract -> suite2p_extraction [fillcolor="#000000",weight="2"];
     suite2p_extraction_masks -> suite2p_extraction [fillcolor="#000000",weight="2"];
     suite2p_extraction_masks -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
-    suite2p_extraction_masks -> suite2p_io_nwb [fillcolor="#000000",minlen="2"];
     suite2p_gui -> suite2p___main__ [fillcolor="#000000"];
     suite2p_gui_buttons -> suite2p_gui_gui2p [fillcolor="#000000",weight="2"];
     suite2p_gui_classgui -> suite2p_gui_gui2p [fillcolor="#000000",weight="2"];
@@ -114,9 +113,9 @@ subgraph cluster_suite2p {
     suite2p_io_h5 -> suite2p_io [fillcolor="#000000",weight="2"];
     suite2p_io_h5 -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
     suite2p_io_nwb -> suite2p_gui_io [fillcolor="#000000",minlen="2"];
-    suite2p_io_nwb -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
+    suite2p_io_nwb -> suite2p_io [fillcolor="#000000",weight="2"];
     suite2p_io_save -> suite2p_io [fillcolor="#000000",weight="2"];
-    suite2p_io_save -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
+    suite2p_io_sbx -> suite2p_io [fillcolor="#000000",weight="2"];
     suite2p_io_sbx -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
     suite2p_io_tiff -> suite2p_io [fillcolor="#000000",weight="2"];
     suite2p_io_tiff -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];

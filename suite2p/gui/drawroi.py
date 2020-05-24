@@ -6,7 +6,6 @@ from matplotlib.colors import hsv_to_rgb
 import time
 from scipy import stats
 from .. import extraction
-from ..detection import sparsedetect
 from . import io
 
 
@@ -22,10 +21,10 @@ def masks_and_traces(ops, stat, stat_orig):
     stat_all = stat.copy()
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
-    stat_all, cell_pix, _ = masks.create_cell_masks(ops, stat_all)
+    stat_all, cell_pix, _ = extraction.create_cell_masks(ops, stat_all)
     stat = stat_all[:len(stat)]
 
-    neuropil_masks = masks.create_neuropil_masks(ops, stat, cell_pix)
+    neuropil_masks = extraction.create_neuropil_masks(ops, stat, cell_pix)
     Ly = ops['Ly']
     Lx = ops['Lx']
     neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
@@ -232,7 +231,7 @@ class ROIDraw(QtGui.QMainWindow):
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
         # Calculate overlap before saving
-        stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, self.parent.ops)
+        stat_all_w_overlap = extraction.get_overlaps(stat_all, self.parent.ops)
         np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all_w_overlap)
         iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]), axis=1)
 

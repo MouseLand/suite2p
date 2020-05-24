@@ -1,9 +1,13 @@
-import time, os
+import os
+import time
+
 import numpy as np
-from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter1d
-from .. import io
+from scipy.signal import medfilt
+
 from . import reference, bidiphase, nonrigid, utils, rigid
+from .. import io
+
 
 #HAS_GPU=False
 #try:

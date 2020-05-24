@@ -1,5 +1,6 @@
-import numpy as np
 import math
+
+import numpy as np
 
 
 def fitMVGaus(y,x,lam,thres=2.5):

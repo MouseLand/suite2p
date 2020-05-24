@@ -1,7 +1,11 @@
-import time, os
+import os
+import time
+
 import numpy as np
 from scipy.signal import medfilt
+
 from . import nonrigid, rigid
+
 
 def compute_zpos(Zreg, ops):
     """ compute z position of frames given z-stack Zreg

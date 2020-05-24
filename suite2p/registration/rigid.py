@@ -1,9 +1,11 @@
 import warnings
+
 import numpy as np
-from scipy.fftpack import next_fast_len
-from numpy import fft
 from numba import vectorize
+from numpy import fft
+from scipy.fftpack import next_fast_len
 from scipy.ndimage import gaussian_filter1d
+
 try:
     from mkl_fft import fft2, ifft2
 except ModuleNotFoundError:

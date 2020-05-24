@@ -1,6 +1,7 @@
 import numpy as np
-from .. import utils
+
 from .. import detection
+from .. import utils
 
 
 def get_overlaps(stat, ops):

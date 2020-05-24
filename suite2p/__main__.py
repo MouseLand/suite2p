@@ -1,6 +1,10 @@
-import numpy as np
 import argparse
-import suite2p  # Only case of absoluted imports: https://docs.python.org/3/tutorial/modules.html#intra-package-references
+
+import numpy as np
+
+import \
+    suite2p  # Only case of absoluted imports: https://docs.python.org/3/tutorial/modules.html#intra-package-references
+
 
 def main():
     ops = np.load('ops.npy', allow_pickle=True).item()

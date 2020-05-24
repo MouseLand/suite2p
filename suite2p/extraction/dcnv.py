@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.ndimage import filters
 from numba import njit, prange
+from scipy.ndimage import filters
+
 
 @njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'], cache=True)
 def oasis_trace(F, v, w, t, l, s, tau, fs):

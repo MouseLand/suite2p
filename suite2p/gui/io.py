@@ -1,11 +1,14 @@
-from PyQt5 import QtGui
-import numpy as np
 import os
 import time
-from .. import io
+
+import numpy as np
+import scipy.io
+from PyQt5 import QtGui
+
 from . import masks, classgui, traces, views, graphics
 from . import utils
-import scipy.io
+from .. import io
+
 
 def make_masks_and_enable_buttons(parent):
     parent.checkBox.setChecked(True)

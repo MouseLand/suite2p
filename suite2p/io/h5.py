@@ -1,7 +1,11 @@
-import numpy as np
 import math
-import h5py, os
+
+import h5py
+import numpy as np
+import os
+
 from . import utils
+
 
 def h5py_to_binary(ops):
     """  finds h5 files and writes them to binaries

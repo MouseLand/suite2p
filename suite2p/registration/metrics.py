@@ -1,9 +1,11 @@
+from multiprocessing import Pool
+
 import numpy as np
 from scipy.signal import convolve2d
 from sklearn.decomposition import PCA
-from ..utils import get_frames
+
 from . import register, nonrigid
-from multiprocessing import Pool
+from ..utils import get_frames
 
 try:
     import cv2

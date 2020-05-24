@@ -1,8 +1,10 @@
-import warnings
 import os
+import warnings
+
 import numpy as np
-from numpy import fft
 from numba import vectorize, complex64
+from numpy import fft
+
 try:
     from mkl_fft import fft2, ifft2
 except ModuleNotFoundError:

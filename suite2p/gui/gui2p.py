@@ -1,12 +1,18 @@
-import sys, os, shutil, time, pathlib
-import numpy as np
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-from scipy.ndimage import gaussian_filter1d
-from scipy.interpolate import interp1d
+import os
+import pathlib
+import shutil
+import sys
 import warnings
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter1d
+
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 from .. import run_s2p
+
 
 def resample_frames(y, x, xt):
     ''' resample y (defined at x) at times xt '''

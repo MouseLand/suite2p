@@ -1,12 +1,14 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
 import os
-import numpy as np
-from matplotlib.colors import hsv_to_rgb
 import time
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from matplotlib.colors import hsv_to_rgb
 from scipy import stats
-from .. import extraction
+
 from . import io
+from .. import extraction
 
 
 def masks_and_traces(ops, stat, stat_orig):

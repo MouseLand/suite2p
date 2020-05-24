@@ -1,9 +1,11 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-import numpy as np
-from matplotlib.colors import hsv_to_rgb
 import matplotlib.cm
+import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from matplotlib.colors import hsv_to_rgb
+
 from . import classgui, io
+
 
 def make_buttons(parent, b0):
     """ color buttons at row b0 """

@@ -1,10 +1,16 @@
 import gc
+import glob
+import json
+import math
+import os
+import time
+
 import numpy as np
-import math, time
-import glob, os, json
 from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter
+
 from . import utils
+
 
 def write_tiff(data, ops, k, ichan):
     """ writes frames to tiffs

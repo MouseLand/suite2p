@@ -1,9 +1,12 @@
-from PyQt5 import QtGui
-import numpy as np
 import os
 import shutil
-from .. import classification
+
+import numpy as np
+from PyQt5 import QtGui
+
 from . import masks, io
+from .. import classification
+
 
 #def make_buttons(parent)
 

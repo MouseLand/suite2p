@@ -1,10 +1,14 @@
+import os
+import pathlib
+import time
+
 import numpy as np
-import time, os, pathlib
 from scipy import stats, signal
+
+import suite2p
+from . import masks
 from .. import classification
 from .. import detection
-from . import masks
-import suite2p
 
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):

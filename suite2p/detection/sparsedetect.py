@@ -1,9 +1,11 @@
-from scipy.ndimage import maximum_filter, gaussian_filter
-from scipy.stats import mode
-from scipy.interpolate import RectBivariateSpline
-from scipy.ndimage.filters import uniform_filter
-import numpy as np
 import time
+
+import numpy as np
+from scipy.interpolate import RectBivariateSpline
+from scipy.ndimage import maximum_filter, gaussian_filter
+from scipy.ndimage.filters import uniform_filter
+from scipy.stats import mode
+
 
 def bin_movie(ops):
     """ bin registered frames in 'reg_file' for ROI detection

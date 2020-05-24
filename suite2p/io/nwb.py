@@ -1,9 +1,12 @@
-import numpy as np
-import os
-import scipy
 import datetime
+import os
+
+import numpy as np
+import scipy
+
 from .. import extraction
 from .. import run_s2p
+
 try:
     from pynwb import NWBFile
     from pynwb.base import Images

@@ -1,5 +1,6 @@
-from PyQt5 import QtGui, QtCore
 import numpy as np
+from PyQt5 import QtGui, QtCore
+
 from .. import extraction
 
 

@@ -1,6 +1,9 @@
-import numpy as np
 import os
+
+import numpy as np
+
 from . import utils
+
 
 def sbx_get_info(sbxfile):
     ''' 

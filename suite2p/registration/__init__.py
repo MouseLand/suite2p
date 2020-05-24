@@ -1,5 +1,5 @@
 from . import bidiphase, nonrigid, rigid
-from .zalign import compute_zpos
-from .register import register_binary
 from .metrics import get_pc_metrics
 from .reference import sampled_mean
+from .register import register_binary
+from .zalign import compute_zpos

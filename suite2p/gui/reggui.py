@@ -1,13 +1,16 @@
 # heavily modified script from a pyqt4 release
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
 import os
-from tifffile import imread
-from scipy.ndimage import gaussian_filter1d
+
 import numpy as np
-from . import utils
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from scipy.ndimage import gaussian_filter1d
+from tifffile import imread
+
 from . import masks
+from . import utils
 from .. import registration
+
 
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):

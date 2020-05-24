@@ -1,10 +1,13 @@
-import numpy as np
+import math
 import time
+
+import numpy as np
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
-import math
-from .. import utils
+
 from . import sparsedetect
+from .. import utils
+
 
 def getSVDdata(ops):
     mov, max_proj = sparsedetect.bin_movie(ops)

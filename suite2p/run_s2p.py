@@ -1,9 +1,15 @@
+import datetime
+import os
+import shutil
+import time
+
 import numpy as np
-import time, os, shutil, datetime
 from scipy.io import savemat
+
+from . import extraction
 from . import io
 from . import registration
-from . import extraction
+
 try:
     from haussmeister import haussio
     HAS_HAUS = True

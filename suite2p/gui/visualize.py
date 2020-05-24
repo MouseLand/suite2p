@@ -1,13 +1,16 @@
-from PyQt5 import QtGui, QtCore
+import sys
+import time
+
 import numpy as np
 import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from matplotlib import cm
+from rastermap.mapping import Rastermap
 from scipy.ndimage import gaussian_filter1d
 from scipy.stats import zscore
-from matplotlib import cm
-import time
-import sys
-from rastermap.mapping import Rastermap
+
 from . import masks
+
 
 # custom vertical label
 class VerticalLabel(QtGui.QWidget):

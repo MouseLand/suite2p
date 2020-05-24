@@ -1,6 +1,6 @@
 import pytest
 import shutil
-import filecmp
+import numpy as np
 import sys
 from pathlib import Path
 from suite2p import run_s2p
@@ -66,6 +66,34 @@ def download_test_data():
             download_url_to_file(data_url, str(cached_file), progress=True)
 
 
+def compare_npy_arrays(arr1, arr2, atol):
+    """
+    Compares contents of two numpy arrays. Checks that the elements are within an absolute tolerance of 0.008.
+
+    Parameters
+    ----------
+    arr1
+    arr2
+    atol
+
+    Returns
+    -------
+
+    """
+    # Handle cases where the elements of npy arrays are dictionaries (e.g: stat.npy)
+    if arr1.dtype == np.dtype('object') and (arr2.dtype == np.dtype('object')):
+        # Iterate through dictionaries
+        for i in range(len(arr1)):
+            gt_curr_dict = arr1[i]
+            output_curr_dict = arr2[i]
+            # Iterate through keys and make sure values are same
+            for k in gt_curr_dict.keys():
+                assert np.allclose(gt_curr_dict[k], output_curr_dict[k], rtol=0, atol=atol)
+    # Assume all other cases have arrays that contain numbers
+    else:
+        assert np.allclose(arr1, arr2, rtol=0, atol=atol)
+
+
 @pytest.fixture()
 def setup_and_teardown(tmpdir):
     """
@@ -102,12 +130,15 @@ class TestCommonPipelineUseCases:
         # Go through each plane folder and compare contents
         for i in range(nplanes):
             for output in outputs_to_check:
-                # Non-shallow comparison of both files to make sure their contents are identical
-                assert filecmp.cmp(
-                    test_data_dir.joinpath('{0}plane{1}chan_{2}_plane{3}.npy'.format(nplanes, nchannels, output, i)),
-                    output_dir.joinpath('plane{}'.format(i), "{}.npy".format(output)),
-                    shallow=False
+                test_data = np.load(
+                    str(test_data_dir.joinpath('{0}plane{1}chan_{2}_plane{3}.npy'
+                        .format(nplanes, nchannels, output, i))
+                        ), allow_pickle=True
                 )
+                output_data = np.load(
+                    str(output_dir.joinpath('plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
+                )
+                compare_npy_arrays(test_data, output_data, 0.008)
 
     def test_1plane_1chan(self, setup_and_teardown):
         """

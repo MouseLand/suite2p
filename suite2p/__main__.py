@@ -10,8 +10,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Suite2p parameters')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
-    from .run_s2p import default_ops
-    ops0 = default_ops()
+    from . import run_s2p
+    ops0 = run_s2p.default_ops()
     for k in ops0.keys():
         v = dict(default = ops0[k],
                  help = '{0}: {1}'.format(k,ops0[k]))
@@ -53,8 +53,8 @@ def parse_arguments():
         from . import run_s2p
         run_s2p.run_s2p(ops, db)
     else:
-        from .gui import gui2p
-        gui2p.run()
+        from . import gui
+        gui.run()
 
     
 if __name__ == '__main__':

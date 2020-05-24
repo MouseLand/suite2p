@@ -1,6 +1,7 @@
 from PyQt5 import QtGui, QtCore
 import numpy as np
-from .. import utils
+from .. import extraction
+
 
 def make_buttons(parent):
     """ view buttons"""
@@ -65,7 +66,7 @@ def init_views(parent):
     for k in range(7):
         if k==2:
             if 'meanImgE' not in parent.ops:
-                parent.ops = utils.enhanced_mean_image(parent.ops)
+                parent.ops = extraction.enhanced_mean_image(parent.ops)
             mimg = parent.ops['meanImgE']
         elif k==1:
             mimg = parent.ops['meanImg']

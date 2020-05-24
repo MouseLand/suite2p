@@ -6,7 +6,7 @@ from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter
 from . import utils
 
-def write(data, ops, k, ichan):
+def write_tiff(data, ops, k, ichan):
     """ writes frames to tiffs
 
     Parameters

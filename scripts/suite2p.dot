@@ -39,14 +39,14 @@ subgraph cluster_suite2p {
     suite2p_io_nwb [fillcolor="#b42d2d",fontcolor="#ffffff",label="suite2p.io.nwb"];
     suite2p_io_save [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p\.\nio\.\nsave"];
     suite2p_io_sbx [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p.io.sbx"];
-    suite2p_io_tiff [fillcolor="#c82323",fontcolor="#ffffff",label="suite2p\.\nio\.\ntiff"];
+    suite2p_io_tiff [fillcolor="#bc2f2f",fontcolor="#ffffff",label="suite2p\.\nio\.\ntiff"];
     suite2p_io_utils [fillcolor="#e72222",fontcolor="#ffffff",label="suite2p\.\nio\.\nutils"];
     suite2p_registration [fillcolor="#9f0404",fontcolor="#ffffff",label="suite2p\.\nregistration"];
     suite2p_registration_bidiphase [fillcolor="#db2f2f",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nbidiphase"];
     suite2p_registration_metrics [fillcolor="#a13535",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nmetrics"];
     suite2p_registration_nonrigid [fillcolor="#d31717",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nnonrigid"];
     suite2p_registration_reference [fillcolor="#a32828",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nreference"];
-    suite2p_registration_register [fillcolor="#931a1a",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nregister"];
+    suite2p_registration_register [fillcolor="#9c1b1b",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nregister"];
     suite2p_registration_rigid [fillcolor="#d31717",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nrigid"];
     suite2p_registration_utils [fillcolor="#e72222",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nutils"];
     suite2p_registration_zalign [fillcolor="#a83838",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nzalign"];
@@ -119,7 +119,6 @@ subgraph cluster_suite2p {
     suite2p_io_save -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
     suite2p_io_sbx -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
     suite2p_io_tiff -> suite2p_io [fillcolor="#000000",weight="2"];
-    suite2p_io_tiff -> suite2p_registration_register [fillcolor="#000000",minlen="2"];
     suite2p_io_tiff -> suite2p_run_s2p [fillcolor="#000000",minlen="2"];
     suite2p_io_utils -> suite2p_io [fillcolor="#000000",weight="2"];
     suite2p_io_utils -> suite2p_io_h5 [fillcolor="#000000",weight="2"];

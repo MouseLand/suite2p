@@ -2,7 +2,7 @@ from PyQt5 import QtGui
 import numpy as np
 import os
 import shutil
-from ..classification import classifier
+from .. import classification
 from . import masks, io
 
 #def make_buttons(parent)
@@ -83,7 +83,7 @@ def reset_default(parent):
 def load(parent, name):
     print('loading classifier ', name)
     parent.classfile = name
-    parent.model = classifier.Classifier(classfile=name)
+    parent.model = classification.Classifier(classfile=name)
     if parent.model.loaded:
         activate(parent, True)
 
@@ -299,7 +299,7 @@ class ListChooser(QtGui.QDialog):
                 self.saveasdefault.setEnabled(True)
 
     def apply_class(self, parent):
-        parent.model = classifier.Classifier(classfile=parent.classfile)
+        parent.model = classification.Classifier(classfile=parent.classfile)
         activate(parent, True)
 
     def save_default(self, parent):

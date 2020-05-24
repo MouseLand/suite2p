@@ -3,8 +3,8 @@ import numpy as np
 import os
 import time
 from .. import utils
-from ..io import nwb
-from . import masks,classgui,traces,views, graphics
+from .. import io
+from . import masks, classgui, traces, views, graphics
 import scipy.io
 
 def make_masks_and_enable_buttons(parent):
@@ -187,7 +187,7 @@ def load_NWB(parent):
     name = parent.fname
     print(name)
     if 1:
-        procs = nwb.read_nwb(name)
+        procs = io.read_nwb(name)
         if procs[1]['nchannels']==2:
             parent.hasred = True
         else:

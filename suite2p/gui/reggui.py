@@ -5,7 +5,7 @@ import os
 from tifffile import imread
 from scipy.ndimage import gaussian_filter1d
 import numpy as np
-from .. import utils
+from . import utils
 from . import masks
 from .. import registration
 
@@ -300,7 +300,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             if not self.ops[0]['allow_overlap']:
                 ypix = ypix[~self.stat[n]['overlap']]
                 xpix = xpix[~self.stat[n]['overlap']]
-            iext = utils.boundary(ypix,xpix)
+            iext = utils.boundary(ypix, xpix)
             yext = ypix[iext]
             xext = xpix[iext]
             goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)

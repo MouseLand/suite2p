@@ -2,9 +2,9 @@ from PyQt5 import QtGui
 import numpy as np
 import os
 import time
-from .. import utils
 from .. import io
 from . import masks, classgui, traces, views, graphics
+from . import utils
 import scipy.io
 
 def make_masks_and_enable_buttons(parent):

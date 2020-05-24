@@ -2,10 +2,11 @@ import numpy as np
 import time, os, pathlib
 from scipy import stats
 from .. import utils
-from ..classification.classifier import Classifier
-from ..detection import sparsedetect, chan2detect, sourcery
+from .. import classification
+from .. import detection
 from . import masks
 import suite2p
+
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -171,9 +172,9 @@ def detect_and_extract(ops, stat=None):
     t0=time.time()
     if stat is None:
         if ops['sparse_mode']:
-            ops, stat = sparsedetect.sparsery(ops)
+            ops, stat = detection.sparsery(ops)
         else:
-            ops, stat = sourcery.sourcery(ops)
+            ops, stat = detection.sourcery(ops)
         print('Found %d ROIs, %0.2f sec'%(len(stat), time.time()-t0))
     stat = masks.roi_stats(ops, stat)
     
@@ -201,7 +202,7 @@ def detect_and_extract(ops, stat=None):
             s2p_dir = pathlib.Path(suite2p.__file__).parent
             classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         print('NOTE: applying classifier %s'%classfile)
-        iscell = Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
+        iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
         if 'preclassify' in ops and ops['preclassify'] > 0.0:
             ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
             stat = stat[ic]
@@ -219,7 +220,7 @@ def detect_and_extract(ops, stat=None):
     if 'meanImg_chan2' in ops:
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
-        ops, redcell = chan2detect.detect(ops, stat)
+        ops, redcell = detection.detect(ops, stat)
         #redcell = np.zeros((len(stat),2))
         np.save(os.path.join(fpath, 'redcell.npy'), redcell[ic])
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])

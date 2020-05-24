@@ -2,8 +2,8 @@ import numpy as np
 import time, os, shutil, datetime
 from scipy.io import savemat
 from .io import save, nwb
-from .registration import register, metrics, reference
-from .extraction import extract, dcnv
+from . import registration
+from . import extraction
 try:
     from haussmeister import haussio
     HAS_HAUS = True
@@ -250,15 +250,15 @@ def run_s2p(ops={},db={}):
             ######### REGISTRATION #########
             t11=time.time()
             print('----------- REGISTRATION')
-            ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
+            ops1[ipl] = registration.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
             if ops['two_step_registration'] and ops['keep_movie_raw']:
                 print('----------- REGISTRATION STEP 2')
                 print('(making mean image (excluding bad frames)')
-                refImg = reference.sampled_mean(ops1[ipl])
-                ops1[ipl] = register.register_binary(ops1[ipl], refImg, raw=False)
+                refImg = registration.sampled_mean(ops1[ipl])
+                ops1[ipl] = registration.register_binary(ops1[ipl], refImg, raw=False)
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))
 
@@ -270,7 +270,7 @@ def run_s2p(ops={},db={}):
                 do_regmetrics = True
             if do_regmetrics and ops1[ipl]['nframes']>=1500:
                 t0=time.time()
-                ops1[ipl] = metrics.get_pc_metrics(ops1[ipl])
+                ops1[ipl] = registration.get_pc_metrics(ops1[ipl])
                 print('Registration metrics, %0.2f sec.'%(time.time()-t0))
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         roidetect = True
@@ -284,7 +284,7 @@ def run_s2p(ops={},db={}):
             ######## CELL DETECTION AND ROI EXTRACTION ##############
             t11=time.time()
             print('----------- ROI DETECTION AND EXTRACTION')
-            ops1[ipl] = extract.detect_and_extract(ops1[ipl])
+            ops1[ipl] = extraction.detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
             print('----------- Total %0.2f sec.'%(time.time()-t11))
@@ -296,8 +296,8 @@ def run_s2p(ops={},db={}):
                 t11=time.time()
                 print('----------- SPIKE DECONVOLUTION')
                 dF = F - ops['neucoeff']*Fneu
-                dF = dcnv.preprocess(dF,ops)
-                spks = dcnv.oasis(dF, ops)
+                dF = registration.preprocess(dF,ops)
+                spks = registration.oasis(dF, ops)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
                 print('----------- Total %0.2f sec.'%(time.time()-t11))
             else:

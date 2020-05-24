@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.colors import hsv_to_rgb
 import time
 from scipy import stats
-from ..extraction import extract, dcnv, masks
+from .. import extraction
 from ..detection import sparsedetect
 from . import io
 
@@ -35,10 +35,10 @@ def masks_and_traces(ops, stat, stat_orig):
         stat0.append({'ipix': stat[n]['ipix'], 'lam': stat[n]['lam'] / stat[n]['lam'].sum()})
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, ops = extract.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
+    F, Fneu, ops = extraction.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         print('red channel:')
-        F_chan2, Fneu_chan2, ops2 = extract.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extraction.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
@@ -61,7 +61,7 @@ def masks_and_traces(ops, stat, stat_orig):
         stat[n]['med'] = [np.mean(stat[n]['ypix']), np.mean(stat[n]['xpix'])]
 
     dF = F - ops['neucoeff'] * Fneu
-    spks = dcnv.oasis(dF, ops)
+    spks = extraction.oasis(dF, ops)
 
     # print('Ftrace size', np.shape(Fneu), np.shape(F))
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat

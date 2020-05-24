@@ -1,6 +1,6 @@
 import numpy as np
 from . import bidiphase, rigid, register
-from ..utils import get_frames
+from .. import utils
 
 def sampled_mean(ops):
     nframes = ops['nframes']
@@ -12,7 +12,7 @@ def sampled_mean(ops):
             bin_file = ops['reg_file']
         else:
             bin_file = ops['reg_file_chan2']
-    frames = get_frames(ops, ix, bin_file, badframes=True)
+    frames = utils.get_frames(ops, ix, bin_file, badframes=True)
     refImg = frames.mean(axis=0)
     return refImg
 
@@ -121,7 +121,7 @@ def compute_reference_image(ops, bin_file):
     nframes = ops['nframes']
     nsamps = np.minimum(ops['nimg_init'], nframes)
     ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
-    frames = get_frames(ops, ix, bin_file)
+    frames = utils.get_frames(ops, ix, bin_file)
     #frames = subsample_frames(ops, nFramesInit)
     if ops['do_bidiphase'] and ops['bidiphase']==0:
         bidi = bidiphase.compute(frames)

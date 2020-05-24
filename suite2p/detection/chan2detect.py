@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from suite2p.extraction import extract
+from .. import extraction
 
 '''
 identify cells with channel 2 brightness (aka red cells)
@@ -57,8 +57,8 @@ def detect(ops, stat):
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
     # ops['min_neuropil_pixels'] = 80
-    cell_pix, cell_masks0 = extract.masks.create_cell_masks(stat, Ly, Lx, ops['allow_overlap'])
-    neuropil_masks = extract.masks.create_neuropil_masks(ops, stat, cell_pix)
+    cell_pix, cell_masks0 = extraction.create_cell_masks(stat, Ly, Lx, ops['allow_overlap'])
+    neuropil_masks = extraction.create_neuropil_masks(ops, stat, cell_pix)
     neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
     cell_masks     = np.zeros((len(stat),Ly*Lx), np.float32)
     for n in range(len(stat)):

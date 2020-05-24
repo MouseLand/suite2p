@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d
 import numpy as np
 from .. import utils
 from . import masks
-from ..registration import zalign
+from .. import registration
 
 class BinaryPlayer(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -801,7 +801,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         print('paused')
 
     def compute_z(self):
-        ops, zcorr = zalign.compute_zpos(self.zstack, self.ops[0])
+        ops, zcorr = registration.compute_zpos(self.zstack, self.ops[0])
         self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
         np.save(self.filename, ops)
         self.plot_zcorr()

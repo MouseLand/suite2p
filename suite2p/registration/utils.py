@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from numba import vectorize, complex64
 from numpy import fft
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter1d
 
 try:
     from mkl_fft import fft2, ifft2
@@ -157,21 +159,6 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
     return mov
 
 
-def sampled_mean(ops):
-    nframes = ops['nframes']
-    nsamps = min(nframes, 1000)
-    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
-    bin_file = ops['reg_file']
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            bin_file = ops['reg_file']
-        else:
-            bin_file = ops['reg_file_chan2']
-    frames = get_frames(ops, ix, bin_file, badframes=True)
-    refImg = frames.mean(axis=0)
-    return refImg
-
-
 def subsample_frames(ops, bin_file, nsamps):
     """ get nsamps frames from binary file for initial reference image
     Parameters
@@ -201,3 +188,32 @@ def subsample_frames(ops, bin_file, nsamps):
         frames[j,:,:] = np.reshape(data, (Ly, Lx))
     reg_file.close()
     return frames
+
+
+def sub2ind(array_shape, rows, cols):
+    inds = rows * array_shape[1] + cols
+    return inds
+
+
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
+
+
+def sampled_mean(ops):
+    nframes = ops['nframes']
+    nsamps = min(nframes, 1000)
+    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
+    bin_file = ops['reg_file']
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            bin_file = ops['reg_file']
+        else:
+            bin_file = ops['reg_file_chan2']
+    frames = get_frames(ops, ix, bin_file, badframes=True)
+    refImg = frames.mean(axis=0)
+    return refImg

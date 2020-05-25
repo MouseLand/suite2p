@@ -1,8 +1,5 @@
 import math
-
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter1d
 
 
 def fitMVGaus(y,x,lam,thres=2.5):
@@ -55,15 +52,3 @@ def fitMVGaus(y,x,lam,thres=2.5):
     return mu, cov, radii, ellipse, area
 
 
-def sub2ind(array_shape, rows, cols):
-    inds = rows * array_shape[1] + cols
-    return inds
-
-
-def resample_frames(y, x, xt):
-    ''' resample y (defined at x) at times xt '''
-    ts = x.size / xt.size
-    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
-    f = interp1d(x,y,fill_value="extrapolate")
-    yt = f(xt)
-    return yt

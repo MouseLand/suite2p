@@ -6,9 +6,7 @@ import time
 import numpy as np
 from scipy.io import savemat
 
-from . import extraction
-from . import io
-from . import registration
+from . import extraction, io, registration
 
 try:
     from haussmeister import haussio

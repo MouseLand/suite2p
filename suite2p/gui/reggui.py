@@ -1,5 +1,6 @@
 # heavily modified script from a pyqt4 release
 import os
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -7,8 +8,9 @@ from PyQt5 import QtGui, QtCore
 from scipy.ndimage import gaussian_filter1d
 from tifffile import imread
 
-from . import masks
+from . import masks, views, graphics, traces, classgui
 from . import utils
+from .io import enable_views_and_classifier
 from .. import registration
 
 
@@ -1117,3 +1119,96 @@ class PCViewer(QtGui.QMainWindow):
                     self.start()
                 else:
                     self.pause()
+
+
+def make_masks_and_enable_buttons(parent):
+    parent.checkBox.setChecked(True)
+    parent.ops_plot['color'] = 0
+    parent.ops_plot['view'] = 0
+    parent.colors['cols'] = 0
+    parent.colors['istat'] = 0
+
+    parent.loadBeh.setEnabled(True)
+    parent.saveMat.setEnabled(True)
+    parent.saveMerge.setEnabled(True)
+    parent.sugMerge.setEnabled(True)
+    parent.manual.setEnabled(True)
+    parent.bloaded = False
+    parent.ROI_remove()
+    parent.isROI = False
+    parent.setWindowTitle(parent.fname)
+    # set bin size to be 0.5s by default
+    parent.bin = int(parent.ops["tau"] * parent.ops["fs"] / 2)
+    parent.binedit.setText(str(parent.bin))
+    if "chan2_thres" not in parent.ops:
+        parent.ops["chan2_thres"] = 0.6
+    parent.chan2prob = parent.ops["chan2_thres"]
+    parent.chan2edit.setText(str(parent.chan2prob))
+    # add boundaries to stat for ROI overlays
+    ncells = len(parent.stat)
+    for n in range(0, ncells):
+        ypix = parent.stat[n]["ypix"].flatten()
+        xpix = parent.stat[n]["xpix"].flatten()
+        iext = utils.boundary(ypix, xpix)
+        parent.stat[n]["yext"] = ypix[iext]
+        parent.stat[n]["xext"] = xpix[iext]
+        ycirc, xcirc = utils.circle(
+            parent.stat[n]["med"],
+            parent.stat[n]["radius"]
+        )
+        goodi = (
+            (ycirc >= 0)
+            & (xcirc >= 0)
+            & (ycirc < parent.ops["Ly"])
+            & (xcirc < parent.ops["Lx"])
+        )
+        parent.stat[n]["ycirc"] = ycirc[goodi]
+        parent.stat[n]["xcirc"] = xcirc[goodi]
+        parent.stat[n]["inmerge"] = 0
+    # enable buttons
+    enable_views_and_classifier(parent)
+
+    # make views
+    views.init_views(parent)
+    # make color arrays for various views
+    masks.make_colors(parent)
+
+    if parent.iscell.sum() > 0:
+        ich = np.nonzero(parent.iscell)[0][0]
+    else:
+        ich = 0
+    parent.ichosen = int(ich)
+    parent.imerge = [int(ich)]
+    parent.iflip = int(ich)
+    parent.ichosen_stats()
+    parent.comboBox.setCurrentIndex(2)
+    # colorbar
+    parent.colormat = masks.draw_colorbar()
+    masks.plot_colorbar(parent)
+    tic = time.time()
+    masks.init_masks(parent)
+    print(time.time() - tic)
+    M = masks.draw_masks(parent)
+    masks.plot_masks(parent, M)
+    parent.lcell1.setText("%d" % (ncells - parent.iscell.sum()))
+    parent.lcell0.setText("%d" % (parent.iscell.sum()))
+    graphics.init_range(parent)
+    traces.plot_trace(parent)
+    parent.xyrat = 1.0
+    if (isinstance(parent.ops['diameter'], list) and
+        len(parent.ops['diameter'])>1 and
+        parent.ops['aspect']==1.0):
+        parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
+    else:
+        if 'aspect' in parent.ops:
+            parent.xyrat = parent.ops['aspect']
+
+    parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
+    parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)
+    #parent.p2.setXLink(parent.p1)
+    #parent.p2.setYLink(parent.p1)
+    parent.loaded = True
+    parent.mode_change(2)
+    parent.show()
+    # no classifier loaded
+    classgui.activate(parent, False)

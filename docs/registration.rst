@@ -32,7 +32,7 @@ needs the reg_file, Ly, Lx, and nimg_init parameters):
 
    from suite2p.registration import register
 
-   refImg = register.pick_init(ops)
+   refImg = register.pick_initial_reference(ops)
 
 Here is an example reference image on the right, compared to just taking
 the average of a random subset of frames (on the left):

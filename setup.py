@@ -29,7 +29,8 @@ setuptools.setup(
       'scanimage-tiff-reader!=1.4.1',
     ],
     tests_require=[
-      'pytest'
+      'pytest',
+      'tqdm',
     ],
     extras_require={
       "docs": [

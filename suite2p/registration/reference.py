@@ -1,7 +1,6 @@
 import numpy as np
 
-from . import bidiphase, rigid, register
-from .. import utils
+from . import bidiphase, rigid, register, utils
 
 
 def sampled_mean(ops):

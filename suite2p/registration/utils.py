@@ -153,3 +153,53 @@ def get_nFrames(ops):
         nbytes = os.path.getsize(ops['reg_file'])
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
+
+
+def get_frames(ops, ix, bin_file, crop=False, badframes=False):
+    """ get frames ix from bin_file
+        frames are cropped by ops['yrange'] and ops['xrange']
+
+    Parameters
+    ----------
+    ops : dict
+        requires 'Ly', 'Lx'
+    ix : int, array
+        frames to take
+    bin_file : str
+        location of binary file to read (frames x Ly x Lx)
+    crop : bool
+        whether or not to crop by 'yrange' and 'xrange' - if True, needed in ops
+
+    Returns
+    -------
+        mov : int16, array
+            frames x Ly x Lx
+    """
+    if badframes and 'badframes' in ops:
+        bad_frames = ops['badframes']
+        try:
+            ixx = ix[bad_frames[ix]==0].copy()
+            ix = ixx
+        except:
+            notbad=True
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread =  np.int64(Ly*Lx*2)
+    Lyc = ops['yrange'][-1] - ops['yrange'][0]
+    Lxc = ops['xrange'][-1] - ops['xrange'][0]
+    if crop:
+        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    else:
+        mov = np.zeros((len(ix), Ly, Lx), np.int16)
+    # load and bin data
+    with open(bin_file, 'rb') as bfile:
+        for i in range(len(ix)):
+            bfile.seek(nbytesread*ix[i], 0)
+            buff = bfile.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            data = np.reshape(data, (Ly, Lx))
+            if crop:
+                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            else:
+                mov[i,:,:] = data
+    return mov

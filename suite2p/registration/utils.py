@@ -215,7 +215,7 @@ def sampled_mean(ops):
             bin_file = ops['reg_file']
         else:
             bin_file = ops['reg_file_chan2']
-    frames = utils.get_frames(ops, ix, bin_file, badframes=True)
+    frames = get_frames(ops, ix, bin_file, badframes=True)
     refImg = frames.mean(axis=0)
     return refImg
 

@@ -10,15 +10,14 @@ subgraph cluster_suite2p {
     suite2p [fillcolor="#ef0606",fontcolor="#ffffff"];
     suite2p_classification [fillcolor="#cc3333",fontcolor="#ffffff",label="suite2p\.\nclassification"];
     suite2p_classification_classifier [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\nclassification\.\nclassifier"];
-    suite2p_detection [fillcolor="#c82323",fontcolor="#ffffff",label="suite2p\.\ndetection"];
-    suite2p_detection_chan2detect [fillcolor="#b83d3d",fontcolor="#ffffff",label="suite2p\.\ndetection\.\nchan2detect"];
-    suite2p_detection_sourcery [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p\.\ndetection\.\nsourcery"];
-    suite2p_detection_sparsedetect [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p\.\ndetection\.\nsparsedetect"];
-    suite2p_detection_utils [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p\.\ndetection\.\nutils"];
     suite2p_extraction [fillcolor="#e50505",fontcolor="#ffffff",label="suite2p\.\nextraction"];
+    suite2p_extraction_chan2detect [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nchan2detect"];
     suite2p_extraction_dcnv [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\nextraction\.\ndcnv"];
-    suite2p_extraction_extract [fillcolor="#993333",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nextract"];
-    suite2p_extraction_masks [fillcolor="#c43131",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nmasks"];
+    suite2p_extraction_extract [fillcolor="#8a2e2e",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nextract"];
+    suite2p_extraction_masks [fillcolor="#d92626",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nmasks"];
+    suite2p_extraction_sourcery [fillcolor="#b83d3d",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nsourcery"];
+    suite2p_extraction_sparsedetect [fillcolor="#b03a3a",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nsparsedetect"];
+    suite2p_extraction_utils [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nutils"];
     suite2p_gui [fillcolor="#f90606",fontcolor="#ffffff",label="suite2p.gui"];
     suite2p_gui_buttons [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p\.\ngui\.\nbuttons"];
     suite2p_gui_classgui [fillcolor="#bf2121",fontcolor="#ffffff",label="suite2p\.\ngui\.\nclassgui"];
@@ -51,28 +50,26 @@ subgraph cluster_suite2p {
     suite2p_registration_utils [fillcolor="#e72222",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nutils"];
     suite2p_registration_zalign [fillcolor="#a83838",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nzalign"];
     suite2p_run_s2p [fillcolor="#ca1616",fontcolor="#ffffff",label="suite2p\.\nrun_s2p"];
-    suite2p_utils [fillcolor="#ce3b3b",fontcolor="#ffffff",label="suite2p.utils"];
+    suite2p_utils [fillcolor="#c24747",fontcolor="#ffffff",label="suite2p.utils"];
 }
     suite2p_classification -> suite2p_extraction_extract [fillcolor="#000000",minlen="2"];
     suite2p_classification -> suite2p_gui_classgui [fillcolor="#000000",minlen="2"];
     suite2p_classification_classifier -> suite2p_classification [fillcolor="#000000",weight="2"];
-    suite2p_detection -> suite2p_extraction_extract [fillcolor="#000000",minlen="2"];
-    suite2p_detection -> suite2p_extraction_masks [fillcolor="#000000",minlen="2"];
-    suite2p_detection_chan2detect -> suite2p_detection [fillcolor="#000000",weight="2"];
-    suite2p_detection_sourcery -> suite2p_detection [fillcolor="#000000",weight="2"];
-    suite2p_detection_sparsedetect -> suite2p_detection [fillcolor="#000000",weight="2"];
-    suite2p_detection_utils -> suite2p_detection_sourcery [fillcolor="#000000",weight="2"];
-    suite2p_detection_utils -> suite2p_detection_sparsedetect [fillcolor="#000000",weight="2"];
-    suite2p_extraction -> suite2p_detection_chan2detect [fillcolor="#000000",minlen="2"];
     suite2p_extraction -> suite2p_gui_drawroi [fillcolor="#000000",minlen="2"];
     suite2p_extraction -> suite2p_gui_merge [fillcolor="#000000",minlen="2"];
     suite2p_extraction -> suite2p_gui_views [fillcolor="#000000",minlen="2"];
     suite2p_extraction -> suite2p_io_nwb [fillcolor="#000000",minlen="2"];
     suite2p_extraction -> suite2p_run_s2p [fillcolor="#000000"];
+    suite2p_extraction_chan2detect -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
     suite2p_extraction_dcnv -> suite2p_extraction [fillcolor="#000000",weight="2"];
     suite2p_extraction_extract -> suite2p_extraction [fillcolor="#000000",weight="2"];
     suite2p_extraction_masks -> suite2p_extraction [fillcolor="#000000",weight="2"];
+    suite2p_extraction_masks -> suite2p_extraction_chan2detect [fillcolor="#000000",weight="2"];
     suite2p_extraction_masks -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
+    suite2p_extraction_sourcery -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
+    suite2p_extraction_sparsedetect -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
+    suite2p_extraction_utils -> suite2p_extraction_extract [fillcolor="#000000",weight="2"];
+    suite2p_extraction_utils -> suite2p_extraction_sparsedetect [fillcolor="#000000",weight="2"];
     suite2p_gui -> suite2p [fillcolor="#000000"];
     suite2p_gui_buttons -> suite2p_gui_gui2p [fillcolor="#000000",weight="2"];
     suite2p_gui_classgui -> suite2p_gui_gui2p [fillcolor="#000000",weight="2"];
@@ -142,7 +139,6 @@ subgraph cluster_suite2p {
     suite2p_run_s2p -> suite2p_gui_gui2p [fillcolor="#000000",minlen="2"];
     suite2p_run_s2p -> suite2p_gui_rungui [fillcolor="#000000",minlen="2"];
     suite2p_run_s2p -> suite2p_io_nwb [fillcolor="#000000",minlen="2"];
-    suite2p_utils -> suite2p_detection_sourcery [fillcolor="#000000",minlen="2"];
-    suite2p_utils -> suite2p_extraction_extract [fillcolor="#000000",minlen="2"];
+    suite2p_utils -> suite2p_extraction_sourcery [fillcolor="#000000",minlen="2"];
 }
 

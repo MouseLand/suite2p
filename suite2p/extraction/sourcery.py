@@ -4,13 +4,13 @@ import time
 import numpy as np
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
+from matplotlib.colors import hsv_to_rgb
 
-from .utils import bin_movie, get_sdmov
-from .. import utils
+from suite2p import utils
 
 
 def getSVDdata(ops):
-    mov, max_proj = bin_movie(ops)
+    mov, max_proj = utils.bin_movie(ops)
     ops['max_proj'] = max_proj
     nbins, Lyc, Lxc = np.shape(mov)
 
@@ -19,7 +19,7 @@ def getSVDdata(ops):
         mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
 
     # compute noise variance across frames
-    sdmov = get_sdmov(mov, ops)
+    sdmov = utils.get_sdmov(mov, ops)
     mov /= sdmov
     mov = np.reshape(mov, (-1,Lyc*Lxc))
     if 1:
@@ -40,7 +40,7 @@ def getSVDdata(ops):
     return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
-    mov, _ = bin_movie(ops)
+    mov, _ = utils.bin_movie(ops)
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
@@ -49,7 +49,7 @@ def getSVDproj(ops, u):
             mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
     if 1:
         #sdmov = np.ones((Lyc*Lxc,), 'float32')
-        sdmov = get_sdmov(mov, ops)
+        sdmov = utils.get_sdmov(mov, ops)
         mov/=sdmov
         mov = np.reshape(mov, (-1,Lyc*Lxc))
 
@@ -252,7 +252,7 @@ def get_stat(ops, stat, Ucell, codes):
         stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         stat0['npix'] = xpix.size
         if 'radius' not in stat0:
-            radius = utils.fitMVGaus(ypix/d0[0], xpix/d0[1], lam, 2)[2]
+            radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
             stat0['radius'] = radius[0] * d0.mean()
             stat0['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
 

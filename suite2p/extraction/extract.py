@@ -7,8 +7,12 @@ from scipy import stats, signal
 
 import suite2p
 from . import masks
-from .. import classification, utils
-from .. import detection
+from .. import classification
+from . import sourcery
+from . import sparsedetect
+from . import chan2detect
+from . import utils
+
 
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
@@ -175,9 +179,9 @@ def detect_and_extract(ops, stat=None):
     t0=time.time()
     if stat is None:
         if ops['sparse_mode']:
-            ops, stat = detection.sparsery(ops)
+            ops, stat = sparsedetect.sparsery(ops)
         else:
-            ops, stat = detection.sourcery(ops)
+            ops, stat = sourcery.sourcery(ops)
         print('Found %d ROIs, %0.2f sec'%(len(stat), time.time()-t0))
     stat = roi_stats(ops, stat)
     
@@ -223,7 +227,7 @@ def detect_and_extract(ops, stat=None):
     if 'meanImg_chan2' in ops:
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
-        ops, redcell = detection.detect(ops, stat)
+        ops, redcell = chan2detect.detect(ops, stat)
         #redcell = np.zeros((len(stat),2))
         np.save(os.path.join(fpath, 'redcell.npy'), redcell[ic])
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])
@@ -341,7 +345,7 @@ def roi_stats(ops, stat):
         if 'med' not in stat:
             stat0['med'] = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
         if 'radius' not in stat0:
-            radius = utils.fitMVGaus(ypix/d0[0], xpix/d0[1], lam, 2)[2]
+            radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
             stat0['radius'] = radius[0] * d0.mean()
             stat0['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
 

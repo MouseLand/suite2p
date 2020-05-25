@@ -1,11 +1,19 @@
+import os
+import pathlib
+import time
+
 import numpy as np
-import time, os, shutil, pathlib
-from scipy import stats
-from .. import utils
-from ..classification.classifier import Classifier
-from ..detection import sparsedetect, chan2detect, sourcery
-from . import masks
+from scipy import stats, signal
+
 import suite2p
+from . import masks
+from .. import classification
+from . import sourcery
+from . import sparsedetect
+from . import chan2detect
+from . import utils
+
+
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -175,7 +183,7 @@ def detect_and_extract(ops, stat=None):
         else:
             ops, stat = sourcery.sourcery(ops)
         print('Found %d ROIs, %0.2f sec'%(len(stat), time.time()-t0))
-    stat = masks.roi_stats(ops, stat)
+    stat = roi_stats(ops, stat)
     
     stat = masks.get_overlaps(stat,ops)
     stat, ix = masks.remove_overlappers(stat, ops, ops['Ly'], ops['Lx'])
@@ -201,7 +209,7 @@ def detect_and_extract(ops, stat=None):
             s2p_dir = pathlib.Path(suite2p.__file__).parent
             classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         print('NOTE: applying classifier %s'%classfile)
-        iscell = Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
+        iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
         if 'preclassify' in ops and ops['preclassify'] > 0.0:
             ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
             stat = stat[ic]
@@ -226,7 +234,7 @@ def detect_and_extract(ops, stat=None):
         np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2[ic])
 
     # add enhanced mean image
-    ops = utils.enhanced_mean_image(ops)
+    ops = enhanced_mean_image(ops)
     # save ops
     np.save(ops['ops_path'], ops)
     # save results
@@ -234,3 +242,120 @@ def detect_and_extract(ops, stat=None):
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu[ic])
 
     return ops
+
+
+def enhanced_mean_image(ops):
+    """ computes enhanced mean image and adds it to ops
+
+    Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
+    divides by this median-filtered image to return a high-pass filtered
+    image ops['meanImgE']
+
+    Parameters
+    ----------
+    ops : dictionary
+        uses 'meanImg', 'aspect', 'diameter', 'yrange' and 'xrange'
+
+    Returns
+    -------
+        ops : dictionary
+            'meanImgE' field added
+
+    """
+
+    I = ops['meanImg'].astype(np.float32)
+    if 'spatscale_pix' not in ops:
+        if isinstance(ops['diameter'], int):
+            diameter = np.array([ops['diameter'], ops['diameter']])
+        else:
+            diameter = np.array(ops['diameter'])
+        ops['spatscale_pix'] = diameter[1]
+        ops['aspect'] = diameter[0]/diameter[1]
+
+    diameter = 4*np.ceil(np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']])) + 1
+    diameter = diameter.flatten().astype(np.int64)
+    Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
+    I = I - Imed
+    Idiv = signal.medfilt2d(np.absolute(I), [diameter[0], diameter[1]])
+    I = I / (1e-10 + Idiv)
+    mimg1 = -6
+    mimg99 = 6
+    mimg0 = I
+
+    mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+    mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
+    mimg0 = np.maximum(0,np.minimum(1,mimg0))
+    mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+    mimg[ops['yrange'][0]:ops['yrange'][1],
+        ops['xrange'][0]:ops['xrange'][1]] = mimg0
+    ops['meanImgE'] = mimg
+    return ops
+
+
+def roi_stats(ops, stat):
+    """ computes statistics of ROIs
+
+    Parameters
+    ----------
+    ops : dictionary
+        'aspect', 'diameter'
+
+    stat : dictionary
+        'ypix', 'xpix', 'lam'
+
+    Returns
+    -------
+    stat : dictionary
+        adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
+
+    """
+    if 'aspect' in ops:
+        d0 = np.array([int(ops['aspect']*10), 10])
+    else:
+        d0 = ops['diameter']
+        if isinstance(d0, int):
+            d0 = [d0,d0]
+
+    rs = masks.circle_mask(np.array([30, 30]))
+    rsort = np.sort(rs.flatten())
+
+    ncells = len(stat)
+    mrs = np.zeros((ncells,))
+    for k in range(0,ncells):
+        stat0 = stat[k]
+        ypix = stat0['ypix']
+        xpix = stat0['xpix']
+        lam = stat0['lam']
+        # compute footprint of ROI
+        y0 = np.median(ypix)
+        x0 = np.median(xpix)
+
+        # compute compactness of ROI
+        r2 = ((ypix-y0))**2 + ((xpix-x0))**2
+        r2 = r2**.5
+        stat0['mrs']  = np.mean(r2)
+        mrs[k] = stat0['mrs']
+        stat0['mrs0'] = np.mean(rsort[:r2.size])
+        stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
+        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
+        stat0['npix'] = xpix.size
+
+        if 'footprint' not in stat0:
+            stat0['footprint'] = 0
+        if 'med' not in stat:
+            stat0['med'] = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
+        if 'radius' not in stat0:
+            radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
+            stat0['radius'] = radius[0] * d0.mean()
+            stat0['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+
+    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
+    npix /= np.mean(npix[:100])
+
+    mmrs = np.nanmedian(mrs[:100])
+    for n in range(len(stat)):
+        stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)
+        stat[n]['npix_norm'] = npix[n]
+    stat = np.array(stat)
+
+    return stat

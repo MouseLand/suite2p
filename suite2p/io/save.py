@@ -1,9 +1,10 @@
-import numpy as np
 import os
-import scipy
-import datetime
 
-def combined(ops1):
+import numpy as np
+import scipy
+
+
+def save_combined(ops1):
     """ Combines all the entries in ops1 into a single result file.
 
     Multi-plane recordings are arranged to best tile a square.

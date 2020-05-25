@@ -1,7 +1,9 @@
-import numpy as np
-import os
-from natsort import natsorted
 import glob
+import os
+
+import numpy as np
+from natsort import natsorted
+
 
 def search_for_ext(rootdir, extension = 'tif', look_one_level_down=False):
     filepaths = []

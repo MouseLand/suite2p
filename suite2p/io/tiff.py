@@ -1,18 +1,18 @@
 import gc
+import glob
+import json
+import math
+import os
+import time
+
 import numpy as np
-from natsort import natsorted
-import math, time
-import glob, os, json
-from scipy import signal
-from scipy import stats, signal
-from scipy.sparse import linalg
-import scipy.io
-#from skimage import io
 from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter
+
 from . import utils
 
-def write(data, ops, k, ichan):
+
+def write_tiff(data, ops, k, ichan):
     """ writes frames to tiffs
 
     Parameters

@@ -1,7 +1,6 @@
-import time, os
 import numpy as np
 from numpy import fft
-from . import register, utils
+
 
 def compute(frames):
     """ computes the bidirectional phase offset

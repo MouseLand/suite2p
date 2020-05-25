@@ -1,6 +1,6 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
 import numpy as np
+from PyQt5 import QtGui, QtCore
+
 
 def plot_trace(parent):
     parent.p3.clear()

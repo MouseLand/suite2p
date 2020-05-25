@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import detection
+from .sparsedetect import extendROI
 
 
 def get_overlaps(stat, ops):
@@ -192,12 +192,12 @@ def create_neuropil_masks(ops, stat, cell_pix):
         ypix = stat[n]['ypix']
         xpix = stat[n]['xpix']
         # first extend to get ring of dis-allowed pixels
-        ypix, xpix = detection.extendROI(ypix, xpix, Ly, Lx,ops['inner_neuropil_radius'])
+        ypix, xpix = extendROI(ypix, xpix, Ly, Lx,ops['inner_neuropil_radius'])
         # count how many pixels are valid
         nring = np.sum(cell_pix[ypix,xpix]<.5)
         ypix1,xpix1 = ypix,xpix
         for j in range(0,100):
-            ypix1, xpix1 = detection.extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
+            ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
             if (np.sum(cell_pix[ypix1,xpix1]<.5) - nring) > ops['min_neuropil_pixels']:
                 break # break if there are at least a minimum number of valid pixels
         ix = cell_pix[ypix1,xpix1]<.5

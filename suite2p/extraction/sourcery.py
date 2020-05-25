@@ -6,7 +6,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from matplotlib.colors import hsv_to_rgb
 
-from suite2p import utils
+from . import utils
 
 
 def getSVDdata(ops):

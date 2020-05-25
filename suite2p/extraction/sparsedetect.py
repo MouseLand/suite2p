@@ -6,7 +6,7 @@ from scipy.ndimage import maximum_filter
 from scipy.ndimage.filters import uniform_filter
 from scipy.stats import mode
 
-from suite2p.extraction import utils
+from . import utils
 
 
 def neuropil_subtraction(mov,lx):

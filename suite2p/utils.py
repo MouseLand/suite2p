@@ -1,6 +1,8 @@
 import math
 
 import numpy as np
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter1d
 
 
 def fitMVGaus(y,x,lam,thres=2.5):
@@ -105,3 +107,12 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
             else:
                 mov[i,:,:] = data
     return mov
+
+
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt

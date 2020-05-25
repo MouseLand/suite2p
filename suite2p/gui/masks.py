@@ -4,7 +4,8 @@ import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
 from matplotlib.colors import hsv_to_rgb
 
-from . import classgui, io
+import suite2p.gui.merge
+from . import io
 
 
 def make_buttons(parent, b0):
@@ -67,7 +68,7 @@ def make_buttons(parent, b0):
     parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
     parent.probedit.returnPressed.connect(
-        lambda: classgui.apply(parent)
+        lambda: suite2p.gui.merge.apply(parent)
     )
     parent.l0.addWidget(parent.probedit, nv + b - 3, 1, 1, 1)
 
@@ -402,17 +403,6 @@ def corr_masks(parent):
 
     rgb_masks(parent, col, c)
 
-def class_masks(parent):
-    c = 6
-    istat = parent.probcell
-    parent.colors['colorbar'][c] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
-    istat = istat - istat.min()
-    istat = istat / istat.max()
-    col = istat_transform(istat, parent.ops_plot['colormap'])
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
-
-    rgb_masks(parent, col, c)
 
 def flip_for_class(parent, iscell):
     ncells = iscell.size

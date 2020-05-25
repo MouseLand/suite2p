@@ -3,7 +3,7 @@ import pyqtgraph as pg
 from PyQt5 import QtGui
 from scipy import stats
 
-from . import masks
+from . import masks, io
 from . import utils
 from .. import extraction
 
@@ -328,3 +328,11 @@ class LineEdit(QtGui.QLineEdit):
         key = self.key
         dstr = str(ops[key])
         self.setText(dstr)
+
+
+def apply(parent):
+    classval = float(parent.probedit.text())
+    iscell = parent.probcell > classval
+    masks.flip_for_class(parent, iscell)
+    parent.update_plot()
+    io.save_iscell(parent)

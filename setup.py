@@ -30,6 +30,12 @@ setuptools.setup(
     ],
     tests_require=[
       'pytest',
+
+
+
+
+
+
       'tqdm',
     ],
     extras_require={

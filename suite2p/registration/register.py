@@ -545,8 +545,7 @@ def iterative_alignment(ops, frames, refImg):
     for iter in range(0,niter):
         ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
-        freg, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(frames,
-                                                    [maskMul, maskOffset, cfRefImg], ops)
+        freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(frames, [maskMul, maskOffset, cfRefImg], ops)
         ymax = ymax.astype(np.float32)
         xmax = xmax.astype(np.float32)
         isort = np.argsort(-cmax)

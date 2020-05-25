@@ -1,0 +1,53 @@
+
+digraph G {
+
+    compound = true;
+    rankdir = TB;
+    node [style=filled,fillcolor="#ffffff",fontcolor="#000000",fontname=Helvetica,fontsize=10];
+
+subgraph cluster_main {
+    label = main;
+    __main__ [fillcolor="#633535",fontcolor="#ffffff",shape="octagon"];
+}
+subgraph cluster_suite2p {
+    label = suite2p;
+    suite2p_gui_reggui [fillcolor="#208383",fontcolor="#ffffff",label="suite2p\.\ngui\.\nreggui",shape="octagon"];
+    suite2p_registration_rigid [fillcolor="#2fbcbc",label="suite2p\.\nregistration\.\nrigid",shape="octagon"];
+    suite2p [fillcolor="#06efef",shape="octagon"];
+    suite2p_gui_merge [fillcolor="#1eaeae",label="suite2p\.\ngui\.\nmerge",shape="octagon"];
+    suite2p_run_s2p [fillcolor="#16caca",label="suite2p\.\nrun_s2p",shape="octagon"];
+    suite2p_extraction [fillcolor="#05e5e5",label="suite2p\.\nextraction",shape="octagon"];
+    suite2p_extraction_masks [fillcolor="#31c4c4",label="suite2p\.\nextraction\.\nmasks",shape="octagon"];
+    suite2p_detection_sourcery [fillcolor="#38a8a8",label="suite2p\.\ndetection\.\nsourcery",shape="octagon"];
+    suite2p_gui_gui2p [fillcolor="#267373",fontcolor="#ffffff",label="suite2p\.\ngui\.\ngui2p",shape="octagon"];
+    suite2p_registration_register [fillcolor="#269b9b",fontcolor="#ffffff",label="suite2p\.\nregistration\.\nregister",shape="octagon"];
+    suite2p_registration [fillcolor="#05e5e5",label="suite2p\.\nregistration",shape="octagon"];
+    suite2p_detection [fillcolor="#23c8c8",label="suite2p\.\ndetection",shape="octagon"];
+    suite2p_gui [fillcolor="#06f9f9",label="suite2p.gui",shape="octagon"];
+    suite2p_detection_sparsedetect [fillcolor="#3bcece",label="suite2p\.\ndetection\.\nsparsedetect",shape="octagon"];
+    suite2p_io [fillcolor="#05d1d1",label="suite2p.io",shape="octagon"];
+    suite2p_io_nwb [fillcolor="#3ab0b0",label="suite2p.io.nwb",shape="octagon"];
+    suite2p_gui_masks [fillcolor="#05dbdb",label="suite2p\.\ngui\.\nmasks",shape="octagon"];
+    suite2p_extraction_extract [fillcolor="#339999",fontcolor="#ffffff",label="suite2p\.\nextraction\.\nextract",shape="octagon"];
+}
+    suite2p -> suite2p_detection_sourcery [fillcolor="#000000",minlen="2"];
+    suite2p -> suite2p_gui_reggui [fillcolor="#000000",minlen="2"];
+    suite2p_detection -> suite2p_extraction_masks [fillcolor="#000000",minlen="2"];
+    suite2p_detection_sourcery -> suite2p_detection [fillcolor="#000000",weight="2"];
+    suite2p_detection_sparsedetect -> suite2p_detection_sourcery [fillcolor="#000000",weight="2"];
+    suite2p_extraction -> suite2p_io_nwb [fillcolor="#000000",minlen="2"];
+    suite2p_extraction_extract -> suite2p_extraction [fillcolor="#000000",weight="2"];
+    suite2p_extraction_masks -> suite2p_extraction [fillcolor="#000000",weight="2"];
+    suite2p_gui -> suite2p [fillcolor="#000000"];
+    suite2p_gui_gui2p -> suite2p_gui [fillcolor="#000000",weight="2"];
+    suite2p_gui_masks -> suite2p_gui_merge [fillcolor="#000000",weight="2"];
+    suite2p_gui_merge -> suite2p_gui_masks [fillcolor="#000000",weight="2"];
+    suite2p_gui_reggui -> __main__ [fillcolor="#000000",lhead="cluster_main",ltail="cluster_suite2p",minlen="3"];
+    suite2p_io -> suite2p_run_s2p [fillcolor="#000000"];
+    suite2p_io_nwb -> suite2p_io [fillcolor="#000000",weight="2"];
+    suite2p_registration -> suite2p_registration_rigid [fillcolor="#000000",weight="2"];
+    suite2p_registration_register -> suite2p_registration [fillcolor="#000000",weight="2"];
+    suite2p_registration_rigid -> suite2p_registration_register [fillcolor="#000000",weight="2"];
+    suite2p_run_s2p -> suite2p [fillcolor="#000000"];
+}
+

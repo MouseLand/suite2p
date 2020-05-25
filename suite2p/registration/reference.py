@@ -3,20 +3,6 @@ import numpy as np
 from . import bidiphase, rigid, register, utils
 
 
-def sampled_mean(ops):
-    nframes = ops['nframes']
-    nsamps = min(nframes, 1000)
-    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
-    bin_file = ops['reg_file']
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            bin_file = ops['reg_file']
-        else:
-            bin_file = ops['reg_file_chan2']
-    frames = utils.get_frames(ops, ix, bin_file, badframes=True)
-    refImg = frames.mean(axis=0)
-    return refImg
-
 def pick_initial_reference(frames):
     """ computes the initial reference image
 
@@ -135,32 +121,3 @@ def compute_reference_image(ops, bin_file):
     refImg = iterative_alignment(ops, frames, refImg)
     return refImg, bidi
 
-def subsample_frames(ops, bin_file, nsamps):
-    """ get nsamps frames from binary file for initial reference image
-    Parameters
-    ----------
-    ops : dictionary
-        requires 'Ly', 'Lx', 'nframes'
-    bin_file : open binary file
-    nsamps : int
-        number of frames to return
-    Returns
-    -------
-    frames : int16
-        frames x Ly x Lx
-    """
-    nFrames = ops['nframes']
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
-    nbytesread = 2 * Ly * Lx
-    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
-    #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
-    for j in range(0,nsamps):
-        reg_file.seek(nbytesread * istart[j], 0)
-        buff = reg_file.read_nwb(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        buff = []
-        frames[j,:,:] = np.reshape(data, (Ly, Lx))
-    reg_file.close()
-    return frames

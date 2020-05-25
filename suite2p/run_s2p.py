@@ -6,6 +6,7 @@ import time
 import numpy as np
 from scipy.io import savemat
 
+import suite2p.registration.utils
 from . import extraction
 from . import io
 from . import registration
@@ -260,7 +261,7 @@ def run_s2p(ops={},db={}):
             if ops['two_step_registration'] and ops['keep_movie_raw']:
                 print('----------- REGISTRATION STEP 2')
                 print('(making mean image (excluding bad frames)')
-                refImg = registration.sampled_mean(ops1[ipl])
+                refImg = suite2p.registration.utils.sampled_mean(ops1[ipl])
                 ops1[ipl] = registration.register_binary(ops1[ipl], refImg, raw=False)
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))

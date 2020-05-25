@@ -1,14 +1,14 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
 import os
-import sys
-import numpy as np
-from matplotlib.colors import hsv_to_rgb
 import time
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+from matplotlib.colors import hsv_to_rgb
 from scipy import stats
-from ..extraction import extract, dcnv, masks
-from ..detection import sparsedetect
+
 from . import io
+from .. import extraction
 
 
 def masks_and_traces(ops, stat, stat_orig):
@@ -23,10 +23,10 @@ def masks_and_traces(ops, stat, stat_orig):
     stat_all = stat.copy()
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
-    stat_all, cell_pix, _ = masks.create_cell_masks(ops, stat_all)
+    stat_all, cell_pix, _ = extraction.create_cell_masks(ops, stat_all)
     stat = stat_all[:len(stat)]
 
-    neuropil_masks = masks.create_neuropil_masks(ops, stat, cell_pix)
+    neuropil_masks = extraction.create_neuropil_masks(ops, stat, cell_pix)
     Ly = ops['Ly']
     Lx = ops['Lx']
     neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
@@ -36,10 +36,10 @@ def masks_and_traces(ops, stat, stat_orig):
         stat0.append({'ipix': stat[n]['ipix'], 'lam': stat[n]['lam'] / stat[n]['lam'].sum()})
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, ops = extract.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
+    F, Fneu, ops = extraction.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         print('red channel:')
-        F_chan2, Fneu_chan2, ops2 = extract.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extraction.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
@@ -62,7 +62,7 @@ def masks_and_traces(ops, stat, stat_orig):
         stat[n]['med'] = [np.mean(stat[n]['ypix']), np.mean(stat[n]['xpix'])]
 
     dF = F - ops['neucoeff'] * Fneu
-    spks = dcnv.oasis(dF, ops)
+    spks = extraction.oasis(dF, ops)
 
     # print('Ftrace size', np.shape(Fneu), np.shape(F))
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat
@@ -233,7 +233,7 @@ class ROIDraw(QtGui.QMainWindow):
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
         # Calculate overlap before saving
-        stat_all_w_overlap = sparsedetect.get_overlaps(stat_all, self.parent.ops)
+        stat_all_w_overlap = extraction.get_overlaps(stat_all, self.parent.ops)
         np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all_w_overlap)
         iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]), axis=1)
 

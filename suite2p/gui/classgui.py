@@ -1,13 +1,12 @@
-from PyQt5 import QtGui, QtCore
-import sys
-import numpy as np
 import os
-import __main__
 import shutil
-from ..classification import classifier
-from . import masks, io
 
-#def make_buttons(parent)
+import numpy as np
+from PyQt5 import QtGui
+
+from . import masks
+from .. import classification
+
 
 def make_buttons(parent,b0):
     # ----- CLASSIFIER BUTTONS -------
@@ -85,7 +84,7 @@ def reset_default(parent):
 def load(parent, name):
     print('loading classifier ', name)
     parent.classfile = name
-    parent.model = classifier.Classifier(classfile=name)
+    parent.model = classification.Classifier(classfile=name)
     if parent.model.loaded:
         activate(parent, True)
 
@@ -170,12 +169,6 @@ def add_to(parent):
         msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')
 
-def apply(parent):
-    classval = float(parent.probedit.text())
-    iscell = parent.probcell > classval
-    masks.flip_for_class(parent, iscell)
-    parent.update_plot()
-    io.save_iscell(parent)
 
 def save(parent, train_stats, train_iscell, keys):
     name = QtGui.QFileDialog.getSaveFileName(parent,'Classifier name (*.npy)')
@@ -203,7 +196,7 @@ def save_list(parent):
 def activate(parent, inactive):
     if inactive:
         parent.probcell = parent.model.predict_proba(parent.stat)
-    masks.class_masks(parent)
+    class_masks(parent)
     parent.update_plot()
 
 def disable(parent):
@@ -301,7 +294,7 @@ class ListChooser(QtGui.QDialog):
                 self.saveasdefault.setEnabled(True)
 
     def apply_class(self, parent):
-        parent.model = classifier.Classifier(classfile=parent.classfile)
+        parent.model = classification.Classifier(classfile=parent.classfile)
         activate(parent, True)
 
     def save_default(self, parent):
@@ -313,3 +306,16 @@ class ListChooser(QtGui.QDialog):
 
     def exit_list(self):
         self.accept()
+
+
+def class_masks(parent):
+    c = 6
+    istat = parent.probcell
+    parent.colors['colorbar'][c] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
+    istat = istat - istat.min()
+    istat = istat / istat.max()
+    col = masks.istat_transform(istat, parent.ops_plot['colormap'])
+    parent.colors['cols'][c] = col
+    parent.colors['istat'][c] = istat.flatten()
+
+    masks.rgb_masks(parent, col, c)

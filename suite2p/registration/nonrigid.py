@@ -1,9 +1,11 @@
+import math
 import warnings
+
 import numpy as np
+from numba import vectorize, float32, int32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
-from numba import vectorize,float32,int32,int16,jit,njit,prange, complex64
-import math
+
 try:
     from mkl_fft import fft2, ifft2
 except ModuleNotFoundError:

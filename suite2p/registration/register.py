@@ -1,13 +1,13 @@
-import time, os
+import os
+import time
+
 import numpy as np
-from scipy.fftpack import next_fast_len
-from numpy import fft
-from numba import vectorize, complex64, float32, int16
-import math
-from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter1d
-from suite2p.io import tiff
-from . import reference, bidiphase, nonrigid, utils, rigid
+from scipy.signal import medfilt
+
+from . import bidiphase, nonrigid, utils, rigid
+from .. import io
+
 
 #HAS_GPU=False
 #try:
@@ -170,7 +170,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         [ymax, xmax, corrXY, ymax1, xmax1, corrXY1] <- shifts and correlations, 
         last 3 for nonrigid
     """
-    offsets = utils.init_offsets(ops)
+    offsets = init_offsets(ops)
     refAndMasks = prepare_refAndMasks(refImg,ops)
 
     nbatch = ops['batch_size']
@@ -224,7 +224,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         # write registered tiffs
         if ops['reg_tif']:
-            tiff.write(data, ops, k, True)
+            io.write_tiff(data, ops, k, True)
 
         nfr += data.shape[0]
         k += 1
@@ -353,7 +353,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         # write registered tiffs
         if ops['reg_tif_chan2']:
-            tiff.write(data, ops, k, False)
+            io.write_tiff(data, ops, k, False)
         ix += nframes
         k+=1
     if ops['functional_chan']!=ops['align_by_chan']:
@@ -416,7 +416,7 @@ def register_binary(ops, refImg=None, raw=True):
     if raw:
         raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
                 'raw_file' in ops and os.path.isfile(ops['raw_file']))
-    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = utils.bin_paths(ops, raw)
+    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
 
     # compute reference image
     if refImg is not None:
@@ -424,9 +424,9 @@ def register_binary(ops, refImg=None, raw=True):
     else:
         t0 = time.time()
         if raw:
-            refImg, bidi = reference.compute_reference_image(ops, raw_file_align)
+            refImg, bidi = compute_reference_image(ops, raw_file_align)
         else:
-            refImg, bidi = reference.compute_reference_image(ops, reg_file_align)
+            refImg, bidi = compute_reference_image(ops, reg_file_align)
         ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
@@ -479,3 +479,174 @@ def register_binary(ops, refImg=None, raw=True):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
+
+
+def pick_initial_reference(frames):
+    """ computes the initial reference image
+
+    the seed frame is the frame with the largest correlations with other frames;
+    the average of the seed frame with its top 20 correlated pairs is the
+    inital reference frame returned
+
+    Parameters
+    ----------
+    frames : 3D array, int16
+        size [frames x Ly x Lx], frames from binary
+
+    Returns
+    -------
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
+
+    """
+    nimg,Ly,Lx = frames.shape
+    frames = np.reshape(frames, (nimg,-1)).astype('float32')
+    frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
+    cc = np.matmul(frames, frames.T)
+    ndiag = np.sqrt(np.diag(cc))
+    cc = cc / np.outer(ndiag, ndiag)
+    CCsort = -np.sort(-cc, axis = 1)
+    bestCC = np.mean(CCsort[:, 1:20], axis=1);
+    imax = np.argmax(bestCC)
+    indsort = np.argsort(-cc[imax, :])
+    refImg = np.mean(frames[indsort[0:20], :], axis = 0)
+    refImg = np.reshape(refImg, (Ly,Lx))
+    return refImg
+
+
+def iterative_alignment(ops, frames, refImg):
+    """ iterative alignment of initial frames to compute reference image
+
+    the seed frame is the frame with the largest correlations with other frames;
+    the average of the seed frame with its top 20 correlated pairs is the
+    inital reference frame returned
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg'
+
+    frames : int16
+        frames from binary (frames x Ly x Lx)
+
+    refImg : int16
+        initial reference image (Ly x Lx)
+
+    Returns
+    -------
+    refImg : int16
+        final reference image (Ly x Lx)
+
+    """
+    # do not reshift frames by bidiphase during alignment
+    ops['bidiphase'] = 0
+    niter = 8
+    nmax  = np.minimum(100, int(frames.shape[0]/2))
+    for iter in range(0,niter):
+        ops['refImg'] = refImg
+        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
+        freg, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(frames,
+                                                    [maskMul, maskOffset, cfRefImg], ops)
+        ymax = ymax.astype(np.float32)
+        xmax = xmax.astype(np.float32)
+        isort = np.argsort(-cmax)
+        nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
+        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze().astype(np.int16)
+        dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
+        # shift data requires an array of shifts
+        dy = np.array([int(np.round(dy))])
+        dx = np.array([int(np.round(dx))])
+        rigid.shift_data(refImg, dy, dx)
+        refImg = refImg.squeeze()
+        ymax, xmax = ymax+dy, xmax+dx
+    return refImg
+
+
+def compute_reference_image(ops, bin_file):
+    """ compute the reference image
+
+    computes initial reference image using ops['nimg_init'] frames
+
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'nimg_init', 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg',
+        'reg_file', (optional 'keep_movie_raw', 'raw_movie')
+
+    bin_file : str
+        location of binary file with data
+
+    Returns
+    -------
+    refImg : int16
+        initial reference image (Ly x Lx)
+
+    """
+
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nframes = ops['nframes']
+    nsamps = np.minimum(ops['nimg_init'], nframes)
+    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
+    frames = utils.get_frames(ops, ix, bin_file)
+    #frames = subsample_frames(ops, nFramesInit)
+    if ops['do_bidiphase'] and ops['bidiphase']==0:
+        bidi = bidiphase.compute(frames)
+        print('NOTE: estimated bidiphase offset from data: %d pixels'%bidi)
+    else:
+        bidi = ops['bidiphase']
+    if bidi != 0:
+        bidiphase.shift(frames, bidi)
+    refImg = pick_initial_reference(frames)
+    refImg = iterative_alignment(ops, frames, refImg)
+    return refImg, bidi
+
+
+def init_offsets(ops):
+    """ initialize offsets for all frames """
+    yoff = np.zeros((0,),np.float32)
+    xoff = np.zeros((0,),np.float32)
+    corrXY = np.zeros((0,),np.float32)
+    if ops['nonrigid']:
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        yoff1 = np.zeros((0,nb),np.float32)
+        xoff1 = np.zeros((0,nb),np.float32)
+        corrXY1 = np.zeros((0,nb),np.float32)
+        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
+    else:
+        offsets = [yoff,xoff,corrXY]
+    return offsets
+
+
+def bin_paths(ops, raw):
+    """ set which binary is being aligned to """
+    raw_file_align = []
+    raw_file_alt = []
+    reg_file_align = []
+    reg_file_alt = []
+    if raw:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                raw_file_align = ops['raw_file']
+                raw_file_alt = ops['raw_file_chan2']
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                raw_file_align = ops['raw_file_chan2']
+                raw_file_alt = ops['raw_file']
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            raw_file_align = ops['raw_file']
+            reg_file_align = ops['reg_file']
+    else:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            reg_file_align = ops['reg_file']
+    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt

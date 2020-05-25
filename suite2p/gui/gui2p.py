@@ -1,21 +1,16 @@
-import sys, os, shutil, time, pathlib
-import numpy as np
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-from pyqtgraph import GraphicsScene
-from scipy.ndimage import gaussian_filter1d
-from scipy.interpolate import interp1d
+import os
+import pathlib
+import shutil
+import sys
 import warnings
-from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from ..run_s2p import default_ops
 
-def resample_frames(y, x, xt):
-    ''' resample y (defined at x) at times xt '''
-    ts = x.size / xt.size
-    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
-    f = interp1d(x,y,fill_value="extrapolate")
-    yt = f(xt)
-    return yt
+import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtGui, QtCore
+
+from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
+from .. import run_s2p
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, statfile=None):
@@ -67,7 +62,7 @@ class MainWindow(QtGui.QMainWindow):
         ops_dir.mkdir(exist_ok=True)
         self.opsuser = os.fspath(ops_dir.joinpath('ops_user.npy'))
         if not os.path.isfile(self.opsuser):
-            np.save(self.opsuser, default_ops())
+            np.save(self.opsuser, run_s2p.default_ops())
         self.opsfile = self.opsuser
 
         menus.mainmenu(self)
@@ -669,7 +664,7 @@ class MainWindow(QtGui.QMainWindow):
         self.win.show()
         self.show()
 
-def run(statfile=None):
+def run_gui(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QtGui.QApplication(sys.argv)

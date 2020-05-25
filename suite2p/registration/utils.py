@@ -31,54 +31,6 @@ def apply_dotnorm(Y, cfRefImg):
     x = x*cfRefImg
     return x
 
-def init_offsets(ops):
-    """ initialize offsets for all frames """
-    yoff = np.zeros((0,),np.float32)
-    xoff = np.zeros((0,),np.float32)
-    corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
-        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
-    else:
-        offsets = [yoff,xoff,corrXY]
-    return offsets
-
-def bin_paths(ops, raw):
-    """ set which binary is being aligned to """
-    raw_file_align = []
-    raw_file_alt = []
-    reg_file_align = []
-    reg_file_alt = []
-    if raw:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                raw_file_align = ops['raw_file']
-                raw_file_alt = ops['raw_file_chan2']
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                raw_file_align = ops['raw_file_chan2']
-                raw_file_alt = ops['raw_file']
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            raw_file_align = ops['raw_file']
-            reg_file_align = ops['reg_file']
-    else:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            reg_file_align = ops['reg_file']
-    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt
-
 
 def gaussian_fft(sig, Ly, Lx):
     ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''

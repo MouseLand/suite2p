@@ -170,7 +170,7 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         [ymax, xmax, corrXY, ymax1, xmax1, corrXY1] <- shifts and correlations, 
         last 3 for nonrigid
     """
-    offsets = utils.init_offsets(ops)
+    offsets = init_offsets(ops)
     refAndMasks = prepare_refAndMasks(refImg,ops)
 
     nbatch = ops['batch_size']
@@ -416,7 +416,7 @@ def register_binary(ops, refImg=None, raw=True):
     if raw:
         raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
                 'raw_file' in ops and os.path.isfile(ops['raw_file']))
-    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = utils.bin_paths(ops, raw)
+    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
 
     # compute reference image
     if refImg is not None:
@@ -600,3 +600,53 @@ def compute_reference_image(ops, bin_file):
     refImg = pick_initial_reference(frames)
     refImg = iterative_alignment(ops, frames, refImg)
     return refImg, bidi
+
+
+def init_offsets(ops):
+    """ initialize offsets for all frames """
+    yoff = np.zeros((0,),np.float32)
+    xoff = np.zeros((0,),np.float32)
+    corrXY = np.zeros((0,),np.float32)
+    if ops['nonrigid']:
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        yoff1 = np.zeros((0,nb),np.float32)
+        xoff1 = np.zeros((0,nb),np.float32)
+        corrXY1 = np.zeros((0,nb),np.float32)
+        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
+    else:
+        offsets = [yoff,xoff,corrXY]
+    return offsets
+
+
+def bin_paths(ops, raw):
+    """ set which binary is being aligned to """
+    raw_file_align = []
+    raw_file_alt = []
+    reg_file_align = []
+    reg_file_alt = []
+    if raw:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                raw_file_align = ops['raw_file']
+                raw_file_alt = ops['raw_file_chan2']
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                raw_file_align = ops['raw_file_chan2']
+                raw_file_alt = ops['raw_file']
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            raw_file_align = ops['raw_file']
+            reg_file_align = ops['reg_file']
+    else:
+        if ops['nchannels']>1:
+            if ops['functional_chan'] == ops['align_by_chan']:
+                reg_file_align = ops['reg_file']
+                reg_file_alt = ops['reg_file_chan2']
+            else:
+                reg_file_align = ops['reg_file_chan2']
+                reg_file_alt = ops['reg_file']
+        else:
+            reg_file_align = ops['reg_file']
+    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt

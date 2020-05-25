@@ -297,8 +297,8 @@ def run_s2p(ops={},db={}):
                 t11=time.time()
                 print('----------- SPIKE DECONVOLUTION')
                 dF = F - ops['neucoeff']*Fneu
-                dF = registration.preprocess(dF,ops)
-                spks = registration.oasis(dF, ops)
+                dF = extraction.preprocess(dF,ops)
+                spks = extraction.oasis(dF, ops)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
                 print('----------- Total %0.2f sec.'%(time.time()-t11))
             else:

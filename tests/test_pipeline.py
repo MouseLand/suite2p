@@ -2,7 +2,7 @@ import pytest
 import shutil
 import filecmp
 import os
-from suite2p import run_s2p
+from suite2p import run_s2p, default_ops
 
 # TODO: store as env variables?
 root_path = '/Users/chriski/Desktop/suite2p_ws'
@@ -16,7 +16,7 @@ def setup_and_teardown(tmpdir):
     Initializes ops to be used for test. Also, uses tmpdir fixture to create a unique temporary dir for
     each test. Then, removes temporary directory after test is completed.
     """
-    ops = run_s2p.default_ops()
+    ops = default_ops()
     ops['data_path'] = [img_path]
     ops['save_path0'] = str(tmpdir)
     yield ops, str(tmpdir)

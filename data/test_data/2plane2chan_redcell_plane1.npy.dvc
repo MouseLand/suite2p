@@ -1,0 +1,7 @@
+md5: 00cf2202c6e5eff5d27896cbc773ebc6
+outs:
+- md5: e130007598176b2e603d6b27370704bf
+  path: 2plane2chan_redcell_plane1.npy
+  cache: true
+  metric: false
+  persist: false

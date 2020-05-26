@@ -1,0 +1,7 @@
+md5: af04fc7475ec108b7f100cfede01a53b
+outs:
+- md5: 86713771ee3e99d0943a76fcf87b031f
+  path: 1plane1chan_F_plane0.npy
+  cache: true
+  metric: false
+  persist: false

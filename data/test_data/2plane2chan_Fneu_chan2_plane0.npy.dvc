@@ -1,0 +1,7 @@
+md5: b5be4a08dc0721ce030d4087f8963c90
+outs:
+- md5: fef712bda6b8be0ba8ac1be0f77f5a83
+  path: 2plane2chan_Fneu_chan2_plane0.npy
+  cache: true
+  metric: false
+  persist: false

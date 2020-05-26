@@ -30,12 +30,6 @@ setuptools.setup(
     ],
     tests_require=[
       'pytest',
-
-
-
-
-
-
       'tqdm',
     ],
     extras_require={
@@ -54,6 +48,10 @@ setuptools.setup(
       "mkl": [
         "mkl_fft>=1.0.10",
         "mkl>=2019.3",
+      ],
+      "data": [
+        "dvc",
+        "pydrive2",
       ],
     },
     include_package_data=True,

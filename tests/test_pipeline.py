@@ -21,12 +21,12 @@ def setup_and_teardown(tmpdir):
     """
     ops = suite2p.default_ops()
     ops['data_path'] = [test_data_dir]
-    ops['save_path0'] = '/Users/chriski/Desktop/suite2p_test_output'
+    ops['save_path0'] = str(tmpdir)
     yield ops, str(tmpdir)
-    # tmpdir_path = Path(str(tmpdir))
-    # if tmpdir_path.is_dir():
-    #     shutil.rmtree(tmpdir)
-    #     print('Successful removal of tmp_path {}.'.format(tmpdir))
+    tmpdir_path = Path(str(tmpdir))
+    if tmpdir_path.is_dir():
+        shutil.rmtree(tmpdir)
+        print('Successful removal of tmp_path {}.'.format(tmpdir))
 
 
 class TestCommonPipelineUseCases:
@@ -46,9 +46,8 @@ class TestCommonPipelineUseCases:
         for i in range(nplanes):
             for output in outputs_to_check:
                 test_data = np.load(
-                    str(test_data_dir.joinpath('{0}plane{1}chan_{2}_plane{3}.npy'
-                        .format(nplanes, nchannels, output, i))
-                        ), allow_pickle=True
+                    str(test_data_dir.joinpath('{}plane{}chan'.format(nplanes, nchannels), 'suite2p',
+                                               'plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
                 )
                 output_data = np.load(
                     str(output_dir.joinpath('plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
@@ -57,7 +56,7 @@ class TestCommonPipelineUseCases:
                 rtol, atol = 1e-6 , 5e-2
                 # Handle cases where the elements of npy arrays are dictionaries (e.g: stat.npy)
                 if output == 'stat':
-                    for gt_dict, output_dict in zip(test_data, output):
+                    for gt_dict, output_dict in zip(test_data, output_data):
                         for k in gt_dict.keys():
                             assert np.allclose(gt_dict[k], output_dict[k], rtol=rtol, atol=atol)
                 else:
@@ -65,11 +64,10 @@ class TestCommonPipelineUseCases:
 
     def test_1plane_1chan(self, setup_and_teardown):
         """
-        Tests for case with 1 plane and 1 channel.
+        Tests for case with 1 plane and 1 channel
         """
         # Get ops and unique tmp_dir from fixture
         ops, tmp_dir = setup_and_teardown
-        ops['save_path0'] = ops['save_path0'] + '/1plane1chan'
         suite2p.run_s2p(ops=ops)
         # Check outputs against ground_truth files
         self.check_output_gt(tmp_dir, ops['nplanes'], ops['nchannels'])
@@ -80,7 +78,6 @@ class TestCommonPipelineUseCases:
         """
         ops, tmp_dir = setup_and_teardown
         ops['nplanes'] = 2
-        ops['save_path0'] = ops['save_path0'] + '/2plane1chan'
         suite2p.run_s2p(ops=ops)
         self.check_output_gt(tmp_dir, ops['nplanes'], ops['nchannels'])
 
@@ -91,6 +88,5 @@ class TestCommonPipelineUseCases:
         ops, tmp_dir = setup_and_teardown
         ops['nplanes'] = 2
         ops['nchannels'] = 2
-        ops['save_path0'] = ops['save_path0'] + '/2plane2chan'
         suite2p.run_s2p(ops=ops)
         self.check_output_gt(tmp_dir, ops['nplanes'], ops['nchannels'])

@@ -60,7 +60,7 @@ class TestCommonPipelineUseCases:
                         for k in gt_dict.keys():
                             assert np.allclose(gt_dict[k], output_dict[k], rtol=rtol, atol=atol)
                 else:
-                    assert np.allclose(test_data, output_data)
+                    assert np.allclose(test_data, output_data, rtol=rtol, atol=atol)
 
     def test_1plane_1chan(self, setup_and_teardown):
         """

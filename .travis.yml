@@ -5,7 +5,7 @@ python:
 - '3.7'
 before_install:
 - openssl aes-256-cbc -K $encrypted_45a7c9683171_key -iv $encrypted_45a7c9683171_iv
-  -in .dvc/tmp/gdrive-user-credentials.json.enc -out .dvc/tmp/gdrive-user-credentials.json
+  -in .dvc\\gdrive-user-credentials.json.enc -out .dvc\\tmp\\gdrive-user-credentials.json
   -d
 - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
 - bash ./miniconda.sh -b

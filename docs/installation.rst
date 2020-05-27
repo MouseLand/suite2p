@@ -5,14 +5,21 @@ Install an `Anaconda`_ distribution of Python -- Choose **Python 3.x**
 and your operating system. Note you might need to use an anaconda prompt
 if you did not add anaconda to the path.
 
-1. Download the ``environment.yml`` file from the repository
+1. Download the suite2p repository from GitHub using Git:  ``git clone https://github.com/MouseLand/suite2p``
 2. Open an anaconda prompt / command prompt with ``conda`` for **python
    3** in the path
-3. Run ``conda env create -f environment.yml``
-4. To activate this new environment, run ``conda activate suite2p``
-5. You should see ``(suite2p)`` on the left side of the terminal line.
-   Now run ``pip install suite2p --upgrade`` to make sure suite2p is installed.
-6. Now run ``python -m suite2p`` and you're all set.
+3. Change the current directory to the suite2p folder: ``cd suite2p``
+4. Run ``conda env create -f environment.yml``
+<<<<<<< HEAD
+5. To activate this new environment, run ``conda activate suite2p``
+6. You should see ``(suite2p)`` on the left side of the terminal line.
+7. Install suite2p into the environment with `python setup.py install`
+8. Now run ``python -m suite2p`` and you're all set.
+=======
+5. To activate this new environment, run ``conda activate suite2p``. Afterwards, You should see ``(suite2p)`` on the left side of the terminal line.
+6. Install suite2p into this environment: ``pip install suite2p``
+7. Now run ``python -m suite2p`` and you're all set.
+>>>>>>> f68e495e3ce7dbc0f1abf6217eb947d8569af15f
 
 If you have an older ``suite2p`` environment you can remove it with
 ``conda env remove -n suite2p`` before creating a new one.
@@ -38,7 +45,7 @@ pyqt5
 ::
 
    pip uninstall pyqt5 pyqt5-tools
-   pip install pyqt5 pyqt5-tools pyqt5.sip
+   pip install suite2p
 
 If when running ``python -m suite2p``, you receive an error associated
 with **matplotlib**, try upgrading it:

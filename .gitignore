@@ -16,6 +16,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# builds
+.eggs
+
 # python and jupyter
 jupyter/.ipynb_checkpoints/
 jupyter/__pycache__/
@@ -40,6 +43,12 @@ doctrees/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# visual studio code
+.vscode
+
+# pycharm
+.idea
 
 # Thumbnails
 ._*

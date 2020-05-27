@@ -1,9 +1,7 @@
-import sys
 import numpy as np
 from scipy.ndimage import gaussian_filter
-import os
 from sklearn.linear_model  import LogisticRegression
-import shutil
+
 
 class Classifier:
     """ ROI classifier model that uses logistic regression

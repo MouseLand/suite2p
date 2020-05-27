@@ -1,5 +1,9 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
+[![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)
+
+[![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
+
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
 
@@ -28,43 +32,33 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 1. Download the [`environment.yml`](https://github.com/MouseLand/suite2p/blob/master/environment.yml) file from the repository. You can do this by cloning the repository, or copy-pasting the text from the file into a text document on your local computer.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
-4. To activate this new environment, run `conda activate suite2p`
-5. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install suite2p --upgrade`.
+4. Pip install suite2p into the environment: `pip install suite2p`
 6. Now run `python -m suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 
 Note you will always have to run **conda activate suite2p** before you run suite2p. Conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
 
-To upgrade suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:
+To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:
 ~~~~
-pip install suite2p --upgrade
+pip install git+https://github.com/MouseLand/suite2p
 ~~~~
+
 
 **Common issues**
-
-If when running `python -m suite2p`, you receive the error: `No module named PyQt5.sip`, then try uninstalling and reinstalling pyqt5
-~~~~
-pip uninstall pyqt5 pyqt5-tools
-pip install pyqt5 pyqt5-tools pyqt5.sip
-~~~~
-
-If when running `python -m suite2p`, you receive an error associated with **matplotlib**, try upgrading it:
-~~~~
-pip install matplotlib --upgrade
-~~~~
 
 If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
 
-## Installation of github version for developers and super-users :)
+## Installation of github version for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. You should see `(suite2p)` on the left side of the terminal line. Now run `pip install -e .` to install the code in the github repository.
-5. Run `python -m suite2p` (<-- you can run this command from anywhere now. If you want to go back to the supported version of suite2p, then say `pip install suite2p` and that will grab the pip package of suite2p)
+4. Install the local version of suite2p into this environment in develop mode: `python setup.py develop`
+5. Run tests: `python setup.py test`
+
 
 ## Examples
 

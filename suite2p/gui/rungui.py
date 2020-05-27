@@ -1,11 +1,15 @@
-from PyQt5 import QtGui, QtCore
-import pyqtgraph as pg
-from pyqtgraph import console
-import sys, json, os, pickle, time, shutil, glob
+import glob
+import json
+import os
+import shutil
 from datetime import datetime
+
 import numpy as np
-from .. import run_s2p
+from PyQt5 import QtGui, QtCore
+
 from . import io
+from .. import run_s2p
+
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 

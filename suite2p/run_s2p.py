@@ -1,10 +1,13 @@
+import datetime
+import os
+import shutil
+import time
+
 import numpy as np
-import time, os, shutil, datetime
 from scipy.io import savemat
-from .io import tiff, h5, save, nwb
-from .registration import register, metrics, reference
-from .extraction import extract, dcnv
-from . import utils
+
+from . import extraction, io, registration
+
 try:
     from haussmeister import haussio
     HAS_HAUS = True
@@ -198,17 +201,14 @@ def run_s2p(ops={},db={}):
         ops = {**ops0, **ops}
         # copy tiff to a binary
         if ops['input_format'] == 'h5':
-            from .io import h5
-            ops1 = h5.h5py_to_binary(ops)
+            ops1 = io.h5py_to_binary(ops)
             print('time %4.2f sec. Wrote h5py to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         elif ops['input_format'] == 'sbx':
-            from .io import sbx
-            ops1 = sbx.sbx_to_binary(ops)
+            ops1 = io.sbx_to_binary(ops)
             print('time %4.2f sec. Wrote sbx to binaries for %d planes'%(time.time()-(t0), len(ops1)))
         else:
-            from .io import tiff
             if ops['input_format'] == 'mesoscan':
-                ops1 = tiff.mesoscan_to_binary(ops)
+                ops1 = io.mesoscan_to_binary(ops)
                 print('time %4.2f sec. Wrote mesoscope tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             elif ops['input_format'] == 'haus':
                 print('time %4.2f sec. Using HAUSIO')
@@ -217,10 +217,10 @@ def run_s2p(ops={},db={}):
                 print('time %4.2f sec. Wrote data to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             elif ops['input_format'] == 'bruker':
                 ops['bruker'] = True
-                ops1 = tiff.ome_to_binary(ops)
+                ops1 = io.ome_to_binary(ops)
                 print('time %4.2f sec. Wrote bruker tifs to binaries for %d planes'%(time.time()-(t0), len(ops1)))
             else:
-                ops1 = tiff.tiff_to_binary(ops)
+                ops1 = io.tiff_to_binary(ops)
                 print('time %4.2f sec. Wrote %d tiff frames to binaries for %d planes'%
                             (time.time()-(t0), ops1[0]['nframes'], len(ops1)))
         np.save(fpathops1, ops1) # save ops1
@@ -251,15 +251,15 @@ def run_s2p(ops={},db={}):
             ######### REGISTRATION #########
             t11=time.time()
             print('----------- REGISTRATION')
-            ops1[ipl] = register.register_binary(ops1[ipl]) # register binary
+            ops1[ipl] = registration.register_binary(ops1[ipl]) # register binary
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
             if ops['two_step_registration'] and ops['keep_movie_raw']:
                 print('----------- REGISTRATION STEP 2')
                 print('(making mean image (excluding bad frames)')
-                refImg = reference.sampled_mean(ops1[ipl])
-                ops1[ipl] = register.register_binary(ops1[ipl], refImg, raw=False)
+                refImg = registration.sampled_mean(ops1[ipl])
+                ops1[ipl] = registration.register_binary(ops1[ipl], refImg, raw=False)
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))
 
@@ -271,7 +271,7 @@ def run_s2p(ops={},db={}):
                 do_regmetrics = True
             if do_regmetrics and ops1[ipl]['nframes']>=1500:
                 t0=time.time()
-                ops1[ipl] = metrics.get_pc_metrics(ops1[ipl])
+                ops1[ipl] = registration.get_pc_metrics(ops1[ipl])
                 print('Registration metrics, %0.2f sec.'%(time.time()-t0))
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         roidetect = True
@@ -285,7 +285,7 @@ def run_s2p(ops={},db={}):
             ######## CELL DETECTION AND ROI EXTRACTION ##############
             t11=time.time()
             print('----------- ROI DETECTION AND EXTRACTION')
-            ops1[ipl] = extract.detect_and_extract(ops1[ipl])
+            ops1[ipl] = extraction.detect_and_extract(ops1[ipl])
             ops = ops1[ipl]
             fpath = ops['save_path']
             print('----------- Total %0.2f sec.'%(time.time()-t11))
@@ -297,8 +297,8 @@ def run_s2p(ops={},db={}):
                 t11=time.time()
                 print('----------- SPIKE DECONVOLUTION')
                 dF = F - ops['neucoeff']*Fneu
-                dF = dcnv.preprocess(dF,ops)
-                spks = dcnv.oasis(dF, ops)
+                dF = extraction.preprocess(dF,ops)
+                spks = extraction.oasis(dF, ops)
                 np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
                 print('----------- Total %0.2f sec.'%(time.time()-t11))
             else:
@@ -332,11 +332,11 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and roidetect:
-        save.combined(ops1)
+        io.save_combined(ops1)
     
     # save to NWB
     if 'save_NWB' in ops and ops['save_NWB']:
-        nwb.save(ops1)
+        io.save_nwb(ops1)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

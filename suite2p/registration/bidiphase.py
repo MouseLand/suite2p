@@ -1,8 +1,6 @@
-import time, os
 import numpy as np
 from numpy import fft
-from mkl_fft import fft2, ifft2
-from . import register, utils
+
 
 def compute(frames):
     """ computes the bidirectional phase offset

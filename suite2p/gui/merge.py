@@ -1,13 +1,12 @@
 import numpy as np
 import pyqtgraph as pg
-from scipy import stats
-import math
 from PyQt5 import QtGui
-from matplotlib.colors import hsv_to_rgb
-import time
-from .. import utils
+from scipy import stats
+
+from . import masks, io
+from . import utils
 from .. import extraction
-from . import masks
+
 
 def distance_matrix(parent, ilist):
     idist = 1e6 * np.ones((len(ilist), len(ilist)))
@@ -88,7 +87,7 @@ def merge_activity_masks(parent):
     stat0['xpix'] = xpix
     stat0['lam'] = lam / lam.sum() * merged_cells.size
 
-    stat0 = extraction.masks.roi_stats(parent.ops, [stat0])[0]
+    stat0 = extraction.roi_stats(parent.ops, [stat0])[0]
 
     # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')
@@ -122,7 +121,7 @@ def merge_activity_masks(parent):
     stat0["ycirc"] = ycirc[goodi]
     stat0["xcirc"] = xcirc[goodi]
     # deconvolve activity
-    spks = extraction.dcnv.oasis(dF[np.newaxis, :], parent.ops)
+    spks = extraction.oasis(dF[np.newaxis, :], parent.ops)
 
     ### remove previously merged cell from FOV (do not replace)
     for k in remove_merged:
@@ -139,7 +138,7 @@ def merge_activity_masks(parent):
 
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
-    parent.stat = extraction.masks.get_overlaps(parent.stat, parent.ops)
+    parent.stat = extraction.get_overlaps(parent.stat, parent.ops)
     parent.stat = np.array(parent.stat)
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
@@ -329,3 +328,11 @@ class LineEdit(QtGui.QLineEdit):
         key = self.key
         dstr = str(ops[key])
         self.setText(dstr)
+
+
+def apply(parent):
+    classval = float(parent.probedit.text())
+    iscell = parent.probcell > classval
+    masks.flip_for_class(parent, iscell)
+    parent.update_plot()
+    io.save_iscell(parent)

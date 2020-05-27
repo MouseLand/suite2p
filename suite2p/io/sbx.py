@@ -1,7 +1,9 @@
+import os
+
 import numpy as np
-from natsort import natsorted
-import glob, os, json
+
 from . import utils
+
 
 def sbx_get_info(sbxfile):
     ''' 

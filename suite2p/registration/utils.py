@@ -1,10 +1,16 @@
-import time, os
+import os
+import warnings
+
 import numpy as np
+from numba import vectorize, complex64
 from numpy import fft
-from numba import vectorize, complex64, float32, int16
-import math
+from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter1d
-from mkl_fft import fft2, ifft2
+
+try:
+    from mkl_fft import fft2, ifft2
+except ModuleNotFoundError:
+    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 def one_photon_preprocess(data, ops):
     ''' pre filtering for one-photon data '''
@@ -26,54 +32,6 @@ def apply_dotnorm(Y, cfRefImg):
     x = Y / (eps0 + np.abs(Y))
     x = x*cfRefImg
     return x
-
-def init_offsets(ops):
-    """ initialize offsets for all frames """
-    yoff = np.zeros((0,),np.float32)
-    xoff = np.zeros((0,),np.float32)
-    corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
-        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
-    else:
-        offsets = [yoff,xoff,corrXY]
-    return offsets
-
-def bin_paths(ops, raw):
-    """ set which binary is being aligned to """
-    raw_file_align = []
-    raw_file_alt = []
-    reg_file_align = []
-    reg_file_alt = []
-    if raw:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                raw_file_align = ops['raw_file']
-                raw_file_alt = ops['raw_file_chan2']
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                raw_file_align = ops['raw_file_chan2']
-                raw_file_alt = ops['raw_file']
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            raw_file_align = ops['raw_file']
-            reg_file_align = ops['reg_file']
-    else:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            reg_file_align = ops['reg_file']
-    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt
 
 
 def gaussian_fft(sig, Ly, Lx):
@@ -149,3 +107,113 @@ def get_nFrames(ops):
         nbytes = os.path.getsize(ops['reg_file'])
     nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
     return nFrames
+
+
+def get_frames(ops, ix, bin_file, crop=False, badframes=False):
+    """ get frames ix from bin_file
+        frames are cropped by ops['yrange'] and ops['xrange']
+
+    Parameters
+    ----------
+    ops : dict
+        requires 'Ly', 'Lx'
+    ix : int, array
+        frames to take
+    bin_file : str
+        location of binary file to read (frames x Ly x Lx)
+    crop : bool
+        whether or not to crop by 'yrange' and 'xrange' - if True, needed in ops
+
+    Returns
+    -------
+        mov : int16, array
+            frames x Ly x Lx
+    """
+    if badframes and 'badframes' in ops:
+        bad_frames = ops['badframes']
+        try:
+            ixx = ix[bad_frames[ix]==0].copy()
+            ix = ixx
+        except:
+            notbad=True
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread =  np.int64(Ly*Lx*2)
+    Lyc = ops['yrange'][-1] - ops['yrange'][0]
+    Lxc = ops['xrange'][-1] - ops['xrange'][0]
+    if crop:
+        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
+    else:
+        mov = np.zeros((len(ix), Ly, Lx), np.int16)
+    # load and bin data
+    with open(bin_file, 'rb') as bfile:
+        for i in range(len(ix)):
+            bfile.seek(nbytesread*ix[i], 0)
+            buff = bfile.read(nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            data = np.reshape(data, (Ly, Lx))
+            if crop:
+                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            else:
+                mov[i,:,:] = data
+    return mov
+
+
+def subsample_frames(ops, bin_file, nsamps):
+    """ get nsamps frames from binary file for initial reference image
+    Parameters
+    ----------
+    ops : dictionary
+        requires 'Ly', 'Lx', 'nframes'
+    bin_file : open binary file
+    nsamps : int
+        number of frames to return
+    Returns
+    -------
+    frames : int16
+        frames x Ly x Lx
+    """
+    nFrames = ops['nframes']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
+    nbytesread = 2 * Ly * Lx
+    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
+    #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
+    for j in range(0,nsamps):
+        reg_file.seek(nbytesread * istart[j], 0)
+        buff = reg_file.read_nwb(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+        buff = []
+        frames[j,:,:] = np.reshape(data, (Ly, Lx))
+    reg_file.close()
+    return frames
+
+
+def sub2ind(array_shape, rows, cols):
+    inds = rows * array_shape[1] + cols
+    return inds
+
+
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
+
+
+def sampled_mean(ops):
+    nframes = ops['nframes']
+    nsamps = min(nframes, 1000)
+    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
+    bin_file = ops['reg_file']
+    if ops['nchannels']>1:
+        if ops['functional_chan'] == ops['align_by_chan']:
+            bin_file = ops['reg_file']
+        else:
+            bin_file = ops['reg_file_chan2']
+    frames = get_frames(ops, ix, bin_file, badframes=True)
+    refImg = frames.mean(axis=0)
+    return refImg

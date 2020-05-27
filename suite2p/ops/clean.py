@@ -1,6 +1,7 @@
-import numpy as np
-import time, os
 import argparse
+
+import numpy as np
+
 
 def main(ops1):
     # cleaning stuff

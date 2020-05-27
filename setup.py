@@ -13,15 +13,55 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
-    install_requires = ['pyqtgraph', 'numpy>=1.13.0', 'scipy', 'h5py', 'natsort','mkl_fft',
-                        'numba', 'scikit-learn', 'matplotlib', 'rastermap>0.1.0', 'tifffile',
-                        'scanimage-tiff-reader'],
+    setup_requires=[
+      'pytest-runner',
+    ],
+    install_requires=[
+      'numpy>=1.16',
+      'numba>=0.43.1',
+      'matplotlib',
+      'scipy',
+      'h5py',
+      'scikit-learn',
+      'natsort',
+      'rastermap>0.1.0',
+      'tifffile',
+      'scanimage-tiff-reader!=1.4.1',
+    ],
+    tests_require=[
+      'pytest',
+
+
+
+
+
+
+      'tqdm',
+    ],
+    extras_require={
+      "docs": [
+        'sphinx>=3.0',
+        'sphinxcontrib-apidoc',
+        'sphinx_rtd_theme',
+      ],
+      # Note: Available in pypi, but cleaner to install as pyqt from conda.
+      "gui": [
+        "pyqt5",
+        "pyqt5-tools",
+        "pyqt5.sip",
+      ],
+      # Note: Not currently available in pip: use conda to install.
+      "mkl": [
+        "mkl_fft>=1.0.10",
+        "mkl>=2019.3",
+      ],
+    },
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
-    ),
+    ],
       entry_points = {
         'console_scripts': [
           'suite2p = suite2p.__main__:parse_arguments',

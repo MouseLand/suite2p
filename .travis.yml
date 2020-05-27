@@ -1,19 +1,23 @@
 language: python
 os:
-  - linux
+- linux
 python:
-  - '3.7'
+- '3.7'
 before_install:
-  # Example from https://github.com/astrofrog/example-travis-conda/
-  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash ./miniconda.sh -b
-  - export PATH=~/miniconda3/bin:$PATH
-  - conda update --yes conda
+- wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+- bash ./miniconda.sh -b
+- export PATH=~/miniconda3/bin:$PATH
+- conda update --yes conda
 install:
-  - conda env create -f environment.yml
-  - source activate suite2p
-  - python setup.py install
+- conda env create -f environment.yml
+- source activate suite2p
+- python setup.py install
 script:
-  - python setup.py test
-
-
+- python setup.py test
+deploy:
+  provider: pypi
+  user: __token__
+  password:
+    secure: KMUsze0SI8xGbgK1pzSRQGFcal8YPLF0eMk1zNGhDA/e5qwk8AToQsbokdyTa7sz/2RAjvsIQUsM2+XIMKXQo/9zCp9Sb5RP9Aqh8E9F9uj5a+UGgC6KDZa+zPFFARDNjcasS/RTm0K77gFAWhfwk0smiuR6mSQjXWYwjAZ8CejOc1CWm11MzaVPcp1AJM8r/h3Q2ulFcwHGgteZEXxgtZh3CQoGgxxAQFLIae3G0TzxoK3Amr7e6WTKDvY16YOEzUWQ+77aB6llOHqNU8edq/qKORnwhjcKsIiwqIsiGAfkYm/zT4n40/+P43dfFGfNj3jB3Yqr0HMhFVs4H9yADaommsBX4nAbSA7lKdxf0ds9wUZLRbwSnkx9RhEG05aALyMXNUZVbd+gUPhK/94o7kWOlaOSzOWQaVZ/2pmNjQbjcQ/cNkt5WM+9PNrmrP2E1VstnalODfyOcvM7G6afU3oKUD1/q5vT19C/EzIayR12w7aVImkGlt8qKI6Fxsg+MVSMrPX/7uxEpQXltX00a15b+5XA9zmyBurdbsAgD6zTPOlkysXaXhOMd4L+XE4Z0iDRQmx6WK2whELL1Qa03F6hI+Y9FVZze86FfewmGDgF+IaU3b5d1C6OdsGBZbHOW3ZEEAmuj6abe7LRF2oDLEi9bCqXiVl0RAR7PFIFEHQ=
+  on:
+    tags: true

@@ -1,7 +1,0 @@
-md5: 4dd5e2948153172574e2aba02fd46d19
-outs:
-- md5: 21a42f03646458cebe219a207c98614f
-  path: 2plane2chan_stat_plane0.npy
-  cache: true
-  metric: false
-  persist: false

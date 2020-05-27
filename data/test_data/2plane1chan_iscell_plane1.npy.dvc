@@ -1,7 +1,0 @@
-md5: e99e636ff2fcb9262a4899ee0d0051fa
-outs:
-- md5: 619df08bd38b37f9ad99b33168ce2bd7
-  path: 2plane1chan_iscell_plane1.npy
-  cache: true
-  metric: false
-  persist: false

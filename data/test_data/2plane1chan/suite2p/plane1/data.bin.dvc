@@ -1,0 +1,7 @@
+md5: bd8f85b25cbc873a45db05ddb844a267
+outs:
+- md5: 76359380c30b4e04b9cf695915a71470
+  path: data.bin
+  cache: true
+  metric: false
+  persist: false

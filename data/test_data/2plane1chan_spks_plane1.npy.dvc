@@ -1,7 +1,0 @@
-md5: 35e4e23489882e4f1c785c0823770314
-outs:
-- md5: 6475ec55070db18a55744804743ed6af
-  path: 2plane1chan_spks_plane1.npy
-  cache: true
-  metric: false
-  persist: false

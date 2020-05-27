@@ -15,6 +15,8 @@ install:
 script:
 - python setup.py test
 deploy:
+  skip_cleanup: true
+  skip_existing: true
   provider: pypi
   user: __token__
   password:

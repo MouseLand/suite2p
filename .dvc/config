@@ -1,6 +1,6 @@
 [core]
-    remote = gdrive
-['remote "gdrive"']
-    url = gdrive://0AMaB1R1dBMV9Uk9PVA
+    remote = gdrive2
 ['remote "local"']
     url = ../../suite2p_data
+['remote "gdrive2"']
+    url = gdrive://1BH9yQf735uGMGyoGrPJ_HgxtwxEsVCGp

@@ -1,0 +1,11 @@
+# Only track dvc files.
+# Template from https://stackoverflow.com/questions/987142/make-gitignore-ignore-everything-except-a-few-files
+
+# Ignore everything
+*
+
+# But not these files...
+!*.dvc
+
+# ...even if they are in subdirectories
+!*/

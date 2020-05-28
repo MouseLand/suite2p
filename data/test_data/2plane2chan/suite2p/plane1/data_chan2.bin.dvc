@@ -1,0 +1,7 @@
+md5: 88aa6f8dd3297005c6a1b5d0799bf43d
+outs:
+- md5: e42cf59b133cec87976edcc1dde628ae
+  path: data_chan2.bin
+  cache: true
+  metric: false
+  persist: false

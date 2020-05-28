@@ -1,0 +1,7 @@
+md5: 8bbc97995d880445d660796d29dac663
+outs:
+- md5: e130007598176b2e603d6b27370704bf
+  path: redcell.npy
+  cache: true
+  metric: false
+  persist: false

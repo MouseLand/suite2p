@@ -12,7 +12,6 @@ test_data_dir = suite_dir
 print(test_data_dir)
 
 
-
 @pytest.fixture()
 def setup_and_teardown(tmpdir):
     """
@@ -28,7 +27,7 @@ def setup_and_teardown(tmpdir):
         shutil.rmtree(tmpdir)
         print('Successful removal of tmp_path {}.'.format(tmpdir))
 
-
+        
 class TestCommonPipelineUseCases:
     """
     Class that tests common use cases for pipeline.
@@ -53,6 +52,7 @@ class TestCommonPipelineUseCases:
                     str(output_dir.joinpath('plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
                 )
                 print("Comparing {} for plane {}".format(output, i))
+
                 rtol, atol = 1e-6 , 5e-2
                 # Handle cases where the elements of npy arrays are dictionaries (e.g: stat.npy)
                 if output == 'stat':

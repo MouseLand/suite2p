@@ -1,0 +1,7 @@
+md5: 117734cb310961d0b4b24cbe8596ea75
+outs:
+- md5: 928dbdff2802fcaa6710f54a45a05d43
+  path: F_chan2.npy
+  cache: true
+  metric: false
+  persist: false

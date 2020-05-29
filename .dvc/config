@@ -1,0 +1,6 @@
+[core]
+    remote = gdrive2
+['remote "local"']
+    url = ../../suite2p_data
+['remote "gdrive2"']
+    url = gdrive://1BH9yQf735uGMGyoGrPJ_HgxtwxEsVCGp

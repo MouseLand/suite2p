@@ -1,0 +1,7 @@
+md5: 3f647c6d523fcceb2335b4e87dd952be
+outs:
+- md5: 4a37e93a91cc47629df7bf4b2ad61a3f
+  path: Fneu.npy
+  cache: true
+  metric: false
+  persist: false

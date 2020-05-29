@@ -1,0 +1,7 @@
+md5: 4e32da80615dbcb1b955073f044eb55e
+outs:
+- md5: fef712bda6b8be0ba8ac1be0f77f5a83
+  path: Fneu_chan2.npy
+  cache: true
+  metric: false
+  persist: false

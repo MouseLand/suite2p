@@ -13,5 +13,7 @@ install:
 - source activate suite2p
 - pip install .[data]
 - dvc pull
+- pip install coveralls
 script:
-- python setup.py test
+- coverage run --source=suite2p setup.py test
+after_success: coveralls

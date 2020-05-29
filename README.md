@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
 
+[![Coverage Status](https://coveralls.io/repos/github/MouseLand/suite2p/badge.svg?branch=master)](https://coveralls.io/github/MouseLand/suite2p?branch=master)
+
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
 

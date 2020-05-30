@@ -146,7 +146,7 @@ def compute_crop(ops):
     return ops
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
-    offsets = init_offsets(ops)
+    offsets = init_offsets(nonrigid=ops['nonrigid'], n_blocks=ops['nblocks'])
 
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
@@ -170,6 +170,16 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
             dout = compute_motion_and_shift(data, refAndMasks, ops)
+
+            # compile offsets (dout[1:])
+            for n in range(len(dout) - 1):
+                if n < 3:
+                    offsets[n] = np.hstack((offsets[n], dout[n + 1]))
+                else:
+                    # add on nonrigid stats
+                    for m in range(len(dout[-1])):
+                        offsets[n + m] = np.vstack((offsets[n + m], dout[-1][m]))
+
             data = np.minimum(dout[0], 2**15 - 2)
             sum_img += data.sum(axis=0)
             data = data.astype('int16')
@@ -178,15 +188,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             if not raw:
                 reg_file_align.seek(-2*data.size,1)
             reg_file_align.write(bytearray(data))
-
-            # compile offsets (dout[1:])
-            for n in range(len(dout)-1):
-                if n < 3:
-                    offsets[n] = np.hstack((offsets[n], dout[n+1]))
-                else:
-                    # add on nonrigid stats
-                    for m in range(len(dout[-1])):
-                        offsets[n+m] = np.vstack((offsets[n+m], dout[-1][m]))
 
             yield ops, offsets, sum_img, data
 
@@ -588,13 +589,13 @@ def compute_reference_image(ops, bin_file):
     return refImg, bidi
 
 
-def init_offsets(ops):
+def init_offsets(nonrigid, n_blocks):
     """ initialize offsets for all frames """
     yoff = np.zeros((0,),np.float32)
     xoff = np.zeros((0,),np.float32)
     corrXY = np.zeros((0,),np.float32)
-    if ops['nonrigid']:
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
+    if nonrigid:
+        nb = n_blocks[0] * n_blocks[1]
         yoff1 = np.zeros((0,nb),np.float32)
         xoff1 = np.zeros((0,nb),np.float32)
         corrXY1 = np.zeros((0,nb),np.float32)

@@ -83,7 +83,7 @@ def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
 
     yxnr = []
     if ops['smooth_sigma_time'] > 0:
-        data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
+        data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
 
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(
@@ -98,7 +98,7 @@ def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
         # preprocessing for 1P recordings
         if ops['1Preg']:
             X, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-                data=data.copy().astype(np.float32),
+                data,
                 pre_smooth=ops['pre_smooth'],
                 spatial_hp=ops['spatial_hp'],
             )

@@ -152,7 +152,7 @@ def phasecorr(data, refAndMasks, ops):
     # preprocessing for 1P recordings
     if ops['1Preg']:
         X, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-            data=data.copy().astype(np.float32),
+            data=data,
             pre_smooth=ops['pre_smooth'],
             spatial_hp=ops['spatial_hp'],
         )

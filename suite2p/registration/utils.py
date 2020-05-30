@@ -15,11 +15,10 @@ except ModuleNotFoundError:
 
 def one_photon_preprocess(data: np.ndarray, pre_smooth: int, spatial_hp: int) -> Tuple[np.ndarray, int, int]:
     ''' pre filtering for one-photon data '''
+    data = data.astype(np.float32)
     if pre_smooth > 0:
         pre_smooth = int(np.ceil(pre_smooth / 2) * 2)
         data = spatial_smooth(data, pre_smooth)
-    else:
-        data = data.astype(np.float32)
 
     spatial_hp = int(np.ceil(spatial_hp / 2) * 2)
     data = spatial_high_pass(data, spatial_hp)

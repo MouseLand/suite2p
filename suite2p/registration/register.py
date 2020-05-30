@@ -233,7 +233,7 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
         data = nonrigid.transform_data(data, ops, ymax1, xmax1)
     return data
 
-def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
+def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops, offsets, reg_file_alt, raw_file_alt):
     """ apply registration shifts computed on one binary file to another
     
     Parameters
@@ -259,10 +259,7 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         sets 'meanImg' or 'meanImg_chan2'
         
     """
-    nbatch = ops['batch_size']
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    nbytesread = 2 * Ly * Lx * nbatch
+    nbytesread = 2 * Ly * Lx * batch_size
     ix = 0
     meanImg = np.zeros((Ly, Lx))
     k=0
@@ -275,14 +272,12 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
         reg_file_alt = open(reg_file_alt, 'r+b')
         raw = False
     while True:
-        if raw:
-            buff = raw_file_alt.read(nbytesread)
-        else:
-            buff = reg_file_alt.read(nbytesread)
-
-        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        buff = []
-        if (data.size==0) | (ix >= ops['nframes']):
+        data = np.frombuffer(
+            raw_file_alt.read(nbytesread) if raw else reg_file_alt.read(nbytesread),
+            dtype=np.int16,
+            offset=0,
+        ).copy()
+        if (data.size==0) | (ix >= nframes):
             break
         data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
         nframes = data.shape[0]
@@ -423,7 +418,16 @@ def register_binary(ops, refImg=None, raw=True):
     ops[mean_img_key] = mean_img
 
     if ops['nchannels']>1:
-        ops = apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)
+        ops = apply_shifts_to_binary(
+            batch_size=ops['batch_size'],
+            Ly=ops['Ly'],
+            Lx=ops['Lx'],
+            nframes=ops['nframes'],
+            ops=ops,
+            offsets=offsets,
+            reg_file_alt=reg_file_alt,
+            raw_file_alt=raw_file_alt,
+        )
 
     if 'yoff' not in ops:
         nframes = ops['nframes']

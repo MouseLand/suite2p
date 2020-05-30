@@ -22,6 +22,7 @@ def one_photon_preprocess_inplace(data, ops):
         )
         ops['pre_smooth'] = pre_smooth
         ops['spatial_hp'] = spatial_hp
+    return data
 
 
 def one_photon_preprocess(data: np.ndarray, pre_smooth: int, spatial_hp: int) -> Tuple[np.ndarray, int, int]:

@@ -96,7 +96,7 @@ def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
     # non-rigid registration
     if ops['nonrigid'] and len(refAndMasks)>3:
         # preprocessing for 1P recordings
-        utils.one_photon_preprocess_inplace(data=data, ops=ops)
+        data = utils.one_photon_preprocess_inplace(data=data, ops=ops)
 
         ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
             data=data_smooth if smooth_sigma_time > 0 else data,

@@ -1,5 +1,6 @@
 import os
 import time
+from contextlib import ExitStack
 
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
@@ -174,62 +175,59 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
-    reg_file_align = open(reg_file_align, mode='wb' if raw else 'r+b')
-    if raw:
-        raw_file_align = open(raw_file_align, 'rb')
 
     sum_img = np.zeros((Ly, Lx))
-    k=0
-    nfr=0
+    k = 0
+    nfr = 0
     t0 = time.time()
-    while True:
-        data = np.frombuffer(
-            raw_file_align.read(nbytesread) if raw else reg_file_align.read(nbytesread),
-            dtype=np.int16,
-            offset=0
-        ).copy()
-        if (data.size == 0) | (nfr >= nframes):
-            break
-        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
+    with open(reg_file_align, mode='wb' if raw else 'r+b') as reg_file_align, ExitStack() as stack:
+        if raw:
+            raw_file_align = stack.enter_context(open(raw_file_align, 'rb'))
 
-        dout = compute_motion_and_shift(data, refAndMasks, ops)
-        data = np.minimum(dout[0], 2**15 - 2)
-        sum_img += data.sum(axis=0)
-        data = data.astype('int16')
+        while True:
+            data = np.frombuffer(
+                raw_file_align.read(nbytesread) if raw else reg_file_align.read(nbytesread),
+                dtype=np.int16,
+                offset=0
+            ).copy()
+            if (data.size == 0) | (nfr >= nframes):
+                break
+            data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
-        # write to reg_file_align
-        if not raw:
-            reg_file_align.seek(-2*data.size,1)
-        reg_file_align.write(bytearray(data))
+            dout = compute_motion_and_shift(data, refAndMasks, ops)
+            data = np.minimum(dout[0], 2**15 - 2)
+            sum_img += data.sum(axis=0)
+            data = data.astype('int16')
 
-        # compile offsets (dout[1:])
-        for n in range(len(dout)-1):
-            if n < 3:
-                offsets[n] = np.hstack((offsets[n], dout[n+1]))
-            else:
-                # add on nonrigid stats
-                for m in range(len(dout[-1])):
-                    offsets[n+m] = np.vstack((offsets[n+m], dout[-1][m]))
+            # write to reg_file_align
+            if not raw:
+                reg_file_align.seek(-2*data.size,1)
+            reg_file_align.write(bytearray(data))
 
-        # write registered tiffs
-        if ops['reg_tif']:
-            fname = io.generate_tiff_filename(
-                functional_chan=ops['functional_chan'],
-                align_by_chan=ops['align_by_chan'],
-                save_path=ops['save_path'],
-                k=k,
-                ichan=True
-            )
-            io.save_tiff(data=data, fname=fname)
+            # compile offsets (dout[1:])
+            for n in range(len(dout)-1):
+                if n < 3:
+                    offsets[n] = np.hstack((offsets[n], dout[n+1]))
+                else:
+                    # add on nonrigid stats
+                    for m in range(len(dout[-1])):
+                        offsets[n+m] = np.vstack((offsets[n+m], dout[-1][m]))
 
-        nfr += data.shape[0]
-        k += 1
-        if k%5==0:
-            print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
+            # write registered tiffs
+            if ops['reg_tif']:
+                fname = io.generate_tiff_filename(
+                    functional_chan=ops['functional_chan'],
+                    align_by_chan=ops['align_by_chan'],
+                    save_path=ops['save_path'],
+                    k=k,
+                    ichan=True
+                )
+                io.save_tiff(data=data, fname=fname)
 
-    reg_file_align.close()
-    if raw:
-        raw_file_align.close()
+            nfr += data.shape[0]
+            k += 1
+            if k%5==0:
+                print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
     print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 

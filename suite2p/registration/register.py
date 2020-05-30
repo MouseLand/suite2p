@@ -144,7 +144,7 @@ def compute_crop(ops):
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops
 
-def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refImg, reg_file_align, raw_file_align):
+def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
     """ register binary data to reference image refImg
 
     Parameters
@@ -171,7 +171,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
         last 3 for nonrigid
     """
     offsets = init_offsets(ops)
-    refAndMasks = prepare_refAndMasks(refImg, ops)
 
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
@@ -439,13 +438,14 @@ def register_binary(ops, refImg=None, raw=True):
 
 
     # register binary to reference image
+    refAndMasks = prepare_refAndMasks(refImg, ops)
     ops, offsets = register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
         nframes=ops['nframes'],
         ops=ops,
-        refImg=refImg,
+        refAndMasks=refAndMasks,
         reg_file_align=reg_file_align,
         raw_file_align=raw_file_align,
     )

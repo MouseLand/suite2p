@@ -431,37 +431,3 @@ def init_offsets(nonrigid, n_blocks):
             np.zeros((0,), np.float32),  # xoff
             np.zeros((0,), np.float32),  # corrXY
         ]
-
-
-def bin_paths(ops, raw):
-    """ set which binary is being aligned to """
-    raw_file_align = []
-    raw_file_alt = []
-    reg_file_align = []
-    reg_file_alt = []
-    if raw:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                raw_file_align = ops['raw_file']
-                raw_file_alt = ops['raw_file_chan2']
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                raw_file_align = ops['raw_file_chan2']
-                raw_file_alt = ops['raw_file']
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            raw_file_align = ops['raw_file']
-            reg_file_align = ops['reg_file']
-    else:
-        if ops['nchannels']>1:
-            if ops['functional_chan'] == ops['align_by_chan']:
-                reg_file_align = ops['reg_file']
-                reg_file_alt = ops['reg_file_chan2']
-            else:
-                reg_file_align = ops['reg_file_chan2']
-                reg_file_alt = ops['reg_file']
-        else:
-            reg_file_align = ops['reg_file']
-    return reg_file_align, reg_file_alt, raw_file_align, raw_file_alt

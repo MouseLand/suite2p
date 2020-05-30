@@ -5,7 +5,7 @@ import numpy as np
 
 from .. import io
 from . import nonrigid
-from .register import bin_paths, compute_reference_image, prepare_refAndMasks, \
+from .register import compute_reference_image, prepare_refAndMasks, \
     register_binary_to_ref, apply_shifts_to_binary, compute_crop
 
 
@@ -60,7 +60,36 @@ def register_binary(ops, refImg=None, raw=True):
     if raw:
         raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
                 'raw_file' in ops and path.isfile(ops['raw_file']))
-    reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
+        raw_file_align = []
+        raw_file_alt = []
+        reg_file_align = []
+        reg_file_alt = []
+        if raw:
+            if ops['nchannels'] > 1:
+                if ops['functional_chan'] == ops['align_by_chan']:
+                    raw_file_align = ops['raw_file']
+                    raw_file_alt = ops['raw_file_chan2']
+                    reg_file_align = ops['reg_file']
+                    reg_file_alt = ops['reg_file_chan2']
+                else:
+                    raw_file_align = ops['raw_file_chan2']
+                    raw_file_alt = ops['raw_file']
+                    reg_file_align = ops['reg_file_chan2']
+                    reg_file_alt = ops['reg_file']
+            else:
+                raw_file_align = ops['raw_file']
+                reg_file_align = ops['reg_file']
+        else:
+            if ops['nchannels'] > 1:
+                if ops['functional_chan'] == ops['align_by_chan']:
+                    reg_file_align = ops['reg_file']
+                    reg_file_alt = ops['reg_file_chan2']
+                else:
+                    reg_file_align = ops['reg_file_chan2']
+                    reg_file_alt = ops['reg_file']
+            else:
+                reg_file_align = ops['reg_file']
+
 
     # compute reference image
     if refImg is not None:

@@ -1,10 +1,10 @@
-import os
+from os import path
 import time
 
 import numpy as np
 
 from .. import io
-from . import nonrigid, utils
+from . import nonrigid
 from .register import bin_paths, compute_reference_image, prepare_refAndMasks, \
     register_binary_to_ref, apply_shifts_to_binary, compute_crop
 
@@ -43,9 +43,11 @@ def register_binary(ops, refImg=None, raw=True):
     if ops['nonrigid']:
         ops = nonrigid.make_blocks(ops)
 
-    ops['nframes'] = utils.get_nFrames(ops)
     if not ops['frames_include'] == -1:
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
+    else:
+        nbytes = path.getsize(ops['raw_file'] if ops.get('keep_movie_raw') and path.exists(ops['raw_file']) else ops['reg_file'])
+        ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx']))
 
     print('registering %d frames'%ops['nframes'])
     # check number of frames and print warnings
@@ -57,7 +59,7 @@ def register_binary(ops, refImg=None, raw=True):
     # get binary file paths
     if raw:
         raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
-                'raw_file' in ops and os.path.isfile(ops['raw_file']))
+                'raw_file' in ops and path.isfile(ops['raw_file']))
     reg_file_align, reg_file_alt, raw_file_align, raw_file_alt = bin_paths(ops, raw)
 
     # compute reference image
@@ -160,9 +162,9 @@ def register_binary(ops, refImg=None, raw=True):
     # ignore user-specified bad_frames.npy
     ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
     if 'data_path' in ops and len(ops['data_path']) > 0:
-        badfrfile = os.path.abspath(os.path.join(ops['data_path'][0], 'bad_frames.npy'))
+        badfrfile = path.abspath(path.join(ops['data_path'][0], 'bad_frames.npy'))
         print('bad frames file path: %s'%badfrfile)
-        if os.path.isfile(badfrfile):
+        if path.isfile(badfrfile):
             badframes = np.load(badfrfile)
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True

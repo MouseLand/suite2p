@@ -1,4 +1,3 @@
-import os
 import warnings
 from typing import Tuple
 
@@ -91,32 +90,6 @@ def spatial_high_pass(data, N):
     norm = spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N).squeeze()
     data -= spatial_smooth(data, N) / norm
     return data
-
-def get_nFrames(ops):
-    """ get number of frames in binary file
-
-    Parameters
-    ----------
-    ops : dictionary
-        requires 'Ly', 'Lx', 'reg_file' (optional 'keep_movie_raw' and 'raw_file')
-
-    Returns
-    -------
-    nFrames : int
-        number of frames in the binary
-
-    """
-
-    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-        try:
-            nbytes = os.path.getsize(ops['raw_file'])
-        except:
-            print('no raw')
-            nbytes = os.path.getsize(ops['reg_file'])
-    else:
-        nbytes = os.path.getsize(ops['reg_file'])
-    nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
-    return nFrames
 
 
 def get_frames(ops, ix, bin_file, crop=False, badframes=False):

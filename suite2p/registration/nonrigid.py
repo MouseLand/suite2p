@@ -206,7 +206,7 @@ def clip(X, lhalf):
     return x00, x01, x10, x11
 
 
-def phasecorr(data, refAndMasks, ops):
+def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, ops):
     """ compute phase correlations for each block 
     
     Parameters
@@ -240,16 +240,12 @@ def phasecorr(data, refAndMasks, ops):
     maskOffset = refAndMasks[1].squeeze()
     cfRefImg   = refAndMasks[2].squeeze()
 
-    LyMax = np.diff(np.array(ops['yblock']))
-    ly,lx = cfRefImg.shape[-2:]
-    lyhalf = int(np.floor(ly/2))
-    lxhalf = int(np.floor(lx/2))
+    ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
-    maxregshift = np.round(ops['maxregshiftNR'])
+    maxregshift = np.round(maxregshiftNR)
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly,lx)/2.)-lpad))
-    nb = len(ops['yblock'])
-    nblocks = ops['nblocks']
+    nb = len(yblock)
 
     # preprocessing for 1P recordings
     if ops['1Preg']:
@@ -266,7 +262,7 @@ def phasecorr(data, refAndMasks, ops):
 
     Y = np.zeros((nimg, nb, ly, lx), 'int16')
     for n in range(nb):
-        yind, xind = ops['yblock'][n], ops['xblock'][n]
+        yind, xind = yblock[n], xblock[n]
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
     for n in range(nb):
@@ -281,7 +277,7 @@ def phasecorr(data, refAndMasks, ops):
     cc0 = np.transpose(cc0, (1,0,2,3))
     cc0 = cc0.reshape((cc0.shape[0], -1))
     cc2 = []
-    R = ops['NRsm']
+    R = NRsm
     cc2.append(cc0)
     for j in range(2):
         cc2.append(R @ cc2[j])
@@ -291,7 +287,7 @@ def phasecorr(data, refAndMasks, ops):
     for n in range(nb):
         snr = np.ones((nimg,), 'float32')
         for j in range(len(cc2)):
-            ism = snr<ops['snr_thresh']
+            ism = snr < snr_thresh
             if np.sum(ism)==0:
                 break
             cc = cc2[j][n,ism,:,:]

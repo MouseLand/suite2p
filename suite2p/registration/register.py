@@ -152,9 +152,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
     raw = len(raw_file_align) > 0
 
     sum_img = np.zeros((Ly, Lx))
-    k = 0
     nfr = 0
-    t0 = time.time()
     with open(reg_file_align, mode='wb' if raw else 'r+b') as reg_file_align, ExitStack() as stack:
         if raw:
             raw_file_align = stack.enter_context(open(raw_file_align, 'rb'))
@@ -189,16 +187,9 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 reg_file_align.seek(-2*data.size,1)
             reg_file_align.write(bytearray(data))
 
-            yield ops, offsets, sum_img, data
-
             nfr += data.shape[0]
-            k += 1
-            if k%5==0:
-                print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
-    print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
-
-
+            yield ops, offsets, sum_img, data, nfr
 
 
 def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
@@ -398,7 +389,8 @@ def register_binary(ops, refImg=None, raw=True):
 
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
-    for k, (ops, offsets, sum_img, data) in enumerate(register_binary_to_ref(
+    t0 = time.time()
+    for k, (ops, offsets, sum_img, data, nfr) in enumerate(register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -417,6 +409,8 @@ def register_binary(ops, refImg=None, raw=True):
                 ichan=True
             )
             io.save_tiff(data=data, fname=fname)
+        if k % 5 == 0:
+            print('%d/%d frames, %0.2f sec.' % (nfr, ops['nframes'], time.time() - t0))
 
     # mean image across all frames
     mean_img = sum_img / ops['nframes']

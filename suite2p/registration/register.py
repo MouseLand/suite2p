@@ -77,12 +77,8 @@ def compute_motion_and_shift(data, refAndMasks, ops):
 
     if ops['bidiphase']!=0 and not ops['bidi_corrected']:
         bidiphase.shift(data, ops['bidiphase'])
-    nr=False
-    yxnr = []
-    if ops['nonrigid'] and len(refAndMasks)>3:
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-        nr=True
 
+    yxnr = []
     if ops['smooth_sigma_time'] > 0:
         data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
 
@@ -95,7 +91,7 @@ def compute_motion_and_shift(data, refAndMasks, ops):
     rigid.shift_data(data, ymax, xmax)
 
     # non-rigid registration
-    if nr:
+    if ops['nonrigid'] and len(refAndMasks)>3:
         # preprocessing for 1P recordings
         if ops['1Preg']:
             X, pre_smooth, spatial_hp = utils.one_photon_preprocess(

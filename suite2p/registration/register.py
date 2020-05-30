@@ -213,28 +213,8 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             yield ops, offsets, sum_img, data, nfr
 
 
-def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
+def apply_shifts(data, bidiphase_value: int, bidi_corrected, is_nonrigid: bool, nblocks, xblock, yblock, ymax, xmax, ymax1, xmax1):
     """ apply rigid and nonrigid shifts to data (for chan that's not 'align_by_chan')
-
-    Parameters
-    ----------
-    data : int16
-        size [nframes x Ly x Lx]
-
-    ops : dictionary
-        'Ly', 'Lx', 'batch_size', 'bidiphase'
-
-    ymax : array
-        y shifts
-
-    ymax : array
-        x shifts
-
-    ymax1 : array
-        nonrigid y shifts
-
-    xmax1 : 2D array
-        nonrigid x shifts
 
     Returns
     -------
@@ -242,18 +222,11 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
         size [nframes x Ly x Lx], shifted data
 
     """
-    if ops['bidiphase']!=0  and not ops['bidi_corrected']:
-        bidiphase.shift(data, ops['bidiphase'])
+    if bidiphase_value != 0 and not bidi_corrected:
+        bidiphase.shift(data, bidiphase_value)
     rigid.shift_data(data, ymax, xmax)
-    if ops['nonrigid']==True:
-        data = nonrigid.transform_data(
-            data,
-            nblocks=ops['nblocks'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
-            ymax1=ymax1,
-            xmax1=xmax1
-        )
+    if is_nonrigid:
+        data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
     return data
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops, offsets, reg_file_alt, raw_file_alt):
@@ -309,7 +282,19 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
                 ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
 
             # apply shifts
-            data = apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
+            data = apply_shifts(
+                data=data,
+                bidiphase_value=ops['bidiphase'],
+                bidi_corrected=ops['bidi_corrected'],
+                is_nonrigid=ops['nonrigid'],
+                nblocks=ops['nblocks'],
+                xblock=ops['xblock'],
+                yblock=ops['yblock'],
+                ymax=ymax,
+                xmax=xmax,
+                ymax1=ymax1,
+                xmax1=xmax1,
+            )
             data = np.minimum(data, 2**15 - 2)
             meanImg += data.mean(axis=0)
             data = data.astype('int16')

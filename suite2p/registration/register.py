@@ -177,18 +177,14 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     Ly = ops['Ly']
     Lx = ops['Lx']
     nbytesread = 2 * Ly * Lx * nbatch
-    if len(raw_file_align) > 0:
-        raw = True
-    else:
-        raw = False
-        #raw = 'keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and os.path.isfile(ops['raw_file'])
+    raw = len(raw_file_align) > 0
     if raw:
         reg_file_align = open(reg_file_align, 'wb')
         raw_file_align = open(raw_file_align, 'rb')
     else:
         reg_file_align = open(reg_file_align, 'r+b')
 
-    meanImg = np.zeros((Ly, Lx))
+    sum_img = np.zeros((Ly, Lx))
     k=0
     nfr=0
     t0 = time.time()
@@ -198,14 +194,13 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
         else:
             buff = reg_file_align.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        buff = []
-        if (data.size==0) | (nfr >= ops['nframes']):
+        if (data.size == 0) | (nfr >= ops['nframes']):
             break
         data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
         dout = compute_motion_and_shift(data, refAndMasks, ops)
         data = np.minimum(dout[0], 2**15 - 2)
-        meanImg += data.sum(axis=0)
+        sum_img += data.sum(axis=0)
         data = data.astype('int16')
 
         # write to reg_file_align
@@ -235,10 +230,9 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
     # mean image across all frames
-    if ops['nchannels']==1 or ops['functional_chan']==ops['align_by_chan']:
-        ops['meanImg'] = meanImg/ops['nframes']
-    else:
-        ops['meanImg_chan2'] = meanImg/ops['nframes']
+    mean_img = sum_img / ops['nframes']
+    mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
+    ops[mean_img_key] = mean_img
 
     reg_file_align.close()
     if raw:

@@ -214,14 +214,13 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
 
 
-def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops, offsets, reg_file_alt, raw_file_alt):
+def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
+    is_nonrigid: bool, bidiphase_value: int, bidi_corrected, nblocks, xblock, yblock,
+    offsets, reg_file_alt, raw_file_alt):
     """ apply registration shifts computed on one binary file to another
     
     Parameters
     ----------
-    
-    ops : dictionary
-        'Ly', 'Lx', 'batch_size', 'align_by_chan'
 
     offsets : list of arrays
         shifts computed from reg_file_align/raw_file_align, 
@@ -262,24 +261,16 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
 
             # get shifts
             ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
-            ymax1,xmax1 = [],[]
-            if ops['nonrigid']:
+            ymax1, xmax1 = [], []
+            if is_nonrigid:
                 ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
 
             # apply shifts
-            if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-                bidiphase.shift(data, ops['bidiphase'])
+            if bidiphase_value != 0 and not bidi_corrected:
+                bidiphase.shift(data, bidiphase_value)
             rigid.shift_data(data, ymax, xmax)
-            if ops['nonrigid']:
-                data = nonrigid.transform_data(
-                    data,
-                    nblocks=ops['nblocks'],
-                    xblock=ops['xblock'],
-                    yblock=ops['yblock'],
-                    ymax1=ymax1,
-                    xmax1=xmax1
-                )
-
+            if is_nonrigid:
+                data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
             data = np.minimum(data, 2 ** 15 - 2)
             meanImg += data.mean(axis=0)
             data = data.astype('int16')
@@ -289,7 +280,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
             reg_file_alt.write(bytearray(data))
 
             ix += nframes
-            yield ops, meanImg, data
+            yield meanImg, data
 
 
 def register_binary(ops, refImg=None, raw=True):
@@ -389,12 +380,17 @@ def register_binary(ops, refImg=None, raw=True):
 
     if ops['nchannels'] > 1:
         t0 = time.time()
-        for k, (ops, mean_img, data) in enumerate(apply_shifts_to_binary(
+        for k, (mean_img, data) in enumerate(apply_shifts_to_binary(
             batch_size=ops['batch_size'],
             Ly=ops['Ly'],
             Lx=ops['Lx'],
             nframes=ops['nframes'],
-            ops=ops,
+            is_nonrigid=ops['nonrigid'],
+            bidiphase_value=ops['bidiphase'],
+            bidi_corrected=ops['bidi_corrected'],
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
             offsets=offsets,
             reg_file_alt=reg_file_alt,
             raw_file_alt=raw_file_alt,

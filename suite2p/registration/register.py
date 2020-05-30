@@ -44,6 +44,7 @@ def prepare_refAndMasks(refImg, ops):
         refAndMasks = [maskMul, maskOffset, cfRefImg]
     return refAndMasks
 
+
 def compute_motion_and_shift(data, refAndMasks, ops):
     """ register data matrix to reference image and shift
 
@@ -103,7 +104,14 @@ def compute_motion_and_shift(data, refAndMasks, ops):
             ops=ops,
         )
         yxnr = [ymax1, xmax1, cmax1]
-        data = nonrigid.transform_data(data, ops, ymax1, xmax1)
+        data = nonrigid.transform_data(
+            data=data,
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
+            ymax1=ymax1,
+            xmax1=xmax1
+        )
     return data, ymax, xmax, cmax, yxnr
 
 def compute_crop(ops):
@@ -230,7 +238,14 @@ def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
         bidiphase.shift(data, ops['bidiphase'])
     rigid.shift_data(data, ymax, xmax)
     if ops['nonrigid']==True:
-        data = nonrigid.transform_data(data, ops, ymax1, xmax1)
+        data = nonrigid.transform_data(
+            data,
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
+            ymax1=ymax1,
+            xmax1=xmax1
+        )
     return data
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops, offsets, reg_file_alt, raw_file_alt):

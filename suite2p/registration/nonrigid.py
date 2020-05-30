@@ -494,7 +494,7 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     return yup, xup
 
 
-def transform_data(data, ops, ymax1, xmax1):
+def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     """ piecewise affine transformation of data using block shifts ymax1, xmax1 
     
     Parameters
@@ -525,9 +525,9 @@ def transform_data(data, ops, ymax1, xmax1):
     yup, xup = upsample_block_shifts(
         Lx=Lx,
         Ly=Ly,
-        nblocks=ops['nblocks'],
-        xblock=ops['xblock'],
-        yblock=ops['yblock'],
+        nblocks=nblocks,
+        xblock=xblock,
+        yblock=yblock,
         ymax1=ymax1,
         xmax1=xmax1,
     )

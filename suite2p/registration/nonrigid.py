@@ -179,7 +179,7 @@ def apply_masks(Y, maskMul, maskOffset):
 def addmultiply(x,y,z):
     return np.complex64(x*y + z)
 
-def getSNR(cc, Ls, ops):
+def getSNR(cc, Ls):
     """ compute SNR of phase-correlation - is it an accurate predicted shift? """
     (lcorr, lpad) = Ls
     nimg = cc.shape[0]
@@ -297,7 +297,7 @@ def phasecorr(data, refAndMasks, ops):
             cc = cc2[j][n,ism,:,:]
             if j>0:
                 ccsm[n, ism, :, :] = cc
-            snr[ism] = getSNR(cc, (lcorr,lpad), ops)
+            snr[ism] = getSNR(cc, (lcorr,lpad))
 
     ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
     for t in range(nimg):

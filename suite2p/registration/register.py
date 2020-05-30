@@ -213,21 +213,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             yield ops, offsets, sum_img, data, nfr
 
 
-def apply_shifts(data, bidiphase_value: int, bidi_corrected, is_nonrigid: bool, nblocks, xblock, yblock, ymax, xmax, ymax1, xmax1):
-    """ apply rigid and nonrigid shifts to data (for chan that's not 'align_by_chan')
-
-    Returns
-    -------
-    data : int16 (or float32 if ops['nonrigid']
-        size [nframes x Ly x Lx], shifted data
-
-    """
-    if bidiphase_value != 0 and not bidi_corrected:
-        bidiphase.shift(data, bidiphase_value)
-    rigid.shift_data(data, ymax, xmax)
-    if is_nonrigid:
-        data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
-    return data
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops, offsets, reg_file_alt, raw_file_alt):
     """ apply registration shifts computed on one binary file to another
@@ -271,7 +256,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
             ).copy()
             if (data.size == 0) | (ix >= nframes):
                 break
-            data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
+            data = np.reshape(data[:int(np.floor(data.shape[0] / Ly / Lx) * Ly * Lx)], (-1, Ly, Lx))
             nframes = data.shape[0]
             iframes = ix + np.arange(0, nframes, 1, int)
 
@@ -282,25 +267,25 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
                 ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
 
             # apply shifts
-            data = apply_shifts(
-                data=data,
-                bidiphase_value=ops['bidiphase'],
-                bidi_corrected=ops['bidi_corrected'],
-                is_nonrigid=ops['nonrigid'],
-                nblocks=ops['nblocks'],
-                xblock=ops['xblock'],
-                yblock=ops['yblock'],
-                ymax=ymax,
-                xmax=xmax,
-                ymax1=ymax1,
-                xmax1=xmax1,
-            )
-            data = np.minimum(data, 2**15 - 2)
+            if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
+                bidiphase.shift(data, ops['bidiphase'])
+            rigid.shift_data(data, ymax, xmax)
+            if ops['nonrigid']:
+                data = nonrigid.transform_data(
+                    data,
+                    nblocks=ops['nblocks'],
+                    xblock=ops['xblock'],
+                    yblock=ops['yblock'],
+                    ymax1=ymax1,
+                    xmax1=xmax1
+                )
+
+            data = np.minimum(data, 2 ** 15 - 2)
             meanImg += data.mean(axis=0)
             data = data.astype('int16')
             # write to binary
             if not raw:
-                reg_file_alt.seek(-2*data.size,1)
+                reg_file_alt.seek(-2 * data.size, 1)
             reg_file_alt.write(bytearray(data))
 
             ix += nframes

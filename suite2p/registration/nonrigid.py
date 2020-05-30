@@ -213,7 +213,7 @@ def clip(X, lhalf):
     return x00, x01, x10, x11
 
 
-def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, ops):
+def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR):
     """ compute phase correlations for each block 
     
     Parameters
@@ -242,32 +242,23 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
 
 
     """
+
     nimg, Ly, Lx = data.shape
-    maskMul    = refAndMasks[0].squeeze()
+    maskMul = refAndMasks[0].squeeze()
     maskOffset = refAndMasks[1].squeeze()
-    cfRefImg   = refAndMasks[2].squeeze()
+    cfRefImg = refAndMasks[2].squeeze()
 
     ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
     maxregshift = np.round(maxregshiftNR)
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly,lx)/2.)-lpad))
+    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly, lx) / 2.) - lpad))
     nb = len(yblock)
 
-    # preprocessing for 1P recordings
-    if ops['1Preg']:
-        X, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-            data.copy().astype(np.float32),
-            pre_smooth=ops['pre_smooth'],
-            spatial_hp=ops['spatial_hp'],
-        )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
-
     # shifts and corrmax
-    ymax1 = np.zeros((nimg,nb),np.float32)
-    cmax1 = np.zeros((nimg,nb),np.float32)
-    xmax1 = np.zeros((nimg,nb),np.float32)
+    ymax1 = np.zeros((nimg, nb), np.float32)
+    cmax1 = np.zeros((nimg, nb), np.float32)
+    xmax1 = np.zeros((nimg, nb), np.float32)
 
     cc0 = np.zeros((nimg, nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
     ymax = np.zeros((nb,), np.int32)

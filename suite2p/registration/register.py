@@ -83,9 +83,12 @@ def compute_motion_and_shift(data, refAndMasks, ops):
         nb = ops['nblocks'][0] * ops['nblocks'][1]
         nr=True
 
+    if ops['smooth_sigma_time'] > 0:
+        data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
+
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(
-        data=gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0) if ops['smooth_sigma_time'] > 0 else data,
+        data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
         refAndMasks=refAndMasks[:3],
         ops=ops
     )
@@ -94,7 +97,7 @@ def compute_motion_and_shift(data, refAndMasks, ops):
     # non-rigid registration
     if nr:
         ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
-            data=gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0) if ops['smooth_sigma_time'] > 0 else data,
+            data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
             refAndMasks=refAndMasks[3:],
             snr_thresh=ops['snr_thresh'],
             NRsm=ops['NRsm'],

@@ -4,6 +4,7 @@ import json
 import math
 import os
 import time
+from typing import Dict
 
 import numpy as np
 from ScanImageTiffReader import ScanImageTiffReader
@@ -12,24 +13,7 @@ from tifffile import imread, TiffFile, TiffWriter
 from . import utils
 
 
-def write_tiff(data, ops, k, ichan):
-    """ writes frames to tiffs
-
-    Parameters
-    ----------
-    data : int16
-        frames x Ly x Lx
-
-    ops : dictionary
-        requires 'functional_chan', 'align_by_chan'
-
-    k : int
-        number of tiff
-
-    ichan : bool
-        channel is ops['align_by_chan']
-
-    """
+def generate_tiff_filename(ops: Dict, k: int, ichan: bool) -> str:
     if ichan:
         if ops['functional_chan']==ops['align_by_chan']:
             tifroot = os.path.join(ops['save_path'], 'reg_tif')
@@ -47,7 +31,13 @@ def write_tiff(data, ops, k, ichan):
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
     fname = 'file%0.3d_chan%d.tif'%(k,wchan)
-    with TiffWriter(os.path.join(tifroot, fname)) as tif:
+    fname = os.path.join(tifroot, fname)
+    return fname
+
+
+def save_tiff(data: np.ndarray, fname: str) -> None:
+    """Save image stack array to tiff file."""
+    with TiffWriter(fname) as tif:
         for i in range(data.shape[0]):
             tif.save(data[i])
 

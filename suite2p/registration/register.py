@@ -224,7 +224,8 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         # write registered tiffs
         if ops['reg_tif']:
-            io.write_tiff(data, ops, k, True)
+            fname = io.generate_tiff_filename(ops=ops, k=k, ichan=True)
+            io.save_tiff(data=data, fname=fname)
 
         nfr += data.shape[0]
         k += 1
@@ -353,7 +354,8 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         # write registered tiffs
         if ops['reg_tif_chan2']:
-            io.write_tiff(data, ops, k, False)
+            fname = io.generate_tiff_filename(ops=ops, k=k, ichan=False)
+            io.save_tiff(data=data, fname=fname)
         ix += nframes
         k+=1
     if ops['functional_chan']!=ops['align_by_chan']:

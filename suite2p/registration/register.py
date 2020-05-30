@@ -264,62 +264,57 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
     meanImg = np.zeros((Ly, Lx))
     k=0
     t0 = time.time()
-    if len(raw_file_alt) > 0:
-        reg_file_alt = open(reg_file_alt, 'wb')
-        raw_file_alt = open(raw_file_alt, 'rb')
-        raw = True
-    else:
-        reg_file_alt = open(reg_file_alt, 'r+b')
-        raw = False
-    while True:
-        data = np.frombuffer(
-            raw_file_alt.read(nbytesread) if raw else reg_file_alt.read(nbytesread),
-            dtype=np.int16,
-            offset=0,
-        ).copy()
-        if (data.size==0) | (ix >= nframes):
-            break
-        data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
-        nframes = data.shape[0]
-        iframes = ix + np.arange(0,nframes,1,int)
+    raw = len(raw_file_alt) > 0
+    with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
+        if raw:
+            raw_file_alt = stack.enter_context(open(raw_file_alt, 'rb'))
+        while True:
+            data = np.frombuffer(
+                raw_file_alt.read(nbytesread) if raw else reg_file_alt.read(nbytesread),
+                dtype=np.int16,
+                offset=0,
+            ).copy()
+            if (data.size == 0) | (ix >= nframes):
+                break
+            data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
+            nframes = data.shape[0]
+            iframes = ix + np.arange(0,nframes,1,int)
 
-        # get shifts
-        ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
-        ymax1,xmax1 = [],[]
-        if ops['nonrigid']:
-            ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
+            # get shifts
+            ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
+            ymax1,xmax1 = [],[]
+            if ops['nonrigid']:
+                ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
 
-        # apply shifts
-        data = apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
-        data = np.minimum(data, 2**15 - 2)
-        meanImg += data.mean(axis=0)
-        data = data.astype('int16')
-        # write to binary
-        if not raw:
-            reg_file_alt.seek(-2*data.size,1)
-        reg_file_alt.write(bytearray(data))
+            # apply shifts
+            data = apply_shifts(data, ops, ymax, xmax, ymax1, xmax1)
+            data = np.minimum(data, 2**15 - 2)
+            meanImg += data.mean(axis=0)
+            data = data.astype('int16')
+            # write to binary
+            if not raw:
+                reg_file_alt.seek(-2*data.size,1)
+            reg_file_alt.write(bytearray(data))
 
-        # write registered tiffs
-        if ops['reg_tif_chan2']:
-            fname = io.generate_tiff_filename(
-                functional_chan=ops['functional_chan'],
-                align_by_chan=ops['align_by_chan'],
-                save_path=ops['save_path'],
-                k=k,
-                ichan=False
-            )
-            io.save_tiff(data=data, fname=fname)
-        ix += nframes
-        k+=1
-    if ops['functional_chan']!=ops['align_by_chan']:
-        ops['meanImg'] = meanImg/k
-    else:
-        ops['meanImg_chan2'] = meanImg/k
-    print('Registered second channel in %0.2f sec.'%(time.time()-t0))
+            # write registered tiffs
+            if ops['reg_tif_chan2']:
+                fname = io.generate_tiff_filename(
+                    functional_chan=ops['functional_chan'],
+                    align_by_chan=ops['align_by_chan'],
+                    save_path=ops['save_path'],
+                    k=k,
+                    ichan=False
+                )
+                io.save_tiff(data=data, fname=fname)
+            ix += nframes
+            k+=1
+        if ops['functional_chan']!=ops['align_by_chan']:
+            ops['meanImg'] = meanImg/k
+        else:
+            ops['meanImg_chan2'] = meanImg/k
 
-    reg_file_alt.close()
-    if raw:
-        raw_file_alt.close()
+    print('Registered second channel in %0.2f sec.' % (time.time() - t0))
+
     return ops
 
 def register_binary(ops, refImg=None, raw=True):

@@ -146,31 +146,6 @@ def compute_crop(ops):
     return ops
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
-    """ register binary data to reference image refImg
-
-    Parameters
-    ----------
-    ops : dictionary
-
-    refImg : int16
-        reference image
-
-    reg_file_align : string
-        file to (read if raw_file_align empty, and) write registered binary to
-
-    raw_file_align : string
-        file to read raw binary from (if not empty)
-
-    Returns
-    -------
-    ops : dictionary
-        sets 'meanImg' or 'meanImg_chan2'
-        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
-
-    offsets : list
-        [ymax, xmax, corrXY, ymax1, xmax1, corrXY1] <- shifts and correlations, 
-        last 3 for nonrigid
-    """
     offsets = init_offsets(ops)
 
     nbytesread = 2 * Ly * Lx * nbatch
@@ -213,16 +188,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                     for m in range(len(dout[-1])):
                         offsets[n+m] = np.vstack((offsets[n+m], dout[-1][m]))
 
-            # write registered tiffs
-            if ops['reg_tif']:
-                fname = io.generate_tiff_filename(
-                    functional_chan=ops['functional_chan'],
-                    align_by_chan=ops['align_by_chan'],
-                    save_path=ops['save_path'],
-                    k=k,
-                    ichan=True
-                )
-                io.save_tiff(data=data, fname=fname)
+            yield ops, offsets, sum_img, data
 
             nfr += data.shape[0]
             k += 1
@@ -231,7 +197,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
     print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
-    return ops, offsets, sum_img
 
 
 
@@ -432,7 +397,7 @@ def register_binary(ops, refImg=None, raw=True):
 
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
-    ops, offsets, sum_img = register_binary_to_ref(
+    for k, (ops, offsets, sum_img, data) in enumerate(register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -441,7 +406,16 @@ def register_binary(ops, refImg=None, raw=True):
         refAndMasks=refAndMasks,
         reg_file_align=reg_file_align,
         raw_file_align=raw_file_align,
-    )
+    )):
+        if ops['reg_tif']:
+            fname = io.generate_tiff_filename(
+                functional_chan=ops['functional_chan'],
+                align_by_chan=ops['align_by_chan'],
+                save_path=ops['save_path'],
+                k=k,
+                ichan=True
+            )
+            io.save_tiff(data=data, fname=fname)
 
     # mean image across all frames
     mean_img = sum_img / ops['nframes']

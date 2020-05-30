@@ -83,11 +83,12 @@ def compute_motion_and_shift(data, refAndMasks, ops):
         nr=True
 
     # rigid registration
-    if ops['smooth_sigma_time'] > 0: # temporal smoothing:
-        data_smooth = gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0)
-        ymax, xmax, cmax = rigid.phasecorr(data_smooth, refAndMasks[:3], ops)
-    else:
-        ymax, xmax, cmax = rigid.phasecorr(data, refAndMasks[:3], ops)
+    ymax, xmax, cmax = rigid.phasecorr(
+        data=gaussian_filter1d(data.copy(),
+        sigma=ops['smooth_sigma_time'], axis=0) if ops['smooth_sigma_time'] > 0 else data,
+        refAndMasks=refAndMasks[:3],
+        ops=ops
+    )
     rigid.shift_data(data, ymax, xmax)
 
     # non-rigid registration

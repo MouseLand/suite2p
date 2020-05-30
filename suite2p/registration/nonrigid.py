@@ -440,7 +440,7 @@ def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
         # x shifts for blocks to coordinate map
         map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])
 
-def upsample_block_shifts(ops, ymax1, xmax1):
+def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     """ upsample blocks of shifts into full pixel-wise maps for shifting
 
     this function upsamples ymax1, xmax1 so that they are nimg x Ly x Lx
@@ -469,8 +469,7 @@ def upsample_block_shifts(ops, ymax1, xmax1):
         size [nimg x Ly x Lx], x shifts for each coordinate
 
     """
-    Ly,Lx = ops['Ly'],ops['Lx']
-    nblocks = ops['nblocks']
+
     nimg = ymax1.shape[0]
     ymax1 = np.reshape(ymax1, (nimg,nblocks[0], nblocks[1]))
     xmax1 = np.reshape(xmax1, (nimg,nblocks[0], nblocks[1]))
@@ -478,21 +477,22 @@ def upsample_block_shifts(ops, ymax1, xmax1):
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    yb = np.array(ops['yblock'][::ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
-    xb = np.array(ops['xblock'][:ops['nblocks'][1]]).mean(axis=1).astype(np.float32)
+    yb = np.array(yblock[::nblocks[1]]).mean(axis=1).astype(np.float32)
+    xb = np.array(xblock[:nblocks[1]]).mean(axis=1).astype(np.float32)
 
-    iy = np.arange(0,Ly,1,np.float32)
-    ix = np.arange(0,Lx,1,np.float32)
-    iy = np.interp(iy, yb, np.arange(0,yb.size,1,int)).astype(np.float32)
-    ix = np.interp(ix, xb, np.arange(0,xb.size,1,int)).astype(np.float32)
-    mshx,mshy = np.meshgrid(ix, iy)
+    iy = np.arange(0, Ly, 1, np.float32)
+    ix = np.arange(0, Lx, 1, np.float32)
+    iy = np.interp(iy, yb, np.arange(0, yb.size, 1, int)).astype(np.float32)
+    ix = np.interp(ix, xb, np.arange(0, xb.size, 1, int)).astype(np.float32)
+    mshx, mshy = np.meshgrid(ix, iy)
     # interpolate from block centers to all points Ly x Lx
     #Ly,Lx = mshy.shape
-    yup = np.zeros((nimg,Ly,Lx), np.float32)
-    xup = np.zeros((nimg,Ly,Lx), np.float32)
+    yup = np.zeros((nimg, Ly, Lx), np.float32)
+    xup = np.zeros((nimg, Ly, Lx), np.float32)
 
-    block_interp(ymax1,xmax1,mshy,mshx,yup,xup)
+    block_interp(ymax1, xmax1, mshy, mshx, yup, xup)
     return yup, xup
+
 
 def transform_data(data, ops, ymax1, xmax1):
     """ piecewise affine transformation of data using block shifts ymax1, xmax1 
@@ -518,13 +518,20 @@ def transform_data(data, ops, ymax1, xmax1):
         size [nimg x Ly x Lx], shifted data
 
     """
-    nblocks = ops['nblocks']
     if data.ndim<3:
-        data = data[np.newaxis,:,:]
-    nimg,Ly,Lx = data.shape
+        data = data[np.newaxis, :, :]
+    nimg, Ly, Lx = data.shape
     # take shifts and make matrices of shifts nimg x Ly x Lx
-    yup,xup = upsample_block_shifts(ops, ymax1, xmax1)
-    mshx,mshy = np.meshgrid(np.arange(0,Lx,1,np.float32), np.arange(0,Ly,1,np.float32))
+    yup, xup = upsample_block_shifts(
+        Lx=Lx,
+        Ly=Ly,
+        nblocks=ops['nblocks'],
+        xblock=ops['xblock'],
+        yblock=ops['yblock'],
+        ymax1=ymax1,
+        xmax1=xmax1,
+    )
+    mshx, mshy = np.meshgrid(np.arange(0, Lx, 1, np.float32), np.arange(0, Ly, 1, np.float32))
     Y = np.zeros(data.shape, np.float32)
     # use shifts and do bilinear interpolation
     shift_coordinates(data, yup, xup, mshy, mshx, Y)

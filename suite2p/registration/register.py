@@ -321,6 +321,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
             ix += nframes
             yield ops, meanImg, data
 
+
 def register_binary(ops, refImg=None, raw=True):
     """ main registration function 
     
@@ -416,7 +417,7 @@ def register_binary(ops, refImg=None, raw=True):
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
 
-    if ops['nchannels']>1:
+    if ops['nchannels'] > 1:
         t0 = time.time()
         for k, (ops, mean_img, data) in enumerate(apply_shifts_to_binary(
             batch_size=ops['batch_size'],
@@ -446,14 +447,14 @@ def register_binary(ops, refImg=None, raw=True):
 
     if 'yoff' not in ops:
         nframes = ops['nframes']
-        ops['yoff'] = np.zeros((nframes,),np.float32)
-        ops['xoff'] = np.zeros((nframes,),np.float32)
-        ops['corrXY'] = np.zeros((nframes,),np.float32)
+        ops['yoff'] = np.zeros((nframes,), np.float32)
+        ops['xoff'] = np.zeros((nframes,), np.float32)
+        ops['corrXY'] = np.zeros((nframes,), np.float32)
         if ops['nonrigid']:
             nb = ops['nblocks'][0] * ops['nblocks'][1]
-            ops['yoff1'] = np.zeros((nframes,nb),np.float32)
-            ops['xoff1'] = np.zeros((nframes,nb),np.float32)
-            ops['corrXY1'] = np.zeros((nframes,nb),np.float32)
+            ops['yoff1'] = np.zeros((nframes, nb), np.float32)
+            ops['xoff1'] = np.zeros((nframes, nb), np.float32)
+            ops['corrXY1'] = np.zeros((nframes, nb), np.float32)
 
     ops['yoff'] += offsets[0]
     ops['xoff'] += offsets[1]
@@ -472,7 +473,6 @@ def register_binary(ops, refImg=None, raw=True):
         if os.path.isfile(badfrfile):
             badframes = np.load(badfrfile)
             badframes = badframes.flatten().astype(int)
-            #print('badframes[0]=%d, badframes[-1]=%d'%(badframes[0],badframes[-1]))
             ops['badframes'][badframes] = True
             print('number of badframes: %d'%ops['badframes'].sum())
 

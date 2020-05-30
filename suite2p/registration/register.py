@@ -84,8 +84,7 @@ def compute_motion_and_shift(data, refAndMasks, ops):
 
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(
-        data=gaussian_filter1d(data.copy(),
-        sigma=ops['smooth_sigma_time'], axis=0) if ops['smooth_sigma_time'] > 0 else data,
+        data=gaussian_filter1d(data.copy(), sigma=ops['smooth_sigma_time'], axis=0) if ops['smooth_sigma_time'] > 0 else data,
         refAndMasks=refAndMasks[:3],
         ops=ops
     )

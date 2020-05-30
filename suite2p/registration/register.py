@@ -45,7 +45,10 @@ def prepare_refAndMasks(refImg, ops):
     return refAndMasks
 
 
-def compute_motion_and_shift(data, refAndMasks, ops):
+def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
+                             nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
+                             ops
+                             ):
     """ register data matrix to reference image and shift
 
     need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft'ed masks;
@@ -103,20 +106,20 @@ def compute_motion_and_shift(data, refAndMasks, ops):
             ops['spatial_hp'] = spatial_hp
 
         ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
-            data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
+            data=data_smooth if smooth_sigma_time > 0 else data,
             refAndMasks=refAndMasks[3:],
-            snr_thresh=ops['snr_thresh'],
-            NRsm=ops['NRsm'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
-            maxregshiftNR=ops['maxregshiftNR'],
+            snr_thresh=snr_thresh,
+            NRsm=nr_sm,
+            xblock=xblock,
+            yblock=yblock,
+            maxregshiftNR=maxregshiftNR,
         )
         yxnr = [ymax1, xmax1, cmax1]
         data = nonrigid.transform_data(
             data=data,
-            nblocks=ops['nblocks'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
+            nblocks=nblocks,
+            xblock=xblock,
+            yblock=yblock,
             ymax1=ymax1,
             xmax1=xmax1
         )
@@ -188,7 +191,18 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 break
             data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
-            dout = compute_motion_and_shift(data, refAndMasks, ops)
+            dout = compute_motion_and_shift(
+                data=data,
+                refAndMasks=refAndMasks,
+                nblocks=ops['nblocks'],
+                xblock=ops['xblock'],
+                yblock=ops['yblock'],
+                nr_sm=ops['NRsm'],
+                snr_thresh=ops['snr_thresh'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+                maxregshiftNR=ops['maxregshiftNR'],
+                ops=ops,
+            )
 
             # compile offsets (dout[1:])
             for n in range(len(dout) - 1):
@@ -517,7 +531,18 @@ def iterative_alignment(ops, frames, refImg):
     for iter in range(0,niter):
         ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
-        freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(frames, [maskMul, maskOffset, cfRefImg], ops)
+        freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
+            data=frames,
+            refAndMasks=[maskMul, maskOffset, cfRefImg],
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
+            nr_sm=ops['NRsm'],
+            snr_thresh=ops['snr_thresh'],
+            smooth_sigma_time=ops['smooth_sigma_time'],
+            maxregshiftNR=ops['maxregshiftNR'],
+            ops=ops,
+        )
         ymax = ymax.astype(np.float32)
         xmax = xmax.astype(np.float32)
         isort = np.argsort(-cmax)

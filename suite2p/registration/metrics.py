@@ -113,7 +113,18 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
         refAndMasks = register.prepare_refAndMasks(refImg, ops)
-        dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(Img, refAndMasks, ops)
+        dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+            data=Img,
+            refAndMasks=refAndMasks,
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
+            nr_sm=ops['NRsm'],
+            snr_thresh=ops['snr_thresh'],
+            smooth_sigma_time=ops['smooth_sigma_time'],
+            maxregshiftNR=ops['maxregshiftNR'],
+            ops=ops,
+        )
         X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
         X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
         X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)

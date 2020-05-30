@@ -144,7 +144,7 @@ def compute_crop(ops):
     ops['xrange'] = [int(xmin), int(xmax)]
     return ops
 
-def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, ops, refImg, reg_file_align, raw_file_align):
+def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refImg, reg_file_align, raw_file_align):
     """ register binary data to reference image refImg
 
     Parameters
@@ -186,12 +186,12 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, ops, refImg, reg_file_
     nfr=0
     t0 = time.time()
     while True:
-        if raw:
-            buff = raw_file_align.read(nbytesread)
-        else:
-            buff = reg_file_align.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        if (data.size == 0) | (nfr >= ops['nframes']):
+        data = np.frombuffer(
+            raw_file_align.read(nbytesread) if raw else reg_file_align.read(nbytesread),
+            dtype=np.int16,
+            offset=0
+        ).copy()
+        if (data.size == 0) | (nfr >= nframes):
             break
         data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
@@ -443,6 +443,7 @@ def register_binary(ops, refImg=None, raw=True):
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
+        nframes=ops['nframes'],
         ops=ops,
         refImg=refImg,
         reg_file_align=reg_file_align,

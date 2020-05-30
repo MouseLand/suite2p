@@ -263,7 +263,6 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
     ix = 0
     meanImg = np.zeros((Ly, Lx))
     k=0
-    t0 = time.time()
     raw = len(raw_file_alt) > 0
     with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
         if raw:
@@ -308,12 +307,12 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
                 io.save_tiff(data=data, fname=fname)
             ix += nframes
             k+=1
+
         if ops['functional_chan']!=ops['align_by_chan']:
             ops['meanImg'] = meanImg/k
         else:
             ops['meanImg_chan2'] = meanImg/k
 
-    print('Registered second channel in %0.2f sec.' % (time.time() - t0))
 
     return ops
 
@@ -413,6 +412,7 @@ def register_binary(ops, refImg=None, raw=True):
     ops[mean_img_key] = mean_img
 
     if ops['nchannels']>1:
+        t0 = time.time()
         ops = apply_shifts_to_binary(
             batch_size=ops['batch_size'],
             Ly=ops['Ly'],
@@ -423,6 +423,7 @@ def register_binary(ops, refImg=None, raw=True):
             reg_file_alt=reg_file_alt,
             raw_file_alt=raw_file_alt,
         )
+        print('Registered second channel in %0.2f sec.' % (time.time() - t0))
 
     if 'yoff' not in ops:
         nframes = ops['nframes']

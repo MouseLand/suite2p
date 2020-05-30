@@ -1,0 +1,7 @@
+md5: 430095fcc5f245300f4e2aa57ab34302
+outs:
+- md5: 721425f9dc7aa32a677cbb3a35ba1ac1
+  path: test_write_tiff.tif
+  cache: true
+  metric: false
+  persist: false

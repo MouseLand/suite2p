@@ -4,7 +4,6 @@ import json
 import math
 import os
 import time
-from typing import Dict
 
 import numpy as np
 from ScanImageTiffReader import ScanImageTiffReader

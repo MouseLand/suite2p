@@ -42,8 +42,16 @@ def phasecorr_reference(refImg0, ops):
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
     if ops['1Preg']:
-        refImg = utils.one_photon_preprocess(refImg[np.newaxis,:,:], ops).squeeze()
-    maskOffset = refImg.mean() * (1. - maskMul);
+        refImg, pre_smooth, spatial_hp = utils.one_photon_preprocess(
+            data=refImg[np.newaxis, :, :],
+            pre_smooth=ops['pre_smooth'],
+            spatial_hp=ops['spatial_hp'],
+        )
+        ops['pre_smooth'] = pre_smooth
+        ops['spatial_hp'] = spatial_hp
+        refImg = refImg.squeeze()
+
+    maskOffset = refImg.mean() * (1. - maskMul)
 
     # reference image in fourier domain
     if 'pad_fft' in ops and ops['pad_fft']:
@@ -143,8 +151,14 @@ def phasecorr(data, refAndMasks, ops):
 
     # preprocessing for 1P recordings
     if ops['1Preg']:
-        #data = data.copy().astype(np.float32)
-        X = utils.one_photon_preprocess(data.copy().astype(np.float32), ops).astype(np.int16)
+        X, pre_smooth, spatial_hp = utils.one_photon_preprocess(
+            data=data.copy().astype(np.float32),
+            pre_smooth=ops['pre_smooth'],
+            spatial_hp=ops['spatial_hp'],
+        )
+        ops['pre_smooth'] = pre_smooth
+        ops['spatial_hp'] = spatial_hp
+        X = X.astype(np.int16)
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 

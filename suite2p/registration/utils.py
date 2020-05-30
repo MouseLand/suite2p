@@ -1,5 +1,6 @@
 import os
 import warnings
+from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
@@ -12,19 +13,17 @@ try:
 except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
-def one_photon_preprocess(data, ops):
+def one_photon_preprocess(data: np.ndarray, pre_smooth: int, spatial_hp: int) -> Tuple[np.ndarray, int, int]:
     ''' pre filtering for one-photon data '''
-    if ops['pre_smooth'] > 0:
-        ops['pre_smooth'] = int(np.ceil(ops['pre_smooth']/2) * 2)
-        data = spatial_smooth(data, ops['pre_smooth'])
+    if pre_smooth > 0:
+        new_pre_smooth = int(np.ceil(pre_smooth / 2) * 2)
+        data = spatial_smooth(data, new_pre_smooth)
     else:
         data = data.astype(np.float32)
 
-    #for n in range(data.shape[0]):
-    #    data[n,:,:] = laplace(data[n,:,:])
-    ops['spatial_hp'] = int(np.ceil(ops['spatial_hp']/2) * 2)
-    data = spatial_high_pass(data, ops['spatial_hp'])
-    return data
+    new_spatial_hp = int(np.ceil(spatial_hp / 2) * 2)
+    data = spatial_high_pass(data, new_spatial_hp)
+    return data, new_pre_smooth, new_spatial_hp
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):

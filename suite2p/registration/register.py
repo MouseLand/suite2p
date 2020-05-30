@@ -346,7 +346,6 @@ def iterative_alignment(ops, frames, refImg):
     # do not reshift frames by bidiphase during alignment
     ops['bidiphase'] = 0
     niter = 8
-    nmax  = np.minimum(100, int(frames.shape[0]/2))
     for iter in range(0,niter):
         ops['refImg'] = refImg
         maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
@@ -373,7 +372,6 @@ def iterative_alignment(ops, frames, refImg):
         dx = np.array([int(np.round(dx))])
         rigid.shift_data(refImg, dy, dx)
         refImg = refImg.squeeze()
-        ymax, xmax = ymax+dy, xmax+dx
     return refImg
 
 
@@ -398,8 +396,6 @@ def compute_reference_image(ops, bin_file):
 
     """
 
-    Ly = ops['Ly']
-    Lx = ops['Lx']
     nframes = ops['nframes']
     nsamps = np.minimum(ops['nimg_init'], nframes)
     ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]

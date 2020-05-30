@@ -13,20 +13,20 @@ from tifffile import imread, TiffFile, TiffWriter
 from . import utils
 
 
-def generate_tiff_filename(ops: Dict, k: int, ichan: bool) -> str:
+def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: str, k: int, ichan: bool) -> str:
     if ichan:
-        if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+        if functional_chan == align_by_chan:
+            tifroot = os.path.join(save_path, 'reg_tif')
             wchan = 0
         else:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            tifroot = os.path.join(save_path, 'reg_tif_chan2')
             wchan = 1
     else:
-        if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+        if functional_chan == align_by_chan:
+            tifroot = os.path.join(save_path, 'reg_tif_chan2')
             wchan = 1
         else:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            tifroot = os.path.join(save_path, 'reg_tif')
             wchan = 0
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)

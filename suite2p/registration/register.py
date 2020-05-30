@@ -219,13 +219,23 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
 
         # write registered tiffs
         if ops['reg_tif']:
-            fname = io.generate_tiff_filename(ops=ops, k=k, ichan=True)
+            fname = io.generate_tiff_filename(
+                functional_chan=ops['functional_chan'],
+                align_by_chan=ops['align_by_chan'],
+                save_path=ops['save_path'],
+                k=k,
+                ichan=True
+            )
             io.save_tiff(data=data, fname=fname)
 
         nfr += data.shape[0]
         k += 1
         if k%5==0:
             print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
+
+    reg_file_align.close()
+    if raw:
+        raw_file_align.close()
 
     print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
@@ -234,9 +244,6 @@ def register_binary_to_ref(ops, refImg, reg_file_align, raw_file_align):
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
 
-    reg_file_align.close()
-    if raw:
-        raw_file_align.close()
     return ops, offsets
 
 def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
@@ -348,7 +355,13 @@ def apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt):
 
         # write registered tiffs
         if ops['reg_tif_chan2']:
-            fname = io.generate_tiff_filename(ops=ops, k=k, ichan=False)
+            fname = io.generate_tiff_filename(
+                functional_chan=ops['functional_chan'],
+                align_by_chan=ops['align_by_chan'],
+                save_path=ops['save_path'],
+                k=k,
+                ichan=False
+            )
             io.save_tiff(data=data, fname=fname)
         ix += nframes
         k+=1

@@ -593,18 +593,22 @@ def compute_reference_image(ops, bin_file):
 
 def init_offsets(nonrigid, n_blocks):
     """ initialize offsets for all frames """
-    yoff = np.zeros((0,),np.float32)
-    xoff = np.zeros((0,),np.float32)
-    corrXY = np.zeros((0,),np.float32)
     if nonrigid:
         nb = n_blocks[0] * n_blocks[1]
-        yoff1 = np.zeros((0,nb),np.float32)
-        xoff1 = np.zeros((0,nb),np.float32)
-        corrXY1 = np.zeros((0,nb),np.float32)
-        offsets = [yoff,xoff,corrXY,yoff1,xoff1,corrXY1]
+        return [
+            np.zeros((0,), np.float32),  # yoff
+            np.zeros((0,), np.float32),  # xoff
+            np.zeros((0,), np.float32),  # corrXY
+            np.zeros((0, nb), np.float32),  # yoff1
+            np.zeros((0, nb), np.float32),  # xoff1
+            np.zeros((0, nb), np.float32),  # corrXY1
+        ]
     else:
-        offsets = [yoff,xoff,corrXY]
-    return offsets
+        return [
+            np.zeros((0,), np.float32),  # yoff
+            np.zeros((0,), np.float32),  # xoff
+            np.zeros((0,), np.float32),  # corrXY
+        ]
 
 
 def bin_paths(ops, raw):

@@ -9,10 +9,10 @@ class TestSuite2pIoModule:
     """
     Tests for the Suite2p IO module
     """
-    def test_tiff_and_binary_same_content(self, setup_and_teardown, get_test_dir_path):
+    def test_tiff_reconstruction_from_binary_file(self, setup_and_teardown, get_test_dir_path):
         """
-        Tests if the numpy array made from io.tiff_to_binary's binary file is identical to the numpy array
-        made from the input TIF.
+        Tests that reconstructed TIF file from write_tiff and tiff_to_binary has same contents
+        as input TIF.
         """
         ops, tmp_dir = setup_and_teardown
         op = io.tiff_to_binary(ops)[0]
@@ -22,6 +22,16 @@ class TestSuite2pIoModule:
             np.uint16
         )
         output_data = np.reshape(binary_file_data, (-1, op['Ly'], op['Lx']))
-        # Convert input TIF to numpy array
+        io.write_tiff(output_data, op, 0, True)
+        # Convert input TIF and output Tiff to numpy array and compare
         input_data = imread(str(Path(get_test_dir_path).joinpath('input.tif')))
-        assert np.array_equal(output_data, input_data)
+        reconstructed_tiff_data = imread(
+            str(Path(tmp_dir).joinpath('suite2p', 'plane0', 'reg_tif', 'file000_chan0.tif'))
+        )
+        assert np.array_equal(reconstructed_tiff_data, input_data)
+
+    def test_h5_to_binary_input_tiff_same_content(self, setup_and_teardown, get_test_dir_path):
+        """
+        Tests if the h5
+        """
+        pass

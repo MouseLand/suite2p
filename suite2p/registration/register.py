@@ -300,7 +300,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
                 break
             data = np.reshape(data[:int(np.floor(data.shape[0]/Ly/Lx)*Ly*Lx)], (-1, Ly, Lx))
             nframes = data.shape[0]
-            iframes = ix + np.arange(0,nframes,1,int)
+            iframes = ix + np.arange(0, nframes, 1, int)
 
             # get shifts
             ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
@@ -318,26 +318,8 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int, ops,
                 reg_file_alt.seek(-2*data.size,1)
             reg_file_alt.write(bytearray(data))
 
-            # write registered tiffs
-            if ops['reg_tif_chan2']:
-                fname = io.generate_tiff_filename(
-                    functional_chan=ops['functional_chan'],
-                    align_by_chan=ops['align_by_chan'],
-                    save_path=ops['save_path'],
-                    k=k,
-                    ichan=False
-                )
-                io.save_tiff(data=data, fname=fname)
             ix += nframes
-            k+=1
-
-        if ops['functional_chan']!=ops['align_by_chan']:
-            ops['meanImg'] = meanImg/k
-        else:
-            ops['meanImg_chan2'] = meanImg/k
-
-
-    return ops
+            yield ops, meanImg, data
 
 def register_binary(ops, refImg=None, raw=True):
     """ main registration function 
@@ -436,7 +418,7 @@ def register_binary(ops, refImg=None, raw=True):
 
     if ops['nchannels']>1:
         t0 = time.time()
-        ops = apply_shifts_to_binary(
+        for k, (ops, mean_img, data) in enumerate(apply_shifts_to_binary(
             batch_size=ops['batch_size'],
             Ly=ops['Ly'],
             Lx=ops['Lx'],
@@ -445,8 +427,22 @@ def register_binary(ops, refImg=None, raw=True):
             offsets=offsets,
             reg_file_alt=reg_file_alt,
             raw_file_alt=raw_file_alt,
-        )
+        )):
+
+            # write registered tiffs
+            if ops['reg_tif_chan2']:
+                fname = io.generate_tiff_filename(
+                    functional_chan=ops['functional_chan'],
+                    align_by_chan=ops['align_by_chan'],
+                    save_path=ops['save_path'],
+                    k=k,
+                    ichan=False
+                )
+                io.save_tiff(data=data, fname=fname)
+
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
+        meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
+        ops[meanImg_key] = mean_img / (k + 1)
 
     if 'yoff' not in ops:
         nframes = ops['nframes']

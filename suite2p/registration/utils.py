@@ -16,14 +16,14 @@ except ModuleNotFoundError:
 def one_photon_preprocess(data: np.ndarray, pre_smooth: int, spatial_hp: int) -> Tuple[np.ndarray, int, int]:
     ''' pre filtering for one-photon data '''
     if pre_smooth > 0:
-        new_pre_smooth = int(np.ceil(pre_smooth / 2) * 2)
-        data = spatial_smooth(data, new_pre_smooth)
+        pre_smooth = int(np.ceil(pre_smooth / 2) * 2)
+        data = spatial_smooth(data, pre_smooth)
     else:
         data = data.astype(np.float32)
 
-    new_spatial_hp = int(np.ceil(spatial_hp / 2) * 2)
-    data = spatial_high_pass(data, new_spatial_hp)
-    return data, new_pre_smooth, new_spatial_hp
+    spatial_hp = int(np.ceil(spatial_hp / 2) * 2)
+    data = spatial_high_pass(data, spatial_hp)
+    return data, pre_smooth, spatial_hp
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
 def apply_dotnorm(Y, cfRefImg):

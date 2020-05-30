@@ -174,11 +174,9 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
+    reg_file_align = open(reg_file_align, mode='wb' if raw else 'r+b')
     if raw:
-        reg_file_align = open(reg_file_align, 'wb')
         raw_file_align = open(raw_file_align, 'rb')
-    else:
-        reg_file_align = open(reg_file_align, 'r+b')
 
     sum_img = np.zeros((Ly, Lx))
     k=0

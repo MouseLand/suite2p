@@ -235,12 +235,9 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
     print('%d/%d frames, %0.2f sec.'%(nfr, ops['nframes'], time.time()-t0))
 
-    # mean image across all frames
-    mean_img = sum_img / ops['nframes']
-    mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
-    ops[mean_img_key] = mean_img
+    return ops, offsets, sum_img
 
-    return ops, offsets
+
 
 def apply_shifts(data, ops, ymax, xmax, ymax1, xmax1):
     """ apply rigid and nonrigid shifts to data (for chan that's not 'align_by_chan')
@@ -439,7 +436,7 @@ def register_binary(ops, refImg=None, raw=True):
 
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
-    ops, offsets = register_binary_to_ref(
+    ops, offsets, sum_img = register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -449,6 +446,11 @@ def register_binary(ops, refImg=None, raw=True):
         reg_file_align=reg_file_align,
         raw_file_align=raw_file_align,
     )
+
+    # mean image across all frames
+    mean_img = sum_img / ops['nframes']
+    mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
+    ops[mean_img_key] = mean_img
 
     if ops['nchannels']>1:
         ops = apply_shifts_to_binary(ops, offsets, reg_file_alt, raw_file_alt)

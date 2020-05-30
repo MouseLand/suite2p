@@ -34,34 +34,21 @@ def phasecorr_reference(refImg0, ops):
         filter in the fft domain with standard deviation 'smooth_sigma'
     """
     refImg = refImg0.copy()
-    if '1Preg' in ops and ops['1Preg']:
-        maskSlope    = ops['spatial_taper'] # slope of taper mask at the edges
-    else:
-        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
-    Ly,Lx = refImg.shape
+
+    maskSlope = ops['spatial_taper'] if '1Preg' in ops and ops['1Preg'] else 3 * ops['smooth_sigma']
+    Ly, Lx = refImg.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-    if ops['1Preg']:
-        refImg, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-            data=refImg[np.newaxis, :, :],
-            pre_smooth=ops['pre_smooth'],
-            spatial_hp=ops['spatial_hp'],
-        )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
-        refImg = refImg.squeeze()
+    utils.one_photon_preprocess_inplace(data=refImg, ops=ops)
+    refImg = refImg.squeeze()
 
     maskOffset = refImg.mean() * (1. - maskMul)
 
     # reference image in fourier domain
-    if 'pad_fft' in ops and ops['pad_fft']:
-        cfRefImg   = np.conj(fft2(refImg,
-                            (next_fast_len(Ly), next_fast_len(Lx))))
-    else:
-        cfRefImg   = np.conj(fft2(refImg))
+    cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if ops.get('pad_fft') else np.conj(fft2(refImg))
 
-    absRef     = np.absolute(cfRefImg)
-    cfRefImg   = cfRefImg / (1e-5 + absRef)
+    absRef = np.absolute(cfRefImg)
+    cfRefImg = cfRefImg / (1e-5 + absRef)
 
     # gaussian filter in space
     fhg = utils.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
@@ -150,15 +137,7 @@ def phasecorr(data, refAndMasks, ops):
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)))
 
     # preprocessing for 1P recordings
-    if ops['1Preg']:
-        X, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-            data=data,
-            pre_smooth=ops['pre_smooth'],
-            spatial_hp=ops['spatial_hp'],
-        )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
-        X = X.astype(np.int16)
+    utils.one_photon_preprocess_inplace(data=data, ops=ops)
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 

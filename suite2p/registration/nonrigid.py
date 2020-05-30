@@ -132,15 +132,7 @@ def phasecorr_reference(refImg1, ops):
     Ly,Lx = refImg0.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-    if ops['1Preg']:
-        refImg0, pre_smooth, spatial_hp = utils.one_photon_preprocess(
-            data=refImg0[np.newaxis, :, :],
-            pre_smooth=ops['pre_smooth'],
-            spatial_hp=ops['spatial_hp'],
-        )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
-        refImg0 = refImg0.squeeze()
+    utils.one_photon_preprocess_inplace(data=refImg0[np.newaxis, :, :], ops=ops)
 
     # split refImg0 into multiple parts
     cfRefImg1 = []
@@ -163,7 +155,7 @@ def phasecorr_reference(refImg1, ops):
         xind = ops['xblock'][n]
         xind = np.arange(xind[0],xind[-1]).astype('int')
 
-        refImg = refImg0[np.ix_(yind,xind)]
+        refImg = refImg0.squeeze()[np.ix_(yind,xind)]
         maskMul2 = utils.spatial_taper(2 * ops['smooth_sigma'], Ly, Lx)
         maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
         maskMul1[n,0,:,:] *= maskMul2.astype('float32')

@@ -13,6 +13,17 @@ try:
 except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
+def one_photon_preprocess_inplace(data, ops):
+    if ops['1Preg']:
+        X, pre_smooth, spatial_hp = one_photon_preprocess(
+            data=data,
+            pre_smooth=ops['pre_smooth'],
+            spatial_hp=ops['spatial_hp'],
+        )
+        ops['pre_smooth'] = pre_smooth
+        ops['spatial_hp'] = spatial_hp
+
+
 def one_photon_preprocess(data: np.ndarray, pre_smooth: int, spatial_hp: int) -> Tuple[np.ndarray, int, int]:
     ''' pre filtering for one-photon data '''
     data = data.astype(np.float32)

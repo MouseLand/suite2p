@@ -218,6 +218,12 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 pre_smooth=ops['pre_smooth'],
             )
 
+            data = np.minimum(dout[0], 2 ** 15 - 2)
+            # write to reg_file_align
+            if not raw:
+                reg_file_align.seek(-2 * data.size, 1)
+            reg_file_align.write(bytearray(data.astype('int16')))
+
             # compile offsets (dout[1:])
             for n in range(len(dout) - 1):
                 if n < 3:
@@ -226,12 +232,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                     # add on nonrigid stats
                     for m in range(len(dout[-1])):
                         offsets[n + m] = np.vstack((offsets[n + m], dout[-1][m]))
-
-            data = np.minimum(dout[0], 2**15 - 2)
-            # write to reg_file_align
-            if not raw:
-                reg_file_align.seek(-2 * data.size, 1)
-            reg_file_align.write(bytearray(data.astype('int16')))
 
             yield offsets, data
 

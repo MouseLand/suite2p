@@ -196,6 +196,8 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             ).copy()
             if (data.size == 0) | (nfr >= nframes):
                 break
+            nfr += data.shape[0]
+
             data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
             dout = compute_motion_and_shift(
@@ -227,15 +229,12 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                         offsets[n + m] = np.vstack((offsets[n + m], dout[-1][m]))
 
             data = np.minimum(dout[0], 2**15 - 2)
-            sum_img += data.sum(axis=0)
-            data = data.astype('int16')
-
             # write to reg_file_align
             if not raw:
-                reg_file_align.seek(-2*data.size,1)
-            reg_file_align.write(bytearray(data))
+                reg_file_align.seek(-2 * data.size, 1)
+            reg_file_align.write(bytearray(data.astype('int16')))
 
-            nfr += data.shape[0]
+            sum_img += data.sum(axis=0)
 
             yield offsets, sum_img, data, nfr
 

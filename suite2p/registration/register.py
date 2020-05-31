@@ -196,7 +196,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 break
             nfr += data.size
 
-
             data, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
                 data=data,
                 bidiphase=ops['bidiphase'],

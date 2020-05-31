@@ -343,76 +343,6 @@ def pick_initial_reference(frames):
     return refImg
 
 
-def iterative_alignment(ops, frames, refImg):
-    """ iterative alignment of initial frames to compute reference image
-
-    the seed frame is the frame with the largest correlations with other frames;
-    the average of the seed frame with its top 20 correlated pairs is the
-    inital reference frame returned
-
-    Parameters
-    ----------
-    ops : dictionary
-        requires 'nonrigid', 'smooth_sigma', 'bidiphase', '1Preg'
-
-    frames : int16
-        frames from binary (frames x Ly x Lx)
-
-    refImg : int16
-        initial reference image (Ly x Lx)
-
-    Returns
-    -------
-    refImg : int16
-        final reference image (Ly x Lx)
-
-    """
-    # do not reshift frames by bidiphase during alignment
-    ops['bidiphase'] = 0
-    niter = 8
-    for iter in range(0,niter):
-        ops['refImg'] = refImg
-        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
-            refImg0=refImg,
-            spatial_taper=ops['spatial_taper'],
-            smooth_sigma=ops['smooth_sigma'],
-            pad_fft=ops['pad_fft'],
-            reg_1p=ops['1Preg'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
-        )
-        freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
-            data=frames,
-            refAndMasks=[maskMul, maskOffset, cfRefImg],
-            maxregshift=ops['maxregshift'],
-            bidiphase=ops['bidiphase'],
-            bidi_corrected=ops['bidi_corrected'],
-            nblocks=ops['nblocks'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
-            nr_sm=ops['NRsm'],
-            snr_thresh=ops['snr_thresh'],
-            smooth_sigma_time=ops['smooth_sigma_time'],
-            maxregshiftNR=ops['maxregshiftNR'],
-            is_nonrigid=ops['nonrigid'],
-            reg_1p=ops['1Preg'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
-        )
-        ymax = ymax.astype(np.float32)
-        xmax = xmax.astype(np.float32)
-        isort = np.argsort(-cmax)
-        nmax = int(frames.shape[0] * (1.+iter)/(2*niter))
-        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze().astype(np.int16)
-        dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
-        # shift data requires an array of shifts
-        dy = np.array([int(np.round(dy))])
-        dx = np.array([int(np.round(dx))])
-        rigid.shift_data(refImg, dy, dx)
-        refImg = refImg.squeeze()
-    return refImg
-
-
 def compute_reference_image(ops, bin_file):
     """ compute the reference image
 
@@ -456,6 +386,52 @@ def compute_reference_image(ops, bin_file):
     if bidi != 0:
         bidiphase.shift(frames, bidi)
     refImg = pick_initial_reference(frames)
-    refImg = iterative_alignment(ops, frames, refImg)
+
+
+    ops['bidiphase'] = 0
+    niter = 8
+    for iter in range(0, niter):
+        ops['refImg'] = refImg
+        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+            refImg0=refImg,
+            spatial_taper=ops['spatial_taper'],
+            smooth_sigma=ops['smooth_sigma'],
+            pad_fft=ops['pad_fft'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
+        )
+        freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
+            data=frames,
+            refAndMasks=[maskMul, maskOffset, cfRefImg],
+            maxregshift=ops['maxregshift'],
+            bidiphase=ops['bidiphase'],
+            bidi_corrected=ops['bidi_corrected'],
+            nblocks=ops['nblocks'],
+            xblock=ops['xblock'],
+            yblock=ops['yblock'],
+            nr_sm=ops['NRsm'],
+            snr_thresh=ops['snr_thresh'],
+            smooth_sigma_time=ops['smooth_sigma_time'],
+            maxregshiftNR=ops['maxregshiftNR'],
+            is_nonrigid=ops['nonrigid'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
+        )
+        ymax = ymax.astype(np.float32)
+        xmax = xmax.astype(np.float32)
+        isort = np.argsort(-cmax)
+        nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
+        refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze().astype(np.int16)
+        dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
+
+        # shift data requires an array of shifts
+        dy = np.array([int(np.round(dy))])
+        dx = np.array([int(np.round(dx))])
+        rigid.shift_data(refImg, dy, dx)
+        refImg = refImg.squeeze()
+
+
     return refImg, bidi
 

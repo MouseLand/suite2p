@@ -219,11 +219,10 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
             rigid_offset = [ymax, xmax, cmax]
             nonrigid_offset = list(yxnr)
 
-            data = np.minimum(data, 2 ** 15 - 2)
             # write to reg_file_align
             if not raw:
                 reg_file_align.seek(-2 * data.size, 1)
-            reg_file_align.write(bytearray(data.astype('int16')))
+            reg_file_align.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
             yield rigid_offset, nonrigid_offset, data
 

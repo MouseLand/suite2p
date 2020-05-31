@@ -115,10 +115,8 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
     nbytesread =  np.int64(Ly*Lx*2)
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
-    if crop:
-        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
-    else:
-        mov = np.zeros((len(ix), Ly, Lx), np.int16)
+
+    mov = np.zeros((len(ix), Lyc, Lxc), np.int16) if crop else np.zeros((len(ix), Ly, Lx), np.int16)
     # load and bin data
     with open(bin_file, 'rb') as bfile:
         for i in range(len(ix)):
@@ -126,10 +124,7 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
             buff = bfile.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             data = np.reshape(data, (Ly, Lx))
-            if crop:
-                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-            else:
-                mov[i,:,:] = data
+            mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]] if crop else data
     return mov
 
 

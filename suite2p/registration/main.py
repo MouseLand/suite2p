@@ -205,7 +205,16 @@ def register_binary(ops, refImg=None, raw=True):
             print('number of badframes: %d'%ops['badframes'].sum())
 
     # return frames which fall outside range
-    ops = compute_crop(ops)
+    ops['badframes'], ops['yrange'], ops['xrange'] = compute_crop(
+        xoff=ops['xoff'],
+        yoff=ops['yoff'],
+        corrXY=ops['corrXY'],
+        th_badframes=ops['th_badframes'],
+        badframes=ops['badframes'],
+        maxregshift=ops['maxregshift'],
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+    )
 
     if not raw:
         ops['bidi_corrected'] = True

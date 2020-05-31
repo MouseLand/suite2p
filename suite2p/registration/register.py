@@ -132,7 +132,7 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxre
         )
     return data, ymax, xmax, cmax, yxnr
 
-def compute_crop(ops):
+def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
     
     determines ops['badframes'] which are frames with large outlier shifts
@@ -152,29 +152,30 @@ def compute_crop(ops):
 
 
     """
-    dx = ops['xoff'] - medfilt(ops['xoff'], 101)
-    dy = ops['yoff'] - medfilt(ops['yoff'], 101)
+    dx = xoff - medfilt(xoff, 101)
+    dy = yoff - medfilt(yoff, 101)
     # offset in x and y (normed by mean offset)
     dxy = (dx**2 + dy**2)**.5
     dxy /= dxy.mean()
     # phase-corr of each frame with reference (normed by median phase-corr)
-    cXY = ops['corrXY'] / medfilt(ops['corrXY'], 101)
+    cXY = corrXY / medfilt(corrXY, 101)
     # exclude frames which have a large deviation and/or low correlation
     px = dxy / np.maximum(0, cXY)
-    ops['badframes'] = np.logical_or(px > ops['th_badframes'] * 100, ops['badframes'])
-    ops['badframes'] = np.logical_or(abs(ops['xoff']) > (ops['maxregshift'] * ops['Lx'] * 0.95), ops['badframes'])
-    ops['badframes'] = np.logical_or(abs(ops['yoff']) > (ops['maxregshift'] * ops['Ly'] * 0.95), ops['badframes'])
-    ymin = np.ceil(np.abs(ops['yoff'][np.logical_not(ops['badframes'])]).max())
-    ymax = ops['Ly'] - ymin 
-    xmin = np.ceil(np.abs(ops['xoff'][np.logical_not(ops['badframes'])]).max())
-    xmax = ops['Lx'] - xmin
-    # ymin = np.maximum(0, np.ceil(np.amax(ops['yoff'][np.logical_not(ops['badframes'])])))
-    # ymax = ops['Ly'] + np.minimum(0, np.floor(np.amin(ops['yoff'])))
-    # xmin = np.maximum(0, np.ceil(np.amax(ops['xoff'][np.logical_not(ops['badframes'])])))
-    # xmax = ops['Lx'] + np.minimum(0, np.floor(np.amin(ops['xoff'])))
-    ops['yrange'] = [int(ymin), int(ymax)]
-    ops['xrange'] = [int(xmin), int(xmax)]
-    return ops
+    badframes = np.logical_or(px > th_badframes * 100, badframes)
+    badframes = np.logical_or(abs(xoff) > (maxregshift * Lx * 0.95), badframes)
+    badframes = np.logical_or(abs(yoff) > (maxregshift * Ly * 0.95), badframes)
+    ymin = np.ceil(np.abs(yoff[np.logical_not(badframes)]).max())
+    ymax = Ly - ymin
+    xmin = np.ceil(np.abs(xoff[np.logical_not(badframes)]).max())
+    xmax = Lx - xmin
+    # ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(badframes)])))
+    # ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
+    # xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(badframes)])))
+    # xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
+    yrange = [int(ymin), int(ymax)]
+    xrange = [int(xmin), int(xmax)]
+
+    return badframes, yrange, xrange
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
 

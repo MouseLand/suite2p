@@ -2,6 +2,7 @@ from os import path
 import time
 
 import numpy as np
+from tqdm import tqdm
 
 from .. import io
 from . import nonrigid
@@ -105,8 +106,7 @@ def register_binary(ops, refImg=None, raw=True):
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
-    t0 = time.time()
-    for k, (offsets, data, nfr) in enumerate(register_binary_to_ref(
+    for k, (offsets, data) in tqdm(enumerate(register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -115,7 +115,7 @@ def register_binary(ops, refImg=None, raw=True):
         refAndMasks=refAndMasks,
         reg_file_align=reg_file_align,
         raw_file_align=raw_file_align,
-    )):
+    ))):
         if ops['reg_tif']:
             fname = io.generate_tiff_filename(
                 functional_chan=ops['functional_chan'],
@@ -125,11 +125,11 @@ def register_binary(ops, refImg=None, raw=True):
                 ichan=True
             )
             io.save_tiff(data=data, fname=fname)
-        if k % 5 == 0:
-            print('%d/%d frames, %0.2f sec.' % (nfr, ops['nframes'], time.time() - t0))
+
+        mean_img += data.sum(axis=0) / ops['nframes']
 
     # mean image across all frames
-    mean_img += data.sum(axis=0) / ops['nframes']
+
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
 

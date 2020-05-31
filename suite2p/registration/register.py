@@ -233,7 +233,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 reg_file_align.seek(-2 * data.size, 1)
             reg_file_align.write(bytearray(data.astype('int16')))
 
-            yield offsets, data, nfr
+            yield offsets, data
 
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,

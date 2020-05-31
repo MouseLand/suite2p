@@ -28,10 +28,10 @@ setuptools.setup(
       'rastermap>0.1.0',
       'tifffile',
       'scanimage-tiff-reader!=1.4.1',
+      'tqdm',
     ],
     tests_require=[
       'pytest',
-      'tqdm',
     ],
     extras_require={
       "docs": [

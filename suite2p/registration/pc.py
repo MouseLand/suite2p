@@ -114,6 +114,10 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
             snr_thresh=ops['snr_thresh'],
             smooth_sigma_time=ops['smooth_sigma_time'],
             maxregshiftNR=ops['maxregshiftNR'],
+            nonrigid=ops['nonrigid'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
             ops=ops,
         )
         X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)

@@ -52,6 +52,7 @@ def prepare_refAndMasks(refImg, ops):
 
 def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nblocks, xblock, yblock,
                              nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
+                             nonrigid, reg_1p, spatial_hp, pre_smooth,
                              ops
                              ):
     """ register data matrix to reference image and shift
@@ -99,13 +100,13 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nbloc
     rigid.shift_data(data, ymax, xmax)
 
     # non-rigid registration
-    if ops['nonrigid'] and len(refAndMasks)>3:
+    if nonrigid and len(refAndMasks)>3:
         # preprocessing for 1P recordings
-        if ops['1Preg']:
+        if reg_1p:
             data = utils.one_photon_preprocess(
                 data=data,
-                spatial_hp=ops['spatial_hp'],
-                pre_smooth=ops['pre_smooth'],
+                spatial_hp=spatial_hp,
+                pre_smooth=pre_smooth,
             )
 
         ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
@@ -206,6 +207,10 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 snr_thresh=ops['snr_thresh'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
                 maxregshiftNR=ops['maxregshiftNR'],
+                nonrigid=ops['nonrigid'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
                 ops=ops,
             )
 
@@ -384,6 +389,10 @@ def iterative_alignment(ops, frames, refImg):
             snr_thresh=ops['snr_thresh'],
             smooth_sigma_time=ops['smooth_sigma_time'],
             maxregshiftNR=ops['maxregshiftNR'],
+            nonrigid=ops['nonrigid'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
             ops=ops,
         )
         ymax = ymax.astype(np.float32)

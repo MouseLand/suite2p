@@ -87,12 +87,12 @@ def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
         bidiphase.shift(data, ops['bidiphase'])
 
     yxnr = []
-    if ops['smooth_sigma_time'] > 0:
-        data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+    if smooth_sigma_time > 0:
+        data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
 
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(
-        data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
+        data=data_smooth if smooth_sigma_time > 0 else data,
         refAndMasks=refAndMasks[:3],
         ops=ops
     )

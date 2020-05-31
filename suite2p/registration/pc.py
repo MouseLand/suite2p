@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 
-from . import nonrigid, register, utils
+from . import rigid, nonrigid, register, utils
 
 
 def pclowhigh(mov, nlowhigh, nPC):
@@ -104,7 +104,38 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
     for i in range(nPC):
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
-        refAndMasks = register.prepare_refAndMasks(refImg, ops)
+
+        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+            refImg0=refImg,
+            spatial_taper=ops['spatial_taper'],
+            smooth_sigma=ops['smooth_sigma'],
+            pad_fft=ops['pad_fft'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
+        )
+        if ops.get('nonrigid'):
+            if 'yblock' not in ops:
+                ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
+                    'NRsm'] = nonrigid.make_blocks(
+                    Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+                )
+
+            maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
+                refImg1=refImg,
+                reg_1p=ops['1Preg'],
+                spatial_taper=ops['spatial_taper'],
+                smooth_sigma=ops['smooth_sigma'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+                yblock=ops['yblock'],
+                xblock=ops['xblock'],
+                pad_fft=ops['pad_fft'],
+            )
+            refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
+        else:
+            refAndMasks = [maskMul, maskOffset, cfRefImg]
+
         dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
             data=Img,
             bidiphase=ops['bidiphase'],

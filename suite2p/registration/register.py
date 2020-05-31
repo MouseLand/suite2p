@@ -15,55 +15,6 @@ from . import bidiphase, nonrigid, utils, rigid
 #except ImportError:
 #    HAS_GPU=False
 
-def prepare_refAndMasks(refImg, ops):
-    """ prepares refAndMasks for phasecorr using refImg
-
-    Parameters
-    ----------
-    refImg : int16
-        reference image
-
-    ops : dictionary
-        requires 'smooth_sigma'
-        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
-
-    Returns
-    -------
-    refAndMasks : list
-        maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
-
-    """
-    maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
-        refImg0=refImg,
-        spatial_taper=ops['spatial_taper'],
-        smooth_sigma=ops['smooth_sigma'],
-        pad_fft=ops['pad_fft'],
-        reg_1p=ops['1Preg'],
-        spatial_hp=ops['spatial_hp'],
-        pre_smooth=ops['pre_smooth'],
-    )
-    if ops.get('nonrigid'):
-        if 'yblock' not in ops:
-            ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
-                Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-            )
-
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-            refImg1=refImg,
-            reg_1p=ops['1Preg'],
-            spatial_taper=ops['spatial_taper'],
-            smooth_sigma=ops['smooth_sigma'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
-            yblock=ops['yblock'],
-            xblock=ops['xblock'],
-            pad_fft=ops['pad_fft'],
-        )
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-    else:
-        refAndMasks = [maskMul, maskOffset, cfRefImg]
-    return refAndMasks
-
 
 def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxregshift, nblocks, xblock, yblock,
                              nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
@@ -259,12 +210,6 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
 
     raw_file_align : string
         file to read raw binary from (if not empty)
-
-    Returns
-    -------
-    ops : dictionary
-        sets 'meanImg' or 'meanImg_chan2'
-        
     """
     nbytesread = 2 * Ly * Lx * batch_size
     ix = 0

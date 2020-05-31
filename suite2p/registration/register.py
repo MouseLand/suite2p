@@ -182,7 +182,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
 
-    sum_img = np.zeros((Ly, Lx))
     nfr = 0
     with open(reg_file_align, mode='wb' if raw else 'r+b') as reg_file_align, ExitStack() as stack:
         if raw:
@@ -234,9 +233,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 reg_file_align.seek(-2 * data.size, 1)
             reg_file_align.write(bytearray(data.astype('int16')))
 
-            sum_img += data.sum(axis=0)
-
-            yield offsets, sum_img, data, nfr
+            yield offsets, data, nfr
 
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,

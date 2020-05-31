@@ -191,12 +191,11 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 raw_file_align.read(nbytesread) if raw else reg_file_align.read(nbytesread),
                 dtype=np.int16,
                 offset=0
-            ).copy()
+            ).reshape(-1, Ly, Lx).astype(np.float32)
             if (data.size == 0) | (nfr >= nframes):
                 break
-            nfr += data.shape[0]
+            nfr += data.size
 
-            data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
             data, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
                 data=data,

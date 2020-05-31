@@ -50,10 +50,9 @@ def prepare_refAndMasks(refImg, ops):
     return refAndMasks
 
 
-def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nblocks, xblock, yblock,
+def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxregshift, nblocks, xblock, yblock,
                              nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
                              is_nonrigid, reg_1p, spatial_hp, pre_smooth,
-                             ops
                              ):
     """ register data matrix to reference image and shift
 
@@ -95,11 +94,11 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nbloc
     ymax, xmax, cmax = rigid.phasecorr(
         data=data_smooth if smooth_sigma_time > 0 else data,
         refAndMasks=refAndMasks[:3],
-        maxregshift=ops['maxregshift'],
-        reg_1p=ops['1Preg'],
-        spatial_hp=ops['spatial_hp'],
-        pre_smooth=ops['pre_smooth'],
-        smooth_sigma_time=ops['smooth_sigma_time'],
+        maxregshift=maxregshift,
+        reg_1p=reg_1p,
+        spatial_hp=spatial_hp,
+        pre_smooth=pre_smooth,
+        smooth_sigma_time=smooth_sigma_time,
     )
     rigid.shift_data(data, ymax, xmax)
 
@@ -204,6 +203,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 bidiphase=ops['bidiphase'],
                 bidi_corrected=ops['bidi_corrected'],
                 refAndMasks=refAndMasks,
+                maxregshift=ops['maxregshift'],
                 nblocks=ops['nblocks'],
                 xblock=ops['xblock'],
                 yblock=ops['yblock'],
@@ -215,7 +215,6 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 reg_1p=ops['1Preg'],
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
-                ops=ops,
             )
 
             # compile offsets (dout[1:])
@@ -384,6 +383,7 @@ def iterative_alignment(ops, frames, refImg):
         freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
             data=frames,
             refAndMasks=[maskMul, maskOffset, cfRefImg],
+            maxregshift=ops['maxregshift'],
             bidiphase=ops['bidiphase'],
             bidi_corrected=ops['bidi_corrected'],
             nblocks=ops['nblocks'],
@@ -397,7 +397,6 @@ def iterative_alignment(ops, frames, refImg):
             reg_1p=ops['1Preg'],
             spatial_hp=ops['spatial_hp'],
             pre_smooth=ops['pre_smooth'],
-            ops=ops,
         )
         ymax = ymax.astype(np.float32)
         xmax = xmax.astype(np.float32)

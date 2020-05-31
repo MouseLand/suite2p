@@ -107,6 +107,7 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
             bidiphase=ops['bidiphase'],
             bidi_corrected=ops['bidi_corrected'],
             refAndMasks=refAndMasks,
+            maxregshift=ops['maxregshift'],
             nblocks=ops['nblocks'],
             xblock=ops['xblock'],
             yblock=ops['yblock'],
@@ -118,7 +119,6 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
             reg_1p=ops['1Preg'],
             spatial_hp=ops['spatial_hp'],
             pre_smooth=ops['pre_smooth'],
-            ops=ops,
         )
         X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
         X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)

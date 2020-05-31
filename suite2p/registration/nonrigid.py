@@ -41,19 +41,7 @@ def mat_upsample(lpad):
 Kmat, nup = mat_upsample(lpad)
 
 def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
-    """ computes overlapping blocks to split FOV into to register separately
-
-    Parameters
-    ----------
-    ops : dictionary
-        'Ly', 'Lx' (optional 'block_size')
-
-    Returns
-    -------
-    ops : dictionary
-        'yblock', 'xblock', 'nblocks', 'NRsm'
-
-    """
+    """ computes overlapping blocks to split FOV into to register separately"""
     ny = int(np.ceil(1.5 * float(Ly) / block_size[0]))
     nx = int(np.ceil(1.5 * float(Lx) / block_size[1]))
 
@@ -87,7 +75,7 @@ def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
     return yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm
 
 
-def phasecorr_reference(refImg1, ops):
+def phasecorr_reference(refImg1, reg_1p, spatial_taper, smooth_sigma, spatial_hp, pre_smooth, yblock, xblock, pad_fft):
     """ computes taper and fft'ed reference image for phasecorr
     
     Parameters
@@ -95,10 +83,6 @@ def phasecorr_reference(refImg1, ops):
 
     refImg1 : 2D array, int16
         reference image
-
-    ops : dictionary
-        'smooth_sigma'
-        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
 
     Returns
     -------
@@ -115,61 +99,43 @@ def phasecorr_reference(refImg1, ops):
 
     """
 
-    if 'yblock' not in ops:
-        ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = make_blocks(
-            Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-        )
-
-    refImg0=refImg1.copy()
-    if ops['1Preg']:
-        maskSlope    = ops['spatial_taper']
-    else:
-        maskSlope    = 3 * ops['smooth_sigma'] # slope of taper mask at the edges
-    Ly,Lx = refImg0.shape
+    refImg0 = refImg1.copy()
+    maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
+    Ly, Lx = refImg0.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-    if ops['1Preg']:
-        refImg0 = utils.one_photon_preprocess(
-            data=refImg0[np.newaxis, :, :],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
-        )
+    if reg_1p:
+        refImg0 = utils.one_photon_preprocess(data=refImg0[np.newaxis, :, :], spatial_hp=spatial_hp, pre_smooth=pre_smooth)
 
     # split refImg0 into multiple parts
-    cfRefImg1 = []
-    maskMul1 = []
-    maskOffset1 = []
-    nb = len(ops['yblock'])
+    nb = len(yblock)
 
     #patch taper
-    Ly = ops['yblock'][0][1] - ops['yblock'][0][0]
-    Lx = ops['xblock'][0][1] - ops['xblock'][0][0]
-    if ops['pad_fft']:
-        cfRefImg1 = np.zeros((nb,1,next_fast_len(Ly), next_fast_len(Lx)),'complex64')
-    else:
-        cfRefImg1 = np.zeros((nb,1,Ly,Lx),'complex64')
+    Ly = yblock[0][1] - yblock[0][0]
+    Lx = xblock[0][1] - xblock[0][0]
+    cfRefImg1 = np.zeros((nb,1,next_fast_len(Ly), next_fast_len(Lx)), 'complex64') if pad_fft else np.zeros((nb, 1, Ly, Lx), 'complex64')
     maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
     maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
     for n in range(nb):
-        yind = ops['yblock'][n]
-        yind = np.arange(yind[0],yind[-1]).astype('int')
-        xind = ops['xblock'][n]
-        xind = np.arange(xind[0],xind[-1]).astype('int')
+        yind = yblock[n]
+        yind = np.arange(yind[0], yind[-1]).astype('int')
+        xind = xblock[n]
+        xind = np.arange(xind[0], xind[-1]).astype('int')
 
         refImg = refImg0.squeeze()[np.ix_(yind,xind)]
-        maskMul2 = utils.spatial_taper(2 * ops['smooth_sigma'], Ly, Lx)
-        maskMul1[n,0,:,:] = maskMul[np.ix_(yind,xind)].astype('float32')
-        maskMul1[n,0,:,:] *= maskMul2.astype('float32')
-        maskOffset1[n,0,:,:] = (refImg.mean() * (1. - maskMul1[n,0,:,:])).astype(np.float32)
-        cfRefImg   = np.conj(fft.fft2(refImg))
-        absRef     = np.absolute(cfRefImg)
-        cfRefImg   = cfRefImg / (1e-5 + absRef)
+        maskMul2 = utils.spatial_taper(2 * smooth_sigma, Ly, Lx)
+        maskMul1[n, 0, :, :] = maskMul[np.ix_(yind,xind)].astype('float32')
+        maskMul1[n, 0, :, :] *= maskMul2.astype('float32')
+        maskOffset1[n, 0, :, :] = (refImg.mean() * (1. - maskMul1[n, 0, :, :])).astype(np.float32)
+        cfRefImg = np.conj(fft.fft2(refImg))
+        absRef = np.absolute(cfRefImg)
+        cfRefImg = cfRefImg / (1e-5 + absRef)
 
         # gaussian filter
-        fhg = utils.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
+        fhg = utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
         cfRefImg *= fhg
+        cfRefImg1[n, 0, :, :] = cfRefImg.astype('complex64')
 
-        cfRefImg1[n,0,:,:] = (cfRefImg.astype('complex64'))
     return maskMul1, maskOffset1, cfRefImg1
 
 @vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel', cache=True)
@@ -217,9 +183,6 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
 
     refAndMasks : list
         gaussian filter, mask offset, FFT of reference image
-
-    ops : dictionary
-        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
 
     ymax1 : 2D array
         size [nimg x nblocks], y shifts of blocks
@@ -434,9 +397,6 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     Parameters
     ------------
 
-    ops : dictionary
-        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
-
     ymax1 : 2D array
         size [nimg x nblocks], y shifts of blocks
 
@@ -486,9 +446,6 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
 
     data : int16 or float32, 3D array
         size [nimg x Ly x Lx]
-
-    ops : dictionary
-        'Ly', 'Lx', 'nblocks', 'yblock', 'xblock' <- indices of blocks
 
     ymax1 : 2D array
         size [nimg x nblocks], y shifts of blocks

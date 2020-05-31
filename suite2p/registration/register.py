@@ -42,8 +42,23 @@ def prepare_refAndMasks(refImg, ops):
         spatial_hp=ops['spatial_hp'],
         pre_smooth=ops['pre_smooth'],
     )
-    if 'nonrigid' in ops and ops['nonrigid']:
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(refImg, ops)
+    if ops.get('nonrigid'):
+        if 'yblock' not in ops:
+            ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
+                Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+            )
+
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
+            refImg1=refImg,
+            reg_1p=ops['1Preg'],
+            spatial_taper=ops['spatial_taper'],
+            smooth_sigma=ops['smooth_sigma'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
+            yblock=ops['yblock'],
+            xblock=ops['xblock'],
+            pad_fft=ops['pad_fft'],
+        )
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
     else:
         refAndMasks = [maskMul, maskOffset, cfRefImg]

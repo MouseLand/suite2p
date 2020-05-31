@@ -105,7 +105,7 @@ def register_binary(ops, refImg=None, raw=True):
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
     t0 = time.time()
-    for k, (ops, offsets, sum_img, data, nfr) in enumerate(register_binary_to_ref(
+    for k, (offsets, sum_img, data, nfr) in enumerate(register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],

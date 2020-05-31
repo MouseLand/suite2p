@@ -237,7 +237,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
             nfr += data.shape[0]
 
-            yield ops, offsets, sum_img, data, nfr
+            yield offsets, sum_img, data, nfr
 
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,

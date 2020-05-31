@@ -50,7 +50,7 @@ def prepare_refAndMasks(refImg, ops):
     return refAndMasks
 
 
-def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
+def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nblocks, xblock, yblock,
                              nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
                              ops
                              ):
@@ -83,8 +83,8 @@ def compute_motion_and_shift(data, refAndMasks, nblocks, xblock, yblock,
 
     """
 
-    if ops['bidiphase']!=0 and not ops['bidi_corrected']:
-        bidiphase.shift(data, ops['bidiphase'])
+    if bidiphase and not bidi_corrected:
+        bidiphase.shift(data, bidiphase)
 
     yxnr = []
     if smooth_sigma_time > 0:
@@ -196,6 +196,8 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
             dout = compute_motion_and_shift(
                 data=data,
+                bidiphase=ops['bidiphase'],
+                bidi_corrected=ops['bidi_corrected'],
                 refAndMasks=refAndMasks,
                 nblocks=ops['nblocks'],
                 xblock=ops['xblock'],
@@ -373,6 +375,8 @@ def iterative_alignment(ops, frames, refImg):
         freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
             data=frames,
             refAndMasks=[maskMul, maskOffset, cfRefImg],
+            bidiphase=ops['bidiphase'],
+            bidi_corrected=ops['bidi_corrected'],
             nblocks=ops['nblocks'],
             xblock=ops['xblock'],
             yblock=ops['yblock'],

@@ -104,6 +104,8 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         refAndMasks = register.prepare_refAndMasks(refImg, ops)
         dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
             data=Img,
+            bidiphase=ops['bidiphase'],
+            bidi_corrected=ops['bidi_corrected'],
             refAndMasks=refAndMasks,
             nblocks=ops['nblocks'],
             xblock=ops['xblock'],

@@ -143,18 +143,26 @@ def get_pc_metrics(ops, use_red=False):
                 adds 'regPC' and 'tPC' and 'regDX'
 
     """
-    nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
+    nsamp = min(5000, ops['nframes'])  # n frames to pick from full movie
     if ops['nframes'] < 5000:
         nsamp = min(2000, ops['nframes'])
     if ops['Ly'] > 700 or ops['Lx'] > 700:
         nsamp = min(2000, nsamp)
-    nPC      = 30 # n PCs to compute motion for
-    nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
-    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    if use_red and 'reg_file_chan2' in ops:
-        mov  = utils.get_frames(ops, ix, ops['reg_file_chan2'], crop=True, badframes=True)
-    else:
-        mov  = utils.get_frames(ops, ix, ops['reg_file'], crop=True, badframes=True)
+    nPC = 30 # n PCs to compute motion for
+    nlowhigh = np.minimum(300,int(ops['nframes']/2))  # n frames to average at ends of PC coefficient sortings
+    ix = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
+
+    mov = utils.get_frames(
+        Lx=ops['Lx'],
+        Ly=ops['Ly'],
+        xrange=ops['xrange'],
+        yrange=ops['yrange'],
+        ix=ix,
+        bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
+        crop=True,
+        badframes=True,
+        bad_frames=ops['badframes']
+    )
 
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
     if 'block_size' not in ops:

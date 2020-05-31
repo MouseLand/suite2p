@@ -404,7 +404,16 @@ def compute_reference_image(ops, bin_file):
     nframes = ops['nframes']
     nsamps = np.minimum(ops['nimg_init'], nframes)
     ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
-    frames = utils.get_frames(ops, ix, bin_file)
+    frames = utils.get_frames(
+        Lx=ops['Lx'],
+        Ly=ops['Ly'],
+        xrange=ops['xrange'],
+        yrange=ops['yrange'],
+        ix=ix,
+        bin_file=bin_file,
+        crop=False,
+        badframes=False
+    )
     #frames = subsample_frames(ops, nFramesInit)
     if ops['do_bidiphase'] and ops['bidiphase']==0:
         bidi = bidiphase.compute(frames)

@@ -83,7 +83,7 @@ def spatial_high_pass(data, N):
     return data
 
 
-def get_frames(ops, ix, bin_file, crop=False, badframes=False):
+def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False, badframes=False, bad_frames=None):
     """ get frames ix from bin_file
         frames are cropped by ops['yrange'] and ops['xrange']
 
@@ -103,18 +103,15 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
         mov : int16, array
             frames x Ly x Lx
     """
-    if badframes and 'badframes' in ops:
-        bad_frames = ops['badframes']
+    if badframes and bad_frames:
         try:
             ixx = ix[bad_frames[ix]==0].copy()
             ix = ixx
         except:
             notbad=True
-    Ly = ops['Ly']
-    Lx = ops['Lx']
     nbytesread =  np.int64(Ly*Lx*2)
-    Lyc = ops['yrange'][-1] - ops['yrange'][0]
-    Lxc = ops['xrange'][-1] - ops['xrange'][0]
+    Lyc = yrange[-1] - yrange[0]
+    Lxc = xrange[-1] - xrange[0]
 
     mov = np.zeros((len(ix), Lyc, Lxc), np.int16) if crop else np.zeros((len(ix), Ly, Lx), np.int16)
     # load and bin data
@@ -124,7 +121,7 @@ def get_frames(ops, ix, bin_file, crop=False, badframes=False):
             buff = bfile.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             data = np.reshape(data, (Ly, Lx))
-            mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]] if crop else data
+            mov[i,:,:] = data[yrange[0]:yrange[-1], xrange[0]:xrange[-1]] if crop else data
     return mov
 
 
@@ -183,6 +180,16 @@ def sampled_mean(ops):
             bin_file = ops['reg_file']
         else:
             bin_file = ops['reg_file_chan2']
-    frames = get_frames(ops, ix, bin_file, badframes=True)
+    frames = get_frames(
+        Lx=ops['Lx'],
+        Ly=ops['Ly'],
+        xrange=ops['xrange'],
+        yrange=ops['yrange'],
+        ix=ix,
+        bin_file=bin_file,
+        crop=False,
+        badframes=True,
+        bad_frames=ops['badframes'],
+    )
     refImg = frames.mean(axis=0)
     return refImg

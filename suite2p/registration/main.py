@@ -5,9 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .. import io
-from . import nonrigid
-from .register import compute_reference_image, prepare_refAndMasks, \
-    register_binary_to_ref, apply_shifts_to_binary, compute_crop
+from . import nonrigid, register, nonrigid, rigid, utils, bidiphase
 
 
 def register_binary(ops, refImg=None, raw=True):
@@ -99,17 +97,84 @@ def register_binary(ops, refImg=None, raw=True):
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        refImg, bidi = compute_reference_image(ops, raw_file_align if raw else reg_file_align)
+        bin_file = raw_file_align if raw else reg_file_align
+        nframes = ops['nframes']
+        nsamps = np.minimum(ops['nimg_init'], nframes)
+        ix = np.linspace(0, nframes, 1 + nsamps).astype('int64')[:-1]
+        frames = utils.get_frames(
+            Lx=ops['Lx'],
+            Ly=ops['Ly'],
+            xrange=ops['xrange'],
+            yrange=ops['yrange'],
+            ix=ix,
+            bin_file=bin_file,
+            crop=False,
+            badframes=False
+        )
+        # frames = subsample_frames(ops, nFramesInit)
+        if ops['do_bidiphase'] and ops['bidiphase'] == 0:
+            bidi = bidiphase.compute(frames)
+            print('NOTE: estimated bidiphase offset from data: %d pixels' % bidi)
+        else:
+            bidi = ops['bidiphase']
+        if bidi != 0:
+            bidiphase.shift(frames, bidi)
+        refImg = register.pick_initial_reference(frames)
+
+        ops['bidiphase'] = 0
+        niter = 8
+        for iter in range(0, niter):
+            ops['refImg'] = refImg
+            maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+                refImg0=refImg,
+                spatial_taper=ops['spatial_taper'],
+                smooth_sigma=ops['smooth_sigma'],
+                pad_fft=ops['pad_fft'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+            )
+            freg, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+                data=frames,
+                refAndMasks=[maskMul, maskOffset, cfRefImg],
+                maxregshift=ops['maxregshift'],
+                bidiphase=ops['bidiphase'],
+                bidi_corrected=ops['bidi_corrected'],
+                nblocks=ops['nblocks'],
+                xblock=ops['xblock'],
+                yblock=ops['yblock'],
+                nr_sm=ops['NRsm'],
+                snr_thresh=ops['snr_thresh'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+                maxregshiftNR=ops['maxregshiftNR'],
+                is_nonrigid=ops['nonrigid'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+            )
+            ymax = ymax.astype(np.float32)
+            xmax = xmax.astype(np.float32)
+            isort = np.argsort(-cmax)
+            nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
+            refImg = freg[isort[1:nmax], :, :].mean(axis=0).squeeze().astype(np.int16)
+            dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
+
+            # shift data requires an array of shifts
+            dy = np.array([int(np.round(dy))])
+            dx = np.array([int(np.round(dx))])
+            rigid.shift_data(refImg, dy, dx)
+            refImg = refImg.squeeze()
+
         ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
 
     # register binary to reference image
-    refAndMasks = prepare_refAndMasks(refImg, ops)
+    refAndMasks = register.prepare_refAndMasks(refImg, ops)
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
-    for k, (rigid_offset, nonrigid_offset, data) in tqdm(enumerate(register_binary_to_ref(
+    for k, (rigid_offset, nonrigid_offset, data) in tqdm(enumerate(register.register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -142,7 +207,7 @@ def register_binary(ops, refImg=None, raw=True):
 
     if ops['nchannels'] > 1:
         t0 = time.time()
-        for k, (mean_img, data) in enumerate(apply_shifts_to_binary(
+        for k, (mean_img, data) in enumerate(register.apply_shifts_to_binary(
             batch_size=ops['batch_size'],
             Ly=ops['Ly'],
             Lx=ops['Lx'],
@@ -205,7 +270,7 @@ def register_binary(ops, refImg=None, raw=True):
             print('number of badframes: %d'%ops['badframes'].sum())
 
     # return frames which fall outside range
-    ops['badframes'], ops['yrange'], ops['xrange'] = compute_crop(
+    ops['badframes'], ops['yrange'], ops['xrange'] = register.compute_crop(
         xoff=ops['xoff'],
         yoff=ops['yoff'],
         corrXY=ops['corrXY'],

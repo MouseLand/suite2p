@@ -40,7 +40,7 @@ def mat_upsample(lpad):
 
 Kmat, nup = mat_upsample(lpad)
 
-def make_blocks(ops):
+def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
     """ computes overlapping blocks to split FOV into to register separately
 
     Parameters
@@ -54,44 +54,38 @@ def make_blocks(ops):
         'yblock', 'xblock', 'nblocks', 'NRsm'
 
     """
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    if 'maxregshiftNR' not in ops:
-        ops['maxregshiftNR'] = 5
-    if 'block_size' not in ops:
-        ops['block_size'] = [128, 128]
+    ny = int(np.ceil(1.5 * float(Ly) / block_size[0]))
+    nx = int(np.ceil(1.5 * float(Lx) / block_size[1]))
 
-    ny = int(np.ceil(1.5 * float(Ly) / ops['block_size'][0]))
-    nx = int(np.ceil(1.5 * float(Lx) / ops['block_size'][1]))
-
-    if ops['block_size'][0]>=Ly:
-        ops['block_size'][0] = Ly
+    if block_size[0] >= Ly:
+        block_size[0] = Ly
         ny = 1
-    if ops['block_size'][1]>=Lx:
-        ops['block_size'][1] = Lx
+    if block_size[1] >= Lx:
+        block_size[1] = Lx
         nx = 1
+    nblocks = [ny, nx]
 
-    ystart = np.linspace(0, Ly - ops['block_size'][0], ny).astype('int')
-    xstart = np.linspace(0, Lx - ops['block_size'][1], nx).astype('int')
-    ops['yblock'] = []
-    ops['xblock'] = []
+    ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
+    xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
+    yblock = []
+    xblock = []
     for iy in range(ny):
         for ix in range(nx):
-            yind = np.array([ystart[iy], ystart[iy]+ops['block_size'][0]])
-            xind = np.array([xstart[ix], xstart[ix]+ops['block_size'][1]])
-            ops['yblock'].append(yind)
-            ops['xblock'].append(xind)
-    ops['nblocks'] = [ny, nx]
+            yind = np.array([ystart[iy], ystart[iy] + block_size[0]])
+            xind = np.array([xstart[ix], xstart[ix] + block_size[1]])
+            yblock.append(yind)
+            xblock.append(xind)
 
     ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
     ys = ys.flatten()
     xs = xs.flatten()
-    ds = (ys - ys[:,np.newaxis])**2 + (xs - xs[:,np.newaxis])**2
+    ds = (ys - ys[:, np.newaxis]) ** 2 + (xs - xs[:, np.newaxis]) ** 2
     R = np.exp(-ds)
-    R = R / np.sum(R,axis=0)
-    ops['NRsm'] = R.T
+    R = R / np.sum(R, axis=0)
+    NRsm = R.T
 
-    return ops
+    return yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm
+
 
 def phasecorr_reference(refImg1, ops):
     """ computes taper and fft'ed reference image for phasecorr
@@ -122,7 +116,9 @@ def phasecorr_reference(refImg1, ops):
     """
 
     if 'yblock' not in ops:
-        ops = make_blocks(ops)
+        ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = make_blocks(
+            Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+        )
 
     refImg0=refImg1.copy()
     if ops['1Preg']:

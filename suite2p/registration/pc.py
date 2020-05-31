@@ -49,7 +49,8 @@ def pclowhigh(mov, nlowhigh, nPC):
     return pclow, pchigh, w, v
 
 
-def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, preg=False):
+def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=10,
+                preg=False, snr_thresh=1.25, is_nonrigid=True):
     """ register top and bottom of PCs to each other
 
         Parameters
@@ -78,7 +79,6 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
     """
     # registration settings
     ops = {
-        'num_workers': -1,
         'snr_thresh': 1.25,
         'nonrigid': True,
         'num_workers': -1,
@@ -96,7 +96,10 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
         'spatial_smooth': 2.0
         }
     nPC, ops['Ly'], ops['Lx'] = pclow.shape
-    ops = nonrigid.make_blocks(ops)
+    ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
+        Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+    )
+
     X = np.zeros((nPC,3))
     for i in range(nPC):
         refImg = pclow[i]
@@ -112,10 +115,10 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
             xblock=ops['xblock'],
             yblock=ops['yblock'],
             nr_sm=ops['NRsm'],
-            snr_thresh=ops['snr_thresh'],
+            snr_thresh=snr_thresh,
             smooth_sigma_time=ops['smooth_sigma_time'],
             maxregshiftNR=ops['maxregshiftNR'],
-            is_nonrigid=ops['nonrigid'],
+            is_nonrigid=is_nonrigid,
             reg_1p=ops['1Preg'],
             spatial_hp=ops['spatial_hp'],
             pre_smooth=ops['pre_smooth'],

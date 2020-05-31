@@ -95,7 +95,11 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, nbloc
     ymax, xmax, cmax = rigid.phasecorr(
         data=data_smooth if smooth_sigma_time > 0 else data,
         refAndMasks=refAndMasks[:3],
-        ops=ops
+        maxregshift=ops['maxregshift'],
+        reg_1p=ops['1Preg'],
+        spatial_hp=ops['spatial_hp'],
+        pre_smooth=ops['pre_smooth'],
+        smooth_sigma_time=ops['smooth_sigma_time'],
     )
     rigid.shift_data(data, ymax, xmax)
 

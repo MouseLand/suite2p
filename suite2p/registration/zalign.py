@@ -74,7 +74,15 @@ def compute_zpos(Zreg, ops):
         data = np.float32(np.reshape(data, (-1, Ly, Lx)))
         inds = np.arange(nfr, nfr+data.shape[0], 1, int)
         for z,ref in enumerate(refAndMasks):
-            _, _, zcorr[z,inds] = rigid.phasecorr(data, ref, ops)
+            _, _, zcorr[z, inds] = rigid.phasecorr(
+                data=data,
+                refAndMasks=ref,
+                maxregshift=ops['maxregshift'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+            )
             if z%10 == 1:
                 print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
         print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))

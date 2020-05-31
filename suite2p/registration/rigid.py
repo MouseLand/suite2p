@@ -129,25 +129,25 @@ def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time):
     return ymax, xmax, cmax
 
 
-def phasecorr(data, refAndMasks, ops):
+def phasecorr(data, refAndMasks, maxregshift, reg_1p, spatial_hp, pre_smooth, smooth_sigma_time):
     """ compute registration offsets """
     nimg, Ly, Lx = data.shape
 
     # maximum registration shift allowed
-    maxregshift = np.round(ops['maxregshift'] * np.minimum(Ly, Lx))
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly,Lx)/2.)))
+    maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
+    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
 
     # preprocessing for 1P recordings
-    if ops['1Preg']:
+    if reg_1p:
         data = utils.one_photon_preprocess(
             data=data,
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
+            spatial_hp=spatial_hp,
+            pre_smooth=pre_smooth,
         )
 
-    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
-
+    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time)
     return ymax, xmax, cmax
+
 
 def shift_data(X, ymax, xmax):
     """ rigid shift X by integer shifts ymax and xmax in place (no return)

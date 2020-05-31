@@ -40,13 +40,11 @@ def phasecorr_reference(refImg0, ops):
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
     if ops['1Preg']:
-        refImg, pre_smooth, spatial_hp = utils.one_photon_preprocess(
+        refImg = utils.one_photon_preprocess(
             data=refImg,
-            pre_smooth=ops['pre_smooth'],
             spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
         )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
     refImg = refImg.squeeze()
 
     maskOffset = refImg.mean() * (1. - maskMul)
@@ -145,13 +143,11 @@ def phasecorr(data, refAndMasks, ops):
 
     # preprocessing for 1P recordings
     if ops['1Preg']:
-        data, pre_smooth, spatial_hp = utils.one_photon_preprocess(
+        data = utils.one_photon_preprocess(
             data=data,
-            pre_smooth=ops['pre_smooth'],
             spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
         )
-        ops['pre_smooth'] = pre_smooth
-        ops['spatial_hp'] = spatial_hp
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, ops['smooth_sigma_time'])
 

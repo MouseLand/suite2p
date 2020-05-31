@@ -178,23 +178,6 @@ def compute_crop(ops):
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
 
-    if nonrigid:
-        nb = ops['nblocks'][0] * ops['nblocks'][1]
-        offsets = [
-            np.zeros((0,), np.float32),  # yoff
-            np.zeros((0,), np.float32),  # xoff
-            np.zeros((0,), np.float32),  # corrXY
-            np.zeros((0, nb), np.float32),  # yoff1
-            np.zeros((0, nb), np.float32),  # xoff1
-            np.zeros((0, nb), np.float32),  # corrXY1
-        ]
-    else:
-        offsets = [
-            np.zeros((0,), np.float32),  # yoff
-            np.zeros((0,), np.float32),  # xoff
-            np.zeros((0,), np.float32),  # corrXY
-        ]
-
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
 
@@ -233,6 +216,8 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
             )
+            rigid_offset = [ymax, xmax, cmax]
+            nonrigid_offset = list(yxnr)
 
             data = np.minimum(data, 2 ** 15 - 2)
             # write to reg_file_align
@@ -240,17 +225,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 reg_file_align.seek(-2 * data.size, 1)
             reg_file_align.write(bytearray(data.astype('int16')))
 
-            # compile offsets (dout[1:])
-            offsets[0] = np.hstack((offsets[0], ymax))
-            offsets[1] = np.hstack((offsets[1], xmax))
-            offsets[2] = np.hstack((offsets[2], cmax))
-
-            if nonrigid:
-                offsets[3] = np.vstack((offsets[3], yxnr[0]))
-                offsets[4] = np.vstack((offsets[4], yxnr[1]))
-                offsets[5] = np.vstack((offsets[5], yxnr[2]))
-
-            yield offsets, data
+            yield rigid_offset, nonrigid_offset, data
 
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,

@@ -106,7 +106,8 @@ def register_binary(ops, refImg=None, raw=True):
     # register binary to reference image
     refAndMasks = prepare_refAndMasks(refImg, ops)
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
-    for k, (offsets, data) in tqdm(enumerate(register_binary_to_ref(
+    rigid_offsets, nonrigid_offsets = [], []
+    for k, (rigid_offset, nonrigid_offset, data) in tqdm(enumerate(register_binary_to_ref(
         nbatch=ops['batch_size'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
@@ -126,9 +127,13 @@ def register_binary(ops, refImg=None, raw=True):
             )
             io.save_tiff(data=data, fname=fname)
 
+        rigid_offsets.append(rigid_offset)
+        nonrigid_offsets.append(nonrigid_offset)
         mean_img += data.sum(axis=0) / ops['nframes']
 
-    # mean image across all frames
+    rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
+    nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
+    offsets = rigid_offsets + nonrigid_offsets
 
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img

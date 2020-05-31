@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 from sklearn.decomposition import PCA
 
@@ -33,12 +31,10 @@ def pclowhigh(mov, nlowhigh, nPC):
 
     """
     nframes, Ly, Lx = mov.shape
-    tic=time.time()
     mov = mov.reshape((nframes, -1))
     mov = mov.astype(np.float32)
     mimg = mov.mean(axis=0)
     mov -= mimg
-    tic=time.time()
     pca = PCA(n_components=nPC).fit(mov.T)
     v = pca.components_.T
     w = pca.singular_values_

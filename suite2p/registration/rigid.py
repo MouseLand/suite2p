@@ -19,9 +19,6 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
     ----------
     refImg0 : 2D array, int16
         reference image
-    ops : dictionary
-        'smooth_sigma'
-        (if ```ops['1Preg']```, need 'spatial_taper', 'spatial_hp', 'pre_smooth')
 
     Returns
     -------

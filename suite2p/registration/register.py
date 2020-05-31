@@ -101,22 +101,10 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxre
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
     
-    determines ops['badframes'] which are frames with large outlier shifts
-    (threshold of outlier is ops['th_badframes']) and
-    it excludes these ops['badframes'] when computing valid ranges
+    determines badframes which are frames with large outlier shifts
+    (threshold of outlier is th_badframes) and
+    it excludes these badframes when computing valid ranges
     from registration in y and x
-
-    Parameters
-    ----------
-    ops : dictionary
-        'yoff', 'xoff', 'corrXY', 'badframes', 'maxregshift'
-
-    Returns
-    ----------
-    ops : dictionary
-        'badframes', 'yrange', 'xrange'
-
-
     """
     dx = xoff - medfilt(xoff, 101)
     dy = yoff - medfilt(yoff, 101)

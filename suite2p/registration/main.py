@@ -96,10 +96,7 @@ def register_binary(ops, refImg=None, raw=True):
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        if raw:
-            refImg, bidi = compute_reference_image(ops, raw_file_align)
-        else:
-            refImg, bidi = compute_reference_image(ops, reg_file_align)
+        refImg, bidi = compute_reference_image(ops, raw_file_align if raw else reg_file_align)
         ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg

@@ -177,7 +177,23 @@ def compute_crop(ops):
     return ops
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
-    offsets = init_offsets(nonrigid=ops['nonrigid'], n_blocks=ops['nblocks'])
+
+    if nonrigid:
+        nb = ops['nblocks'][0] * ops['nblocks'][1]
+        offsets = [
+            np.zeros((0,), np.float32),  # yoff
+            np.zeros((0,), np.float32),  # xoff
+            np.zeros((0,), np.float32),  # corrXY
+            np.zeros((0, nb), np.float32),  # yoff1
+            np.zeros((0, nb), np.float32),  # xoff1
+            np.zeros((0, nb), np.float32),  # corrXY1
+        ]
+    else:
+        offsets = [
+            np.zeros((0,), np.float32),  # yoff
+            np.zeros((0,), np.float32),  # xoff
+            np.zeros((0,), np.float32),  # corrXY
+        ]
 
     nbytesread = 2 * Ly * Lx * nbatch
     raw = len(raw_file_align) > 0
@@ -199,7 +215,7 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
 
             data = np.float32(np.reshape(data, (-1, Ly, Lx)))
 
-            dout = compute_motion_and_shift(
+            data, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
                 data=data,
                 bidiphase=ops['bidiphase'],
                 bidi_corrected=ops['bidi_corrected'],
@@ -218,20 +234,21 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 pre_smooth=ops['pre_smooth'],
             )
 
-            data = np.minimum(dout[0], 2 ** 15 - 2)
+            data = np.minimum(data, 2 ** 15 - 2)
             # write to reg_file_align
             if not raw:
                 reg_file_align.seek(-2 * data.size, 1)
             reg_file_align.write(bytearray(data.astype('int16')))
 
             # compile offsets (dout[1:])
-            for n in range(len(dout) - 1):
-                if n < 3:
-                    offsets[n] = np.hstack((offsets[n], dout[n + 1]))
-                else:
-                    # add on nonrigid stats
-                    for m in range(len(dout[-1])):
-                        offsets[n + m] = np.vstack((offsets[n + m], dout[-1][m]))
+            offsets[0] = np.hstack((offsets[0], ymax))
+            offsets[1] = np.hstack((offsets[1], xmax))
+            offsets[2] = np.hstack((offsets[2], cmax))
+
+            if nonrigid:
+                offsets[3] = np.vstack((offsets[3], yxnr[0]))
+                offsets[4] = np.vstack((offsets[4], yxnr[1]))
+                offsets[5] = np.vstack((offsets[5], yxnr[2]))
 
             yield offsets, data
 
@@ -454,22 +471,3 @@ def compute_reference_image(ops, bin_file):
     refImg = iterative_alignment(ops, frames, refImg)
     return refImg, bidi
 
-
-def init_offsets(nonrigid, n_blocks):
-    """ initialize offsets for all frames """
-    if nonrigid:
-        nb = n_blocks[0] * n_blocks[1]
-        return [
-            np.zeros((0,), np.float32),  # yoff
-            np.zeros((0,), np.float32),  # xoff
-            np.zeros((0,), np.float32),  # corrXY
-            np.zeros((0, nb), np.float32),  # yoff1
-            np.zeros((0, nb), np.float32),  # xoff1
-            np.zeros((0, nb), np.float32),  # corrXY1
-        ]
-    else:
-        return [
-            np.zeros((0,), np.float32),  # yoff
-            np.zeros((0,), np.float32),  # xoff
-            np.zeros((0,), np.float32),  # corrXY
-        ]

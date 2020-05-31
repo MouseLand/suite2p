@@ -12,7 +12,7 @@ except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 from . import utils
 
-def phasecorr_reference(refImg0, ops):
+def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=None, reg_1p=None, spatial_hp=None, pre_smooth=None):
     """ computes masks and fft'ed reference image for phasecorr
 
     Parameters
@@ -35,28 +35,24 @@ def phasecorr_reference(refImg0, ops):
     """
     refImg = refImg0.copy()
 
-    maskSlope = ops['spatial_taper'] if '1Preg' in ops and ops['1Preg'] else 3 * ops['smooth_sigma']
+    maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma
     Ly, Lx = refImg.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-    if ops['1Preg']:
-        refImg = utils.one_photon_preprocess(
-            data=refImg,
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
-        )
+    if reg_1p:
+        refImg = utils.one_photon_preprocess(data=refImg, spatial_hp=spatial_hp, pre_smooth=pre_smooth)
     refImg = refImg.squeeze()
 
     maskOffset = refImg.mean() * (1. - maskMul)
 
     # reference image in fourier domain
-    cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if ops.get('pad_fft') else np.conj(fft2(refImg))
+    cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(refImg))
 
     absRef = np.absolute(cfRefImg)
     cfRefImg = cfRefImg / (1e-5 + absRef)
 
     # gaussian filter in space
-    fhg = utils.gaussian_fft(ops['smooth_sigma'], cfRefImg.shape[0], cfRefImg.shape[1])
+    fhg = utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
     cfRefImg *= fhg
 
     maskMul = maskMul.astype('float32')

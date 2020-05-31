@@ -33,7 +33,15 @@ def prepare_refAndMasks(refImg, ops):
         maskMul, maskOffset, cfRefImg (see register.prepare_masks for details)
 
     """
-    maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
+    maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+        refImg0=refImg,
+        spatial_taper=ops['spatial_taper'],
+        smooth_sigma=ops['smooth_sigma'],
+        pad_fft=ops['pad_fft'],
+        reg_1p=ops['1Preg'],
+        spatial_hp=ops['spatial_hp'],
+        pre_smooth=ops['pre_smooth'],
+    )
     if 'nonrigid' in ops and ops['nonrigid']:
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(refImg, ops)
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
@@ -353,7 +361,15 @@ def iterative_alignment(ops, frames, refImg):
     niter = 8
     for iter in range(0,niter):
         ops['refImg'] = refImg
-        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(refImg, ops)
+        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+            refImg0=refImg,
+            spatial_taper=ops['spatial_taper'],
+            smooth_sigma=ops['smooth_sigma'],
+            pad_fft=ops['pad_fft'],
+            reg_1p=ops['1Preg'],
+            spatial_hp=ops['spatial_hp'],
+            pre_smooth=ops['pre_smooth'],
+        )
         freg, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
             data=frames,
             refAndMasks=[maskMul, maskOffset, cfRefImg],

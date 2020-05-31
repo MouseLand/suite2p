@@ -49,7 +49,17 @@ def compute_zpos(Zreg, ops):
     reg_file = open(ops['reg_file'], 'rb')
     refAndMasks = []
     for Z in Zreg:
-        refAndMasks.append(rigid.phasecorr_reference(Z, ops))
+        refAndMasks.append(
+            rigid.phasecorr_reference(
+                refImg0=Z,
+                spatial_taper=ops['spatial_taper'],
+                smooth_sigma=ops['smooth_sigma'],
+                pad_fft=ops['pad_fft'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+            )
+        )
 
     zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
     t0 = time.time()

@@ -27,8 +27,9 @@ setuptools.setup(
       'natsort',
       'rastermap>0.1.0',
       'tifffile',
-      'scanimage-tiff-reader!=1.4.1',
       'tqdm',
+      'scanimage-tiff-reader',
+      'pyqtgraph',
     ],
     tests_require=[
       'pytest',

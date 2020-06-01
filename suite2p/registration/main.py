@@ -236,7 +236,8 @@ def register_binary(ops, refImg=None, raw=True):
 
     if ops['nchannels'] > 1:
         t0 = time.time()
-        for k, (mean_img, data) in enumerate(register.apply_shifts_to_binary(
+        mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
+        for k, data in enumerate(register.apply_shifts_to_binary(
             batch_size=ops['batch_size'],
             Ly=ops['Ly'],
             Lx=ops['Lx'],
@@ -263,9 +264,11 @@ def register_binary(ops, refImg=None, raw=True):
                 )
                 io.save_tiff(data=data, fname=fname)
 
+            mean_img_sum += data.mean(axis=0)
+
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
         meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
-        ops[meanImg_key] = mean_img / (k + 1)
+        ops[meanImg_key] = mean_img_sum / (k + 1)
 
     if 'yoff' not in ops:
         nframes = ops['nframes']

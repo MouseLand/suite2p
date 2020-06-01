@@ -246,7 +246,6 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
     """
     nbytesread = 2 * Ly * Lx * batch_size
     ix = 0
-    meanImg = np.zeros((Ly, Lx))
 
     raw = len(raw_file_alt) > 0
     with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
@@ -277,7 +276,6 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
             if is_nonrigid:
                 data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
             data = np.minimum(data, 2 ** 15 - 2)
-            meanImg += data.mean(axis=0)
 
             # write to binary
             if not raw:
@@ -285,7 +283,8 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
             reg_file_alt.write(bytearray(data.astype('int16')))
 
             ix += nframes
-            yield meanImg, data
+
+            yield data
 
 
 def pick_initial_reference(frames):

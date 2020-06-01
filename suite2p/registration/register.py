@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from typing import Optional
 
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
@@ -131,25 +132,76 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
 
     return badframes, yrange, xrange
 
+
+class BinaryFile:
+
+    def __init__(self, nbatch: int, Ly: int, Lx: int, nframes: int, reg_file_align, raw_file_align):
+        self.nbatch = nbatch
+        self.Ly = Ly
+        self.Lx = Lx
+        self.nframes = nframes
+        self.reg_file_align = open(reg_file_align, mode='wb' if raw_file_align else 'r+b')
+        self.raw_file_align = open(raw_file_align, 'rb') if raw_file_align else None
+        self.nfr = 0
+
+        self._f = None
+        self.can_read = True
+
+    @property
+    def nbytesread(self):
+        return 2 * self.Ly * self.Lx * self.nbatch
+
+    def close(self):
+        self.reg_file_align.close()
+        if self.raw_file_align:
+            self.raw_file_align.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        data = self.read()
+        if data is None:
+            raise StopIteration
+        return data
+
+    def read(self) -> Optional[np.ndarray]:
+        if not self.can_read:
+            raise IOError("BinaryFile needs to write before it can read again.")
+
+        buff = self.raw_file_align.read(self.nbytesread) if self.raw_file_align else self.reg_file_align.read(self.nbytesread)
+        data = np.frombuffer(
+            buff,
+            dtype=np.int16,
+            offset=0
+        ).reshape(-1, self.Ly, self.Lx).astype(np.float32)
+        if (data.size == 0) | (self.nfr >= self.nframes):
+            return None
+        self.nfr += data.size
+        self.can_read = False
+
+        return data
+
+    def write(self, data):
+        if self.can_read:
+            raise IOError("BinaryFile needs to read before it can write again.")
+
+        if not self.raw_file_align:
+            self.reg_file_align.seek(-2 * data.size, 1)
+        self.reg_file_align.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
+        self.can_read = True
+
+
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
 
-    nbytesread = 2 * Ly * Lx * nbatch
-    raw = len(raw_file_align) > 0
-
-    nfr = 0
-    with open(reg_file_align, mode='wb' if raw else 'r+b') as reg_file_align, ExitStack() as stack:
-        if raw:
-            raw_file_align = stack.enter_context(open(raw_file_align, 'rb'))
-
-        while True:
-            data = np.frombuffer(
-                raw_file_align.read(nbytesread) if raw else reg_file_align.read(nbytesread),
-                dtype=np.int16,
-                offset=0
-            ).reshape(-1, Ly, Lx).astype(np.float32)
-            if (data.size == 0) | (nfr >= nframes):
-                break
-            nfr += data.size
+    with BinaryFile(nbatch=nbatch, Ly=Ly, Lx=Lx, nframes=nframes, reg_file_align=reg_file_align, raw_file_align=raw_file_align) as f:
+        for data in f:
 
             data, ymax, xmax, cmax, yxnr = compute_motion_and_shift(
                 data=data,
@@ -169,15 +221,15 @@ def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, ref
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
             )
+
+            # output
             rigid_offset = [ymax, xmax, cmax]
             nonrigid_offset = list(yxnr)
-
-            # write to reg_file_align
-            if not raw:
-                reg_file_align.seek(-2 * data.size, 1)
-            reg_file_align.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-
             yield rigid_offset, nonrigid_offset, data
+
+            f.write(data)
+
+
 
 
 def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,

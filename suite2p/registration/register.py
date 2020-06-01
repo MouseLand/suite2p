@@ -261,6 +261,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
                 break
             data = np.reshape(data, (-1, Ly, Lx))
 
+            yield data
 
 
             nframes = data.shape[0]
@@ -287,7 +288,6 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
 
             nfr += nframes
 
-            yield data
 
 
 def pick_initial_reference(frames):

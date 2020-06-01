@@ -244,25 +244,10 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
     raw_file_align : string
         file to read raw binary from (if not empty)
     """
-    nbytesread = 2 * Ly * Lx * batch_size
+
     nfr = 0
-
-    raw = len(raw_file_alt) > 0
-    with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
-        if raw:
-            raw_file_alt = stack.enter_context(open(raw_file_alt, 'rb'))
-        while True:
-            data = np.frombuffer(
-                raw_file_alt.read(nbytesread) if raw else reg_file_alt.read(nbytesread),
-                dtype=np.int16,
-                offset=0,
-            ).copy()
-            if (data.size == 0) | (nfr >= nframes):
-                break
-            data = np.reshape(data, (-1, Ly, Lx))
-
-            yield data
-
+    with BinaryFile(nbatch=batch_size, Ly=Ly, Lx=Lx, nframes=nframes, reg_file=reg_file_alt, raw_file=raw_file_alt) as f:
+        for data in f:
 
             nframes = data.shape[0]
             iframes = nfr + np.arange(0, nframes, 1, int)
@@ -279,15 +264,11 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
             rigid.shift_data(data, ymax, xmax)
             if is_nonrigid:
                 data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
-            # data = np.minimum(data, 2 ** 15 - 2)
 
-            # write to binary
-            if not raw:
-                reg_file_alt.seek(-2 * data.size, 1)
-            reg_file_alt.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-
+            yield data
             nfr += nframes
 
+            f.write(data)
 
 
 def pick_initial_reference(frames):

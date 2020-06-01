@@ -135,13 +135,13 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
 
 class BinaryFile:
 
-    def __init__(self, nbatch: int, Ly: int, Lx: int, nframes: int, reg_file_align, raw_file_align):
+    def __init__(self, nbatch: int, Ly: int, Lx: int, nframes: int, reg_file: str, raw_file: str):
         self.nbatch = nbatch
         self.Ly = Ly
         self.Lx = Lx
         self.nframes = nframes
-        self.reg_file_align = open(reg_file_align, mode='wb' if raw_file_align else 'r+b')
-        self.raw_file_align = open(raw_file_align, 'rb') if raw_file_align else None
+        self.reg_file = open(reg_file, mode='wb' if raw_file else 'r+b')
+        self.raw_file = open(raw_file, 'rb') if raw_file else None
         self.nfr = 0
 
         self._f = None
@@ -152,9 +152,9 @@ class BinaryFile:
         return 2 * self.Ly * self.Lx * self.nbatch
 
     def close(self):
-        self.reg_file_align.close()
-        if self.raw_file_align:
-            self.raw_file_align.close()
+        self.reg_file.close()
+        if self.raw_file:
+            self.raw_file.close()
 
     def __enter__(self):
         return self
@@ -174,33 +174,27 @@ class BinaryFile:
     def read(self) -> Optional[np.ndarray]:
         if not self.can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
-
-        buff = self.raw_file_align.read(self.nbytesread) if self.raw_file_align else self.reg_file_align.read(self.nbytesread)
-        data = np.frombuffer(
-            buff,
-            dtype=np.int16,
-            offset=0
-        ).reshape(-1, self.Ly, self.Lx).astype(np.float32)
+        buff = self.raw_file.read(self.nbytesread) if self.raw_file else self.reg_file.read(self.nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(np.float32)
         if (data.size == 0) | (self.nfr >= self.nframes):
             return None
         self.nfr += data.size
         self.can_read = False
-
         return data
 
     def write(self, data):
         if self.can_read:
             raise IOError("BinaryFile needs to read before it can write again.")
 
-        if not self.raw_file_align:
-            self.reg_file_align.seek(-2 * data.size, 1)
-        self.reg_file_align.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
+        if not self.raw_file:
+            self.reg_file.seek(-2 * data.size, 1)
+        self.reg_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
         self.can_read = True
 
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
 
-    with BinaryFile(nbatch=nbatch, Ly=Ly, Lx=Lx, nframes=nframes, reg_file_align=reg_file_align, raw_file_align=raw_file_align) as f:
+    with BinaryFile(nbatch=nbatch, Ly=Ly, Lx=Lx, nframes=nframes, reg_file=reg_file_align, raw_file=raw_file_align) as f:
         for data in f:
 
             data, ymax, xmax, cmax, yxnr = compute_motion_and_shift(

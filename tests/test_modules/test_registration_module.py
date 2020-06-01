@@ -4,17 +4,17 @@ from tifffile import imread
 from suite2p import registration
 
 
-def prepare_for_registration(op):
+def prepare_for_registration(op, input_file_name, dimensions):
     """
     Prepares for registration by performing functions of io module. Fills out necessary ops parameters for
     registration module.
     """
     op['reg_tif'] = True
-    op['Ly'] = 256
-    op['Lx'] = 256
+    op['Lx'] = dimensions[0]
+    op['Ly'] = dimensions[1]
     # Make input data non-negative
     input_data = (imread(
-        str(op['data_path'][0].joinpath('registration_data', 'rigid_registration_test_data.tif'))
+        str(input_file_name)
     ) // 2).astype(np.int16)
     bin_file_path = str(Path(op['save_path0']).joinpath('data.bin'))
     # Generate binary file
@@ -29,13 +29,28 @@ class TestSuite2pRegistrationModule:
     """
     Tests for the Suite2p Registration Module
     """
+    def test_register_binary_output_1plane1chan(self, setup_and_teardown, get_test_dir_path):
+        """
+        Regression test that checks the output of register_binary given the `input.tif`.
+        """
+        op, tmp_dir = setup_and_teardown
+        op = prepare_for_registration(
+            op, op['data_path'][0].joinpath('input.tif'), (404, 360)
+        )
+        op = registration.register_binary(op)
+        registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
+        output_check = imread(str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif')))
+        assert np.array_equal(registered_data, output_check)
+
     def test_register_binary_rigid_registration_only(self, setup_and_teardown):
         """
         Tests that register_binary works for a dataset that only has rigid shifts.
         """
         op, tmp_dir = setup_and_teardown
         op['nonrigid'] = False
-        op = prepare_for_registration(op)
+        op = prepare_for_registration(
+            op, op['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
+        )
         op = registration.register_binary(op)
         registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
         # Make sure registered_data is identical across frames
@@ -51,6 +66,7 @@ class TestSuite2pRegistrationModule:
         """
         Tests that register_binary works for a dataset that only has non-rigid shifts.
         """
+        # TODO: Create simple dataset for which you can confirm non-rigid shifts work.
         pass
 
     def test_register_binary_nonrigid_rigid_registration(self, setup_and_teardown):

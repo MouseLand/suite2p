@@ -59,8 +59,7 @@ def register_binary(ops, refImg=None, raw=True):
 
     # get binary file paths
     if raw:
-        raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and
-                'raw_file' in ops and path.isfile(ops['raw_file']))
+        raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and path.isfile(ops['raw_file']))
         raw_file_align = []
         raw_file_alt = []
         reg_file_align = []
@@ -201,7 +200,6 @@ def register_binary(ops, refImg=None, raw=True):
         refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
     else:
         refAndMasks = [maskMul, maskOffset, cfRefImg]
-
 
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []

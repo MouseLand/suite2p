@@ -245,7 +245,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
         file to read raw binary from (if not empty)
     """
     nbytesread = 2 * Ly * Lx * batch_size
-    ix = 0
+    nfr = 0
 
     raw = len(raw_file_alt) > 0
     with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
@@ -257,11 +257,12 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
                 dtype=np.int16,
                 offset=0,
             ).copy()
-            if (data.size == 0) | (ix >= nframes):
+            if (data.size == 0) | (nfr >= nframes):
                 break
-            data = np.reshape(data[:int(np.floor(data.shape[0] / Ly / Lx) * Ly * Lx)], (-1, Ly, Lx))
+            data = np.reshape(data, (-1, Ly, Lx))
+
             nframes = data.shape[0]
-            iframes = ix + np.arange(0, nframes, 1, int)
+            iframes = nfr + np.arange(0, nframes, 1, int)
 
             # get shifts
             ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
@@ -282,7 +283,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
                 reg_file_alt.seek(-2 * data.size, 1)
             reg_file_alt.write(bytearray(data.astype('int16')))
 
-            ix += nframes
+            nfr += nframes
 
             yield data
 

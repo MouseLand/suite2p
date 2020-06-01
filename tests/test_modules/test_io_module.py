@@ -38,11 +38,11 @@ class TestSuite2pIoModule:
 
     def test_h5_to_binary_nonnegative_output(self, setup_and_teardown, get_test_dir_path):
         """
-        Tests if the binary file produced by h5_to_binary contains nonnegative data
+        Tests if the binary file produced by h5_to_binary contains nonnegative data.
         """
-        ops, tmp_dir = setup_and_teardown
-        ops['h5py'] = Path(get_test_dir_path).joinpath('input.h5')
-        ops['data_path'] = []
-        op = io.h5py_to_binary(ops)[0]
+        op, tmp_dir = setup_and_teardown
+        op['h5py'] = Path(get_test_dir_path).joinpath('input.h5')
+        op['data_path'] = []
+        op = io.h5py_to_binary(op)[0]
         output_data = get_binary_file_data(tmp_dir, op)
         assert np.all(output_data >= 0)

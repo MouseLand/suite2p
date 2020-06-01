@@ -142,10 +142,9 @@ class BinaryFile:
         self.nframes = nframes
         self.reg_file = open(reg_file, mode='wb' if raw_file else 'r+b')
         self.raw_file = open(raw_file, 'rb') if raw_file else None
-        self.nfr = 0
 
-        self._f = None
-        self.can_read = True
+        self._nfr = 0
+        self._can_read = True
 
     @property
     def nbytesread(self):
@@ -171,25 +170,25 @@ class BinaryFile:
             raise StopIteration
         return data
 
-    def read(self) -> Optional[np.ndarray]:
-        if not self.can_read:
+    def read(self, dtype=np.float32) -> Optional[np.ndarray]:
+        if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
         buff = self.raw_file.read(self.nbytesread) if self.raw_file else self.reg_file.read(self.nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(np.float32)
-        if (data.size == 0) | (self.nfr >= self.nframes):
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(dtype)
+        if (data.size == 0) | (self._nfr >= self.nframes):
             return None
-        self.nfr += data.size
-        self.can_read = False
+        self._nfr += data.size
+        self._can_read = False
         return data
 
     def write(self, data):
-        if self.can_read:
+        if self._can_read:
             raise IOError("BinaryFile needs to read before it can write again.")
 
         if not self.raw_file:
             self.reg_file.seek(-2 * data.size, 1)
         self.reg_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-        self.can_read = True
+        self._can_read = True
 
 
 def register_binary_to_ref(nbatch: int, Ly: int, Lx: int, nframes: int, ops, refAndMasks, reg_file_align, raw_file_align):
@@ -248,7 +247,7 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
     nbytesread = 2 * Ly * Lx * batch_size
     ix = 0
     meanImg = np.zeros((Ly, Lx))
-    k=0
+
     raw = len(raw_file_alt) > 0
     with open(reg_file_alt, mode='wb' if raw else 'r+b') as reg_file_alt, ExitStack() as stack:
         if raw:
@@ -279,11 +278,11 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
                 data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
             data = np.minimum(data, 2 ** 15 - 2)
             meanImg += data.mean(axis=0)
-            data = data.astype('int16')
+
             # write to binary
             if not raw:
                 reg_file_alt.seek(-2 * data.size, 1)
-            reg_file_alt.write(bytearray(data))
+            reg_file_alt.write(bytearray(data.astype('int16')))
 
             ix += nframes
             yield meanImg, data

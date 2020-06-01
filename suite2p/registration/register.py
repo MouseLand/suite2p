@@ -249,20 +249,19 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
     with BinaryFile(nbatch=batch_size, Ly=Ly, Lx=Lx, nframes=nframes, reg_file=reg_file_alt, raw_file=raw_file_alt) as f:
         for data in f:
 
+            # get shifts
             nframes = data.shape[0]
             iframes = nfr + np.arange(0, nframes, 1, int)
-
-            # get shifts
             ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
-            ymax1, xmax1 = [], []
-            if is_nonrigid:
-                ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
 
             # apply shifts
             if bidiphase_value != 0 and not bidi_corrected:
                 bidiphase.shift(data, bidiphase_value)
+
             rigid.shift_data(data, ymax, xmax)
+
             if is_nonrigid:
+                ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
                 data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
 
             yield data

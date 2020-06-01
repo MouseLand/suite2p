@@ -93,11 +93,12 @@ def choose_tiff_reader(fs0, ops):
     try:
         tif = ScanImageTiffReader(fs0)
         tsize = tif.shape()
-        if len(tsize) < 3:
-            # single page tiffs
-            im = tif.data()
-        else:
-            im = tif.data(beg=0, end=np.minimum(ops['batch_size'], tif.shape()[0]-1))
+        # todo: find out why whis causes "Windows fatal exception: access violation" errors.
+        # if len(tsize) < 3:
+        #     # single page tiffs
+        #     im = tif.data()
+        # else:
+        #     im = tif.data(beg=0, end=np.minimum(ops['batch_size'], tif.shape()[0]-1))
         tif.close()
         sktiff=False
     except:

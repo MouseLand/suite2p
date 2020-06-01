@@ -261,6 +261,8 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
                 break
             data = np.reshape(data, (-1, Ly, Lx))
 
+
+
             nframes = data.shape[0]
             iframes = nfr + np.arange(0, nframes, 1, int)
 
@@ -276,12 +278,12 @@ def apply_shifts_to_binary(batch_size: int, Ly: int, Lx: int, nframes: int,
             rigid.shift_data(data, ymax, xmax)
             if is_nonrigid:
                 data = nonrigid.transform_data(data, nblocks=nblocks, xblock=xblock, yblock=yblock, ymax1=ymax1, xmax1=xmax1)
-            data = np.minimum(data, 2 ** 15 - 2)
+            # data = np.minimum(data, 2 ** 15 - 2)
 
             # write to binary
             if not raw:
                 reg_file_alt.seek(-2 * data.size, 1)
-            reg_file_alt.write(bytearray(data.astype('int16')))
+            reg_file_alt.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
             nfr += nframes
 

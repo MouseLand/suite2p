@@ -16,7 +16,7 @@ def prepare_for_detection(op, input_file_name_list, dimensions, test_utils):
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
-        plane_dir = test_utils.create_plane_dir(op, plane)
+        plane_dir = test_utils.get_plane_dir(op, plane)
         bin_path = test_utils.write_data_to_binary(
             str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
         )
@@ -34,6 +34,21 @@ def prepare_for_detection(op, input_file_name_list, dimensions, test_utils):
     return ops
 
 
+def detect_and_extract_wrapper(ops, test_utils):
+    for plane in range(ops[0]['nplanes']):
+        curr_op = ops[plane]
+        plane_dir = test_utils.get_plane_dir(curr_op, plane)
+        # Detection Part
+        curr_op = extraction.detect_and_extract(curr_op)
+        # Extraction part
+        F = np.load(plane_dir.joinpath('F.npy'))
+        Fneu = np.load(plane_dir.joinpath('Fneu.npy'))
+        dF = F - curr_op['neucoeff'] * Fneu
+        dF = extraction.preprocess(dF, curr_op)
+        spks = extraction.oasis(dF, curr_op)
+        np.save(plane_dir.joinpath('spks.npy'), spks)
+
+
 class TestSuite2pDetectionExtractionModule:
     """
     Tests for the Suite2p Detection and Extraction module.
@@ -46,11 +61,9 @@ class TestSuite2pDetectionExtractionModule:
             op, [[op['data_path'][0].joinpath('detection', 'pre_registered.npy')]], (404, 360),
             test_utils
         )
-        # Detection Part
-        for op in ops:
-            op = extraction.detect_and_extract(op)
+        detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            tmp_dir, ['F', 'Fneu', 'iscell', 'stat'], get_test_dir_path, op['nplanes'], op['nchannels']
+            tmp_dir, ['F', 'Fneu', 'iscell', 'stat', 'spks'], get_test_dir_path, op['nplanes'], op['nchannels']
         )
 
     def test_detection_extraction_output_2plane2chan(self, setup_and_teardown, get_test_dir_path, test_utils):
@@ -69,10 +82,7 @@ class TestSuite2pDetectionExtractionModule:
         )
         ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
         ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
-        # Detection Part
-        for op in ops:
-            op = extraction.detect_and_extract(op)
+        detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            tmp_dir, ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'iscell', 'stat'],
-            get_test_dir_path, op['nplanes'], op['nchannels']
+            tmp_dir, ['F', 'Fneu', 'iscell', 'stat', 'spks'], get_test_dir_path, op['nplanes'], op['nchannels']
         )

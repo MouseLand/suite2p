@@ -12,7 +12,7 @@ class TestUtils:
     """
 
     @staticmethod
-    def create_plane_dir(op, plane):
+    def get_plane_dir(op, plane):
         suite_dir = Path(op['save_path0']).joinpath('suite2p')
         suite_dir.mkdir(exist_ok=True)
         plane_dir = Path(op['save_path0']).joinpath('suite2p').joinpath('plane{}'.format(plane))

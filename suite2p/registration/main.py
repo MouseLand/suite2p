@@ -91,6 +91,7 @@ def register_binary(ops, refImg=None, raw=True):
                 reg_file_align = ops['reg_file']
 
 
+
     # compute reference image
     if refImg is not None:
         print('NOTE: user reference frame given')
@@ -122,6 +123,14 @@ def register_binary(ops, refImg=None, raw=True):
 
         ops['bidiphase'] = 0
         niter = 8
+
+        if ops.get('nonrigid'):
+            if 'yblock' not in ops:
+                ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
+                    'NRsm'] = nonrigid.make_blocks(
+                    Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+                )
+
         for iter in range(0, niter):
             ops['refImg'] = refImg
             maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
@@ -203,29 +212,44 @@ def register_binary(ops, refImg=None, raw=True):
 
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
-    for k, (rigid_offset, nonrigid_offset, data) in tqdm(enumerate(register.register_binary_to_ref(
-        nbatch=ops['batch_size'],
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        nframes=ops['nframes'],
-        ops=ops,
-        refAndMasks=refAndMasks,
-        reg_file_align=reg_file_align,
-        raw_file_align=raw_file_align,
-    ))):
-        if ops['reg_tif']:
-            fname = io.generate_tiff_filename(
-                functional_chan=ops['functional_chan'],
-                align_by_chan=ops['align_by_chan'],
-                save_path=ops['save_path'],
-                k=k,
-                ichan=True
-            )
-            io.save_tiff(data=data, fname=fname)
+    with io.BinaryFile(nbatch=ops['batch_size'], Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
+                             reg_file=reg_file_align, raw_file=raw_file_align) as f:
+        for k, data in tqdm(enumerate(f)):
 
-        rigid_offsets.append(rigid_offset)
-        nonrigid_offsets.append(nonrigid_offset)
-        mean_img += data.sum(axis=0) / ops['nframes']
+            data, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+                data=data,
+                bidiphase=ops['bidiphase'],
+                bidi_corrected=ops['bidi_corrected'],
+                refAndMasks=refAndMasks,
+                maxregshift=ops['maxregshift'],
+                nblocks=ops['nblocks'],
+                xblock=ops['xblock'],
+                yblock=ops['yblock'],
+                nr_sm=ops['NRsm'],
+                snr_thresh=ops['snr_thresh'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+                maxregshiftNR=ops['maxregshiftNR'],
+                is_nonrigid=ops['nonrigid'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+            )
+
+            # output
+            rigid_offsets.append([ymax, xmax, cmax])
+            nonrigid_offsets.append(list(yxnr))
+            mean_img += data.sum(axis=0) / ops['nframes']
+
+            f.write(data)
+            if ops['reg_tif']:
+                fname = io.generate_tiff_filename(
+                    functional_chan=ops['functional_chan'],
+                    align_by_chan=ops['align_by_chan'],
+                    save_path=ops['save_path'],
+                    k=k,
+                    ichan=True
+                )
+                io.save_tiff(data=data, fname=fname)
 
     rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
     nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
@@ -237,34 +261,42 @@ def register_binary(ops, refImg=None, raw=True):
     if ops['nchannels'] > 1:
         t0 = time.time()
         mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
-        for k, data in enumerate(register.apply_shifts_to_binary(
-            batch_size=ops['batch_size'],
-            Ly=ops['Ly'],
-            Lx=ops['Lx'],
-            nframes=ops['nframes'],
-            is_nonrigid=ops['nonrigid'],
-            bidiphase_value=ops['bidiphase'],
-            bidi_corrected=ops['bidi_corrected'],
-            nblocks=ops['nblocks'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
-            offsets=offsets,
-            reg_file_alt=reg_file_alt,
-            raw_file_alt=raw_file_alt,
-        )):
+        nfr = 0
+        with io.BinaryFile(nbatch=ops['batch_size'], Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
+                        reg_file=reg_file_alt, raw_file=raw_file_alt) as f:
 
-            # write registered tiffs
-            if ops['reg_tif_chan2']:
-                fname = io.generate_tiff_filename(
-                    functional_chan=ops['functional_chan'],
-                    align_by_chan=ops['align_by_chan'],
-                    save_path=ops['save_path'],
-                    k=k,
-                    ichan=False
-                )
-                io.save_tiff(data=data, fname=fname)
+            for data in f:
 
-            mean_img_sum += data.mean(axis=0)
+                # get shifts
+                nframes = data.shape[0]
+                iframes = nfr + np.arange(0, nframes, 1, int)
+                nfr += nframes
+                ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
+
+                # apply shifts
+                if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
+                    bidiphase.shift(data, ops['bidiphase'])
+
+                rigid.shift_data(data, ymax, xmax)
+
+                if ops['nonrigid']:
+                    ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
+                    data = nonrigid.transform_data(data, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
+                                                   ymax1=ymax1, xmax1=xmax1)
+
+                # write
+                f.write(data)
+                if ops['reg_tif_chan2']:
+                    fname = io.generate_tiff_filename(
+                        functional_chan=ops['functional_chan'],
+                        align_by_chan=ops['align_by_chan'],
+                        save_path=ops['save_path'],
+                        k=k,
+                        ichan=False
+                    )
+                    io.save_tiff(data=data, fname=fname)
+
+                mean_img_sum += data.mean(axis=0)
 
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
         meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'

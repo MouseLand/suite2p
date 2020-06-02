@@ -1,9 +1,11 @@
+import os
 from os import path
 import time
 
 import numpy as np
 from tqdm import tqdm
 
+from .pc import pclowhigh, pc_register
 from .. import io
 from . import nonrigid, register, nonrigid, rigid, utils, bidiphase
 
@@ -351,3 +353,158 @@ def register_binary(ops, refImg=None, raw=True):
     if 'ops_path' in ops:
         np.save(ops['ops_path'], ops)
     return ops
+
+
+def get_pc_metrics(ops, use_red=False):
+    """ computes registration metrics using top PCs of registered movie
+
+        movie saved as binary file ops['reg_file']
+        metrics saved to ops['regPC'] and ops['X']
+        'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+        'regPC' is average of top and bottom frames for each PC
+        'tPC' is PC across time frames
+
+        Parameters
+        ----------
+        ops : dictionary
+            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+            (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
+        use_red : :obj:`bool`, optional
+            default False, whether to use 'reg_file' or 'reg_file_chan2'
+
+        Returns
+        -------
+            ops : dictionary
+                adds 'regPC' and 'tPC' and 'regDX'
+
+    """
+    nsamp = min(5000, ops['nframes'])  # n frames to pick from full movie
+    if ops['nframes'] < 5000:
+        nsamp = min(2000, ops['nframes'])
+    if ops['Ly'] > 700 or ops['Lx'] > 700:
+        nsamp = min(2000, nsamp)
+    nPC = 30 # n PCs to compute motion for
+    nlowhigh = np.minimum(300,int(ops['nframes']/2))  # n frames to average at ends of PC coefficient sortings
+    ix = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
+
+    mov = utils.get_frames(
+        Lx=ops['Lx'],
+        Ly=ops['Ly'],
+        xrange=ops['xrange'],
+        yrange=ops['yrange'],
+        ix=ix,
+        bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
+        crop=True,
+        badframes=True,
+        bad_frames=ops['badframes']
+    )
+
+    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
+    if 'block_size' not in ops:
+        ops['block_size'] = [128, 128]
+    if 'maxregshiftNR' not in ops:
+        ops['maxregshiftNR'] = 5
+    if 'smooth_sigma' not in ops:
+        ops['smooth_sigma'] = 1.15
+    if 'maxregshift' not in ops:
+        ops['maxregshift'] = 0.1
+    if '1Preg' not in ops:
+        ops['1Preg'] = False
+
+    X = pc_register(pclow, pchigh, spatial_hp=ops['spatial_hp'], pre_smooth=ops['pre_smooth'],
+                       bidi_corrected=ops['bidi_corrected'], smooth_sigma=ops['smooth_sigma'], smooth_sigma_time=ops['smooth_sigma_time'],
+                       block_size=ops['block_size'], maxregshift=ops['maxregshift'], maxregshiftNR=ops['maxregshiftNR'],
+                       reg_1p=ops['1Preg'], snr_thresh=ops['snr_thresh'], is_nonrigid=ops['nonrigid'], pad_fft=ops['pad_fft'],
+                       bidiphase=ops['bidiphase'], spatial_taper=ops['spatial_taper'])
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
+    ops['regDX'] = X
+    ops['tPC'] = v
+
+    return ops
+
+
+def compute_zpos(Zreg, ops):
+    """ compute z position of frames given z-stack Zreg
+
+    Parameters
+    ------------
+
+    Zreg : 3D array
+        size [nplanes x Ly x Lx], z-stack
+
+    ops : dictionary
+        'reg_file' <- binary to register to z-stack, 'smooth_sigma',
+        'Ly', 'Lx', 'batch_size'
+
+
+    """
+    if 'reg_file' not in ops:
+        print('ERROR: no binary')
+        return
+
+    nbatch = ops['batch_size']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread = 2 * Ly * Lx * nbatch
+
+    ops_orig = ops.copy()
+    ops['nonrigid'] = False
+    nplanes, zLy, zLx = Zreg.shape
+    if Zreg.shape[1] != Ly or Zreg.shape[2] != Lx:
+        # padding
+        if Zreg.shape[1] > Ly:
+            Zreg = Zreg[:, ]
+        pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
+        dsmooth = np.concatenate((pad, data, pad), axis=1)
+        pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
+        dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
+
+    nbytes = os.path.getsize(ops['reg_file'])
+    nFrames = int(nbytes/(2 * Ly * Lx))
+
+    reg_file = open(ops['reg_file'], 'rb')
+    refAndMasks = []
+    for Z in Zreg:
+        refAndMasks.append(
+            rigid.phasecorr_reference(
+                refImg0=Z,
+                spatial_taper=ops['spatial_taper'],
+                smooth_sigma=ops['smooth_sigma'],
+                pad_fft=ops['pad_fft'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+            )
+        )
+
+    zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
+    t0 = time.time()
+    k = 0
+    nfr = 0
+    while True:
+        buff = reg_file.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
+        buff = []
+        if (data.size==0) | (nfr >= ops['nframes']):
+            break
+        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
+        inds = np.arange(nfr, nfr+data.shape[0], 1, int)
+        for z,ref in enumerate(refAndMasks):
+            _, _, zcorr[z, inds] = rigid.phasecorr(
+                data=data,
+                refAndMasks=ref,
+                maxregshift=ops['maxregshift'],
+                reg_1p=ops['1Preg'],
+                spatial_hp=ops['spatial_hp'],
+                pre_smooth=ops['pre_smooth'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+            )
+            if z%10 == 1:
+                print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
+        print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
+        nfr += data.shape[0]
+        k+=1
+
+    reg_file.close()
+    ops_orig['zcorr'] = zcorr
+    return ops_orig, zcorr

@@ -6,6 +6,7 @@ import time
 import numpy as np
 from scipy.io import savemat
 
+import suite2p.registration.main
 from . import extraction, io, registration
 
 try:
@@ -271,7 +272,7 @@ def run_s2p(ops={},db={}):
                 do_regmetrics = True
             if do_regmetrics and ops1[ipl]['nframes']>=1500:
                 t0=time.time()
-                ops1[ipl] = registration.get_pc_metrics(ops1[ipl])
+                ops1[ipl] = suite2p.registration.main.get_pc_metrics(ops1[ipl])
                 print('Registration metrics, %0.2f sec.'%(time.time()-t0))
                 np.save(os.path.join(ops1[ipl]['save_path'],'ops.npy'), ops1[ipl])
         roidetect = True

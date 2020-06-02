@@ -8,6 +8,7 @@ from PyQt5 import QtGui, QtCore
 from scipy.ndimage import gaussian_filter1d
 from tifffile import imread
 
+import suite2p.registration.main
 from . import masks, views, graphics, traces, classgui
 from . import utils
 from .io import enable_views_and_classifier
@@ -806,7 +807,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         print('paused')
 
     def compute_z(self):
-        ops, zcorr = registration.compute_zpos(self.zstack, self.ops[0])
+        ops, zcorr = suite2p.registration.main.compute_zpos(self.zstack, self.ops[0])
         self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
         np.save(self.filename, ops)
         self.plot_zcorr()

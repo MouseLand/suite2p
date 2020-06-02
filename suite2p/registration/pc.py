@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 
-from . import rigid, nonrigid, register, utils
+from . import rigid, nonrigid, register
 
 
 def pclowhigh(mov, nlowhigh, nPC):
@@ -49,8 +49,9 @@ def pclowhigh(mov, nlowhigh, nPC):
     return pclow, pchigh, w, v
 
 
-def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=10,
-                preg=False, snr_thresh=1.25, is_nonrigid=True):
+def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_sigma=1.15, smooth_sigma_time=0,
+                block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
+                is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
     """ register top and bottom of PCs to each other
 
         Parameters
@@ -78,27 +79,12 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
                 nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
     """
     # registration settings
-    ops = {
-        'snr_thresh': 1.25,
-        'nonrigid': True,
-        'num_workers': -1,
-        'block_size': np.array(block_size),
-        'maxregshiftNR': np.array(maxregshiftNR),
-        'maxregshift': np.array(maxregshift),
-        'subpixel': 10,
-        'smooth_sigma': smooth_sigma,
-        'smooth_sigma_time': 0,
-        '1Preg': preg,
-        'pad_fft': False,
-        'bidiphase': 0,
-        'refImg': refImg,
-        'spatial_taper': 50.0,
-        'spatial_smooth': 2.0
-        }
-    nPC, ops['Ly'], ops['Lx'] = pclow.shape
-    ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
-        Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-    )
+    block_size = np.array(block_size)
+    maxregshiftNR = np.array(maxregshiftNR)
+    maxregshift = np.array(maxregshift)
+
+    nPC, Ly, Lx = pclow.shape
+    yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm = nonrigid.make_blocks(Ly=Ly, Lx=Lx, maxregshiftNR=maxregshiftNR, block_size=block_size)
 
     X = np.zeros((nPC,3))
     for i in range(nPC):
@@ -107,30 +93,25 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
 
         maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
             refImg0=refImg,
-            spatial_taper=ops['spatial_taper'],
-            smooth_sigma=ops['smooth_sigma'],
-            pad_fft=ops['pad_fft'],
-            reg_1p=ops['1Preg'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
+            spatial_taper=spatial_taper,
+            smooth_sigma=smooth_sigma,
+            pad_fft=pad_fft,
+            reg_1p=reg_1p,
+            spatial_hp=spatial_hp,
+            pre_smooth=pre_smooth,
         )
-        if ops.get('nonrigid'):
-            if 'yblock' not in ops:
-                ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
-                    'NRsm'] = nonrigid.make_blocks(
-                    Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-                )
+        if is_nonrigid:
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg1=refImg,
-                reg_1p=ops['1Preg'],
-                spatial_taper=ops['spatial_taper'],
-                smooth_sigma=ops['smooth_sigma'],
-                spatial_hp=ops['spatial_hp'],
-                pre_smooth=ops['pre_smooth'],
-                yblock=ops['yblock'],
-                xblock=ops['xblock'],
-                pad_fft=ops['pad_fft'],
+                reg_1p=reg_1p,
+                spatial_taper=spatial_taper,
+                smooth_sigma=smooth_sigma,
+                spatial_hp=spatial_hp,
+                pre_smooth=pre_smooth,
+                yblock=yblock,
+                xblock=xblock,
+                pad_fft=pad_fft,
             )
             refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
         else:
@@ -138,21 +119,21 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
 
         dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
             data=Img,
-            bidiphase=ops['bidiphase'],
-            bidi_corrected=ops['bidi_corrected'],
+            bidiphase=bidiphase,
+            bidi_corrected=bidi_corrected,
             refAndMasks=refAndMasks,
-            maxregshift=ops['maxregshift'],
-            nblocks=ops['nblocks'],
-            xblock=ops['xblock'],
-            yblock=ops['yblock'],
-            nr_sm=ops['NRsm'],
+            maxregshift=maxregshift,
+            nblocks=nblocks,
+            xblock=xblock,
+            yblock=yblock,
+            nr_sm=NRsm,
             snr_thresh=snr_thresh,
-            smooth_sigma_time=ops['smooth_sigma_time'],
-            maxregshiftNR=ops['maxregshiftNR'],
+            smooth_sigma_time=smooth_sigma_time,
+            maxregshiftNR=maxregshiftNR,
             is_nonrigid=is_nonrigid,
-            reg_1p=ops['1Preg'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
+            reg_1p=reg_1p,
+            spatial_hp=spatial_hp,
+            pre_smooth=pre_smooth,
         )
         X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
         X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
@@ -160,70 +141,3 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
     return X
 
 
-def get_pc_metrics(ops, use_red=False):
-    """ computes registration metrics using top PCs of registered movie
-
-        movie saved as binary file ops['reg_file']
-        metrics saved to ops['regPC'] and ops['X']
-        'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
-        'regPC' is average of top and bottom frames for each PC
-        'tPC' is PC across time frames
-
-        Parameters
-        ----------
-        ops : dictionary
-            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
-            (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
-        use_red : :obj:`bool`, optional
-            default False, whether to use 'reg_file' or 'reg_file_chan2'
-
-        Returns
-        -------
-            ops : dictionary
-                adds 'regPC' and 'tPC' and 'regDX'
-
-    """
-    nsamp = min(5000, ops['nframes'])  # n frames to pick from full movie
-    if ops['nframes'] < 5000:
-        nsamp = min(2000, ops['nframes'])
-    if ops['Ly'] > 700 or ops['Lx'] > 700:
-        nsamp = min(2000, nsamp)
-    nPC = 30 # n PCs to compute motion for
-    nlowhigh = np.minimum(300,int(ops['nframes']/2))  # n frames to average at ends of PC coefficient sortings
-    ix = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-
-    mov = utils.get_frames(
-        Lx=ops['Lx'],
-        Ly=ops['Ly'],
-        xrange=ops['xrange'],
-        yrange=ops['yrange'],
-        ix=ix,
-        bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
-        crop=True,
-        badframes=True,
-        bad_frames=ops['badframes']
-    )
-
-    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
-    if 'block_size' not in ops:
-        ops['block_size']   = [128, 128]
-    if 'maxregshiftNR' not in ops:
-        ops['maxregshiftNR'] = 5
-    if 'smooth_sigma' not in ops:
-        ops['smooth_sigma'] = 1.15
-    if 'maxregshift' not in ops:
-        ops['maxregshift'] = 0.1
-    if '1Preg' not in ops:
-        ops['1Preg'] = False
-    if 'refImg' in ops:
-        refImg = ops['refImg']
-
-    else:
-        refImg = mov.mean(axis=0)
-    X    = pc_register(pclow, pchigh, refImg,
-                       ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
-    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
-    ops['regDX'] = X
-    ops['tPC'] = v
-
-    return ops

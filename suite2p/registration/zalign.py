@@ -1,97 +1,9 @@
-import os
 import time
 
 import numpy as np
 from scipy.signal import medfilt
 
 from . import nonrigid, rigid
-
-
-def compute_zpos(Zreg, ops):
-    """ compute z position of frames given z-stack Zreg
-    
-    Parameters
-    ------------
-
-    Zreg : 3D array
-        size [nplanes x Ly x Lx], z-stack
-
-    ops : dictionary
-        'reg_file' <- binary to register to z-stack, 'smooth_sigma', 
-        'Ly', 'Lx', 'batch_size'
-
-    
-    """
-    if 'reg_file' not in ops:
-        print('ERROR: no binary')
-        return
-
-    nbatch = ops['batch_size']
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    nbytesread = 2 * Ly * Lx * nbatch
-
-    ops_orig = ops.copy()
-    ops['nonrigid'] = False
-    nplanes, zLy, zLx = Zreg.shape
-    if Zreg.shape[1] != Ly or Zreg.shape[2] != Lx:
-        # padding
-        if Zreg.shape[1] > Ly:
-            Zreg = Zreg[:, ]
-        pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
-        dsmooth = np.concatenate((pad, data, pad), axis=1)
-        pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
-        dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
-
-    nbytes = os.path.getsize(ops['reg_file'])
-    nFrames = int(nbytes/(2 * Ly * Lx))
-
-    reg_file = open(ops['reg_file'], 'rb')
-    refAndMasks = []
-    for Z in Zreg:
-        refAndMasks.append(
-            rigid.phasecorr_reference(
-                refImg0=Z,
-                spatial_taper=ops['spatial_taper'],
-                smooth_sigma=ops['smooth_sigma'],
-                pad_fft=ops['pad_fft'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
-                pre_smooth=ops['pre_smooth'],
-            )
-        )
-
-    zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
-    t0 = time.time()
-    k = 0
-    nfr = 0
-    while True:
-        buff = reg_file.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        buff = []
-        if (data.size==0) | (nfr >= ops['nframes']):
-            break
-        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
-        inds = np.arange(nfr, nfr+data.shape[0], 1, int)
-        for z,ref in enumerate(refAndMasks):
-            _, _, zcorr[z, inds] = rigid.phasecorr(
-                data=data,
-                refAndMasks=ref,
-                maxregshift=ops['maxregshift'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
-                pre_smooth=ops['pre_smooth'],
-                smooth_sigma_time=ops['smooth_sigma_time'],
-            )
-            if z%10 == 1:
-                print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
-        print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
-        nfr += data.shape[0]
-        k+=1
-
-    reg_file.close()
-    ops_orig['zcorr'] = zcorr
-    return ops_orig, zcorr
 
 
 def register_stack(Z, ops):

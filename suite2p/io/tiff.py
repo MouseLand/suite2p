@@ -36,6 +36,7 @@ def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: 
 
 def save_tiff(data: np.ndarray, fname: str) -> None:
     """Save image stack array to tiff file."""
+    data = np.floor(data).astype(np.int16)
     with TiffWriter(fname) as tif:
         for i in range(data.shape[0]):
             tif.save(data[i])

@@ -124,12 +124,12 @@ def register_binary(ops, refImg=None, raw=True):
         ops['bidiphase'] = 0
         niter = 8
 
-        if ops.get('nonrigid'):
-            if 'yblock' not in ops:
-                ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
-                    'NRsm'] = nonrigid.make_blocks(
-                    Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-                )
+
+        if 'yblock' not in ops:
+            ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
+                'NRsm'] = nonrigid.make_blocks(
+                Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+            )
 
         for iter in range(0, niter):
             ops['refImg'] = refImg

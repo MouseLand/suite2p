@@ -1,0 +1,7 @@
+md5: 9440c5f295a4bf4cad4c3f8b6d568856
+outs:
+- md5: 1bc65d48d14cf70d611ba56e7619f638
+  path: pre_registered01.npy
+  cache: true
+  metric: false
+  persist: false

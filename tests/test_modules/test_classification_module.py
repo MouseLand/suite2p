@@ -1,5 +1,5 @@
 import numpy as np
-import suite2p
+from suite2p import classification
 
 
 class TestSuite2pClassificationModule:

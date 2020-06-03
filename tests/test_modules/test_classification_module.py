@@ -16,4 +16,5 @@ class TestSuite2pClassificationModule:
         stat = np.load(get_test_dir_path.joinpath('classification', 'pre_stat.npy'), allow_pickle=True)
         iscell = classification.Classifier(default_cls_file, keys=['npix_norm', 'compact', 'skew']).run(stat)
         expected_output = np.load(get_test_dir_path.joinpath('1plane1chan', 'suite2p', 'plane0', 'iscell.npy'))
-        assert np.array_equal(iscell, expected_output)
+        # Logistic Regression has differences in tolerance due to depndence on C
+        assert np.allclose(iscell, expected_output, atol=1e-4)

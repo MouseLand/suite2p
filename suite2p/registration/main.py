@@ -267,7 +267,6 @@ def register_binary(ops, refImg=None, raw=True):
 
     rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
     nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
-    offsets = rigid_offsets + nonrigid_offsets
 
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
@@ -285,7 +284,7 @@ def register_binary(ops, refImg=None, raw=True):
                 nframes = data.shape[0]
                 iframes = nfr + np.arange(0, nframes, 1, int)
                 nfr += nframes
-                ymax, xmax = offsets[0][iframes].astype(np.int32), offsets[1][iframes].astype(np.int32)
+                ymax, xmax = rigid_offsets[0][iframes].astype(np.int32), rigid_offsets[1][iframes].astype(np.int32)
 
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
@@ -294,7 +293,7 @@ def register_binary(ops, refImg=None, raw=True):
                 rigid.shift_data(data, ymax, xmax)
 
                 if ops['nonrigid']:
-                    ymax1, xmax1 = offsets[3][iframes], offsets[4][iframes]
+                    ymax1, xmax1 = nonrigid_offsets[0][iframes], nonrigid_offsets[1][iframes]
                     data = nonrigid.transform_data(data, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
                                                    ymax1=ymax1, xmax1=xmax1)
 
@@ -316,24 +315,9 @@ def register_binary(ops, refImg=None, raw=True):
         meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
         ops[meanImg_key] = mean_img_sum / (k + 1)
 
-    if 'yoff' not in ops:
-        nframes = ops['nframes']
-        ops['yoff'] = np.zeros((nframes,), np.float32)
-        ops['xoff'] = np.zeros((nframes,), np.float32)
-        ops['corrXY'] = np.zeros((nframes,), np.float32)
-        if ops['nonrigid']:
-            nb = ops['nblocks'][0] * ops['nblocks'][1]
-            ops['yoff1'] = np.zeros((nframes, nb), np.float32)
-            ops['xoff1'] = np.zeros((nframes, nb), np.float32)
-            ops['corrXY1'] = np.zeros((nframes, nb), np.float32)
-
-    ops['yoff'] += offsets[0]
-    ops['xoff'] += offsets[1]
-    ops['corrXY'] += offsets[2]
+    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     if ops['nonrigid']:
-        ops['yoff1'] += offsets[3]
-        ops['xoff1'] += offsets[4]
-        ops['corrXY1'] += offsets[5]
+        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
 
     # compute valid region
     # ignore user-specified bad_frames.npy

@@ -70,11 +70,15 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
     if is_nonrigid and len(refAndMasks)>3:
         # preprocessing for 1P recordings
         if reg_1p:
-            data = utils.one_photon_preprocess(
-                data=data,
-                spatial_hp=spatial_hp,
-                pre_smooth=pre_smooth,
-            )
+            if pre_smooth and pre_smooth % 2:
+                raise ValueError("if set, pre_smooth must be a positive even integer.")
+            if spatial_hp % 2:
+                raise ValueError("spatial_hp must be a positive even integer.")
+            data = data.astype(np.float32)
+
+            if pre_smooth:
+                data = utils.spatial_smooth(data, int(pre_smooth))
+            data = utils.spatial_high_pass(data, int(spatial_hp))
 
         ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
             data=data_smooth if smooth_sigma_time > 0 else data,

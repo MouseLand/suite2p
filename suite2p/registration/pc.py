@@ -103,9 +103,19 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         if is_nonrigid:
 
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
+            # pre filtering for one-photon data
             if reg_1p:
-                refImg = utils.one_photon_preprocess(data=refImg[np.newaxis, :, :], spatial_hp=spatial_hp,
-                                                      pre_smooth=pre_smooth)
+                data = refImg[np.newaxis, :, :]
+                if pre_smooth and pre_smooth % 2:
+                    raise ValueError("if set, pre_smooth must be a positive even integer.")
+                if spatial_hp % 2:
+                    raise ValueError("spatial_hp must be a positive even integer.")
+                data = data.astype(np.float32)
+                if pre_smooth:
+                    data = utils.spatial_smooth(data, int(pre_smooth))
+                data = utils.spatial_high_pass(data, int(spatial_hp))
+                refImg = data
+
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg0=refImg,

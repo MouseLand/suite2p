@@ -201,8 +201,17 @@ def register_binary(ops, refImg=None, raw=True):
 
         maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
         if ops['1Preg']:
-            refImg = utils.one_photon_preprocess(data=refImg[np.newaxis, :, :], spatial_hp=ops['spatial_hp'],
-                                                  pre_smooth=ops['pre_smooth'])
+            data = refImg[np.newaxis, :, :]
+            if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                raise ValueError("if set, pre_smooth must be a positive even integer.")
+            if ops['spatial_hp'] % 2:
+                raise ValueError("spatial_hp must be a positive even integer.")
+            data = data.astype(np.float32)
+
+            if ops['pre_smooth']:
+                data = utils.spatial_smooth(data, int(ops['pre_smooth']))
+            data = utils.spatial_high_pass(data, int(ops['spatial_hp']))
+            refImg = data
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
             refImg0=refImg,

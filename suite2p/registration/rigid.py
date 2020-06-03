@@ -37,7 +37,18 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
     if reg_1p:
-        refImg = utils.one_photon_preprocess(data=refImg, spatial_hp=spatial_hp, pre_smooth=pre_smooth)
+        data = refImg
+        if pre_smooth and pre_smooth % 2:
+            raise ValueError("if set, pre_smooth must be a positive even integer.")
+        if spatial_hp % 2:
+            raise ValueError("spatial_hp must be a positive even integer.")
+        data = data.astype(np.float32)
+
+        if pre_smooth:
+            data = utils.spatial_smooth(data, int(pre_smooth))
+        data = utils.spatial_high_pass(data, int(spatial_hp))
+        refImg = data
+
     refImg = refImg.squeeze()
 
     maskOffset = refImg.mean() * (1. - maskMul)
@@ -136,11 +147,15 @@ def phasecorr(data, refAndMasks, maxregshift, reg_1p, spatial_hp, pre_smooth, sm
 
     # preprocessing for 1P recordings
     if reg_1p:
-        data = utils.one_photon_preprocess(
-            data=data,
-            spatial_hp=spatial_hp,
-            pre_smooth=pre_smooth,
-        )
+        if pre_smooth and pre_smooth % 2:
+            raise ValueError("if set, pre_smooth must be a positive even integer.")
+        if spatial_hp % 2:
+            raise ValueError("spatial_hp must be a positive even integer.")
+        data = data.astype(np.float32)
+
+        if pre_smooth:
+            data = utils.spatial_smooth(data, int(pre_smooth))
+        data = utils.spatial_high_pass(data, int(spatial_hp))
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time)
     return ymax, xmax, cmax

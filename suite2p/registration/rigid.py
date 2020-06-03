@@ -1,8 +1,6 @@
 import warnings
 
 import numpy as np
-from numba import vectorize
-from numpy import fft
 from scipy.fftpack import next_fast_len
 from scipy.ndimage import gaussian_filter1d
 
@@ -70,19 +68,16 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
     return maskMul, maskOffset, cfRefImg
 
 
-@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
-def addmultiplytype(x,y,z):
-    return np.complex64(np.float32(x)*y + z)
-
 def clip(X, lcorr):
     """ perform 2D fftshift and crop with lcorr """
-    x00 = X[:,  :lcorr+1, :lcorr+1]
-    x11 = X[:,  -lcorr:, -lcorr:]
-    x01 = X[:,  :lcorr+1, -lcorr:]
-    x10 = X[:,  -lcorr:, :lcorr+1]
+    x00 = X[:, :lcorr+1, :lcorr+1]
+    x11 = X[:, -lcorr:, -lcorr:]
+    x01 = X[:, :lcorr+1, -lcorr:]
+    x10 = X[:, -lcorr:, :lcorr+1]
     return x00, x01, x10, x11
 
-def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time):
+
+def phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time):
     """ compute phase correlation between data and reference image
 
     Parameters
@@ -106,21 +101,14 @@ def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time):
         maximum of phase correlation for each frame
 
     """
-    maskMul    = refAndMasks[0]
-    maskOffset = refAndMasks[1]
-    cfRefImg   = refAndMasks[2].squeeze()
-
     nimg = data.shape[0]
-    ly,lx = cfRefImg.shape[-2:]
-    lyhalf = int(np.floor(ly/2))
-    lxhalf = int(np.floor(lx/2))
 
     # shifts and corrmax
     ymax = np.zeros((nimg,), np.int32)
     xmax = np.zeros((nimg,), np.int32)
     cmax = np.zeros((nimg,), np.float32)
 
-    X = addmultiplytype(data, maskMul, maskOffset)
+    X = utils.addmultiplytype(data, maskMul, maskOffset)
     for t in range(X.shape[0]):
         fft2(X[t], overwrite_x=True)
     X = utils.apply_dotnorm(X, cfRefImg)
@@ -137,7 +125,7 @@ def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time):
     return ymax, xmax, cmax
 
 
-def phasecorr(data, refAndMasks, maxregshift, smooth_sigma_time):
+def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):
     """ compute registration offsets """
 
     nimg, Ly, Lx = data.shape
@@ -146,7 +134,7 @@ def phasecorr(data, refAndMasks, maxregshift, smooth_sigma_time):
     maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
 
-    ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time)
+    ymax, xmax, cmax = phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time)
     return ymax, xmax, cmax
 
 

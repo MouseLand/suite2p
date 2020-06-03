@@ -67,9 +67,14 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
         data = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else data, int(spatial_hp))
 
     # rigid registration
+    maskMul, maskOffset, cfRefImg = refAndMasks[:3]
+    cfRefImg = cfRefImg.squeeze()
+
     ymax, xmax, cmax = rigid.phasecorr(
         data=data_smooth if smooth_sigma_time > 0 else data,
-        refAndMasks=refAndMasks[:3],
+        maskMul=maskMul,
+        maskOffset=maskOffset,
+        cfRefImg=cfRefImg,
         maxregshift=maxregshift,
         smooth_sigma_time=smooth_sigma_time,
     )

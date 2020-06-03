@@ -489,9 +489,14 @@ def compute_zpos(Zreg, ops):
                     data = utils.spatial_smooth(data, int(ops['pre_smooth']))
                 data = utils.spatial_high_pass(data, int(ops['spatial_hp']))
 
+            maskMul, maskOffset, cfRefImg = ref
+            cfRefImg = cfRefImg.squeeze()
+
             _, _, zcorr[z, inds] = rigid.phasecorr(
                 data=data,
-                refAndMasks=ref,
+                maskMul=maskMul,
+                maskOffset=maskOffset,
+                cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )

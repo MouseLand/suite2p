@@ -18,6 +18,11 @@ def apply_dotnorm(Y, cfRefImg):
     return x
 
 
+@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel')
+def addmultiplytype(x,y,z):
+    return np.complex64(np.float32(x)*y + z)
+
+
 def gaussian_fft(sig, Ly, Lx):
     ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
     x = np.arange(0, Lx)

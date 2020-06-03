@@ -1,13 +1,14 @@
 import os
 from os import path
 import time
+from warnings import warn
 
 import numpy as np
 from tqdm import tqdm
 
 from .pc import pclowhigh, pc_register
 from .. import io
-from . import nonrigid, register, nonrigid, rigid, utils, bidiphase
+from . import register, nonrigid, rigid, utils, bidiphase
 
 
 def register_binary(ops, refImg=None, raw=True):
@@ -46,18 +47,18 @@ def register_binary(ops, refImg=None, raw=True):
             Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
         )
 
-    if not ops['frames_include'] == -1:
+    # set number of frames and print warnings
+    if ops['frames_include'] != -1:
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
     else:
         nbytes = path.getsize(ops['raw_file'] if ops.get('keep_movie_raw') and path.exists(ops['raw_file']) else ops['reg_file'])
         ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx']))
 
     print('registering %d frames'%ops['nframes'])
-    # check number of frames and print warnings
-    if ops['nframes']<50:
-        raise Exception('ERROR: the total number of frames should be at least 50 ')
-    if ops['nframes']<200:
-        print('WARNING: number of frames is below 200, unpredictable behaviors may occur')
+    if ops['nframes'] < 50:
+        raise ValueError('the total number of frames should be at least 50.')
+    if ops['nframes'] < 200:
+        warn('number of frames is below 200, unpredictable behaviors may occur.')
 
     # get binary file paths
     if raw:

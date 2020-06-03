@@ -168,13 +168,12 @@ def shift_data(X, ymax, xmax):
     ----------
     X : int16
         array that's frames x Ly x Lx
-    ymax : int
+    ymax : np.ndarray
         shifts in y from cfRefImg to data for each frame
-    xmax : int
+    xmax : np.ndarray
         shifts in x from cfRefImg to data for each frame
 
     """
-
     ymax = ymax.flatten()
     xmax = xmax.flatten()
     if X.ndim<3:
@@ -182,10 +181,4 @@ def shift_data(X, ymax, xmax):
     nimg, Ly, Lx = X.shape
     for n in range(nimg):
         X[n] = np.roll(X[n].copy(), (-ymax[n], -xmax[n]), axis=(0,1))
-        #yrange = np.arange(0, Ly,1,int) + ymax[n]
-        #xrange = np.arange(0, Lx,1,int) + xmax[n]
-        #yrange = yrange[np.logical_or(yrange<0, yrange>Ly-1)] - ymax[n]
-        #xrange = xrange[np.logical_or(xrange<0, xrange>Lx-1)] - xmax[n]
-        #X[n][yrange, :] = m0
-        #X[n][:, xrange] = m0
 

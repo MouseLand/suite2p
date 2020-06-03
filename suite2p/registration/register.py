@@ -102,10 +102,6 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
     ymax = Ly - ymin
     xmin = np.ceil(np.abs(xoff[np.logical_not(badframes)]).max())
     xmax = Lx - xmin
-    # ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(badframes)])))
-    # ymax = Ly + np.minimum(0, np.floor(np.amin(yoff)))
-    # xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(badframes)])))
-    # xmax = Lx + np.minimum(0, np.floor(np.amin(xoff)))
     yrange = [int(ymin), int(ymax)]
     xrange = [int(xmin), int(xmax)]
 

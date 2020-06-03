@@ -55,14 +55,8 @@ def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
 
     ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
     xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
-    yblock = []
-    xblock = []
-    for iy in range(ny):
-        for ix in range(nx):
-            yind = np.array([ystart[iy], ystart[iy] + block_size[0]])
-            xind = np.array([xstart[ix], xstart[ix] + block_size[1]])
-            yblock.append(yind)
-            xblock.append(xind)
+    yblock = [np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny) for ix in range(nx)]
+    xblock = [np.array([xstart[ix], xstart[ix] + block_size[1]]) for iy in range(ny) for ix in range(nx)]
 
     ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
     ys = ys.flatten()

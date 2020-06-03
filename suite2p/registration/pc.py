@@ -132,25 +132,34 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
-        dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+        dwrite, ymax, xmax, cmax = register.compute_motion_and_shift(
             data=Img,
             refAndMasks=refAndMasks,
             maxregshift=maxregshift,
-            nblocks=nblocks,
-            xblock=xblock,
-            yblock=yblock,
-            nr_sm=NRsm,
-            snr_thresh=snr_thresh,
             smooth_sigma_time=smooth_sigma_time,
-            maxregshiftNR=maxregshiftNR,
-            is_nonrigid=is_nonrigid,
             reg_1p=reg_1p,
             spatial_hp=spatial_hp,
             pre_smooth=pre_smooth,
         )
-        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
-        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+
+
+        # non-rigid registration
+        if is_nonrigid and len(refAndMasks) > 3:
+            dwrite, yxnr = nonrigid.shift(
+                data=dwrite,
+                refAndMasks=refAndMasks,
+                nblocks=nblocks,
+                xblock=xblock,
+                yblock=yblock,
+                nr_sm=NRsm,
+                snr_thresh=snr_thresh,
+                smooth_sigma_time=smooth_sigma_time,
+                maxregshiftNR=maxregshiftNR
+            )
+
+            X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
+            X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
+            X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
     return X
 
 

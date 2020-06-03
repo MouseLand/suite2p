@@ -139,22 +139,16 @@ def register_binary(ops, refImg=None, raw=True):
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(frames, ops['bidiphase'])
 
-            freg, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+            freg, ymax, xmax, cmax = register.compute_motion_and_shift(
                 data=frames,
                 refAndMasks=[maskMul, maskOffset, cfRefImg],
                 maxregshift=ops['maxregshift'],
-                nblocks=ops['nblocks'],
-                xblock=ops['xblock'],
-                yblock=ops['yblock'],
-                nr_sm=ops['NRsm'],
-                snr_thresh=ops['snr_thresh'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
-                maxregshiftNR=ops['maxregshiftNR'],
-                is_nonrigid=ops['nonrigid'],
                 reg_1p=ops['1Preg'],
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
             )
+
             ymax = ymax.astype(np.float32)
             xmax = xmax.astype(np.float32)
             isort = np.argsort(-cmax)
@@ -225,26 +219,32 @@ def register_binary(ops, refImg=None, raw=True):
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(data, ops['bidiphase'])
 
-            data, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
+            data, ymax, xmax, cmax = register.compute_motion_and_shift(
                 data=data,
                 refAndMasks=refAndMasks,
                 maxregshift=ops['maxregshift'],
-                nblocks=ops['nblocks'],
-                xblock=ops['xblock'],
-                yblock=ops['yblock'],
-                nr_sm=ops['NRsm'],
-                snr_thresh=ops['snr_thresh'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
-                maxregshiftNR=ops['maxregshiftNR'],
-                is_nonrigid=ops['nonrigid'],
                 reg_1p=ops['1Preg'],
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
             )
-
-            # output
             rigid_offsets.append([ymax, xmax, cmax])
-            nonrigid_offsets.append(list(yxnr))
+
+            # non-rigid registration
+            if ops['nonrigid'] and len(refAndMasks) > 3:
+                data, yxnr = nonrigid.shift(
+                    data=data,
+                    refAndMasks=refAndMasks,
+                    nblocks=ops['nblocks'],
+                    xblock=ops['xblock'],
+                    yblock=ops['yblock'],
+                    nr_sm=ops['NRsm'],
+                    snr_thresh=ops['snr_thresh'],
+                    smooth_sigma_time=ops['smooth_sigma_time'],
+                    maxregshiftNR=ops['maxregshiftNR']
+                )
+                nonrigid_offsets.append(list(yxnr))
+
             mean_img += data.sum(axis=0) / ops['nframes']
 
             f.write(data)

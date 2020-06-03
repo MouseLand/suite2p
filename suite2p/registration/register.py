@@ -17,10 +17,7 @@ from . import bidiphase, nonrigid, utils, rigid
 #    HAS_GPU=False
 
 
-def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yblock,
-                             nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
-                             is_nonrigid, reg_1p, spatial_hp, pre_smooth,
-                             ):
+def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, reg_1p, spatial_hp, pre_smooth,):
     """ register data matrix to reference image and shift
 
     need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft'ed masks;
@@ -50,7 +47,6 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
 
     """
 
-    yxnr = []
     if smooth_sigma_time > 0:
         data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
 
@@ -80,20 +76,7 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
     )
     rigid.shift_data(data, ymax, xmax)
 
-    # non-rigid registration
-    if is_nonrigid and len(refAndMasks)>3:
-        data, yxnr = nonrigid.shift(
-            data=data,
-            refAndMasks=refAndMasks,
-            nblocks=nblocks,
-            xblock=xblock,
-            yblock=yblock,
-            nr_sm=nr_sm,
-            snr_thresh=snr_thresh,
-            smooth_sigma_time=smooth_sigma_time,
-            maxregshiftNR=maxregshiftNR
-        )
-    return data, ymax, xmax, cmax, yxnr
+    return data, ymax, xmax, cmax
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion

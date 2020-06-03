@@ -197,10 +197,12 @@ def register_binary(ops, refImg=None, raw=True):
                 Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
             )
 
+        maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
+
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-            refImg1=refImg,
+            refImg=refImg,
             reg_1p=ops['1Preg'],
-            spatial_taper=ops['spatial_taper'],
+            maskSlope=maskSlope,
             smooth_sigma=ops['smooth_sigma'],
             spatial_hp=ops['spatial_hp'],
             pre_smooth=ops['pre_smooth'],

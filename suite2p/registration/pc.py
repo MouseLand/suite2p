@@ -102,10 +102,12 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         )
         if is_nonrigid:
 
+            maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
+
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-                refImg1=refImg,
+                refImg=refImg,
                 reg_1p=reg_1p,
-                spatial_taper=spatial_taper,
+                maskSlope=maskSlope,
                 smooth_sigma=smooth_sigma,
                 spatial_hp=spatial_hp,
                 pre_smooth=pre_smooth,

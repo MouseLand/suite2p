@@ -82,23 +82,16 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
 
     # non-rigid registration
     if is_nonrigid and len(refAndMasks)>3:
-        ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
-            data=data_smooth if smooth_sigma_time > 0 else data,
-            refAndMasks=refAndMasks[3:],
-            snr_thresh=snr_thresh,
-            NRsm=nr_sm,
-            xblock=xblock,
-            yblock=yblock,
-            maxregshiftNR=maxregshiftNR,
-        )
-        yxnr = [ymax1, xmax1, cmax1]
-        data = nonrigid.transform_data(
+        data, yxnr = nonrigid.shift(
             data=data,
+            refAndMasks=refAndMasks,
             nblocks=nblocks,
             xblock=xblock,
             yblock=yblock,
-            ymax1=ymax1,
-            xmax1=xmax1
+            nr_sm=nr_sm,
+            snr_thresh=snr_thresh,
+            smooth_sigma_time=smooth_sigma_time,
+            maxregshiftNR=maxregshiftNR
         )
     return data, ymax, xmax, cmax, yxnr
 

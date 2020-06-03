@@ -5,6 +5,7 @@ import numpy as np
 from numba import vectorize, float32, int32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
+from scipy.ndimage import gaussian_filter1d
 
 try:
     from mkl_fft import fft2, ifft2
@@ -467,3 +468,28 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     # use shifts and do bilinear interpolation
     shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y
+
+
+def shift(data, refAndMasks, nblocks, xblock, yblock, nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR):
+    if smooth_sigma_time > 0:
+        data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
+
+    ymax1, xmax1, cmax1, _ = phasecorr(
+        data=data_smooth if smooth_sigma_time > 0 else data,
+        refAndMasks=refAndMasks[3:],
+        snr_thresh=snr_thresh,
+        NRsm=nr_sm,
+        xblock=xblock,
+        yblock=yblock,
+        maxregshiftNR=maxregshiftNR,
+    )
+    yxnr = [ymax1, xmax1, cmax1]
+    data = transform_data(
+        data=data,
+        nblocks=nblocks,
+        xblock=xblock,
+        yblock=yblock,
+        ymax1=ymax1,
+        xmax1=xmax1
+    )
+    return data, yxnr

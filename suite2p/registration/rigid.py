@@ -30,14 +30,8 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
         reference image fft'ed and complex conjugate and multiplied by gaussian
         filter in the fft domain with standard deviation 'smooth_sigma'
     """
-    refImg = refImg0.copy()
-
-    maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma
-    Ly, Lx = refImg.shape
-    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
-
     if reg_1p:
-        data = refImg
+        data = refImg0
         if pre_smooth and pre_smooth % 2:
             raise ValueError("if set, pre_smooth must be a positive even integer.")
         if spatial_hp % 2:
@@ -47,7 +41,13 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
         if pre_smooth:
             data = utils.spatial_smooth(data, int(pre_smooth))
         data = utils.spatial_high_pass(data, int(spatial_hp))
-        refImg = data
+        refImg0 = data
+
+    refImg = refImg0.copy()
+
+    maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma
+    Ly, Lx = refImg.shape
+    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
     refImg = refImg.squeeze()
 

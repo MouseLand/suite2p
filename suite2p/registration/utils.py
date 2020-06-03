@@ -67,7 +67,7 @@ def spatial_high_pass(data, N):
     return data
 
 
-def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False, badframes=False, bad_frames=None):
+def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False):
     """ get frames ix from bin_file
         frames are cropped by ops['yrange'] and ops['xrange']
 
@@ -87,12 +87,6 @@ def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False, badframes=False
         mov : int16, array
             frames x Ly x Lx
     """
-    if badframes and bad_frames:
-        try:
-            ixx = ix[bad_frames[ix]==0].copy()
-            ix = ixx
-        except:
-            notbad=True
     nbytesread =  np.int64(Ly*Lx*2)
     Lyc = yrange[-1] - yrange[0]
     Lxc = xrange[-1] - xrange[0]
@@ -100,11 +94,11 @@ def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False, badframes=False
     mov = np.zeros((len(ix), Lyc, Lxc), np.int16) if crop else np.zeros((len(ix), Ly, Lx), np.int16)
     # load and bin data
     with open(bin_file, 'rb') as bfile:
-        for i in range(len(ix)):
-            bfile.seek(nbytesread*ix[i], 0)
+        for mov_i, ixx in zip(mov, ix):
+            bfile.seek(nbytesread * ixx, 0)
             buff = bfile.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
             data = np.reshape(data, (Ly, Lx))
-            mov[i,:,:] = data[yrange[0]:yrange[-1], xrange[0]:xrange[-1]] if crop else data
+            mov_i[:, :] = data[yrange[0]:yrange[-1], xrange[0]:xrange[-1]] if crop else data
     return mov
 

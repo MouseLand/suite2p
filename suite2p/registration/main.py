@@ -110,10 +110,8 @@ def register_binary(ops, refImg=None, raw=True):
             yrange=ops['yrange'],
             ix=ix,
             bin_file=bin_file,
-            crop=False,
-            badframes=False
+            crop=False
         )
-        # frames = subsample_frames(ops, nFramesInit)
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:
             bidi = bidiphase.compute(frames)
             print('NOTE: estimated bidiphase offset from data: %d pixels' % bidi)

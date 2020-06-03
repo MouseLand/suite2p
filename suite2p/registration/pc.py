@@ -119,10 +119,11 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         else:
             refAndMasks = [maskMul, maskOffset, cfRefImg]
 
+        if bidiphase and not bidi_corrected:
+            bidiphase.shift(Img, bidiphase)
+
         dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
             data=Img,
-            bidiphase=bidiphase,
-            bidi_corrected=bidi_corrected,
             refAndMasks=refAndMasks,
             maxregshift=maxregshift,
             nblocks=nblocks,

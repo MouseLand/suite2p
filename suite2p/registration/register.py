@@ -17,7 +17,7 @@ from . import bidiphase, nonrigid, utils, rigid
 #    HAS_GPU=False
 
 
-def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxregshift, nblocks, xblock, yblock,
+def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yblock,
                              nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR,
                              is_nonrigid, reg_1p, spatial_hp, pre_smooth,
                              ):
@@ -49,9 +49,6 @@ def compute_motion_and_shift(data, bidiphase, bidi_corrected, refAndMasks, maxre
         ymax, xmax and cmax from the non-rigid registration
 
     """
-
-    if bidiphase and not bidi_corrected:
-        bidiphase.shift(data, bidiphase)
 
     yxnr = []
     if smooth_sigma_time > 0:

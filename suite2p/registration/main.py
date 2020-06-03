@@ -144,12 +144,14 @@ def register_binary(ops, refImg=None, raw=True):
                 spatial_hp=ops['spatial_hp'],
                 pre_smooth=ops['pre_smooth'],
             )
+
+            if ops['bidiphase'] and not ops['bidi_corrected']:
+                bidiphase.shift(frames, ops['bidiphase'])
+
             freg, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
                 data=frames,
                 refAndMasks=[maskMul, maskOffset, cfRefImg],
                 maxregshift=ops['maxregshift'],
-                bidiphase=ops['bidiphase'],
-                bidi_corrected=ops['bidi_corrected'],
                 nblocks=ops['nblocks'],
                 xblock=ops['xblock'],
                 yblock=ops['yblock'],
@@ -220,10 +222,11 @@ def register_binary(ops, refImg=None, raw=True):
                              reg_file=reg_file_align, raw_file=raw_file_align) as f:
         for k, data in tqdm(enumerate(f)):
 
+            if ops['bidiphase'] and not ops['bidi_corrected']:
+                bidiphase.shift(data, ops['bidiphase'])
+
             data, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(
                 data=data,
-                bidiphase=ops['bidiphase'],
-                bidi_corrected=ops['bidi_corrected'],
                 refAndMasks=refAndMasks,
                 maxregshift=ops['maxregshift'],
                 nblocks=ops['nblocks'],
@@ -456,8 +459,8 @@ def compute_zpos(Zreg, ops):
         # padding
         if Zreg.shape[1] > Ly:
             Zreg = Zreg[:, ]
-        pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
-        dsmooth = np.concatenate((pad, data, pad), axis=1)
+        pad = np.zeros((nplanes, int(N/2), zLx))
+        dsmooth = np.concatenate((pad, Zreg, pad), axis=1)
         pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
         dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
 

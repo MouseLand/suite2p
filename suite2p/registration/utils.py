@@ -1,11 +1,8 @@
 import warnings
-from typing import Optional
 
 import numpy as np
 from numba import vectorize, complex64
 from numpy import fft
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter1d
 
 try:
     from mkl_fft import fft2, ifft2

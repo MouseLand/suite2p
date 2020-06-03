@@ -198,14 +198,14 @@ def register_binary(ops, refImg=None, raw=True):
             )
 
         maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
+        if ops['1Preg']:
+            refImg = utils.one_photon_preprocess(data=refImg[np.newaxis, :, :], spatial_hp=ops['spatial_hp'],
+                                                  pre_smooth=ops['pre_smooth'])
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-            refImg=refImg,
-            reg_1p=ops['1Preg'],
+            refImg0=refImg,
             maskSlope=maskSlope,
             smooth_sigma=ops['smooth_sigma'],
-            spatial_hp=ops['spatial_hp'],
-            pre_smooth=ops['pre_smooth'],
             yblock=ops['yblock'],
             xblock=ops['xblock'],
             pad_fft=ops['pad_fft'],

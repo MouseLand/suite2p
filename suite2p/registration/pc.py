@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 
-from . import rigid, nonrigid, register
+from . import rigid, nonrigid, register, utils
 
 
 def pclowhigh(mov, nlowhigh, nPC):
@@ -103,14 +103,14 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         if is_nonrigid:
 
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
+            if reg_1p:
+                refImg = utils.one_photon_preprocess(data=refImg[np.newaxis, :, :], spatial_hp=spatial_hp,
+                                                      pre_smooth=pre_smooth)
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-                refImg=refImg,
-                reg_1p=reg_1p,
+                refImg0=refImg,
                 maskSlope=maskSlope,
                 smooth_sigma=smooth_sigma,
-                spatial_hp=spatial_hp,
-                pre_smooth=pre_smooth,
                 yblock=yblock,
                 xblock=xblock,
                 pad_fft=pad_fft,

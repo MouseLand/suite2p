@@ -75,7 +75,7 @@ def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
     return yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm
 
 
-def phasecorr_reference(refImg, reg_1p, maskSlope, smooth_sigma, spatial_hp, pre_smooth, yblock, xblock, pad_fft):
+def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_fft):
     """ computes taper and fft'ed reference image for phasecorr
     
     Parameters
@@ -99,12 +99,9 @@ def phasecorr_reference(refImg, reg_1p, maskSlope, smooth_sigma, spatial_hp, pre
 
     """
 
-    refImg0 = refImg.copy()
     Ly, Lx = refImg0.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-    if reg_1p:
-        refImg0 = utils.one_photon_preprocess(data=refImg0[np.newaxis, :, :], spatial_hp=spatial_hp, pre_smooth=pre_smooth)
 
     # split refImg0 into multiple parts
     nb = len(yblock)

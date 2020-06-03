@@ -5,23 +5,11 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from scipy.signal import medfilt
 
-from . import bidiphase, nonrigid, utils, rigid
-
-
-#HAS_GPU=False
-#try:
-#    import cupy as cp
-#    from cupyx.scipy.fftpack import fftn, ifftn, get_fft_plan
-#    HAS_GPU=True
-#except ImportError:
-#    HAS_GPU=False
+from . import utils, rigid
 
 
 def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, reg_1p, spatial_hp, pre_smooth,):
     """ register data matrix to reference image and shift
-
-    need to run ```refAndMasks = register.prepare_refAndMasks(ops)``` to get fft'ed masks;
-    if ```ops['nonrigid']``` need to run ```ops = nonrigid.make_blocks(ops)```
 
     Parameters
     ----------
@@ -29,8 +17,6 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, 
         array that's frames x Ly x Lx
     refAndMasks : list
         maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
-    ops : dictionary
-        requires 'nonrigid', 'bidiphase', '1Preg'
 
     Returns
     -------
@@ -42,9 +28,6 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, 
         shifts in x from cfRefImg to data for each frame
     cmax : float
         maximum of phase correlation for each frame
-    yxnr : list
-        ymax, xmax and cmax from the non-rigid registration
-
     """
 
     if smooth_sigma_time > 0:

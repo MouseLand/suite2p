@@ -103,7 +103,7 @@ def register_binary(ops, refImg=None, raw=True):
         nframes = ops['nframes']
         nsamps = np.minimum(ops['nimg_init'], nframes)
         ix = np.linspace(0, nframes, 1 + nsamps).astype('int64')[:-1]
-        frames = utils.get_frames(
+        frames = io.get_frames(
             Lx=ops['Lx'],
             Ly=ops['Ly'],
             xrange=ops['xrange'],
@@ -399,7 +399,7 @@ def get_pc_metrics(ops, use_red=False):
     nlowhigh = np.minimum(300,int(ops['nframes']/2))  # n frames to average at ends of PC coefficient sortings
     ix = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
 
-    mov = utils.get_frames(
+    mov = io.get_frames(
         Lx=ops['Lx'],
         Ly=ops['Ly'],
         xrange=ops['xrange'],
@@ -407,8 +407,6 @@ def get_pc_metrics(ops, use_red=False):
         ix=ix,
         bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
         crop=True,
-        badframes=True,
-        bad_frames=ops['badframes']
     )
 
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)

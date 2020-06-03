@@ -141,7 +141,9 @@ def register_binary(ops, refImg=None, raw=True):
 
             freg, ymax, xmax, cmax = register.compute_motion_and_shift(
                 data=frames,
-                refAndMasks=[maskMul, maskOffset, cfRefImg],
+                maskMul=maskMul,
+                maskOffset=maskOffset,
+                cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
                 reg_1p=ops['1Preg'],
@@ -206,9 +208,6 @@ def register_binary(ops, refImg=None, raw=True):
             xblock=ops['xblock'],
             pad_fft=ops['pad_fft'],
         )
-        refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-    else:
-        refAndMasks = [maskMul, maskOffset, cfRefImg]
 
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
@@ -221,7 +220,9 @@ def register_binary(ops, refImg=None, raw=True):
 
             data, ymax, xmax, cmax = register.compute_motion_and_shift(
                 data=data,
-                refAndMasks=refAndMasks,
+                maskMul=maskMul,
+                maskOffset=maskOffset,
+                cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
                 reg_1p=ops['1Preg'],
@@ -231,10 +232,12 @@ def register_binary(ops, refImg=None, raw=True):
             rigid_offsets.append([ymax, xmax, cmax])
 
             # non-rigid registration
-            if ops['nonrigid'] and len(refAndMasks) > 3:
+            if ops['nonrigid']:
                 data, yxnr = nonrigid.shift(
                     data=data,
-                    refAndMasks=refAndMasks,
+                    maskMulNR=maskMulNR,
+                    maskOffsetNR=maskOffsetNR,
+                    cfRefImgNR=cfRefImgNR,
                     nblocks=ops['nblocks'],
                     xblock=ops['xblock'],
                     yblock=ops['yblock'],

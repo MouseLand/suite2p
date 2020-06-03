@@ -101,7 +101,6 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
             pre_smooth=pre_smooth,
         )
         if is_nonrigid:
-
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
             # pre filtering for one-photon data
             if reg_1p:
@@ -125,16 +124,15 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
                 xblock=xblock,
                 pad_fft=pad_fft,
             )
-            refAndMasks = [maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR]
-        else:
-            refAndMasks = [maskMul, maskOffset, cfRefImg]
 
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
         dwrite, ymax, xmax, cmax = register.compute_motion_and_shift(
             data=Img,
-            refAndMasks=refAndMasks,
+            maskMul=maskMul,
+            maskOffset=maskOffset,
+            cfRefImg=cfRefImg,
             maxregshift=maxregshift,
             smooth_sigma_time=smooth_sigma_time,
             reg_1p=reg_1p,
@@ -142,12 +140,13 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
             pre_smooth=pre_smooth,
         )
 
-
         # non-rigid registration
-        if is_nonrigid and len(refAndMasks) > 3:
+        if is_nonrigid:
             dwrite, yxnr = nonrigid.shift(
                 data=dwrite,
-                refAndMasks=refAndMasks,
+                maskMulNR=maskMulNR,
+                maskOffsetNR=maskOffsetNR,
+                cfRefImgNR=cfRefImgNR,
                 nblocks=nblocks,
                 xblock=xblock,
                 yblock=yblock,

@@ -8,7 +8,7 @@ from scipy.signal import medfilt
 from . import utils, rigid
 
 
-def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, reg_1p, spatial_hp, pre_smooth,):
+def compute_motion_and_shift(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time, reg_1p, spatial_hp, pre_smooth, ):
     """ register data matrix to reference image and shift
 
     Parameters
@@ -46,7 +46,6 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, smooth_sigma_time, 
         data = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else data, int(spatial_hp))
 
     # rigid registration
-    maskMul, maskOffset, cfRefImg = refAndMasks[:3]
     cfRefImg = cfRefImg.squeeze()
 
     ymax, xmax, cmax = rigid.phasecorr(

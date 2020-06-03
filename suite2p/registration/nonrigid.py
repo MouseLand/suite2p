@@ -470,13 +470,13 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     return Y
 
 
-def shift(data, refAndMasks, nblocks, xblock, yblock, nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR):
+def shift(data, maskMulNR, maskOffsetNR, cfRefImgNR, nblocks, xblock, yblock, nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR):
     if smooth_sigma_time > 0:
         data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
 
     ymax1, xmax1, cmax1, _ = phasecorr(
         data=data_smooth if smooth_sigma_time > 0 else data,
-        refAndMasks=refAndMasks[3:],
+        refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
         snr_thresh=snr_thresh,
         NRsm=nr_sm,
         xblock=xblock,

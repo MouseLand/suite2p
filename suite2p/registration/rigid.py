@@ -189,35 +189,3 @@ def shift_data(X, ymax, xmax):
         #X[n][yrange, :] = m0
         #X[n][:, xrange] = m0
 
-
-def shift_data_subpixel(inputs):
-    ''' rigid shift of X by ymax and xmax '''
-    ''' allows subpixel shifts '''
-    ''' ** not being used ** '''
-    X, ymax, xmax, pad_fft = inputs
-    ymax = ymax.flatten()
-    xmax = xmax.flatten()
-    if X.ndim<3:
-        X = X[np.newaxis,:,:]
-
-    nimg, Ly0, Lx0 = X.shape
-    if pad_fft:
-        X = fft2(X.astype('float32'), (next_fast_len(Ly0), next_fast_len(Lx0)))
-    else:
-        X = fft2(X.astype('float32'))
-    nimg, Ly, Lx = X.shape
-    Ny = fft.ifftshift(np.arange(-np.fix(Ly/2), np.ceil(Ly/2)))
-    Nx = fft.ifftshift(np.arange(-np.fix(Lx/2), np.ceil(Lx/2)))
-    [Nx,Ny] = np.meshgrid(Nx,Ny)
-    Nx = Nx.astype('float32') / Lx
-    Ny = Ny.astype('float32') / Ly
-    dph = Nx * np.reshape(xmax, (-1,1,1)) + Ny * np.reshape(ymax, (-1,1,1))
-    Y = np.real(ifft2(X * np.exp((2j * np.pi) * dph)))
-    # crop back to original size
-    if Ly0<Ly or Lx0<Lx:
-        Lyhalf = int(np.floor(Ly/2))
-        Lxhalf = int(np.floor(Lx/2))
-        Y = Y[np.ix_(np.arange(0,nimg,1,int),
-                     np.arange(-np.fix(Ly0/2), np.ceil(Ly0/2),1,int) + Lyhalf,
-                     np.arange(-np.fix(Lx0/2), np.ceil(Lx0/2),1,int) + Lxhalf)]
-    return Y

@@ -471,19 +471,28 @@ def compute_zpos(Zreg, ops):
     while True:
         buff = reg_file.read(nbytesread)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        buff = []
         if (data.size==0) | (nfr >= ops['nframes']):
             break
         data = np.float32(np.reshape(data, (-1, Ly, Lx)))
         inds = np.arange(nfr, nfr+data.shape[0], 1, int)
         for z,ref in enumerate(refAndMasks):
+
+            # preprocessing for 1P recordings
+            if ops['1Preg']:
+                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                    raise ValueError("if set, pre_smooth must be a positive even integer.")
+                if ops['spatial_hp'] % 2:
+                    raise ValueError("spatial_hp must be a positive even integer.")
+                data = data.astype(np.float32)
+
+                if ops['pre_smooth']:
+                    data = utils.spatial_smooth(data, int(ops['pre_smooth']))
+                data = utils.spatial_high_pass(data, int(ops['spatial_hp']))
+
             _, _, zcorr[z, inds] = rigid.phasecorr(
                 data=data,
                 refAndMasks=ref,
                 maxregshift=ops['maxregshift'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
-                pre_smooth=ops['pre_smooth'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             if z%10 == 1:

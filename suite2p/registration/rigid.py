@@ -137,25 +137,14 @@ def phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time):
     return ymax, xmax, cmax
 
 
-def phasecorr(data, refAndMasks, maxregshift, reg_1p, spatial_hp, pre_smooth, smooth_sigma_time):
+def phasecorr(data, refAndMasks, maxregshift, smooth_sigma_time):
     """ compute registration offsets """
+
     nimg, Ly, Lx = data.shape
 
     # maximum registration shift allowed
     maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
-
-    # preprocessing for 1P recordings
-    if reg_1p:
-        if pre_smooth and pre_smooth % 2:
-            raise ValueError("if set, pre_smooth must be a positive even integer.")
-        if spatial_hp % 2:
-            raise ValueError("spatial_hp must be a positive even integer.")
-        data = data.astype(np.float32)
-
-        if pre_smooth:
-            data = utils.spatial_smooth(data, int(pre_smooth))
-        data = utils.spatial_high_pass(data, int(spatial_hp))
 
     ymax, xmax, cmax = phasecorr_cpu(data, refAndMasks, lcorr, smooth_sigma_time)
     return ymax, xmax, cmax

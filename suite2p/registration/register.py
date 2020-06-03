@@ -54,14 +54,23 @@ def compute_motion_and_shift(data, refAndMasks, maxregshift, nblocks, xblock, yb
     if smooth_sigma_time > 0:
         data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
 
+    # preprocessing for 1P recordings
+    if reg_1p:
+        if pre_smooth and pre_smooth % 2:
+            raise ValueError("if set, pre_smooth must be a positive even integer.")
+        if spatial_hp % 2:
+            raise ValueError("spatial_hp must be a positive even integer.")
+        data = data.astype(np.float32)
+
+        if pre_smooth:
+            data = utils.spatial_smooth(data_smooth if smooth_sigma_time > 0 else data, int(pre_smooth))
+        data = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else data, int(spatial_hp))
+
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(
         data=data_smooth if smooth_sigma_time > 0 else data,
         refAndMasks=refAndMasks[:3],
         maxregshift=maxregshift,
-        reg_1p=reg_1p,
-        spatial_hp=spatial_hp,
-        pre_smooth=pre_smooth,
         smooth_sigma_time=smooth_sigma_time,
     )
     rigid.shift_data(data, ymax, xmax)

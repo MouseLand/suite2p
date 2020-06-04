@@ -33,23 +33,27 @@ def check_registration_output(op, dimensions, input_path, reg_output_path, outpu
     registered_data = imread(reg_output_path)
     output_check = imread(output_path)
     assert np.array_equal(registered_data, output_check)
+    return op
 
 
 class TestSuite2pRegistrationModule:
     """
     Tests for the Suite2p Registration Module
     """
-    def test_register_binary_output(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_output_with_metrics(self, setup_and_teardown, get_test_dir_path):
         """
         Regression test that checks the output of register_binary given the `input.tif`.
         """
         op, tmp_dir = setup_and_teardown
-        check_registration_output(
-            op, (404, 360),
-            op['data_path'][0].joinpath('input.tif'),
+        op['batch_size'] = 1500
+        op['do_regmetrics'] = True
+        op = check_registration_output(
+            op, (256, 256),
+            op['data_path'][0].joinpath('registration', 'input_1500.tif'),
             str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
             str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif'))
         )
+        reg_op = registration.get_pc_metrics(op)
 
     def test_register_binary_do_bidi_output(self, setup_and_teardown, get_test_dir_path):
         """
@@ -70,7 +74,6 @@ class TestSuite2pRegistrationModule:
         """
         op, tmp_dir = setup_and_teardown
         op['1Preg'] = True
-        op['do_regmetrics'] = True
         op['smooth_sigma_time'] = 1
         check_registration_output(
             op, (404, 360),

@@ -25,22 +25,44 @@ def prepare_for_registration(op, input_file_name, dimensions):
     return op
 
 
+def check_registration_output(op, dimensions, input_path, reg_output_path, output_path):
+    op = prepare_for_registration(
+        op, input_path, dimensions
+    )
+    op = registration.register_binary(op)
+    registered_data = imread(reg_output_path)
+    output_check = imread(output_path)
+    assert np.array_equal(registered_data, output_check)
+
+
 class TestSuite2pRegistrationModule:
     """
     Tests for the Suite2p Registration Module
     """
-    def test_register_binary_output_1plane1chan(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_output(self, setup_and_teardown, get_test_dir_path):
         """
         Regression test that checks the output of register_binary given the `input.tif`.
         """
         op, tmp_dir = setup_and_teardown
-        op = prepare_for_registration(
-            op, op['data_path'][0].joinpath('input.tif'), (404, 360)
+        check_registration_output(
+            op, (404, 360),
+            op['data_path'][0].joinpath('input.tif'),
+            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif'))
         )
-        op = registration.register_binary(op)
-        registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
-        output_check = imread(str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif')))
-        assert np.array_equal(registered_data, output_check)
+
+    def test_register_binary_do_biphase_output(self, setup_and_teardown, get_test_dir_path):
+        """
+        Regression test that checks the output of register_binary using bidiphase given the `input.tif`.
+        """
+        op, tmp_dir = setup_and_teardown
+        op['do_bidiphase'] = True
+        check_registration_output(
+            op, (404, 360),
+            op['data_path'][0].joinpath('input.tif'),
+            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(get_test_dir_path).joinpath('registration', 'regression_bidi_output.tif'))
+        )
 
     def test_register_binary_rigid_registration_only(self, setup_and_teardown):
         """

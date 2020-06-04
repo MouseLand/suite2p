@@ -1,0 +1,7 @@
+md5: 41e6acdfc02e1feb407a7b2e7c08913d
+outs:
+- md5: 72c3c4f6648799acef232c14025aadc1
+  path: regression_bidi_output.tif
+  cache: true
+  metric: false
+  persist: false

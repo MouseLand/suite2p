@@ -22,6 +22,8 @@ $RECYCLE.BIN/
 # python and jupyter
 jupyter/.ipynb_checkpoints/
 jupyter/__pycache__/
+jupyter/*.npy
+jupyter/*.tif
 .ipynb_checkpoints/
 __pycache__/
 dist/

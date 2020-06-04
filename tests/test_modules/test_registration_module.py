@@ -51,15 +51,15 @@ class TestSuite2pRegistrationModule:
             str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif'))
         )
 
-    def test_register_binary_do_biphase_output(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_do_bidi_output(self, setup_and_teardown, get_test_dir_path):
         """
-        Regression test that checks the output of register_binary using bidiphase given the `input.tif`.
+        Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
         """
         op, tmp_dir = setup_and_teardown
         op['do_bidiphase'] = True
         check_registration_output(
             op, (404, 360),
-            op['data_path'][0].joinpath('input.tif'),
+            op['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
             str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
             str(Path(get_test_dir_path).joinpath('registration', 'regression_bidi_output.tif'))
         )

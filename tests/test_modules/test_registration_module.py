@@ -64,6 +64,21 @@ class TestSuite2pRegistrationModule:
             str(Path(get_test_dir_path).joinpath('registration', 'regression_bidi_output.tif'))
         )
 
+    def test_register_binary_1preg_output(self, setup_and_teardown, get_test_dir_path):
+        """
+        Regression test that checks the output of register_binary with 1Preg given the `input.tif`.
+        """
+        op, tmp_dir = setup_and_teardown
+        op['1Preg'] = True
+        op['do_regmetrics'] = True
+        op['smooth_sigma_time'] = 1
+        check_registration_output(
+            op, (404, 360),
+            op['data_path'][0].joinpath('input.tif'),
+            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(get_test_dir_path).joinpath('registration', 'regression_1preg_output.tif'))
+        )
+
     def test_register_binary_rigid_registration_only(self, setup_and_teardown):
         """
         Tests that register_binary works for a dataset that only has rigid shifts.

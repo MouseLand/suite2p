@@ -5,6 +5,8 @@ from warnings import warn
 
 import numpy as np
 from tqdm import tqdm
+from scipy.ndimage import gaussian_filter1d
+
 
 from .pc import pclowhigh, pc_register
 from .. import io
@@ -233,20 +235,29 @@ def register_binary(ops, refImg=None, raw=True):
 
             # non-rigid registration
             if ops['nonrigid']:
-                data, yxnr = nonrigid.shift(
+
+                if ops['smooth_sigma_time'] > 0:
+                    data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+
+                ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
+                    data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
+                    refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
+                    snr_thresh=ops['snr_thresh'],
+                    NRsm=ops['NRsm'],
+                    xblock=ops['xblock'],
+                    yblock=ops['yblock'],
+                    maxregshiftNR=ops['maxregshiftNR'],
+                )
+                data = nonrigid.transform_data(
                     data=data,
-                    maskMulNR=maskMulNR,
-                    maskOffsetNR=maskOffsetNR,
-                    cfRefImgNR=cfRefImgNR,
                     nblocks=ops['nblocks'],
                     xblock=ops['xblock'],
                     yblock=ops['yblock'],
-                    nr_sm=ops['NRsm'],
-                    snr_thresh=ops['snr_thresh'],
-                    smooth_sigma_time=ops['smooth_sigma_time'],
-                    maxregshiftNR=ops['maxregshiftNR']
+                    ymax1=ymax1,
+                    xmax1=xmax1,
                 )
-                nonrigid_offsets.append(list(yxnr))
+
+                nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
             mean_img += data.sum(axis=0) / ops['nframes']
 

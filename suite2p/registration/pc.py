@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
+from scipy.ndimage import gaussian_filter1d
+
 
 from . import rigid, nonrigid, register, utils
 
@@ -142,23 +144,32 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
 
         # non-rigid registration
         if is_nonrigid:
-            dwrite, yxnr = nonrigid.shift(
+
+            if smooth_sigma_time > 0:
+                data_smooth = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+
+            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
+                data=data_smooth if smooth_sigma_time > 0 else dwrite,
+                refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
+                snr_thresh=snr_thresh,
+                NRsm=NRsm,
+                xblock=xblock,
+                yblock=yblock,
+                maxregshiftNR=maxregshiftNR,
+            )
+
+            data = nonrigid.transform_data(
                 data=dwrite,
-                maskMulNR=maskMulNR,
-                maskOffsetNR=maskOffsetNR,
-                cfRefImgNR=cfRefImgNR,
                 nblocks=nblocks,
                 xblock=xblock,
                 yblock=yblock,
-                nr_sm=NRsm,
-                snr_thresh=snr_thresh,
-                smooth_sigma_time=smooth_sigma_time,
-                maxregshiftNR=maxregshiftNR
+                ymax1=ymax1,
+                xmax1=xmax1
             )
 
-            X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
+            X[i,1] = np.mean((ymax1**2 + xmax1**2)**.5)
             X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-            X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+            X[i,2] = np.amax((ymax1**2 + xmax1**2)**.5)
     return X
 
 

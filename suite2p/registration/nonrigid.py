@@ -469,27 +469,3 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y
 
-
-def shift(data, maskMulNR, maskOffsetNR, cfRefImgNR, nblocks, xblock, yblock, nr_sm, snr_thresh, smooth_sigma_time, maxregshiftNR):
-    if smooth_sigma_time > 0:
-        data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
-
-    ymax1, xmax1, cmax1, _ = phasecorr(
-        data=data_smooth if smooth_sigma_time > 0 else data,
-        refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
-        snr_thresh=snr_thresh,
-        NRsm=nr_sm,
-        xblock=xblock,
-        yblock=yblock,
-        maxregshiftNR=maxregshiftNR,
-    )
-    yxnr = [ymax1, xmax1, cmax1]
-    data = transform_data(
-        data=data,
-        nblocks=nblocks,
-        xblock=xblock,
-        yblock=yblock,
-        ymax1=ymax1,
-        xmax1=xmax1
-    )
-    return data, yxnr

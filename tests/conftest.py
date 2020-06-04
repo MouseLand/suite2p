@@ -12,15 +12,27 @@ class TestUtils:
     """
 
     @staticmethod
-    def check_output(output_root, test_data_dir, nplanes: int, nchannels: int):
+    def get_plane_dir(op, plane):
+        suite_dir = Path(op['save_path0']).joinpath('suite2p')
+        suite_dir.mkdir(exist_ok=True)
+        plane_dir = Path(op['save_path0']).joinpath('suite2p').joinpath('plane{}'.format(plane))
+        plane_dir.mkdir(exist_ok=True)
+        return plane_dir
+
+    @staticmethod
+    def write_data_to_binary(binary_path, data_path):
+        input_data = np.load(data_path)
+        with open(binary_path, 'wb') as f:
+            input_data.tofile(f)
+        return binary_path
+
+    @staticmethod
+    def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int):
         """
         Helper function to check if outputs given by a test are exactly the same
         as the ground truth outputs.
         """
         output_dir = Path(output_root).joinpath("suite2p")
-        outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
-        if nchannels == 2:
-            outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
         for i in range(nplanes):
             for output in outputs_to_check:
                 test_data = np.load(

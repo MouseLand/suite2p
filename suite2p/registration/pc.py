@@ -150,7 +150,9 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
 
             ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
                 data=data_smooth if smooth_sigma_time > 0 else dwrite,
-                refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
+                maskMul=maskMulNR.squeeze(),
+                maskOffset=maskOffsetNR.squeeze(),
+                cfRefImg=cfRefImgNR.squeeze(),
                 snr_thresh=snr_thresh,
                 NRsm=NRsm,
                 xblock=xblock,

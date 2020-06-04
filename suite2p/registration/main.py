@@ -241,7 +241,9 @@ def register_binary(ops, refImg=None, raw=True):
 
                 ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
                     data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
-                    refAndMasks=[maskMulNR, maskOffsetNR, cfRefImgNR],
+                    maskMul=maskMulNR.squeeze(),
+                    maskOffset=maskOffsetNR.squeeze(),
+                    cfRefImg=cfRefImgNR.squeeze(),
                     snr_thresh=ops['snr_thresh'],
                     NRsm=ops['NRsm'],
                     xblock=ops['xblock'],

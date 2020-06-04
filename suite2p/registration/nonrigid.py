@@ -5,7 +5,7 @@ import numpy as np
 from numba import vectorize, float32, int32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
-from scipy.ndimage import gaussian_filter1d
+
 
 try:
     from mkl_fft import fft2, ifft2
@@ -163,7 +163,7 @@ def clip(X, lhalf):
     return x00, x01, x10, x11
 
 
-def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR):
+def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR):
     """ compute phase correlations for each block 
     
     Parameters
@@ -191,10 +191,6 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
     """
 
     nimg, Ly, Lx = data.shape
-    maskMul = refAndMasks[0].squeeze()
-    maskOffset = refAndMasks[1].squeeze()
-    cfRefImg = refAndMasks[2].squeeze()
-
     ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
@@ -206,8 +202,6 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
     ymax1 = np.zeros((nimg, nb), np.float32)
     cmax1 = np.zeros((nimg, nb), np.float32)
     xmax1 = np.zeros((nimg, nb), np.float32)
-
-    cc0 = np.zeros((nimg, nb, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1), np.float32)
     ymax = np.zeros((nb,), np.int32)
     xmax = np.zeros((nb,), np.int32)
 
@@ -246,7 +240,6 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
                 ccsm[n, ism, :, :] = cc
             snr[ism] = getSNR(cc, (lcorr,lpad))
 
-    ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
     for t in range(nimg):
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
@@ -263,8 +256,9 @@ def phasecorr(data, refAndMasks, snr_thresh, NRsm, xblock, yblock, maxregshiftNR
         mdpt = np.floor(nup/2)
         ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
         ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
-    #ccmat = np.reshape(ccmat, (nb, 2*lpad+1, 2*lpad+1))
+
     return ymax1, xmax1, cmax1, ccsm
+
 
 def linear_interp(iy, ix, yb, xb, f):
     """ 2d interpolation of f on grid of yb, xb into grid of iy, ix 

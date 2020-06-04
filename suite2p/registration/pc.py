@@ -81,12 +81,10 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
                 nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
     """
     # registration settings
-    block_size = np.array(block_size)
-    maxregshiftNR = np.array(maxregshiftNR)
-    maxregshift = np.array(maxregshift)
-
     nPC, Ly, Lx = pclow.shape
-    yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm = nonrigid.make_blocks(Ly=Ly, Lx=Lx, maxregshiftNR=maxregshiftNR, block_size=block_size)
+    yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm = nonrigid.make_blocks(
+        Ly=Ly, Lx=Lx, maxregshiftNR=np.array(maxregshiftNR), block_size=np.array(block_size)
+    )
 
     X = np.zeros((nPC,3))
     for i in range(nPC):
@@ -135,7 +133,7 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
             maskMul=maskMul,
             maskOffset=maskOffset,
             cfRefImg=cfRefImg,
-            maxregshift=maxregshift,
+            maxregshift=np.array(maxregshift),
             smooth_sigma_time=smooth_sigma_time,
             reg_1p=reg_1p,
             spatial_hp=spatial_hp,

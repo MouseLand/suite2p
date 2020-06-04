@@ -403,6 +403,9 @@ def get_pc_metrics(ops, use_red=False):
     )
 
     pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)
+    ops['tPC'] = v
+
     if 'block_size' not in ops:
         ops['block_size'] = [128, 128]
     if 'maxregshiftNR' not in ops:
@@ -419,9 +422,8 @@ def get_pc_metrics(ops, use_red=False):
                        block_size=ops['block_size'], maxregshift=ops['maxregshift'], maxregshiftNR=ops['maxregshiftNR'],
                        reg_1p=ops['1Preg'], snr_thresh=ops['snr_thresh'], is_nonrigid=ops['nonrigid'], pad_fft=ops['pad_fft'],
                        bidiphase=ops['bidiphase'], spatial_taper=ops['spatial_taper'])
-    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
     ops['regDX'] = X
-    ops['tPC'] = v
+
 
     return ops
 

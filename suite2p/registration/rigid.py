@@ -77,7 +77,7 @@ def clip(X, lcorr):
     return x00, x01, x10, x11
 
 
-def phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time):
+def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):
     """ compute phase correlation between data and reference image
 
     Parameters
@@ -101,7 +101,12 @@ def phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time)
         maximum of phase correlation for each frame
 
     """
-    nimg = data.shape[0]
+
+    nimg, Ly, Lx = data.shape
+
+    # maximum registration shift allowed
+    maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
+    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
 
     # shifts and corrmax
     ymax = np.zeros((nimg,), np.int32)
@@ -119,22 +124,10 @@ def phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time)
     if smooth_sigma_time > 0:
         cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
     for t in np.arange(nimg):
-        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2*lcorr+1, 2*lcorr+1))
+        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2 * lcorr + 1, 2 * lcorr + 1))
         cmax[t] = cc[t, ymax[t], xmax[t]]
-    ymax, xmax = ymax-lcorr, xmax-lcorr
-    return ymax, xmax, cmax
+    ymax, xmax = ymax - lcorr, xmax - lcorr
 
-
-def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):
-    """ compute registration offsets """
-
-    nimg, Ly, Lx = data.shape
-
-    # maximum registration shift allowed
-    maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
-
-    ymax, xmax, cmax = phasecorr_cpu(data, maskMul, maskOffset, cfRefImg, lcorr, smooth_sigma_time)
     return ymax, xmax, cmax
 
 

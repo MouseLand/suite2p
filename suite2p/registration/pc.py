@@ -158,15 +158,6 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
                 maxregshiftNR=maxregshiftNR,
             )
 
-            data = nonrigid.transform_data(
-                data=dwrite,
-                nblocks=nblocks,
-                xblock=xblock,
-                yblock=yblock,
-                ymax1=ymax1,
-                xmax1=xmax1
-            )
-
             X[i,1] = np.mean((ymax1**2 + xmax1**2)**.5)
             X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
             X[i,2] = np.amax((ymax1**2 + xmax1**2)**.5)

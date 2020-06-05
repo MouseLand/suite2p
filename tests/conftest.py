@@ -77,7 +77,3 @@ def setup_and_teardown(tmpdir, get_test_dir_path):
     if tmpdir_path.is_dir():
         shutil.rmtree(tmpdir)
         print('Successful removal of tmp_path {}.'.format(tmpdir))
-
-@pytest.fixture
-def helpers():
-    return Helpers

@@ -1,0 +1,7 @@
+md5: 554ac029df952131b110283e611178a0
+outs:
+- md5: 63519dc05baa9f588e6787d4ba6d0b40
+  path: iscell.npy
+  cache: true
+  metric: false
+  persist: false

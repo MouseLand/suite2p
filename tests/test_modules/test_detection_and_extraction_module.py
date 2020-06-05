@@ -55,17 +55,21 @@ class TestSuite2pDetectionExtractionModule:
     """
     # TODO: Separate once the detection module is created.
 
-    def test_detection_extraction_output_1plane1chan(self, default_ops, data_dir, test_utils):
+    def test_detection_extraction_output_1plane1chan(self, default_ops, test_utils):
         ops = prepare_for_detection(
             default_ops, [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]], (404, 360),
             test_utils
         )
         detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            default_ops['save_path0'], ['F', 'Fneu', 'iscell', 'stat', 'spks'], data_dir, default_ops['nplanes'], default_ops['nchannels']
+            default_ops['save_path0'],
+            ['F', 'Fneu', 'iscell', 'stat', 'spks'],
+            default_ops['data_path'][0],
+            default_ops['nplanes'],
+            default_ops['nchannels'],
         )
 
-    def test_detection_extraction_output_2plane2chan(self, default_ops, data_dir, test_utils):
+    def test_detection_extraction_output_2plane2chan(self, default_ops, test_utils):
         default_ops['nchannels'] = 2
         default_ops['nplanes'] = 2
         detection_dir = default_ops['data_path'][0].joinpath('detection')
@@ -82,5 +86,9 @@ class TestSuite2pDetectionExtractionModule:
         ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
         detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            default_ops['save_path0'], ['F', 'Fneu', 'iscell', 'stat', 'spks'], data_dir, default_ops['nplanes'], default_ops['nchannels']
+            default_ops['save_path0'],
+            ['F', 'Fneu', 'iscell', 'stat', 'spks'],
+            default_ops['data_path'][0],
+            default_ops['nplanes'],
+            default_ops['nchannels'],
         )

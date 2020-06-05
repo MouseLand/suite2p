@@ -40,7 +40,7 @@ class TestSuite2pRegistrationModule:
     """
     Tests for the Suite2p Registration Module
     """
-    def test_register_binary_output_with_metrics(self, default_ops, data_dir):
+    def test_register_binary_output_with_metrics(self, default_ops):
         """
         Regression test that checks the output of register_binary given the `input.tif`.
         """
@@ -50,11 +50,11 @@ class TestSuite2pRegistrationModule:
             default_ops, (256, 256),
             default_ops['data_path'][0].joinpath('registration', 'input_1500.tif'),
             str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(data_dir).joinpath('registration', 'regression_output.tif'))
+            str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))
         )
         registration.get_pc_metrics(op)
 
-    def test_register_binary_do_bidi_output(self, default_ops, data_dir):
+    def test_register_binary_do_bidi_output(self, default_ops):
         """
         Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
         """
@@ -63,10 +63,10 @@ class TestSuite2pRegistrationModule:
             default_ops, (404, 360),
             default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
             str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(data_dir).joinpath('registration', 'regression_bidi_output.tif'))
+            str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))
         )
 
-    def test_register_binary_1preg_output(self, default_ops, data_dir):
+    def test_register_binary_1preg_output(self, default_ops):
         """
         Regression test that checks the output of register_binary with 1Preg given the `input.tif`.
         """
@@ -76,7 +76,7 @@ class TestSuite2pRegistrationModule:
             default_ops, (404, 360),
             default_ops['data_path'][0].joinpath('input.tif'),
             str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(data_dir).joinpath('registration', 'regression_1preg_output.tif'))
+            str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_1preg_output.tif'))
         )
 
     def test_register_binary_rigid_registration_only(self, default_ops):

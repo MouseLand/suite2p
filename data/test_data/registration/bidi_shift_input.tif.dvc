@@ -1,0 +1,7 @@
+md5: c8725cd4c8c6dea5f540c764cfabb09a
+outs:
+- md5: 1a92a7768555f4c8b1b832de226d6cbf
+  path: bidi_shift_input.tif
+  cache: true
+  metric: false
+  persist: false

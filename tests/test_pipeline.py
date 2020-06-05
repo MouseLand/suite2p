@@ -27,3 +27,19 @@ def test_2plane_2chan(default_ops):
         default_ops['nplanes'],
         default_ops['nchannels'],
     )
+
+
+def test_1plane_2chan_sourcery(default_ops):
+    """
+    Tests for case with 2 planes and 1 channel.
+    """
+    default_ops['nchannels'] = 2
+    default_ops['sparse_mode'] = 0
+    suite2p.run_s2p(ops=default_ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        get_outputs_to_check(default_ops['nchannels']),
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+    )

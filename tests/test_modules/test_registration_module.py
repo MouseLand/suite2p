@@ -40,56 +40,52 @@ class TestSuite2pRegistrationModule:
     """
     Tests for the Suite2p Registration Module
     """
-    def test_register_binary_output_with_metrics(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_output_with_metrics(self, default_ops, data_dir):
         """
         Regression test that checks the output of register_binary given the `input.tif`.
         """
-        op, tmp_dir = setup_and_teardown
-        op['batch_size'] = 1500
-        op['do_regmetrics'] = True
+        default_ops['batch_size'] = 1500
+        default_ops['do_regmetrics'] = True
         op = check_registration_output(
-            op, (256, 256),
-            op['data_path'][0].joinpath('registration', 'input_1500.tif'),
-            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(get_test_dir_path).joinpath('registration', 'regression_output.tif'))
+            default_ops, (256, 256),
+            default_ops['data_path'][0].joinpath('registration', 'input_1500.tif'),
+            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(data_dir).joinpath('registration', 'regression_output.tif'))
         )
-        reg_op = registration.get_pc_metrics(op)
+        registration.get_pc_metrics(op)
 
-    def test_register_binary_do_bidi_output(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_do_bidi_output(self, default_ops, data_dir):
         """
         Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
         """
-        op, tmp_dir = setup_and_teardown
-        op['do_bidiphase'] = True
+        default_ops['do_bidiphase'] = True
         check_registration_output(
-            op, (404, 360),
-            op['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
-            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(get_test_dir_path).joinpath('registration', 'regression_bidi_output.tif'))
+            default_ops, (404, 360),
+            default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
+            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(data_dir).joinpath('registration', 'regression_bidi_output.tif'))
         )
 
-    def test_register_binary_1preg_output(self, setup_and_teardown, get_test_dir_path):
+    def test_register_binary_1preg_output(self, default_ops, data_dir):
         """
         Regression test that checks the output of register_binary with 1Preg given the `input.tif`.
         """
-        op, tmp_dir = setup_and_teardown
-        op['1Preg'] = True
-        op['smooth_sigma_time'] = 1
+        default_ops['1Preg'] = True
+        default_ops['smooth_sigma_time'] = 1
         check_registration_output(
-            op, (404, 360),
-            op['data_path'][0].joinpath('input.tif'),
-            str(Path(op['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(get_test_dir_path).joinpath('registration', 'regression_1preg_output.tif'))
+            default_ops, (404, 360),
+            default_ops['data_path'][0].joinpath('input.tif'),
+            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(data_dir).joinpath('registration', 'regression_1preg_output.tif'))
         )
 
-    def test_register_binary_rigid_registration_only(self, setup_and_teardown):
+    def test_register_binary_rigid_registration_only(self, default_ops):
         """
         Tests that register_binary works for a dataset that only has rigid shifts.
         """
-        op, tmp_dir = setup_and_teardown
-        op['nonrigid'] = False
+        default_ops['nonrigid'] = False
         op = prepare_for_registration(
-            op, op['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
+            default_ops, default_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
         )
         op = registration.register_binary(op)
         registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
@@ -102,15 +98,3 @@ class TestSuite2pRegistrationModule:
         assert num_col_lines == 16
         assert num_row_lines == 16
 
-    def test_register_binary_nonrigid_registration_only(self, setup_and_teardown):
-        """
-        Tests that register_binary works for a dataset that only has non-rigid shifts.
-        """
-        # TODO: Create simple dataset for which you can confirm non-rigid shifts work.
-        pass
-
-    def test_register_binary_nonrigid_rigid_registration(self, setup_and_teardown):
-        """
-        Tests that register_binary works for a dataset that has both non-rigid and rigid shifts.
-        """
-        pass

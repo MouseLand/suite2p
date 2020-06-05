@@ -55,24 +55,22 @@ class TestSuite2pDetectionExtractionModule:
     """
     # TODO: Separate once the detection module is created.
 
-    def test_detection_extraction_output_1plane1chan(self, setup_and_teardown, get_test_dir_path, test_utils):
-        op, tmp_dir = setup_and_teardown
+    def test_detection_extraction_output_1plane1chan(self, default_ops, data_dir, test_utils):
         ops = prepare_for_detection(
-            op, [[op['data_path'][0].joinpath('detection', 'pre_registered.npy')]], (404, 360),
+            default_ops, [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]], (404, 360),
             test_utils
         )
         detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            tmp_dir, ['F', 'Fneu', 'iscell', 'stat', 'spks'], get_test_dir_path, op['nplanes'], op['nchannels']
+            default_ops['save_path0'], ['F', 'Fneu', 'iscell', 'stat', 'spks'], data_dir, default_ops['nplanes'], default_ops['nchannels']
         )
 
-    def test_detection_extraction_output_2plane2chan(self, setup_and_teardown, get_test_dir_path, test_utils):
-        op, tmp_dir = setup_and_teardown
-        op['nchannels'] = 2
-        op['nplanes'] = 2
-        detection_dir = op['data_path'][0].joinpath('detection')
+    def test_detection_extraction_output_2plane2chan(self, default_ops, data_dir, test_utils):
+        default_ops['nchannels'] = 2
+        default_ops['nplanes'] = 2
+        detection_dir = default_ops['data_path'][0].joinpath('detection')
         ops = prepare_for_detection(
-            op,
+            default_ops,
             [
                 [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
                 [detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
@@ -84,5 +82,5 @@ class TestSuite2pDetectionExtractionModule:
         ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
         detect_and_extract_wrapper(ops, test_utils)
         test_utils.check_output(
-            tmp_dir, ['F', 'Fneu', 'iscell', 'stat', 'spks'], get_test_dir_path, op['nplanes'], op['nchannels']
+            default_ops['save_path0'], ['F', 'Fneu', 'iscell', 'stat', 'spks'], data_dir, default_ops['nplanes'], default_ops['nchannels']
         )

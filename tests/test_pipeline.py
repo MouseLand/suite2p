@@ -15,14 +15,13 @@ class TestCommonPipelineUseCases:
     Class that tests common use cases for pipeline.
     """
 
-    def test_2plane_2chan(self, setup_and_teardown, get_test_dir_path, test_utils):
+    def test_2plane_2chan(self, default_ops, data_dir, test_utils):
         """
         Tests for case with 2 planes and 2 channels.
         """
-        ops, tmp_dir = setup_and_teardown
-        ops['nplanes'] = 2
-        ops['nchannels'] = 2
-        suite2p.run_s2p(ops=ops)
+        default_ops['nplanes'] = 2
+        default_ops['nchannels'] = 2
+        suite2p.run_s2p(ops=default_ops)
         test_utils.check_output(
-            tmp_dir, get_outputs_to_check(ops['nchannels']), get_test_dir_path, ops['nplanes'], ops['nchannels']
+            default_ops['save_path0'], get_outputs_to_check(default_ops['nchannels']), data_dir, default_ops['nplanes'], default_ops['nchannels']
         )

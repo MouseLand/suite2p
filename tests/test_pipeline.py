@@ -1,5 +1,10 @@
+"""
+Class that tests common use cases for pipeline.
+"""
+
 import suite2p
 import utils
+
 
 def get_outputs_to_check(n_channels):
     outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
@@ -8,22 +13,17 @@ def get_outputs_to_check(n_channels):
     return outputs_to_check
 
 
-class TestCommonPipelineUseCases:
+def test_2plane_2chan(default_ops):
     """
-    Class that tests common use cases for pipeline.
+    Tests for case with 2 planes and 2 channels.
     """
-
-    def test_2plane_2chan(self, default_ops):
-        """
-        Tests for case with 2 planes and 2 channels.
-        """
-        default_ops['nplanes'] = 2
-        default_ops['nchannels'] = 2
-        suite2p.run_s2p(ops=default_ops)
-        utils.check_output(
-            default_ops['save_path0'],
-            get_outputs_to_check(default_ops['nchannels']),
-            default_ops['data_path'][0],
-            default_ops['nplanes'],
-            default_ops['nchannels'],
-        )
+    default_ops['nplanes'] = 2
+    default_ops['nchannels'] = 2
+    suite2p.run_s2p(ops=default_ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        get_outputs_to_check(default_ops['nchannels']),
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+    )

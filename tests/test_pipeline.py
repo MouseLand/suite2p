@@ -29,11 +29,11 @@ def test_2plane_2chan(default_ops):
     )
 
 
-def test_2plane_1chan_sourcery(default_ops):
+def test_1plane_2chan_sourcery(default_ops):
     """
     Tests for case with 2 planes and 1 channel.
     """
-    default_ops['nplanes'] = 2
+    default_ops['nchannels'] = 2
     default_ops['sparse_mode'] = 0
     suite2p.run_s2p(ops=default_ops)
     utils.check_output(

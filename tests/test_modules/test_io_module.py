@@ -25,9 +25,9 @@ def test_tiff_reconstruction_from_binary_file(default_ops):
     output_data = get_binary_file_data(op)
     # Make sure data in matrix is nonnegative
     assert np.all(output_data >= 0)
-    io.write_tiff(output_data, op, 0, True)
+    io.save_tiff(output_data, str(Path(default_ops['save_path0']).joinpath('output.tif')))
     reconstructed_tiff_data = imread(
-        str(Path(default_ops['save_path0']).joinpath('suite2p', 'plane0', 'reg_tif', 'file000_chan0.tif'))
+        str(Path(default_ops['save_path0']).joinpath('output.tif'))
     )
     # Compare to our test data
     prior_data = imread(

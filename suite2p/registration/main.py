@@ -43,6 +43,11 @@ def register_binary(ops, refImg=None, raw=True):
             op = register_binary(op)
         return ops
 
+    if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+        raise ValueError("if set, pre_smooth must be a positive even integer.")
+    if ops['spatial_hp_reg'] % 2:
+        raise ValueError("spatial_hp must be a positive even integer.")
+
     # make blocks for nonrigid
     if ops['nonrigid'] or 'yblock' not in ops:
         ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
@@ -129,10 +134,6 @@ def register_binary(ops, refImg=None, raw=True):
         for iter in range(0, niter):
 
             if ops['1Preg']:
-                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                    raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if ops['spatial_hp_reg'] % 2:
-                    raise ValueError("spatial_hp must be a positive even integer.")
                 refImg = refImg.astype(np.float32)
                 refImg = refImg[np.newaxis, :, :]
                 if ops['pre_smooth']:
@@ -160,10 +161,6 @@ def register_binary(ops, refImg=None, raw=True):
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                    raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if ops['spatial_hp_reg'] % 2:
-                    raise ValueError("spatial_hp must be a positive even integer.")
                 freg = freg.astype(np.float32)
 
                 if ops['pre_smooth']:
@@ -203,10 +200,6 @@ def register_binary(ops, refImg=None, raw=True):
 
     # register binary to reference image
     if ops['1Preg']:
-        if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-            raise ValueError("if set, pre_smooth must be a positive even integer.")
-        if ops['spatial_hp_reg'] % 2:
-            raise ValueError("spatial_hp must be a positive even integer.")
         refImg = refImg.astype(np.float32)
         refImg = refImg[np.newaxis, :, :]
         if ops['pre_smooth']:
@@ -232,10 +225,6 @@ def register_binary(ops, refImg=None, raw=True):
         maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
         if ops['1Preg']:
             data = refImg[np.newaxis, :, :]
-            if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                raise ValueError("if set, pre_smooth must be a positive even integer.")
-            if ops['spatial_hp_reg'] % 2:
-                raise ValueError("spatial_hp must be a positive even integer.")
             data = data.astype(np.float32)
 
             if ops['pre_smooth']:
@@ -270,10 +259,6 @@ def register_binary(ops, refImg=None, raw=True):
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                    raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if ops['spatial_hp_reg'] % 2:
-                    raise ValueError("spatial_hp must be a positive even integer.")
                 data = data.astype(np.float32)
 
                 if ops['pre_smooth']:
@@ -505,8 +490,12 @@ def compute_zpos(Zreg, ops):
 
     """
     if 'reg_file' not in ops:
-        print('ERROR: no binary')
-        return
+        raise IOError('no binary specified')
+
+    if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+        raise ValueError("if set, pre_smooth must be a positive even integer.")
+    if ops['spatial_hp_reg'] % 2:
+        raise ValueError("spatial_hp must be a positive even integer.")
 
     nbatch = ops['batch_size']
     Ly = ops['Ly']
@@ -532,10 +521,6 @@ def compute_zpos(Zreg, ops):
     refAndMasks = []
     for Z in Zreg:
         if ops['1Preg']:
-            if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                raise ValueError("if set, pre_smooth must be a positive even integer.")
-            if ops['spatial_hp_reg'] % 2:
-                raise ValueError("spatial_hp must be a positive even integer.")
             Z = Z.astype(np.float32)
             Z = Z[np.newaxis, :, :]
             if ops['pre_smooth']:
@@ -568,10 +553,6 @@ def compute_zpos(Zreg, ops):
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-                    raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if ops['spatial_hp_reg'] % 2:
-                    raise ValueError("spatial_hp must be a positive even integer.")
                 data = data.astype(np.float32)
 
                 if ops['pre_smooth']:

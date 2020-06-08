@@ -2,63 +2,8 @@ from contextlib import ExitStack
 from typing import Optional
 
 import numpy as np
-from scipy.ndimage import gaussian_filter1d
 from scipy.signal import medfilt
 
-from . import utils, rigid
-
-
-def compute_motion_and_shift(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time, reg_1p, spatial_hp, pre_smooth, ):
-    """ register data matrix to reference image and shift
-
-    Parameters
-    ----------
-    data : int16
-        array that's frames x Ly x Lx
-    refAndMasks : list
-        maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
-
-    Returns
-    -------
-    data : int16 (or float32, if ops['nonrigid'])
-        registered frames x Ly x Lx
-    ymax : int
-        shifts in y from cfRefImg to data for each frame
-    xmax : int
-        shifts in x from cfRefImg to data for each frame
-    cmax : float
-        maximum of phase correlation for each frame
-    """
-
-    if smooth_sigma_time > 0:
-        data_smooth = gaussian_filter1d(data, sigma=smooth_sigma_time, axis=0)
-
-    # preprocessing for 1P recordings
-    if reg_1p:
-        if pre_smooth and pre_smooth % 2:
-            raise ValueError("if set, pre_smooth must be a positive even integer.")
-        if spatial_hp % 2:
-            raise ValueError("spatial_hp must be a positive even integer.")
-        data = data.astype(np.float32)
-
-        if pre_smooth:
-            data = utils.spatial_smooth(data_smooth if smooth_sigma_time > 0 else data, int(pre_smooth))
-        data = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else data, int(spatial_hp))
-
-    # rigid registration
-    cfRefImg = cfRefImg.squeeze()
-
-    ymax, xmax, cmax = rigid.phasecorr(
-        data=data_smooth if smooth_sigma_time > 0 else data,
-        maskMul=maskMul,
-        maskOffset=maskOffset,
-        cfRefImg=cfRefImg,
-        maxregshift=maxregshift,
-        smooth_sigma_time=smooth_sigma_time,
-    )
-    rigid.shift_data(data, ymax, xmax)
-
-    return data, ymax, xmax, cmax
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion

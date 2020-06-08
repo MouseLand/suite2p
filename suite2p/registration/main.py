@@ -127,31 +127,61 @@ def register_binary(ops, refImg=None, raw=True):
         ops['bidiphase'] = 0
         niter = 8
         for iter in range(0, niter):
+
+            if ops['1Preg']:
+                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                    raise ValueError("if set, pre_smooth must be a positive even integer.")
+                if ops['spatial_hp_reg'] % 2:
+                    raise ValueError("spatial_hp must be a positive even integer.")
+                refImg = refImg.astype(np.float32)
+                refImg = refImg[np.newaxis, :, :]
+                if ops['pre_smooth']:
+                    refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+                refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+                refImg = refImg.squeeze()
+            refImg = refImg.copy()
+
             ops['refImg'] = refImg
             maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
-                refImg0=refImg,
-                spatial_taper=ops['spatial_taper'],
+                refImg=refImg,
+                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
                 smooth_sigma=ops['smooth_sigma'],
                 pad_fft=ops['pad_fft'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp_reg'],
-                pre_smooth=ops['pre_smooth'],
             )
 
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(frames, ops['bidiphase'])
 
-            freg, ymax, xmax, cmax = register.compute_motion_and_shift(
-                data=frames,
+            ###
+            freg = frames
+            if ops['smooth_sigma_time'] > 0:
+                data_smooth = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0)
+                data_smooth = data_smooth.astype(np.float32)
+
+            # preprocessing for 1P recordings
+            if ops['1Preg']:
+                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                    raise ValueError("if set, pre_smooth must be a positive even integer.")
+                if ops['spatial_hp_reg'] % 2:
+                    raise ValueError("spatial_hp must be a positive even integer.")
+                freg = freg.astype(np.float32)
+
+                if ops['pre_smooth']:
+                    freg = utils.spatial_smooth(data_smooth if ops['smooth_sigma_time'] > 0 else freg, int(ops['pre_smooth']))
+                freg = utils.spatial_high_pass(data_smooth if ops['smooth_sigma_time'] > 0 else freg, int(ops['spatial_hp_reg']))
+
+            # rigid registration
+            ymax, xmax, cmax = rigid.phasecorr(
+                data=data_smooth if ops['smooth_sigma_time'] > 0 else freg,
                 maskMul=maskMul,
                 maskOffset=maskOffset,
-                cfRefImg=cfRefImg,
+                cfRefImg=cfRefImg.squeeze(),
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp_reg'],
-                pre_smooth=ops['pre_smooth'],
             )
+            rigid.shift_data(freg, ymax, xmax)
+
+            ####
 
             ymax = ymax.astype(np.float32)
             xmax = xmax.astype(np.float32)
@@ -172,14 +202,25 @@ def register_binary(ops, refImg=None, raw=True):
 
 
     # register binary to reference image
+    if ops['1Preg']:
+        if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+            raise ValueError("if set, pre_smooth must be a positive even integer.")
+        if ops['spatial_hp_reg'] % 2:
+            raise ValueError("spatial_hp must be a positive even integer.")
+        refImg = refImg.astype(np.float32)
+        refImg = refImg[np.newaxis, :, :]
+        if ops['pre_smooth']:
+            refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+        refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+        refImg = refImg.squeeze()
+
+    refImg = refImg.copy()
+
     maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
-        refImg0=refImg,
-        spatial_taper=ops['spatial_taper'],
+        refImg=refImg,
+        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
         smooth_sigma=ops['smooth_sigma'],
         pad_fft=ops['pad_fft'],
-        reg_1p=ops['1Preg'],
-        spatial_hp=ops['spatial_hp_reg'],
-        pre_smooth=ops['pre_smooth'],
     )
     if ops.get('nonrigid'):
         if 'yblock' not in ops:
@@ -200,7 +241,7 @@ def register_binary(ops, refImg=None, raw=True):
             if ops['pre_smooth']:
                 data = utils.spatial_smooth(data, int(ops['pre_smooth']))
             data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
-            refImg = data
+            refImg = data.squeeze()
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
             refImg0=refImg,
@@ -220,17 +261,37 @@ def register_binary(ops, refImg=None, raw=True):
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(data, ops['bidiphase'])
 
-            data, ymax, xmax, cmax = register.compute_motion_and_shift(
-                data=data,
+
+            ####
+
+            if ops['smooth_sigma_time'] > 0:
+                data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+                data_smooth = data_smooth.astype(np.float32)
+
+            # preprocessing for 1P recordings
+            if ops['1Preg']:
+                if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                    raise ValueError("if set, pre_smooth must be a positive even integer.")
+                if ops['spatial_hp_reg'] % 2:
+                    raise ValueError("spatial_hp must be a positive even integer.")
+                data = data.astype(np.float32)
+
+                if ops['pre_smooth']:
+                    data = utils.spatial_smooth(data_smooth if ops['smooth_sigma_time'] > 0 else data, int(ops['pre_smooth']))
+                data = utils.spatial_high_pass(data_smooth if ops['smooth_sigma_time'] > 0 else data, int(ops['spatial_hp_reg']))
+
+            # rigid registration
+            ymax, xmax, cmax = rigid.phasecorr(
+                data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
                 maskMul=maskMul,
                 maskOffset=maskOffset,
-                cfRefImg=cfRefImg,
+                cfRefImg=cfRefImg.squeeze(),
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp_reg'],
-                pre_smooth=ops['pre_smooth'],
             )
+            rigid.shift_data(data, ymax, xmax)
+
+            ####
             rigid_offsets.append([ymax, xmax, cmax])
 
             # non-rigid registration
@@ -470,17 +531,27 @@ def compute_zpos(Zreg, ops):
     reg_file = open(ops['reg_file'], 'rb')
     refAndMasks = []
     for Z in Zreg:
-        refAndMasks.append(
-            rigid.phasecorr_reference(
-                refImg0=Z,
-                spatial_taper=ops['spatial_taper'],
-                smooth_sigma=ops['smooth_sigma'],
-                pad_fft=ops['pad_fft'],
-                reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp_reg'],
-                pre_smooth=ops['pre_smooth'],
-            )
+        if ops['1Preg']:
+            if ops['pre_smooth'] and ops['pre_smooth'] % 2:
+                raise ValueError("if set, pre_smooth must be a positive even integer.")
+            if ops['spatial_hp_reg'] % 2:
+                raise ValueError("spatial_hp must be a positive even integer.")
+            Z = Z.astype(np.float32)
+            Z = Z[np.newaxis, :, :]
+            if ops['pre_smooth']:
+                Z = utils.spatial_smooth(Z, int(ops['pre_smooth']))
+            Z = utils.spatial_high_pass(Z, int(ops['spatial_hp_reg']))
+            Z = Z.squeeze()
+
+        Z = Z.copy()
+
+        maskMul, maskOffset, cfRefImag = rigid.phasecorr_reference(
+            refImg=Z,
+            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+            smooth_sigma=ops['smooth_sigma'],
+            pad_fft=ops['pad_fft'],
         )
+        refAndMasks.append((maskMul, maskOffset, cfRefImag))
 
     zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
     t0 = time.time()

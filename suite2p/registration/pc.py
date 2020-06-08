@@ -91,14 +91,26 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
 
+        if reg_1p:
+            data = refImg
+            if pre_smooth and pre_smooth % 2:
+                raise ValueError("if set, pre_smooth must be a positive even integer.")
+            if spatial_hp % 2:
+                raise ValueError("spatial_hp must be a positive even integer.")
+            data = data.astype(np.float32)
+            data = data[np.newaxis, :, :]
+            if pre_smooth:
+                data = utils.spatial_smooth(data, int(pre_smooth))
+            data = utils.spatial_high_pass(data, int(spatial_hp))
+            refImg = data.squeeze()
+
+        refImg = refImg.copy()
+
         maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
-            refImg0=refImg,
-            spatial_taper=spatial_taper,
+            refImg=refImg,
+            maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma,
             smooth_sigma=smooth_sigma,
             pad_fft=pad_fft,
-            reg_1p=reg_1p,
-            spatial_hp=spatial_hp,
-            pre_smooth=pre_smooth,
         )
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
@@ -128,17 +140,35 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
-        dwrite, ymax, xmax, cmax = register.compute_motion_and_shift(
-            data=Img,
+        ###
+        dwrite = Img
+        if smooth_sigma_time > 0:
+            data_smooth = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+            data_smooth = data_smooth.astype(np.float32)
+
+        # preprocessing for 1P recordings
+        if reg_1p:
+            if pre_smooth and pre_smooth % 2:
+                raise ValueError("if set, pre_smooth must be a positive even integer.")
+            if spatial_hp % 2:
+                raise ValueError("spatial_hp must be a positive even integer.")
+            Img = Img.astype(np.float32)
+
+            if pre_smooth:
+                dwrite = utils.spatial_smooth(data_smooth if smooth_sigma_time > 0 else dwrite, int(pre_smooth))
+            dwrite = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else dwrite, int(spatial_hp))
+
+        # rigid registration
+        ymax, xmax, cmax = rigid.phasecorr(
+            data=data_smooth if smooth_sigma_time > 0 else dwrite,
             maskMul=maskMul,
             maskOffset=maskOffset,
-            cfRefImg=cfRefImg,
-            maxregshift=np.array(maxregshift),
+            cfRefImg=cfRefImg.squeeze(),
+            maxregshift=maxregshift,
             smooth_sigma_time=smooth_sigma_time,
-            reg_1p=reg_1p,
-            spatial_hp=spatial_hp,
-            pre_smooth=pre_smooth,
         )
+        rigid.shift_data(Img, ymax, xmax)
+        ###
 
         # non-rigid registration
         if is_nonrigid:

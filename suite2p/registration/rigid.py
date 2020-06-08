@@ -10,12 +10,12 @@ except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 from . import utils
 
-def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=None, reg_1p=None, spatial_hp=None, pre_smooth=None):
+def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
     """ computes masks and fft'ed reference image for phasecorr
 
     Parameters
     ----------
-    refImg0 : 2D array, int16
+    refImg : 2D array, int16
         reference image
 
     Returns
@@ -28,22 +28,7 @@ def phasecorr_reference(refImg0, spatial_taper=None, smooth_sigma=None, pad_fft=
         reference image fft'ed and complex conjugate and multiplied by gaussian
         filter in the fft domain with standard deviation 'smooth_sigma'
     """
-    if reg_1p:
-        data = refImg0
-        if pre_smooth and pre_smooth % 2:
-            raise ValueError("if set, pre_smooth must be a positive even integer.")
-        if spatial_hp % 2:
-            raise ValueError("spatial_hp must be a positive even integer.")
-        data = data.astype(np.float32)
 
-        if pre_smooth:
-            data = utils.spatial_smooth(data, int(pre_smooth))
-        data = utils.spatial_high_pass(data, int(spatial_hp))
-        refImg0 = data
-
-    refImg = refImg0.copy()
-
-    maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma
     Ly, Lx = refImg.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 

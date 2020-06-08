@@ -2,6 +2,7 @@ import os
 from os import path
 import time
 from warnings import warn
+from typing import Dict, Any
 
 import numpy as np
 from tqdm import tqdm
@@ -13,7 +14,7 @@ from .. import io
 from . import register, nonrigid, rigid, utils, bidiphase
 
 
-def register_binary(ops, refImg=None, raw=True):
+def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     """ main registration function
 
     if ops is a list of dictionaries, each will be registered separately
@@ -38,10 +39,6 @@ def register_binary(ops, refImg=None, raw=True):
 
 
     """
-    if (type(ops) is list) or (type(ops) is np.ndarray):
-        for op in ops:
-            op = register_binary(op)
-        return ops
 
     if ops['pre_smooth'] and ops['pre_smooth'] % 2:
         raise ValueError("if set, pre_smooth must be a positive even integer.")

@@ -74,7 +74,8 @@ def default_ops():
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # 1P settings
         '1Preg': False, # whether to perform high-pass filtering and tapering
-        'spatial_hp': 25, # window for spatial high-pass filtering before registration
+        'spatial_hp_reg': 26, # window for spatial high-pass filtering before registration
+        'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
         'pre_smooth': 2, # whether to smooth before high-pass filtering before registration
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings

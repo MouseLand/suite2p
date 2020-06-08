@@ -134,7 +134,7 @@ def register_binary(ops, refImg=None, raw=True):
                 smooth_sigma=ops['smooth_sigma'],
                 pad_fft=ops['pad_fft'],
                 reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
+                spatial_hp=ops['spatial_hp_reg'],
                 pre_smooth=ops['pre_smooth'],
             )
 
@@ -149,7 +149,7 @@ def register_binary(ops, refImg=None, raw=True):
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
                 reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
+                spatial_hp=ops['spatial_hp_reg'],
                 pre_smooth=ops['pre_smooth'],
             )
 
@@ -178,7 +178,7 @@ def register_binary(ops, refImg=None, raw=True):
         smooth_sigma=ops['smooth_sigma'],
         pad_fft=ops['pad_fft'],
         reg_1p=ops['1Preg'],
-        spatial_hp=ops['spatial_hp'],
+        spatial_hp=ops['spatial_hp_reg'],
         pre_smooth=ops['pre_smooth'],
     )
     if ops.get('nonrigid'):
@@ -193,13 +193,13 @@ def register_binary(ops, refImg=None, raw=True):
             data = refImg[np.newaxis, :, :]
             if ops['pre_smooth'] and ops['pre_smooth'] % 2:
                 raise ValueError("if set, pre_smooth must be a positive even integer.")
-            if ops['spatial_hp'] % 2:
+            if ops['spatial_hp_reg'] % 2:
                 raise ValueError("spatial_hp must be a positive even integer.")
             data = data.astype(np.float32)
 
             if ops['pre_smooth']:
                 data = utils.spatial_smooth(data, int(ops['pre_smooth']))
-            data = utils.spatial_high_pass(data, int(ops['spatial_hp']))
+            data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
             refImg = data
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
@@ -228,7 +228,7 @@ def register_binary(ops, refImg=None, raw=True):
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
                 reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
+                spatial_hp=ops['spatial_hp_reg'],
                 pre_smooth=ops['pre_smooth'],
             )
             rigid_offsets.append([ymax, xmax, cmax])
@@ -417,7 +417,7 @@ def get_pc_metrics(ops, use_red=False):
     if '1Preg' not in ops:
         ops['1Preg'] = False
 
-    X = pc_register(pclow, pchigh, spatial_hp=ops['spatial_hp'], pre_smooth=ops['pre_smooth'],
+    X = pc_register(pclow, pchigh, spatial_hp=ops['spatial_hp_reg'], pre_smooth=ops['pre_smooth'],
                        bidi_corrected=ops['bidi_corrected'], smooth_sigma=ops['smooth_sigma'], smooth_sigma_time=ops['smooth_sigma_time'],
                        block_size=ops['block_size'], maxregshift=ops['maxregshift'], maxregshiftNR=ops['maxregshiftNR'],
                        reg_1p=ops['1Preg'], snr_thresh=ops['snr_thresh'], is_nonrigid=ops['nonrigid'], pad_fft=ops['pad_fft'],
@@ -477,7 +477,7 @@ def compute_zpos(Zreg, ops):
                 smooth_sigma=ops['smooth_sigma'],
                 pad_fft=ops['pad_fft'],
                 reg_1p=ops['1Preg'],
-                spatial_hp=ops['spatial_hp'],
+                spatial_hp=ops['spatial_hp_reg'],
                 pre_smooth=ops['pre_smooth'],
             )
         )
@@ -499,13 +499,13 @@ def compute_zpos(Zreg, ops):
             if ops['1Preg']:
                 if ops['pre_smooth'] and ops['pre_smooth'] % 2:
                     raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if ops['spatial_hp'] % 2:
+                if ops['spatial_hp_reg'] % 2:
                     raise ValueError("spatial_hp must be a positive even integer.")
                 data = data.astype(np.float32)
 
                 if ops['pre_smooth']:
                     data = utils.spatial_smooth(data, int(ops['pre_smooth']))
-                data = utils.spatial_high_pass(data, int(ops['spatial_hp']))
+                data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
 
             maskMul, maskOffset, cfRefImg = ref
             cfRefImg = cfRefImg.squeeze()

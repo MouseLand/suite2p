@@ -391,7 +391,7 @@ def sparsery(ops):
     rez /= sdmov
     
     # subtract low-pass filtered version of binned movie
-    rez = neuropil_subtraction(rez, ops['spatial_hp'])
+    rez = neuropil_subtraction(rez, ops['spatial_hp_detect'])
 
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]

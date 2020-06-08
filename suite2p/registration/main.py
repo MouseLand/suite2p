@@ -66,37 +66,30 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     # get binary file paths
     if raw:
-        raw = ('keep_movie_raw' in ops and ops['keep_movie_raw'] and 'raw_file' in ops and path.isfile(ops['raw_file']))
-        raw_file_align = []
-        raw_file_alt = []
-        reg_file_align = []
-        reg_file_alt = []
+        raw = ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
         if raw:
             if ops['nchannels'] > 1:
                 if ops['functional_chan'] == ops['align_by_chan']:
-                    raw_file_align = ops['raw_file']
-                    raw_file_alt = ops['raw_file_chan2']
-                    reg_file_align = ops['reg_file']
-                    reg_file_alt = ops['reg_file_chan2']
+                    raw_file_align, reg_file_align = ops['raw_file'], ops['reg_file']
+                    raw_file_alt, reg_file_alt = ops['raw_file_chan2'], ops['reg_file_chan2']
                 else:
-                    raw_file_align = ops['raw_file_chan2']
-                    raw_file_alt = ops['raw_file']
-                    reg_file_align = ops['reg_file_chan2']
-                    reg_file_alt = ops['reg_file']
+                    raw_file_align, reg_file_align = ops['raw_file_chan2'], ops['reg_file_chan2']
+                    raw_file_alt, reg_file_alt = ops['raw_file'], ops['reg_file']
             else:
-                raw_file_align = ops['raw_file']
-                reg_file_align = ops['reg_file']
+                raw_file_align, reg_file_align = ops['raw_file'], ops['reg_file']
+                raw_file_alt, reg_file_alt = [], []
         else:
             if ops['nchannels'] > 1:
                 if ops['functional_chan'] == ops['align_by_chan']:
-                    reg_file_align = ops['reg_file']
-                    reg_file_alt = ops['reg_file_chan2']
+                    raw_file_align, reg_file_align = [], ops['reg_file']
+                    raw_file_alt, reg_file_alt = [], ops['reg_file_chan2']
                 else:
-                    reg_file_align = ops['reg_file_chan2']
-                    reg_file_alt = ops['reg_file']
+                    raw_file_align, reg_file_align = [], ops['reg_file_chan2']
+                    raw_file_alt, reg_file_alt = [], ops['reg_file']
             else:
-                reg_file_align = ops['reg_file']
-
+                raw_file_align, reg_file_align = [], ops['reg_file']
+                raw_file_alt, reg_file_alt = [], []
+    bin_file = raw_file_align if raw else reg_file_align
 
 
     # compute reference image
@@ -104,7 +97,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        bin_file = raw_file_align if raw else reg_file_align
         nframes = ops['nframes']
         nsamps = np.minimum(ops['nimg_init'], nframes)
         ix = np.linspace(0, nframes, 1 + nsamps).astype('int64')[:-1]

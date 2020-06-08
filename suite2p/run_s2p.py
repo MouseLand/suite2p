@@ -230,7 +230,6 @@ def run_s2p(ops={},db={}):
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])
 
     ops1 = np.array(ops1)
-    #ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
 

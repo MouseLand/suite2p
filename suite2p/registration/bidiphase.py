@@ -2,7 +2,7 @@ import numpy as np
 from numpy import fft
 
 
-def compute(frames):
+def compute(frames) -> int:
     """ computes the bidirectional phase offset
 
     sometimes in line scanning there will be offsets between lines;
@@ -43,7 +43,7 @@ def compute(frames):
 
     return bidiphase
 
-def shift(frames, bidiphase):
+def shift(frames, bidiphase: int):
     """ shift frames by bidirectional phase offset, bidiphase
 
     sometimes in line scanning there will be offsets between lines;
@@ -63,7 +63,6 @@ def shift(frames, bidiphase):
 
     """
 
-    bidiphase = int(bidiphase)
     nt, Ly, Lx = frames.shape
     yr = np.arange(1, np.floor(Ly/2)*2, 2, int)
     ntr = np.arange(0, nt, 1, int)

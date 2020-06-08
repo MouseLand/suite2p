@@ -45,12 +45,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     if ops['spatial_hp_reg'] % 2:
         raise ValueError("spatial_hp must be a positive even integer.")
 
-    # make blocks for nonrigid
-    if ops['nonrigid'] or 'yblock' not in ops:
-        ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
-            Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-        )
-
     # set number of frames and print warnings
     if ops['frames_include'] != -1:
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
@@ -104,15 +98,13 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             crop=False
         )
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:
-            bidi = bidiphase.compute(frames)
-            print('NOTE: estimated bidiphase offset from data: %d pixels' % bidi)
-        else:
-            bidi = ops['bidiphase']
-        if bidi != 0:
-            bidiphase.shift(frames, bidi)
+            ops['bidiphase'] = bidiphase.compute(frames)
+            print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])
+        if ops['bidiphase'] != 0:
+            bidiphase.shift(frames, int(ops['bidiphase']))
+
         refImg = register.pick_initial_reference(frames)
 
-        ops['bidiphase'] = 0
         niter = 8
         for iter in range(0, niter):
 
@@ -132,9 +124,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 smooth_sigma=ops['smooth_sigma'],
                 pad_fft=ops['pad_fft'],
             )
-
-            if ops['bidiphase'] and not ops['bidi_corrected']:
-                bidiphase.shift(frames, ops['bidiphase'])
 
             ###
             freg = frames
@@ -176,7 +165,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             rigid.shift_data(refImg, dy, dx)
             refImg = refImg.squeeze()
 
-        ops['bidiphase'] = bidi
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
@@ -231,7 +219,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         for k, data in tqdm(enumerate(f)):
 
             if ops['bidiphase'] and not ops['bidi_corrected']:
-                bidiphase.shift(data, ops['bidiphase'])
+                bidiphase.shift(data, int(ops['bidiphase']))
 
 
             ####
@@ -326,7 +314,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-                    bidiphase.shift(data, ops['bidiphase'])
+                    bidiphase.shift(data, int(ops['bidiphase']))
 
                 rigid.shift_data(data, ymax, xmax)
 

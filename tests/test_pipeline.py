@@ -1,6 +1,9 @@
-import numpy as np
-from pathlib import Path
+"""
+Class that tests common use cases for pipeline.
+"""
+
 import suite2p
+import utils
 
 
 def get_outputs_to_check(n_channels):
@@ -10,19 +13,33 @@ def get_outputs_to_check(n_channels):
     return outputs_to_check
 
 
-class TestCommonPipelineUseCases:
+def test_2plane_2chan(default_ops):
     """
-    Class that tests common use cases for pipeline.
+    Tests for case with 2 planes and 2 channels.
     """
+    default_ops['nplanes'] = 2
+    default_ops['nchannels'] = 2
+    suite2p.run_s2p(ops=default_ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        get_outputs_to_check(default_ops['nchannels']),
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+    )
 
-    def test_2plane_2chan(self, setup_and_teardown, get_test_dir_path, test_utils):
-        """
-        Tests for case with 2 planes and 2 channels.
-        """
-        ops, tmp_dir = setup_and_teardown
-        ops['nplanes'] = 2
-        ops['nchannels'] = 2
-        suite2p.run_s2p(ops=ops)
-        test_utils.check_output(
-            tmp_dir, get_outputs_to_check(ops['nchannels']), get_test_dir_path, ops['nplanes'], ops['nchannels']
-        )
+
+def test_1plane_2chan_sourcery(default_ops):
+    """
+    Tests for case with 2 planes and 1 channel.
+    """
+    default_ops['nchannels'] = 2
+    default_ops['sparse_mode'] = 0
+    suite2p.run_s2p(ops=default_ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        get_outputs_to_check(default_ops['nchannels']),
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+    )

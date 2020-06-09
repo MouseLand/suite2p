@@ -6,7 +6,7 @@ from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from matplotlib.colors import hsv_to_rgb
 
-from . import utils
+from suite2p.extraction import utils
 
 
 def getSVDdata(ops):
@@ -22,19 +22,15 @@ def getSVDdata(ops):
     sdmov = utils.get_sdmov(mov, ops)
     mov /= sdmov
     mov = np.reshape(mov, (-1,Lyc*Lxc))
-    if 1:
-        # compute covariance of binned frames
-        cov = mov @ mov.transpose() / mov.shape[1]
-        cov = cov.astype('float32')
+    # compute covariance of binned frames
+    cov = mov @ mov.transpose() / mov.shape[1]
+    cov = cov.astype('float32')
 
-        nsvd_for_roi = min(ops['nbinned'], int(cov.shape[0]/2))
-        u, s, v = np.linalg.svd(cov)
+    nsvd_for_roi = min(ops['nbinned'], int(cov.shape[0]/2))
+    u, s, v = np.linalg.svd(cov)
 
-        u = u[:, :nsvd_for_roi]
-        U = u.transpose() @ mov
-    else:
-        U = mov
-        u = []
+    u = u[:, :nsvd_for_roi]
+    U = u.transpose() @ mov
     U = np.reshape(U, (-1,Lyc,Lxc))
     U = np.transpose(U, (1, 2, 0)).copy()
     return ops, U, sdmov, u

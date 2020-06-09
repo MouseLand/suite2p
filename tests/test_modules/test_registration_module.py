@@ -5,6 +5,9 @@ Tests for the Suite2p Registration Module
 import numpy as np
 from pathlib import Path
 from tifffile import imread
+
+import suite2p.registration.pc
+import suite2p.registration.register
 from suite2p import registration
 
 
@@ -33,7 +36,7 @@ def check_registration_output(op, dimensions, input_path, reg_output_path, outpu
     op = prepare_for_registration(
         op, input_path, dimensions
     )
-    op = registration.register_binary(op)
+    op = suite2p.registration.register.register_binary(op)
     registered_data = imread(reg_output_path)
     output_check = imread(output_path)
     assert np.array_equal(registered_data, output_check)
@@ -52,7 +55,7 @@ def test_register_binary_output_with_metrics(default_ops):
         str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
         str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))
     )
-    registration.get_pc_metrics(op)
+    suite2p.registration.pc.get_pc_metrics(op)
 
 
 def test_register_binary_do_bidi_output(default_ops):
@@ -88,7 +91,7 @@ def test_register_binary_rigid_registration_only(default_ops):
     op = prepare_for_registration(
         default_ops, default_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
     )
-    op = registration.register_binary(op)
+    op = suite2p.registration.register.register_binary(op)
     registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
     # Make sure registered_data is identical across frames
     check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)

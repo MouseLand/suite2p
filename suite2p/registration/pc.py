@@ -2,8 +2,8 @@ import numpy as np
 from sklearn.decomposition import PCA
 from scipy.ndimage import gaussian_filter1d
 
-
-from . import rigid, nonrigid, register, utils
+from . import rigid, nonrigid, utils
+from .. import io
 
 
 def pclowhigh(mov, nlowhigh, nPC):
@@ -194,3 +194,63 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
     return X
 
 
+def get_pc_metrics(ops, use_red=False, nPC=30):
+    """ computes registration metrics using top PCs of registered movie
+
+        movie saved as binary file ops['reg_file']
+        metrics saved to ops['regPC'] and ops['X']
+        'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+        'regPC' is average of top and bottom frames for each PC
+        'tPC' is PC across time frames
+
+        Parameters
+        ----------
+        ops : dictionary
+            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+            (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
+        use_red : :obj:`bool`, optional
+            default False, whether to use 'reg_file' or 'reg_file_chan2'
+        nPC : int
+            # n PCs to compute motion for
+
+        Returns
+        -------
+            ops : dictionary
+                adds 'regPC' and 'tPC' and 'regDX'
+
+    """
+    # n frames to pick from full movie
+    nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
+
+    mov = io.get_frames(
+        Lx=ops['Lx'],
+        Ly=ops['Ly'],
+        xrange=ops['xrange'],
+        yrange=ops['yrange'],
+        ix=np.linspace(0, ops['nframes'] - 1, nsamp).astype('int'),
+        bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
+        crop=True,
+    )
+
+    pclow, pchigh, sv, ops['tPC'] = pclowhigh(mov, nlowhigh=np.minimum(300, int(ops['nframes'] / 2)), nPC=nPC)
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)
+
+    ops['regDX'] = pc_register(
+        pclow,
+        pchigh,
+        spatial_hp=ops['spatial_hp_reg'],
+        pre_smooth=ops['pre_smooth'],
+        bidi_corrected=ops['bidi_corrected'],
+        smooth_sigma=ops['smooth_sigma'] if 'smooth_sigma' in ops else 1.15,
+        smooth_sigma_time=ops['smooth_sigma_time'],
+        block_size=ops['block_size'] if 'block_size' in ops else [128, 128],
+        maxregshift=ops['maxregshift'] if 'maxregshift' in ops else 0.1,
+        maxregshiftNR=ops['maxregshiftNR'] if 'maxregshiftNR' in ops else 5,
+        reg_1p=ops['1Preg'] if '1Preg' in ops else False,
+        snr_thresh=ops['snr_thresh'],
+        is_nonrigid=ops['nonrigid'],
+        pad_fft=ops['pad_fft'],
+        bidiphase=ops['bidiphase'],
+        spatial_taper=ops['spatial_taper']
+    )
+    return ops

@@ -372,8 +372,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     if not raw:
         ops['bidi_corrected'] = True
 
-    if 'ops_path' in ops:
-        np.save(ops['ops_path'], ops)
     return ops
 
 

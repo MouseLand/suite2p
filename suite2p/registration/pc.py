@@ -167,7 +167,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             maxregshift=maxregshift,
             smooth_sigma_time=smooth_sigma_time,
         )
-        rigid.shift_data(Img, ymax, xmax)
+        rigid.shift_frames(Img, ymax, xmax)
         ###
 
         # non-rigid registration

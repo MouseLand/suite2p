@@ -116,22 +116,24 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
     return ymax, xmax, cmax
 
 
-def shift_data(frames, ys, xs):
+def shift_frame(frame, dy, dx):
+    """returns rigid shift frames by integer shifts ys and xs in place"""
+    frame[:] = np.roll(frame, (-dy, -dx), axis=(0, 1))
+
+
+def shift_frames(frames, dys, dxs):
     """ rigid shift frames by integer shifts ys and xs in place (no return)
 
     Parameters
     ----------
     frames : int16
         array that's frames x Ly x Lx
-    ys : np.ndarray
+    dys : np.ndarray
         shifts in y from cfRefImg to data for each frame
-    xs : np.ndarray
+    dxs : np.ndarray
         shifts in x from cfRefImg to data for each frame
 
     """
-    if frames.ndim < 3:
-        frames = frames[np.newaxis, :, :]
-
-    for frame, y, x in zip(frames, ys.flatten(), xs.flatten()):
-        frame[:] = np.roll(frame, (-y, -x), axis=(0, 1))
+    for frame, y, x in zip(frames, dys.flatten(), dxs.flatten()):
+        shift_frame(frame=frame, dy=y, dx=x)
 

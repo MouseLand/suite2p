@@ -125,23 +125,22 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 pad_fft=ops['pad_fft'],
             )
 
-            ###
             freg = frames
             if ops['smooth_sigma_time'] > 0:
-                data_smooth = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0)
-                data_smooth = data_smooth.astype(np.float32)
+                freg = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0)
+                freg = freg.astype(np.float32)
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
                 freg = freg.astype(np.float32)
 
                 if ops['pre_smooth']:
-                    freg = utils.spatial_smooth(data_smooth if ops['smooth_sigma_time'] > 0 else freg, int(ops['pre_smooth']))
-                freg = utils.spatial_high_pass(data_smooth if ops['smooth_sigma_time'] > 0 else freg, int(ops['spatial_hp_reg']))
+                    freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
+                freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=data_smooth if ops['smooth_sigma_time'] > 0 else freg,
+                data=freg,
                 maskMul=maskMul,
                 maskOffset=maskOffset,
                 cfRefImg=cfRefImg.squeeze(),
@@ -149,8 +148,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             rigid.shift_data(freg, ymax, xmax)
-
-            ####
 
             ymax = ymax.astype(np.float32)
             xmax = xmax.astype(np.float32)
@@ -225,20 +222,20 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             ####
 
             if ops['smooth_sigma_time'] > 0:
-                data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
-                data_smooth = data_smooth.astype(np.float32)
+                data = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+                data = data.astype(np.float32)
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
                 data = data.astype(np.float32)
 
                 if ops['pre_smooth']:
-                    data = utils.spatial_smooth(data_smooth if ops['smooth_sigma_time'] > 0 else data, int(ops['pre_smooth']))
-                data = utils.spatial_high_pass(data_smooth if ops['smooth_sigma_time'] > 0 else data, int(ops['spatial_hp_reg']))
+                    data = utils.spatial_smooth(data, int(ops['pre_smooth']))
+                data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
+                data=data,
                 maskMul=maskMul,
                 maskOffset=maskOffset,
                 cfRefImg=cfRefImg.squeeze(),
@@ -254,10 +251,10 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             if ops['nonrigid']:
 
                 if ops['smooth_sigma_time'] > 0:
-                    data_smooth = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+                    data = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
 
                 ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
-                    data=data_smooth if ops['smooth_sigma_time'] > 0 else data,
+                    data=data,
                     maskMul=maskMulNR.squeeze(),
                     maskOffset=maskOffsetNR.squeeze(),
                     cfRefImg=cfRefImgNR.squeeze(),

@@ -51,7 +51,7 @@ def pclowhigh(mov, nlowhigh, nPC):
     return pclow, pchigh, w, v
 
 
-def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_sigma=1.15, smooth_sigma_time=0,
+def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
                 block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
                 is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
     """ register top and bottom of PCs to each other
@@ -143,8 +143,8 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         ###
         dwrite = Img
         if smooth_sigma_time > 0:
-            data_smooth = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
-            data_smooth = data_smooth.astype(np.float32)
+            dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+            dwrite = dwrite.astype(np.float32)
 
         # preprocessing for 1P recordings
         if reg_1p:
@@ -155,12 +155,12 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
             Img = Img.astype(np.float32)
 
             if pre_smooth:
-                dwrite = utils.spatial_smooth(data_smooth if smooth_sigma_time > 0 else dwrite, int(pre_smooth))
-            dwrite = utils.spatial_high_pass(data_smooth if smooth_sigma_time > 0 else dwrite, int(spatial_hp))
+                dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
 
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
-            data=data_smooth if smooth_sigma_time > 0 else dwrite,
+            data=dwrite,
             maskMul=maskMul,
             maskOffset=maskOffset,
             cfRefImg=cfRefImg.squeeze(),
@@ -174,10 +174,10 @@ def pc_register(pclow, pchigh, spatial_hp, pre_smooth, bidi_corrected, smooth_si
         if is_nonrigid:
 
             if smooth_sigma_time > 0:
-                data_smooth = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+                dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
 
             ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
-                data=data_smooth if smooth_sigma_time > 0 else dwrite,
+                data=dwrite,
                 maskMul=maskMulNR.squeeze(),
                 maskOffset=maskOffsetNR.squeeze(),
                 cfRefImg=cfRefImgNR.squeeze(),

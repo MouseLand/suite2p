@@ -10,6 +10,7 @@ except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 from . import utils
 
+
 def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
     """ computes masks and fft'ed reference image for phasecorr
 
@@ -31,26 +32,14 @@ def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
 
     Ly, Lx = refImg.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
-
-    refImg = refImg.squeeze()
-
     maskOffset = refImg.mean() * (1. - maskMul)
 
     # reference image in fourier domain
     cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(refImg))
-
-    absRef = np.absolute(cfRefImg)
-    cfRefImg = cfRefImg / (1e-5 + absRef)
-
-    # gaussian filter in space
-    fhg = utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
-    cfRefImg *= fhg
-
-    maskMul = maskMul.astype('float32')
-    maskOffset = maskOffset.astype('float32')
-    cfRefImg = cfRefImg.astype('complex64')
-    cfRefImg = np.reshape(cfRefImg, (1, cfRefImg.shape[0], cfRefImg.shape[1]))
-    return maskMul, maskOffset, cfRefImg
+    cfRefImg /= (1e-5 + np.absolute(cfRefImg))
+    cfRefImg *= utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
+    cfRefImg = cfRefImg[np.newaxis, :, :]
+    return maskMul.astype('float32'), maskOffset.astype('float32'), cfRefImg.astype('complex64')
 
 
 def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):

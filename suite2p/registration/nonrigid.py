@@ -37,52 +37,30 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xblock, pad_fft):
-    """ computes taper and fft'ed reference image for phasecorr
-    
-    Parameters
-    ----------
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xblock, pad_fft: bool = False):
+    """ computes taper and fft'ed reference image for phasecorr"""
+    nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
+    dims = (nb, Ly, Lx)
+    cfRef_dims = (nb, next_fast_len(Ly), next_fast_len(Lx)) if pad_fft else dims
+    gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
+    cfRefImg1 = np.empty(cfRef_dims, 'complex64')
 
-    refImg : 2D array, int16
-        reference image
-
-    Returns
-    -------
-    maskMul : 2D array
-        mask that is multiplied to spatially taper
-
-    maskOffset : 2D array
-        shifts in x from cfRefImg to data for each frame
-
-    cfRefImg : 2D array, complex64
-        reference image fft'ed and complex conjugate and multiplied by gaussian
-        filter in the fft domain with standard deviation 'smooth_sigma'
-    
-
-    """
-
-    nb = len(yblock)
-    Ly = yblock[0][1] - yblock[0][0]
-    Lx = xblock[0][1] - xblock[0][0]
-    cfRefImg1 = np.zeros((nb, next_fast_len(Ly), next_fast_len(Lx)), 'complex64') if pad_fft else np.zeros((nb, Ly, Lx), 'complex64')
     maskMul = spatial_taper(maskSlope, *refImg0.shape)
-    maskMul1 = np.zeros((nb, Ly, Lx), 'float32')
-    maskMul1[:, :, :] = spatial_taper(2 * smooth_sigma, Ly, Lx)
-    maskOffset1 = np.zeros((nb, Ly, Lx), 'float32')
-    for n in range(nb):
-        yind = yblock[n]
-        xind = xblock[n]
+    maskMul1 = np.empty(dims, 'float32')
+    maskMul1[:] = spatial_taper(2 * smooth_sigma, Ly, Lx)
+    maskOffset1 = np.empty(dims, 'float32')
+    for yind, xind, maskMul1_n, maskOffset1_n, cfRefImg1_n in zip(yblock, xblock, maskMul1, maskOffset1, cfRefImg1):
         ix = np.ix_(np.arange(yind[0], yind[-1]).astype('int'), np.arange(xind[0], xind[-1]).astype('int'))
         refImg = refImg0[ix]
 
         # mask params
-        maskMul1[n, :, :] *= maskMul[ix]
-        maskOffset1[n, :, :] = refImg.mean() * (1. - maskMul1[n, :, :])
+        maskMul1_n *= maskMul[ix]
+        maskOffset1_n[:] = refImg.mean() * (1. - maskMul1_n)
 
         # gaussian filter
-        cfRefImg = np.conj(fft.fft2(refImg))
-        cfRefImg = cfRefImg / (1e-5 + np.absolute(cfRefImg)) * gaussian_fft(smooth_sigma, *cfRefImg.shape)
-        cfRefImg1[n, :, :] = cfRefImg.astype('complex64')
+        cfRefImg1_n[:] = np.conj(fft.fft2(refImg))
+        cfRefImg1_n /= 1e-5 + np.absolute(cfRefImg1_n)
+        cfRefImg1_n[:] *= gaussian_filter
 
     return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
 

@@ -67,7 +67,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_fft):
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xblock, pad_fft):
     """ computes taper and fft'ed reference image for phasecorr
     
     Parameters
@@ -103,24 +103,22 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
     cfRefImg1 = np.zeros((nb,1,next_fast_len(Ly), next_fast_len(Lx)), 'complex64') if pad_fft else np.zeros((nb, 1, Ly, Lx), 'complex64')
     maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
     maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
+    maskMul2 = spatial_taper(2 * smooth_sigma, Ly, Lx)
+    refImg0 = refImg0.squeeze()
     for n in range(nb):
         yind = yblock[n]
-        yind = np.arange(yind[0], yind[-1]).astype('int')
         xind = xblock[n]
-        xind = np.arange(xind[0], xind[-1]).astype('int')
+        ix = np.ix_(np.arange(yind[0], yind[-1]).astype('int'), np.arange(xind[0], xind[-1]).astype('int'))
 
-        refImg = refImg0.squeeze()[np.ix_(yind,xind)]
-        maskMul2 = spatial_taper(2 * smooth_sigma, Ly, Lx)
-        maskMul1[n, 0, :, :] = maskMul[np.ix_(yind,xind)].astype('float32')
-        maskMul1[n, 0, :, :] *= maskMul2.astype('float32')
+        refImg = refImg0[ix]
+        maskMul1[n, 0, :, :] = maskMul[ix].astype('float32') * maskMul2.astype('float32')
         maskOffset1[n, 0, :, :] = (refImg.mean() * (1. - maskMul1[n, 0, :, :])).astype(np.float32)
         cfRefImg = np.conj(fft.fft2(refImg))
         absRef = np.absolute(cfRefImg)
         cfRefImg = cfRefImg / (1e-5 + absRef)
 
         # gaussian filter
-        fhg = gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
-        cfRefImg *= fhg
+        cfRefImg *= gaussian_fft(smooth_sigma, *cfRefImg.shape)
         cfRefImg1[n, 0, :, :] = cfRefImg.astype('complex64')
 
     return maskMul1, maskOffset1, cfRefImg1

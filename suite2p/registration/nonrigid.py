@@ -396,10 +396,7 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
         size [nimg x Ly x Lx], shifted data
 
     """
-    if data.ndim<3:
-        data = data[np.newaxis, :, :]
-    nimg, Ly, Lx = data.shape
-    # take shifts and make matrices of shifts nimg x Ly x Lx
+    _, Ly, Lx = data.shape
     yup, xup = upsample_block_shifts(
         Lx=Lx,
         Ly=Ly,
@@ -409,9 +406,10 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
         ymax1=ymax1,
         xmax1=xmax1,
     )
-    mshx, mshy = np.meshgrid(np.arange(0, Lx, 1, np.float32), np.arange(0, Ly, 1, np.float32))
-    Y = np.zeros(data.shape, np.float32)
+
     # use shifts and do bilinear interpolation
+    mshx, mshy = np.meshgrid(np.arange(Lx, dtype=np.float32), np.arange(Ly, dtype=np.float32))
+    Y = np.zeros_like(data, dtype=np.float32)
     shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y
 

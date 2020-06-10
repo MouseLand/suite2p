@@ -269,8 +269,8 @@ def map_coordinates(I, yc, xc, Y):
     Ly,Lx = I.shape
     yc_floor = yc.astype(np.int32)
     xc_floor = xc.astype(np.int32)
-    yc -= yc_floor
-    xc -= xc_floor
+    yc = yc - yc_floor
+    xc = xc - xc_floor
     for i in range(yc_floor.shape[0]):
         for j in range(yc_floor.shape[1]):
             yf = min(Ly-1, max(0, yc_floor[i,j]))
@@ -317,12 +317,14 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     for t in prange(data.shape[0]):
         map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
 
+
 @njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True, cache=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
     """ interpolate from ymax1 to mshy to create coordinate transforms """
     for t in prange(ymax1.shape[0]):
-        map_coordinates(ymax1[t], mshy.copy(), mshx.copy(), yup[t])  # y shifts for blocks to coordinate map
-        map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])  # x shifts for blocks to coordinate map
+        map_coordinates(ymax1[t], mshy, mshx, yup[t])  # y shifts for blocks to coordinate map
+        map_coordinates(xmax1[t], mshy, mshx, xup[t])  # x shifts for blocks to coordinate map
+
 
 def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     """ upsample blocks of shifts into full pixel-wise maps for shifting
@@ -352,8 +354,8 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     """
 
     nimg = ymax1.shape[0]
-    ymax1 = np.reshape(ymax1, (nimg,nblocks[0], nblocks[1]))
-    xmax1 = np.reshape(xmax1, (nimg,nblocks[0], nblocks[1]))
+    ymax1 = ymax1.reshape(nimg, nblocks[0], nblocks[1])
+    xmax1 = xmax1.reshape(nimg, nblocks[0], nblocks[1])
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
@@ -361,10 +363,10 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     yb = np.array(yblock[::nblocks[1]]).mean(axis=1).astype(np.float32)
     xb = np.array(xblock[:nblocks[1]]).mean(axis=1).astype(np.float32)
 
-    iy = np.arange(0, Ly, 1, np.float32)
-    ix = np.arange(0, Lx, 1, np.float32)
-    iy = np.interp(iy, yb, np.arange(0, yb.size, 1, int)).astype(np.float32)
-    ix = np.interp(ix, xb, np.arange(0, xb.size, 1, int)).astype(np.float32)
+    iy = np.arange(Ly, dtype=np.float32)
+    ix = np.arange(Lx, dtype=np.float32)
+    iy = np.interp(iy, yb, np.arange(yb.size, dtype=int)).astype(np.float32)
+    ix = np.interp(ix, xb, np.arange(xb.size, dtype=int)).astype(np.float32)
     mshx, mshy = np.meshgrid(ix, iy)
     # interpolate from block centers to all points Ly x Lx
     #Ly,Lx = mshy.shape

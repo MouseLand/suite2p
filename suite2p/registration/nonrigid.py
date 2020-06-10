@@ -54,8 +54,8 @@ def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
 
     ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
     xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
-    yblock = [np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny) for ix in range(nx)]
-    xblock = [np.array([xstart[ix], xstart[ix] + block_size[1]]) for iy in range(ny) for ix in range(nx)]
+    yblock = [np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny) for _ in range(nx)]
+    xblock = [np.array([xstart[ix], xstart[ix] + block_size[1]]) for _ in range(ny) for ix in range(nx)]
 
     ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
     ys = ys.flatten()
@@ -352,28 +352,26 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
         size [nimg x Ly x Lx], x shifts for each coordinate
 
     """
-
-    nimg = ymax1.shape[0]
-    ymax1 = ymax1.reshape(nimg, nblocks[0], nblocks[1])
-    xmax1 = xmax1.reshape(nimg, nblocks[0], nblocks[1])
     # make arrays of control points for piecewise-affine transform
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    yb = np.array(yblock[::nblocks[1]]).mean(axis=1).astype(np.float32)
-    xb = np.array(xblock[:nblocks[1]]).mean(axis=1).astype(np.float32)
+    yb = np.array(yblock[::nblocks[1]]).mean(axis=1)  # todo: find out why yb has two colons and xb has one colon
+    xb = np.array(xblock[:nblocks[1]]).mean(axis=1)
 
-    iy = np.arange(Ly, dtype=np.float32)
-    ix = np.arange(Lx, dtype=np.float32)
-    iy = np.interp(iy, yb, np.arange(yb.size, dtype=int)).astype(np.float32)
-    ix = np.interp(ix, xb, np.arange(xb.size, dtype=int)).astype(np.float32)
+    iy = np.interp(np.arange(Ly), yb, np.arange(yb.size)).astype(np.float32)
+    ix = np.interp(np.arange(Lx), xb, np.arange(xb.size)).astype(np.float32)
     mshx, mshy = np.meshgrid(ix, iy)
+
     # interpolate from block centers to all points Ly x Lx
-    #Ly,Lx = mshy.shape
+    nimg = ymax1.shape[0]
+    ymax1 = ymax1.reshape(nimg, nblocks[0], nblocks[1])
+    xmax1 = xmax1.reshape(nimg, nblocks[0], nblocks[1])
     yup = np.zeros((nimg, Ly, Lx), np.float32)
     xup = np.zeros((nimg, Ly, Lx), np.float32)
 
     block_interp(ymax1, xmax1, mshy, mshx, yup, xup)
+
     return yup, xup
 
 

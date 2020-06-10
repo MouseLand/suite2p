@@ -181,7 +181,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     """
     Kmat, nup = mat_upsample(lpad=3)
 
-    nimg, Ly, Lx = data.shape
+    nimg = data.shape[0]
     ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
@@ -195,13 +195,9 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         yind, xind = yblock[n], xblock[n]
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
-    for n in range(nb):
-        for t in range(nimg):
-            fft2(Y[t,n], overwrite_x=True)
+    fft2(Y, overwrite_x=True)
     Y = utils.apply_dotnorm(Y, cfRefImg)
-    for n in range(nb):
-        for t in range(nimg):
-            ifft2(Y[t,n], overwrite_x=True)
+    ifft2(Y, overwrite_x=True)
 
     # calculate ccsm
     lhalf = lcorr + lpad

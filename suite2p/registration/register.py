@@ -246,10 +246,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     cfRefImg = cfRefImg[np.newaxis, :, :]
     if ops.get('nonrigid'):
         if 'yblock' not in ops:
-            ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[
-                'NRsm'] = nonrigid.make_blocks(
-                Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
-            )
+            ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
+                'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
 
         maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
         if ops['1Preg']:

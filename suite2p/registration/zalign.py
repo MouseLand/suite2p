@@ -13,8 +13,8 @@ def register_stack(Z, ops):
     ops['nframes'], ops['Ly'], ops['Lx'] = Z.shape
 
     if ops['nonrigid']:
-        ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
-            Ly=ops['Ly'], Lx=ops['Lx'], maxregshiftNR=ops['maxregshiftNR'], block_size=ops['block_size']
+        ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
+            Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size']
         )
 
     Ly = ops['Ly']

@@ -1,6 +1,6 @@
-import math
 import warnings
 from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
 from numba import float32, njit, prange
@@ -25,6 +25,15 @@ def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
     return K
 
 
+def kernelD2(xs: int, ys: int) -> np.ndarray:
+    ys, xs = np.meshgrid(xs, ys)
+    ys = ys.flatten().reshape(1, -1)
+    xs = xs.flatten().reshape(1, -1)
+    R = np.exp(-((ys - ys.T) ** 2 + (xs - xs.T) ** 2))
+    R = R / np.sum(R, axis=0)
+    return R
+
+
 @lru_cache(maxsize=5)
 def mat_upsample(lpad, subpixel: int = 10):
     """ upsampling matrix using gaussian kernels """
@@ -35,33 +44,27 @@ def mat_upsample(lpad, subpixel: int = 10):
     return Kmat, nup
 
 
-def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
+def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:
+    """Returns block_size and nblocks from dimension length and desired block size"""
+    return (L, 1) if block_size >= L else (block_size, int(np.ceil(1.5 * L / block_size)))
+
+
+def make_blocks(Ly, Lx, block_size=(128, 128)):
     """ computes overlapping blocks to split FOV into to register separately"""
-    ny = int(np.ceil(1.5 * float(Ly) / block_size[0]))
-    nx = int(np.ceil(1.5 * float(Lx) / block_size[1]))
 
-    if block_size[0] >= Ly:
-        block_size[0] = Ly
-        ny = 1
-    if block_size[1] >= Lx:
-        block_size[1] = Lx
-        nx = 1
-    nblocks = [ny, nx]
+    block_size_y, ny = calculate_nblocks(L=Ly, block_size=block_size[0])
+    block_size_x, nx = calculate_nblocks(L=Lx, block_size=block_size[1])
+    block_size = (block_size_y, block_size_x)
 
+    # todo: could rounding to int here over-represent some pixels over others?
     ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
     xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
     yblock = [np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny) for _ in range(nx)]
     xblock = [np.array([xstart[ix], xstart[ix] + block_size[1]]) for _ in range(ny) for ix in range(nx)]
 
-    ys, xs = np.meshgrid(np.arange(nx), np.arange(ny))
-    ys = ys.flatten()
-    xs = xs.flatten()
-    ds = (ys - ys[:, np.newaxis]) ** 2 + (xs - xs[:, np.newaxis]) ** 2
-    R = np.exp(-ds)
-    R = R / np.sum(R, axis=0)
-    NRsm = R.T
+    NRsm = kernelD2(xs=np.arange(nx), ys=np.arange(ny)).T
 
-    return yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm
+    return yblock, xblock, [ny, nx], block_size, NRsm
 
 
 def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_fft):

@@ -82,9 +82,10 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
     """
     # registration settings
     nPC, Ly, Lx = pclow.shape
-    yblock, xblock, nblocks, maxregshiftNR, block_size, NRsm = nonrigid.make_blocks(
-        Ly=Ly, Lx=Lx, maxregshiftNR=np.array(maxregshiftNR), block_size=np.array(block_size)
+    yblock, xblock, nblocks, block_size, NRsm = nonrigid.make_blocks(
+        Ly=Ly, Lx=Lx, block_size=np.array(block_size)
     )
+    maxregshiftNR = np.array(maxregshiftNR)
 
     X = np.zeros((nPC,3))
     for i in range(nPC):

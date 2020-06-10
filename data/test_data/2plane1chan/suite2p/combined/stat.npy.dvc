@@ -1,7 +1,0 @@
-md5: 4977a6562d55314e921950cc5f39cf21
-outs:
-- md5: b35bba3d285b4297ed439f62b1fe3369
-  path: stat.npy
-  cache: true
-  metric: false
-  persist: false

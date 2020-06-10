@@ -180,12 +180,16 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             refImg = refImg.copy()
 
             ops['refImg'] = refImg
-            maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+            maskMul, maskOffset = rigid.compute_masks(
                 refImg=refImg,
                 maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+            )
+            cfRefImg = rigid.phasecorr_reference(
+                refImg=refImg,
                 smooth_sigma=ops['smooth_sigma'],
                 pad_fft=ops['pad_fft'],
             )
+            cfRefImg = cfRefImg[np.newaxis, :, :]
 
             freg = frames
             if ops['smooth_sigma_time'] > 0:
@@ -235,12 +239,16 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     refImg = refImg.copy()
 
-    maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+    maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
         maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+    )
+    cfRefImg = rigid.phasecorr_reference(
+        refImg=refImg,
         smooth_sigma=ops['smooth_sigma'],
         pad_fft=ops['pad_fft'],
     )
+    cfRefImg = cfRefImg[np.newaxis, :, :]
     if ops.get('nonrigid'):
         if 'yblock' not in ops:
             ops['yblock'], ops['xblock'], ops['nblocks'], ops['maxregshiftNR'], ops['block_size'], ops[

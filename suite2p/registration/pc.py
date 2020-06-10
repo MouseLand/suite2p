@@ -105,13 +105,16 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             refImg = data.squeeze()
 
         refImg = refImg.copy()
-
-        maskMul, maskOffset, cfRefImg = rigid.phasecorr_reference(
+        maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
-            maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma,
+            maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma
+        )
+        cfRefImg = rigid.phasecorr_reference(
+            refImg=refImg,
             smooth_sigma=smooth_sigma,
             pad_fft=pad_fft,
         )
+        cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
             # pre filtering for one-photon data

@@ -151,12 +151,16 @@ def compute_zpos(Zreg, ops):
 
         Z = Z.copy()
 
-        maskMul, maskOffset, cfRefImag = rigid.phasecorr_reference(
+        maskMul, maskOffset = rigid.compute_masks(
             refImg=Z,
             maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+        )
+        cfRefImag = rigid.phasecorr_reference(
+            refImg=Z,
             smooth_sigma=ops['smooth_sigma'],
             pad_fft=ops['pad_fft'],
         )
+        cfRefImag = cfRefImag[np.newaxis, :, :]
         refAndMasks.append((maskMul, maskOffset, cfRefImag))
 
     zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)

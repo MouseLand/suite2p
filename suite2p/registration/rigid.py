@@ -1,4 +1,5 @@
 import warnings
+from typing import Tuple
 
 import numpy as np
 from scipy.fftpack import next_fast_len
@@ -11,8 +12,18 @@ except ModuleNotFoundError:
 from . import utils
 
 
-def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
-    """ computes masks and fft'ed reference image for phasecorr
+def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
+    """Returns maskMul and maskOffset from an image and slope parameter"""
+    Ly, Lx = refImg.shape
+    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
+    maskOffset = refImg.mean() * (1. - maskMul)
+    return maskMul.astype('float32'), maskOffset.astype('float32')
+
+
+def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:
+    """
+    Returns reference image fft'ed and complex conjugate and multiplied by gaussian filter in the fft domain,
+    with standard deviation 'smooth_sigma' computes fft'ed reference image for phasecorr.
 
     Parameters
     ----------
@@ -21,25 +32,13 @@ def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
 
     Returns
     -------
-    maskMul : 2D array
-        mask that is multiplied to spatially taper
-    maskOffset : 2D array
-        shifts in x from cfRefImg to data for each frame
     cfRefImg : 2D array, complex64
-        reference image fft'ed and complex conjugate and multiplied by gaussian
-        filter in the fft domain with standard deviation 'smooth_sigma'
     """
-
     Ly, Lx = refImg.shape
-    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
-    maskOffset = refImg.mean() * (1. - maskMul)
-
-    # reference image in fourier domain
     cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(refImg))
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
     cfRefImg *= utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
-    cfRefImg = cfRefImg[np.newaxis, :, :]
-    return maskMul.astype('float32'), maskOffset.astype('float32'), cfRefImg.astype('complex64')
+    return cfRefImg.astype('complex64')
 
 
 def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):

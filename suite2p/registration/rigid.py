@@ -2,27 +2,22 @@ import warnings
 from typing import Tuple
 
 import numpy as np
-from scipy.fftpack import next_fast_len
 from scipy.ndimage import gaussian_filter1d
 
-try:
-    from mkl_fft import fft2, ifft2
-except ModuleNotFoundError:
-    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
-from . import utils
+from .utils import convolve, complex_fft2, spatial_taper, addmultiplytype, gaussian_fft
 
 
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     """Returns maskMul and maskOffset from an image and slope parameter"""
     Ly, Lx = refImg.shape
-    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
+    maskMul = spatial_taper(maskSlope, Ly, Lx)
     maskOffset = refImg.mean() * (1. - maskMul)
     return maskMul.astype('float32'), maskOffset.astype('float32')
 
 
 def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -> np.ndarray:
     """Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'."""
-    return utils.addmultiplytype(data, maskMul, maskOffset)
+    return addmultiplytype(data, maskMul, maskOffset)
 
 
 def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:
@@ -39,10 +34,9 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = F
     -------
     cfRefImg : 2D array, complex64
     """
-    Ly, Lx = refImg.shape
-    cfRefImg = np.conj(fft2(refImg, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(refImg))
+    cfRefImg = complex_fft2(img=refImg, pad_fft=pad_fft)
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
-    cfRefImg *= utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
+    cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
     return cfRefImg.astype('complex64')
 
 
@@ -68,27 +62,20 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time):
         maximum of phase correlation for each frame
 
     """
+    data = convolve(data, cfRefImg)
 
-    # maximum registration shift allowed
-    min_dim = np.minimum(*data.shape[1:])
+    min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
-
-    # shifts and corrmax
-    X = data
-    fft2(X, overwrite_x=True)
-    X = utils.apply_dotnorm(X, cfRefImg)
-    ifft2(X, overwrite_x=True)
     cc = np.real(
         np.block(
-            [[X[:,  -lcorr:, -lcorr:], X[:,  -lcorr:, :lcorr+1]],
-             [X[:, :lcorr+1, -lcorr:], X[:, :lcorr+1, :lcorr+1]]]
+            [[data[:,  -lcorr:, -lcorr:], data[:,  -lcorr:, :lcorr+1]],
+             [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
         )
     )
-    if smooth_sigma_time > 0:
-        cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
+    cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0) if smooth_sigma_time > 0 else cc
 
     ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)
-    for t in np.arange(X.shape[0]):
+    for t in np.arange(data.shape[0]):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2 * lcorr + 1, 2 * lcorr + 1))
     cmax = cc[np.arange(len(cc)), ymax, xmax]
     ymax, xmax = ymax - lcorr, xmax - lcorr

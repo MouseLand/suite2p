@@ -3,6 +3,8 @@ import warnings
 import numpy as np
 from numba import vectorize, complex64
 from numpy import fft
+from scipy.fftpack import next_fast_len
+
 
 try:
     from mkl_fft import fft2, ifft2
@@ -10,11 +12,11 @@ except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 
-@vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
+@vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
 def apply_dotnorm(Y, cfRefImg):
     eps0 = np.complex64(1e-5)
     x = Y / (eps0 + np.abs(Y))
-    x = x*cfRefImg
+    x = x * cfRefImg
     return x
 
 
@@ -37,6 +39,7 @@ def gaussian_fft(sig, Ly, Lx):
     fhg = np.real(fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
     return fhg
 
+
 def spatial_taper(sig, Ly, Lx):
     ''' spatial taper  on edges with gaussian of std sig '''
     x = np.arange(0, Lx)
@@ -51,7 +54,8 @@ def spatial_taper(sig, Ly, Lx):
     maskMul = maskY * maskX
     return maskMul
 
-def spatial_smooth(data,N):
+
+def spatial_smooth(data, N):
     ''' spatially smooth data using cumsum over axis=1,2 with window N'''
     pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
     dsmooth = np.concatenate((pad, data, pad), axis=1)
@@ -65,9 +69,24 @@ def spatial_smooth(data,N):
     dsmooth = (cumsum[:, :, N:] - cumsum[:, :, :-N]) / float(N)
     return dsmooth
 
+
 def spatial_high_pass(data, N):
     ''' high pass filters data over axis=1,2 with window N'''
     norm = spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N).squeeze()
     data -= spatial_smooth(data, N) / norm
     return data
 
+
+def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
+    """Returns the 3D array 'mov' convolved by a 2D array 'img'."""
+    mov = mov.copy()
+    fft2(mov, overwrite_x=True)
+    mov = apply_dotnorm(mov, img)
+    ifft2(mov, overwrite_x=True)
+    return mov
+
+
+def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
+    """Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed."""
+    Ly, Lx = img.shape
+    return np.conj(fft2(img, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(img))

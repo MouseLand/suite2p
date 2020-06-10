@@ -61,37 +61,30 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xb
 
     """
 
-    Ly, Lx = refImg0.shape
-    maskMul = spatial_taper(maskSlope, Ly, Lx)
-
-    # split refImg0 into multiple parts
     nb = len(yblock)
-
-    #patch taper
     Ly = yblock[0][1] - yblock[0][0]
     Lx = xblock[0][1] - xblock[0][0]
-    cfRefImg1 = np.zeros((nb,1,next_fast_len(Ly), next_fast_len(Lx)), 'complex64') if pad_fft else np.zeros((nb, 1, Ly, Lx), 'complex64')
-    maskMul1 = np.zeros((nb,1,Ly,Lx),'float32')
-    maskOffset1 = np.zeros((nb,1,Ly,Lx),'float32')
-    maskMul2 = spatial_taper(2 * smooth_sigma, Ly, Lx)
-    refImg0 = refImg0.squeeze()
+    cfRefImg1 = np.zeros((nb, next_fast_len(Ly), next_fast_len(Lx)), 'complex64') if pad_fft else np.zeros((nb, Ly, Lx), 'complex64')
+    maskMul = spatial_taper(maskSlope, *refImg0.shape)
+    maskMul1 = np.zeros((nb, Ly, Lx), 'float32')
+    maskMul1[:, :, :] = spatial_taper(2 * smooth_sigma, Ly, Lx)
+    maskOffset1 = np.zeros((nb, Ly, Lx), 'float32')
     for n in range(nb):
         yind = yblock[n]
         xind = xblock[n]
         ix = np.ix_(np.arange(yind[0], yind[-1]).astype('int'), np.arange(xind[0], xind[-1]).astype('int'))
-
         refImg = refImg0[ix]
-        maskMul1[n, 0, :, :] = maskMul[ix].astype('float32') * maskMul2.astype('float32')
-        maskOffset1[n, 0, :, :] = (refImg.mean() * (1. - maskMul1[n, 0, :, :])).astype(np.float32)
-        cfRefImg = np.conj(fft.fft2(refImg))
-        absRef = np.absolute(cfRefImg)
-        cfRefImg = cfRefImg / (1e-5 + absRef)
+
+        # mask params
+        maskMul1[n, :, :] *= maskMul[ix]
+        maskOffset1[n, :, :] = refImg.mean() * (1. - maskMul1[n, :, :])
 
         # gaussian filter
-        cfRefImg *= gaussian_fft(smooth_sigma, *cfRefImg.shape)
-        cfRefImg1[n, 0, :, :] = cfRefImg.astype('complex64')
+        cfRefImg = np.conj(fft.fft2(refImg))
+        cfRefImg = cfRefImg / (1e-5 + np.absolute(cfRefImg)) * gaussian_fft(smooth_sigma, *cfRefImg.shape)
+        cfRefImg1[n, :, :] = cfRefImg.astype('complex64')
 
-    return maskMul1, maskOffset1, cfRefImg1
+    return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
 
 
 def getSNR(cc, Ls):

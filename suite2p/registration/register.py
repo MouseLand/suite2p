@@ -212,15 +212,14 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             for frame, dy, dx in zip(freg, ymax.flatten(), xmax.flatten()):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
-            ymax = ymax.astype(np.float32)
-            xmax = xmax.astype(np.float32)
-            isort = np.argsort(-cmax)
-            nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
-            refImg = freg[isort[1:nmax], :, :].mean(axis=0).astype(np.int16)
-            dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
-
             # shift data requires an array of shifts
-            refImg[:] = rigid.shift_frame(frame=refImg, dy=int(np.round(dy)), dx=int(np.round(dx)))
+            nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
+            isort = np.argsort(-cmax)[1:nmax]
+            refImg = rigid.shift_frame(
+                frame=freg[isort].mean(axis=0).astype(np.int16),
+                dy=int(np.round(-ymax[isort].astype(np.float32).mean())),
+                dx=int(np.round(-xmax[isort].astype(np.float32).mean()))
+            )
 
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg

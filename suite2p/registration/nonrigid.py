@@ -3,7 +3,7 @@ import warnings
 from functools import lru_cache
 
 import numpy as np
-from numba import vectorize, float32, int32, njit, prange
+from numba import float32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
 
@@ -126,9 +126,6 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
 
     return maskMul1, maskOffset1, cfRefImg1
 
-@vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel', cache=True)
-def apply_masks(Y, maskMul, maskOffset):
-    return Y*maskMul + maskOffset
 
 def getSNR(cc, Ls):
     """ compute SNR of phase-correlation - is it an accurate predicted shift? """
@@ -270,8 +267,8 @@ def map_coordinates(I, yc, xc, Y):
 
     """
     Ly,Lx = I.shape
-    yc_floor = yc.copy().astype(np.int32)
-    xc_floor = xc.copy().astype(np.int32)
+    yc_floor = yc.astype(np.int32)
+    xc_floor = xc.astype(np.int32)
     yc -= yc_floor
     xc -= xc_floor
     for i in range(yc_floor.shape[0]):
@@ -287,9 +284,6 @@ def map_coordinates(I, yc, xc, Y):
                       np.float32(I[yf1, xf]) * y * (1 - x) +
                       np.float32(I[yf1, xf1]) * y * x )
 
-@vectorize([int32(float32)], nopython=True, cache=True)
-def nfloor(y):
-    return math.floor(y) #np.int32(np.floor(y))
 
 @njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
        'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True, cache=True)
@@ -320,7 +314,6 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
         size [nimg x Ly x Lx], shifted data
 
     """
-    Ly,Lx = data.shape[1:]
     for t in prange(data.shape[0]):
         map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
 
@@ -328,10 +321,8 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
     """ interpolate from ymax1 to mshy to create coordinate transforms """
     for t in prange(ymax1.shape[0]):
-        # y shifts for blocks to coordinate map
-        map_coordinates(ymax1[t], mshy.copy(), mshx.copy(), yup[t])
-        # x shifts for blocks to coordinate map
-        map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])
+        map_coordinates(ymax1[t], mshy.copy(), mshx.copy(), yup[t])  # y shifts for blocks to coordinate map
+        map_coordinates(xmax1[t], mshy.copy(), mshx.copy(), xup[t])  # x shifts for blocks to coordinate map
 
 def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     """ upsample blocks of shifts into full pixel-wise maps for shifting

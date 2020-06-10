@@ -1,5 +1,4 @@
 import warnings
-from functools import lru_cache
 from typing import Tuple
 
 import numpy as np
@@ -12,36 +11,7 @@ try:
 except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
-from .utils import addmultiply, spatial_taper, gaussian_fft, apply_dotnorm
-
-
-def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
-    """Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)"""
-    xs0, xs1 = np.meshgrid(xs, xs)
-    ys0, ys1 = np.meshgrid(ys, ys)
-    dxs = xs0.reshape(-1, 1) - ys0.reshape(1, -1)
-    dys = xs1.reshape(-1, 1) - ys1.reshape(1, -1)
-    K = np.exp(-(dxs ** 2 + dys ** 2) / (2 * sigL ** 2))
-    return K
-
-
-def kernelD2(xs: int, ys: int) -> np.ndarray:
-    ys, xs = np.meshgrid(xs, ys)
-    ys = ys.flatten().reshape(1, -1)
-    xs = xs.flatten().reshape(1, -1)
-    R = np.exp(-((ys - ys.T) ** 2 + (xs - xs.T) ** 2))
-    R = R / np.sum(R, axis=0)
-    return R
-
-
-@lru_cache(maxsize=5)
-def mat_upsample(lpad, subpixel: int = 10):
-    """ upsampling matrix using gaussian kernels """
-    lar = np.arange(-lpad, lpad + 1)
-    larUP = np.arange(-lpad, lpad + .001, 1. / subpixel)
-    nup = larUP.shape[0]
-    Kmat = np.linalg.inv(kernelD(lar, lar)) @ kernelD(lar, larUP)
-    return Kmat, nup
+from .utils import addmultiply, spatial_taper, gaussian_fft, apply_dotnorm, kernelD2, mat_upsample
 
 
 def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:

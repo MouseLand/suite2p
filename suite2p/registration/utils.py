@@ -1,4 +1,5 @@
 import warnings
+from functools import lru_cache
 
 import numpy as np
 from numba import vectorize, complex64
@@ -90,3 +91,32 @@ def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
     """Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed."""
     Ly, Lx = img.shape
     return np.conj(fft2(img, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(img))
+
+
+def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
+    """Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)"""
+    xs0, xs1 = np.meshgrid(xs, xs)
+    ys0, ys1 = np.meshgrid(ys, ys)
+    dxs = xs0.reshape(-1, 1) - ys0.reshape(1, -1)
+    dys = xs1.reshape(-1, 1) - ys1.reshape(1, -1)
+    K = np.exp(-(dxs ** 2 + dys ** 2) / (2 * sigL ** 2))
+    return K
+
+
+def kernelD2(xs: int, ys: int) -> np.ndarray:
+    ys, xs = np.meshgrid(xs, ys)
+    ys = ys.flatten().reshape(1, -1)
+    xs = xs.flatten().reshape(1, -1)
+    R = np.exp(-((ys - ys.T) ** 2 + (xs - xs.T) ** 2))
+    R = R / np.sum(R, axis=0)
+    return R
+
+
+@lru_cache(maxsize=5)
+def mat_upsample(lpad, subpixel: int = 10):
+    """ upsampling matrix using gaussian kernels """
+    lar = np.arange(-lpad, lpad + 1)
+    larUP = np.arange(-lpad, lpad + .001, 1. / subpixel)
+    nup = larUP.shape[0]
+    Kmat = np.linalg.inv(kernelD(lar, lar)) @ kernelD(lar, larUP)
+    return Kmat, nup

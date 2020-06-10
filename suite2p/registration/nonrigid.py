@@ -152,14 +152,6 @@ def getSNR(cc, Ls):
     return snr
 
 
-def clip(X, lhalf):
-    x00 = X[:, :, :lhalf+1, :lhalf+1]
-    x11 = X[:, :, -lhalf:, -lhalf:]
-    x01 = X[:, :, :lhalf+1, -lhalf:]
-    x10 = X[:, :, -lhalf:, :lhalf+1]
-    return x00, x01, x10, x11
-
-
 def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
     """ compute phase correlations for each block 
     
@@ -216,15 +208,20 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     for n in range(nb):
         for t in range(nimg):
             ifft2(Y[t,n], overwrite_x=True)
-    x00, x01, x10, x11 = clip(Y, lcorr+lpad)
-    cc0 = np.real(np.block([[x11, x10], [x01, x00]]))
-    cc0 = np.transpose(cc0, (1,0,2,3))
-    cc0 = cc0.reshape((cc0.shape[0], -1))
-    cc2 = []
-    R = NRsm
-    cc2.append(cc0)
+
+    lhalf = lcorr + lpad
+    cc0 = np.real(
+        np.block(
+            [[Y[:, :, -lhalf:, -lhalf:], Y[:, :, -lhalf:, :lhalf + 1]],
+             [Y[:, :, :lhalf + 1, -lhalf:], Y[:, :, :lhalf + 1, :lhalf + 1]]]
+        )
+    )
+    cc0 = cc0.transpose(1, 0, 2, 3)
+    cc0 = cc0.reshape(cc0.shape[0], -1)
+    cc2 = [cc0]
+
     for j in range(2):
-        cc2.append(R @ cc2[j])
+        cc2.append(NRsm @ cc2[j])
     for j in range(len(cc2)):
         cc2[j] = cc2[j].reshape((nb, nimg, 2*lcorr+2*lpad+1, 2*lcorr+2*lpad+1))
     ccsm = cc2[0]

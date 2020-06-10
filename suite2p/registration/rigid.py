@@ -87,11 +87,9 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
 
     """
 
-    _, Ly, Lx = data.shape
-
     # maximum registration shift allowed
-    maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
+    min_dim = np.minimum(*data.shape[1:])
+    lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
 
     # shifts and corrmax
     X = utils.addmultiplytype(data, maskMul, maskOffset)

@@ -221,18 +221,17 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
 
     cc2 = [cc0, NRsm @ cc0, NRsm @ NRsm @ cc0]
     cc2 = [c2.reshape(nb, nimg, 2 * lcorr + 2 * lpad + 1, 2 * lcorr + 2 * lpad + 1) for c2 in cc2]
-
     ccsm = cc2[0]
     for n in range(nb):
         snr = np.ones(nimg, 'float32')
-        for j in range(len(cc2)):
+        for j, c2 in enumerate(cc2):
             ism = snr < snr_thresh
-            if np.sum(ism)==0:
+            if np.sum(ism) == 0:
                 break
-            cc = cc2[j][n,ism,:,:]
-            if j>0:
+            cc = c2[n, ism, :, :]
+            if j > 0:
                 ccsm[n, ism, :, :] = cc
-            snr[ism] = getSNR(cc, (lcorr,lpad))
+            snr[ism] = getSNR(cc, (lcorr, lpad))
 
     for t in range(nimg):
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)

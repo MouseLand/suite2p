@@ -13,20 +13,18 @@ except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 from . import utils
 
-sigL = 0.85 # smoothing width for up-sampling kernels, keep it between 0.5 and 1.0...
-lpad = 3   # upsample from a square +/- lpad
-subpixel = 10
+
 
 # smoothing kernel
-def kernelD(a, b):
-    """ Gaussian kernel from a to b """
+def kernelD(a, b, sigL: float = 0.85):
+    """Gaussian kernel from a to b, with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)"""
     dxs = np.reshape(a[0], (-1,1)) - np.reshape(b[0], (1,-1))
     dys = np.reshape(a[1], (-1,1)) - np.reshape(b[1], (1,-1))
     ds = np.square(dxs) + np.square(dys)
     K = np.exp(-ds/(2*np.square(sigL)))
     return K
 
-def mat_upsample(lpad):
+def mat_upsample(lpad, subpixel: int = 10):
     """ upsampling matrix using gaussian kernels """
     lar    = np.arange(-lpad, lpad+1)
     larUP  = np.arange(-lpad, lpad+.001, 1./subpixel)
@@ -39,7 +37,7 @@ def mat_upsample(lpad):
     nup = larUP.shape[0]
     return Kmat, nup
 
-Kmat, nup = mat_upsample(lpad)
+Kmat, nup = mat_upsample(lpad=3)
 
 def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
     """ computes overlapping blocks to split FOV into to register separately"""
@@ -163,7 +161,7 @@ def clip(X, lhalf):
     return x00, x01, x10, x11
 
 
-def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR):
+def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
     """ compute phase correlations for each block 
     
     Parameters
@@ -187,7 +185,8 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     ccsm : 4D array
         size [nimg x nblocks x ly x lx], smoothed phase correlations
 
-
+    lpad: int
+        upsample from a square +/- lpad
     """
 
     nimg, Ly, Lx = data.shape

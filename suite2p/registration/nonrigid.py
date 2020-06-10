@@ -247,29 +247,6 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     return ymax1, xmax1, cmax1, ccsm
 
 
-def linear_interp(iy, ix, yb, xb, f):
-    """ 2d interpolation of f on grid of yb, xb into grid of iy, ix 
-        assumes f is 3D and last two dimensions are yb,xb """
-    fup = f.copy().astype(np.float32)
-    Lax = [iy.size, ix.size]
-    for n in range(2):
-        fup = np.transpose(fup,(1,2,0)).copy()
-        if n==0:
-            ds  = np.abs(iy[:,np.newaxis] - yb[:,np.newaxis].T)
-        else:
-            ds  = np.abs(ix[:,np.newaxis] - xb[:,np.newaxis].T)
-        im1 = np.argmin(ds, axis=1)
-        w1  = ds[np.arange(0,Lax[n],1,int),im1]
-        ds[np.arange(0,Lax[n],1,int),im1] = np.inf
-        im2 = np.argmin(ds, axis=1)
-        w2  = ds[np.arange(0,Lax[n],1,int),im2]
-        wnorm = w1+w2
-        w1 /= wnorm
-        w2 /= wnorm
-        fup = (1-w1[:,np.newaxis,np.newaxis]) * fup[im1] + (1-w2[:,np.newaxis,np.newaxis]) * fup[im2]
-    fup = np.transpose(fup, (1,2,0))
-    return fup
-
 @njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
         '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'], cache=True)
 def map_coordinates(I, yc, xc, Y):

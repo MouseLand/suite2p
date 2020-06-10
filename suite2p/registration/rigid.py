@@ -53,15 +53,6 @@ def phasecorr_reference(refImg, maskSlope, smooth_sigma=None, pad_fft=None):
     return maskMul, maskOffset, cfRefImg
 
 
-def clip(X, lcorr):
-    """ perform 2D fftshift and crop with lcorr """
-    x00 = X[:, :lcorr+1, :lcorr+1]
-    x11 = X[:, -lcorr:, -lcorr:]
-    x01 = X[:, :lcorr+1, -lcorr:]
-    x10 = X[:, -lcorr:, :lcorr+1]
-    return x00, x01, x10, x11
-
-
 def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):
     """ compute phase correlation between data and reference image
 
@@ -96,8 +87,12 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
     fft2(X, overwrite_x=True)
     X = utils.apply_dotnorm(X, cfRefImg)
     ifft2(X, overwrite_x=True)
-    x00, x01, x10, x11 = clip(X, lcorr)
-    cc = np.real(np.block([[x11, x10], [x01, x00]]))
+    cc = np.real(
+        np.block(
+            [[X[:,  -lcorr:, -lcorr:], X[:,  -lcorr:, :lcorr+1]],
+             [X[:, :lcorr+1, -lcorr:], X[:, :lcorr+1, :lcorr+1]]]
+        )
+    )
     if smooth_sigma_time > 0:
         cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
 

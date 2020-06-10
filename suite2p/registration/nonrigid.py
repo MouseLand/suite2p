@@ -190,12 +190,6 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     nb = len(yblock)
 
     # shifts and corrmax
-    ymax1 = np.zeros((nimg, nb), np.float32)
-    cmax1 = np.zeros((nimg, nb), np.float32)
-    xmax1 = np.zeros((nimg, nb), np.float32)
-    ymax = np.zeros((nb,), np.int32)
-    xmax = np.zeros((nb,), np.int32)
-
     Y = np.zeros((nimg, nb, ly, lx), 'int16')
     for n in range(nb):
         yind, xind = yblock[n], xblock[n]
@@ -209,6 +203,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         for t in range(nimg):
             ifft2(Y[t,n], overwrite_x=True)
 
+    # calculate ccsm
     lhalf = lcorr + lpad
     cc0 = np.real(
         np.block(
@@ -233,22 +228,25 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
                 ccsm[n, ism, :, :] = cc
             snr[ism] = getSNR(cc, (lcorr, lpad))
 
+    # calculate ymax1, xmax1, cmax1
+    ymax1 = np.zeros((nimg, nb), np.float32)
+    cmax1 = np.zeros((nimg, nb), np.float32)
+    xmax1 = np.zeros((nimg, nb), np.float32)
+    ymax = np.zeros((nb,), np.int32)
+    xmax = np.zeros((nb,), np.int32)
     for t in range(nimg):
         ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
             ix = np.argmax(ccsm[n, t][lpad:-lpad, lpad:-lpad], axis=None)
-            ym, xm = np.unravel_index(ix, (2*lcorr+1, 2*lcorr+1))
-            ccmat[n] = ccsm[n,t][ym:ym+2*lpad+1, xm:xm+2*lpad+1]
-            ymax[n], xmax[n] = ym-lcorr, xm-lcorr
-        ccmat = np.reshape(ccmat, (nb,-1))
-        ccb = np.dot(ccmat, Kmat)
-        imax = np.argmax(ccb, axis=1)
-        cmax = np.amax(ccb, axis=1)
-        ymax1[t], xmax1[t] = np.unravel_index(imax, (nup,nup))
-        cmax1[t] = cmax
-        mdpt = np.floor(nup/2)
-        ymax1[t], xmax1[t] = (ymax1[t] - mdpt)/subpixel, (xmax1[t] - mdpt)/subpixel
-        ymax1[t], xmax1[t] = ymax1[t] + ymax, xmax1[t] + xmax
+            ym, xm = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
+            ccmat[n] = ccsm[n, t][ym:ym + 2 * lpad + 1, xm:xm + 2 * lpad + 1]
+            ymax[n], xmax[n] = ym - lcorr, xm - lcorr
+        ccb = ccmat.reshape(nb, -1) @ Kmat
+        cmax1[t] = np.amax(ccb, axis=1)
+        ymax1[t], xmax1[t] = np.unravel_index(np.argmax(ccb, axis=1), (nup, nup))
+        mdpt = nup // 2
+        ymax1[t] = (ymax1[t] - mdpt) / subpixel + ymax
+        xmax1[t] = (xmax1[t] - mdpt) / subpixel + xmax
 
     return ymax1, xmax1, cmax1, ccsm
 

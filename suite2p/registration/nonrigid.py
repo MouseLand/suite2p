@@ -27,16 +27,17 @@ def kernelD(a, b, sigL: float = 0.85):
 @lru_cache(maxsize=5)
 def mat_upsample(lpad, subpixel: int = 10):
     """ upsampling matrix using gaussian kernels """
-    lar    = np.arange(-lpad, lpad+1)
-    larUP  = np.arange(-lpad, lpad+.001, 1./subpixel)
-    x, y   = np.meshgrid(lar, lar)
+    lar = np.arange(-lpad, lpad+1)
+    larUP = np.arange(-lpad, lpad+.001, 1./subpixel)
+    x, y = np.meshgrid(lar, lar)
     xU, yU = np.meshgrid(larUP, larUP)
-    Kx = kernelD((x,y),(x,y))
+    Kx = kernelD((x, y), (x, y))
     Kx = np.linalg.inv(Kx)
-    Kg = kernelD((x,y),(xU,yU))
+    Kg = kernelD((x, y), (xU, yU))
     Kmat = np.dot(Kx, Kg)
     nup = larUP.shape[0]
     return Kmat, nup
+
 
 def make_blocks(Ly, Lx, maxregshiftNR=5, block_size=(128, 128)):
     """ computes overlapping blocks to split FOV into to register separately"""
@@ -94,7 +95,6 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
     Ly, Lx = refImg0.shape
     maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
 
-
     # split refImg0 into multiple parts
     nb = len(yblock)
 
@@ -139,16 +139,16 @@ def getSNR(cc, Ls):
     nimg = cc.shape[0]
     cc0 = cc[:, lpad:-lpad, lpad:-lpad]
     cc0 = np.reshape(cc0, (nimg, -1))
-    X1max  = np.amax(cc0, axis = 1)
-    ix  = np.argmax(cc0, axis = 1)
-    ymax, xmax = np.unravel_index(ix, (2*lcorr+1,2*lcorr+1))
+    X1max  = np.amax(cc0, axis=1)
+    ix = np.argmax(cc0, axis=1)
+    ymax, xmax = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
     # set to 0 all pts +-lpad from ymax,xmax
     cc0 = cc.copy()
     for j in range(nimg):
-        cc0[j,ymax[j]:ymax[j]+2*lpad, xmax[j]:xmax[j]+2*lpad] = 0
+        cc0[j, ymax[j]:ymax[j] + 2 * lpad, xmax[j]:xmax[j] + 2 * lpad] = 0
     cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax  = np.maximum(0, np.amax(cc0, axis = 1))
-    snr = X1max / Xmax # computes snr
+    Xmax = np.maximum(0, np.amax(cc0, axis=1))
+    snr = X1max / Xmax  # computes snr
     return snr
 
 

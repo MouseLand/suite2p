@@ -185,13 +185,14 @@ def detect_and_extract(ops, stat=None):
             classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         print('NOTE: applying classifier %s'%classfile)
         iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
-        if 'preclassify' in ops and ops['preclassify'] > 0.0:
-            ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
-            stat = stat[ic]
-            iscell = iscell[ic]
-            print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
-        else:
-            ic = np.ones(len(stat), np.bool)
+        # Code Below does not work. Setting ops['preclassify'] gives you typeError.
+        # if 'preclassify' in ops and ops['preclassify'] > 0.0:
+        #     ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
+        #     stat = stat[ic]
+        #     iscell = iscell[ic]
+        #     print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
+        # else:
+        ic = np.ones(len(stat), np.bool)
     else:
         iscell = np.zeros((0,2))
     fpath = ops['save_path']

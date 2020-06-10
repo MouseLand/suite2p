@@ -87,28 +87,27 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
 
     """
 
-    nimg, Ly, Lx = data.shape
+    _, Ly, Lx = data.shape
 
     # maximum registration shift allowed
     maxregshift = np.round(maxregshift * np.minimum(Ly, Lx))
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
 
     # shifts and corrmax
-    ymax = np.zeros((nimg,), np.int32)
-    xmax = np.zeros((nimg,), np.int32)
-    cmax = np.zeros((nimg,), np.float32)
+    ymax = np.zeros(data.shape[0], np.int32)
+    xmax = np.zeros(data.shape[0], np.int32)
+    cmax = np.zeros(data.shape[0], np.float32)
 
     X = utils.addmultiplytype(data, maskMul, maskOffset)
-    for t in range(X.shape[0]):
-        fft2(X[t], overwrite_x=True)
+
+    fft2(X, overwrite_x=True)
     X = utils.apply_dotnorm(X, cfRefImg)
-    for t in np.arange(nimg):
-        ifft2(X[t], overwrite_x=True)
+    ifft2(X, overwrite_x=True)
     x00, x01, x10, x11 = clip(X, lcorr)
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
     if smooth_sigma_time > 0:
         cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
-    for t in np.arange(nimg):
+    for t in np.arange(X.shape[0]):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2 * lcorr + 1, 2 * lcorr + 1))
         cmax[t] = cc[t, ymax[t], xmax[t]]
     ymax, xmax = ymax - lcorr, xmax - lcorr

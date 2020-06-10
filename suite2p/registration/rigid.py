@@ -94,12 +94,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
     lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(Ly, Lx) / 2.)))
 
     # shifts and corrmax
-    ymax = np.zeros(data.shape[0], np.int32)
-    xmax = np.zeros(data.shape[0], np.int32)
-    cmax = np.zeros(data.shape[0], np.float32)
-
     X = utils.addmultiplytype(data, maskMul, maskOffset)
-
     fft2(X, overwrite_x=True)
     X = utils.apply_dotnorm(X, cfRefImg)
     ifft2(X, overwrite_x=True)
@@ -107,12 +102,14 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
     cc = np.real(np.block([[x11, x10], [x01, x00]]))
     if smooth_sigma_time > 0:
         cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0)
+
+    ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)
     for t in np.arange(X.shape[0]):
         ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2 * lcorr + 1, 2 * lcorr + 1))
-        cmax[t] = cc[t, ymax[t], xmax[t]]
+    cmax = cc[np.arange(len(cc)), ymax, xmax]
     ymax, xmax = ymax - lcorr, xmax - lcorr
 
-    return ymax, xmax, cmax
+    return ymax, xmax, cmax.astype(np.float32)
 
 
 def shift_frame(frame: np.ndarray, dy: int, dx: int) -> np.ndarray:

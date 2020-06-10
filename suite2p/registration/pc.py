@@ -168,7 +168,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             smooth_sigma_time=smooth_sigma_time,
         )
         for frame, dy, dx in zip(Img, ymax.flatten(), xmax.flatten()):
-            rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+            frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
         ###
 
         # non-rigid registration

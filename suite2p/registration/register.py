@@ -210,7 +210,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             for frame, dy, dx in zip(freg, ymax.flatten(), xmax.flatten()):
-                rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+                frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             ymax = ymax.astype(np.float32)
             xmax = xmax.astype(np.float32)
@@ -220,7 +220,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             dy, dx = -ymax[isort[1:nmax]].mean(), -xmax[isort[1:nmax]].mean()
 
             # shift data requires an array of shifts
-            rigid.shift_frame(frame=refImg, dy=int(np.round(dy)), dx=int(np.round(dx)))
+            refImg[:] = rigid.shift_frame(frame=refImg, dy=int(np.round(dy)), dx=int(np.round(dx)))
 
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
@@ -300,7 +300,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             for frame, dy, dx in zip(data, ymax.flatten(), xmax.flatten()):
-                rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+                frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             rigid_offsets.append([ymax, xmax, cmax])
 
@@ -371,7 +371,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     bidiphase.shift(data, int(ops['bidiphase']))
 
                 for frame, dy, dx in zip(data, ymax.flatten(), xmax.flatten()):
-                    rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+                    frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
                 if ops['nonrigid']:
                     ymax1, xmax1 = nonrigid_offsets[0][iframes], nonrigid_offsets[1][iframes]

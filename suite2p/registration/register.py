@@ -177,7 +177,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
                 refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
                 refImg = refImg.squeeze()
-            refImg = refImg.copy()
 
             ops['refImg'] = refImg
             maskMul, maskOffset = rigid.compute_masks(
@@ -236,8 +235,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
         refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
         refImg = refImg.squeeze()
-
-    refImg = refImg.copy()
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,

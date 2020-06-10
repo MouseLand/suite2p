@@ -149,8 +149,6 @@ def compute_zpos(Zreg, ops):
             Z = utils.spatial_high_pass(Z, int(ops['spatial_hp_reg']))
             Z = Z.squeeze()
 
-        Z = Z.copy()
-
         maskMul, maskOffset = rigid.compute_masks(
             refImg=Z,
             maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],

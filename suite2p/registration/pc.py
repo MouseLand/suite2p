@@ -104,7 +104,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             data = utils.spatial_high_pass(data, int(spatial_hp))
             refImg = data.squeeze()
 
-        refImg = refImg.copy()
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
             maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma

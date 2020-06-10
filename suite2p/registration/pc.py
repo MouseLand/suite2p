@@ -162,9 +162,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
 
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
-            data=dwrite,
-            maskMul=maskMul,
-            maskOffset=maskOffset,
+            data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
             cfRefImg=cfRefImg.squeeze(),
             maxregshift=maxregshift,
             smooth_sigma_time=smooth_sigma_time,

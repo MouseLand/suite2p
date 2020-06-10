@@ -186,9 +186,7 @@ def compute_zpos(Zreg, ops):
             cfRefImg = cfRefImg.squeeze()
 
             _, _, zcorr[z, inds] = rigid.phasecorr(
-                data=data,
-                maskMul=maskMul,
-                maskOffset=maskOffset,
+                data=rigid.apply_masks(data=data, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],

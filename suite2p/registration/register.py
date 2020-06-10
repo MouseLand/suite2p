@@ -204,9 +204,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=freg,
-                maskMul=maskMul,
-                maskOffset=maskOffset,
+                data=rigid.apply_masks(data=freg, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg.squeeze(),
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
@@ -295,9 +293,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=data,
-                maskMul=maskMul,
-                maskOffset=maskOffset,
+                data=rigid.apply_masks(data=data, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg.squeeze(),
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],

@@ -20,6 +20,11 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     return maskMul.astype('float32'), maskOffset.astype('float32')
 
 
+def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -> np.ndarray:
+    """Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'."""
+    return utils.addmultiplytype(data, maskMul, maskOffset)
+
+
 def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:
     """
     Returns reference image fft'ed and complex conjugate and multiplied by gaussian filter in the fft domain,
@@ -41,15 +46,13 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = F
     return cfRefImg.astype('complex64')
 
 
-def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_time):
+def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time):
     """ compute phase correlation between data and reference image
 
     Parameters
     ----------
     data : int16
         array that's frames x Ly x Lx
-    refAndMasks : list
-        maskMul, maskOffset and cfRefImg (from prepare_refAndMasks)
     lcorr : int
         maximum shift in pixels
     smooth_sigma_time : float
@@ -71,7 +74,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, maxregshift, smooth_sigma_tim
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
 
     # shifts and corrmax
-    X = utils.addmultiplytype(data, maskMul, maskOffset)
+    X = data
     fft2(X, overwrite_x=True)
     X = utils.apply_dotnorm(X, cfRefImg)
     ifft2(X, overwrite_x=True)

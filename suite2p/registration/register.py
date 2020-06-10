@@ -189,8 +189,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             freg = frames
             if ops['smooth_sigma_time'] > 0:
-                freg = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0)
-                freg = freg.astype(np.float32)
+                freg = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0).astype(np.float32)
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
@@ -217,8 +216,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             isort = np.argsort(-cmax)[1:nmax]
             refImg = rigid.shift_frame(
                 frame=freg[isort].mean(axis=0).astype(np.int16),
-                dy=int(np.round(-ymax[isort].astype(np.float32).mean())),
-                dx=int(np.round(-xmax[isort].astype(np.float32).mean()))
+                dy=int(np.round(-ymax[isort].mean())),
+                dx=int(np.round(-xmax[isort].mean()))
             )
 
         print('Reference frame, %0.2f sec.'%(time.time()-t0))

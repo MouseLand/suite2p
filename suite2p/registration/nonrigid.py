@@ -7,12 +7,12 @@ from numba import vectorize, float32, int32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
 
-
 try:
     from mkl_fft import fft2, ifft2
 except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
-from . import utils
+
+from .utils import addmultiply, spatial_taper, gaussian_fft, apply_dotnorm
 
 
 def kernelD(a, b, sigL: float = 0.85):
@@ -93,7 +93,7 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
     """
 
     Ly, Lx = refImg0.shape
-    maskMul = utils.spatial_taper(maskSlope, Ly, Lx)
+    maskMul = spatial_taper(maskSlope, Ly, Lx)
 
     # split refImg0 into multiple parts
     nb = len(yblock)
@@ -111,7 +111,7 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
         xind = np.arange(xind[0], xind[-1]).astype('int')
 
         refImg = refImg0.squeeze()[np.ix_(yind,xind)]
-        maskMul2 = utils.spatial_taper(2 * smooth_sigma, Ly, Lx)
+        maskMul2 = spatial_taper(2 * smooth_sigma, Ly, Lx)
         maskMul1[n, 0, :, :] = maskMul[np.ix_(yind,xind)].astype('float32')
         maskMul1[n, 0, :, :] *= maskMul2.astype('float32')
         maskOffset1[n, 0, :, :] = (refImg.mean() * (1. - maskMul1[n, 0, :, :])).astype(np.float32)
@@ -120,7 +120,7 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
         cfRefImg = cfRefImg / (1e-5 + absRef)
 
         # gaussian filter
-        fhg = utils.gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
+        fhg = gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
         cfRefImg *= fhg
         cfRefImg1[n, 0, :, :] = cfRefImg.astype('complex64')
 
@@ -129,9 +129,6 @@ def phasecorr_reference(refImg0, maskSlope, smooth_sigma, yblock, xblock, pad_ff
 @vectorize([float32(float32, float32, float32)], nopython=True, target = 'parallel', cache=True)
 def apply_masks(Y, maskMul, maskOffset):
     return Y*maskMul + maskOffset
-@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target = 'parallel', cache=True)
-def addmultiply(x,y,z):
-    return np.complex64(x*y + z)
 
 def getSNR(cc, Ls):
     """ compute SNR of phase-correlation - is it an accurate predicted shift? """
@@ -196,7 +193,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
     fft2(Y, overwrite_x=True)
-    Y = utils.apply_dotnorm(Y, cfRefImg)
+    Y = apply_dotnorm(Y, cfRefImg)
     ifft2(Y, overwrite_x=True)
 
     # calculate ccsm

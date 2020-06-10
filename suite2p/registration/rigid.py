@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
-from .utils import convolve, complex_fft2, spatial_taper, addmultiplytype, gaussian_fft
+from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_fft
 
 
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
@@ -17,7 +17,7 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
 
 def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -> np.ndarray:
     """Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'."""
-    return addmultiplytype(data, maskMul, maskOffset)
+    return addmultiply(data, maskMul, maskOffset)
 
 
 def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:

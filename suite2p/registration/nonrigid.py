@@ -212,21 +212,19 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     lhalf = lcorr + lpad
     cc0 = np.real(
         np.block(
-            [[Y[:, :, -lhalf:, -lhalf:], Y[:, :, -lhalf:, :lhalf + 1]],
+            [[Y[:, :, -lhalf:,    -lhalf:], Y[:, :, -lhalf:,    :lhalf + 1]],
              [Y[:, :, :lhalf + 1, -lhalf:], Y[:, :, :lhalf + 1, :lhalf + 1]]]
         )
     )
     cc0 = cc0.transpose(1, 0, 2, 3)
     cc0 = cc0.reshape(cc0.shape[0], -1)
-    cc2 = [cc0]
 
-    for j in range(2):
-        cc2.append(NRsm @ cc2[j])
-    for j in range(len(cc2)):
-        cc2[j] = cc2[j].reshape((nb, nimg, 2*lcorr+2*lpad+1, 2*lcorr+2*lpad+1))
+    cc2 = [cc0, NRsm @ cc0, NRsm @ NRsm @ cc0]
+    cc2 = [c2.reshape(nb, nimg, 2 * lcorr + 2 * lpad + 1, 2 * lcorr + 2 * lpad + 1) for c2 in cc2]
+
     ccsm = cc2[0]
     for n in range(nb):
-        snr = np.ones((nimg,), 'float32')
+        snr = np.ones(nimg, 'float32')
         for j in range(len(cc2)):
             ism = snr < snr_thresh
             if np.sum(ism)==0:

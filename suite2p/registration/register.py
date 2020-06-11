@@ -190,7 +190,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 refImg = refImg.squeeze()
 
             # rigid registration
-            ops['refImg'] = refImg
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(
                     freg,
@@ -211,7 +210,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             for frame, dy, dx in zip(freg, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
-            # shift data requires an array of shifts
             nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
             isort = np.argsort(-cmax)[1:nmax]
             refImg = rigid.shift_frame(

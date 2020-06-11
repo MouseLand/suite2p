@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-from suite2p.detection import masks
+from . import masks
 
 '''
 identify cells with channel 2 brightness (aka red cells)

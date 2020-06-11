@@ -62,17 +62,14 @@ def temporal_smooth(frames: np.ndarray, sigma: float) -> np.ndarray:
 
 def spatial_smooth(data, N):
     ''' spatially smooth data using cumsum over axis=1,2 with window N'''
-    pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
-    dsmooth = np.concatenate((pad, data, pad), axis=1)
-    pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
-    dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
-    # in X
-    cumsum = np.cumsum(dsmooth, axis=1).astype(np.float32)
-    dsmooth = (cumsum[:, N:, :] - cumsum[:, :-N, :]) / float(N)
-    # in Y
-    cumsum = np.cumsum(dsmooth, axis=2)
-    dsmooth = (cumsum[:, :, N:] - cumsum[:, :, :-N]) / float(N)
-    return dsmooth
+    half_pad = N // 2
+    data_padded = np.pad(data, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
+
+    cumsum = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
+    data_smoothed = (cumsum[:, N:, :] - cumsum[:, :-N, :])  # in X
+    data_smoothed = (data_smoothed[:, :, N:] - data_smoothed[:, :, :-N])  # in Y
+    data_smoothed /= N ** 2
+    return data_smoothed
 
 
 def spatial_high_pass(data, N):

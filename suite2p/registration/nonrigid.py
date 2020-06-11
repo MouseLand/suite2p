@@ -65,22 +65,15 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xb
     return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
 
 
-def getSNR(cc, Ls):
+def getSNR(cc, lcorr, lpad):
     """ compute SNR of phase-correlation - is it an accurate predicted shift? """
-    (lcorr, lpad) = Ls
-    nimg = cc.shape[0]
-    cc0 = cc[:, lpad:-lpad, lpad:-lpad]
-    cc0 = np.reshape(cc0, (nimg, -1))
-    X1max  = np.amax(cc0, axis=1)
-    ix = np.argmax(cc0, axis=1)
-    ymax, xmax = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
+    cc0 = cc[:, lpad:-lpad, lpad:-lpad].reshape(cc.shape[0], -1)
     # set to 0 all pts +-lpad from ymax,xmax
-    cc0 = cc.copy()
-    for j in range(nimg):
-        cc0[j, ymax[j]:ymax[j] + 2 * lpad, xmax[j]:xmax[j] + 2 * lpad] = 0
-    cc0 = np.reshape(cc0, (nimg, -1))
-    Xmax = np.maximum(0, np.amax(cc0, axis=1))
-    snr = X1max / Xmax  # computes snr
+    cc1 = cc.copy()
+    for c1, ymax, xmax in zip(cc1, *np.unravel_index(np.argmax(cc0, axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):
+        c1[ymax:ymax + 2 * lpad, xmax:xmax + 2 * lpad] = 0
+
+    snr = np.amax(cc0, axis=1) / np.maximum(0, np.amax(cc1.reshape(cc.shape[0], -1), axis=1))  # todo: check for infs/nans from divide by zero
     return snr
 
 
@@ -154,7 +147,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
             cc = c2[n, ism, :, :]
             if j > 0:
                 ccsm[n, ism, :, :] = cc
-            snr[ism] = getSNR(cc, (lcorr, lpad))
+            snr[ism] = getSNR(cc, lcorr, lpad)
 
     # calculate ymax1, xmax1, cmax1
     ymax1 = np.zeros((nimg, nb), np.float32)

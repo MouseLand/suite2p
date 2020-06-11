@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-from ..detection import masks
+from suite2p.detection import masks
 
 '''
 identify cells with channel 2 brightness (aka red cells)
@@ -43,7 +43,6 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     return mimg2
 
 def detect(ops, stat):
-    #ops2 = ops.copy()
     mimg = ops['meanImg'].copy()
     mimg2 = ops['meanImg_chan2'].copy()
 

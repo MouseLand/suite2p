@@ -95,7 +95,7 @@ def test_extraction_output_2plane2chan(default_ops):
     extract_wrapper(ops)
     utils.check_output(
         default_ops['save_path0'],
-        ['F', 'Fneu', 'iscell', 'stat', 'spks'],
+        ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'iscell', 'stat', 'spks'],
         default_ops['data_path'][0],
         default_ops['nplanes'],
         default_ops['nchannels'],

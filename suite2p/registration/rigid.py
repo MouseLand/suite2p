@@ -1,10 +1,8 @@
-import warnings
 from typing import Tuple
 
 import numpy as np
-from scipy.ndimage import gaussian_filter1d
 
-from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_fft
+from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_fft, temporal_smooth
 
 
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
@@ -72,7 +70,7 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time):
              [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
         )
     )
-    cc = gaussian_filter1d(cc, smooth_sigma_time, axis=0) if smooth_sigma_time > 0 else cc
+    cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc
 
     ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)
     for t in np.arange(data.shape[0]):

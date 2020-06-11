@@ -82,7 +82,6 @@ def spatial_high_pass(data, N):
     """high pass filters data over axis=1,2 with window N"""
     if data.ndim == 2:
         data = data[np.newaxis, :, :]
-
     data_filtered = data - (spatial_smooth(data, N) / spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N))
     return data_filtered.squeeze()
 

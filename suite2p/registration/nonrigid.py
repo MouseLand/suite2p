@@ -105,8 +105,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
-    maxregshift = np.round(maxregshiftNR)
-    lcorr = int(np.minimum(maxregshift, np.floor(np.minimum(ly, lx) / 2.) - lpad))
+    lcorr = int(np.minimum(np.round(maxregshiftNR), np.floor(np.minimum(ly, lx) / 2.) - lpad))
     nb = len(yblock)
 
     # shifts and corrmax
@@ -143,13 +142,14 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
             snr[ism] = getSNR(cc, lcorr, lpad)
 
     # calculate ymax1, xmax1, cmax1
-    ymax1 = np.zeros((nimg, nb), np.float32)
-    cmax1 = np.zeros((nimg, nb), np.float32)
-    xmax1 = np.zeros((nimg, nb), np.float32)
-    ymax = np.zeros((nb,), np.int32)
-    xmax = np.zeros((nb,), np.int32)
+    mdpt = nup // 2
+    ymax1 = np.empty((nimg, nb), np.float32)
+    cmax1 = np.empty((nimg, nb), np.float32)
+    xmax1 = np.empty((nimg, nb), np.float32)
+    ymax = np.empty((nb,), np.int32)
+    xmax = np.empty((nb,), np.int32)
     for t in range(nimg):
-        ccmat = np.zeros((nb, 2*lpad+1, 2*lpad+1), np.float32)
+        ccmat = np.empty((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
             ix = np.argmax(ccsm[n, t][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
@@ -158,7 +158,6 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         ccb = ccmat.reshape(nb, -1) @ Kmat
         cmax1[t] = np.amax(ccb, axis=1)
         ymax1[t], xmax1[t] = np.unravel_index(np.argmax(ccb, axis=1), (nup, nup))
-        mdpt = nup // 2
         ymax1[t] = (ymax1[t] - mdpt) / subpixel + ymax
         xmax1[t] = (xmax1[t] - mdpt) / subpixel + xmax
 

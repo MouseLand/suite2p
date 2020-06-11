@@ -48,8 +48,6 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     Fneu : float, 2D array
         size [ROIs x time]
 
-    ops : dictionaray
-        adds 'meanImg'
 
     """
     t0=time.time()
@@ -68,8 +66,6 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     ix = 0
     data = 1
 
-    ops['meanImg'] = np.zeros((Ly,Lx))
-    k=0
     while data is not None:
         buff = reg_file.read(block_size)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -78,18 +74,14 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
             break
         data = np.reshape(data, (-1, Ly, Lx))
         inds = ix+np.arange(0,nimg,1,int)
-        ops['meanImg'] += data.mean(axis=0)
         data = np.reshape(data, (nimg,-1))
 
         # extract traces and neuropil
         for n in range(ncells):
             F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-            #Fneu[n,inds] = np.mean(data[neuropil_masks[n,:], :], axis=0)
         Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         ix += nimg
-        k += 1
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
-    ops['meanImg'] /= k
 
     reg_file.close()
     return F, Fneu, ops
@@ -134,7 +126,6 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     F,Fneu,ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
-        ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
 
@@ -159,8 +150,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     Returns
     ----------------
 
-    ops : dictionaray
-        adds 'meanImg' (optional 'meanImg_chan2')
+    ops : dictionary
 
     """
     F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)
@@ -183,13 +173,6 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
             classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         print('NOTE: applying classifier %s'%classfile)
         iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
-        # Code Below does not work. Setting ops['preclassify'] gives you typeError.
-        # if 'preclassify' in ops and ops['preclassify'] > 0.0:
-        #     ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
-        #     stat = stat[ic]
-        #     iscell = iscell[ic]
-        #     print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
-        # else:
         ic = np.ones(len(stat), np.bool)
     else:
         iscell = np.zeros((0,2))
@@ -202,7 +185,6 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stat)
-        #redcell = np.zeros((len(stat),2))
         np.save(os.path.join(fpath, 'redcell.npy'), redcell[ic])
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])
         np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2[ic])

@@ -1,11 +1,9 @@
 import time
-from contextlib import ExitStack
 from os import path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from warnings import warn
 
 import numpy as np
-from scipy.ndimage import gaussian_filter1d
 from scipy.signal import medfilt
 from tqdm import tqdm
 
@@ -172,7 +170,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             freg = frames
             if ops['smooth_sigma_time'] > 0:
-                freg = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0).astype(np.float32)
+                freg = utils.temporal_smooth(frames=freg, sigma=ops['smooth_sigma_time'])
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
@@ -269,7 +267,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 bidiphase.shift(data, int(ops['bidiphase']))
 
             if ops['smooth_sigma_time'] > 0:
-                data = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+                data = utils.temporal_smooth(frames=data, sigma=ops['smooth_sigma_time'])
                 data = data.astype(np.float32)
 
             # preprocessing for 1P recordings
@@ -296,7 +294,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             if ops['nonrigid']:
 
                 if ops['smooth_sigma_time'] > 0:
-                    data = gaussian_filter1d(data, sigma=ops['smooth_sigma_time'], axis=0)
+                    data = utils.temporal_smooth(data, sigma=ops['smooth_sigma_time'])
 
                 ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
                     data=data,

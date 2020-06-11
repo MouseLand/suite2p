@@ -5,7 +5,7 @@ import numpy as np
 from numba import vectorize, complex64
 from numpy import fft
 from scipy.fftpack import next_fast_len
-
+from scipy.ndimage import gaussian_filter1d
 
 try:
     from mkl_fft import fft2, ifft2
@@ -54,6 +54,10 @@ def spatial_taper(sig, Ly, Lx):
     maskX = 1./(1.+np.exp((xx-mX)/sig))
     maskMul = maskY * maskX
     return maskMul
+
+def temporal_smooth(frames: np.ndarray, sigma: float) -> np.ndarray:
+    """returns Gaussian filtered 'frames' ndarray over first dimension"""
+    return gaussian_filter1d(frames, sigma=sigma, axis=0)
 
 
 def spatial_smooth(data, N):

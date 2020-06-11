@@ -233,7 +233,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         smooth_sigma=ops['smooth_sigma'],
         pad_fft=ops['pad_fft'],
     )
-    cfRefImg = cfRefImg[np.newaxis, :, :]
+
     if ops.get('nonrigid'):
         if 'yblock' not in ops:
             ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
@@ -281,13 +281,13 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(data=data, maskMul=maskMul, maskOffset=maskOffset),
-                cfRefImg=cfRefImg.squeeze(),
+                cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             rigid_offsets.append([ymax, xmax, cmax])
 
-            for frame, dy, dx in zip(data, ymax.flatten(), xmax.flatten()):
+            for frame, dy, dx in zip(data, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             # non-rigid registration

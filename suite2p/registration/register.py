@@ -191,23 +191,24 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # rigid registration
             ops['refImg'] = refImg
-            maskMul, maskOffset = rigid.compute_masks(
-                refImg=refImg,
-                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
-            )
-            cfRefImg = rigid.phasecorr_reference(
-                refImg=refImg,
-                smooth_sigma=ops['smooth_sigma'],
-                pad_fft=ops['pad_fft'],
-            )
-
             ymax, xmax, cmax = rigid.phasecorr(
-                data=rigid.apply_masks(data=freg, maskMul=maskMul, maskOffset=maskOffset),
-                cfRefImg=cfRefImg,
+                data=rigid.apply_masks(
+                    freg,
+                    *rigid.compute_masks(
+                        refImg=refImg,
+                        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+                    )
+                ),
+                cfRefImg=rigid.phasecorr_reference(
+                    refImg=refImg,
+                    smooth_sigma=ops['smooth_sigma'],
+                    pad_fft=ops['pad_fft'],
+                ),
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
-            for frame, dy, dx in zip(freg, ymax.flatten(), xmax.flatten()):
+
+            for frame, dy, dx in zip(freg, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             # shift data requires an array of shifts

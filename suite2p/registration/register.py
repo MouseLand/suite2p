@@ -176,17 +176,12 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                freg = freg.astype(np.float32)
-
-                if ops['pre_smooth']:
-                    freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
-                freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
-
-                refImg = refImg.astype(np.float32)
                 refImg = refImg[np.newaxis, :, :]
                 if ops['pre_smooth']:
                     refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+                    freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
                 refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+                freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
                 refImg = refImg.squeeze()
 
             # rigid registration

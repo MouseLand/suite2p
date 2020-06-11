@@ -285,7 +285,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 if ops['smooth_sigma_time'] > 0:
                     data = utils.temporal_smooth(data, sigma=ops['smooth_sigma_time'])
 
-                ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
+                ymax1, xmax1, cmax1 = nonrigid.phasecorr(
                     data=data,
                     maskMul=maskMulNR.squeeze(),
                     maskOffset=maskOffsetNR.squeeze(),

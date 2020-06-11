@@ -163,7 +163,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             if smooth_sigma_time > 0:
                 dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
 
-            ymax1, xmax1, cmax1, _ = nonrigid.phasecorr(
+            ymax1, xmax1, cmax1, = nonrigid.phasecorr(
                 data=dwrite,
                 maskMul=maskMulNR.squeeze(),
                 maskOffset=maskOffsetNR.squeeze(),

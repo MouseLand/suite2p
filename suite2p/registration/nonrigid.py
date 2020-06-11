@@ -161,7 +161,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         ymax1[t] = (ymax1[t] - mdpt) / subpixel + ymax
         xmax1[t] = (xmax1[t] - mdpt) / subpixel + xmax
 
-    return ymax1, xmax1, cmax1, ccsm
+    return ymax1, xmax1, cmax1
 
 
 @njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 

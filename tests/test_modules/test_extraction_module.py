@@ -23,6 +23,9 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
         bin_path = utils.write_data_to_binary(
             str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
         )
+        curr_op['meanImg'] = np.reshape(
+            np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
+        ).mean(axis=0)
         curr_op['reg_file'] = bin_path
         if plane == 1: # Second plane result has different crop.
             curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]

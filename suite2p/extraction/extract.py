@@ -7,8 +7,6 @@ from scipy import stats, signal
 
 import suite2p
 from .. import classification
-from . import chan2detect
-
 
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
@@ -188,11 +186,6 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
 
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
-        if 'chan2_thres' not in ops:
-            ops['chan2_thres'] = 0.65
-        ops, redcell = chan2detect.detect(ops, stat)
-        #redcell = np.zeros((len(stat),2))
-        np.save(os.path.join(fpath, 'redcell.npy'), redcell[ic])
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])
         np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2[ic])
 

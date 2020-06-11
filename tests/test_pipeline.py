@@ -9,7 +9,7 @@ import utils
 def get_outputs_to_check(n_channels):
     outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
     if n_channels == 2:
-        outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
+        outputs_to_check.extend(['F_chan2', 'Fneu_chan2', 'redcell'])
     return outputs_to_check
 
 

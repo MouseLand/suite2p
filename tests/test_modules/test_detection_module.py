@@ -24,6 +24,9 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
         bin_path = utils.write_data_to_binary(
             str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
         )
+        curr_op['meanImg'] = np.reshape(
+            np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
+        ).mean(axis=0)
         curr_op['reg_file'] = bin_path
         if plane == 1: # Second plane result has different crop.
             curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]
@@ -79,4 +82,13 @@ def test_detection_output_2plane2chan(default_ops):
         ]
         , (404, 360),
     )
+    ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
+    ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        ['redcell'],
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+    )

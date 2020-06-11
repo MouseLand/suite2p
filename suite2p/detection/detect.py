@@ -1,13 +1,20 @@
 import time
 import numpy as np
-
-from . import sourcery, sparsedetect, masks, utils
+from pathlib import Path
+from . import sourcery, sparsedetect, masks, chan2detect, utils
 
 
 def main_detect(ops, stat=None):
     stat = select_rois(ops, stat)
     # extract fluorescence and neuropil
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
+    ic = np.ones(len(stat), np.bool)
+    # if second channel, detect bright cells in second channel
+    if 'meanImg_chan2' in ops:
+        if 'chan2_thres' not in ops:
+            ops['chan2_thres'] = 0.65
+        ops, redcell = chan2detect.detect(ops, stat)
+        np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
     return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 

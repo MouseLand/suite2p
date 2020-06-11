@@ -125,10 +125,9 @@ def compute_zpos(Zreg, ops):
         # padding
         if Zreg.shape[1] > Ly:
             Zreg = Zreg[:, ]
-        pad = np.zeros((nplanes, int(N/2), zLx))
-        dsmooth = np.concatenate((pad, Zreg, pad), axis=1)
-        pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
-        dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
+
+        half_pad = N // 2
+        dsmooth = np.pad(Zreg, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
 
     nbytes = os.path.getsize(ops['reg_file'])
     nFrames = int(nbytes/(2 * Ly * Lx))

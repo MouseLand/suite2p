@@ -4,7 +4,7 @@ Tests for the Suite2p Detection and Extraction module.
 
 import numpy as np
 
-from suite2p import extraction
+from suite2p import detection, extraction
 import utils
 
 
@@ -44,8 +44,9 @@ def detect_and_extract_wrapper(ops):
         curr_op = ops[plane]
         plane_dir = utils.get_plane_dir(curr_op, plane)
         # Detection Part
-        curr_op = extraction.detect_and_extract(curr_op)
+        cell_pix, cell_masks, neuropil_masks, stat, curr_op = detection.main_detect(curr_op)
         # Extraction part
+        curr_op = extraction.extract(curr_op, cell_pix, cell_masks, neuropil_masks, stat)
         F = np.load(plane_dir.joinpath('F.npy'))
         Fneu = np.load(plane_dir.joinpath('Fneu.npy'))
         dF = F - curr_op['neucoeff'] * Fneu

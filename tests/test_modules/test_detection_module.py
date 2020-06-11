@@ -53,8 +53,8 @@ def detect_wrapper(ops):
             allow_pickle=True
         )[()]
         assert np.array_equal(output_check['cell_pix'], cell_pix)
-        utils.check_lists_of_arr_equal(cell_masks, output_check['cell_masks'])
-        utils.check_lists_of_arr_equal(neuropil_masks, output_check['neuropil_masks'])
+        utils.check_lists_of_arr_all_close(cell_masks, output_check['cell_masks'])
+        utils.check_lists_of_arr_all_close(neuropil_masks, output_check['neuropil_masks'])
         utils.check_dict_dicts_all_close(stat, output_check['stat'])
 
 

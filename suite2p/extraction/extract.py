@@ -7,7 +7,6 @@ from scipy import stats, signal
 
 import suite2p
 from .. import classification
-from ..detection import detect
 from . import chan2detect
 
 
@@ -141,7 +140,7 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
 
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
-def detect_and_extract(ops, stat=None):
+def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     """ detects ROIs, computes fluorescence, applies default classifier and saves to *.npy
 
     if stat is None, ROIs are computed from 'reg_file'
@@ -164,7 +163,6 @@ def detect_and_extract(ops, stat=None):
         adds 'meanImg' (optional 'meanImg_chan2')
 
     """
-    cell_pix, cell_masks, neuropil_masks, stat =detect.main_detect(ops, stat)
     F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu

@@ -170,26 +170,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         niter = 8
         for iter in range(0, niter):
 
-            if ops['1Preg']:
-                refImg = refImg.astype(np.float32)
-                refImg = refImg[np.newaxis, :, :]
-                if ops['pre_smooth']:
-                    refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-                refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-                refImg = refImg.squeeze()
-
-            ops['refImg'] = refImg
-            maskMul, maskOffset = rigid.compute_masks(
-                refImg=refImg,
-                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
-            )
-            cfRefImg = rigid.phasecorr_reference(
-                refImg=refImg,
-                smooth_sigma=ops['smooth_sigma'],
-                pad_fft=ops['pad_fft'],
-            )
-            cfRefImg = cfRefImg[np.newaxis, :, :]
-
             freg = frames
             if ops['smooth_sigma_time'] > 0:
                 freg = gaussian_filter1d(freg, sigma=ops['smooth_sigma_time'], axis=0).astype(np.float32)
@@ -202,10 +182,28 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
                 freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
 
+                refImg = refImg.astype(np.float32)
+                refImg = refImg[np.newaxis, :, :]
+                if ops['pre_smooth']:
+                    refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+                refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+                refImg = refImg.squeeze()
+
             # rigid registration
+            ops['refImg'] = refImg
+            maskMul, maskOffset = rigid.compute_masks(
+                refImg=refImg,
+                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+            )
+            cfRefImg = rigid.phasecorr_reference(
+                refImg=refImg,
+                smooth_sigma=ops['smooth_sigma'],
+                pad_fft=ops['pad_fft'],
+            )
+
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(data=freg, maskMul=maskMul, maskOffset=maskOffset),
-                cfRefImg=cfRefImg.squeeze(),
+                cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
@@ -249,7 +247,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
                 'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
 
-        maskSlope = ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma']  # slope of taper mask at the edges
         if ops['1Preg']:
             data = refImg[np.newaxis, :, :]
             data = data.astype(np.float32)
@@ -261,7 +258,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
             refImg0=refImg,
-            maskSlope=maskSlope,
+            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'], # slope of taper mask at the edges
             smooth_sigma=ops['smooth_sigma'],
             yblock=ops['yblock'],
             xblock=ops['xblock'],

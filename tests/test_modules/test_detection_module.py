@@ -38,17 +38,45 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
     return ops
 
 
-def test_detection_extraction_output_1plane1chan(default_ops):
+def detect_wrapper(ops):
+    """
+    Calls the main_detect function and compares output dictionaries (cell_pix, cell_masks,
+    neuropil_masks, stat) with prior output dicts.
+    """
+    for i in range(len(ops)):
+        op = ops[i]
+        cell_pix, cell_masks, neuropil_masks, stat = detection.main_detect(op, None)
+        output_check = np.load(
+            op['data_path'][0].joinpath(
+                'detection',
+                'detect_output_{0}p{1}c{2}.npy'.format(op['nplanes'], op['nchannels'], i)),
+            allow_pickle=True
+        )[()]
+        assert np.array_equal(output_check['cell_pix'], cell_pix)
+        utils.check_lists_of_arr_equal(cell_masks, output_check['cell_masks'])
+        utils.check_lists_of_arr_equal(neuropil_masks, output_check['neuropil_masks'])
+        utils.check_dict_dicts_all_close(stat, output_check['stat'])
+
+
+def test_detection_output_1plane1chan(default_ops):
     ops = prepare_for_detection(
         default_ops,
         [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
         (404, 360)
     )
-    cell_pix, cell_masks, neuropil_masks, stat = detection.main_detect(ops, None)
-    utils.check_output(
-        default_ops['save_path0'],
-        ['F', 'Fneu', 'iscell', 'stat', 'spks'],
-        default_ops['data_path'][0],
-        default_ops['nplanes'],
-        default_ops['nchannels'],
+    detect_wrapper(ops)
+
+
+def test_detection_output_2plane2chan(default_ops):
+    default_ops['nchannels'] = 2
+    default_ops['nplanes'] = 2
+    detection_dir = default_ops['data_path'][0].joinpath('detection')
+    ops = prepare_for_detection(
+        default_ops,
+        [
+            [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
+            [detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
+        ]
+        , (404, 360),
     )
+    detect_wrapper(ops)

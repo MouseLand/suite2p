@@ -65,11 +65,11 @@ def spatial_smooth(data, N):
     half_pad = N // 2
     data_padded = np.pad(data, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
 
-    cumsum = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
-    data_smoothed = (cumsum[:, N:, :] - cumsum[:, :-N, :])  # in X
-    data_smoothed = (data_smoothed[:, :, N:] - data_smoothed[:, :, :-N])  # in Y
-    data_smoothed /= N ** 2
-    return data_smoothed
+    data_summed = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
+    data_summed = (data_summed[:, N:, :] - data_summed[:, :-N, :])  # in X
+    data_summed = (data_summed[:, :, N:] - data_summed[:, :, :-N])  # in Y
+    data_summed /= N ** 2
+    return data_summed
 
 
 def spatial_high_pass(data, N):

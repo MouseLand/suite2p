@@ -49,7 +49,6 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         size [ROIs x time]
 
     ops : dictionaray
-        adds 'meanImg'
 
     """
     t0=time.time()
@@ -68,8 +67,6 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     ix = 0
     data = 1
 
-    ops['meanImg'] = np.zeros((Ly,Lx))
-    k=0
     while data is not None:
         buff = reg_file.read(block_size)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -78,19 +75,14 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
             break
         data = np.reshape(data, (-1, Ly, Lx))
         inds = ix+np.arange(0,nimg,1,int)
-        ops['meanImg'] += data.mean(axis=0)
         data = np.reshape(data, (nimg,-1))
 
         # extract traces and neuropil
         for n in range(ncells):
             F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-            #Fneu[n,inds] = np.mean(data[neuropil_masks[n,:], :], axis=0)
         Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         ix += nimg
-        k += 1
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
-    ops['meanImg'] /= k
-
     reg_file.close()
     return F, Fneu, ops
 
@@ -124,7 +116,6 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
         size [ROIs x time]
 
     ops : dictionaray
-        adds 'meanImg' (optional 'meanImg_chan2')
 
     stat : array of dicts
         adds 'skew', 'std'    
@@ -134,7 +125,6 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     F,Fneu,ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
-        ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
 
@@ -160,7 +150,6 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     ----------------
 
     ops : dictionaray
-        adds 'meanImg' (optional 'meanImg_chan2')
 
     """
     F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)

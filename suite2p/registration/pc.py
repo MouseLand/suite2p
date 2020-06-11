@@ -94,16 +94,10 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
 
         if reg_1p:
             data = refImg
-            if pre_smooth and pre_smooth % 2:
-                raise ValueError("if set, pre_smooth must be a positive even integer.")
-            if spatial_hp % 2:
-                raise ValueError("spatial_hp must be a positive even integer.")
             data = data.astype(np.float32)
-            data = data[np.newaxis, :, :]
             if pre_smooth:
                 data = utils.spatial_smooth(data, int(pre_smooth))
-            data = utils.spatial_high_pass(data, int(spatial_hp))
-            refImg = data.squeeze()
+            refImg = utils.spatial_high_pass(data, int(spatial_hp))
 
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
@@ -119,11 +113,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
             # pre filtering for one-photon data
             if reg_1p:
-                data = refImg[np.newaxis, :, :]
-                if pre_smooth and pre_smooth % 2:
-                    raise ValueError("if set, pre_smooth must be a positive even integer.")
-                if spatial_hp % 2:
-                    raise ValueError("spatial_hp must be a positive even integer.")
                 data = data.astype(np.float32)
                 if pre_smooth:
                     data = utils.spatial_smooth(data, int(pre_smooth))
@@ -151,10 +140,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
 
         # preprocessing for 1P recordings
         if reg_1p:
-            if pre_smooth and pre_smooth % 2:
-                raise ValueError("if set, pre_smooth must be a positive even integer.")
-            if spatial_hp % 2:
-                raise ValueError("spatial_hp must be a positive even integer.")
             Img = Img.astype(np.float32)
 
             if pre_smooth:

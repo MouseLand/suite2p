@@ -99,12 +99,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
 
     """
-
-    if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-        raise ValueError("if set, pre_smooth must be a positive even integer.")
-    if ops['spatial_hp_reg'] % 2:
-        raise ValueError("spatial_hp must be a positive even integer.")
-
     # set number of frames and print warnings
     if ops['frames_include'] != -1:
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
@@ -174,13 +168,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                refImg = refImg[np.newaxis, :, :]
                 if ops['pre_smooth']:
                     refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
                     freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
                 refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
                 freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
-                refImg = refImg.squeeze()
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
@@ -218,11 +210,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     # register binary to reference image
     if ops['1Preg']:
         refImg = refImg.astype(np.float32)
-        refImg = refImg[np.newaxis, :, :]
         if ops['pre_smooth']:
             refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
         refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-        refImg = refImg.squeeze()
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
@@ -240,8 +230,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
 
         if ops['1Preg']:
-            data = refImg[np.newaxis, :, :]
-            data = data.astype(np.float32)
+            data = refImg.astype(np.float32)
 
             if ops['pre_smooth']:
                 data = utils.spatial_smooth(data, int(ops['pre_smooth']))

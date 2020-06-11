@@ -60,23 +60,31 @@ def temporal_smooth(frames: np.ndarray, sigma: float) -> np.ndarray:
     return gaussian_filter1d(frames, sigma=sigma, axis=0)
 
 
-def spatial_smooth(data, N):
-    ''' spatially smooth data using cumsum over axis=1,2 with window N'''
-    half_pad = N // 2
+def spatial_smooth(data, window):
+    """spatially smooth data using cumsum over axis=1,2 with window N"""
+    if window and window % 2:
+        raise ValueError("Filter window must be an even integer.")
+    if data.ndim == 2:
+        data = data[np.newaxis, : ,:]
+
+    half_pad = window // 2
     data_padded = np.pad(data, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
 
     data_summed = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
-    data_summed = (data_summed[:, N:, :] - data_summed[:, :-N, :])  # in X
-    data_summed = (data_summed[:, :, N:] - data_summed[:, :, :-N])  # in Y
-    data_summed /= N ** 2
-    return data_summed
+    data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :])  # in X
+    data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window])  # in Y
+    data_summed /= window ** 2
+
+    return data_summed.squeeze()
 
 
 def spatial_high_pass(data, N):
-    ''' high pass filters data over axis=1,2 with window N'''
-    norm = spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N).squeeze()
-    data -= spatial_smooth(data, N) / norm
-    return data
+    """high pass filters data over axis=1,2 with window N"""
+    if data.ndim == 2:
+        data = data[np.newaxis, :, :]
+
+    data_filtered = data - (spatial_smooth(data, N) / spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N))
+    return data_filtered.squeeze()
 
 
 def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:

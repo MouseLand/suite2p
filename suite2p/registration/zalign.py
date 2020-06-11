@@ -113,11 +113,6 @@ def compute_zpos(Zreg, ops):
     if 'reg_file' not in ops:
         raise IOError('no binary specified')
 
-    if ops['pre_smooth'] and ops['pre_smooth'] % 2:
-        raise ValueError("if set, pre_smooth must be a positive even integer.")
-    if ops['spatial_hp_reg'] % 2:
-        raise ValueError("spatial_hp must be a positive even integer.")
-
     nbatch = ops['batch_size']
     Ly = ops['Ly']
     Lx = ops['Lx']

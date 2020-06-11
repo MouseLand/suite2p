@@ -4,11 +4,11 @@ import numpy as np
 from . import sourcery, sparsedetect, masks, utils
 
 
-def main_detect(ops, stat):
+def main_detect(ops, stat=None):
     stat = select_rois(ops, stat)
     # extract fluorescence and neuropil
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
-    return cell_pix, cell_masks, neuropil_masks, stat
+    return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 
 def select_rois(ops, stat=None):

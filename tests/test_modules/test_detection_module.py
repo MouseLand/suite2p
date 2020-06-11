@@ -45,7 +45,7 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_pix, cell_masks, neuropil_masks, stat = detection.main_detect(op, None)
+        cell_pix, cell_masks, neuropil_masks, stat, op = detection.main_detect(op, None)
         output_check = np.load(
             op['data_path'][0].joinpath(
                 'detection',

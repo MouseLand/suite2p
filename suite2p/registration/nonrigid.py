@@ -6,12 +6,7 @@ from numba import float32, njit, prange
 from numpy import fft
 from scipy.fftpack import next_fast_len
 
-try:
-    from mkl_fft import fft2, ifft2
-except ModuleNotFoundError:
-    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
-
-from .utils import addmultiply, spatial_taper, gaussian_fft, apply_dotnorm, kernelD2, mat_upsample
+from .utils import addmultiply, spatial_taper, gaussian_fft, kernelD2, mat_upsample, convolve
 
 
 def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:
@@ -120,9 +115,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
         yind, xind = yblock[n], xblock[n]
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
-    fft2(Y, overwrite_x=True)
-    Y = apply_dotnorm(Y, cfRefImg)
-    ifft2(Y, overwrite_x=True)
+    Y = convolve(mov=Y, img=cfRefImg)
 
     # calculate ccsm
     lhalf = lcorr + lpad

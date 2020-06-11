@@ -296,10 +296,10 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
+            rigid_offsets.append([ymax, xmax, cmax])
+
             for frame, dy, dx in zip(data, ymax.flatten(), xmax.flatten()):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
-
-            rigid_offsets.append([ymax, xmax, cmax])
 
             # non-rigid registration
             if ops['nonrigid']:
@@ -318,6 +318,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     yblock=ops['yblock'],
                     maxregshiftNR=ops['maxregshiftNR'],
                 )
+
+                nonrigid_offsets.append([ymax1, xmax1, cmax1])
+
                 data = nonrigid.transform_data(
                     data=data,
                     nblocks=ops['nblocks'],
@@ -326,8 +329,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     ymax1=ymax1,
                     xmax1=xmax1,
                 )
-
-                nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
             mean_img += data.sum(axis=0) / ops['nframes']
 
@@ -344,6 +345,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
     nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
+    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    if ops['nonrigid']:
+        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
 
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
@@ -392,10 +396,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
         meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
         ops[meanImg_key] = mean_img_sum / (k + 1)
-
-    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
-    if ops['nonrigid']:
-        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
 
     # compute valid region
     # ignore user-specified bad_frames.npy

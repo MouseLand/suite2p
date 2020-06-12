@@ -1,0 +1,7 @@
+md5: 9d7feb8a08a89566c6b88ac0d1a9c97a
+outs:
+- md5: 9aeb3b0d8d83ea1022d813310939338c
+  path: regression_smoothed_chan0.tif
+  cache: true
+  metric: false
+  persist: false

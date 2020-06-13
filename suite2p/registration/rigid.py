@@ -38,7 +38,7 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = F
     return cfRefImg.astype('complex64')
 
 
-def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time):
+def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int, float]:
     """ compute phase correlation between data and reference image
 
     Parameters

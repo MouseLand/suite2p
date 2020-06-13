@@ -2,6 +2,7 @@ import time
 from os import path
 from typing import Dict, Any
 from warnings import warn
+from itertools import count
 
 import numpy as np
 from scipy.signal import medfilt
@@ -230,12 +231,12 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
 
         if ops['1Preg']:
-            data = refImg.astype(np.float32)
+            refImg = refImg.astype(np.float32)
 
             if ops['pre_smooth']:
-                data = utils.spatial_smooth(data, int(ops['pre_smooth']))
-            data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
-            refImg = data.squeeze()
+                refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+            refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+            refImg = refImg.squeeze()
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
             refImg0=refImg,
@@ -250,43 +251,43 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     rigid_offsets, nonrigid_offsets = [], []
     with io.BinaryFile(nbatch=ops['batch_size'], Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
                              reg_file=reg_file_align, raw_file=raw_file_align) as f:
-        for k, data in tqdm(enumerate(f)):
+        for k, (_, frames) in tqdm(enumerate(f)):
 
             if ops['bidiphase'] and not ops['bidi_corrected']:
-                bidiphase.shift(data, int(ops['bidiphase']))
+                bidiphase.shift(frames, int(ops['bidiphase']))
 
             if ops['smooth_sigma_time'] > 0:
-                data = utils.temporal_smooth(frames=data, sigma=ops['smooth_sigma_time'])
-                data = data.astype(np.float32)
+                frames = utils.temporal_smooth(frames=frames, sigma=ops['smooth_sigma_time'])
+                frames = frames.astype(np.float32)
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                data = data.astype(np.float32)
+                frames = frames.astype(np.float32)
 
                 if ops['pre_smooth']:
-                    data = utils.spatial_smooth(data, int(ops['pre_smooth']))
-                data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
+                    frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
+                frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=rigid.apply_masks(data=data, maskMul=maskMul, maskOffset=maskOffset),
+                data=rigid.apply_masks(data=frames, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
             rigid_offsets.append([ymax, xmax, cmax])
 
-            for frame, dy, dx in zip(data, ymax, xmax):
+            for frame, dy, dx in zip(frames, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             # non-rigid registration
             if ops['nonrigid']:
 
                 if ops['smooth_sigma_time'] > 0:
-                    data = utils.temporal_smooth(data, sigma=ops['smooth_sigma_time'])
+                    frames = utils.temporal_smooth(frames, sigma=ops['smooth_sigma_time'])
 
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
-                    data=data,
+                    data=frames,
                     maskMul=maskMulNR.squeeze(),
                     maskOffset=maskOffsetNR.squeeze(),
                     cfRefImg=cfRefImgNR.squeeze(),
@@ -297,10 +298,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     maxregshiftNR=ops['maxregshiftNR'],
                 )
 
-                nonrigid_offsets.append([ymax1, xmax1, cmax1])
-
-                data = nonrigid.transform_data(
-                    data=data,
+                frames = nonrigid.transform_data(
+                    data=frames,
                     nblocks=ops['nblocks'],
                     xblock=ops['xblock'],
                     yblock=ops['yblock'],
@@ -308,9 +307,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     xmax1=xmax1,
                 )
 
-            mean_img += data.sum(axis=0) / ops['nframes']
+                nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
-            f.write(data)
+            mean_img += frames.sum(axis=0) / ops['nframes']
+
+            f.write(frames)
             if ops['reg_tif']:
                 fname = io.generate_tiff_filename(
                     functional_chan=ops['functional_chan'],
@@ -319,10 +320,13 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     k=k,
                     ichan=True
                 )
-                io.save_tiff(data=data, fname=fname)
+                io.save_tiff(data=frames, fname=fname)
 
     rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
+    ymax, xmax, cmax = rigid_offsets
+
     nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
+
     ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     if ops['nonrigid']:
         ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
@@ -333,32 +337,25 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     if ops['nchannels'] > 1:
         t0 = time.time()
         mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
-        nfr = 0
         with io.BinaryFile(nbatch=ops['batch_size'], Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
                         reg_file=reg_file_alt, raw_file=raw_file_alt) as f:
 
-            for data in f:
-
-                # get shifts
-                nframes = data.shape[0]
-                iframes = nfr + np.arange(0, nframes, 1, int)
-                nfr += nframes
-                ymax, xmax = rigid_offsets[0][iframes].astype(np.int32), rigid_offsets[1][iframes].astype(np.int32)
+            for iframes, frames in f:
 
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-                    bidiphase.shift(data, int(ops['bidiphase']))
+                    bidiphase.shift(frames, int(ops['bidiphase']))
 
-                for frame, dy, dx in zip(data, ymax.flatten(), xmax.flatten()):
+                for frame, dy, dx in zip(frames, ymax[iframes].astype(int), xmax[iframes].astype(int)):
                     frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
                 if ops['nonrigid']:
                     ymax1, xmax1 = nonrigid_offsets[0][iframes], nonrigid_offsets[1][iframes]
-                    data = nonrigid.transform_data(data, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
+                    frames = nonrigid.transform_data(frames, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
                                                    ymax1=ymax1, xmax1=xmax1)
 
                 # write
-                f.write(data)
+                f.write(frames)
                 if ops['reg_tif_chan2']:
                     fname = io.generate_tiff_filename(
                         functional_chan=ops['functional_chan'],
@@ -367,9 +364,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                         k=k,
                         ichan=False
                     )
-                    io.save_tiff(data=data, fname=fname)
+                    io.save_tiff(data=frames, fname=fname)
 
-                mean_img_sum += data.mean(axis=0)
+                mean_img_sum += frames.mean(axis=0)
 
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
         meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'

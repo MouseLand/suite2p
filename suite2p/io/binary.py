@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -14,6 +14,7 @@ class BinaryFile:
         self.raw_file = open(raw_file, 'rb') if raw_file else None
 
         self._nfr = 0
+        self._index = 0
         self._can_read = True
 
     @property
@@ -40,7 +41,7 @@ class BinaryFile:
             raise StopIteration
         return data
 
-    def read(self, dtype=np.float32) -> Optional[np.ndarray]:
+    def read(self, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
         buff = self.raw_file.read(self.nbytesread) if self.raw_file else self.reg_file.read(self.nbytesread)
@@ -48,8 +49,10 @@ class BinaryFile:
         if (data.size == 0) | (self._nfr >= self.nframes):
             return None
         self._nfr += data.size
+        indices = np.arange(self._index, self._index + data.shape[0])
+        self._index += data.shape[0]
         self._can_read = False
-        return data
+        return indices, data
 
     def write(self, data: np.ndarray) -> None:
         if self._can_read:

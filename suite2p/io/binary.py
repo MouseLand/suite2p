@@ -5,12 +5,21 @@ import numpy as np
 
 class BinaryFile:
 
-    def __init__(self, Ly: int, Lx: int, nframes: int, reg_file: str, raw_file: str):
+    def __init__(self, Ly: int, Lx: int, nframes: int, read_file: str, write_file: Optional[str]):
         self.Ly = Ly
         self.Lx = Lx
         self.nframes = nframes
-        self.reg_file = open(reg_file, mode='wb' if raw_file else 'r+b')
-        self.raw_file = open(raw_file, 'rb') if raw_file else None
+        if read_file == write_file:
+            self.read_file = open(read_file, mode='r+b')
+            self.write_file = self.read_file
+        elif read_file and not write_file:
+            self.read_file = open(read_file, mode='rb')
+            self.write_file = write_file
+        elif read_file and write_file and read_file != write_file:
+            self.read_file = open(read_file, mode='rb')
+            self.write_file = open(write_file, mode='wb')
+        else:
+            raise IOError("Invalid combination of read_file and write_file")
 
         self._nfr = 0
         self._index = 0
@@ -21,9 +30,9 @@ class BinaryFile:
         return 2 * self.Ly * self.Lx
 
     def close(self) -> None:
-        self.reg_file.close()
-        if self.raw_file:
-            self.raw_file.close()
+        self.read_file.close()
+        if self.write_file:
+            self.write_file.close()
 
     def __enter__(self):
         return self
@@ -42,7 +51,7 @@ class BinaryFile:
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
         nbytes = self.nbytesread * batch_size
-        buff = self.raw_file.read(nbytes) if self.raw_file else self.reg_file.read(nbytes)
+        buff = self.read_file.read(nbytes)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(dtype)
         if (data.size == 0) | (self._nfr >= self.nframes):
             return None
@@ -55,10 +64,11 @@ class BinaryFile:
     def write(self, data: np.ndarray) -> None:
         if self._can_read:
             raise IOError("BinaryFile needs to read before it can write again.")
-
-        if not self.raw_file:
-            self.reg_file.seek(-2 * data.size, 1)
-        self.reg_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
+        if not self.write_file:
+            raise IOError("No write_file specified, writing not possible.")
+        if self.read_file is self.write_file:
+            self.write_file.seek(-2 * data.size, 1)
+        self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
         self._can_read = True
 
 

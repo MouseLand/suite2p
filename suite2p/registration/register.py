@@ -247,7 +247,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
-    with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'], reg_file=reg_file_align, raw_file=raw_file_align) as f:
+    with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
+                       read_file=raw_file_align if raw_file_align else reg_file_align,
+                       write_file=reg_file_align) as f:
         for k, (_, frames) in tqdm(enumerate(f.iter_frames(batch_size=ops['batch_size']))):
 
             if ops['bidiphase'] and not ops['bidi_corrected']:
@@ -334,7 +336,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     if ops['nchannels'] > 1:
         t0 = time.time()
         mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
-        with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'], reg_file=reg_file_alt, raw_file=raw_file_alt) as f:
+        with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'], nframes=ops['nframes'],
+                           read_file=raw_file_alt if raw_file_alt else reg_file_alt,
+                           write_file=reg_file_alt) as f:
 
             for iframes, frames in f.iter_frames(batch_size=ops['batch_size']):
 

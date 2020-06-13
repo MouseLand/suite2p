@@ -5,8 +5,7 @@ import numpy as np
 
 class BinaryFile:
 
-    def __init__(self, nbatch: int, Ly: int, Lx: int, nframes: int, reg_file: str, raw_file: str):
-        self.nbatch = nbatch
+    def __init__(self, Ly: int, Lx: int, nframes: int, reg_file: str, raw_file: str):
         self.Ly = Ly
         self.Lx = Lx
         self.nframes = nframes
@@ -19,7 +18,7 @@ class BinaryFile:
 
     @property
     def nbytesread(self) -> int:
-        return 2 * self.Ly * self.Lx * self.nbatch
+        return 2 * self.Ly * self.Lx
 
     def close(self) -> None:
         self.reg_file.close()
@@ -32,19 +31,18 @@ class BinaryFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def __iter__(self):
-        return self
+    def iter_frames(self, batch_size=1, dtype=np.float32):
+        while True:
+            data = self.read(batch_size=batch_size, dtype=dtype)
+            if data is None:
+                break
+            yield data
 
-    def __next__(self):
-        data = self.read()
-        if data is None:
-            raise StopIteration
-        return data
-
-    def read(self, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+    def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
-        buff = self.raw_file.read(self.nbytesread) if self.raw_file else self.reg_file.read(self.nbytesread)
+        nbytes = self.nbytesread * batch_size
+        buff = self.raw_file.read(nbytes) if self.raw_file else self.reg_file.read(nbytes)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(dtype)
         if (data.size == 0) | (self._nfr >= self.nframes):
             return None

@@ -1,6 +1,6 @@
 import numpy as np
 
-from .sparsedetect import extendROI
+from suite2p.detection.sparsedetect import extendROI
 
 
 def get_overlaps(stat, ops):

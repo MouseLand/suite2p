@@ -1,12 +1,10 @@
 """
-    Tests for the Suite2p Detection and Extraction module.
-    """
-# TODO: Separate once the detection module is created.
+Tests for the Suite2p Detection module.
+"""
 
 import numpy as np
-
-from suite2p import extraction
 import utils
+from suite2p import detection
 
 
 def prepare_for_detection(op, input_file_name_list, dimensions):
@@ -26,6 +24,9 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
         bin_path = utils.write_data_to_binary(
             str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
         )
+        curr_op['meanImg'] = np.reshape(
+            np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
+        ).mean(axis=0)
         curr_op['reg_file'] = bin_path
         if plane == 1: # Second plane result has different crop.
             curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]
@@ -40,37 +41,36 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
     return ops
 
 
-def detect_and_extract_wrapper(ops):
-    for plane in range(ops[0]['nplanes']):
-        curr_op = ops[plane]
-        plane_dir = utils.get_plane_dir(curr_op, plane)
-        # Detection Part
-        curr_op = extraction.detect_and_extract(curr_op)
-        # Extraction part
-        F = np.load(plane_dir.joinpath('F.npy'))
-        Fneu = np.load(plane_dir.joinpath('Fneu.npy'))
-        dF = F - curr_op['neucoeff'] * Fneu
-        dF = extraction.preprocess(dF, curr_op)
-        spks = extraction.oasis(dF, curr_op)
-        np.save(plane_dir.joinpath('spks.npy'), spks)
+def detect_wrapper(ops):
+    """
+    Calls the main_detect function and compares output dictionaries (cell_pix, cell_masks,
+    neuropil_masks, stat) with prior output dicts.
+    """
+    for i in range(len(ops)):
+        op = ops[i]
+        cell_pix, cell_masks, neuropil_masks, stat, op = detection.main_detect(op, None)
+        output_check = np.load(
+            op['data_path'][0].joinpath(
+                'detection',
+                'detect_output_{0}p{1}c{2}.npy'.format(op['nplanes'], op['nchannels'], i)),
+            allow_pickle=True
+        )[()]
+        assert np.array_equal(output_check['cell_pix'], cell_pix)
+        utils.check_lists_of_arr_all_close(cell_masks, output_check['cell_masks'])
+        utils.check_lists_of_arr_all_close(neuropil_masks, output_check['neuropil_masks'])
+        utils.check_dict_dicts_all_close(stat, output_check['stat'])
 
 
-def test_detection_extraction_output_1plane1chan(default_ops):
+def test_detection_output_1plane1chan(default_ops):
     ops = prepare_for_detection(
         default_ops,
         [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
         (404, 360)
     )
-    detect_and_extract_wrapper(ops)
-    utils.check_output(
-        default_ops['save_path0'],
-        ['F', 'Fneu', 'iscell', 'stat', 'spks'],
-        default_ops['data_path'][0],
-        default_ops['nplanes'],
-        default_ops['nchannels'],
-    )
+    detect_wrapper(ops)
 
-def test_detection_extraction_output_2plane2chan(default_ops):
+
+def test_detection_output_2plane2chan(default_ops):
     default_ops['nchannels'] = 2
     default_ops['nplanes'] = 2
     detection_dir = default_ops['data_path'][0].joinpath('detection')
@@ -84,10 +84,10 @@ def test_detection_extraction_output_2plane2chan(default_ops):
     )
     ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
-    detect_and_extract_wrapper(ops)
+    detect_wrapper(ops)
     utils.check_output(
         default_ops['save_path0'],
-        ['F', 'Fneu', 'iscell', 'stat', 'spks'],
+        ['redcell'],
         default_ops['data_path'][0],
         default_ops['nplanes'],
         default_ops['nchannels'],

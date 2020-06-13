@@ -5,8 +5,8 @@ from scipy import stats
 
 from . import masks, io
 from . import utils
+from .. import detection
 from .. import extraction
-
 
 def distance_matrix(parent, ilist):
     idist = 1e6 * np.ones((len(ilist), len(ilist)))
@@ -87,7 +87,7 @@ def merge_activity_masks(parent):
     stat0['xpix'] = xpix
     stat0['lam'] = lam / lam.sum() * merged_cells.size
 
-    stat0 = extraction.roi_stats(parent.ops, [stat0])[0]
+    stat0 = detection.roi_stats(parent.ops, [stat0])[0]
 
     # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')

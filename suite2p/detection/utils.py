@@ -1,7 +1,7 @@
+import numpy as np
 import math
 import time
 
-import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
@@ -50,7 +50,6 @@ def bin_movie(ops):
     nimgbatch = bin_size * (nimgbatch // bin_size)
     nbytesread = np.int64(Ly*Lx*nimgbatch*2)
     mov = np.zeros((ops['nbinned'], Lyc, Lxc), np.float32)
-    max_proj = np.zeros((Lyc, Lxc), np.float32)
     ix = 0
     idata = 0
     # load and bin data
@@ -82,8 +81,6 @@ def bin_movie(ops):
     mov = mov[:ix,:,:]
     max_proj = mov.max(axis=0)
     print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
-
-    #nimgbatch = min(mov.shape[0] , max(int(500/nt0), int(240./nt0 * ops['fs'])))
 
     # data is high-pass filtered
     if ops['high_pass']<10:

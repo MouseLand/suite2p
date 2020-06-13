@@ -6,7 +6,7 @@ import time
 import numpy as np
 from scipy.io import savemat
 
-from . import extraction, io, registration
+from . import extraction, io, registration, detection
 
 try:
     from haussmeister import haussio
@@ -282,10 +282,16 @@ def run_s2p(ops={},db={}):
             spikedetect = ops['spikedetect']
 
         if roidetect:
-            ######## CELL DETECTION AND ROI EXTRACTION ##############
+            ######## CELL DETECTION ##############
             t11=time.time()
-            print('----------- ROI DETECTION AND EXTRACTION')
-            ops1[ipl] = extraction.detect_and_extract(ops1[ipl])
+            print('----------- ROI DETECTION')
+            cell_pix, cell_masks, neuropil_masks, stat, ops1[ipl] = detection.main_detect(ops1[ipl])
+            print('----------- Total %0.2f sec.'%(time.time()-t11))
+
+            ######## ROI EXTRACTION ##############
+            t11=time.time()
+            print('----------- EXTRACTION')
+            ops1[ipl] = extraction.extract(ops1[ipl], cell_pix, cell_masks, neuropil_masks, stat)
             ops = ops1[ipl]
             fpath = ops['save_path']
             print('----------- Total %0.2f sec.'%(time.time()-t11))

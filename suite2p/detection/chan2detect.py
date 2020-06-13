@@ -43,7 +43,6 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     return mimg2
 
 def detect(ops, stat):
-    #ops2 = ops.copy()
     mimg = ops['meanImg'].copy()
     mimg2 = ops['meanImg_chan2'].copy()
 

@@ -31,7 +31,7 @@ def test_2plane_2chan(default_ops):
 
 def test_1plane_2chan_sourcery(default_ops):
     """
-    Tests for case with 2 planes and 1 channel.
+    Tests for case with 1 plane and 2 channel.
     """
     default_ops['nchannels'] = 2
     default_ops['sparse_mode'] = 0

@@ -19,28 +19,51 @@ def prepare_for_registration(op, input_file_name, dimensions):
     op['reg_tif'] = True
     op['Lx'] = dimensions[0]
     op['Ly'] = dimensions[1]
+    nc = op['nchannels']
     # Make input data non-negative
     input_data = (imread(
         str(input_file_name)
     ) // 2).astype(np.int16)
-    bin_file_path = str(Path(op['save_path0']).joinpath('data.bin'))
-    # Generate binary file
-    with open(bin_file_path, 'wb') as f:
-        f.write(input_data)
-    op['reg_file'] = bin_file_path
-    op['save_path'] = op['save_path0']
-    return op
+    nframes_per_plane = input_data.shape[0] // op['nplanes']
+    ops = []
+    for i in range(op['nplanes']):
+        # split image by number of planes
+        plane_start = i * nframes_per_plane
+        chan1_end = plane_start + nframes_per_plane//nc if nc == 2 else nframes_per_plane*(i+1)
+        curr_op = op.copy()
+        bin_file_path = str(Path(curr_op['save_path0']).joinpath('data_{}.bin'.format(i)))
+        # Generate binary file for chan1
+        with open(bin_file_path, 'wb') as f:
+            f.write(input_data[plane_start:chan1_end, :, :])
+        # Generate binary file for chan2
+        if nc == 2:
+            bin_file_path2 = str(Path(curr_op['save_path0']).joinpath('data_{}_2.bin'.format(i)))
+            with open(bin_file_path2, 'wb') as f2:
+                f2.write(input_data[chan1_end:nframes_per_plane*(i+1), :, :])
+            curr_op['reg_file_chan2'] = bin_file_path2
+        curr_op['reg_file'] = bin_file_path
+        curr_op['save_path'] = op['save_path0']
+        ops.append(curr_op)
+    return ops
 
 
-def check_registration_output(op, dimensions, input_path, reg_output_path, output_path):
-    op = prepare_for_registration(
+def check_registration_output(op, dimensions, input_path, reg_output_path_list, output_path_list):
+    ops = prepare_for_registration(
         op, input_path, dimensions
     )
-    op = suite2p.registration.register.register_binary(op)
-    registered_data = imread(reg_output_path)
-    output_check = imread(output_path)
-    assert np.array_equal(registered_data, output_check)
-    return op
+    reg_ops = []
+    npl = op['nplanes']
+    for i in range(npl):
+        curr_op = registration.register_binary(ops[i])
+        registered_data = imread(reg_output_path_list[i*npl])
+        output_check = imread(output_path_list[i*npl])
+        assert np.array_equal(registered_data, output_check)
+        if op['nchannels'] == 2:
+            registered_data = imread(reg_output_path_list[i * npl + 1])
+            output_check = imread(output_path_list[i * npl + 1])
+            assert np.array_equal(registered_data, output_check)
+        reg_ops.append(curr_op)
+    return reg_ops
 
 
 def test_register_binary_output_with_metrics(default_ops):
@@ -52,10 +75,10 @@ def test_register_binary_output_with_metrics(default_ops):
     op = check_registration_output(
         default_ops, (256, 256),
         default_ops['data_path'][0].joinpath('registration', 'input_1500.tif'),
-        str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-        str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))
+        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
+        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))]
     )
-    suite2p.registration.pc.get_pc_metrics(op)
+    registration.get_pc_metrics(op[0])
 
 
 def test_register_binary_do_bidi_output(default_ops):
@@ -66,22 +89,10 @@ def test_register_binary_do_bidi_output(default_ops):
     check_registration_output(
         default_ops, (404, 360),
         default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
-        str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-        str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))
+        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
+        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))]
     )
 
-def test_register_binary_1preg_output(default_ops):
-    """
-    Regression test that checks the output of register_binary with 1Preg given the `input.tif`.
-    """
-    default_ops['1Preg'] = True
-    default_ops['smooth_sigma_time'] = 1
-    check_registration_output(
-        default_ops, (404, 360),
-        default_ops['data_path'][0].joinpath('input.tif'),
-        str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-        str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_1preg_output.tif'))
-    )
 
 def test_register_binary_rigid_registration_only(default_ops):
     """
@@ -90,8 +101,8 @@ def test_register_binary_rigid_registration_only(default_ops):
     default_ops['nonrigid'] = False
     op = prepare_for_registration(
         default_ops, default_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
-    )
-    op = suite2p.registration.register.register_binary(op)
+    )[0]
+    op = registration.register_binary(op)
     registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
     # Make sure registered_data is identical across frames
     check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)
@@ -102,3 +113,24 @@ def test_register_binary_rigid_registration_only(default_ops):
     assert num_col_lines == 16
     assert num_row_lines == 16
 
+
+def test_register_binary_smoothed_output(default_ops):
+    """
+    Regression test that checks the output of register_binary with smooth_sigma_time=1 and 2planes/2channels
+    given the `input.tif`.
+    """
+    default_ops['smooth_sigma_time'] = 1
+    default_ops['nchannels'] = 2
+    default_ops['reg_tif_chan2'] = True
+    check_registration_output(
+        default_ops, (404, 360),
+        default_ops['data_path'][0].joinpath('input.tif'),
+        [
+            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
+            str(Path(default_ops['save_path0']).joinpath('reg_tif_chan2', 'file000_chan1.tif'))
+        ],
+        [
+            str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_smoothed_chan0.tif')),
+            str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_smoothed_chan1.tif'))
+        ]
+    )

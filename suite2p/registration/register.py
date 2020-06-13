@@ -141,15 +141,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         nframes = ops['nframes']
         nsamps = np.minimum(ops['nimg_init'], nframes)
         ix = np.linspace(0, nframes, 1 + nsamps).astype('int64')[:-1]
-        frames = io.get_frames(
-            Lx=ops['Lx'],
-            Ly=ops['Ly'],
-            xrange=ops['xrange'],
-            yrange=ops['yrange'],
-            ix=ix,
-            bin_file=raw_file_align if raw else reg_file_align,
-            crop=False
-        )
+        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
+            frames = f.ix(ix)
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:
             ops['bidiphase'] = bidiphase.compute(frames)
             print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])

@@ -1,11 +1,11 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Sequence
 
 import numpy as np
 
 
 class BinaryFile:
 
-    def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str]):
+    def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
         self.Ly = Ly
         self.Lx = Lx
         if read_file == write_file:
@@ -45,6 +45,18 @@ class BinaryFile:
                 break
             yield data
 
+    def ix(self, indices: Sequence[int]):
+        frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
+        # load and bin data
+        orig_ptr = self.read_file.tell()
+        for frame, ixx in zip(frames, indices):
+            self.read_file.seek(self.nbytesread * ixx)
+            buff = self.read_file.read(self.nbytesread)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0)
+            frame[:] = np.reshape(data, (self.Ly, self.Lx))
+        self.read_file.seek(orig_ptr)
+        return frames
+
     def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
@@ -68,40 +80,3 @@ class BinaryFile:
             self.write_file.seek(-2 * data.size, 1)
             self._can_read = True
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-
-
-
-def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False):
-    """ get frames ix from bin_file
-        frames are cropped by ops['yrange'] and ops['xrange']
-
-    Parameters
-    ----------
-    ops : dict
-        requires 'Ly', 'Lx'
-    ix : int, array
-        frames to take
-    bin_file : str
-        location of binary file to read (frames x Ly x Lx)
-    crop : bool
-        whether or not to crop by 'yrange' and 'xrange' - if True, needed in ops
-
-    Returns
-    -------
-        mov : int16, array
-            frames x Ly x Lx
-    """
-    nbytesread =  np.int64(Ly*Lx*2)
-    Lyc = yrange[-1] - yrange[0]
-    Lxc = xrange[-1] - xrange[0]
-
-    mov = np.zeros((len(ix), Lyc, Lxc), np.int16) if crop else np.zeros((len(ix), Ly, Lx), np.int16)
-    # load and bin data
-    with open(bin_file, 'rb') as bfile:
-        for mov_i, ixx in zip(mov, ix):
-            bfile.seek(nbytesread * ixx, 0)
-            buff = bfile.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            data = np.reshape(data, (Ly, Lx))
-            mov_i[:, :] = data[yrange[0]:yrange[-1], xrange[0]:xrange[-1]] if crop else data
-    return mov

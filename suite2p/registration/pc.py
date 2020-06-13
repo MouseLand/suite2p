@@ -208,16 +208,11 @@ def get_pc_metrics(ops, use_red=False, nPC=30):
     """
     # n frames to pick from full movie
     nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
-
-    mov = io.get_frames(
-        Lx=ops['Lx'],
-        Ly=ops['Ly'],
-        xrange=ops['xrange'],
-        yrange=ops['yrange'],
-        ix=np.linspace(0, ops['nframes'] - 1, nsamp).astype('int'),
-        bin_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file'],
-        crop=True,
-    )
+    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'],
+                       read_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
+                       ) as f:
+        mov = f.ix(indices=np.linspace(0, ops['nframes'] - 1, nsamp).astype('int'))
+        mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
     pclow, pchigh, sv, ops['tPC'] = pclowhigh(mov, nlowhigh=np.minimum(300, int(ops['nframes'] / 2)), nPC=nPC)
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)

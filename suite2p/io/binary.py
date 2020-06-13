@@ -5,10 +5,9 @@ import numpy as np
 
 class BinaryFile:
 
-    def __init__(self, Ly: int, Lx: int, nframes: int, read_file: str, write_file: Optional[str]):
+    def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str]):
         self.Ly = Ly
         self.Lx = Lx
-        self.nframes = nframes
         if read_file == write_file:
             self.read_file = open(read_file, mode='r+b')
             self.write_file = self.read_file
@@ -21,7 +20,6 @@ class BinaryFile:
         else:
             raise IOError("Invalid combination of read_file and write_file")
 
-        self._nfr = 0
         self._index = 0
         self._can_read = True
 
@@ -53,12 +51,12 @@ class BinaryFile:
         nbytes = self.nbytesread * batch_size
         buff = self.read_file.read(nbytes)
         data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(dtype)
-        if (data.size == 0) | (self._nfr >= self.nframes):
+        if data.size == 0:
             return None
-        self._nfr += data.size
         indices = np.arange(self._index, self._index + data.shape[0])
         self._index += data.shape[0]
-        self._can_read = False
+        if self.read_file is self.write_file:
+            self._can_read = False
         return indices, data
 
     def write(self, data: np.ndarray) -> None:
@@ -68,8 +66,9 @@ class BinaryFile:
             raise IOError("No write_file specified, writing not possible.")
         if self.read_file is self.write_file:
             self.write_file.seek(-2 * data.size, 1)
+            self._can_read = True
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-        self._can_read = True
+
 
 
 def get_frames(Lx, Ly, xrange, yrange, ix, bin_file, crop=False):

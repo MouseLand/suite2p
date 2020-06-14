@@ -86,11 +86,7 @@ def spatial_high_pass(data, N):
 
 def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     """Returns the 3D array 'mov' convolved by a 2D array 'img'."""
-    mov = mov.copy()
-    fft2(mov, overwrite_x=True)
-    mov = apply_dotnorm(mov, img)
-    ifft2(mov, overwrite_x=True)
-    return mov
+    return ifft2(apply_dotnorm(fft2(mov), img))
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:

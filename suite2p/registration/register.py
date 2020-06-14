@@ -124,10 +124,10 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        nframes = ops['nframes']
-        nsamps = np.minimum(ops['nimg_init'], nframes)
+
         with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
-            frames = f.ix(indices=np.linspace(0, nframes, 1 + nsamps, dtype=int)[:-1])  # todo: check for overrepresentation of certain frames over others
+            frames = f.ix(indices=np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1])  # todo: check for overrepresentation of certain frames over others
+
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:
             ops['bidiphase'] = bidiphase.compute(frames)
             print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])

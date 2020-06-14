@@ -114,24 +114,10 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         warn('number of frames is below 200, unpredictable behaviors may occur.')
 
     # get binary file paths
-    if raw:
-        raw = ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
-        if raw:
-            if ops['nchannels'] > 1:
-                if ops['functional_chan'] == ops['align_by_chan']:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = ops['raw_file'], ops['reg_file'], ops['raw_file_chan2'], ops['reg_file_chan2']
-                else:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = ops['raw_file_chan2'], ops['reg_file_chan2'], ops['raw_file'], ops['reg_file']
-            else:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = ops['raw_file'], ops['reg_file'], [], []
-        else:
-            if ops['nchannels'] > 1:
-                if ops['functional_chan'] == ops['align_by_chan']:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = [], ops['reg_file'], [], ops['reg_file_chan2']
-                else:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = [], ops['reg_file_chan2'], [], ops['reg_file']
-            else:
-                    raw_file_align, reg_file_align, raw_file_alt, reg_file_alt = [], ops['reg_file'], [], []
+    raw = raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
+    reg_file_align = ops['reg_file'] if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file_chan2']
+    raw_file_align = ops.get('raw_file') if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file_chan2')
+    raw_file_align = raw_file_align if raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file']) else []
 
     # compute reference image
     if refImg is not None:
@@ -324,7 +310,12 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
 
+
     if ops['nchannels'] > 1:
+        reg_file_alt = ops['reg_file_chan2'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file']
+        raw_file_alt = ops.get('raw_file_chan2') if ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file')
+        raw_file_alt = raw_file_alt if raw else []
+
         t0 = time.time()
         mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
         with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],

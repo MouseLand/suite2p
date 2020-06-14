@@ -15,10 +15,7 @@ except ModuleNotFoundError:
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
 def apply_dotnorm(Y, cfRefImg):
-    eps0 = np.complex64(1e-5)
-    x = Y / (eps0 + np.abs(Y))
-    x = x * cfRefImg
-    return x
+    return Y / (np.complex64(1e-5) + np.abs(Y)) * cfRefImg
 
 
 @vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
@@ -26,13 +23,18 @@ def addmultiply(x, mul, add):
     return np.complex64(np.float32(x) * mul + add)
 
 
-def gaussian_fft(sig, Ly, Lx):
-    ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
-    x = np.arange(0, Lx)
-    y = np.arange(0, Ly)
+def meshgrid_mean_centered(x, y):
+    x = np.arange(0, x)
+    y = np.arange(0, y)
     x = np.abs(x - x.mean())
     y = np.abs(y - y.mean())
     xx, yy = np.meshgrid(x, y)
+    return xx, yy
+
+
+def gaussian_fft(sig, Ly, Lx):
+    ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
+    xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
     hgx = np.exp(-np.square(xx/sig) / 2)
     hgy = np.exp(-np.square(yy/sig) / 2)
     hgg = hgy * hgx
@@ -43,15 +45,11 @@ def gaussian_fft(sig, Ly, Lx):
 
 def spatial_taper(sig, Ly, Lx):
     ''' spatial taper  on edges with gaussian of std sig '''
-    x = np.arange(0, Lx)
-    y = np.arange(0, Ly)
-    x = np.abs(x - x.mean())
-    y = np.abs(y - y.mean())
-    xx, yy = np.meshgrid(x, y)
-    mY = y.max() - 2*sig
-    mX = x.max() - 2*sig
-    maskY = 1./(1.+np.exp((yy-mY)/sig))
-    maskX = 1./(1.+np.exp((xx-mX)/sig))
+    xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
+    mY = ((Ly - 1) / 2) - 2 * sig
+    mX = ((Lx - 1) / 2) - 2 * sig
+    maskY = 1. / (1. + np.exp((yy - mY) / sig))
+    maskX = 1. / (1. + np.exp((xx - mX) / sig))
     maskMul = maskY * maskX
     return maskMul
 

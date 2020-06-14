@@ -299,12 +299,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 io.save_tiff(data=frames, fname=fname)
 
     rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
-    ymax, xmax, cmax = rigid_offsets
 
-    nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
 
     ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     if ops['nonrigid']:
+        nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
         ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
 
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
@@ -328,13 +327,12 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
                     bidiphase.shift(frames, int(ops['bidiphase']))
 
-                for frame, dy, dx in zip(frames, ymax[iframes].astype(int), xmax[iframes].astype(int)):
+                for frame, dy, dx in zip(frames, ops['yoff'][iframes].astype(int), ops['xoff'][iframes].astype(int)):
                     frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
                 if ops['nonrigid']:
-                    ymax1, xmax1 = nonrigid_offsets[0][iframes], nonrigid_offsets[1][iframes]
                     frames = nonrigid.transform_data(frames, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
-                                                   ymax1=ymax1, xmax1=xmax1)
+                                                   ymax1=ops['yoff1'][iframes], xmax1=ops['xoff1'][iframes])
 
                 # write
                 f.write(frames)

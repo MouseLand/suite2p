@@ -6,7 +6,7 @@ import time
 import numpy as np
 from scipy.io import savemat
 
-from . import extraction, io, registration, detection
+from . import extraction, io, registration, detection, classification
 
 try:
     from haussmeister import haussio
@@ -291,9 +291,16 @@ def run_s2p(ops={},db={}):
             ######## ROI EXTRACTION ##############
             t11=time.time()
             print('----------- EXTRACTION')
-            ops1[ipl] = extraction.extract(ops1[ipl], cell_pix, cell_masks, neuropil_masks, stat)
+            ops1[ipl], stat = extraction.extract(ops1[ipl], cell_pix, cell_masks, neuropil_masks, stat)
             ops = ops1[ipl]
             fpath = ops['save_path']
+            print('----------- Total %0.2f sec.'%(time.time()-t11))
+
+            ######## ROI CLASSIFICATION ##############
+            t11=time.time()
+            print('----------- CLASSIFICATION')
+            ops1[ipl], stat, iscell = classification.classify(ops1[ipl], stat)
+            ops = ops1[ipl]
             print('----------- Total %0.2f sec.'%(time.time()-t11))
 
             ######### SPIKE DECONVOLUTION ###############

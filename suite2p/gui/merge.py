@@ -3,9 +3,10 @@ import pyqtgraph as pg
 from PyQt5 import QtGui
 from scipy import stats
 
+import suite2p.detection.stats
 from . import masks, io
 from . import utils
-from .. import detection
+from ..detection import roi_stats
 from .. import extraction
 
 def distance_matrix(parent, ilist):
@@ -87,7 +88,7 @@ def merge_activity_masks(parent):
     stat0['xpix'] = xpix
     stat0['lam'] = lam / lam.sum() * merged_cells.size
 
-    stat0 = detection.roi_stats(parent.ops, [stat0])[0]
+    stat0 = roi_stats(parent.ops, [stat0])[0]
 
     # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')

@@ -250,7 +250,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     fsmooth = frames
 
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
-                    data=frames,
+                    data=fsmooth,
                     maskMul=maskMulNR.squeeze(),
                     maskOffset=maskOffsetNR.squeeze(),
                     cfRefImg=cfRefImgNR.squeeze(),

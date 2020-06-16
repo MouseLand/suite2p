@@ -55,9 +55,9 @@ def spatial_taper(sig, Ly, Lx):
     maskMul = maskY * maskX
     return maskMul
 
-def temporal_smooth(frames: np.ndarray, sigma: float) -> np.ndarray:
+def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
     """returns Gaussian filtered 'frames' ndarray over first dimension"""
-    return gaussian_filter1d(frames, sigma=sigma, axis=0)
+    return gaussian_filter1d(data, sigma=sigma, axis=0)
 
 
 def spatial_smooth(data, window):

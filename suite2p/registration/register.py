@@ -11,6 +11,7 @@ from tqdm import tqdm
 from suite2p import io
 from suite2p.registration import bidiphase, utils, rigid, nonrigid
 
+import pdb
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
@@ -119,7 +120,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     raw_file_align = ops.get('raw_file') if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file_chan2')
     raw_file_align = raw_file_align if raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file']) else []
 
-    # compute reference image
+    ### ----- compute reference image -------------- ###
     if refImg is not None:
         print('NOTE: user reference frame given')
     else:
@@ -136,24 +137,19 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
         refImg = pick_initial_reference(frames)
 
+        if ops['1Preg']:
+            if ops['pre_smooth']:
+                refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+                frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
+            refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+            frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
+
         niter = 8
         for iter in range(0, niter):
-
-            freg = frames
-            # Pre-smoothing
-            if ops['smooth_sigma_time'] > 0:
-                freg = utils.temporal_smooth(frames=freg, sigma=ops['smooth_sigma_time'])
-            if ops['1Preg']:
-                if ops['pre_smooth']:
-                    refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-                    freg = utils.spatial_smooth(freg, int(ops['pre_smooth']))
-                refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-                freg = utils.spatial_high_pass(freg, int(ops['spatial_hp_reg']))
-
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(
-                    freg,
+                    frames,
                     *rigid.compute_masks(
                         refImg=refImg,
                         maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
@@ -168,13 +164,16 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
 
-            for frame, dy, dx in zip(freg, ymax, xmax):
+            for frame, dy, dx in zip(frames, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
             nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
             isort = np.argsort(-cmax)[1:nmax]
+            # reset reference image
+            refImg = frames[isort].mean(axis=0).astype(np.int16)
+            # shift reference image to position of mean shifts
             refImg = rigid.shift_frame(
-                frame=freg[isort].mean(axis=0).astype(np.int16),
+                frame=refImg,
                 dy=int(np.round(-ymax[isort].mean())),
                 dx=int(np.round(-xmax[isort].mean()))
             )
@@ -183,12 +182,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ops['refImg'] = refImg
 
 
-    # register binary to reference image
-    if ops['1Preg']:
-        refImg = refImg.astype(np.float32)
-        if ops['pre_smooth']:
-            refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-        refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+    ### ------------- register binary to reference image ------------ ###
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
@@ -204,14 +198,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         if 'yblock' not in ops:
             ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
                 'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
-
-        if ops['1Preg']:
-            refImg = refImg.astype(np.float32)
-
-            if ops['pre_smooth']:
-                refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-            refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-            refImg = refImg.squeeze()
 
         maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
             refImg0=refImg,
@@ -232,21 +218,19 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(frames, int(ops['bidiphase']))
 
+            fsmooth = frames.copy().astype(np.float32)
             if ops['smooth_sigma_time'] > 0:
-                frames = utils.temporal_smooth(frames=frames, sigma=ops['smooth_sigma_time'])
-                frames = frames.astype(np.float32)
+                fsmooth = utils.temporal_smooth(data=fsmooth, sigma=ops['smooth_sigma_time'])
 
             # preprocessing for 1P recordings
             if ops['1Preg']:
-                frames = frames.astype(np.float32)
-
                 if ops['pre_smooth']:
-                    frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
-                frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
+                    fsmooth = utils.spatial_smooth(fsmooth, int(ops['pre_smooth']))
+                fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
 
             # rigid registration
             ymax, xmax, cmax = rigid.phasecorr(
-                data=rigid.apply_masks(data=frames, maskMul=maskMul, maskOffset=maskOffset),
+                data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
@@ -258,9 +242,12 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
             # non-rigid registration
             if ops['nonrigid']:
-
-                if ops['smooth_sigma_time'] > 0:
-                    frames = utils.temporal_smooth(frames, sigma=ops['smooth_sigma_time'])
+                # need to also shift smoothed data (if smoothing used)
+                if ops['smooth_sigma_time'] or ops['1Preg']:
+                    for fsm, dy, dx in zip(fsmooth, ymax, xmax):
+                        fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
+                else:
+                    fsmooth = frames
 
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
                     data=frames,

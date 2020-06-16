@@ -7,7 +7,10 @@ from . import sourcery, sparsedetect, masks, chan2detect, utils
 def main_detect(ops, stat=None):
     stat = select_rois(ops, stat)
     # extract fluorescence and neuropil
+    t0 = time.time()
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
+    print('Masks made in %0.2f sec.' % (time.time() - t0))
+
     ic = np.ones(len(stat), np.bool)
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
@@ -35,13 +38,10 @@ def select_rois(ops, stat=None):
 
 
 def make_masks(ops, stat):
-    t0=time.time()
-    cell_pix, cell_masks = masks.create_cell_masks(stat, ops['Ly'], ops['Lx'], ops['allow_overlap'])
+    Ly, Lx = ops['Ly'], ops['Lx']
+    cell_pix, cell_masks = masks.create_cell_masks(stat, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
     neuropil_masks = masks.create_neuropil_masks(ops, stat, cell_pix)
-    Ly=ops['Ly']
-    Lx=ops['Lx']
-    neuropil_masks = np.reshape(neuropil_masks, (-1,Ly*Lx))
-    print('Masks made in %0.2f sec.'%(time.time()-t0))
+    neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
     return cell_pix, cell_masks, neuropil_masks
 
 

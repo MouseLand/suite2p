@@ -5,9 +5,6 @@ import time
 import numpy as np
 from scipy import stats, signal
 
-import suite2p
-from .. import classification
-
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -129,7 +126,7 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
 def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
-    """ detects ROIs, computes fluorescence, applies default classifier and saves to *.npy
+    """ detects ROIs, computes fluorescence, and saves to *.npy
 
     if stat is None, ROIs are computed from 'reg_file'
 
@@ -147,7 +144,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     Returns
     ----------------
 
-    ops : dictionaray
+    ops : dictionary
 
     """
     F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)
@@ -159,30 +156,15 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     sd = np.std(dF, axis=1)
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
-        stat[k]['std']  = sd[k]
+        stat[k]['std'] = sd[k]
 
-    # apply default classifier 
     if len(stat) > 0:
-        user_dir = pathlib.Path.home().joinpath('.suite2p')
-        classfile = user_dir.joinpath('classifiers', 'classifier_user.npy')
-        if not os.path.isfile(classfile):
-            s2p_dir = pathlib.Path(suite2p.__file__).parent
-            classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
-        print('NOTE: applying classifier %s'%classfile)
-        iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
-        # Code Below does not work. Setting ops['preclassify'] gives you typeError.
-        # if 'preclassify' in ops and ops['preclassify'] > 0.0:
-        #     ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
-        #     stat = stat[ic]
-        #     iscell = iscell[ic]
-        #     print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
-        # else:
         ic = np.ones(len(stat), np.bool)
     else:
-        iscell = np.zeros((0,2))
+        raise ValueError("Stat array should not be of length 0.")
+
     fpath = ops['save_path']
-    np.save(os.path.join(fpath,'iscell.npy'), iscell)
-    np.save(os.path.join(fpath,'stat.npy'), stat)
+    np.save(os.path.join(fpath, 'stat.npy'), stat)
 
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
@@ -197,7 +179,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
     np.save(os.path.join(fpath,'F.npy'), F[ic])
     np.save(os.path.join(fpath,'Fneu.npy'), Fneu[ic])
 
-    return ops
+    return ops, stat
 
 
 def enhanced_mean_image(ops):

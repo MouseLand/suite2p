@@ -73,7 +73,8 @@ def default_ops():
         'maxregshiftNR': 5, # maximum pixel shift allowed for nonrigid, relative to rigid
         # 1P settings
         '1Preg': False, # whether to perform high-pass filtering and tapering
-        'spatial_hp': 25, # window for spatial high-pass filtering before registration
+        'spatial_hp_reg': 26, # window for spatial high-pass filtering before registration
+        'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
         'pre_smooth': 2, # whether to smooth before high-pass filtering before registration
         'spatial_taper': 50, # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
         # cell detection settings
@@ -228,7 +229,6 @@ def run_s2p(ops={},db={}):
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])
 
     ops1 = np.array(ops1)
-    #ops1 = utils.split_multiops(ops1)
     if not ops['do_registration']:
         flag_binreg = True
 
@@ -252,6 +252,8 @@ def run_s2p(ops={},db={}):
             t11=time.time()
             print('----------- REGISTRATION')
             ops1[ipl] = registration.register_binary(ops1[ipl]) # register binary
+            if 'ops_path' in ops1[ipl]:
+                np.save(ops1[ipl]['ops_path'], ops1[ipl])
             np.save(fpathops1, ops1) # save ops1
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
@@ -260,6 +262,8 @@ def run_s2p(ops={},db={}):
                 print('(making mean image (excluding bad frames)')
                 refImg = registration.sampled_mean(ops1[ipl])
                 ops1[ipl] = registration.register_binary(ops1[ipl], refImg, raw=False)
+                if 'ops_path' in ops:
+                    np.save(ops1[ipl]['ops_path'], ops1[ipl])
                 np.save(fpathops1, ops1) # save ops1
                 print('----------- Total %0.2f sec'%(time.time()-t11))
 

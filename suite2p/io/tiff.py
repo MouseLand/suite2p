@@ -12,42 +12,32 @@ from tifffile import imread, TiffFile, TiffWriter
 from . import utils
 
 
-def write_tiff(data, ops, k, ichan):
-    """ writes frames to tiffs
-
-    Parameters
-    ----------
-    data : int16
-        frames x Ly x Lx
-
-    ops : dictionary
-        requires 'functional_chan', 'align_by_chan'
-
-    k : int
-        number of tiff
-
-    ichan : bool
-        channel is ops['align_by_chan']
-
-    """
+def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: str, k: int, ichan: bool) -> str:
     if ichan:
-        if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+        if functional_chan == align_by_chan:
+            tifroot = os.path.join(save_path, 'reg_tif')
             wchan = 0
         else:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+            tifroot = os.path.join(save_path, 'reg_tif_chan2')
             wchan = 1
     else:
-        if ops['functional_chan']==ops['align_by_chan']:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif_chan2')
+        if functional_chan == align_by_chan:
+            tifroot = os.path.join(save_path, 'reg_tif_chan2')
             wchan = 1
         else:
-            tifroot = os.path.join(ops['save_path'], 'reg_tif')
+            tifroot = os.path.join(save_path, 'reg_tif')
             wchan = 0
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
     fname = 'file%0.3d_chan%d.tif'%(k,wchan)
-    with TiffWriter(os.path.join(tifroot, fname)) as tif:
+    fname = os.path.join(tifroot, fname)
+    return fname
+
+
+def save_tiff(data: np.ndarray, fname: str) -> None:
+    """Save image stack array to tiff file."""
+    data = np.floor(data).astype(np.int16)
+    with TiffWriter(fname) as tif:
         for i in range(data.shape[0]):
             tif.save(data[i])
 

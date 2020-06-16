@@ -4,76 +4,7 @@ import time
 import numpy as np
 from scipy.signal import medfilt
 
-from . import nonrigid, rigid
-
-
-def compute_zpos(Zreg, ops):
-    """ compute z position of frames given z-stack Zreg
-    
-    Parameters
-    ------------
-
-    Zreg : 3D array
-        size [nplanes x Ly x Lx], z-stack
-
-    ops : dictionary
-        'reg_file' <- binary to register to z-stack, 'smooth_sigma', 
-        'Ly', 'Lx', 'batch_size'
-
-    
-    """
-    if 'reg_file' not in ops:
-        print('ERROR: no binary')
-        return
-
-    nbatch = ops['batch_size']
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    nbytesread = 2 * Ly * Lx * nbatch
-
-    ops_orig = ops.copy()
-    ops['nonrigid'] = False
-    nplanes, zLy, zLx = Zreg.shape
-    if Zreg.shape[1] != Ly or Zreg.shape[2] != Lx:
-        # padding
-        if Zreg.shape[1] > Ly:
-            Zreg = Zreg[:, ]
-        pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
-        dsmooth = np.concatenate((pad, data, pad), axis=1)
-        pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
-        dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
-
-    nbytes = os.path.getsize(ops['reg_file'])
-    nFrames = int(nbytes/(2 * Ly * Lx))
-
-    reg_file = open(ops['reg_file'], 'rb')
-    refAndMasks = []
-    for Z in Zreg:
-        refAndMasks.append(rigid.phasecorr_reference(Z, ops))
-
-    zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
-    t0 = time.time()
-    k = 0
-    nfr = 0
-    while True:
-        buff = reg_file.read(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
-        buff = []
-        if (data.size==0) | (nfr >= ops['nframes']):
-            break
-        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
-        inds = np.arange(nfr, nfr+data.shape[0], 1, int)
-        for z,ref in enumerate(refAndMasks):
-            _, _, zcorr[z,inds] = rigid.phasecorr(data, ref, ops)
-            if z%10 == 1:
-                print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
-        print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
-        nfr += data.shape[0]
-        k+=1
-
-    reg_file.close()
-    ops_orig['zcorr'] = zcorr
-    return ops_orig, zcorr
+from . import nonrigid, rigid, utils
 
 
 def register_stack(Z, ops):
@@ -82,7 +13,9 @@ def register_stack(Z, ops):
     ops['nframes'], ops['Ly'], ops['Lx'] = Z.shape
 
     if ops['nonrigid']:
-        ops = nonrigid.make_blocks(ops)
+        ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops['NRsm'] = nonrigid.make_blocks(
+            Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size']
+        )
 
     Ly = ops['Ly']
     Lx = ops['Lx']
@@ -160,3 +93,104 @@ def register_stack(Z, ops):
     ops['meanImg'] = meanImg/ops['nframes']
 
     return Zreg, ops
+
+
+def compute_zpos(Zreg, ops):
+    """ compute z position of frames given z-stack Zreg
+
+    Parameters
+    ------------
+
+    Zreg : 3D array
+        size [nplanes x Ly x Lx], z-stack
+
+    ops : dictionary
+        'reg_file' <- binary to register to z-stack, 'smooth_sigma',
+        'Ly', 'Lx', 'batch_size'
+
+
+    """
+    if 'reg_file' not in ops:
+        raise IOError('no binary specified')
+
+    nbatch = ops['batch_size']
+    Ly = ops['Ly']
+    Lx = ops['Lx']
+    nbytesread = 2 * Ly * Lx * nbatch
+
+    ops_orig = ops.copy()
+    ops['nonrigid'] = False
+    nplanes, zLy, zLx = Zreg.shape
+    if Zreg.shape[1] != Ly or Zreg.shape[2] != Lx:
+        # padding
+        if Zreg.shape[1] > Ly:
+            Zreg = Zreg[:, ]
+
+        half_pad = N // 2
+        dsmooth = np.pad(Zreg, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
+
+    nbytes = os.path.getsize(ops['reg_file'])
+    nFrames = int(nbytes/(2 * Ly * Lx))
+
+    reg_file = open(ops['reg_file'], 'rb')
+    refAndMasks = []
+    for Z in Zreg:
+        if ops['1Preg']:
+            Z = Z.astype(np.float32)
+            Z = Z[np.newaxis, :, :]
+            if ops['pre_smooth']:
+                Z = utils.spatial_smooth(Z, int(ops['pre_smooth']))
+            Z = utils.spatial_high_pass(Z, int(ops['spatial_hp_reg']))
+            Z = Z.squeeze()
+
+        maskMul, maskOffset = rigid.compute_masks(
+            refImg=Z,
+            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+        )
+        cfRefImag = rigid.phasecorr_reference(
+            refImg=Z,
+            smooth_sigma=ops['smooth_sigma'],
+            pad_fft=ops['pad_fft'],
+        )
+        cfRefImag = cfRefImag[np.newaxis, :, :]
+        refAndMasks.append((maskMul, maskOffset, cfRefImag))
+
+    zcorr = np.zeros((Zreg.shape[0], nFrames), np.float32)
+    t0 = time.time()
+    k = 0
+    nfr = 0
+    while True:
+        buff = reg_file.read(nbytesread)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).copy()
+        if (data.size==0) | (nfr >= ops['nframes']):
+            break
+        data = np.float32(np.reshape(data, (-1, Ly, Lx)))
+        inds = np.arange(nfr, nfr+data.shape[0], 1, int)
+        for z,ref in enumerate(refAndMasks):
+
+            # preprocessing for 1P recordings
+            if ops['1Preg']:
+                data = data.astype(np.float32)
+
+                if ops['pre_smooth']:
+                    data = utils.spatial_smooth(data, int(ops['pre_smooth']))
+                data = utils.spatial_high_pass(data, int(ops['spatial_hp_reg']))
+
+            maskMul, maskOffset, cfRefImg = ref
+            cfRefImg = cfRefImg.squeeze()
+
+            _, _, zcorr[z, inds] = rigid.phasecorr(
+                data=rigid.apply_masks(data=data, maskMul=maskMul, maskOffset=maskOffset),
+                cfRefImg=cfRefImg,
+                maxregshift=ops['maxregshift'],
+                smooth_sigma_time=ops['smooth_sigma_time'],
+            )
+            if z%10 == 1:
+                print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
+        print('%d planes, %d/%d frames, %0.2f sec.'%(z, nfr, ops['nframes'], time.time()-t0))
+        nfr += data.shape[0]
+        k+=1
+
+    reg_file.close()
+    ops_orig['zcorr'] = zcorr
+    return ops_orig, zcorr

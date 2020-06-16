@@ -1,10 +1,10 @@
-import os
 import warnings
+from functools import lru_cache
 
 import numpy as np
 from numba import vectorize, complex64
 from numpy import fft
-from scipy.interpolate import interp1d
+from scipy.fftpack import next_fast_len
 from scipy.ndimage import gaussian_filter1d
 
 try:
@@ -12,26 +12,18 @@ try:
 except ModuleNotFoundError:
     warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
-def one_photon_preprocess(data, ops):
-    ''' pre filtering for one-photon data '''
-    if ops['pre_smooth'] > 0:
-        ops['pre_smooth'] = int(np.ceil(ops['pre_smooth']/2) * 2)
-        data = spatial_smooth(data, ops['pre_smooth'])
-    else:
-        data = data.astype(np.float32)
 
-    #for n in range(data.shape[0]):
-    #    data[n,:,:] = laplace(data[n,:,:])
-    ops['spatial_hp'] = int(np.ceil(ops['spatial_hp']/2) * 2)
-    data = spatial_high_pass(data, ops['spatial_hp'])
-    return data
-
-@vectorize([complex64(complex64, complex64)], nopython=True, target = 'parallel')
+@vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
 def apply_dotnorm(Y, cfRefImg):
     eps0 = np.complex64(1e-5)
     x = Y / (eps0 + np.abs(Y))
-    x = x*cfRefImg
+    x = x * cfRefImg
     return x
+
+
+@vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
+def addmultiply(x, mul, add):
+    return np.complex64(np.float32(x) * mul + add)
 
 
 def gaussian_fft(sig, Ly, Lx):
@@ -48,6 +40,7 @@ def gaussian_fft(sig, Ly, Lx):
     fhg = np.real(fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
     return fhg
 
+
 def spatial_taper(sig, Ly, Lx):
     ''' spatial taper  on edges with gaussian of std sig '''
     x = np.arange(0, Lx)
@@ -62,158 +55,76 @@ def spatial_taper(sig, Ly, Lx):
     maskMul = maskY * maskX
     return maskMul
 
-def spatial_smooth(data,N):
-    ''' spatially smooth data using cumsum over axis=1,2 with window N'''
-    pad = np.zeros((data.shape[0], int(N/2), data.shape[2]))
-    dsmooth = np.concatenate((pad, data, pad), axis=1)
-    pad = np.zeros((dsmooth.shape[0], dsmooth.shape[1], int(N/2)))
-    dsmooth = np.concatenate((pad, dsmooth, pad), axis=2)
-    # in X
-    cumsum = np.cumsum(dsmooth, axis=1).astype(np.float32)
-    dsmooth = (cumsum[:, N:, :] - cumsum[:, :-N, :]) / float(N)
-    # in Y
-    cumsum = np.cumsum(dsmooth, axis=2)
-    dsmooth = (cumsum[:, :, N:] - cumsum[:, :, :-N]) / float(N)
-    return dsmooth
+def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
+    """returns Gaussian filtered 'frames' ndarray over first dimension"""
+    return gaussian_filter1d(data, sigma=sigma, axis=0)
+
+
+def spatial_smooth(data, window):
+    """spatially smooth data using cumsum over axis=1,2 with window N"""
+    if window and window % 2:
+        raise ValueError("Filter window must be an even integer.")
+    if data.ndim == 2:
+        data = data[np.newaxis, : ,:]
+
+    half_pad = window // 2
+    data_padded = np.pad(data, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
+
+    data_summed = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
+    data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :])  # in X
+    data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window])  # in Y
+    data_summed /= window ** 2
+
+    return data_summed.squeeze()
+
 
 def spatial_high_pass(data, N):
-    ''' high pass filters data over axis=1,2 with window N'''
-    norm = spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N).squeeze()
-    data -= spatial_smooth(data, N) / norm
-    return data
-
-def get_nFrames(ops):
-    """ get number of frames in binary file
-
-    Parameters
-    ----------
-    ops : dictionary
-        requires 'Ly', 'Lx', 'reg_file' (optional 'keep_movie_raw' and 'raw_file')
-
-    Returns
-    -------
-    nFrames : int
-        number of frames in the binary
-
-    """
-
-    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-        try:
-            nbytes = os.path.getsize(ops['raw_file'])
-        except:
-            print('no raw')
-            nbytes = os.path.getsize(ops['reg_file'])
-    else:
-        nbytes = os.path.getsize(ops['reg_file'])
-    nFrames = int(nbytes/(2* ops['Ly'] *  ops['Lx']))
-    return nFrames
+    """high pass filters data over axis=1,2 with window N"""
+    if data.ndim == 2:
+        data = data[np.newaxis, :, :]
+    data_filtered = data - (spatial_smooth(data, N) / spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N))
+    return data_filtered.squeeze()
 
 
-def get_frames(ops, ix, bin_file, crop=False, badframes=False):
-    """ get frames ix from bin_file
-        frames are cropped by ops['yrange'] and ops['xrange']
-
-    Parameters
-    ----------
-    ops : dict
-        requires 'Ly', 'Lx'
-    ix : int, array
-        frames to take
-    bin_file : str
-        location of binary file to read (frames x Ly x Lx)
-    crop : bool
-        whether or not to crop by 'yrange' and 'xrange' - if True, needed in ops
-
-    Returns
-    -------
-        mov : int16, array
-            frames x Ly x Lx
-    """
-    if badframes and 'badframes' in ops:
-        bad_frames = ops['badframes']
-        try:
-            ixx = ix[bad_frames[ix]==0].copy()
-            ix = ixx
-        except:
-            notbad=True
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    nbytesread =  np.int64(Ly*Lx*2)
-    Lyc = ops['yrange'][-1] - ops['yrange'][0]
-    Lxc = ops['xrange'][-1] - ops['xrange'][0]
-    if crop:
-        mov = np.zeros((len(ix), Lyc, Lxc), np.int16)
-    else:
-        mov = np.zeros((len(ix), Ly, Lx), np.int16)
-    # load and bin data
-    with open(bin_file, 'rb') as bfile:
-        for i in range(len(ix)):
-            bfile.seek(nbytesread*ix[i], 0)
-            buff = bfile.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            data = np.reshape(data, (Ly, Lx))
-            if crop:
-                mov[i,:,:] = data[ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
-            else:
-                mov[i,:,:] = data
+def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
+    """Returns the 3D array 'mov' convolved by a 2D array 'img'."""
+    mov = mov.copy()
+    fft2(mov, overwrite_x=True)
+    mov = apply_dotnorm(mov, img)
+    ifft2(mov, overwrite_x=True)
     return mov
 
 
-def subsample_frames(ops, bin_file, nsamps):
-    """ get nsamps frames from binary file for initial reference image
-    Parameters
-    ----------
-    ops : dictionary
-        requires 'Ly', 'Lx', 'nframes'
-    bin_file : open binary file
-    nsamps : int
-        number of frames to return
-    Returns
-    -------
-    frames : int16
-        frames x Ly x Lx
-    """
-    nFrames = ops['nframes']
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    frames = np.zeros((nsamps, Ly, Lx), dtype='int16')
-    nbytesread = 2 * Ly * Lx
-    istart = np.linspace(0, nFrames, 1+nsamps).astype('int64')
-    #istart = np.arange(nFrames - nsamps, nFrames).astype('int64')
-    for j in range(0,nsamps):
-        reg_file.seek(nbytesread * istart[j], 0)
-        buff = reg_file.read_nwb(nbytesread)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        buff = []
-        frames[j,:,:] = np.reshape(data, (Ly, Lx))
-    reg_file.close()
-    return frames
+def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
+    """Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed."""
+    Ly, Lx = img.shape
+    return np.conj(fft2(img, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(img))
 
 
-def sub2ind(array_shape, rows, cols):
-    inds = rows * array_shape[1] + cols
-    return inds
+def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
+    """Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)"""
+    xs0, xs1 = np.meshgrid(xs, xs)
+    ys0, ys1 = np.meshgrid(ys, ys)
+    dxs = xs0.reshape(-1, 1) - ys0.reshape(1, -1)
+    dys = xs1.reshape(-1, 1) - ys1.reshape(1, -1)
+    K = np.exp(-(dxs ** 2 + dys ** 2) / (2 * sigL ** 2))
+    return K
 
 
-def resample_frames(y, x, xt):
-    ''' resample y (defined at x) at times xt '''
-    ts = x.size / xt.size
-    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
-    f = interp1d(x,y,fill_value="extrapolate")
-    yt = f(xt)
-    return yt
+def kernelD2(xs: int, ys: int) -> np.ndarray:
+    ys, xs = np.meshgrid(xs, ys)
+    ys = ys.flatten().reshape(1, -1)
+    xs = xs.flatten().reshape(1, -1)
+    R = np.exp(-((ys - ys.T) ** 2 + (xs - xs.T) ** 2))
+    R = R / np.sum(R, axis=0)
+    return R
 
 
-def sampled_mean(ops):
-    nframes = ops['nframes']
-    nsamps = min(nframes, 1000)
-    ix = np.linspace(0, nframes, 1+nsamps).astype('int64')[:-1]
-    bin_file = ops['reg_file']
-    if ops['nchannels']>1:
-        if ops['functional_chan'] == ops['align_by_chan']:
-            bin_file = ops['reg_file']
-        else:
-            bin_file = ops['reg_file_chan2']
-    frames = get_frames(ops, ix, bin_file, badframes=True)
-    refImg = frames.mean(axis=0)
-    return refImg
+@lru_cache(maxsize=5)
+def mat_upsample(lpad, subpixel: int = 10):
+    """ upsampling matrix using gaussian kernels """
+    lar = np.arange(-lpad, lpad + 1)
+    larUP = np.arange(-lpad, lpad + .001, 1. / subpixel)
+    nup = larUP.shape[0]
+    Kmat = np.linalg.inv(kernelD(lar, lar)) @ kernelD(lar, larUP)
+    return Kmat, nup

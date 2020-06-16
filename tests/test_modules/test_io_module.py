@@ -25,7 +25,14 @@ def test_tiff_reconstruction_from_binary_file(default_ops):
     output_data = get_binary_file_data(op)
     # Make sure data in matrix is nonnegative
     assert np.all(output_data >= 0)
-    io.write_tiff(output_data, op, 0, True)
+    fname = io.generate_tiff_filename(
+        functional_chan=op['functional_chan'],
+        align_by_chan=op['align_by_chan'],
+        save_path=op['save_path'],
+        k=0,
+        ichan=True
+    )
+    io.save_tiff(output_data, fname=fname)
     reconstructed_tiff_data = imread(
         str(Path(default_ops['save_path0']).joinpath('suite2p', 'plane0', 'reg_tif', 'file000_chan0.tif'))
     )

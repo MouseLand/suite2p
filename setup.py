@@ -27,12 +27,12 @@ setuptools.setup(
       'natsort',
       'rastermap>0.1.0',
       'tifffile',
+      'tqdm',
       'scanimage-tiff-reader',
       'pyqtgraph',
     ],
     tests_require=[
       'pytest',
-      'tqdm',
     ],
     extras_require={
       "docs": [

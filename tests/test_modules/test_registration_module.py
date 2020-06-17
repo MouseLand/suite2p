@@ -5,10 +5,7 @@ Tests for the Suite2p Registration Module
 import numpy as np
 from pathlib import Path
 from tifffile import imread
-
-import suite2p.registration.pc
-import suite2p.registration.register
-from suite2p import registration
+from suite2p.registration import bidiphase, utils, register_binary, get_pc_metrics
 
 
 def prepare_for_registration(op, input_file_name, dimensions):
@@ -54,7 +51,7 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     reg_ops = []
     npl = op['nplanes']
     for i in range(npl):
-        curr_op = registration.register_binary(ops[i])
+        curr_op = register_binary(ops[i])
         registered_data = imread(reg_output_path_list[i*npl])
         output_check = imread(output_path_list[i*npl])
         assert np.array_equal(registered_data, output_check)
@@ -78,7 +75,7 @@ def test_register_binary_output_with_metrics(default_ops):
         [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
         [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))]
     )
-    registration.get_pc_metrics(op[0])
+    get_pc_metrics(op[0])
 
 
 def test_register_binary_do_bidi_output(default_ops):
@@ -102,7 +99,7 @@ def test_register_binary_rigid_registration_only(default_ops):
     op = prepare_for_registration(
         default_ops, default_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
     )[0]
-    op = registration.register_binary(op)
+    op = register_binary(op)
     registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
     # Make sure registered_data is identical across frames
     check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)
@@ -114,26 +111,57 @@ def test_register_binary_rigid_registration_only(default_ops):
     assert num_row_lines == 16
 
 
-# def test_register_binary_smoothed_output(default_ops):
-#     """
-#     Regression test that checks the output of register_binary with smooth_sigma_time=1 and 2planes/2channels
-#     given the `input.tif`.
-#     """
-#     default_ops['do_bidiphase'] = True
-#     default_ops['smooth_sigma_time'] = 1
-#     default_ops['nchannels'] = 1
-#     default_ops['reg_tif'] = True
-#
-#     # to get tests to pass
-#     check_registration_output(
-#         default_ops, (404, 360),
-#         default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
-#         [
-#             str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-#             #str(Path(default_ops['save_path0']).joinpath('reg_tif_chan2', 'file000_chan1.tif'))
-#         ],
-#         [
-#             str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_smoothed_chan0.tif')),
-#             #str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_smoothed_chan1.tif'))
-#         ]
-#     )
+def test_spatial_smooth_has_not_regressed_during_refactor():
+    frames = np.ones((2, 3, 3))
+    smoothed = utils.spatial_smooth(frames, 2)
+    expected = np.array([
+        [[1.  , 1.  , 0.5 ],
+         [1.  , 1.  , 0.5 ],
+         [0.5 , 0.5 , 0.25]],
+
+        [[1.  , 1.  , 0.5 ],
+         [1.  , 1.  , 0.5 ],
+         [0.5 , 0.5 , 0.25]]], dtype=np.float32)
+    assert np.allclose(smoothed, expected)
+
+
+def test_positive_bidiphase_shift_shifts_every_other_line():
+    orig = np.array([
+        [[1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7]]
+    ])
+    expected = np.array([
+        [[1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 1, 2, 3, 4, 5],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 1, 2, 3, 4, 5],
+         [1, 2, 3, 4, 5, 6, 7]]
+    ])
+
+    shifted = orig.copy()
+    bidiphase.shift(shifted, 2)
+    assert np.allclose(shifted, expected)
+
+
+def test_negative_bidiphase_shift_shifts_every_other_line():
+    orig = np.array([
+        [[1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7]]
+    ])
+    expected = np.array([
+        [[1, 2, 3, 4, 5, 6, 7],
+         [3, 4, 5, 6, 7, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7],
+         [3, 4, 5, 6, 7, 6, 7],
+         [1, 2, 3, 4, 5, 6, 7]]
+    ])
+
+    shifted = orig.copy()
+    bidiphase.shift(shifted, -2)
+    assert np.allclose(shifted, expected)

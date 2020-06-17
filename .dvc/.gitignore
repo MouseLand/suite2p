@@ -6,4 +6,5 @@
 /state-wal
 /state
 /cache
-/tmp
+/tmp/*
+!/tmp/gdrive-user-credentials.json

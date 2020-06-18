@@ -254,19 +254,17 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
 
     return stats
 
+
 def getVmap(Ucell, sig):
-    us = gaussian_filter(Ucell, [sig[0], sig[1], 0.],  mode='wrap')
+    us = gaussian_filter(Ucell, [sig[0], sig[1], 0.], mode='wrap')
     # compute log variance at each location
-    V  = (us**2).mean(axis=-1)
-    um = (Ucell**2).mean(axis=-1)
-    um = gaussian_filter(um, sig,  mode='wrap')
-    V  = V / um
-    V  = V.astype('float64')
-    return V, us
+    log_variances = (us**2).mean(axis=-1) / gaussian_filter((Ucell**2).mean(axis=-1), sig, mode='wrap')
+    return log_variances.astype('float64'), us
+
 
 def sub2ind(array_shape, rows, cols):
-    inds = rows * array_shape[1] + cols
-    return inds
+    return rows * array_shape[1] + cols
+
 
 def minDistance(inputs):
     y1, x1, y2, x2 = inputs

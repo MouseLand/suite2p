@@ -34,27 +34,23 @@ def roi_stats(ops, stats):
 
     rs = circle_mask(np.array([30, 30]))
     rsort = np.sort(rs.flatten())
-
-    mrs = np.zeros(len(stats))
-    for k, stat in enumerate(stats):
+    for stat in stats:
         ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
 
         # compute compactness of ROI
         mrs_val = mean_r_squared(y=ypix, x=xpix)
-        mrs[k] = mrs_val
         stat['mrs'] = mrs_val
         stat['mrs0'] = np.mean(rsort[:ypix.size])
-        stat['compact'] = stat['mrs'] / (1e-10+stat['mrs0'])
-        stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
+        stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
+        stat['med'] = [np.median(ypix), np.median(xpix)]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
             radius = fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
             stat['radius'] = radius[0] * d0.mean()
             stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
-        if 'footprint' not in stat:
-            stat['footprint'] = 0
 
-    mmrs = np.nanmedian(mrs[:100])  # todo: why only include the first 100?
+
+    mmrs = np.nanmedian([stat['mrs'] for stat in stats[:100]])  # todo: why only include the first 100?
     for stat in stats:
         stat['mrs'] = stat['mrs'] / (1e-10 + mmrs)
 
@@ -62,5 +58,9 @@ def roi_stats(ops, stats):
     npix /= np.mean(npix[:100])  # todo: why only include the first 100?
     for stat, npix0 in zip(stats, npix):
         stat['npix_norm'] = npix0
+
+    for stat in stats:
+        if 'footprint' not in stat:
+            stat['footprint'] = 0
 
     return np.array(stats)

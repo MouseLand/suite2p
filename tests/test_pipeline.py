@@ -13,7 +13,7 @@ def get_outputs_to_check(n_channels):
     return outputs_to_check
 
 
-def test_1plane_1chan_bidi_with_batches_and_metrics(default_ops):
+def test_1plane_1chan_with_batches_and_metrics(default_ops):
     """
     Tests for case with 1 plane and 1 channel with multiple batches.
     """

@@ -1,6 +1,7 @@
 import numpy as np
 
-from suite2p.detection import masks, utils
+from .masks import circle_mask
+from .utils import fitMVGaus
 
 
 def mean_r_squared(y, x, estimator=np.median):
@@ -31,11 +32,10 @@ def roi_stats(ops, stats):
         if isinstance(d0, int):
             d0 = [d0,d0]
 
-    rs = masks.circle_mask(np.array([30, 30]))
+    rs = circle_mask(np.array([30, 30]))
     rsort = np.sort(rs.flatten())
 
-    ncells = len(stats)
-    mrs = np.zeros(ncells)
+    mrs = np.zeros(len(stats))
     for k, stat in enumerate(stats):
         ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
 
@@ -48,21 +48,19 @@ def roi_stats(ops, stats):
         stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
+            radius = fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
             stat['radius'] = radius[0] * d0.mean()
             stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
         if 'footprint' not in stat:
             stat['footprint'] = 0
-        if 'med' not in stats:
-            stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
 
-    npix = np.array([stats[n]['npix'] for n in range(len(stats))]).astype('float32')
-    npix /= np.mean(npix[:100])
+    mmrs = np.nanmedian(mrs[:100])  # todo: why only include the first 100?
+    for stat in stats:
+        stat['mrs'] = stat['mrs'] / (1e-10 + mmrs)
 
-    mmrs = np.nanmedian(mrs[:100])
-    for n in range(len(stats)):
-        stats[n]['mrs'] = stats[n]['mrs'] / (1e-10 + mmrs)
-        stats[n]['npix_norm'] = npix[n]
-    stats = np.array(stats)
+    npix = np.array([stat['npix'] for stat in stats], dtype='float32')
+    npix /= np.mean(npix[:100])  # todo: why only include the first 100?
+    for stat, npix0 in zip(stats, npix):
+        stat['npix_norm'] = npix0
 
-    return stats
+    return np.array(stats)

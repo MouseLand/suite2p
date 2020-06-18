@@ -218,9 +218,8 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
 
     # Remove empty cells
     stats = [stat for stat in stats if len(stat['ypix']) != 0]
-    ncells = len(stats)
-    
-    footprints = np.zeros((ncells,))
+
+    footprints = np.zeros(len(stats))
     for k, (stat, code) in enumerate(zip(stats, codes)):
         ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
 
@@ -245,16 +244,14 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         footprints[k] = np.nanmean(rs[proj > proj.max() * frac])
 
     mfoot = np.nanmedian(footprints)
-    for n in range(len(stats)):
-        stats[n]['footprint'] = footprints[n] / mfoot
-        if np.isnan(stats[n]['footprint']):
-            stats[n]['footprint'] = 0
-    npix = np.array([stats[n]['npix'] for n in range(len(stats))]).astype('float32')
+    for stat, footprint in zip(stats, footprints):
+        stat['footprint'] = footprint / mfoot if not np.isnan(footprint) else 0
+
+    npix = np.array([stat['npix'] for stat in stats], dtype='float32')
     npix /= np.mean(npix[:100])
-    #mmrs = np.nanmedian(mrs[:100])
-    for n in range(len(stats)):
-        #stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)
-        stats[n]['npix_norm'] = npix[n]
+    for stat, npix0 in zip(stats, npix):
+        stat['npix_norm'] = npix0
+
     return stats
 
 def getVmap(Ucell, sig):

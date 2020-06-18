@@ -63,20 +63,6 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     return reg_ops
 
 
-def test_register_binary_output_with_metrics(default_ops):
-    """
-    Regression test that checks the output of register_binary given the `input.tif`.
-    """
-    default_ops['do_regmetrics'] = True
-    op = check_registration_output(
-        default_ops, (256, 256),
-        default_ops['data_path'][0].joinpath('registration', 'input_1500.tif'),
-        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
-        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))]
-    )
-    get_pc_metrics(op[0])
-
-
 def test_register_binary_do_bidi_output(default_ops):
     """
     Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,

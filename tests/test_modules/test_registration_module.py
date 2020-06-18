@@ -63,28 +63,31 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     return reg_ops
 
 
-def test_register_binary_bidi_output_with_metrics(default_ops):
+def test_register_binary_output_with_metrics(default_ops):
     """
-    Regression test that checks the output of register_binary given th `input1500_bidi_shifted.tif`.
-    Checks to make sure bidi_shift and registration metrics works like before.
+    Regression test that checks the output of register_binary given the `input.tif`.
     """
     default_ops['do_regmetrics'] = True
-    default_ops['do_bidiphase'] = True
     op = check_registration_output(
         default_ops, (256, 256),
-        default_ops['data_path'][0].joinpath('registration', 'input1500_bidi_shifted.tif'),
-        [
-            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif')),
-            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file001_chan0.tif')),
-            str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file002_chan0.tif'))
-        ],
-        [
-            str(Path(default_ops['data_path'][0]).joinpath('registration', 'reg_bidi_batch1.tif')),
-            str(Path(default_ops['data_path'][0]).joinpath('registration', 'reg_bidi_batch2.tif')),
-            str(Path(default_ops['data_path'][0]).joinpath('registration', 'reg_bidi_batch3.tif'))
-        ]
+        default_ops['data_path'][0].joinpath('registration', 'input_1500.tif'),
+        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
+        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_output.tif'))]
     )
     get_pc_metrics(op[0])
+
+
+def test_register_binary_do_bidi_output(default_ops):
+    """
+    Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
+    """
+    default_ops['do_bidiphase'] = True
+    check_registration_output(
+        default_ops, (404, 360),
+        default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
+        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
+        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))]
+    )
 
 
 def test_register_binary_rigid_registration_only(default_ops):

@@ -198,8 +198,13 @@ def pairwiseDistance(y,x):
          + (np.expand_dims(x,axis=-1) - np.expand_dims(x,axis=0))**2)**0.5
     return dists
 
+
+def r_squared(yp, xp, ypix, xpix, diam_y, diam_x, estimator=np.median):
+    return np.sqrt(((yp - estimator(ypix)) / diam_y) ** 2 + (((xp - estimator(xpix)) / diam_x) ** 2))
+
+
 # this function needs to be updated with the new stat
-def get_stat(ops, stat, Ucell, codes):
+def get_stat(ops, stats, Ucell, codes, frac=0.5):
     '''computes statistics of cells found using sourcery
     inputs:
         Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
@@ -207,63 +212,50 @@ def get_stat(ops, stat, Ucell, codes):
         stat
         assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
     '''
-    d0 = ops['diameter']
-    Ly = ops['Lyc']
-    Lx = ops['Lxc']
-    rs,dy,dx = circleMask(d0)
+    d0, Ly, Lx = ops['diameter'], ops['Lyc'], ops['Lxc']
+    rs, dy, dx = circleMask(d0)
     rsort = np.sort(rs.flatten())
 
-    d0 = d0.astype('float32')
-    rs    = rs[rs<=1.]
-    frac = 0.5
-
     # Remove empty cells
-    stat = [elem for elem in stat if len(elem['ypix']) != 0]
-    ncells = len(stat)
+    stats = [stat for stat in stats if len(stat['ypix']) != 0]
+    ncells = len(stats)
     
     footprints = np.zeros((ncells,))
-    for k in range(0,ncells):
-        stat0 = stat[k]
-        ypix = stat0['ypix']
-        xpix = stat0['xpix']
-        lam = stat0['lam']
-        # compute footprint of ROI
-        y0 = np.median(ypix)
-        x0 = np.median(xpix)
-        yp, xp = extendROI(ypix,xpix,Ly,Lx, int(np.mean(d0)))
-        rs0 = (((yp-y0)/d0[0])**2 + ((xp-x0)/d0[1])**2)**.5
+    for k, (stat, code) in enumerate(zip(stats, codes)):
+        ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
 
-        proj  = Ucell[yp, xp, :] @ np.expand_dims(codes[k,:], axis=1)
-        inds  = proj.flatten() > proj.max()*frac
-        footprints[k] = np.nanmean(rs0[inds])
+        # compute footprint of ROI
+        yp, xp = extendROI(ypix, xpix, Ly, Lx, int(np.mean(d0)))
 
         # compute compactness of ROI
-        r2 = ((ypix-y0)/d0[0])**2 + ((xpix-x0)/d0[1])**2
-        r2 = r2**.5
-        stat0['mrs']  = np.mean(r2)
-        stat0['mrs0'] = np.mean(rsort[:r2.size])
-        stat0['compact'] = stat0['mrs'] / (1e-10+stat0['mrs0'])
-        stat0['ypix'] += ops['yrange'][0]
-        stat0['xpix'] += ops['xrange'][0]
-        stat0['med']  = [np.median(stat0['ypix']), np.median(stat0['xpix'])]
-        stat0['npix'] = xpix.size
-        if 'radius' not in stat0:
+        rs = r_squared(yp=yp, xp=xp, ypix=ypix, xpix=xpix, diam_y=d0[0], diam_x=d0[1])
+        stat['mrs'] = np.mean(rs)
+        stat['mrs0'] = np.mean(rsort[:ypix.size])
+        stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
+        stat['ypix'] += ops['yrange'][0]
+        stat['xpix'] += ops['xrange'][0]
+        stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
+        stat['npix'] = xpix.size
+        if 'radius' not in stat:
             radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
-            stat0['radius'] = radius[0] * d0.mean()
-            stat0['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+            stat['radius'] = radius[0] * d0.mean()
+            stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+
+        proj = (Ucell[yp, xp, :] @ np.expand_dims(code, axis=1)).flatten()
+        footprints[k] = np.nanmean(rs[proj > proj.max() * frac])
 
     mfoot = np.nanmedian(footprints)
-    for n in range(len(stat)):
-        stat[n]['footprint'] = footprints[n] / mfoot
-        if np.isnan(stat[n]['footprint']):
-            stat[n]['footprint'] = 0
-    npix = np.array([stat[n]['npix'] for n in range(len(stat))]).astype('float32')
+    for n in range(len(stats)):
+        stats[n]['footprint'] = footprints[n] / mfoot
+        if np.isnan(stats[n]['footprint']):
+            stats[n]['footprint'] = 0
+    npix = np.array([stats[n]['npix'] for n in range(len(stats))]).astype('float32')
     npix /= np.mean(npix[:100])
     #mmrs = np.nanmedian(mrs[:100])
-    for n in range(len(stat)):
+    for n in range(len(stats)):
         #stat[n]['mrs'] = stat[n]['mrs'] / (1e-10+mmrs)
-        stat[n]['npix_norm'] = npix[n]
-    return stat
+        stats[n]['npix_norm'] = npix[n]
+    return stats
 
 def getVmap(Ucell, sig):
     us = gaussian_filter(Ucell, [sig[0], sig[1], 0.],  mode='wrap')

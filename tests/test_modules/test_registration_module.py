@@ -67,7 +67,6 @@ def test_register_binary_output_with_metrics(default_ops):
     """
     Regression test that checks the output of register_binary given the `input.tif`.
     """
-    default_ops['batch_size'] = 1500
     default_ops['do_regmetrics'] = True
     op = check_registration_output(
         default_ops, (256, 256),

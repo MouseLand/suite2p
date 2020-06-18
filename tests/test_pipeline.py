@@ -17,7 +17,7 @@ def test_1plane_1chan_with_batches_and_metrics(default_ops):
     """
     Tests for case with 1 plane and 1 channel with multiple batches.
     """
-    default_ops['tiff_list'] = ['input1500.tif']
+    default_ops['tiff_list'] = ['input_1500.tif']
     default_ops['do_regmetrics'] = True
     suite2p.run_s2p(ops=default_ops)
     utils.check_output(

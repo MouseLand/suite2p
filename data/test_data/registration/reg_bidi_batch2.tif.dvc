@@ -1,0 +1,7 @@
+md5: 570516932f3196ec365f2c5bb2e709e2
+outs:
+- md5: 30ffd380ea3321ffd15a1f0b8ff74d37
+  path: reg_bidi_batch2.tif
+  cache: true
+  metric: false
+  persist: false

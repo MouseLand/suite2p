@@ -88,7 +88,13 @@ def merge_activity_masks(parent):
     stat0['xpix'] = xpix
     stat0['lam'] = lam / lam.sum() * merged_cells.size
 
-    stat0 = roi_stats(parent.ops, [stat0])[0]
+    if 'aspect' in parent.ops:
+        d0 = np.array([int(parent.ops['aspect']*10), 10])
+    else:
+        d0 = parent.ops['diameter']
+        if isinstance(d0, int):
+            d0 = [d0, d0]
+    stat0 = roi_stats(d0, [stat0])[0]
 
     # npix_norm
     npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')

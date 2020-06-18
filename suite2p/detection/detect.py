@@ -30,7 +30,14 @@ def select_rois(ops, stat=None):
         else:
             ops, stat = sourcery.sourcery(ops)
         print('Found %d ROIs, %0.2f sec' % (len(stat), time.time() - t0))
-    stat = roi_stats(ops, stat)
+
+    if 'aspect' in ops:
+        d0 = np.array([int(ops['aspect']*10), 10])
+    else:
+        d0 = ops['diameter']
+        if isinstance(d0, int):
+            d0 = [d0,d0]
+    stat = roi_stats(d0, stat)
 
     stat = masks.get_overlaps(stat, ops)
     stat, ix = masks.remove_overlappers(stat, ops, ops['Ly'], ops['Lx'])

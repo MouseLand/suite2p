@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple
 
 from .masks import circle_mask
 from .utils import fitMVGaus
@@ -8,13 +9,12 @@ def mean_r_squared(y, x, estimator=np.median):
     return np.mean(np.sqrt((y - estimator(y)) ** 2 + ((x - estimator(x)) ** 2)))
 
 
-def roi_stats(ops, stats):
+def roi_stats(diameters: Tuple[int, int], stats):
     """ computes statistics of ROIs
 
     Parameters
     ----------
-    ops : dictionary
-        'aspect', 'diameter'
+    diameters : (dy, dx)
 
     stats : dictionary
         'ypix', 'xpix', 'lam'
@@ -25,13 +25,6 @@ def roi_stats(ops, stats):
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
 
     """
-    if 'aspect' in ops:
-        d0 = np.array([int(ops['aspect']*10), 10])
-    else:
-        d0 = ops['diameter']
-        if isinstance(d0, int):
-            d0 = [d0,d0]
-
     rs = circle_mask(np.array([30, 30]))
     rsort = np.sort(rs.flatten())
     for stat in stats:
@@ -45,8 +38,8 @@ def roi_stats(ops, stats):
         stat['med'] = [np.median(ypix), np.median(xpix)]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            radius = fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
-            stat['radius'] = radius[0] * d0.mean()
+            radius = fitMVGaus(ypix / diameters[0], xpix / diameters[1], lam, 2)[2]
+            stat['radius'] = radius[0] * diameters.mean()
             stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
 
 

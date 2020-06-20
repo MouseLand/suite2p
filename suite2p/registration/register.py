@@ -2,7 +2,6 @@ import time
 from os import path
 from typing import Dict, Any
 from warnings import warn
-from itertools import count
 
 import numpy as np
 from scipy.signal import medfilt
@@ -10,7 +9,6 @@ from tqdm import tqdm
 
 from suite2p import io
 from suite2p.registration import bidiphase, utils, rigid, nonrigid
-
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
@@ -283,12 +281,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     ichan=True
                 )
                 io.save_tiff(data=frames, fname=fname)
-    rigid_offsets = [off.flatten() for off in list(np.hstack(np.array(rigid_offsets, dtype=np.float32)))]
-    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    ops['yoff'], ops['xoff'], ops['corrXY'] = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
     if ops['nonrigid']:
-        nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
-        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
-
+        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
 

@@ -23,6 +23,18 @@ def addmultiply(x, mul, add):
     return np.complex64(np.float32(x) * mul + add)
 
 
+def combine_offsets_across_batches(offset_list, rigid):
+    yoff, xoff, corr_xy = [], [], []
+    for batch in offset_list:
+        yoff.append(batch[0])
+        xoff.append(batch[1])
+        corr_xy.append(batch[2])
+    if rigid:
+        return np.hstack(yoff), np.hstack(xoff), np.hstack(corr_xy)
+    else:
+        return np.vstack(yoff), np.vstack(xoff), np.vstack(corr_xy)
+
+
 def meshgrid_mean_centered(x, y):
     x = np.arange(0, x)
     y = np.arange(0, y)

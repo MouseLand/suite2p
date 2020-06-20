@@ -6,7 +6,7 @@ from . import rigid, nonrigid, utils
 from .. import io
 
 
-def pclowhigh(mov, nlowhigh, nPC):
+def pclowhigh(mov, nlowhigh, nPC, random_state):
     """ get mean of top and bottom PC weights for nPC's of mov
 
         computes nPC PCs of mov and returns average of top and bottom
@@ -37,7 +37,7 @@ def pclowhigh(mov, nlowhigh, nPC):
     mov = mov.astype(np.float32)
     mimg = mov.mean(axis=0)
     mov -= mimg
-    pca = PCA(n_components=nPC).fit(mov.T)
+    pca = PCA(n_components=nPC, random_state=random_state).fit(mov.T)
     v = pca.components_.T
     w = pca.singular_values_
     mov += mimg
@@ -181,7 +181,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
     return X
 
 
-def get_pc_metrics(ops, use_red=False, nPC=30):
+def get_pc_metrics(ops, use_red=False, nPC=30, random_state=None):
     """ computes registration metrics using top PCs of registered movie
 
         movie saved as binary file ops['reg_file']
@@ -214,7 +214,8 @@ def get_pc_metrics(ops, use_red=False, nPC=30):
         mov = f.ix(indices=np.linspace(0, ops['nframes'] - 1, nsamp).astype('int'))
         mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
-    pclow, pchigh, sv, ops['tPC'] = pclowhigh(mov, nlowhigh=np.minimum(300, int(ops['nframes'] / 2)), nPC=nPC)
+    pclow, pchigh, sv, ops['tPC'] = pclowhigh(mov, nlowhigh=np.minimum(300, int(ops['nframes'] / 2)), nPC=nPC,
+                                              random_state=random_state)
     ops['regPC'] = np.concatenate((pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)
 
     ops['regDX'] = pc_register(

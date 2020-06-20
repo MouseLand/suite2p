@@ -1,0 +1,7 @@
+md5: 982dfd9fcef2fcbcd1d1115d8b7f4824
+outs:
+- md5: a6cbf8b8b3e9500e337747ce69c11f39
+  path: spks.npy
+  cache: true
+  metric: false
+  persist: false

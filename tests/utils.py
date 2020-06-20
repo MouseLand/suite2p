@@ -34,7 +34,7 @@ def check_dict_dicts_all_close(first_dict, second_dict):
             assert np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
 
 
-def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int):
+def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag=""):
     """
     Helper function to check if outputs given by a test are exactly the same
     as the ground truth outputs.
@@ -43,7 +43,7 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nch
     for i in range(nplanes):
         for output in outputs_to_check:
             test_data = np.load(
-                str(test_data_dir.joinpath('{}plane{}chan'.format(nplanes, nchannels), 'suite2p',
+                str(test_data_dir.joinpath('{}plane{}chan{}'.format(nplanes, nchannels, added_tag), 'suite2p',
                                            'plane{}'.format(i), "{}.npy".format(output))), allow_pickle=True
             )
             output_data = np.load(

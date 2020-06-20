@@ -11,7 +11,6 @@ from tqdm import tqdm
 from suite2p import io
 from suite2p.registration import bidiphase, utils, rigid, nonrigid
 
-import pdb
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
@@ -284,10 +283,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     ichan=True
                 )
                 io.save_tiff(data=frames, fname=fname)
-
-    rigid_offsets = list(np.array(rigid_offsets, dtype=np.float32).squeeze())
-
-
+    rigid_offsets = [off.flatten() for off in list(np.hstack(np.array(rigid_offsets, dtype=np.float32)))]
     ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     if ops['nonrigid']:
         nonrigid_offsets = list(np.array(nonrigid_offsets, dtype=np.float32).squeeze())
@@ -309,7 +305,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                            write_file=reg_file_alt) as f:
 
             for iframes, frames in f.iter_frames(batch_size=ops['batch_size']):
-
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
                     bidiphase.shift(frames, int(ops['bidiphase']))

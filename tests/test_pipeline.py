@@ -30,6 +30,25 @@ def test_1plane_1chan_with_batches_and_metrics(default_ops):
     )
 
 
+def test_2plane_2chan_with_batches(default_ops):
+    """
+    Tests for case with 2 planes and 2 channels with multiple batches.
+    """
+    default_ops['tiff_list'] = ['input_1500.tif']
+    default_ops['batch_size'] = 200
+    default_ops['nplanes'] = 2
+    default_ops['nchannels'] = 2
+    suite2p.run_s2p(ops=default_ops)
+    utils.check_output(
+        default_ops['save_path0'],
+        get_outputs_to_check(default_ops['nchannels']),
+        default_ops['data_path'][0],
+        default_ops['nplanes'],
+        default_ops['nchannels'],
+        added_tag='1500'
+    )
+
+
 def test_2plane_2chan(default_ops):
     """
     Tests for case with 2 planes and 2 channels.

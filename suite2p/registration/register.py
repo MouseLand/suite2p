@@ -10,6 +10,7 @@ from tqdm import tqdm
 from suite2p import io
 from suite2p.registration import bidiphase, utils, rigid, nonrigid
 
+
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
     """ determines how much to crop FOV based on motion
     

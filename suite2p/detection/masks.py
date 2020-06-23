@@ -3,14 +3,14 @@ import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
 
-def count_overlaps(Ly: int, Lx: int, stats) -> np.ndarray:
+def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     overlap = np.zeros((Ly, Lx))
-    for stat in stats:
-        overlap[stat['ypix'], stat['xpix']] += 1
+    for xpix, ypix in zip(xpixs, ypixs):
+        overlap[ypix, xpix] += 1
     return overlap
 
 
-def get_overlaps(Ly, Lx, stats) -> List[np.ndarray]:
+def get_overlaps(Ly, Lx, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> List[np.ndarray]:
     """ computes overlapping pixels from ROIs in stat
 
     Parameters
@@ -28,8 +28,8 @@ def get_overlaps(Ly, Lx, stats) -> List[np.ndarray]:
     overlaps: List of boolean arrays (one for each cell)
 
     """
-    mask = count_overlaps(Ly, Lx, stats=stats)
-    overlaps = [mask[stat['ypix'], stat['xpix']] > 1 for stat in stats]
+    mask = count_overlaps(Ly, Lx, ypixs=ypixs, xpixs=xpixs)
+    overlaps = [mask[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
     return overlaps
 
 

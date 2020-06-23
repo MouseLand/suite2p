@@ -15,7 +15,7 @@ def get_overlaps(overlaps, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> 
     return [overlaps[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
 
 
-def remove_overlappers(stats, ops, Ly, Lx):
+def remove_overlappers(stats, max_overlap, Ly, Lx):
     """ removes ROIs that are overlapping more than fraction ops['max_overlap'] with other ROIs
     
     Parameters
@@ -42,12 +42,9 @@ def remove_overlappers(stats, ops, Ly, Lx):
     xpixs = [stat['xpix'] for stat in stats]
     mask = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
     while 1:
-        O = np.zeros((len(stats),1))
-        for n, stat in enumerate(stats):
-            O[n] = np.mean(mask[stat['ypix'], stat['xpix']] > 1.5)
-        inds = (O > ops['max_overlap']).nonzero()[0]
-        if len(inds) > 0:
-            i = np.max(inds)
+        inds = [n for n, stat in enumerate(stats) if np.mean(mask[stat['ypix'], stat['xpix']] > 1.5) > max_overlap]
+        if inds:
+            i = inds[-1]
             mask[stats[i]['ypix'], stats[i]['xpix']] -= 1
             del stats[i]
         else:

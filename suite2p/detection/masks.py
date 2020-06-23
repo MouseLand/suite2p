@@ -80,7 +80,8 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
     cell_pix = np.minimum(1, cell_pix)
     return cell_pix, cell_masks
 
-def create_neuropil_masks(ops, stat, cell_pix):
+
+def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_pixels):
     """ creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slow!)
     
     Parameters
@@ -103,27 +104,23 @@ def create_neuropil_masks(ops, stat, cell_pix):
         size [ncells x Ly x Lx] where each pixel is weight of neuropil mask
 
     """
+    valid_pixels = lambda cell_pix, ypix, xpix: cell_pix[ypix, xpix] < .5
 
-    ncells = len(stat)
-    Ly = cell_pix.shape[0]
-    Lx = cell_pix.shape[1]
-    neuropil_masks = np.zeros((ncells,Ly,Lx), np.float32)
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        # first extend to get ring of dis-allowed pixels
-        ypix, xpix = extendROI(ypix, xpix, Ly, Lx,ops['inner_neuropil_radius'])
-        # count how many pixels are valid
-        nring = np.sum(cell_pix[ypix,xpix]<.5)
-        ypix1,xpix1 = ypix,xpix
-        for j in range(0,100):
-            ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, 5) # keep extending
-            if (np.sum(cell_pix[ypix1,xpix1]<.5) - nring) > ops['min_neuropil_pixels']:
-                break # break if there are at least a minimum number of valid pixels
-        ix = cell_pix[ypix1,xpix1]<.5
-        ypix1, xpix1 = ypix1[ix], xpix1[ix]
-        neuropil_masks[n,ypix1,xpix1] = 1.
-        neuropil_masks[n,ypix,xpix] = 0
-    S = np.sum(neuropil_masks, axis=(1,2))
-    neuropil_masks /= S[:, np.newaxis, np.newaxis]
-    return neuropil_masks
+    Ly, Lx = cell_pix.shape
+    neuropil_masks = np.zeros((len(stats), Ly, Lx), np.float32)
+    for stat, neuropil_mask in zip(stats, neuropil_masks):
+
+        # extend to get ring of dis-allowed pixels
+        ypix, xpix = extendROI(stat['ypix'], stat['xpix'], Ly, Lx, niter=inner_neuropil_radius)
+        nring = np.sum(valid_pixels(cell_pix, ypix, xpix))  # count how many pixels are valid
+        inner_ring = neuropil_masks[ypix, xpix]
+
+        for _ in range(100):
+            ypix, xpix = extendROI(ypix, xpix, Ly, Lx, 5)  # keep extending
+            if np.sum(valid_pixels(cell_pix, ypix, xpix)) - nring > min_neuropil_pixels:
+                break  # break if there are at least a minimum number of valid pixels
+        ix = valid_pixels(cell_pix, ypix, xpix)
+        neuropil_mask[ypix[ix], xpix[ix]] = 1.
+        inner_ring[:] = 0
+
+    return neuropil_masks / np.sum(neuropil_masks, axis=(1, 2), keepdims=True)

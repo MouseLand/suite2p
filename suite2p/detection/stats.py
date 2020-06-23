@@ -8,7 +8,7 @@ def mean_r_squared(y, x, estimator=np.median):
 
 
 def calc_radii(dy, dx, ypix, xpix, lam):
-    return fitMVGaus(ypix / dy, xpix / dx, lam, 2)[2]
+    return fitMVGaus(ypix / dy, xpix / dx, lam, 2).radii
 
 
 def aspect_ratio(ry, rx) -> float:
@@ -43,6 +43,7 @@ def roi_stats(dy: int, dx: int, stats):
         stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
         stat['med'] = [np.median(ypix), np.median(xpix)]
         stat['npix'] = xpix.size
+
         if 'radius' not in stat:
             radius = calc_radii(dy=dy, dx=dx, xpix=xpix, ypix=ypix, lam=lam)
             stat['radius'] = radius[0] * np.mean((dx, dy))

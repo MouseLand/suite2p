@@ -236,9 +236,9 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            radius = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2)[2]
-            stat['radius'] = radius[0] * d0.mean()
-            stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+            ry, rx = utils.fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2).radii
+            stat['radius'] = ry * d0.mean()
+            stat['aspect_ratio'] = 2 * ry/(.01 + ry + rx)
 
         proj = (Ucell[yp, xp, :] @ np.expand_dims(code, axis=1)).flatten()
         footprints[k] = np.nanmean(rs[proj > proj.max() * frac])

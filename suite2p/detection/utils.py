@@ -1,5 +1,5 @@
 import time
-from collections import namedtuple
+from typing import Tuple, NamedTuple
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -139,7 +139,16 @@ def get_sdmov(mov, ops):
     return sdmov
 
 
-EllipseData = namedtuple("EllipseData", "mu cov radii ellipse area")
+class EllipseData(NamedTuple):
+    mu: float
+    cov: float
+    radii: Tuple[float, float]
+    ellipse: np.ndarray
+
+    @property
+    def area(self):
+        return (self.radii[0] * self.radii[1]) ** 0.5 * np.pi
+
 
 def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
     """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
@@ -152,45 +161,28 @@ def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
         pixel locations in x
     lam : float, array
         weights of each pixel
-
-    Returns
-    -------
-        mu : float
-            mean of gaussian fit.
-        cov : float
-            covariance of gaussian fit.
-        radii : float, array
-            half of major and minor axis lengths of elliptical fit.
-        ellipse : float, array
-            coordinates of elliptical fit.
-        area : float
-            area of ellipse.
-
     """
 
     # normalize pixel weights
     lam /= lam.sum()
 
     # mean of gaussian
-    yx = np.stack((y,x))
-    mu = (lam*yx).sum(axis=-1)
-    yx = yx - np.expand_dims(mu, axis=1)
-    yx = yx * lam ** .5
+    yx = np.stack((y, x))
+    mu = (lam * yx).sum(axis=1)
+    yx = (yx - mu[:, np.newaxis]) * lam ** .5
     cov = yx @ yx.T
 
     # radii of major and minor axes
     radii, evec = np.linalg.eig(cov)
-    radii = np.maximum(0, np.real(radii))
-    radii = thres * radii ** .5
+    radii = thres * np.maximum(0, np.real(radii)) ** .5
 
     # compute pts of ellipse
-    p = np.expand_dims(np.linspace(0, 2 * np.pi, npts), axis=1)
-    p = np.concatenate((np.cos(p), np.sin(p)), axis=1)
-    ellipse = (p * radii) @ evec.transpose() + mu
-    area = (radii[0] * radii[1])**0.5 * np.pi
+    theta = np.linspace(0, 2 * np.pi, npts)
+    p = np.stack((np.cos(theta), np.sin(theta)))
+    ellipse = (p.T * radii) @ evec.T + mu
     radii = np.sort(radii)[::-1]
 
-    return EllipseData(mu, cov, radii, ellipse, area)
+    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse)
 
 
 def distance_kernel(radius: int) -> np.ndarray:

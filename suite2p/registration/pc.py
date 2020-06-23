@@ -181,7 +181,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
     return X
 
 
-def get_pc_metrics(ops, use_red=False, nPC=30, random_state=None):
+def get_pc_metrics(ops, use_red=False, nPC=30):
     """ computes registration metrics using top PCs of registered movie
 
         movie saved as binary file ops['reg_file']
@@ -206,6 +206,7 @@ def get_pc_metrics(ops, use_red=False, nPC=30, random_state=None):
                 adds 'regPC' and 'tPC' and 'regDX'
 
     """
+    random_state = ops['reg_metrics_rs'] if 'reg_metrics_rs' in ops else None
     # n frames to pick from full movie
     nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
     with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'],

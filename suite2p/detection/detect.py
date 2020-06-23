@@ -1,8 +1,9 @@
 import time
 import numpy as np
 from pathlib import Path
-from . import sourcery, sparsedetect, masks, chan2detect
+from . import sourcery, sparsedetect, chan2detect
 from .stats import roi_stats
+from .masks import get_overlaps, count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks
 
 
 def main_detect(ops):
@@ -39,15 +40,15 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops):
 
     ypixs = [stat['ypix'] for stat in stats]
     xpixs = [stat['xpix'] for stat in stats]
-    overlap_masks = masks.get_overlaps(
-        overlaps=masks.count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs),
+    overlap_masks = get_overlaps(
+        overlaps=count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs),
         ypixs=ypixs,
         xpixs=xpixs,
     )
     for stat, overlap_mask in zip(stats, overlap_masks):
         stat['overlap'] = overlap_mask
 
-    ix = masks.remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=max_overlap, Ly=Ly, Lx=Lx)
+    ix = remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=max_overlap, Ly=Ly, Lx=Lx)
     stats = [stats[i] for i in ix]
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
     return stats
@@ -55,8 +56,8 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops):
 
 def make_masks(ops, stats):
     Ly, Lx = ops['Ly'], ops['Lx']
-    cell_pix, cell_masks = masks.create_cell_masks(stats, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
-    neuropil_masks = masks.create_neuropil_masks(
+    cell_pix, cell_masks = create_cell_masks(stats, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
+    neuropil_masks = create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in stats],
         xpixs=[stat['xpix'] for stat in stats],
         cell_pix=cell_pix,

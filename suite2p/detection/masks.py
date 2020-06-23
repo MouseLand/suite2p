@@ -20,8 +20,7 @@ def remove_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> Li
     overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
     ix = []
     for i, (ypix, xpix) in reversed(list(enumerate(zip(ypixs, xpixs)))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        overlap = overlaps[ypix, xpix]
-        if np.mean(overlap > 1) > max_overlap:
+        if np.mean(overlaps[ypix, xpix] > 1) > max_overlap:  # note: fancy indexing returns a copy
             overlaps[ypix, xpix] -= 1
         else:
             ix.append(i)

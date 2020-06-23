@@ -49,7 +49,7 @@ def select_rois(ops, stats=None):
     for stat, overlap_mask in zip(stats, overlap_masks):
         stat['overlap'] = overlap_mask
 
-    ix = masks.remove_overlappers(stats, max_overlap=ops['max_overlap'], Ly=ops['Ly'], Lx=ops['Lx'])
+    ix = masks.remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=ops['max_overlap'], Ly=ops['Ly'], Lx=ops['Lx'])
     stats = [stats[i] for i in ix]
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
     return stats

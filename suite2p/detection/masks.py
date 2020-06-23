@@ -1,4 +1,5 @@
 from typing import List
+from itertools import count
 import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
@@ -83,7 +84,7 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
 
 def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_pixels):
     """ creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slow!)
-    
+
     Parameters
     ----------
 
@@ -94,7 +95,7 @@ def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_p
         'ypix', 'xpix', 'lam'
 
     cellpix : 2D array
-        1 if ROI exists in pixel, 0 if not; 
+        1 if ROI exists in pixel, 0 if not;
         pixels ignored for neuropil computation
 
     Returns
@@ -113,14 +114,14 @@ def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_p
         # extend to get ring of dis-allowed pixels
         ypix, xpix = extendROI(stat['ypix'], stat['xpix'], Ly, Lx, niter=inner_neuropil_radius)
         nring = np.sum(valid_pixels(cell_pix, ypix, xpix))  # count how many pixels are valid
-        inner_ring = neuropil_masks[ypix, xpix]
 
-        for _ in range(100):
-            ypix, xpix = extendROI(ypix, xpix, Ly, Lx, 5)  # keep extending
-            if np.sum(valid_pixels(cell_pix, ypix, xpix)) - nring > min_neuropil_pixels:
-                break  # break if there are at least a minimum number of valid pixels
-        ix = valid_pixels(cell_pix, ypix, xpix)
-        neuropil_mask[ypix[ix], xpix[ix]] = 1.
-        inner_ring[:] = 0
+        nreps = count()
+        ypix1, xpix1 = ypix, xpix
+        while next(nreps) < 100 and np.sum(valid_pixels(cell_pix, ypix1, xpix1)) - nring <= min_neuropil_pixels:
+            ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, 5)  # keep extending
+
+        ix = valid_pixels(cell_pix, ypix1, xpix1)
+        neuropil_mask[ypix1[ix], xpix1[ix]] = 1.
+        neuropil_mask[ypix, xpix] = 0
 
     return neuropil_masks / np.sum(neuropil_masks, axis=(1, 2), keepdims=True)

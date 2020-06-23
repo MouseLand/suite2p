@@ -1,8 +1,7 @@
 import numpy as np
 from typing import Tuple
 
-from .masks import circle_mask
-from .utils import fitMVGaus
+from .utils import fitMVGaus, distance_kernel
 
 
 def mean_r_squared(y, x, estimator=np.median):
@@ -25,7 +24,7 @@ def roi_stats(diameters: Tuple[int, int], stats):
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
 
     """
-    rs = circle_mask(np.array([30, 30]))
+    rs = distance_kernel(radius=30)
     rsort = np.sort(rs.flatten())
     for stat in stats:
         ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']

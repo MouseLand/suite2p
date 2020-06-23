@@ -187,3 +187,11 @@ def fitMVGaus(y,x,lam,thres=2.5):
     area = (radii[0] * radii[1])**0.5 * math.pi
     radii  = np.sort(radii)[::-1]
     return mu, cov, radii, ellipse, area
+
+
+def distance_kernel(radius: int) -> np.ndarray:
+    """ Returns 2D array containing geometric distance from center, with radius 'radius'"""
+    d = np.arange(-radius, radius + 1)
+    dx, dy = np.meshgrid(d, d)
+    dists_2d = (dy ** 2 + dx ** 2) ** 0.5
+    return dists_2d

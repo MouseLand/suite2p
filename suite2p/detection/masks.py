@@ -15,13 +15,13 @@ def get_overlaps(overlaps, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> 
     return [overlaps[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
 
 
-def remove_overlappers(stat, ops, Ly, Lx):
+def remove_overlappers(stats, ops, Ly, Lx):
     """ removes ROIs that are overlapping more than fraction ops['max_overlap'] with other ROIs
     
     Parameters
     ----------------
 
-    stat : array of dicts
+    stats : array of dicts
         'ypix', 'xpix'
 
     ops : dictionary
@@ -37,54 +37,29 @@ def remove_overlappers(stat, ops, Ly, Lx):
         list of ROIs that were kept
 
     """
-    ncells = len(stat)
-    if not isinstance(stat, list):
-        stat = list(stat)
-    mask = np.zeros((Ly,Lx))
+    stats = list(stats)
+    ncells = len(stats)
     ix = [k for k in range(ncells)]
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
+    ypixs = [stat['ypix'] for stat in stats]
+    xpixs = [stat['xpix'] for stat in stats]
+    mask = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
     while 1:
-        O = np.zeros((len(stat),1))
-        for n in range(len(stat)):
-            ypix = stat[n]['ypix']
-            xpix = stat[n]['xpix']
+        O = np.zeros((len(stats),1))
+        for n in range(len(stats)):
+            ypix = stats[n]['ypix']
+            xpix = stats[n]['xpix']
             O[n] = np.mean(mask[ypix,xpix] > 1.5)
         #i = np.argmax(O)
         inds = (O > ops['max_overlap']).nonzero()[0]
         if len(inds) > 0:
             i = np.max(inds)
-            ypix = stat[i]['ypix']
-            xpix = stat[i]['xpix']
+            ypix = stats[i]['ypix']
+            xpix = stats[i]['xpix']
             mask[ypix,xpix] -= 1
-            del stat[i], ix[i]
+            del stats[i], ix[i]
         else:
             break
-    return stat, ix
-
-def circle_mask(d0):
-    """ creates array (2*d0+1, 2*d0+1) with indices and radii from center point
-        
-    Parameters
-    ----------
-    d0 : int
-        patch of (-d0,d0+1) over which radius computed
-
-    Returns
-    -------
-        rs : array, float 
-            (2*d0+1,2*d0+1) of radii
-
-        dx,dy: indices in rs where the radius is less than d0
-    """
-    dx  = np.tile(np.arange(-d0[1],d0[1]+1), (2*d0[0]+1,1))
-    dy  = np.tile(np.arange(-d0[0],d0[0]+1), (2*d0[1]+1,1))
-    dy  = dy.transpose()
-
-    rs  = (dy**2 + dx**2) ** 0.5
-    return rs
+    return stats, ix
 
 
 def create_cell_masks(stat, Ly, Lx, allow_overlap=False):

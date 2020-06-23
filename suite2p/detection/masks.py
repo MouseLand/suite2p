@@ -42,7 +42,7 @@ def remove_overlappers(stats, max_overlap, Ly, Lx):
     xpixs = [stat['xpix'] for stat in stats]
     overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
     new_stats = []
-    for stat in reversed(stats):
+    for stat in reversed(stats):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
         if np.mean(overlaps[stat['ypix'], stat['xpix']] > 1) > max_overlap:
             overlaps[stat['ypix'], stat['xpix']] -= 1
         else:

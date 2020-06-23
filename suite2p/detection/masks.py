@@ -40,16 +40,14 @@ def remove_overlappers(stats, max_overlap, Ly, Lx):
     stats = list(stats)
     ypixs = [stat['ypix'] for stat in stats]
     xpixs = [stat['xpix'] for stat in stats]
-    mask = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    while 1:
-        inds = [n for n, stat in enumerate(stats) if np.mean(mask[stat['ypix'], stat['xpix']] > 1.5) > max_overlap]
-        if inds:
-            i = inds[-1]
-            mask[stats[i]['ypix'], stats[i]['xpix']] -= 1
-            del stats[i]
+    overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
+    new_stats = []
+    for stat in reversed(stats):
+        if np.mean(overlaps[stat['ypix'], stat['xpix']] > 1) > max_overlap:
+            overlaps[stat['ypix'], stat['xpix']] -= 1
         else:
-            break
-    return stats
+            new_stats.append(stat)
+    return new_stats[::-1]
 
 
 def create_cell_masks(stat, Ly, Lx, allow_overlap=False):

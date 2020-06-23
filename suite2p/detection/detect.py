@@ -6,7 +6,12 @@ from .stats import roi_stats
 
 
 def main_detect(ops, stat=None):
-    stat = select_rois(ops, stat)
+    if 'aspect' in ops:
+        dy, dx = int(ops['aspect'] * 10), 10
+    else:
+        d0 = ops['diameter']
+        dy, dx = (d0, d0) if isinstance(d0, int) else d0
+    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], ops=ops, stats=stat)
     # extract fluorescence and neuropil
     t0 = time.time()
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
@@ -22,7 +27,7 @@ def main_detect(ops, stat=None):
     return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 
-def select_rois(ops, stats=None):
+def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops, stats=None):
     t0 = time.time()
     if stats is None:
         if ops['sparse_mode']:
@@ -31,25 +36,19 @@ def select_rois(ops, stats=None):
             ops, stats = sourcery.sourcery(ops)
         print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
-    if 'aspect' in ops:
-        d0 = np.array([int(ops['aspect']*10), 10])
-    else:
-        d0 = ops['diameter']
-        if isinstance(d0, int):
-            d0 = [d0,d0]
-    stats = roi_stats(d0, stats)
+    stats = roi_stats(dy=dy, dx=dx, stats=stats)
 
     ypixs = [stat['ypix'] for stat in stats]
     xpixs = [stat['xpix'] for stat in stats]
     overlap_masks = masks.get_overlaps(
-        overlaps=masks.count_overlaps(Ly=ops['Ly'], Lx=ops['Lx'], ypixs=ypixs, xpixs=xpixs),
+        overlaps=masks.count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs),
         ypixs=ypixs,
         xpixs=xpixs,
     )
     for stat, overlap_mask in zip(stats, overlap_masks):
         stat['overlap'] = overlap_mask
 
-    ix = masks.remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=ops['max_overlap'], Ly=ops['Ly'], Lx=ops['Lx'])
+    ix = masks.remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=max_overlap, Ly=Ly, Lx=Lx)
     stats = [stats[i] for i in ix]
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
     return stats

@@ -8,7 +8,7 @@ def mean_r_squared(y, x, estimator=np.median):
     return np.mean(np.sqrt((y - estimator(y)) ** 2 + ((x - estimator(x)) ** 2)))
 
 
-def roi_stats(diameters: Tuple[int, int], stats):
+def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
 
     Parameters
@@ -37,8 +37,8 @@ def roi_stats(diameters: Tuple[int, int], stats):
         stat['med'] = [np.median(ypix), np.median(xpix)]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            radius = fitMVGaus(ypix / diameters[0], xpix / diameters[1], lam, 2)[2]
-            stat['radius'] = radius[0] * diameters.mean()
+            radius = fitMVGaus(ypix / dy, xpix / dx, lam, 2)[2]
+            stat['radius'] = radius[0] * np.mean((dx, dy))
             stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
 
 

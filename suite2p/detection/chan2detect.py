@@ -42,7 +42,7 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     mimg2 = np.maximum(0, mimg2)
     return mimg2
 
-def detect(ops, stat):
+def detect(ops, stats):
     mimg = ops['meanImg'].copy()
     mimg2 = ops['meanImg_chan2'].copy()
 
@@ -57,16 +57,17 @@ def detect(ops, stat):
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
     # ops['min_neuropil_pixels'] = 80
-    cell_pix, cell_masks0 = masks.create_cell_masks(stat, Ly, Lx, ops['allow_overlap'])
+    cell_pix, cell_masks0 = masks.create_cell_masks(stats, Ly, Lx, ops['allow_overlap'])
     neuropil_masks = masks.create_neuropil_masks(
-        stat,
-        cell_pix,
+        ypixs=[stat['ypix'] for stat in stats],
+        xpixs=[stat['xpix'] for stat in stats],
+        cell_pix=cell_pix,
         inner_neuropil_radius=ops['inner_neuropil_radius'],
         min_neuropil_pixels=ops['min_neuropil_pixels'],
     )
     neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
-    cell_masks     = np.zeros((len(stat),Ly*Lx), np.float32)
-    for n in range(len(stat)):
+    cell_masks     = np.zeros((len(stats), Ly * Lx), np.float32)
+    for n in range(len(stats)):
         cell_masks[n, cell_masks0[n][0]] = cell_masks0[n][1]
 
     inpix = cell_masks @ mimg2.flatten()

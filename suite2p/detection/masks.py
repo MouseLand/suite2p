@@ -82,17 +82,11 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
     return cell_pix, cell_masks
 
 
-def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_pixels):
+def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neuropil_pixels):
     """ creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slow!)
 
     Parameters
     ----------
-
-    ops : dictionary
-        'inner_neuropil_radius', 'min_neuropil_pixels'
-
-    stat : dictionary
-        'ypix', 'xpix', 'lam'
 
     cellpix : 2D array
         1 if ROI exists in pixel, 0 if not;
@@ -108,11 +102,12 @@ def create_neuropil_masks(stats, cell_pix, inner_neuropil_radius, min_neuropil_p
     valid_pixels = lambda cell_pix, ypix, xpix: cell_pix[ypix, xpix] < .5
 
     Ly, Lx = cell_pix.shape
-    neuropil_masks = np.zeros((len(stats), Ly, Lx), np.float32)
-    for stat, neuropil_mask in zip(stats, neuropil_masks):
+    assert len(xpixs) == len(ypixs)
+    neuropil_masks = np.zeros((len(xpixs), Ly, Lx), np.float32)
+    for ypix, xpix, neuropil_mask in zip(ypixs, xpixs, neuropil_masks):
 
         # extend to get ring of dis-allowed pixels
-        ypix, xpix = extendROI(stat['ypix'], stat['xpix'], Ly, Lx, niter=inner_neuropil_radius)
+        ypix, xpix = extendROI(ypix, xpix, Ly, Lx, niter=inner_neuropil_radius)
         nring = np.sum(valid_pixels(cell_pix, ypix, xpix))  # count how many pixels are valid
 
         nreps = count()

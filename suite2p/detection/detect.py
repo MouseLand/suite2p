@@ -53,12 +53,13 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops):
     return stats
 
 
-def make_masks(ops, stat):
+def make_masks(ops, stats):
     Ly, Lx = ops['Ly'], ops['Lx']
-    cell_pix, cell_masks = masks.create_cell_masks(stat, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
+    cell_pix, cell_masks = masks.create_cell_masks(stats, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
     neuropil_masks = masks.create_neuropil_masks(
-        stat,
-        cell_pix,
+        ypixs=[stat['ypix'] for stat in stats],
+        xpixs=[stat['xpix'] for stat in stats],
+        cell_pix=cell_pix,
         inner_neuropil_radius=ops['inner_neuropil_radius'],
         min_neuropil_pixels=ops['min_neuropil_pixels'],
     )

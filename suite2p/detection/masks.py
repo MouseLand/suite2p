@@ -1,39 +1,37 @@
+from typing import List
 import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
 
+def count_overlaps(Ly: int, Lx: int, stats) -> np.ndarray:
+    overlap = np.zeros((Ly, Lx))
+    for stat in stats:
+        overlap[stat['ypix'], stat['xpix']] += 1
+    return overlap
 
-def get_overlaps(stat, ops):
+
+def get_overlaps(Ly, Lx, stats) -> List[np.ndarray]:
     """ computes overlapping pixels from ROIs in stat
-    
+
     Parameters
     ----------------
 
     ops : dictionary
         'Ly', 'Lx'
 
-    stat : array of dicts 
+    stats : array of dicts
         'ypix', 'xpix'
-        
+
     Returns
     ----------------
 
-    stat : array of dicts
-        adds 'overlap'
+    overlaps: List of boolean arrays (one for each cell)
 
     """
-    Ly, Lx = ops['Ly'], ops['Lx']
-    ncells = len(stat)
-    mask = np.zeros((Ly,Lx))
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        mask[ypix,xpix] += 1
-    for n in range(ncells):
-        ypix = stat[n]['ypix']
-        xpix = stat[n]['xpix']
-        stat[n]['overlap'] = mask[ypix,xpix] > 1.5
-    return stat
+    mask = count_overlaps(Ly, Lx, stats=stats)
+    overlaps = [mask[stat['ypix'], stat['xpix']] > 1 for stat in stats]
+    return overlaps
+
 
 def remove_overlappers(stat, ops, Ly, Lx):
     """ removes ROIs that are overlapping more than fraction ops['max_overlap'] with other ROIs

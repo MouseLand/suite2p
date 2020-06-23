@@ -22,14 +22,14 @@ def main_detect(ops, stat=None):
     return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 
-def select_rois(ops, stat=None):
+def select_rois(ops, stats=None):
     t0 = time.time()
-    if stat is None:
+    if stats is None:
         if ops['sparse_mode']:
-            ops, stat = sparsedetect.sparsery(ops)
+            ops, stats = sparsedetect.sparsery(ops)
         else:
-            ops, stat = sourcery.sourcery(ops)
-        print('Found %d ROIs, %0.2f sec' % (len(stat), time.time() - t0))
+            ops, stats = sourcery.sourcery(ops)
+        print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
     if 'aspect' in ops:
         d0 = np.array([int(ops['aspect']*10), 10])
@@ -37,12 +37,15 @@ def select_rois(ops, stat=None):
         d0 = ops['diameter']
         if isinstance(d0, int):
             d0 = [d0,d0]
-    stat = roi_stats(d0, stat)
+    stats = roi_stats(d0, stats)
 
-    stat = masks.get_overlaps(stat, ops)
-    stat, ix = masks.remove_overlappers(stat, ops, ops['Ly'], ops['Lx'])
-    print('After removing overlaps, %d ROIs remain' % (len(stat)))
-    return stat
+    overlaps = masks.get_overlaps(Ly=ops['Ly'], Lx=ops['Lx'], stats=stats)
+    for stat, overlap in zip(stats, overlaps):
+        stat['overlap'] = overlap
+
+    stats, ix = masks.remove_overlappers(stats, ops, ops['Ly'], ops['Lx'])
+    print('After removing overlaps, %d ROIs remain' % (len(stats)))
+    return stats
 
 
 def make_masks(ops, stat):

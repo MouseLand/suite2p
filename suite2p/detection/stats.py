@@ -1,11 +1,18 @@
 import numpy as np
-from typing import Tuple
 
 from .utils import fitMVGaus, distance_kernel
 
 
 def mean_r_squared(y, x, estimator=np.median):
     return np.mean(np.sqrt((y - estimator(y)) ** 2 + ((x - estimator(x)) ** 2)))
+
+
+def calc_radii(dy, dx, ypix, xpix, lam):
+    return fitMVGaus(ypix / dy, xpix / dx, lam, 2)[2]
+
+
+def aspect_ratio(ry, rx) -> float:
+    return 2 * ry / (.01 + ry + rx)
 
 
 def roi_stats(dy: int, dx: int, stats):
@@ -37,9 +44,9 @@ def roi_stats(dy: int, dx: int, stats):
         stat['med'] = [np.median(ypix), np.median(xpix)]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            radius = fitMVGaus(ypix / dy, xpix / dx, lam, 2)[2]
+            radius = calc_radii(dy=dy, dx=dx, xpix=xpix, ypix=ypix, lam=lam)
             stat['radius'] = radius[0] * np.mean((dx, dy))
-            stat['aspect_ratio'] = 2 * radius[0]/(.01 + radius[0] + radius[1])
+            stat['aspect_ratio'] = aspect_ratio(ry=radius[0], rx=radius[1])
 
 
     mmrs = np.nanmedian([stat['mrs'] for stat in stats[:100]])  # todo: why only include the first 100?

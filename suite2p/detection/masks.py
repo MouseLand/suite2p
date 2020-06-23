@@ -15,7 +15,7 @@ def get_overlaps(overlaps, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> 
     return [overlaps[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
 
 
-def remove_overlappers(stats, max_overlap, Ly, Lx):
+def remove_overlappers(stats, max_overlap: float, Ly: int, Lx: int) -> List[int]
     """ removes ROIs that are overlapping more than fraction ops['max_overlap'] with other ROIs
     
     Parameters
@@ -29,10 +29,6 @@ def remove_overlappers(stats, max_overlap, Ly, Lx):
 
     Returns
     ----------------
-
-    stat : array of dicts
-        ROIs with ops['max_overlap'] overlapped ROIs removed
-    
     ix : list
         list of ROIs that were kept
 
@@ -41,13 +37,14 @@ def remove_overlappers(stats, max_overlap, Ly, Lx):
     ypixs = [stat['ypix'] for stat in stats]
     xpixs = [stat['xpix'] for stat in stats]
     overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    new_stats = []
-    for stat in reversed(stats):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        if np.mean(overlaps[stat['ypix'], stat['xpix']] > 1) > max_overlap:
+    ix = []
+    for i, stat in reversed(list(enumerate(stats))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
+        overlap = overlaps[stat['ypix'], stat['xpix']]
+        if np.mean(overlap > 1) > max_overlap:
             overlaps[stat['ypix'], stat['xpix']] -= 1
         else:
-            new_stats.append(stat)
-    return new_stats[::-1]
+            ix.append(i)
+    return ix[::-1]
 
 
 def create_cell_masks(stat, Ly, Lx, allow_overlap=False):

@@ -5,13 +5,13 @@ from . import sourcery, sparsedetect, masks, chan2detect
 from .stats import roi_stats
 
 
-def main_detect(ops, stat=None):
+def main_detect(ops):
     if 'aspect' in ops:
         dy, dx = int(ops['aspect'] * 10), 10
     else:
         d0 = ops['diameter']
         dy, dx = (d0, d0) if isinstance(d0, int) else d0
-    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], ops=ops, stats=stat)
+    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
@@ -27,14 +27,13 @@ def main_detect(ops, stat=None):
     return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 
-def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops, stats=None):
+def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops):
     t0 = time.time()
-    if stats is None:
-        if ops['sparse_mode']:
-            ops, stats = sparsedetect.sparsery(ops)
-        else:
-            ops, stats = sourcery.sourcery(ops)
-        print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
+    if ops['sparse_mode']:
+        ops, stats = sparsedetect.sparsery(ops)
+    else:
+        ops, stats = sourcery.sourcery(ops)
+    print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
     stats = roi_stats(dy=dy, dx=dx, stats=stats)
 

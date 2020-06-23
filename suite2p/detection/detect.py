@@ -39,13 +39,14 @@ def select_rois(ops, stats=None):
             d0 = [d0,d0]
     stats = roi_stats(d0, stats)
 
-    overlaps = masks.get_overlaps(
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        ypixs=[stat['ypix'] for stat in stats],
-        xpixs=[stat['xpix'] for stat in stats],
+    ypixs = [stat['ypix'] for stat in stats]
+    xpixs = [stat['xpix'] for stat in stats]
+    overlap_masks = masks.get_overlaps(
+        overlaps=masks.count_overlaps(Ly=ops['Ly'], Lx=ops['Lx'], ypixs=ypixs, xpixs=xpixs),
+        ypixs=ypixs,
+        xpixs=xpixs,
     )
-    for stat, overlap in zip(stats, overlaps):
+    for stat, overlap in zip(stats, overlap_masks):
         stat['overlap'] = overlap
 
     stats, ix = masks.remove_overlappers(stats, ops, ops['Ly'], ops['Lx'])

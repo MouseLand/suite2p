@@ -10,27 +10,9 @@ def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     return overlap
 
 
-def get_overlaps(Ly, Lx, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> List[np.ndarray]:
-    """ computes overlapping pixels from ROIs in stat
-
-    Parameters
-    ----------------
-
-    ops : dictionary
-        'Ly', 'Lx'
-
-    stats : array of dicts
-        'ypix', 'xpix'
-
-    Returns
-    ----------------
-
-    overlaps: List of boolean arrays (one for each cell)
-
-    """
-    mask = count_overlaps(Ly, Lx, ypixs=ypixs, xpixs=xpixs)
-    overlaps = [mask[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
-    return overlaps
+def get_overlaps(overlaps, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> List[np.ndarray]:
+    """computes overlapping pixels from ROIs"""
+    return [overlaps[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
 
 
 def remove_overlappers(stat, ops, Ly, Lx):

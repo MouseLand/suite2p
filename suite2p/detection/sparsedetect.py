@@ -381,7 +381,7 @@ def sparsery(ops):
         list of ROIs
 
     """
-    rez, max_proj = utils.bin_movie(ops)
+    rez, max_proj = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
     ops['max_proj'] = max_proj
     nbinned, Lyc, Lxc = rez.shape
     # cropped size

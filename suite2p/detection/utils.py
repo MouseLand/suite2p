@@ -5,7 +5,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
-def bin_movie(ops):
+def bin_movie(high_pass: float, ops):
     """ bin registered frames in 'reg_file' for ROI detection
 
     movie is binned then high-pass filtered to move slow changes
@@ -39,7 +39,7 @@ def bin_movie(ops):
     bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
     bin_size = max(bin_min, bin_tau)
     ops['nbinned'] = nframes // bin_size
-    print('Binning movie in chunks of length %2.2d'%bin_size)
+    print('Binning movie in chunks of length %2.2d' % bin_size)
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
@@ -80,20 +80,28 @@ def bin_movie(ops):
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
     max_proj = mov.max(axis=0)
-    print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
+    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
 
-    # data is high-pass filtered
-    if ops['high_pass']<10:
-        # slow high-pass
-        for j in range(mov.shape[1]):
-            mov[:,j,:] -= gaussian_filter(mov[:,j,:], [ops['high_pass'], 0])
-    else:
-        # fast approx high-pass
-        hp = int(ops['high_pass'])
-        for i in np.arange(0, mov.shape[0], hp):
-            mov[i:i+hp,:,:] -= mov[i:i+hp,:,:].mean(axis=0)
+    high_pass_filter = high_pass_gaussian_filter if high_pass < 10 else high_pass_rolling_mean_filter  # gaussian is slower
+    mov = high_pass_filter(mov, int(high_pass))
 
     return mov, max_proj
+
+
+def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
+    """Returns a high-pass-filtered copy of the 3D array 'mov' using a gaussian kernel."""
+    mov = mov.copy()
+    for j in range(mov.shape[1]):
+        mov[:, j, :] -= gaussian_filter(mov[:, j, :], [width, 0])
+    return mov
+
+
+def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
+    """Returns a high-pass-filtered copy of the 3D array 'mov' using a rolling mean kernel over time."""
+    mov = mov.copy()
+    for i in np.arange(0, mov.shape[0], width):
+        mov[i:i + width, :, :] -= mov[i:i + width, :, :].mean(axis=0)
+    return mov
 
 
 def get_sdmov(mov, ops):

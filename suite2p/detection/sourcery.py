@@ -10,7 +10,7 @@ from . import utils
 
 
 def getSVDdata(ops):
-    mov, max_proj = utils.bin_movie(ops)
+    mov, max_proj = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
     ops['max_proj'] = max_proj
     nbins, Lyc, Lxc = np.shape(mov)
 
@@ -36,7 +36,7 @@ def getSVDdata(ops):
     return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
-    mov, _ = utils.bin_movie(ops)
+    mov, _ = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:

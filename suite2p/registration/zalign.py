@@ -6,7 +6,7 @@ from scipy.signal import medfilt
 
 from . import nonrigid, rigid, utils
 
-
+# This function doesn't work. Has a bunch of name errors. 
 def register_stack(Z, ops):
     if 'refImg' not in ops:
         ops['refImg'] = Z.mean(axis=0)
@@ -49,7 +49,7 @@ def register_stack(Z, ops):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops)
+        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops) # not here
         dwrite = dwrite.astype('int16') # need to hold on to this
         meanImg += dwrite.sum(axis=0)
         yoff = np.hstack((yoff, ymax))
@@ -64,7 +64,7 @@ def register_stack(Z, ops):
 
         k += 1
         if k%5==0:
-            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], time.time()-k0))
+            print('%d/%d frames %4.2f sec'%(nfr, ops['nframes'], time.time()-k0)) # where is this timer set?
 
     # compute some potentially useful info
     ops['th_badframes'] = 100

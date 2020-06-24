@@ -68,7 +68,7 @@ def getSNR(cc, lcorr, lpad):
     for c1, ymax, xmax in zip(cc1, *np.unravel_index(np.argmax(cc0, axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):
         c1[ymax:ymax + 2 * lpad, xmax:xmax + 2 * lpad] = 0
 
-    snr = np.amax(cc0, axis=1) / np.maximum(0, np.amax(cc1.reshape(cc.shape[0], -1), axis=1))  # todo: check for infs/nans from divide by zero
+    snr = np.amax(cc0, axis=1) / np.maximum(1e-10, np.amax(cc1.reshape(cc.shape[0], -1), axis=1))  # ensure positivity for outlier cases
     return snr
 
 
@@ -279,7 +279,7 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    yb = np.array(yblock[::nblocks[1]]).mean(axis=1)  # todo: find out why yb has two colons and xb has one colon
+    yb = np.array(yblock[::nblocks[1]]).mean(axis=1)  # this recovers the coordinates of the meshgrid from (yblock, xblock)
     xb = np.array(xblock[:nblocks[1]]).mean(axis=1)
 
     iy = np.interp(np.arange(Ly), yb, np.arange(yb.size)).astype(np.float32)

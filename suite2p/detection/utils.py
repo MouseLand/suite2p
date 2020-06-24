@@ -28,59 +28,48 @@ def bin_movie(high_pass: float, ops):
 
     """
     t0 = time.time()
-    badframes = False
-    if 'badframes' in ops:
-        badframes = True
-        nframes = ops['nframes'] - ops['badframes'].sum()
-    else:
-        nframes = ops['nframes']
-    bin_min = np.floor(nframes / ops['nbinned']).astype('int32');
-    bin_min = max(bin_min, 1)
-    bin_tau = np.round(ops['tau'] * ops['fs']).astype('int32');
-    bin_size = max(bin_min, bin_tau)
+    nframes = ops['nframes'] - ops['badframes'].sum() if 'badframes' in ops else ops['nframes']
+    bin_size = int(max(1, nframes // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     ops['nbinned'] = nframes // bin_size
+
     print('Binning movie in chunks of length %2.2d' % bin_size)
     Ly = ops['Ly']
     Lx = ops['Lx']
     Lyc = ops['yrange'][-1] - ops['yrange'][0]
     Lxc = ops['xrange'][-1] - ops['xrange'][0]
 
-    nimgbatch = 500
-    nimgbatch = min(nframes, nimgbatch)
-    nimgbatch = bin_size * (nimgbatch // bin_size)
-    nbytesread = np.int64(Ly*Lx*nimgbatch*2)
+    nimgbatch = min(nframes, 500) // bin_size * bin_size
+    nbytesread = Ly * Lx * nimgbatch * 2
     mov = np.zeros((ops['nbinned'], Lyc, Lxc), np.float32)
-    ix = 0
-    idata = 0
+    ix, idata = 0, 0
     # load and bin data
     with open(ops['reg_file'], 'rb') as reg_file:
         while True:
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            buff = []
-            nimgd = data.size // (Ly*Lx)
+            nimgd = data.size // (Ly * Lx)
             if nimgd < bin_size:
                 break
             data = np.reshape(data, (-1, Ly, Lx))
-            dinds = idata + np.arange(0,data.shape[0],1,int)
-            idata+=data.shape[0]
+            dinds = idata + np.arange(0, data.shape[0], 1, int)
+            idata += data.shape[0]
             if dinds[-1] >= ops['nframes']: # this only happens when ops['frames_include'] != -1
                 break
-            if badframes and np.sum(ops['badframes'][dinds])>.5:
+            if 'badframes' in ops and np.sum(ops['badframes'][dinds]) > .5:
                 data = data[~ops['badframes'][dinds],:,:]
             nimgd = data.shape[0]
             if nimgd < nimgbatch:
                 nmax = (nimgd // bin_size) * bin_size
-                data = data[:nmax,:,:]
+                data = data[:nmax, :, :]
             dbin = np.reshape(data, (-1, bin_size, Ly, Lx))
             # crop into valid area
-            mov[ix:ix+dbin.shape[0],:,:] = dbin[:, :,
+            mov[ix:ix+dbin.shape[0], :, :] = dbin[:, :,
                                                 ops['yrange'][0]:ops['yrange'][-1],
                                                 ops['xrange'][0]:ops['xrange'][-1]].mean(axis=1)
             ix += dbin.shape[0]
     mov = mov[:ix,:,:]
     max_proj = mov.max(axis=0)
-    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
+    print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
 
     high_pass_filter = high_pass_gaussian_filter if high_pass < 10 else high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(high_pass))

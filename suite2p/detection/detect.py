@@ -12,7 +12,7 @@ def main_detect(ops):
     else:
         d0 = ops['diameter']
         dy, dx = (d0, d0) if isinstance(d0, int) else d0
-    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], ops=ops)
+    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
     cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
@@ -28,9 +28,9 @@ def main_detect(ops):
     return cell_pix, cell_masks, neuropil_masks, stat, ops
 
 
-def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, ops):
+def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
     t0 = time.time()
-    if ops['sparse_mode']:
+    if sparse_mode:
         ops, stats = sparsedetect.sparsery(ops)
     else:
         ops, stats = sourcery.sourcery(ops)

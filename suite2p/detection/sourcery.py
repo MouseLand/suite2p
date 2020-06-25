@@ -10,7 +10,9 @@ from . import utils
 
 
 def getSVDdata(ops):
-    mov, max_proj = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
+    mov, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    mov = high_pass_filter(mov, int(ops['high_pass']))
     ops['max_proj'] = max_proj
     nbins, Lyc, Lxc = np.shape(mov)
 
@@ -36,7 +38,9 @@ def getSVDdata(ops):
     return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
-    mov, _ = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
+    mov, _ = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    mov = high_pass_filter(mov, int(ops['high_pass']))
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:

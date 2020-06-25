@@ -2,13 +2,12 @@ import time
 from typing import Tuple, NamedTuple
 
 import numpy as np
+from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
 
 
-def bin_movie(high_pass: float, ops):
+def bin_movie(Ly: int, Lx: int, ops):
     """ bin registered frames in 'reg_file' for ROI detection
-
-    movie is binned then high-pass filtered to move slow changes
 
     Parameters
     ----------------
@@ -19,7 +18,6 @@ def bin_movie(high_pass: float, ops):
 
     Returns
     ----------------
-
     mov : 3D array
         binned movie, size [nbins x Ly x Lx]
 
@@ -31,32 +29,27 @@ def bin_movie(high_pass: float, ops):
     nframes = ops['nframes'] - ops['badframes'].sum() if 'badframes' in ops else ops['nframes']
     bin_size = int(max(1, nframes // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     ops['nbinned'] = nframes // bin_size
-
     print('Binning movie in chunks of length %2.2d' % bin_size)
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    Lyc = ops['yrange'][-1] - ops['yrange'][0]
-    Lxc = ops['xrange'][-1] - ops['xrange'][0]
 
     nimgbatch = min(nframes, 500) // bin_size * bin_size
     nbytesread = Ly * Lx * nimgbatch * 2
-    mov = np.zeros((ops['nbinned'], Lyc, Lxc), np.float32)
+    mov = np.zeros((ops['nbinned'], ops['yrange'][-1] - ops['yrange'][0], ops['xrange'][-1] - ops['xrange'][0]), np.float32)
     ix, idata = 0, 0
     # load and bin data
     with open(ops['reg_file'], 'rb') as reg_file:
         while True:
             buff = reg_file.read(nbytesread)
             data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            nimgd = data.size // (Ly * Lx)
-            if nimgd < bin_size:
+            if data.size == 0:
                 break
-            data = np.reshape(data, (-1, Ly, Lx))
+            data = data.reshape(-1, Ly, Lx)
             dinds = idata + np.arange(0, data.shape[0], 1, int)
             idata += data.shape[0]
-            if dinds[-1] >= ops['nframes']: # this only happens when ops['frames_include'] != -1
+
+            if dinds[-1] >= ops['nframes']:
                 break
             if 'badframes' in ops and np.sum(ops['badframes'][dinds]) > .5:
-                data = data[~ops['badframes'][dinds],:,:]
+                data = data[~ops['badframes'][dinds], :, :]
             nimgd = data.shape[0]
             if nimgd < nimgbatch:
                 nmax = (nimgd // bin_size) * bin_size
@@ -70,9 +63,6 @@ def bin_movie(high_pass: float, ops):
     mov = mov[:ix,:,:]
     max_proj = mov.max(axis=0)
     print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
-
-    high_pass_filter = high_pass_gaussian_filter if high_pass < 10 else high_pass_rolling_mean_filter  # gaussian is slower
-    mov = high_pass_filter(mov, int(high_pass))
 
     return mov, max_proj
 
@@ -185,6 +175,5 @@ def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
 def distance_kernel(radius: int) -> np.ndarray:
     """ Returns 2D array containing geometric distance from center, with radius 'radius'"""
     d = np.arange(-radius, radius + 1)
-    dx, dy = np.meshgrid(d, d)
-    dists_2d = (dy ** 2 + dx ** 2) ** 0.5
+    dists_2d = norm(np.meshgrid(d, d), axis=0)
     return dists_2d

@@ -381,7 +381,10 @@ def sparsery(ops):
         list of ROIs
 
     """
-    rez, max_proj = utils.bin_movie(high_pass=ops['high_pass'], ops=ops)
+    rez, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    rez = high_pass_filter(rez, int(ops['high_pass']))
+
     ops['max_proj'] = max_proj
     nbinned, Lyc, Lxc = rez.shape
     # cropped size

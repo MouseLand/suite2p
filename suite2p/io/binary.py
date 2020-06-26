@@ -34,6 +34,18 @@ class BinaryFile:
     def nbytesread(self) -> int:
         return 2 * self.Ly * self.Lx
 
+    @property
+    def n_frames(self) -> int:
+        return int(self.nbytesread / self.Ly / self.Lx)
+
+    @property
+    def shape(self) -> Tuple[int, int, int]:
+        return self.n_frames, self.Ly, self.Lx
+
+    @property
+    def size(self) -> int:
+        return np.prod(self.shape)
+
     def close(self) -> None:
         self.read_file.close()
         if self.write_file:

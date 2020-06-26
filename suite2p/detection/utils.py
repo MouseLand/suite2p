@@ -1,5 +1,5 @@
 import time
-from typing import Tuple, NamedTuple
+from typing import Tuple, NamedTuple, Optional, Sequence
 
 import numpy as np
 from numpy.linalg import norm
@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter
 from ..io.binary import BinaryFile
 
 
-def bin_movie(Ly: int, Lx: int, bin_size: int, ops):
+def bin_movie(Ly: int, Lx: int, bin_size: int, ops, bad_frames: Sequence[int] = ()):
     """ bin registered frames in 'reg_file' for ROI detection
 
     Parameters
@@ -27,8 +27,7 @@ def bin_movie(Ly: int, Lx: int, bin_size: int, ops):
         max projection image (mov.max(axis=0)) size [Ly x Lx]
 
     """
-    nbadframes = ops['badframes'].sum() if 'badframes' in ops else 0
-    nframes = ops['nframes'] - nbadframes
+    nframes = ops['nframes'] - len(bad_frames)
     print('Binning movie in chunks of length %2.2d' % bin_size)
 
     batch_size = min(nframes, 500) // bin_size * bin_size
@@ -40,6 +39,10 @@ def bin_movie(Ly: int, Lx: int, bin_size: int, ops):
 
             data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
+            if len(bad_frames) > 0:
+                good_frames = np.setdiff1d(bad_frames, indices, assume_unique=True)
+                if len(good_frames) / len(indices) > 0.5:
+                    data = data[good_frames, :, :]
             if 'badframes' in ops and np.sum(ops['badframes'][indices]) > .5:  # todo: badframes only get rejected if there are a lot of them, else are kept.
                 data = data[~ops['badframes'][indices], :, :]
 
@@ -48,10 +51,8 @@ def bin_movie(Ly: int, Lx: int, bin_size: int, ops):
                 mov.append(dbin)
 
     mov = np.vstack(mov)
-    max_proj = mov.max(axis=0)
-    ops['nbinned'] = mov.shape[0]
 
-    return mov, max_proj
+    return mov
 
 
 def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:

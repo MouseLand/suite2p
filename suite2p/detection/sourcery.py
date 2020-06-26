@@ -11,14 +11,20 @@ from . import utils
 
 def getSVDdata(ops):
     t0 = time.time()
-    mov, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'],
-                                    bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
-                                    ops=ops,
-                                    )
+    mov = utils.bin_movie(
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        ops=ops,
+    )
+    ops['nbinned'] = mov.shape[0]
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+
+
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
-    ops['max_proj'] = max_proj
+    ops['max_proj'] = mov.max(axis=0)
     nbins, Lyc, Lxc = np.shape(mov)
 
     sig = ops['diameter']/10. # PICK UP
@@ -44,10 +50,15 @@ def getSVDdata(ops):
 
 def getSVDproj(ops, u):
     t0 = time.time()
-    mov, _ = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'],
-                             bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
-                             ops=ops,
-                             )
+    mov = utils.bin_movie(
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        ops=ops,
+    )
+
+    ops['nbinned'] = mov.shape[0]
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))

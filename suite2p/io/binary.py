@@ -4,7 +4,10 @@ import numpy as np
 
 
 def from_slice(s: slice) -> np.ndarray:
-    return np.arange(s.start, s.stop, s.step)
+    if s.start == None and s.stop == None and s.step == None:
+        return None
+    else:
+        return np.arange(s.start, s.stop, s.step)
 
 
 class BinaryFile:
@@ -43,13 +46,14 @@ class BinaryFile:
         self.close()
 
     def __getitem__(self, *items):
-        frames, *crop = items
-        if isinstance(frames, int):
-            return self.ix(indices=[frames])
-        elif isinstance(frames, slice):
-            return self.ix(indices=from_slice(frames))
+        frame_indices, *crop = items
+        if isinstance(frame_indices, int):
+            frames = self.ix(indices=[frame_indices])
+        elif isinstance(frame_indices, slice):
+            frames = self.ix(indices=from_slice(frame_indices))
         else:
-            return self.ix(indices=frames)
+            frames = self.ix(indices=frame_indices)
+        return frames[(slice(None),) + crop] if crop else frames
 
     def iter_frames(self, batch_size=1, dtype=np.float32):
         while True:

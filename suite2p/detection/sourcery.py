@@ -17,11 +17,11 @@ def getSVDdata(ops):
         filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
+        n_frames=ops['nframes'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         y_range=ops['yrange'],
         x_range=ops['xrange'],
-        ops=ops,
     )
     ops['nbinned'] = mov.shape[0]
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
@@ -61,11 +61,11 @@ def getSVDproj(ops, u):
         filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
+        n_frames=ops['nframes'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         y_range=ops['yrange'],
         x_range=ops['xrange'],
-        ops=ops,
     )
 
     ops['nbinned'] = mov.shape[0]

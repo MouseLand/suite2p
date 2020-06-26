@@ -388,11 +388,11 @@ def sparsery(ops):
         filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
+        n_frames=ops['nframes'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         y_range=ops['yrange'],
         x_range=ops['xrange'],
-        ops=ops,
     )
 
     ops['nbinned'] = rez.shape[0]

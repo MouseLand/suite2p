@@ -1,5 +1,5 @@
 import time
-from typing import Tuple, NamedTuple, Optional, Sequence
+from typing import Tuple, NamedTuple, Sequence
 
 import numpy as np
 from numpy.linalg import norm
@@ -8,29 +8,11 @@ from scipy.ndimage import gaussian_filter
 from ..io.binary import BinaryFile
 
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, ops, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
-    """ bin registered frames in 'reg_file' for ROI detection
-
-    Parameters
-    ----------------
-
-    ops : dictionary
-        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'high_pass', 'batch_size'
-        (optional 'badframes')
-
-    Returns
-    ----------------
-    mov : 3D array
-        binned movie, size [nbins x Ly x Lx]
-
-    max_proj : 2D array
-        max projection image (mov.max(axis=0)) size [Ly x Lx]
-
-    """
-    batch_size = min(ops['nframes'] - len(bad_frames), 500) // bin_size * bin_size
-
+def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
+    """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
-        mov = []
+        batches = []
+        batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
         for indices, data in f.iter_frames(batch_size=batch_size):
 
             # crop frames
@@ -46,10 +28,9 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, ops, x_range: Tupl
             # calculate rolling mean.
             if data.shape[0] >= batch_size:
                 dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1).astype(np.float32)
-                mov.append(dbin)
+                batches.append(dbin)
 
-    mov = np.vstack(mov)
-
+    mov = np.vstack(batches)
     return mov
 
 

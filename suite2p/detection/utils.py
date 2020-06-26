@@ -75,20 +75,11 @@ def get_sdmov(mov, ops):
         adds 'overlap'
 
     """
-    ix = 0
-
-    if len(mov.shape)>2:
-        nbins,Ly, Lx = mov.shape
-        npix = (Ly , Lx)
-    else:
-        nbins, npix = mov.shape
+    nbins, Ly, Lx = mov.shape
     batch_size = min(ops['batch_size'], nbins)
-    sdmov = np.zeros(npix, 'float32')
-    while 1:
-        if ix>=nbins:
-            break
-        sdmov += (np.diff(mov[ix:ix+batch_size,:, :], axis = 0)**2).sum(axis=0)
-        ix = ix + batch_size
+    sdmov = np.zeros((Ly, Lx), 'float32')
+    for ix in range(0, nbins, batch_size):
+        sdmov += (np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0)
     sdmov = np.maximum(1e-10, (sdmov/nbins)**0.5)
     return sdmov
 

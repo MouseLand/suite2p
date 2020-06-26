@@ -34,17 +34,11 @@ def bin_movie(Ly: int, Lx: int, ops):
     print('Binning movie in chunks of length %2.2d' % bin_size)
 
     nimgbatch = min(nframes, 500) // bin_size * bin_size
-    nbytesread = Ly * Lx * nimgbatch * 2
     mov = np.zeros((ops['nbinned'], ops['yrange'][-1] - ops['yrange'][0], ops['xrange'][-1] - ops['xrange'][0]), np.float32)
     ix, idata = 0, 0
     # load and bin data
-    with open(ops['reg_file'], 'rb') as reg_file:
-        while True:
-            buff = reg_file.read(nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            if data.size == 0:
-                break
-            data = data.reshape(-1, Ly, Lx)
+    with BinaryFile(Ly=Ly, Lx=Lx, read_file=ops['reg_file']) as f:
+        for indices, data in f.iter_frames(batch_size=nimgbatch):
             dinds = idata + np.arange(0, data.shape[0], 1, int)
             idata += data.shape[0]
 

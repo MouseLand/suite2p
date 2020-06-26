@@ -79,8 +79,8 @@ def get_sdmov(mov, ops):
     batch_size = min(ops['batch_size'], nbins)
     sdmov = np.zeros((Ly, Lx), 'float32')
     for ix in range(0, nbins, batch_size):
-        sdmov += (np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0)
-    sdmov = np.maximum(1e-10, (sdmov/nbins)**0.5)
+        sdmov += ((np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0) / nbins) ** 0.5
+    sdmov = np.maximum(1e-10, sdmov)
     return sdmov
 
 

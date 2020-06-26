@@ -382,10 +382,12 @@ def sparsery(ops):
 
     """
     t0 = time.time()
+    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
     rez = utils.bin_movie(
         Ly=ops['Ly'],
         Lx=ops['Lx'],
-        bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+        bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         ops=ops,
     )

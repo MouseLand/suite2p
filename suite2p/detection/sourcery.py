@@ -11,10 +11,12 @@ from . import utils
 
 def getSVDdata(ops):
     t0 = time.time()
+    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
     mov = utils.bin_movie(
         Ly=ops['Ly'],
         Lx=ops['Lx'],
-        bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+        bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         ops=ops,
     )
@@ -50,10 +52,12 @@ def getSVDdata(ops):
 
 def getSVDproj(ops, u):
     t0 = time.time()
+    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
     mov = utils.bin_movie(
         Ly=ops['Ly'],
         Lx=ops['Lx'],
-        bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+        bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
         ops=ops,
     )

@@ -14,6 +14,7 @@ def getSVDdata(ops):
     bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     print('Binning movie in chunks of length %2.2d' % bin_size)
     mov = utils.bin_movie(
+        filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
         bin_size=bin_size,
@@ -57,6 +58,7 @@ def getSVDproj(ops, u):
     bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     print('Binning movie in chunks of length %2.2d' % bin_size)
     mov = utils.bin_movie(
+        filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
         bin_size=bin_size,

@@ -10,7 +10,9 @@ from . import utils
 
 
 def getSVDdata(ops):
+    t0 = time.time()
     mov, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
     ops['max_proj'] = max_proj
@@ -38,7 +40,9 @@ def getSVDdata(ops):
     return ops, U, sdmov, u
 
 def getSVDproj(ops, u):
+    t0 = time.time()
     mov, _ = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
 

@@ -27,36 +27,29 @@ def bin_movie(Ly: int, Lx: int, ops):
         max projection image (mov.max(axis=0)) size [Ly x Lx]
 
     """
-    t0 = time.time()
-    nframes = ops['nframes'] - ops['badframes'].sum() if 'badframes' in ops else ops['nframes']
+    nbadframes = ops['badframes'].sum() if 'badframes' in ops else 0
+    nframes = ops['nframes'] - nbadframes
     bin_size = int(max(1, nframes // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
-    ops['nbinned'] = nframes // bin_size
     print('Binning movie in chunks of length %2.2d' % bin_size)
 
     nimgbatch = min(nframes, 500) // bin_size * bin_size
-    mov = np.zeros((ops['nbinned'], ops['yrange'][-1] - ops['yrange'][0], ops['xrange'][-1] - ops['xrange'][0]), np.float32)
-    ix = 0
+    mov = []
     # load and bin data
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=ops['reg_file']) as f:
         for indices, data in f.iter_frames(batch_size=nimgbatch):
 
             data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
-            if indices[-1] >= ops['nframes']:
-                break
-            if 'badframes' in ops and np.sum(ops['badframes'][indices]) > .5:
+            if 'badframes' in ops and np.sum(ops['badframes'][indices]) > .5:  # todo: badframes only get rejected if there are a lot of them, else are kept.
                 data = data[~ops['badframes'][indices], :, :]
 
-            nimgd = data.shape[0]
-            if nimgd < nimgbatch:
-                data = data[:-(data.shape[0] % nimgbatch), :, :]
-            dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1)
-            mov[ix:ix+dbin.shape[0], :, :] = dbin
-            ix += dbin.shape[0]
+            if data.shape[0] >= nimgbatch:
+                dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1).astype(np.float32)
+                mov.append(dbin)
 
-    mov = mov[:ix,:,:]
+    mov = np.vstack(mov)
     max_proj = mov.max(axis=0)
-    print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))
+    ops['nbinned'] = mov.shape[0]
 
     return mov, max_proj
 
@@ -72,7 +65,7 @@ def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
 def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """Returns a high-pass-filtered copy of the 3D array 'mov' using a rolling mean kernel over time."""
     mov = mov.copy()
-    for i in np.arange(0, mov.shape[0], width):
+    for i in range(0, mov.shape[0], width):
         mov[i:i + width, :, :] -= mov[i:i + width, :, :].mean(axis=0)
     return mov
 

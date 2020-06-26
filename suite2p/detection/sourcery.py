@@ -18,6 +18,8 @@ def getSVDdata(ops):
         Lx=ops['Lx'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        y_range=ops['yrange'],
+        x_range=ops['xrange'],
         ops=ops,
     )
     ops['nbinned'] = mov.shape[0]
@@ -59,6 +61,8 @@ def getSVDproj(ops, u):
         Lx=ops['Lx'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        y_range=ops['yrange'],
+        x_range=ops['xrange'],
         ops=ops,
     )
 

@@ -389,6 +389,8 @@ def sparsery(ops):
         Lx=ops['Lx'],
         bin_size=bin_size,
         bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        y_range=ops['yrange'],
+        x_range=ops['xrange'],
         ops=ops,
     )
 

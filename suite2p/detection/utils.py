@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter
 from ..io.binary import BinaryFile
 
 
-def bin_movie(Ly: int, Lx: int, bin_size: int, ops, bad_frames: Sequence[int] = ()):
+def bin_movie(Ly: int, Lx: int, bin_size: int, ops, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
     """ bin registered frames in 'reg_file' for ROI detection
 
     Parameters
@@ -33,7 +33,8 @@ def bin_movie(Ly: int, Lx: int, bin_size: int, ops, bad_frames: Sequence[int] = 
         mov = []
         for indices, data in f.iter_frames(batch_size=batch_size):
 
-            data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            if len(x_range) and len(y_range):
+                data = data[:, slice(*y_range), slice(*x_range)]
 
             if len(bad_frames) > 0:
                 good_frames = np.setdiff1d(bad_frames, indices, assume_unique=True)

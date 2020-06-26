@@ -3,6 +3,10 @@ from typing import Optional, Tuple, Sequence
 import numpy as np
 
 
+def from_slice(s: slice) -> np.ndarray:
+    return np.arange(s.start, s.stop, s.step)
+
+
 class BinaryFile:
 
     def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
@@ -37,6 +41,15 @@ class BinaryFile:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def __getitem__(self, *items):
+        frames, *crop = items
+        if isinstance(frames, int):
+            return self.ix(indices=[frames])
+        elif isinstance(frames, slice):
+            return self.ix(indices=from_slice(frames))
+        else:
+            return self.ix(indices=frames)
 
     def iter_frames(self, batch_size=1, dtype=np.float32):
         while True:

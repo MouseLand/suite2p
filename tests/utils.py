@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 
-r_tol, a_tol = 1e-6, 5e-2
+r_tol, a_tol = 1e-4, 5e-2
 
 
 def get_plane_dir(op, plane):

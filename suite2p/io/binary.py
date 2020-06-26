@@ -57,10 +57,11 @@ class BinaryFile:
 
     def iter_frames(self, batch_size=1, dtype=np.float32):
         while True:
-            data = self.read(batch_size=batch_size, dtype=dtype)
-            if data is None:
+            results = self.read(batch_size=batch_size, dtype=dtype)
+            if results is None:
                 break
-            yield data
+            indices, data = results
+            yield indices, data
 
     def ix(self, indices: Sequence[int]):
         frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)

@@ -5,6 +5,8 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
 
+from ..io.binary import BinaryFile
+
 
 def bin_movie(Ly: int, Lx: int, ops):
     """ bin registered frames in 'reg_file' for ROI detection
@@ -46,20 +48,20 @@ def bin_movie(Ly: int, Lx: int, ops):
             dinds = idata + np.arange(0, data.shape[0], 1, int)
             idata += data.shape[0]
 
+            data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+
             if dinds[-1] >= ops['nframes']:
                 break
             if 'badframes' in ops and np.sum(ops['badframes'][dinds]) > .5:
                 data = data[~ops['badframes'][dinds], :, :]
+
             nimgd = data.shape[0]
             if nimgd < nimgbatch:
-                nmax = (nimgd // bin_size) * bin_size
-                data = data[:nmax, :, :]
-            dbin = np.reshape(data, (-1, bin_size, Ly, Lx))
-            # crop into valid area
-            mov[ix:ix+dbin.shape[0], :, :] = dbin[:, :,
-                                                ops['yrange'][0]:ops['yrange'][-1],
-                                                ops['xrange'][0]:ops['xrange'][-1]].mean(axis=1)
+                data = data[:-(data.shape[0] % nimgbatch), :, :]
+            dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1)
+            mov[ix:ix+dbin.shape[0], :, :] = dbin
             ix += dbin.shape[0]
+
     mov = mov[:ix,:,:]
     max_proj = mov.max(axis=0)
     print('Binned movie [%d,%d,%d], %0.2f sec.'%(mov.shape[0], mov.shape[1], mov.shape[2], time.time()-t0))

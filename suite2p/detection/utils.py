@@ -35,19 +35,17 @@ def bin_movie(Ly: int, Lx: int, ops):
 
     nimgbatch = min(nframes, 500) // bin_size * bin_size
     mov = np.zeros((ops['nbinned'], ops['yrange'][-1] - ops['yrange'][0], ops['xrange'][-1] - ops['xrange'][0]), np.float32)
-    ix, idata = 0, 0
+    ix = 0
     # load and bin data
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=ops['reg_file']) as f:
         for indices, data in f.iter_frames(batch_size=nimgbatch):
-            dinds = idata + np.arange(0, data.shape[0], 1, int)
-            idata += data.shape[0]
 
             data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
-            if dinds[-1] >= ops['nframes']:
+            if indices[-1] >= ops['nframes']:
                 break
-            if 'badframes' in ops and np.sum(ops['badframes'][dinds]) > .5:
-                data = data[~ops['badframes'][dinds], :, :]
+            if 'badframes' in ops and np.sum(ops['badframes'][indices]) > .5:
+                data = data[~ops['badframes'][indices], :, :]
 
             nimgd = data.shape[0]
             if nimgd < nimgbatch:

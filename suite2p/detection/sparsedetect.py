@@ -382,7 +382,10 @@ def sparsery(ops):
 
     """
     t0 = time.time()
-    rez, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'], ops=ops)
+    rez, max_proj = utils.bin_movie(Ly=ops['Ly'], Lx=ops['Lx'],
+                                    bin_size=int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs']))),
+                                    ops=ops,
+                                    )
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (rez.shape[0], rez.shape[1], rez.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     rez = high_pass_filter(rez, int(ops['high_pass']))

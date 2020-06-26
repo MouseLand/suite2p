@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter
 from ..io.binary import BinaryFile
 
 
-def bin_movie(Ly: int, Lx: int, ops):
+def bin_movie(Ly: int, Lx: int, bin_size: int, ops):
     """ bin registered frames in 'reg_file' for ROI detection
 
     Parameters
@@ -29,21 +29,21 @@ def bin_movie(Ly: int, Lx: int, ops):
     """
     nbadframes = ops['badframes'].sum() if 'badframes' in ops else 0
     nframes = ops['nframes'] - nbadframes
-    bin_size = int(max(1, nframes // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     print('Binning movie in chunks of length %2.2d' % bin_size)
 
-    nimgbatch = min(nframes, 500) // bin_size * bin_size
+    batch_size = min(nframes, 500) // bin_size * bin_size
     mov = []
+
     # load and bin data
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=ops['reg_file']) as f:
-        for indices, data in f.iter_frames(batch_size=nimgbatch):
+        for indices, data in f.iter_frames(batch_size=batch_size):
 
             data = data[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
 
             if 'badframes' in ops and np.sum(ops['badframes'][indices]) > .5:  # todo: badframes only get rejected if there are a lot of them, else are kept.
                 data = data[~ops['badframes'][indices], :, :]
 
-            if data.shape[0] >= nimgbatch:
+            if data.shape[0] >= batch_size:
                 dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1).astype(np.float32)
                 mov.append(dbin)
 

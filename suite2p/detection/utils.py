@@ -33,14 +33,17 @@ def bin_movie(Ly: int, Lx: int, bin_size: int, ops, x_range: Tuple[int, int] = (
         mov = []
         for indices, data in f.iter_frames(batch_size=batch_size):
 
+            # crop frames
             if len(x_range) and len(y_range):
                 data = data[:, slice(*y_range), slice(*x_range)]
 
+            # remove bad frames
             if len(bad_frames) > 0:
                 good_frames = np.setdiff1d(bad_frames, indices, assume_unique=True)
                 if len(good_frames) / len(indices) > 0.5:  # todo: badframes only get rejected if there are a lot of them, else are kept.
                     data = data[good_frames, :, :]
 
+            # calculate rolling mean.
             if data.shape[0] >= batch_size:
                 dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1).astype(np.float32)
                 mov.append(dbin)

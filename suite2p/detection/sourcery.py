@@ -37,7 +37,7 @@ def getSVDdata(ops):
         mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
 
     # compute noise variance across frames
-    sdmov = utils.get_sdmov(mov, ops)
+    sdmov = utils.standard_deviation_over_time(mov, batch_size=ops['batch_size'])
     mov /= sdmov
     mov = np.reshape(mov, (-1,Lyc*Lxc))
     # compute covariance of binned frames
@@ -80,7 +80,7 @@ def getSVDproj(ops, u):
             mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
     if 1:
         #sdmov = np.ones((Lyc*Lxc,), 'float32')
-        sdmov = utils.get_sdmov(mov, ops)
+        sdmov = utils.standard_deviation_over_time(mov, batch_size=ops['batch_size'])
         mov/=sdmov
         mov = np.reshape(mov, (-1,Lyc*Lxc))
 

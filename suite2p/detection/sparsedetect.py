@@ -1,6 +1,8 @@
 import time
 
 import numpy as np
+from numpy.linalg import norm
+
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import maximum_filter
 from scipy.ndimage.filters import uniform_filter
@@ -83,7 +85,7 @@ def add_square(yi,xi,lx,Ly,Lx):
 
     """
     lhf = int((lx-1)/2)
-    ipix = np.arange(-lhf,-lhf+lx)+ np.zeros(lx, 'int32')[:, np.newaxis]
+    ipix = np.tile(np.arange(-lhf, -lhf + lx, dtype=np.int32), reps=(lx, 1))
     x0 = xi + ipix
     y0 = yi + ipix.T
     mask  = np.ones((lx,lx), 'float32')
@@ -91,7 +93,7 @@ def add_square(yi,xi,lx,Ly,Lx):
     x0 = x0[ix]
     y0 = y0[ix]
     mask = mask[ix]
-    mask = mask / (mask**2).sum()**.5
+    mask = mask / norm(mask)
     return y0.flatten(), x0.flatten(), mask.flatten()
 
 def iter_extend(ypix, xpix, rez, Lyc,Lxc):
@@ -292,7 +294,7 @@ def sparsery(ops):
     # cropped size
     ops['Lyc'] = Lyc
     ops['Lxc'] = Lxc
-    sdmov = utils.get_sdmov(rez, ops)
+    sdmov = utils.standard_deviation_over_time(rez, batch_size=ops['batch_size'])
     rez /= sdmov
     
     # subtract low-pass filtered version of binned movie

@@ -68,37 +68,14 @@ def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     return mov
 
 
-def get_sdmov(mov, ops):
-    """ computes standard deviation of difference between pixels across time
-
-    difference between frames in binned movie computed then stddev
-    helps to normalize image across pixels
-
-    Parameters
-    ----------------
-
-    mov : 3D array
-        size [nbins x Ly x Lx]
-
-    ops : dictionary
-        'batch_size'
-
-    stat : array of dicts
-        'ypix', 'xpix'
-
-    Returns
-    ----------------
-
-    stat : array of dicts
-        adds 'overlap'
-
-    """
+def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray:
+    """Returns standard deviation of difference between pixels across time, computed in batches of batch_size."""
     nbins, Ly, Lx = mov.shape
-    batch_size = min(ops['batch_size'], nbins)
+    batch_size = min(batch_size, nbins)
     sdmov = np.zeros((Ly, Lx), 'float32')
     for ix in range(0, nbins, batch_size):
-        sdmov += ((np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0) / nbins) ** 0.5
-    sdmov = np.maximum(1e-10, sdmov)
+        sdmov += ((np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0))
+    sdmov = np.maximum(1e-10, np.sqrt(sdmov / nbins))
     return sdmov
 
 

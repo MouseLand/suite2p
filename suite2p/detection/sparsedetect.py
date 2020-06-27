@@ -68,48 +68,25 @@ def square_conv2(mov,lx):
         movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
     return movt
 
-def downsample(mov, flag=True):
-    """ downsample in pixels binned movie
-    
-    Parameters
-    ----------------
+def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
+    """Returns a pixel-downsampled movie from 'mov', tapering the edges of 'taper_edge' is True."""
+    n_frames, Ly, Lx = mov.shape
 
-    mov : 3D array
-        binned movie, size [nbinned x Lyc x Lxc]
-
-    flag : bool (optional, default True)
-        whether or not to edge taper
-
-    Returns
-    ----------------
-
-    mov2 : 2D array
-        downsampled + binned movie, size [nbinned x Lyp x Lxp]
-
-    """
-    if flag:
-        nu = 2
-    else:
-        nu = 1
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nbinned, Ly, Lx = mov.shape
+    nu = 2 if taper_edge else 1
 
     # bin along Y
-    movd = np.zeros((nbinned,int(np.ceil(Ly/2)),Lx), 'float32')
     Ly0 = 2*int(Ly/2)
-    for t in range(nbinned):
-        movd[t,:int(Ly0/2),:] = (mov[t,0:Ly0:2,:] + mov[t,1:Ly0:2,:])/2
-    if Ly%2==1:
-        movd[:,-1,:] = mov[:,-1,:]/nu
+    movd = (mov[:, 0:Ly0:2, :] + mov[:, 1:Ly0:2, :]) / 2
+
+    if Ly % 2 == 1:
+        movd[:, -1, :] /= nu
 
     # bin along X
-    mov2 = np.zeros((nbinned,int(np.ceil(Ly/2)),int(np.ceil(Lx/2))), 'float32')
     Lx0 = 2*int(Lx/2)
-    for t in range(nbinned):
-        mov2[t,:,:int(Lx0/2)] = (movd[t,:,0:Lx0:2] + movd[t,:,1:Lx0:2])/2
-    if Lx%2==1:
-        mov2[:,:,-1] = movd[:,:,-1]/nu
+    mov2 = (movd[:, :, 0:Lx0:2] + movd[:, :, 1:Lx0:2]) / 2
+    if Lx % 2 == 1:
+        mov2[:, :, -1] /= nu
+
     return mov2
 
 

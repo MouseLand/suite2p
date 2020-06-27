@@ -1,11 +1,34 @@
-import time
-from typing import Tuple, NamedTuple, Sequence
+from typing import Tuple, NamedTuple, Sequence, Optional
 
 import numpy as np
 from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
 
 from ..io.binary import BinaryFile
+
+def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
+    """Returns an array with the mean of each time bin (of size 'bin_size')."""
+    n_frames, Ly, Lx = mov.shape
+    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
+
+
+def reject_frames(mov: np.ndarray, bad_indices: Sequence[int], mov_indices: Optional[Sequence[int]] = None, reject_threshold: float = 0.):
+    """
+    Returns only the frames of 'mov' not in 'bad_indices', if the percentage of bad_indices is higher than reject_threshold.
+    Uses the indices of 'mov' by default, but can use alternate indices in 'mov_indices' to match with bad_indices.
+    """
+    n_frames, Ly, Lx = mov.shape
+    indices = mov_indices if mov_indices is not None else np.arange(n_frames)
+    if len(indices) != n_frames:
+        raise TypeError("'mov_indices' must be the same length as the movie, in order to match them up properly.")
+    good_frames = np.setdiff1d(bad_indices, indices, assume_unique=True)
+    good_mov = mov[good_frames, :, :] if len(good_frames) / len(indices) > reject_threshold else mov
+    return good_mov
+
+
+def crop(mov: np.ndarray, y_range: Tuple[int, int], x_range: Tuple[int, int]) -> np.ndarray:
+    """Returns cropped frames of 'mov' encompassed by y_range and x_range."""
+    return mov[:, slice(*y_range), slice(*x_range)]
 
 
 def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
@@ -15,19 +38,14 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_r
         batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
         for indices, data in f.iter_frames(batch_size=batch_size):
 
-            # crop frames
             if len(x_range) and len(y_range):
-                data = data[:, slice(*y_range), slice(*x_range)]
+                data = crop(mov=data, y_range=y_range, x_range=x_range)
 
-            # remove bad frames
             if len(bad_frames) > 0:
-                good_frames = np.setdiff1d(bad_frames, indices, assume_unique=True)
-                if len(good_frames) / len(indices) > 0.5:  # todo: badframes only get rejected if there are a lot of them, else are kept.
-                    data = data[good_frames, :, :]
+                data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
 
-            # calculate rolling mean.
             if data.shape[0] >= batch_size:  # todo: drops the end of the movie
-                dbin = data.reshape(-1, bin_size, data.shape[1], data.shape[2]).mean(axis=1)
+                dbin = binned_mean(mov=data, bin_size=bin_size)
                 batches.append(dbin)
 
     mov = np.vstack(batches)

@@ -17,32 +17,12 @@ def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
         frame -= uniform_filter(frame, size=[filter_size, filter_size], mode='constant') / c1
 
 
-def square_conv2(mov,lx):
-    """ convolve in pixels binned movie
-    
-    Parameters
-    ----------------
-
-    mov : 3D array
-        binned movie, size [nbinned x Lyc x Lxc]
-
-    lx : int
-        filter size
-
-    Returns
-    ----------------
-
-    movt : 3D array
-        convolved + binned movie, size [nbinned x Lyc x Lxc]
-
-    """
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
+def square_conv2(mov: np.ndarray, filter_size: int) -> np.ndarray:
+    """Returns movie convolved by uniform kernel with width 'filter_size'."""
     nbinned, Ly, Lx = mov.shape
-
     movt = np.zeros((nbinned, Ly, Lx), 'float32')
-    for t in range(nbinned):
-        movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
+    for frame, framet in zip(mov, movt):
+        framet[:] = filter_size * uniform_filter(frame, size=[filter_size, filter_size], mode='constant')
     return movt
 
 

@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+from numpy.linalg import norm
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import maximum_filter
 from scipy.ndimage.filters import uniform_filter
@@ -111,35 +112,11 @@ def downsample(mov, flag=True):
         mov2[:,:,-1] = movd[:,:,-1]/nu
     return mov2
 
-def threshold_reduce(movu, Th2):
-    """ thresholded stddev of spatially downsampled binned movie
-    
-    is function faster without loop?
 
-    Parameters
-    ----------------
+def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
+    """Returns time-normed movie values, thresholded by 'intensity_threshold'."""
+    return norm(np.where(mov > intensity_threshold, mov, 0), axis=0)
 
-    movu : 3D array
-        downsampled binned movie, size [nbinned x Lyp x Lxp]
-
-    Th2 : float
-        threshold on pixel intensity
-
-    Returns
-    ----------------
-
-    Vt : 2D array
-        stddev of pixels across time above threshold Th2
-
-    """
-    nbinned, Lyp, Lxp = movu.shape
-    #Vt = np.zeros((1,Lyp,Lxp), 'float32')
-    Vt = (((movu>Th2) * movu)**2).sum(axis=0)**0.5
-   
-    #for t in range(nbinned):
-    #    Vt += movu[t]**2 * (movu[t]>Th2)
-    #Vt = Vt**.5
-    return Vt
 
 def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
     # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales

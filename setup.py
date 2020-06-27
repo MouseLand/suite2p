@@ -39,6 +39,7 @@ setuptools.setup(
         'sphinx>=3.0',
         'sphinxcontrib-apidoc',
         'sphinx_rtd_theme',
+        'sphinx-prompt'
       ],
       # Note: Available in pypi, but cleaner to install as pyqt from conda.
       "gui": [

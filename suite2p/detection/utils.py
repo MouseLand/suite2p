@@ -158,14 +158,20 @@ def distance_kernel(radius: int) -> np.ndarray:
 def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
     """Returns a pixel-downsampled movie from 'mov', tapering the edges of 'taper_edge' is True."""
     n_frames, Ly, Lx = mov.shape
-    movd = (mov[:, 0:-1:2, 0:-1:2] + mov[:, 0:-1:2, 1::2] + mov[:, 1::2, 0:-1:2] + mov[:, 1::2, 1::2]) / 4
 
-    if taper_edge and Ly % 2:
-        movd[:, -1, :] /= 2
-    if taper_edge and Lx % 2:
-        movd[:, :, -1] /= 2
+    # bin along Y
+    movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), 'float32')
+    movd[:, :Ly//2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]], axis=0)
+    if Ly % 2 == 1:
+        movd[:, -1, :] = mov[:, -1, :] / 2 if taper_edge else mov[:, -1, :]
 
-    return movd
+    # bin along X
+    mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))), 'float32')
+    mov2[:, :, :Lx//2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]], axis=0)
+    if Lx % 2 == 1:
+        mov2[:, :, -1] = movd[:, :, -1] / 2 if taper_edge else movd[:, :, -1]
+
+    return mov2
 
 
 def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:

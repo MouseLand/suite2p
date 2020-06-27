@@ -26,8 +26,8 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_r
                     data = data[good_frames, :, :]
 
             # calculate rolling mean.
-            if data.shape[0] >= batch_size:
-                dbin = np.reshape(data, (-1, bin_size, data.shape[1], data.shape[2])).mean(axis=1).astype(np.float32)
+            if data.shape[0] >= batch_size:  # todo: drops the end of the movie
+                dbin = data.reshape(-1, bin_size, data.shape[1], data.shape[2]).mean(axis=1)
                 batches.append(dbin)
 
     mov = np.vstack(batches)
@@ -43,7 +43,7 @@ def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
 
 
 def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
-    """Returns a high-pass-filtered copy of the 3D array 'mov' using a rolling mean kernel over time."""
+    """Returns a high-pass-filtered copy of the 3D array 'mov' using a non-overlapping rolling mean kernel over time."""
     mov = mov.copy()
     for i in range(0, mov.shape[0], width):
         mov[i:i + width, :, :] -= mov[i:i + width, :, :].mean(axis=0)

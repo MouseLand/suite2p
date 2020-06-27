@@ -10,19 +10,20 @@ from . import utils
 
 
 def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
-    """subtracts low-pass filtered version of movie in-place to help ignore neuropil."""
+    """Returns movie subtracted by a low-pass filtered version of itself to help ignore neuropil."""
     nbinned, Ly, Lx = mov.shape
-    c1 = uniform_filter(np.ones((Ly, Lx)), size=[filter_size, filter_size], mode='constant')
-    for frame in mov:
-        frame -= uniform_filter(frame, size=[filter_size, filter_size], mode='constant') / c1
+    c1 = uniform_filter(np.ones((Ly, Lx)), size=filter_size, mode='constant')
+    movt = np.zeros_like(mov)
+    for frame, framet in zip(mov, movt):
+        framet[:] = frame - (uniform_filter(frame, size=filter_size, mode='constant') / c1)
+    return movt
 
 
 def square_conv2(mov: np.ndarray, filter_size: int) -> np.ndarray:
     """Returns movie convolved by uniform kernel with width 'filter_size'."""
-    nbinned, Ly, Lx = mov.shape
-    movt = np.zeros((nbinned, Ly, Lx), 'float32')
+    movt = np.zeros_like(mov, dtype=np.float32)
     for frame, framet in zip(mov, movt):
-        framet[:] = filter_size * uniform_filter(frame, size=[filter_size, filter_size], mode='constant')
+        framet[:] = filter_size * uniform_filter(frame, size=filter_size, mode='constant')
     return movt
 
 
@@ -295,7 +296,7 @@ def sparsery(ops):
     rez /= sdmov
     
     # subtract low-pass filtered version of binned movie
-    neuropil_subtraction(rez, ops['spatial_hp_detect'])
+    rez = neuropil_subtraction(rez, ops['spatial_hp_detect'])
 
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]

@@ -33,6 +33,7 @@ setuptools.setup(
     ],
     tests_require=[
       'pytest',
+      'pynwb',
     ],
     extras_require={
       "docs": [

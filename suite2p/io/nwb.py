@@ -5,7 +5,6 @@ import numpy as np
 import scipy
 
 from .. import detection
-from .. import extraction
 from .. import run_s2p
 
 try:
@@ -20,13 +19,13 @@ try:
     from pynwb.ophys import Fluorescence
     from pynwb import NWBHDF5IO
     NWB = True
-except:
+except ModuleNotFoundError:
     NWB = False
 
 
 def read_nwb(fpath):
     with NWBHDF5IO(fpath, 'r') as fio:
-        nwbfile = fio.read_nwb()
+        nwbfile = fio.read()
         
         # ROIs
         try:
@@ -100,7 +99,6 @@ def read_nwb(fpath):
             LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
             LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
             meanImg = np.zeros((LY, LX))
-            #meanImgE = np.zeros((LY, LX))
             max_proj = np.zeros((LY, LX))
             if ops['nchannels']>1:
                 meanImg_chan2 = np.zeros((LY, LX))
@@ -110,7 +108,6 @@ def read_nwb(fpath):
                 xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
                 yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
                 meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
-                #meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
                 Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
                 max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
                 if ops['nchannels']>1:
@@ -144,7 +141,7 @@ def save_nwb(ops1):
         ### INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description='suite2p_proc',
-            identifier=ops['data_path'][0],
+            identifier=str(ops['data_path'][0]),
             session_start_time=(ops['date_proc'] if 'date_proc' in ops 
                                 else datetime.datetime.now())
         )
@@ -268,7 +265,6 @@ def save_nwb(ops1):
                     images.add_image(GrayscaleImage(name=bstr, data=img))
                 
             ophys_module.add(images)
-
 
         with NWBHDF5IO(os.path.join(ops['save_path0'], 'suite2p', 'ophys.nwb'), 'w') as fio:
             fio.write(nwbfile)

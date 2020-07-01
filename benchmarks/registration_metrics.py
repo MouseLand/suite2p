@@ -51,8 +51,13 @@ def run_pc_reg_metrics(inputfile, outputpath, nchannels, nplanes, one_preg,
     result_ops = suite2p.run_s2p(default_ops)
     for plane in range(nplanes):
         dx = result_ops[plane]['regDX']
-        reg_pc =result_ops[plane]['reg_pc']
+        reg_pc =result_ops[plane]['regPC']
         tpc = result_ops[plane]['tPC']
+        bottom_pc = reg_pc[0]
+        top_pc = reg_pc[1]
+        click.echo(bottom_pc.shape)
+        click.echo(top_pc.shape)
+
 
 if __name__ == "__main__":
     run_pc_reg_metrics()

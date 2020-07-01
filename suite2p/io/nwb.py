@@ -48,7 +48,7 @@ def read_nwb(fpath):
             d0 = ops['diameter']
             if isinstance(d0, int):
                 d0 = [d0, d0]
-        stat = roi_stats(d0, stat)
+        stat = roi_stats(*d0, stat)
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:

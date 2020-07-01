@@ -4,7 +4,7 @@ import os
 import numpy as np
 import scipy
 
-from .. import detection
+from ..detection import roi_stats
 from .. import run_s2p
 
 try:
@@ -42,7 +42,13 @@ def read_nwb(fpath):
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0,-2])
         ops = run_s2p.default_ops()
-        stat = detection.roi_stats(ops, stat)
+        if 'aspect' in ops:
+            d0 = np.array([int(ops['aspect'] * 10), 10])
+        else:
+            d0 = ops['diameter']
+            if isinstance(d0, int):
+                d0 = [d0, d0]
+        stat = roi_stats(d0, stat)
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:

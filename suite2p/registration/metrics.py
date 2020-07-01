@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 
 import numpy as np
+from numpy.linalg import norm
 from scipy.signal import convolve2d
 
 try:
@@ -40,8 +41,7 @@ def local_corr(mov, batch_size, num_cores):
 
     filt = np.ones((3,3),np.float32)
     filt[1,1] = 0
-    fnorm = ((filt**2).sum())**0.5
-    filt /= fnorm
+    filt /= norm(filt)
     ix=0
     k=0
     filtnorm = convolve2d(np.ones((Ly,Lx)),filt,'same')
@@ -116,7 +116,7 @@ def optic_flow(mov, tmpl, nflows):
             tmpl, mov[n,:,:], None, pyr_scale, levels, winsize, iterations, poly_n, poly_sigma, flags)
 
         flows[n,:,:,:] = flow
-        norms[n] = ((flow**2).sum()) ** 0.5
+        norms[n] = norm(flow)
 
     return flows, norms
 

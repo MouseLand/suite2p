@@ -125,7 +125,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         t0 = time.time()
 
         with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
-
             frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]
 
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:

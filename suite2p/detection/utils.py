@@ -153,3 +153,21 @@ def distance_kernel(radius: int) -> np.ndarray:
     d = np.arange(-radius, radius + 1)
     dists_2d = norm(np.meshgrid(d, d), axis=0)
     return dists_2d
+
+
+def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
+    """Returns a pixel-downsampled movie from 'mov', tapering the edges of 'taper_edge' is True."""
+    n_frames, Ly, Lx = mov.shape
+    movd = (mov[:, 0:-1:2, 0:-1:2] + mov[:, 0:-1:2, 1::2] + mov[:, 1::2, 0:-1:2] + mov[:, 1::2, 1::2]) / 4
+
+    if taper_edge and Ly % 2:
+        movd[:, -1, :] /= 2
+    if taper_edge and Lx % 2:
+        movd[:, :, -1] /= 2
+
+    return movd
+
+
+def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
+    """Returns time-normed movie values, thresholded by 'intensity_threshold'."""
+    return norm(np.where(mov > intensity_threshold, mov, 0), axis=0)

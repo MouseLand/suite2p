@@ -1,7 +1,6 @@
 import time
 
 import numpy as np
-from numpy.linalg import norm
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import maximum_filter
 from scipy.ndimage.filters import uniform_filter
@@ -10,35 +9,13 @@ from scipy.stats import mode
 from . import utils
 
 
-def neuropil_subtraction(mov,lx):
-    """ subtract low-pass filtered version of binned movie
-
-    low-pass filtered version ~ neuropil
-    subtract to help ignore neuropil
-    
-    Parameters
-    ----------------
-
-    mov : 3D array
-        binned movie, size [nbins x Ly x Lx]
-
-    lx : int
-        size of filter
-
-    Returns
-    ----------------
-
-    mov : 3D array
-        binned movie with "neuropil" subtracted, size [nbins x Ly x Lx]
-
-    """
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
+def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
+    """subtracts low-pass filtered version of movie in-place to help ignore neuropil."""
     nbinned, Ly, Lx = mov.shape
-    c1 = uniform_filter(np.ones((Ly,Lx)), size=[lx, lx], mode = 'constant')
-    for j in range(nbinned):
-        mov[j] -= uniform_filter(mov[j], size=[lx, lx], mode = 'constant') / c1
-    return mov
+    c1 = uniform_filter(np.ones((Ly, Lx)), size=[filter_size, filter_size], mode='constant')
+    for frame in mov:
+        frame -= uniform_filter(frame, size=[filter_size, filter_size], mode='constant') / c1
+
 
 def square_conv2(mov,lx):
     """ convolve in pixels binned movie
@@ -68,29 +45,6 @@ def square_conv2(mov,lx):
         movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
     return movt
 
-def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
-    """Returns a pixel-downsampled movie from 'mov', tapering the edges of 'taper_edge' is True."""
-    n_frames, Ly, Lx = mov.shape
-
-    # bin along Y
-    movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), 'float32')
-    movd[:, :Ly//2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]], axis=0)
-    if Ly % 2 == 1:
-        movd[:, -1, :] = mov[:, -1, :] / 2 if taper_edge else mov[:, -1, :]
-
-    # bin along X
-    mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))), 'float32')
-    mov2[:, :, :Lx//2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]], axis=0)
-    if Lx % 2 == 1:
-        mov2[:, :, -1] = movd[:, :, -1] / 2 if taper_edge else movd[:, :, -1]
-
-    return mov2
-
-
-def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
-    """Returns time-normed movie values, thresholded by 'intensity_threshold'."""
-    return norm(np.where(mov > intensity_threshold, mov, 0), axis=0)
-
 
 def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
     # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales
@@ -108,6 +62,7 @@ def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
     for j in range(len(Lyp)):
         ys[j], xs[j], lms[j] = extend_mask(ys[j], xs[j], lms[j], Lyp[j], Lxp[j])
     return ys, xs, lms
+
 
 def add_square(yi,xi,lx,Ly,Lx):
     """ return square of pixels around peak with norm 1
@@ -360,7 +315,7 @@ def sparsery(ops):
     rez /= sdmov
     
     # subtract low-pass filtered version of binned movie
-    rez = neuropil_subtraction(rez, ops['spatial_hp_detect'])
+    neuropil_subtraction(rez, ops['spatial_hp_detect'])
 
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]
@@ -375,8 +330,8 @@ def sparsery(ops):
         # convolve
         movu.append(square_conv2(dmov, 3))
         # downsample
-        dmov = 2 * downsample(dmov)
-        gxy0 = downsample(gxy[j], False)
+        dmov = 2 * utils.downsample(dmov)
+        gxy0 = utils.downsample(gxy[j], False)
         gxy.append(gxy0)
         nbinned, Lyp[j], Lxp[j] = movu[j].shape
         
@@ -419,7 +374,7 @@ def sparsery(ops):
     ops['Vmap']  = []
     # get standard deviation for pixels for all values > Th2
     for j in range(len(movu)):
-        V0.append(threshold_reduce(movu[j], Th2))
+        V0.append(utils.threshold_reduce(movu[j], Th2))
         ops['Vmap'].append(V0[j].copy())
         movu[j] = np.reshape(movu[j], (movu[j].shape[0], -1))
 

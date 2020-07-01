@@ -3,6 +3,13 @@ from typing import Optional, Tuple, Sequence
 import numpy as np
 
 
+def from_slice(s: slice) -> np.ndarray:
+    if s.start == None and s.stop == None and s.step == None:
+        return None
+    else:
+        return np.arange(s.start, s.stop, s.step)
+
+
 class BinaryFile:
 
     def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
@@ -27,6 +34,18 @@ class BinaryFile:
     def nbytesread(self) -> int:
         return 2 * self.Ly * self.Lx
 
+    @property
+    def n_frames(self) -> int:
+        return int(self.nbytesread / self.Ly / self.Lx)
+
+    @property
+    def shape(self) -> Tuple[int, int, int]:
+        return self.n_frames, self.Ly, self.Lx
+
+    @property
+    def size(self) -> int:
+        return np.prod(self.shape)
+
     def close(self) -> None:
         self.read_file.close()
         if self.write_file:
@@ -38,12 +57,23 @@ class BinaryFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def __getitem__(self, *items):
+        frame_indices, *crop = items
+        if isinstance(frame_indices, int):
+            frames = self.ix(indices=[frame_indices])
+        elif isinstance(frame_indices, slice):
+            frames = self.ix(indices=from_slice(frame_indices))
+        else:
+            frames = self.ix(indices=frame_indices)
+        return frames[(slice(None),) + crop] if crop else frames
+
     def iter_frames(self, batch_size=1, dtype=np.float32):
         while True:
-            data = self.read(batch_size=batch_size, dtype=dtype)
-            if data is None:
+            results = self.read(batch_size=batch_size, dtype=dtype)
+            if results is None:
                 break
-            yield data
+            indices, data = results
+            yield indices, data
 
     def ix(self, indices: Sequence[int]):
         frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)

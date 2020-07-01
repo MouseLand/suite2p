@@ -1,6 +1,8 @@
 import time
 
 import numpy as np
+from numpy.linalg import norm
+
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import maximum_filter
 from scipy.ndimage.filters import uniform_filter
@@ -9,137 +11,23 @@ from scipy.stats import mode
 from . import utils
 
 
-def neuropil_subtraction(mov,lx):
-    """ subtract low-pass filtered version of binned movie
-
-    low-pass filtered version ~ neuropil
-    subtract to help ignore neuropil
-    
-    Parameters
-    ----------------
-
-    mov : 3D array
-        binned movie, size [nbins x Ly x Lx]
-
-    lx : int
-        size of filter
-
-    Returns
-    ----------------
-
-    mov : 3D array
-        binned movie with "neuropil" subtracted, size [nbins x Ly x Lx]
-
-    """
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
+def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
+    """Returns movie subtracted by a low-pass filtered version of itself to help ignore neuropil."""
     nbinned, Ly, Lx = mov.shape
-    c1 = uniform_filter(np.ones((Ly,Lx)), size=[lx, lx], mode = 'constant')
-    for j in range(nbinned):
-        mov[j] -= uniform_filter(mov[j], size=[lx, lx], mode = 'constant') / c1
-    return mov
-
-def square_conv2(mov,lx):
-    """ convolve in pixels binned movie
-    
-    Parameters
-    ----------------
-
-    mov : 3D array
-        binned movie, size [nbinned x Lyc x Lxc]
-
-    lx : int
-        filter size
-
-    Returns
-    ----------------
-
-    movt : 3D array
-        convolved + binned movie, size [nbinned x Lyc x Lxc]
-
-    """
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nbinned, Ly, Lx = mov.shape
-
-    movt = np.zeros((nbinned, Ly, Lx), 'float32')
-    for t in range(nbinned):
-        movt[t] = lx * uniform_filter(mov[t], size=[lx, lx], mode = 'constant')
+    c1 = uniform_filter(np.ones((Ly, Lx)), size=filter_size, mode='constant')
+    movt = np.zeros_like(mov)
+    for frame, framet in zip(mov, movt):
+        framet[:] = frame - (uniform_filter(frame, size=filter_size, mode='constant') / c1)
     return movt
 
-def downsample(mov, flag=True):
-    """ downsample in pixels binned movie
-    
-    Parameters
-    ----------------
 
-    mov : 3D array
-        binned movie, size [nbinned x Lyc x Lxc]
+def square_conv2(mov: np.ndarray, filter_size: int) -> np.ndarray:
+    """Returns movie convolved by uniform kernel with width 'filter_size'."""
+    movt = np.zeros_like(mov, dtype=np.float32)
+    for frame, framet in zip(mov, movt):
+        framet[:] = filter_size * uniform_filter(frame, size=filter_size, mode='constant')
+    return movt
 
-    flag : bool (optional, default True)
-        whether or not to edge taper
-
-    Returns
-    ----------------
-
-    mov2 : 2D array
-        downsampled + binned movie, size [nbinned x Lyp x Lxp]
-
-    """
-    if flag:
-        nu = 2
-    else:
-        nu = 1
-    if len(mov.shape)<3:
-        mov = mov[np.newaxis, :, :]
-    nbinned, Ly, Lx = mov.shape
-
-    # bin along Y
-    movd = np.zeros((nbinned,int(np.ceil(Ly/2)),Lx), 'float32')
-    Ly0 = 2*int(Ly/2)
-    for t in range(nbinned):
-        movd[t,:int(Ly0/2),:] = (mov[t,0:Ly0:2,:] + mov[t,1:Ly0:2,:])/2
-    if Ly%2==1:
-        movd[:,-1,:] = mov[:,-1,:]/nu
-
-    # bin along X
-    mov2 = np.zeros((nbinned,int(np.ceil(Ly/2)),int(np.ceil(Lx/2))), 'float32')
-    Lx0 = 2*int(Lx/2)
-    for t in range(nbinned):
-        mov2[t,:,:int(Lx0/2)] = (movd[t,:,0:Lx0:2] + movd[t,:,1:Lx0:2])/2
-    if Lx%2==1:
-        mov2[:,:,-1] = movd[:,:,-1]/nu
-    return mov2
-
-def threshold_reduce(movu, Th2):
-    """ thresholded stddev of spatially downsampled binned movie
-    
-    is function faster without loop?
-
-    Parameters
-    ----------------
-
-    movu : 3D array
-        downsampled binned movie, size [nbinned x Lyp x Lxp]
-
-    Th2 : float
-        threshold on pixel intensity
-
-    Returns
-    ----------------
-
-    Vt : 2D array
-        stddev of pixels across time above threshold Th2
-
-    """
-    nbinned, Lyp, Lxp = movu.shape
-    #Vt = np.zeros((1,Lyp,Lxp), 'float32')
-    Vt = (((movu>Th2) * movu)**2).sum(axis=0)**0.5
-   
-    #for t in range(nbinned):
-    #    Vt += movu[t]**2 * (movu[t]>Th2)
-    #Vt = Vt**.5
-    return Vt
 
 def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
     # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales
@@ -157,6 +45,7 @@ def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):
     for j in range(len(Lyp)):
         ys[j], xs[j], lms[j] = extend_mask(ys[j], xs[j], lms[j], Lyp[j], Lxp[j])
     return ys, xs, lms
+
 
 def add_square(yi,xi,lx,Ly,Lx):
     """ return square of pixels around peak with norm 1
@@ -196,7 +85,7 @@ def add_square(yi,xi,lx,Ly,Lx):
 
     """
     lhf = int((lx-1)/2)
-    ipix = np.arange(-lhf,-lhf+lx)+ np.zeros(lx, 'int32')[:, np.newaxis]
+    ipix = np.tile(np.arange(-lhf, -lhf + lx, dtype=np.int32), reps=(lx, 1))
     x0 = xi + ipix
     y0 = yi + ipix.T
     mask  = np.ones((lx,lx), 'float32')
@@ -204,7 +93,7 @@ def add_square(yi,xi,lx,Ly,Lx):
     x0 = x0[ix]
     y0 = y0[ix]
     mask = mask[ix]
-    mask = mask / (mask**2).sum()**.5
+    mask = mask / norm(mask)
     return y0.flatten(), x0.flatten(), mask.flatten()
 
 def iter_extend(ypix, xpix, rez, Lyc,Lxc):
@@ -381,13 +270,31 @@ def sparsery(ops):
         list of ROIs
 
     """
-    rez, max_proj = utils.bin_movie(ops)
-    ops['max_proj'] = max_proj
+    t0 = time.time()
+    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
+    rez = utils.bin_movie(
+        filename=ops['reg_file'],
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        n_frames=ops['nframes'],
+        bin_size=bin_size,
+        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        y_range=ops['yrange'],
+        x_range=ops['xrange'],
+    )
+
+    ops['nbinned'] = rez.shape[0]
+    print('Binned movie [%d,%d,%d], %0.2f sec.' % (rez.shape[0], rez.shape[1], rez.shape[2], time.time() - t0))
+    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    rez = high_pass_filter(rez, int(ops['high_pass']))
+
+    ops['max_proj'] = rez.max(axis=0)
     nbinned, Lyc, Lxc = rez.shape
     # cropped size
     ops['Lyc'] = Lyc
     ops['Lxc'] = Lxc
-    sdmov = utils.get_sdmov(rez, ops)
+    sdmov = utils.standard_deviation_over_time(rez, batch_size=ops['batch_size'])
     rez /= sdmov
     
     # subtract low-pass filtered version of binned movie
@@ -406,8 +313,8 @@ def sparsery(ops):
         # convolve
         movu.append(square_conv2(dmov, 3))
         # downsample
-        dmov = 2 * downsample(dmov)
-        gxy0 = downsample(gxy[j], False)
+        dmov = 2 * utils.downsample(dmov)
+        gxy0 = utils.downsample(gxy[j], False)
         gxy.append(gxy0)
         nbinned, Lyp[j], Lxp[j] = movu[j].shape
         
@@ -450,7 +357,7 @@ def sparsery(ops):
     ops['Vmap']  = []
     # get standard deviation for pixels for all values > Th2
     for j in range(len(movu)):
-        V0.append(threshold_reduce(movu[j], Th2))
+        V0.append(utils.threshold_reduce(movu[j], Th2))
         ops['Vmap'].append(V0[j].copy())
         movu[j] = np.reshape(movu[j], (movu[j].shape[0], -1))
 

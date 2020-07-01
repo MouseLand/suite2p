@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
-
-from . import masks
+from .masks import create_cell_masks, create_neuropil_masks, make_masks
 
 '''
 identify cells with channel 2 brightness (aka red cells)
@@ -42,26 +41,21 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     mimg2 = np.maximum(0, mimg2)
     return mimg2
 
-def detect(ops, stat):
+def detect(ops, stats):
     mimg = ops['meanImg'].copy()
     mimg2 = ops['meanImg_chan2'].copy()
 
     # subtract bleedthrough of green into red channel
     # non-rigid regression with nblks x nblks pieces
     nblks = 3
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    mimg2_corr = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
-    ops['meanImg_chan2_corrected'] = mimg2_corr
+    Ly, Lx = ops['Ly'], ops['Lx']
+    ops['meanImg_chan2_corrected'] = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
 
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
-    # ops['min_neuropil_pixels'] = 80
-    cell_pix, cell_masks0 = masks.create_cell_masks(stat, Ly, Lx, ops['allow_overlap'])
-    neuropil_masks = masks.create_neuropil_masks(ops, stat, cell_pix)
-    neuropil_masks = np.reshape(neuropil_masks,(-1,Ly*Lx))
-    cell_masks     = np.zeros((len(stat),Ly*Lx), np.float32)
-    for n in range(len(stat)):
+    cell_pix, cell_masks0, neuropil_masks = make_masks(ops=ops, stats=stats)
+    cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
+    for n in range(len(stats)):
         cell_masks[n, cell_masks0[n][0]] = cell_masks0[n][1]
 
     inpix = cell_masks @ mimg2.flatten()

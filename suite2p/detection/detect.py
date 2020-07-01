@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
 from .stats import roi_stats
-from .masks import get_overlaps, count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks
+from .masks import get_overlaps, count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
 
 
 def main_detect(ops):
@@ -15,7 +15,8 @@ def main_detect(ops):
     stats = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
-    cell_pix, cell_masks = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_masks = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
     neuropil_masks = create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in stats],
         xpixs=[stat['xpix'] for stat in stats],

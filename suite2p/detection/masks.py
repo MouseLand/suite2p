@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from itertools import count
 import numpy as np
 
@@ -28,13 +28,27 @@ def remove_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> Li
     return ix[::-1]
 
 
-def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
+def create_cell_pix(stats, Ly, Lx, allow_overlap=False) -> np.ndarray:
+    """Returns Ly x Lx array of whether it contains a cell (1) or not (0)."""
+    cell_pix = np.zeros((Ly, Lx))
+    for stat in stats:
+        mask = ... if allow_overlap else ~stat['overlap']
+        ypix = stat['ypix'][mask]
+        xpix = stat['xpix'][mask]
+        lam = stat['lam'][mask]
+        if xpix.size:
+            cell_pix[ypix[lam > 0], xpix[lam > 0]] = 1
+
+    return cell_pix
+
+
+def create_cell_masks(stats, Ly, Lx, allow_overlap=False) -> List[Tuple[np.ndarray, np.ndarray]]:
     """ creates cell masks for ROIs in stat and computes radii
 
     Parameters
     ----------
 
-    stat : dictionary
+    stats : dictionary
         'ypix', 'xpix', 'lam'
 
     Ly : float
@@ -56,30 +70,19 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
         len ncells, each has tuple of pixels belonging to each cell and weights
 
     """
-
-    ncells = len(stat)
-    cell_pix = np.zeros((Ly,Lx))
     cell_masks = []
-
-    for n in range(ncells):
-        if allow_overlap:
-            overlap = np.zeros((stat[n]['npix'],), bool)
-        else:
-            overlap = stat[n]['overlap']
-        ypix = stat[n]['ypix'][~overlap]
-        xpix = stat[n]['xpix'][~overlap]
-        lam  = stat[n]['lam'][~overlap]
+    for stat in stats:
+        mask = ... if allow_overlap else ~stat['overlap']
+        ypix = stat['ypix'][mask]
+        xpix = stat['xpix'][mask]
+        lam = stat['lam'][mask]
         if xpix.size:
-            # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
-            cell_pix[ypix[lam>0],xpix[lam>0]] += 1
-            ipix = np.ravel_multi_index((ypix, xpix), (Ly,Lx)).astype('int')
-            #utils.sub2ind((Ly,Lx), ypix, xpix)
-            cell_masks.append((ipix, lam/lam.sum()))
+            cell_mask = (np.ravel_multi_index((ypix, xpix), (Ly, Lx)).astype('int'), lam / lam.sum())
         else:
-            cell_masks.append((np.zeros(0).astype('int'), np.zeros(0)))
+            cell_mask = (np.zeros(0).astype('int'), np.zeros(0))
+        cell_masks.append(cell_mask)
 
-    cell_pix = np.minimum(1, cell_pix)
-    return cell_pix, cell_masks
+    return cell_masks
 
 
 def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neuropil_pixels):

@@ -15,7 +15,14 @@ def main_detect(ops):
     stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
-    cell_pix, cell_masks, neuropil_masks = make_masks(ops, stat)
+    cell_pix, cell_masks, neuropil_masks = make_masks(
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        allow_overlap=ops['allow_overlap'],
+        inner_neuropil_radius=ops['inner_neuropil_radius'],
+        min_neuropil_pixels=ops['min_neuropil_pixels'],
+        stats=stat
+    )
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
     ic = np.ones(len(stat), np.bool)

@@ -53,7 +53,14 @@ def detect(ops, stats):
 
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
-    cell_pix, cell_masks0, neuropil_masks = make_masks(ops=ops, stats=stats)
+    cell_pix, cell_masks0, neuropil_masks = make_masks(
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        allow_overlap=ops['allow_overlap'],
+        inner_neuropil_radius=ops['inner_neuropil_radius'],
+        min_neuropil_pixels=ops['min_neuropil_pixels'],
+        stats=stats
+    )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
     for n in range(len(stats)):
         cell_masks[n, cell_masks0[n][0]] = cell_masks0[n][1]

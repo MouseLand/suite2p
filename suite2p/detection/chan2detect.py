@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .masks import create_cell_masks, create_neuropil_masks, make_masks
+from .masks import create_cell_masks, create_neuropil_masks
 
 '''
 identify cells with channel 2 brightness (aka red cells)
@@ -53,13 +53,13 @@ def detect(ops, stats):
 
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
-    cell_pix, cell_masks0, neuropil_masks = make_masks(
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        allow_overlap=ops['allow_overlap'],
+    cell_pix, cell_masks0 = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    neuropil_masks = create_neuropil_masks(
+        ypixs=[stat['ypix'] for stat in stats],
+        xpixs=[stat['xpix'] for stat in stats],
+        cell_pix=cell_pix,
         inner_neuropil_radius=ops['inner_neuropil_radius'],
         min_neuropil_pixels=ops['min_neuropil_pixels'],
-        stats=stats
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
     for n in range(len(stats)):

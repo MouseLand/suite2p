@@ -119,17 +119,6 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neu
         neuropil_mask[ypix1[ix], xpix1[ix]] = 1.
         neuropil_mask[ypix, xpix] = 0
 
-    return neuropil_masks / np.sum(neuropil_masks, axis=(1, 2), keepdims=True)
-
-
-def make_masks(Ly: int, Lx: int, allow_overlap, inner_neuropil_radius, min_neuropil_pixels, stats):
-    cell_pix, cell_masks = create_cell_masks(stats, Ly=Ly, Lx=Lx, allow_overlap=allow_overlap)
-    neuropil_masks = create_neuropil_masks(
-        ypixs=[stat['ypix'] for stat in stats],
-        xpixs=[stat['xpix'] for stat in stats],
-        cell_pix=cell_pix,
-        inner_neuropil_radius=inner_neuropil_radius,
-        min_neuropil_pixels=min_neuropil_pixels,
-    )
+    neuropil_masks /= np.sum(neuropil_masks, axis=(1, 2), keepdims=True)
     neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
-    return cell_pix, cell_masks, neuropil_masks
+    return neuropil_masks

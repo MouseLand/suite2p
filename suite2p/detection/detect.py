@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
 from .stats import roi_stats
-from .masks import get_overlaps, count_overlaps, remove_overlappers, make_masks
+from .masks import get_overlaps, count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks
 
 
 def main_detect(ops):
@@ -12,27 +12,28 @@ def main_detect(ops):
     else:
         d0 = ops['diameter']
         dy, dx = (d0, d0) if isinstance(d0, int) else d0
-    stat = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
+    stats = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
-    cell_pix, cell_masks, neuropil_masks = make_masks(
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        allow_overlap=ops['allow_overlap'],
+    cell_pix, cell_masks = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    neuropil_masks = create_neuropil_masks(
+        ypixs=[stat['ypix'] for stat in stats],
+        xpixs=[stat['xpix'] for stat in stats],
+        cell_pix=cell_pix,
         inner_neuropil_radius=ops['inner_neuropil_radius'],
         min_neuropil_pixels=ops['min_neuropil_pixels'],
-        stats=stat
     )
+
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    ic = np.ones(len(stat), np.bool)
+    ic = np.ones(len(stats), np.bool)
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
-        ops, redcell = chan2detect.detect(ops, stat)
+        ops, redcell = chan2detect.detect(ops, stats)
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
-    return cell_pix, cell_masks, neuropil_masks, stat, ops
+    return cell_pix, cell_masks, neuropil_masks, stats, ops
 
 
 def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):

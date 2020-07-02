@@ -50,9 +50,9 @@ def roi_stats(dy: int, dx: int, stats):
         stat['npix'] = xpix.size
 
         if 'radius' not in stat:
-            radius = calc_radii(dy=dy, dx=dx, xpix=xpix, ypix=ypix, lam=lam)
-            stat['radius'] = radius[0] * np.mean((dx, dy))
-            stat['aspect_ratio'] = aspect_ratio(ry=radius[0], rx=radius[1])
+            radii = calc_radii(dy=dy, dx=dx, xpix=xpix, ypix=ypix, lam=lam)
+            stat['radius'] = radii[0] * np.mean((dx, dy))
+            stat['aspect_ratio'] = aspect_ratio(ry=radii[0], rx=radii[1])
 
     # todo: why specify the first 100?
     mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)

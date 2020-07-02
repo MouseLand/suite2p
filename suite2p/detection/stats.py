@@ -1,4 +1,5 @@
-from typing import Tuple
+from typing import Tuple, Optional
+from dataclasses import dataclass, field
 
 import numpy as np
 from numpy.linalg import norm
@@ -23,6 +24,56 @@ def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, o
     return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)
 
 
+@dataclass(frozen=True)
+class ROI:
+    ypix: np.ndarray
+    xpix: np.ndarray
+    lam: np.ndarray
+    dx: Optional[int]
+    dy: Optional[int]
+    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()))
+
+    def __post_init__(self):
+        """Validate inputs."""
+        if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
+            raise TypeError("xpix, ypix, and lam should all be the same size.")
+
+    @property
+    def mean_r_squared(self) -> float:
+        return mean_r_squared(y=self.ypix, x=self.xpix)
+
+    @property
+    def mean_r_squared0(self) -> float:
+        return np.mean(self.rsort[:self.ypix.size])
+
+    @property
+    def mean_r_squared_compact(self) -> float:
+        return self.mean_r_squared / (1e-10 + self.mean_r_squared0)
+
+    @property
+    def median_pix(self) -> Tuple[float, float]:
+        return np.median(self.ypix), np.median(self.xpix)
+
+    @property
+    def n_pixels(self) -> int:
+        return self.xpix.size
+
+    @property
+    def radii(self) -> Tuple[float, float]:
+        if self.dx is None or self.dy is None:
+            raise TypeError("dx and dy are required for calculating radii.")
+        return calc_radii(dy=self.dy, dx=self.dx, xpix=self.xpix, ypix=self.ypix, lam=self.lam)
+
+    @property
+    def radius(self) -> float:
+        return self.radii[0] * np.mean((self.dx, self.dy))
+
+    @property
+    def aspect_ratio(self) -> float:
+        ry, rx = self.radii
+        return aspect_ratio(ry=ry, rx=rx)
+
+
 def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
 
@@ -39,23 +90,17 @@ def roi_stats(dy: int, dx: int, stats):
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
 
     """
-    rs = distance_kernel(radius=30)
-    rsort = np.sort(rs.flatten())
     for stat in stats:
-        ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
-
-        # compute compactness of ROI
-        mrs_val = mean_r_squared(y=ypix, x=xpix)
-        stat['mrs'] = mrs_val
-        stat['mrs0'] = np.mean(rsort[:ypix.size])
-        stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
-        stat['med'] = [np.median(ypix), np.median(xpix)]
-        stat['npix'] = xpix.size
-
+        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
+        stat['mrs'] = roi.mean_r_squared
+        stat['mrs0'] = roi.mean_r_squared0
+        stat['compact'] = roi.mean_r_squared_compact
+        stat['med'] = list(roi.median_pix)
+        stat['npix'] = roi.n_pixels
         if 'radius' not in stat:
-            radii = calc_radii(dy=dy, dx=dx, xpix=xpix, ypix=ypix, lam=lam)
-            stat['radius'] = radii[0] * np.mean((dx, dy))
-            stat['aspect_ratio'] = aspect_ratio(ry=radii[0], rx=radii[1])
+            stat['radius'] = roi.radius
+            stat['aspect_ratio'] = roi.aspect_ratio
+
 
     # todo: why specify the first 100?
     mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)

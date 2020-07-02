@@ -48,22 +48,25 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
 
     for stat in stats:
         roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
-        stat['mrs'] = roi.mean_r_squared
-        stat['mrs0'] = roi.mean_r_squared0
-        stat['compact'] = roi.mean_r_squared_compact
-        stat['med'] = list(roi.median_pix)
-        stat['npix'] = roi.n_pixels
+        stat.update({
+            'mrs': roi.mean_r_squared,
+            'mrs0': roi.mean_r_squared0,
+            'compact': roi.mean_r_squared_compact,
+            'med': list(roi.median_pix),
+            'npix': roi.n_pixels,
+        })
         if 'radius' not in stat:
-            stat['radius'] = roi.radius
-            stat['aspect_ratio'] = roi.aspect_ratio
+            stat.update({'radius': roi.radius, 'aspect_ratio': roi.aspect_ratio})
 
     # todo: why specify the first 100?
     mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
     npix_normeds = norm_by_average(values=[stat['npix'] for stat in stats], first_n=100)
     for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
-        stat['mrs'] = mrs_normed
-        stat['npix_norm'] = npix_normed
-        stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
+        stat.update({
+            'mrs': mrs_normed,
+            'npix_norm': npix_normed,
+            'footprint': 0 if 'footprint' not in stat else stat['footprint']
+        })
 
     stats = np.array(stats)
 

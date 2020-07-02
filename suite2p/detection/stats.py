@@ -34,7 +34,7 @@ class ROI:
     lam: np.ndarray
     dx: Optional[int]
     dy: Optional[int]
-    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()))
+    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
 
     def __post_init__(self):
         """Validate inputs."""

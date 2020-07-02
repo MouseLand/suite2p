@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .masks import create_cell_masks, create_neuropil_masks, make_masks
+from .masks import create_cell_masks, create_cell_pix, create_neuropil_masks
 
 '''
 identify cells with channel 2 brightness (aka red cells)
@@ -53,10 +53,18 @@ def detect(ops, stats):
 
     # compute pixels in cell and in area around cell (including overlaps)
     # (exclude pixels from other cells)
-    cell_pix, cell_masks0, neuropil_masks = make_masks(ops=ops, stats=stats)
+    cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_masks0 = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    neuropil_masks = create_neuropil_masks(
+        ypixs=[stat['ypix'] for stat in stats],
+        xpixs=[stat['xpix'] for stat in stats],
+        cell_pix=cell_pix,
+        inner_neuropil_radius=ops['inner_neuropil_radius'],
+        min_neuropil_pixels=ops['min_neuropil_pixels'],
+    )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
-    for n in range(len(stats)):
-        cell_masks[n, cell_masks0[n][0]] = cell_masks0[n][1]
+    for cell_mask, cell_mask0 in zip(cell_masks, cell_masks0):
+        cell_mask[cell_mask0[0]] = cell_mask0[1]
 
     inpix = cell_masks @ mimg2.flatten()
     extpix = neuropil_masks @ mimg2.flatten()

@@ -1,40 +1,31 @@
-from typing import List
+from typing import List, Tuple
 from itertools import count
 import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
 
-def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
-    overlap = np.zeros((Ly, Lx))
-    for xpix, ypix in zip(xpixs, ypixs):
-        overlap[ypix, xpix] += 1
-    return overlap
+
+def create_cell_pix(stats, Ly, Lx, allow_overlap=False) -> np.ndarray:
+    """Returns Ly x Lx array of whether it contains a cell (1) or not (0)."""
+    cell_pix = np.zeros((Ly, Lx))
+    for stat in stats:
+        mask = ... if allow_overlap else ~stat['overlap']
+        ypix = stat['ypix'][mask]
+        xpix = stat['xpix'][mask]
+        lam = stat['lam'][mask]
+        if xpix.size:
+            cell_pix[ypix[lam > 0], xpix[lam > 0]] = 1
+
+    return cell_pix
 
 
-def get_overlaps(overlaps, ypixs: List[np.ndarray], xpixs: List[np.ndarray]) -> List[np.ndarray]:
-    """computes overlapping pixels from ROIs"""
-    return [overlaps[ypix, xpix] > 1 for ypix, xpix in zip(ypixs, xpixs)]
-
-
-def remove_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
-    """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
-    overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    ix = []
-    for i, (ypix, xpix) in reversed(list(enumerate(zip(ypixs, xpixs)))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        if np.mean(overlaps[ypix, xpix] > 1) > max_overlap:  # note: fancy indexing returns a copy
-            overlaps[ypix, xpix] -= 1
-        else:
-            ix.append(i)
-    return ix[::-1]
-
-
-def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
+def create_cell_masks(stats, Ly, Lx, allow_overlap=False) -> List[Tuple[np.ndarray, np.ndarray]]:
     """ creates cell masks for ROIs in stat and computes radii
 
     Parameters
     ----------
 
-    stat : dictionary
+    stats : dictionary
         'ypix', 'xpix', 'lam'
 
     Ly : float
@@ -48,38 +39,21 @@ def create_cell_masks(stat, Ly, Lx, allow_overlap=False):
 
     Returns
     -------
-    
-    cell_pix : 2D array
-        size [Ly x Lx] where 1 if pixel belongs to cell
-    
     cell_masks : list 
         len ncells, each has tuple of pixels belonging to each cell and weights
 
     """
-
-    ncells = len(stat)
-    cell_pix = np.zeros((Ly,Lx))
     cell_masks = []
+    for stat in stats:
+        mask = ... if allow_overlap else ~stat['overlap']
+        ypix = stat['ypix'][mask]
+        xpix = stat['xpix'][mask]
+        cell_mask = np.ravel_multi_index((ypix, xpix), (Ly, Lx))
+        lam = stat['lam'][mask]
+        lam_normed = lam / lam.sum() if lam.size > 0 else np.empty(0)
+        cell_masks.append((cell_mask, lam_normed))
 
-    for n in range(ncells):
-        if allow_overlap:
-            overlap = np.zeros((stat[n]['npix'],), bool)
-        else:
-            overlap = stat[n]['overlap']
-        ypix = stat[n]['ypix'][~overlap]
-        xpix = stat[n]['xpix'][~overlap]
-        lam  = stat[n]['lam'][~overlap]
-        if xpix.size:
-            # add pixels of cell to cell_pix (pixels to exclude in neuropil computation)
-            cell_pix[ypix[lam>0],xpix[lam>0]] += 1
-            ipix = np.ravel_multi_index((ypix, xpix), (Ly,Lx)).astype('int')
-            #utils.sub2ind((Ly,Lx), ypix, xpix)
-            cell_masks.append((ipix, lam/lam.sum()))
-        else:
-            cell_masks.append((np.zeros(0).astype('int'), np.zeros(0)))
-
-    cell_pix = np.minimum(1, cell_pix)
-    return cell_pix, cell_masks
+    return cell_masks
 
 
 def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neuropil_pixels):
@@ -119,18 +93,6 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neu
         neuropil_mask[ypix1[ix], xpix1[ix]] = 1.
         neuropil_mask[ypix, xpix] = 0
 
-    return neuropil_masks / np.sum(neuropil_masks, axis=(1, 2), keepdims=True)
-
-
-def make_masks(ops, stats):
-    Ly, Lx = ops['Ly'], ops['Lx']
-    cell_pix, cell_masks = create_cell_masks(stats, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap'])
-    neuropil_masks = create_neuropil_masks(
-        ypixs=[stat['ypix'] for stat in stats],
-        xpixs=[stat['xpix'] for stat in stats],
-        cell_pix=cell_pix,
-        inner_neuropil_radius=ops['inner_neuropil_radius'],
-        min_neuropil_pixels=ops['min_neuropil_pixels'],
-    )
+    neuropil_masks /= np.sum(neuropil_masks, axis=(1, 2), keepdims=True)
     neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
-    return cell_pix, cell_masks, neuropil_masks
+    return neuropil_masks

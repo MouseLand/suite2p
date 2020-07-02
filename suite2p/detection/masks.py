@@ -57,10 +57,6 @@ def create_cell_masks(stats, Ly, Lx, allow_overlap=False) -> List[Tuple[np.ndarr
 
     Returns
     -------
-    
-    cell_pix : 2D array
-        size [Ly x Lx] where 1 if pixel belongs to cell
-    
     cell_masks : list 
         len ncells, each has tuple of pixels belonging to each cell and weights
 

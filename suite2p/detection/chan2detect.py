@@ -63,8 +63,8 @@ def detect(ops, stats):
         min_neuropil_pixels=ops['min_neuropil_pixels'],
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
-    for n in range(len(stats)):
-        cell_masks[n, cell_masks0[n][0]] = cell_masks0[n][1]
+    for cell_mask, cell_mask0 in zip(cell_masks, cell_masks0):
+        cell_mask[cell_mask0[0]] = cell_mask0[1]
 
     inpix = cell_masks @ mimg2.flatten()
     extpix = neuropil_masks @ mimg2.flatten()

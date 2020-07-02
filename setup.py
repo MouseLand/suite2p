@@ -30,6 +30,7 @@ setuptools.setup(
       'tqdm',
       'scanimage-tiff-reader',
       'pyqtgraph',
+      'cached-property',
     ],
     tests_require=[
       'pytest',

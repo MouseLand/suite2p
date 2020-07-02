@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
+from cached_property import cached_property
 
 from .utils import norm_by_average
 
@@ -13,6 +14,17 @@ def distance_kernel(radius: int) -> np.ndarray:
     d = np.arange(-radius, radius + 1)
     dists_2d = norm(np.meshgrid(d, d), axis=0)
     return dists_2d
+
+
+class EllipseData(NamedTuple):
+    mu: float
+    cov: float
+    radii: Tuple[float, float]
+    ellipse: np.ndarray
+
+    @property
+    def area(self):
+        return (self.radii[0] * self.radii[1]) ** 0.5 * np.pi
 
 
 @dataclass(frozen=True)
@@ -29,7 +41,7 @@ class ROI:
         if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
             raise TypeError("xpix, ypix, and lam should all be the same size.")
 
-    @property
+    @cached_property
     def mean_r_squared(self) -> float:
         return mean_r_squared(y=self.ypix, x=self.xpix)
 
@@ -49,11 +61,15 @@ class ROI:
     def n_pixels(self) -> int:
         return self.xpix.size
 
+    @cached_property
+    def fit_ellipse(self) -> EllipseData:
+        if self.dx is None or self.dy is None:
+            raise TypeError("dx and dy are required for fitting to an ellipse.")
+        return fitMVGaus(self.ypix / self.dy, self.xpix / self.dx, self.lam, 2)
+
     @property
     def radii(self) -> Tuple[float, float]:
-        if self.dx is None or self.dy is None:
-            raise TypeError("dx and dy are required for calculating radii.")
-        return calc_radii(dy=self.dy, dx=self.dx, xpix=self.xpix, ypix=self.ypix, lam=self.lam)
+        return self.fit_ellipse.radii
 
     @property
     def radius(self) -> float:
@@ -62,7 +78,7 @@ class ROI:
     @property
     def aspect_ratio(self) -> float:
         ry, rx = self.radii
-        return aspect_ratio(ry=ry, rx=rx)
+        return aspect_ratio(width=ry, height=rx)
 
 
 
@@ -111,23 +127,8 @@ def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:
     return np.mean(norm(((y - estimator(y)), (x - estimator(x))), axis=0))
 
 
-def calc_radii(dy: float, dx: float, ypix: np.ndarray, xpix: np.ndarray, lam: np.ndarray) -> Tuple[float, float]:
-    return fitMVGaus(ypix / dy, xpix / dx, lam, 2).radii
-
-
-def aspect_ratio(ry: float, rx: float, offset: float = .01) -> float:
-    return 2 * ry / (ry + rx + offset)
-
-
-class EllipseData(NamedTuple):
-    mu: float
-    cov: float
-    radii: Tuple[float, float]
-    ellipse: np.ndarray
-
-    @property
-    def area(self):
-        return (self.radii[0] * self.radii[1]) ** 0.5 * np.pi
+def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
+    return 2 * width / (width + height + offset)
 
 
 def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:

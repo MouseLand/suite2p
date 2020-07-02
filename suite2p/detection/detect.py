@@ -2,8 +2,9 @@ import time
 import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
-from .stats import roi_stats
+from .stats import ROI
 from .masks import count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
+from .utils import norm_by_average
 
 
 def main_detect(ops):
@@ -45,7 +46,26 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
         ops, stats = sourcery.sourcery(ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
-    stats = roi_stats(dy=dy, dx=dx, stats=stats)
+    for stat in stats:
+        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
+        stat['mrs'] = roi.mean_r_squared
+        stat['mrs0'] = roi.mean_r_squared0
+        stat['compact'] = roi.mean_r_squared_compact
+        stat['med'] = list(roi.median_pix)
+        stat['npix'] = roi.n_pixels
+        if 'radius' not in stat:
+            stat['radius'] = roi.radius
+            stat['aspect_ratio'] = roi.aspect_ratio
+
+    # todo: why specify the first 100?
+    mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
+    npix_normeds = norm_by_average(values=[stat['npix'] for stat in stats], first_n=100)
+    for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
+        stat['mrs'] = mrs_normed
+        stat['npix_norm'] = npix_normed
+        stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
+
+    stats = np.array(stats)
 
     ypixs = [stat['ypix'] for stat in stats]
     xpixs = [stat['xpix'] for stat in stats]

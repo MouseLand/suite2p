@@ -1,10 +1,11 @@
 from typing import Tuple, Optional
 from dataclasses import dataclass, field
+from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
 
-from .utils import fitMVGaus, distance_kernel
+from .utils import fitMVGaus, distance_kernel, norm_by_average
 
 
 def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:
@@ -17,11 +18,6 @@ def calc_radii(dy: float, dx: float, ypix: np.ndarray, xpix: np.ndarray, lam: np
 
 def aspect_ratio(ry: float, rx: float, offset: float = .01) -> float:
     return 2 * ry / (ry + rx + offset)
-
-
-def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
-    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
-    return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)
 
 
 @dataclass(frozen=True)
@@ -74,6 +70,7 @@ class ROI:
         return aspect_ratio(ry=ry, rx=rx)
 
 
+
 def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
 
@@ -90,6 +87,8 @@ def roi_stats(dy: int, dx: int, stats):
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
 
     """
+    warn("roi_stats() will be removed in a future release.  Use ROI instead.", PendingDeprecationWarning)
+
     for stat in stats:
         roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
         stat['mrs'] = roi.mean_r_squared

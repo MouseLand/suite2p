@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
 from .stats import ROI
-from .masks import count_overlaps, remove_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
+from .masks import count_overlaps, filter_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
 from .utils import norm_by_average
 
 
@@ -47,8 +47,13 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
     rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy) for stat in stats]
+
     mrs_normeds = norm_by_average([roi.mean_r_squared for roi in rois], estimator=np.nanmedian, offset=1e-10, first_n=100)
     npix_normeds = norm_by_average([roi.n_pixels for roi in rois], first_n=100)
+    n_overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])
+
+    ix = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
+
     for roi, mrs_normed, npix_normed, stat in zip(rois, mrs_normeds, npix_normeds, stats):
         stat.update({
             'mrs': mrs_normed,
@@ -58,6 +63,7 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
             'npix': roi.n_pixels,
             'npix_norm': npix_normed,
             'footprint': 0 if 'footprint' not in stat else stat['footprint'],
+            'overlap': n_overlaps[roi.ypix, roi.xpix] > 1,
         })
         if 'radius' not in stat:
             stat.update({
@@ -65,15 +71,6 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
                 'aspect_ratio': roi.aspect_ratio,
             })
 
-    stats = np.array(stats)
-
-    ypixs = [stat['ypix'] for stat in stats]
-    xpixs = [stat['xpix'] for stat in stats]
-    n_overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    for stat in stats:
-        stat['overlap'] = n_overlaps[stat['ypix'], stat['xpix']] > 1
-
-    ix = remove_overlappers(ypixs=ypixs, xpixs=xpixs, max_overlap=max_overlap, Ly=Ly, Lx=Lx)
     stats = [stats[i] for i in ix]
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
     return stats

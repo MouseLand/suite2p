@@ -11,7 +11,7 @@ def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     return overlap
 
 
-def remove_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
+def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
     """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
     overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
     ix = []

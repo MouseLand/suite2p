@@ -56,7 +56,10 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
             'npix': roi.n_pixels,
         })
         if 'radius' not in stat:
-            stat.update({'radius': roi.radius, 'aspect_ratio': roi.aspect_ratio})
+            stat.update({
+                'radius': roi.radius,
+                'aspect_ratio': roi.aspect_ratio}
+            )
 
     # todo: why specify the first 100?
     mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)

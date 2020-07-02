@@ -46,9 +46,8 @@ def create_cell_masks(stats, Ly, Lx, allow_overlap=False) -> List[Tuple[np.ndarr
     cell_masks = []
     for stat in stats:
         mask = ... if allow_overlap else ~stat['overlap']
-        ypix = stat['ypix'][mask]
-        xpix = stat['xpix'][mask]
-        cell_mask = np.ravel_multi_index((ypix, xpix), (Ly, Lx))
+        cell_mask = np.ravel_multi_index((stat['ypix'], stat['xpix']), (Ly, Lx))
+        cell_mask = cell_mask[mask]
         lam = stat['lam'][mask]
         lam_normed = lam / lam.sum() if lam.size > 0 else np.empty(0)
         cell_masks.append((cell_mask, lam_normed))

@@ -43,6 +43,10 @@ class ROI:
         if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
             raise TypeError("xpix, ypix, and lam should all be the same size.")
 
+    def ravel_indices(self, Ly: int, Lx: int) -> np.ndarray:
+        """Returns a 1-dimensional array of indices from the ypix and xpix coordinates, assuming an image shape Ly x Lx."""
+        return np.ravel_multi_index((self.ypix, self.xpix), (Ly, Lx))
+
     @classmethod
     def get_overlap_count_image(cls, rois: Sequence[ROI], Ly: int, Lx: int) -> np.ndarray:
         return count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])

@@ -46,30 +46,24 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
         ops, stats = sourcery.sourcery(ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
-    for stat in stats:
-        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
+    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy) for stat in stats]
+    mrs_normeds = norm_by_average([roi.mean_r_squared for roi in rois], estimator=np.nanmedian, offset=1e-10, first_n=100)
+    npix_normeds = norm_by_average([roi.n_pixels for roi in rois], first_n=100)
+    for roi, mrs_normed, npix_normed, stat in zip(rois, mrs_normeds, npix_normeds, stats):
         stat.update({
-            'mrs': roi.mean_r_squared,
+            'mrs': mrs_normed,
             'mrs0': roi.mean_r_squared0,
             'compact': roi.mean_r_squared_compact,
             'med': list(roi.median_pix),
             'npix': roi.n_pixels,
+            'npix_norm': npix_normed,
+            'footprint': 0 if 'footprint' not in stat else stat['footprint'],
         })
         if 'radius' not in stat:
             stat.update({
                 'radius': roi.radius,
-                'aspect_ratio': roi.aspect_ratio}
-            )
-
-    # todo: why specify the first 100?
-    mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
-    npix_normeds = norm_by_average(values=[stat['npix'] for stat in stats], first_n=100)
-    for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
-        stat.update({
-            'mrs': mrs_normed,
-            'npix_norm': npix_normed,
-            'footprint': 0 if 'footprint' not in stat else stat['footprint']
-        })
+                'aspect_ratio': roi.aspect_ratio,
+            })
 
     stats = np.array(stats)
 

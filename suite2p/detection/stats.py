@@ -1,4 +1,6 @@
-from typing import Tuple, Optional, NamedTuple
+from __future__ import annotations
+
+from typing import Tuple, Optional, NamedTuple, Sequence
 from dataclasses import dataclass, field
 from warnings import warn
 
@@ -6,6 +8,7 @@ import numpy as np
 from numpy.linalg import norm
 from cached_property import cached_property
 
+from .masks import count_overlaps
 from .utils import norm_by_average
 
 
@@ -41,6 +44,10 @@ class ROI:
         if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
             raise TypeError("xpix, ypix, and lam should all be the same size.")
 
+    @classmethod
+    def get_overlap_count_image(cls, rois: Sequence[ROI], Ly: int, Lx: int) -> np.ndarray:
+        return count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])
+
     @cached_property
     def mean_r_squared(self) -> float:
         return mean_r_squared(y=self.ypix, x=self.xpix)
@@ -53,6 +60,10 @@ class ROI:
     def mean_r_squared_compact(self) -> float:
         return self.mean_r_squared / (1e-10 + self.mean_r_squared0)
 
+    @classmethod
+    def get_mean_r_squared_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
+        return norm_by_average([roi.mean_r_squared for roi in rois], estimator=np.nanmedian, offset=1e-10, first_n=first_n)
+
     @property
     def median_pix(self) -> Tuple[float, float]:
         return np.median(self.ypix), np.median(self.xpix)
@@ -60,6 +71,10 @@ class ROI:
     @property
     def n_pixels(self) -> int:
         return self.xpix.size
+
+    @classmethod
+    def get_n_pixels_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
+        return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
 
     @cached_property
     def fit_ellipse(self) -> EllipseData:
@@ -79,7 +94,6 @@ class ROI:
     def aspect_ratio(self) -> float:
         ry, rx = self.radii
         return aspect_ratio(width=ry, height=rx)
-
 
 
 def roi_stats(dy: int, dx: int, stats):

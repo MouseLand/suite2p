@@ -3,8 +3,7 @@ import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
 from .stats import ROI
-from .masks import count_overlaps, filter_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
-from .utils import norm_by_average
+from .masks import filter_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
 
 
 def main_detect(ops):
@@ -48,9 +47,9 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
 
     rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy) for stat in stats]
 
-    mrs_normeds = norm_by_average([roi.mean_r_squared for roi in rois], estimator=np.nanmedian, offset=1e-10, first_n=100)
-    npix_normeds = norm_by_average([roi.n_pixels for roi in rois], first_n=100)
-    n_overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])
+    mrs_normeds = ROI.get_mean_r_squared_normed_all(rois=rois)
+    npix_normeds = ROI.get_n_pixels_normed_all(rois=rois)
+    n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
 
     ix = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
 

@@ -47,6 +47,17 @@ class ROI:
     def get_overlap_count_image(cls, rois: Sequence[ROI], Ly: int, Lx: int) -> np.ndarray:
         return count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])
 
+    @classmethod
+    def filter_overlappers(cls, rois: Sequence[ROI], overlap_image: np.ndarray, max_overlap: float) -> np.ndarray:
+        """returns logical array of rois that remain after removing those that overlap more than fraction max_overlap from overlap_img."""
+        return filter_overlappers(
+            ypixs=[roi.ypix for roi in rois],
+            xpixs=[roi.xpix for roi in rois],
+            overlap_image=overlap_image,
+            max_overlap=max_overlap,
+        )
+
+
     @cached_property
     def mean_r_squared(self) -> float:
         return mean_r_squared(y=self.ypix, x=self.xpix)
@@ -186,13 +197,13 @@ def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     return overlap
 
 
-def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[bool]:
-    """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
-    overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
+def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray, max_overlap: float) -> List[bool]:
+    """returns ROI indices that remain after removing those that overlap more than fraction max_overlap from overlap_img."""
+    n_overlaps = overlap_image.copy()
     keep_rois = []
     for ypix, xpix in reversed(list(zip(ypixs, xpixs))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        keep_roi = np.mean(overlaps[ypix, xpix] > 1) <= max_overlap
+        keep_roi = np.mean(n_overlaps[ypix, xpix] > 1) <= max_overlap
         keep_rois.append(keep_roi)
         if not keep_roi:
-            overlaps[ypix, xpix] -= 1
+            n_overlaps[ypix, xpix] -= 1
     return keep_rois[::-1]

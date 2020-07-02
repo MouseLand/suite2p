@@ -2,7 +2,7 @@ import time
 import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
-from .stats import ROI, filter_overlappers
+from .stats import ROI
 from .masks import create_cell_masks, create_neuropil_masks, create_cell_pix
 
 
@@ -50,8 +50,7 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
     mrs_normeds = ROI.get_mean_r_squared_normed_all(rois=rois)
     npix_normeds = ROI.get_n_pixels_normed_all(rois=rois)
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
-
-    keep_rois = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
+    keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps, max_overlap=max_overlap)
 
     good_stats = []
     for keep_roi, roi, mrs_normed, npix_normed, stat in zip(keep_rois, rois, mrs_normeds, npix_normeds, stats):

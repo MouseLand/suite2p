@@ -53,25 +53,27 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
 
     ix = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
 
-    for roi, mrs_normed, npix_normed, stat in zip(rois, mrs_normeds, npix_normeds, stats):
-        stat.update({
-            'mrs': mrs_normed,
-            'mrs0': roi.mean_r_squared0,
-            'compact': roi.mean_r_squared_compact,
-            'med': list(roi.median_pix),
-            'npix': roi.n_pixels,
-            'npix_norm': npix_normed,
-            'footprint': 0 if 'footprint' not in stat else stat['footprint'],
-            'overlap': n_overlaps[roi.ypix, roi.xpix] > 1,
-        })
-        if 'radius' not in stat:
+    good_stats = []
+    for i, (roi, mrs_normed, npix_normed, stat) in enumerate(zip(rois, mrs_normeds, npix_normeds, stats)):
+        if i in ix:
             stat.update({
-                'radius': roi.radius,
-                'aspect_ratio': roi.aspect_ratio,
+                'mrs': mrs_normed,
+                'mrs0': roi.mean_r_squared0,
+                'compact': roi.mean_r_squared_compact,
+                'med': list(roi.median_pix),
+                'npix': roi.n_pixels,
+                'npix_norm': npix_normed,
+                'footprint': 0 if 'footprint' not in stat else stat['footprint'],
+                'overlap': n_overlaps[roi.ypix, roi.xpix] > 1,
             })
+            if 'radius' not in stat:
+                stat.update({
+                    'radius': roi.radius,
+                    'aspect_ratio': roi.aspect_ratio,
+                })
+            good_stats.append(stat)
 
-    stats = [stats[i] for i in ix]
-    print('After removing overlaps, %d ROIs remain' % (len(stats)))
-    return stats
+    print('After removing overlaps, %d ROIs remain' % (len(good_stats)))
+    return good_stats
 
 

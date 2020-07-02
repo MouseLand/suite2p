@@ -1,18 +1,21 @@
+from typing import Tuple
+
 import numpy as np
+from numpy.linalg import norm
 
 from .utils import fitMVGaus, distance_kernel
 
 
-def mean_r_squared(y, x, estimator=np.median):
-    return np.mean(np.sqrt((y - estimator(y)) ** 2 + ((x - estimator(x)) ** 2)))
+def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:
+    return np.mean(norm(((y - estimator(y)), (x - estimator(x))), axis=0))
 
 
-def calc_radii(dy, dx, ypix, xpix, lam):
+def calc_radii(dy: float, dx: float, ypix: np.ndarray, xpix: np.ndarray, lam: np.ndarray) -> Tuple[float, float]:
     return fitMVGaus(ypix / dy, xpix / dx, lam, 2).radii
 
 
-def aspect_ratio(ry, rx) -> float:
-    return 2 * ry / (.01 + ry + rx)
+def aspect_ratio(ry: float, rx: float, offset: float = .01) -> float:
+    return 2 * ry / (ry + rx + offset)
 
 
 def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:

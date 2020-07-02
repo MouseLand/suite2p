@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, Optional, NamedTuple, Sequence
+from typing import Tuple, Optional, NamedTuple, Sequence, List
 from dataclasses import dataclass, field
 from warnings import warn
 
@@ -8,7 +8,6 @@ import numpy as np
 from numpy.linalg import norm
 from cached_property import cached_property
 
-from .masks import count_overlaps
 from .utils import norm_by_average
 
 
@@ -178,3 +177,22 @@ def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
     radii = np.sort(radii)[::-1]
 
     return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse)
+
+
+def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
+    overlap = np.zeros((Ly, Lx))
+    for xpix, ypix in zip(xpixs, ypixs):
+        overlap[ypix, xpix] += 1
+    return overlap
+
+
+def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
+    """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
+    overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
+    ix = []
+    for i, (ypix, xpix) in reversed(list(enumerate(zip(ypixs, xpixs)))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
+        if np.mean(overlaps[ypix, xpix] > 1) > max_overlap:  # note: fancy indexing returns a copy
+            overlaps[ypix, xpix] -= 1
+        else:
+            ix.append(i)
+    return ix[::-1]

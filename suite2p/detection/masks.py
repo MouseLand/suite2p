@@ -4,24 +4,6 @@ import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
 
-def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
-    overlap = np.zeros((Ly, Lx))
-    for xpix, ypix in zip(xpixs, ypixs):
-        overlap[ypix, xpix] += 1
-    return overlap
-
-
-def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
-    """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
-    overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    ix = []
-    for i, (ypix, xpix) in reversed(list(enumerate(zip(ypixs, xpixs)))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        if np.mean(overlaps[ypix, xpix] > 1) > max_overlap:  # note: fancy indexing returns a copy
-            overlaps[ypix, xpix] -= 1
-        else:
-            ix.append(i)
-    return ix[::-1]
-
 
 def create_cell_pix(stats, Ly, Lx, allow_overlap=False) -> np.ndarray:
     """Returns Ly x Lx array of whether it contains a cell (1) or not (0)."""

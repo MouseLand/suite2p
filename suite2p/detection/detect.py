@@ -2,8 +2,8 @@ import time
 import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
-from .stats import ROI
-from .masks import filter_overlappers, create_cell_masks, create_neuropil_masks, create_cell_pix
+from .stats import ROI, filter_overlappers
+from .masks import create_cell_masks, create_neuropil_masks, create_cell_pix
 
 
 def main_detect(ops):

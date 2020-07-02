@@ -57,6 +57,8 @@ class ROI:
             max_overlap=max_overlap,
         )
 
+    def get_overlap_image(self, overlap_count_image: np.ndarray) -> np.ndarray:
+        return overlap_count_image[self.ypix, self.xpix] > 1
 
     @cached_property
     def mean_r_squared(self) -> float:

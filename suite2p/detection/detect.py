@@ -63,7 +63,7 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
                 'npix': roi.n_pixels,
                 'npix_norm': npix_normed,
                 'footprint': 0 if 'footprint' not in stat else stat['footprint'],
-                'overlap': n_overlaps[roi.ypix, roi.xpix] > 1,
+                'overlap': roi.get_overlap_image(n_overlaps),
             })
             if 'radius' not in stat:
                 stat.update({

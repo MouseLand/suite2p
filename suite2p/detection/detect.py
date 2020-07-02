@@ -51,11 +51,11 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
     npix_normeds = ROI.get_n_pixels_normed_all(rois=rois)
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
 
-    ix = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
+    keep_rois = filter_overlappers(ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois], max_overlap=max_overlap, Ly=Ly, Lx=Lx)
 
     good_stats = []
-    for i, (roi, mrs_normed, npix_normed, stat) in enumerate(zip(rois, mrs_normeds, npix_normeds, stats)):
-        if i in ix:
+    for keep_roi, roi, mrs_normed, npix_normed, stat in zip(keep_rois, rois, mrs_normeds, npix_normeds, stats):
+        if keep_roi:
             stat.update({
                 'mrs': mrs_normed,
                 'mrs0': roi.mean_r_squared0,

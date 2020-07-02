@@ -186,13 +186,13 @@ def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     return overlap
 
 
-def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[int]:
+def filter_overlappers(ypixs, xpixs, max_overlap: float, Ly: int, Lx: int) -> List[bool]:
     """returns ROI indices are remain after removing those that overlap more than fraction max_overlap with other ROIs"""
     overlaps = count_overlaps(Ly=Ly, Lx=Lx, ypixs=ypixs, xpixs=xpixs)
-    ix = []
-    for i, (ypix, xpix) in reversed(list(enumerate(zip(ypixs, xpixs)))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        if np.mean(overlaps[ypix, xpix] > 1) > max_overlap:  # note: fancy indexing returns a copy
+    keep_rois = []
+    for ypix, xpix in reversed(list(zip(ypixs, xpixs))):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
+        keep_roi = np.mean(overlaps[ypix, xpix] > 1) <= max_overlap
+        keep_rois.append(keep_roi)
+        if not keep_roi:
             overlaps[ypix, xpix] -= 1
-        else:
-            ix.append(i)
-    return ix[::-1]
+    return keep_rois[::-1]

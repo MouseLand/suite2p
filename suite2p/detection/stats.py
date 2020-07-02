@@ -15,6 +15,11 @@ def aspect_ratio(ry, rx) -> float:
     return 2 * ry / (.01 + ry + rx)
 
 
+def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
+    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
+    return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)
+
+
 def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
 
@@ -49,18 +54,12 @@ def roi_stats(dy: int, dx: int, stats):
             stat['radius'] = radius[0] * np.mean((dx, dy))
             stat['aspect_ratio'] = aspect_ratio(ry=radius[0], rx=radius[1])
 
-
-    mmrs = np.nanmedian([stat['mrs'] for stat in stats[:100]])  # todo: why only include the first 100?
-    for stat in stats:
-        stat['mrs'] = stat['mrs'] / (1e-10 + mmrs)
-
-    npix = np.array([stat['npix'] for stat in stats], dtype='float32')
-    npix /= np.mean(npix[:100])  # todo: why only include the first 100?
-    for stat, npix0 in zip(stats, npix):
-        stat['npix_norm'] = npix0
-
-    for stat in stats:
-        if 'footprint' not in stat:
-            stat['footprint'] = 0
+    # todo: why specify the first 100?
+    mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
+    npix_normeds = norm_by_average(values=[stat['npix'] for stat in stats], first_n=100)
+    for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
+        stat['mrs'] = mrs_normed
+        stat['npix_norm'] = npix_normed
+        stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
 
     return np.array(stats)

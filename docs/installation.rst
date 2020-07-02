@@ -10,16 +10,9 @@ if you did not add anaconda to the path.
    3** in the path
 3. Change the current directory to the suite2p folder: ``cd suite2p``
 4. Run ``conda env create -f environment.yml``
-<<<<<<< HEAD
-5. To activate this new environment, run ``conda activate suite2p``
-6. You should see ``(suite2p)`` on the left side of the terminal line.
-7. Install suite2p into the environment with `python setup.py install`
-8. Now run ``python -m suite2p`` and you're all set.
-=======
 5. To activate this new environment, run ``conda activate suite2p``. Afterwards, You should see ``(suite2p)`` on the left side of the terminal line.
 6. Install suite2p into this environment: ``pip install suite2p``
 7. Now run ``python -m suite2p`` and you're all set.
->>>>>>> f68e495e3ce7dbc0f1abf6217eb947d8569af15f
 
 If you have an older ``suite2p`` environment you can remove it with
 ``conda env remove -n suite2p`` before creating a new one.

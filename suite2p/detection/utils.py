@@ -1,4 +1,4 @@
-from typing import Tuple, NamedTuple, Sequence, Optional
+from typing import Tuple, Sequence, Optional
 
 import numpy as np
 from numpy.linalg import norm
@@ -77,59 +77,6 @@ def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray
         sdmov += ((np.diff(mov[ix:ix+batch_size, :, :], axis=0) ** 2).sum(axis=0))
     sdmov = np.maximum(1e-10, np.sqrt(sdmov / nbins))
     return sdmov
-
-
-class EllipseData(NamedTuple):
-    mu: float
-    cov: float
-    radii: Tuple[float, float]
-    ellipse: np.ndarray
-
-    @property
-    def area(self):
-        return (self.radii[0] * self.radii[1]) ** 0.5 * np.pi
-
-
-def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
-    """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
-
-    Parameters
-    ----------
-    y : float, array
-        pixel locations in y
-    x : float, array
-        pixel locations in x
-    lam : float, array
-        weights of each pixel
-    """
-
-    # normalize pixel weights
-    lam /= lam.sum()
-
-    # mean of gaussian
-    yx = np.stack((y, x))
-    mu = (lam * yx).sum(axis=1)
-    yx = (yx - mu[:, np.newaxis]) * lam ** .5
-    cov = yx @ yx.T
-
-    # radii of major and minor axes
-    radii, evec = np.linalg.eig(cov)
-    radii = thres * np.maximum(0, np.real(radii)) ** .5
-
-    # compute pts of ellipse
-    theta = np.linspace(0, 2 * np.pi, npts)
-    p = np.stack((np.cos(theta), np.sin(theta)))
-    ellipse = (p.T * radii) @ evec.T + mu
-    radii = np.sort(radii)[::-1]
-
-    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse)
-
-
-def distance_kernel(radius: int) -> np.ndarray:
-    """ Returns 2D array containing geometric distance from center, with radius 'radius'"""
-    d = np.arange(-radius, radius + 1)
-    dists_2d = norm(np.meshgrid(d, d), axis=0)
-    return dists_2d
 
 
 def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:

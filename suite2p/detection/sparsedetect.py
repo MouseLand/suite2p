@@ -361,15 +361,15 @@ def sparsery(ops):
         ops['Vmap'].append(V0[j].copy())
         movu[j] = np.reshape(movu[j], (movu[j].shape[0], -1))
 
-    xpix,ypix,lam = [],[],[]
     rez = np.reshape(rez, (-1, Lyc*Lxc))
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
     niter = 250 * ops['max_iterations']
-    Vmax = np.zeros((niter))
-    ihop = np.zeros((niter))
-    vrat = np.zeros((niter))
+    Vmax = np.zeros(niter)
+    ihop = np.zeros(niter)
+    vrat = np.zeros(niter)
+    stats = []
     for tj in range(niter):
         # find peaks in stddev's
         v0max = np.array([V0[j].max() for j in range(5)])
@@ -422,17 +422,19 @@ def sparsery(ops):
             movu[j][np.ix_(goodframe, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[goodframe], lms[j])
             Mx = movu[j][:,xs[j]+Lxp[j]*ys[j]]
             V0[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
-            
-        xpix.append(xpix0)
-        ypix.append(ypix0)
-        lam.append(lam0)
+
+        stats.append({
+            'ypix': ypix0 + ops['yrange'][0],
+            'lam': lam0 * sdmov[ypix0, xpix0],
+            'xpix': xpix0 + ops['xrange'][0],
+            'footprint': ihop[tj]
+        })
+
         if tj%1000==0:
             print('%d ROIs, score=%2.2f'%(tj, Vmax[tj]))
     
     ops['Vmax'] = Vmax
     ops['ihop'] = ihop
     ops['Vsplit'] = vrat
-    stat  = [{'ypix':ypix[n] + ops['yrange'][0], 'lam':lam[n]*sdmov[ypix[n], xpix[n]], 
-              'xpix':xpix[n] + ops['xrange'][0], 'footprint': ops['ihop'][n]} for n in range(len(xpix))]
 
-    return ops, stat
+    return ops, stats

@@ -30,7 +30,7 @@ def crop(mov: np.ndarray, y_range: Tuple[int, int], x_range: Tuple[int, int]) ->
     return mov[:, slice(*y_range), slice(*x_range)]
 
 
-def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
+def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """Returns a high-pass-filtered copy of the 3D array 'mov' using a gaussian kernel."""
     mov = mov.copy()
     for j in range(mov.shape[1]):
@@ -38,7 +38,7 @@ def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     return mov
 
 
-def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
+def hp_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """Returns a high-pass-filtered copy of the 3D array 'mov' using a non-overlapping rolling mean kernel over time."""
     mov = mov.copy()
     for i in range(0, mov.shape[0], width):

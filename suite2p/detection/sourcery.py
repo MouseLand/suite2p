@@ -12,7 +12,7 @@ from . import utils
 
 def getSVDdata(mov: np.ndarray, ops):
 
-    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    high_pass_filter = utils.hp_gaussian_filter if ops['high_pass'] < 10 else utils.hp_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
     ops['max_proj'] = mov.max(axis=0)
     nbins, Lyc, Lxc = np.shape(mov)
@@ -40,7 +40,7 @@ def getSVDdata(mov: np.ndarray, ops):
 
 def getSVDproj(mov: np.ndarray, ops, u):
 
-    high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
+    high_pass_filter = utils.hp_gaussian_filter if ops['high_pass'] < 10 else utils.hp_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
 
     nbins, Lyc, Lxc = np.shape(mov)

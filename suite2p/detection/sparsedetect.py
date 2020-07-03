@@ -250,7 +250,7 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     return ypix1,xpix1,lam1
 
 
-def sparsery(rez: np.ndarray, high_pass: int, ops):
+def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, ops):
     """ bin ops['reg_file'] then detect ROIs using correlations in time
     
     Parameters
@@ -270,19 +270,13 @@ def sparsery(rez: np.ndarray, high_pass: int, ops):
         list of ROIs
 
     """
-    high_pass_filter = utils.high_pass_gaussian_filter if high_pass < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
-    rez = high_pass_filter(rez, int(high_pass))
+    rez = utils.hp_gaussian_filter(rez, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(rez, high_pass)  # gaussian is slower
 
     ops['max_proj'] = rez.max(axis=0)
     nbinned, Lyc, Lxc = rez.shape
-    # cropped size
-    ops['Lyc'] = Lyc
-    ops['Lxc'] = Lxc
-    sdmov = utils.standard_deviation_over_time(rez, batch_size=ops['batch_size'])
-    rez /= sdmov
-    
-    # subtract low-pass filtered version of binned movie
-    rez = neuropil_subtraction(rez, ops['spatial_hp_detect'])
+    sdmov = utils.standard_deviation_over_time(rez, batch_size=batch_size)
+    rez = rez / sdmov
+    rez = neuropil_subtraction(rez, filter_size=neuropil_high_pass)  # subtract low-pass filtered version of binned movie
 
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]

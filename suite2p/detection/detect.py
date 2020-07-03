@@ -60,7 +60,14 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
 
     t0 = time.time()
     if sparse_mode:
-        ops, stats = sparsedetect.sparsery(rez=mov, high_pass=int(ops['high_pass']), ops=ops)
+        ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
+        ops, stats = sparsedetect.sparsery(
+            rez=mov,
+            high_pass=int(ops['high_pass']),
+            neuropil_high_pass=ops['spatial_hp_detect'],
+            batch_size=ops['batch_size'],
+            ops=ops,
+        )
     else:
         ops, stats = sourcery.sourcery(mov=mov, ops=ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))

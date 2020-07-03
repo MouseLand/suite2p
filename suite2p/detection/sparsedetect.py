@@ -250,14 +250,14 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     return ypix1,xpix1,lam1
 
 
-def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, ops):
-    """ bin ops['reg_file'] then detect ROIs using correlations in time
+def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, ops):
+    """detect ROIs in 'mov' using correlations in time.
     
     Parameters
     ----------------
 
     ops : dictionary
-        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'batch_size'
+        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes'
 
 
     Returns
@@ -270,17 +270,17 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         list of ROIs
 
     """
-    rez = utils.hp_gaussian_filter(rez, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(rez, high_pass)  # gaussian is slower
+    mov = utils.hp_gaussian_filter(mov, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(mov, high_pass)  # gaussian is slower
 
-    ops['max_proj'] = rez.max(axis=0)
-    nbinned, Lyc, Lxc = rez.shape
-    sdmov = utils.standard_deviation_over_time(rez, batch_size=batch_size)
-    rez = rez / sdmov
-    rez = neuropil_subtraction(rez, filter_size=neuropil_high_pass)  # subtract low-pass filtered version of binned movie
+    ops['max_proj'] = mov.max(axis=0)
+    nbinned, Lyc, Lxc = mov.shape
+    sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
+    mov = mov / sdmov
+    mov = neuropil_subtraction(mov, filter_size=neuropil_high_pass)  # subtract low-pass filtered version of binned movie
 
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]
-    dmov = rez
+    dmov = mov
     movu = []
 
     # downsample movie at various spatial scales
@@ -321,7 +321,7 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
 
     # threshold for accepted peaks (scale it by spatial scale)
     Th2 = ops['threshold_scaling']*5*max(1,im)
-    vmultiplier = max(1, np.float32(rez.shape[0])/1200)
+    vmultiplier = max(1, np.float32(mov.shape[0]) / 1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
     ops['spatscale_pix'] = 3*2**im
 
@@ -330,7 +330,7 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     ops['Vmap'] = deepcopy(V0)
     movu = [movu0.reshape(movu0.shape[0], -1) for movu0 in movu]
 
-    rez = np.reshape(rez, (-1, Lyc*Lxc))
+    mov = np.reshape(mov, (-1, Lyc * Lxc))
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
@@ -360,13 +360,13 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         ypix0, xpix0, lam0 = add_square(int(yi), int(xi), ls, Lyc, Lxc)
         
         # project movie into square to get time series
-        tproj = rez[:, ypix0*Lxc + xpix0] @ lam0
+        tproj = mov[:, ypix0 * Lxc + xpix0] @ lam0
         goodframe = np.nonzero(tproj>Th2)[0] # frames with activity > Th2
         
         # extend mask based on activity similarity
         for j in range(3):
-            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, rez[goodframe], Lyc, Lxc)
-            tproj = rez[:, ypix0*Lxc+ xpix0] @ lam0
+            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, mov[goodframe], Lyc, Lxc)
+            tproj = mov[:, ypix0 * Lxc + xpix0] @ lam0
             goodframe = np.nonzero(tproj>Th2)[0]
             if len(goodframe)<1:
                 break
@@ -374,7 +374,7 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             break
 
         # check if ROI should be split
-        vrat[tj], ipack = two_comps(rez[:, ypix0*Lxc+ xpix0], lam0, Th2)
+        vrat[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
         if vrat[tj]>1.25:
             lam0, xp, goodframe = ipack
             tproj[goodframe] = xp
@@ -384,7 +384,7 @@ def sparsery(rez: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             lam0 = lam0[ix]
 
         # update residual on raw movie
-        rez[np.ix_(goodframe, ypix0*Lxc+ xpix0)] -= tproj[goodframe][:,np.newaxis] * lam0
+        mov[np.ix_(goodframe, ypix0 * Lxc + xpix0)] -= tproj[goodframe][:, np.newaxis] * lam0
         # update filtered movie
         ys, xs, lms = multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp)
         for j in range(nscales):

@@ -62,7 +62,7 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
     if sparse_mode:
         ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
         ops, stats = sparsedetect.sparsery(
-            rez=mov,
+            mov=mov,
             high_pass=int(ops['high_pass']),
             neuropil_high_pass=ops['spatial_hp_detect'],
             batch_size=ops['batch_size'],

@@ -40,7 +40,7 @@ def main_detect(ops):
 def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
     t0 = time.time()
     if sparse_mode:
-        ops, stats = sparsedetect.sparsery(ops)
+        ops, stats = sparsedetect.sparsery(high_pass=int(ops['high_pass']), ops=ops)
     else:
         ops, stats = sourcery.sourcery(ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))

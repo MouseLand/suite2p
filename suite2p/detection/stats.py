@@ -8,8 +8,6 @@ import numpy as np
 from numpy.linalg import norm
 from cached_property import cached_property
 
-from .utils import norm_by_average
-
 
 def distance_kernel(radius: int) -> np.ndarray:
     """ Returns 2D array containing geometric distance from center, with radius 'radius'"""
@@ -213,3 +211,8 @@ def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray, max_overlap: flo
         if not keep_roi:
             n_overlaps[ypix, xpix] -= 1
     return keep_rois[::-1]
+
+
+def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
+    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
+    return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)

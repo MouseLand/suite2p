@@ -103,6 +103,3 @@ def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
     return norm(np.where(mov > intensity_threshold, mov, 0), axis=0)
 
 
-def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
-    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
-    return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)

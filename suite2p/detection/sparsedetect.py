@@ -250,7 +250,9 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     return ypix1,xpix1,lam1
 
 
-def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, ops):
+def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
+             max_iterations: int, ops
+             ):
     """detect ROIs in 'mov' using correlations in time.
     
     Parameters
@@ -303,7 +305,6 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
                                      kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
         I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
     I0 = I.max(axis=0)
-    ops['Vcorr'] = I0
 
     # find best scale based on scale of top peaks
     # (used  to set threshold)
@@ -311,8 +312,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
     im, nm = mode(imap[ipk][isort[:50]])
-    if ops['spatial_scale'] > 0:
-        im = max(1, min(4, ops['spatial_scale']))
+    if spatial_scale > 0:
+        im = max(1, min(4, spatial_scale))
         fstr = 'FORCED'
     else:
         fstr = 'estimated'
@@ -320,7 +321,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         print('ERROR: best scale was 0, everything should break now!')
 
     # threshold for accepted peaks (scale it by spatial scale)
-    Th2 = ops['threshold_scaling']*5*max(1,im)
+    Th2 = threshold_scaling * 5 * max(1, im)
     vmultiplier = max(1, np.float32(mov.shape[0]) / 1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
     ops['spatscale_pix'] = 3*2**im
@@ -334,12 +335,11 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
-    niter = 250 * ops['max_iterations']
-    Vmax = np.zeros(niter)
-    ihop = np.zeros(niter)
-    vrat = np.zeros(niter)
+    Vmax = np.zeros(max_iterations)
+    ihop = np.zeros(max_iterations)
+    vrat = np.zeros(max_iterations)
     stats = []
-    for tj in range(niter):
+    for tj in range(max_iterations):
         # find peaks in stddev's
         v0max = np.array([V0[j].max() for j in range(5)])
         imap = np.argmax(v0max)
@@ -406,6 +406,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         'Vmax': Vmax,
         'ihop': ihop,
         'Vsplit': vrat,
+        'Vcorr': I0,
     })
 
     return ops, stats

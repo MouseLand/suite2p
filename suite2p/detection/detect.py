@@ -66,6 +66,9 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
             high_pass=int(ops['high_pass']),
             neuropil_high_pass=ops['spatial_hp_detect'],
             batch_size=ops['batch_size'],
+            spatial_scale=ops['spatial_scale'],
+            threshold_scaling=ops['threshold_scaling'],
+            max_iterations=250 * ops['max_iterations'],
             ops=ops,
         )
     else:

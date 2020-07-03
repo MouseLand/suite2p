@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 
 import numpy as np
 from numpy.linalg import norm
@@ -347,13 +348,10 @@ def sparsery(ops):
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
     ops['spatscale_pix'] = 3*2**im
 
-    V0 = []
-    ops['Vmap']  = []
     # get standard deviation for pixels for all values > Th2
-    for j in range(len(movu)):
-        V0.append(utils.threshold_reduce(movu[j], Th2))
-        ops['Vmap'].append(V0[j].copy())
-        movu[j] = np.reshape(movu[j], (movu[j].shape[0], -1))
+    V0 = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]
+    ops['Vmap'] = deepcopy(V0)
+    movu = [movu0.reshape(movu0.shape[0], -1) for movu0 in movu]
 
     rez = np.reshape(rez, (-1, Lyc*Lxc))
     lxs = 3 * 2**np.arange(5)

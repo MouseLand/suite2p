@@ -88,8 +88,8 @@ def add_square(yi,xi,lx,Ly,Lx):
     ipix = np.tile(np.arange(-lhf, -lhf + lx, dtype=np.int32), reps=(lx, 1))
     x0 = xi + ipix
     y0 = yi + ipix.T
-    mask  = np.ones((lx,lx), 'float32')
-    ix = np.all((y0>=0, y0<Ly, x0>=0 , x0<Lx), axis=0)
+    mask = np.ones_like(ipix, dtype=np.float32)
+    ix = np.all((y0 >= 0, y0 < Ly, x0 >= 0, x0 < Lx), axis=0)
     x0 = x0[ix]
     y0 = y0[ix]
     mask = mask[ix]
@@ -370,10 +370,6 @@ def sparsery(ops):
     Vmax = np.zeros((niter))
     ihop = np.zeros((niter))
     vrat = np.zeros((niter))
-    Npix = np.zeros((niter))
-
-    t0 = time.time()
-
     for tj in range(niter):
         # find peaks in stddev's
         v0max = np.array([V0[j].max() for j in range(5)])

@@ -1,4 +1,3 @@
-import time
 from copy import deepcopy
 
 import numpy as np
@@ -251,14 +250,14 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     return ypix1,xpix1,lam1
 
 
-def sparsery(high_pass: int, ops):
+def sparsery(rez: np.ndarray, high_pass: int, ops):
     """ bin ops['reg_file'] then detect ROIs using correlations in time
     
     Parameters
     ----------------
 
     ops : dictionary
-        'reg_file', 'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'high_pass', 'batch_size'
+        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes', 'batch_size'
 
 
     Returns
@@ -271,22 +270,6 @@ def sparsery(high_pass: int, ops):
         list of ROIs
 
     """
-    t0 = time.time()
-    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
-    print('Binning movie in chunks of length %2.2d' % bin_size)
-    rez = utils.bin_movie(
-        filename=ops['reg_file'],
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        n_frames=ops['nframes'],
-        bin_size=bin_size,
-        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
-        y_range=ops['yrange'],
-        x_range=ops['xrange'],
-    )
-
-    ops['nbinned'] = rez.shape[0]
-    print('Binned movie [%d,%d,%d], %0.2f sec.' % (rez.shape[0], rez.shape[1], rez.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if high_pass < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     rez = high_pass_filter(rez, int(high_pass))
 

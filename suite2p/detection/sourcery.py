@@ -10,23 +10,7 @@ from .stats import fitMVGaus
 from . import utils
 
 
-def getSVDdata(ops):
-    t0 = time.time()
-    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
-    print('Binning movie in chunks of length %2.2d' % bin_size)
-    mov = utils.bin_movie(
-        filename=ops['reg_file'],
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        n_frames=ops['nframes'],
-        bin_size=bin_size,
-        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
-        y_range=ops['yrange'],
-        x_range=ops['xrange'],
-    )
-    ops['nbinned'] = mov.shape[0]
-    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
-
+def getSVDdata(mov: np.ndarray, ops):
 
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
@@ -54,23 +38,8 @@ def getSVDdata(ops):
     U = np.transpose(U, (1, 2, 0)).copy()
     return ops, U, sdmov, u
 
-def getSVDproj(ops, u):
-    t0 = time.time()
-    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
-    print('Binning movie in chunks of length %2.2d' % bin_size)
-    mov = utils.bin_movie(
-        filename=ops['reg_file'],
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        n_frames=ops['nframes'],
-        bin_size=bin_size,
-        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
-        y_range=ops['yrange'],
-        x_range=ops['xrange'],
-    )
+def getSVDproj(mov: np.ndarray, ops, u):
 
-    ops['nbinned'] = mov.shape[0]
-    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     high_pass_filter = utils.high_pass_gaussian_filter if ops['high_pass'] < 10 else utils.high_pass_rolling_mean_filter  # gaussian is slower
     mov = high_pass_filter(mov, int(ops['high_pass']))
 
@@ -80,7 +49,6 @@ def getSVDproj(ops, u):
         for j in range(nbins):
             mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
     if 1:
-        #sdmov = np.ones((Lyc*Lxc,), 'float32')
         sdmov = utils.standard_deviation_over_time(mov, batch_size=ops['batch_size'])
         mov/=sdmov
         mov = np.reshape(mov, (-1,Lyc*Lxc))
@@ -371,7 +339,7 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
         iter += 1
     return ypix, xpix, lam, ix, code
 
-def sourcery(ops):
+def sourcery(mov: np.ndarray, ops):
     change_codes = True
     i0 = time.time()
     if isinstance(ops['diameter'], int):
@@ -379,7 +347,7 @@ def sourcery(ops):
     ops['diameter'] = np.array(ops['diameter'])
     ops['spatscale_pix'] = ops['diameter'][1]
     ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
-    ops, U,sdmov, u   = getSVDdata(ops) # get SVD components
+    ops, U,sdmov, u   = getSVDdata(mov=mov, ops=ops) # get SVD components
     S, StU , StS = getStU(ops, U)
     Lyc, Lxc,nsvd = U.shape
     ops['Lyc'] = Lyc
@@ -508,7 +476,7 @@ def sourcery(ops):
             Ucell = Ucell + (S.reshape((-1,nbasis))@neu).reshape(U.shape)
         if refine<0 and (newcells<Nfirst/10 or it==ops['max_iterations']):
             refine = 3
-            U, sdmov = getSVDproj(ops, u)
+            U, sdmov = getSVDproj(mov, ops, u)
             Ucell = U
         if refine>=0:
             StU = S.reshape((Lyc*Lxc,-1)).transpose() @ Ucell.reshape((Lyc*Lxc,-1))

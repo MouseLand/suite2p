@@ -324,11 +324,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     Th2 = threshold_scaling * 5 * max(1, im)
     vmultiplier = max(1, np.float32(mov.shape[0]) / 1200)
     print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
-    ops['spatscale_pix'] = 3*2**im
 
     # get standard deviation for pixels for all values > Th2
     V0 = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]
-    ops['Vmap'] = deepcopy(V0)
     movu = [movu0.reshape(movu0.shape[0], -1) for movu0 in movu]
 
     mov = np.reshape(mov, (-1, Lyc * Lxc))
@@ -338,12 +336,13 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     Vmax = np.zeros(max_iterations)
     ihop = np.zeros(max_iterations)
     vrat = np.zeros(max_iterations)
+    V1 = deepcopy(V0)
     stats = []
     for tj in range(max_iterations):
         # find peaks in stddev's
-        v0max = np.array([V0[j].max() for j in range(5)])
+        v0max = np.array([V1[j].max() for j in range(5)])
         imap = np.argmax(v0max)
-        imax = np.argmax(V0[imap])
+        imax = np.argmax(V1[imap])
         yi, xi = np.unravel_index(imax, (Lyp[imap], Lxp[imap]))
         # position of peak
         yi, xi = gxy[imap][1,yi,xi], gxy[imap][0,yi,xi]
@@ -390,7 +389,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         for j in range(nscales):
             movu[j][np.ix_(goodframe, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[goodframe], lms[j])
             Mx = movu[j][:,xs[j]+Lxp[j]*ys[j]]
-            V0[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
+            V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
 
         stats.append({
             'ypix': ypix0 + ops['yrange'][0],
@@ -407,6 +406,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         'ihop': ihop,
         'Vsplit': vrat,
         'Vcorr': I0,
+        'Vmap': V0,
+        'spatscale_pix': 3 * 2 ** im,
     })
 
     return ops, stats

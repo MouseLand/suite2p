@@ -1,5 +1,8 @@
 import argparse
 import suite2p
+import numpy as np
+import matplotlib.pyplot as plt
+
 from suite2p.__main__ import add_args, parse_args
 
 
@@ -20,6 +23,7 @@ def registration_metrics():
     # Set registration metrics specific parameters
     ops['do_regmetrics'] = True
     ops['roidetect'] = False
+    ops['reg_metric_n_pc'] = 10
     ops = set_op_param(ops, args, ['data_path', 'tiff_list'])
     print("Calculating registration metrics...")
     result_ops = suite2p.run_s2p(ops)
@@ -27,10 +31,14 @@ def registration_metrics():
         dx = result_ops[p]['regDX']
         reg_pc = result_ops[p]['regPC']
         tpc = result_ops[p]['tPC']
-        bottom_pc = reg_pc[0]
-        top_pc = reg_pc[1]
-        print(top_pc.shape)
-        print(bottom_pc.shape)
+        avg_scores = np.mean(tpc, axis=1)
+        max_scores = np.max(tpc, axis=1)
+        fig, ax = plt.subplots(1, 2, figsize=(12, 3))
+        ax[0].plot(avg_scores)
+        ax[0].title.set_text('Avg scores')
+        ax[1].plot(max_scores)
+        ax[1].title.set_text('Max scores')
+        plt.show()
 
 
 if __name__ == "__main__":

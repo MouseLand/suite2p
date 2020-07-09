@@ -1,21 +1,20 @@
 import argparse
 import suite2p
 import numpy as np
-import matplotlib.pyplot as plt
 
 from suite2p.__main__ import add_args, parse_args
 
 
-def set_op_param(ops, args, param_name_list):
-    for p_name in param_name_list:
-        pval = getattr(args, p_name)
-        if pval:
-            ops[p_name] = pval
-            print('->> Setting {0} to {1}'.format(p_name, ops[p_name]))
-    return ops
+def print_iter(iter_list, iter_name_list, pre=""):
+    for val, name in zip(iter_list, iter_name_list):
+        print("{} offsets: {}".format(pre + " " + name, val))
 
 
 def registration_metrics():
+    """
+    Displays registration offsets calculated on pclow and pchigh frames. If registration was performed well,
+    the PCs should not contain movement. All offsets calculated on pclow/pchigh frames should be close to zero.
+    """
     default_parser = add_args(argparse.ArgumentParser(description='Suite2p parameters'))
     default_parser.add_argument('data_path', type=str, nargs=1, help='Path to directory with input files')
     default_parser.add_argument('--tiff_list', default=[], type=str, nargs='*', help='Input files selected')
@@ -24,21 +23,22 @@ def registration_metrics():
     ops['do_regmetrics'] = True
     ops['roidetect'] = False
     ops['reg_metric_n_pc'] = 10
-    ops = set_op_param(ops, args, ['data_path', 'tiff_list'])
+    # Sets each parameter name to corresponding args value for ops dictionary
+    for p_name in ['data_path', 'tiff_list']:
+        pval = getattr(args, p_name)
+        if pval:
+            ops[p_name] = pval
+            print('->> Setting {0} to {1}'.format(p_name, ops[p_name]))
     print("Calculating registration metrics...")
     result_ops = suite2p.run_s2p(ops)
+    off_strs = ['rigid', 'avg_non_rigid', 'max_non_rigid']
     for p in range(ops['nplanes']):
-        dx = result_ops[p]['regDX']
-        reg_pc = result_ops[p]['regPC']
-        tpc = result_ops[p]['tPC']
-        avg_scores = np.mean(tpc, axis=1)
-        max_scores = np.max(tpc, axis=1)
-        fig, ax = plt.subplots(1, 2, figsize=(12, 3))
-        ax[0].plot(avg_scores)
-        ax[0].title.set_text('Avg scores')
-        ax[1].plot(max_scores)
-        ax[1].title.set_text('Max scores')
-        plt.show()
+        print("\nPlane {}: ".format(p))
+        offsets = result_ops[p]['regDX']
+        avg_offs = np.mean(offsets, axis=0)
+        max_offs = np.max(offsets, axis=0)
+        print_iter(avg_offs, off_strs, 'Average')
+        print_iter(max_offs, off_strs, 'Max')
 
 
 if __name__ == "__main__":

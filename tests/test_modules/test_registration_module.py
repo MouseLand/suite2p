@@ -63,26 +63,26 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     return reg_ops
 
 
-def test_register_binary_do_bidi_output(default_ops):
+def test_register_binary_do_bidi_output(test_ops):
     """
     Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
     """
-    default_ops['do_bidiphase'] = True
+    test_ops['do_bidiphase'] = True
     check_registration_output(
-        default_ops, (404, 360),
-        default_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
-        [str(Path(default_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
-        [str(Path(default_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))]
+        test_ops, (404, 360),
+        test_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
+        [str(Path(test_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
+        [str(Path(test_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))]
     )
 
 
-def test_register_binary_rigid_registration_only(default_ops):
+def test_register_binary_rigid_registration_only(test_ops):
     """
     Tests that register_binary works for a dataset that only has rigid shifts.
     """
-    default_ops['nonrigid'] = False
+    test_ops['nonrigid'] = False
     op = prepare_for_registration(
-        default_ops, default_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
+        test_ops, test_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
     )[0]
     op = register_binary(op)
     registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))

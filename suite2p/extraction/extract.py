@@ -212,6 +212,7 @@ def detect_and_extract(ops, stat=None):
         iscell = classification.Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
         if 'preclassify' in ops and ops['preclassify'] > 0.0:
             ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
+            stat = np.array(stat)
             stat = stat[ic]
             iscell = iscell[ic]
             print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
@@ -229,7 +230,7 @@ def detect_and_extract(ops, stat=None):
             ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stat)
         #redcell = np.zeros((len(stat),2))
-        np.save(os.path.join(fpath, 'redcell.npy'), redcell[ic])
+        np.save(os.path.join(fpath, 'redcell.npy'), redcell)
         np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])
         np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2[ic])
 

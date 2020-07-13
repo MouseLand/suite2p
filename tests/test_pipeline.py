@@ -55,31 +55,16 @@ def test_2plane_2chan_with_batches(test_ops):
     test_ops['batch_size'] = 200
     test_ops['nplanes'] = 2
     test_ops['nchannels'] = 2
+    test_ops['reg_tif'] = True
+    test_ops['reg_tif_chan2'] = True
     suite2p.run_s2p(ops=test_ops)
     utils.check_output(
         test_ops['save_path0'],
-        get_outputs_to_check(test_ops['nchannels']),
+        get_outputs_to_check(test_ops['nchannels']) + ['reg_tif', 'reg_tif_chan2'],
         test_ops['data_path'][0],
         test_ops['nplanes'],
         test_ops['nchannels'],
         added_tag='1500'
-    )
-
-
-def test_2plane_2chan(test_ops):
-    """
-    Tests for case with 2 planes and 2 channels.
-    """
-    test_ops['nplanes'] = 2
-    test_ops['nchannels'] = 2
-    test_ops['tiff_list'] = ['input.tif']
-    suite2p.run_s2p(ops=test_ops)
-    utils.check_output(
-        test_ops['save_path0'],
-        get_outputs_to_check(test_ops['nchannels']),
-        test_ops['data_path'][0],
-        test_ops['nplanes'],
-        test_ops['nchannels'],
     )
 
 

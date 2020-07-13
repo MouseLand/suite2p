@@ -24,11 +24,12 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
     test_ops['tiff_list'] = ['input_1500.tif']
     test_ops['do_regmetrics'] = True
     test_ops['save_NWB'] = True
+    test_ops['reg_tif'] = True
     outputs_to_check = ['F', 'Fneu', 'spks', 'iscell']
     suite2p.run_s2p(ops=test_ops)
     utils.check_output(
         test_ops['save_path0'],
-        outputs_to_check,
+        outputs_to_check + ['reg_tif'],
         test_ops['data_path'][0],
         test_ops['nplanes'],
         test_ops['nchannels'],

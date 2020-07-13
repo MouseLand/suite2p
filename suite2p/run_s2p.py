@@ -347,12 +347,11 @@ def run_s2p(ops={},db={}):
     # set up number of CPU workers for registration and cell detection
     ipl = 0
 
-    while ipl<len(ops1):
+    for ipl, ops in enumerate(ops1):
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
-        ops1[ipl] = run_plane(ops1[ipl], flag_binreg=flag_binreg)
+        ops = run_plane(ops, flag_binreg=flag_binreg)
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
-        ipl += 1 #len(ipl)
     print('total = %0.2f sec.'%(time.time()-t0))
 
     # save final ops1 with all planes

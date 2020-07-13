@@ -73,16 +73,27 @@ def pick_initial_reference(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
-def compute_reference(ops, read_file):
-    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=read_file) as f:
-        frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]
+def compute_reference(ops, frames):
+    """ computes the reference image
 
-    if ops['do_bidiphase'] and ops['bidiphase'] == 0:
-        ops['bidiphase'] = bidiphase.compute(frames)
-        print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])
-    if ops['bidiphase'] != 0:
-        bidiphase.shift(frames, int(ops['bidiphase']))
+    picks initial reference then iteratively aligns frames to create reference
 
+    Parameters
+    ----------
+    
+    ops : dictionary
+        need registration options
+
+    frames : 3D array, int16
+        size [nimg_init x Ly x Lx], frames to use to create initial reference
+
+    Returns
+    -------
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
+
+    """
+    
     refImg = pick_initial_reference(frames)
 
     if ops['1Preg']:
@@ -158,7 +169,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
     else:
         nbytes = path.getsize(ops['raw_file'] if ops.get('keep_movie_raw') and path.exists(ops['raw_file']) else ops['reg_file'])
-        ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx']))
+        ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx'])) # this equation is only true with int16 :)
 
     print('registering %d frames'%ops['nframes'])
     if ops['nframes'] < 50:
@@ -172,12 +183,24 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     raw_file_align = ops.get('raw_file') if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file_chan2')
     raw_file_align = raw_file_align if raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file']) else []
 
-    ### ----- compute reference image -------------- ###
+    ### ----- compute and use bidiphase shift -------------- ###
+    if refImg is None or (ops['do_bidiphase'] and ops['bidiphase'] == 0):
+        # grab frames
+        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
+            frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]    
+        # compute bidiphase shift
+        if ops['do_bidiphase'] and ops['bidiphase'] == 0:
+            ops['bidiphase'] = bidiphase.compute(frames)
+            print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])
+        # shift frames
+        if refImg is None and ops['bidiphase'] != 0:
+            bidiphase.shift(frames, int(ops['bidiphase'])) 
+
     if refImg is not None:
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-        refImg = compute_reference(ops, raw_file_align if raw else reg_file_align)
+        refImg = compute_reference(ops, frames)
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 

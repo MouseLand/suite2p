@@ -23,7 +23,7 @@ def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
     return movt
 
 
-def square_conv2(mov: np.ndarray, filter_size: int) -> np.ndarray:
+def square_convolution_2d(mov: np.ndarray, filter_size: int) -> np.ndarray:
     """Returns movie convolved by uniform kernel with width 'filter_size'."""
     movt = np.zeros_like(mov, dtype=np.float32)
     for frame, framet in zip(mov, movt):
@@ -280,28 +280,24 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     mov = utils.hp_gaussian_filter(mov, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(mov, high_pass)  # gaussian is slower
     max_proj = mov.max(axis=0)
 
-    nbinned, Lyc, Lxc = mov.shape
     sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
-    mov = mov / sdmov
-    mov = neuropil_subtraction(mov, filter_size=neuropil_high_pass)  # subtract low-pass filtered version of binned movie
+    mov = neuropil_subtraction(mov=mov / sdmov, filter_size=neuropil_high_pass)  # subtract low-pass filtered movie
 
+    _, Lyc, Lxc = mov.shape
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
     gxy = [np.array(LL).astype('float32')]
     dmov = mov
     movu = []
 
     # downsample movie at various spatial scales
-    # downsampled sizes
-    Lyp = np.zeros(5, 'int32')
-    Lxp = np.zeros(5,'int32')
+    Lyp, Lxp = np.zeros(5, 'int32'), np.zeros(5, 'int32')  # downsampled sizes
     for j in range(5):
-        # convolve
-        movu.append(square_conv2(dmov, 3))
-        # downsample
+        movu0 = square_convolution_2d(dmov, 3)
         dmov = 2 * utils.downsample(dmov)
         gxy0 = utils.downsample(gxy[j], False)
         gxy.append(gxy0)
-        nbinned, Lyp[j], Lxp[j] = movu[j].shape
+        _, Lyp[j], Lxp[j] = movu0.shape
+        movu.append(movu0)
 
     # spline over scales
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
@@ -366,10 +362,10 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
 
         # check if ROI should be split
         vrat[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
-        if vrat[tj]>1.25:
+        if vrat[tj] > 1.25:
             lam0, xp, active_frames = ipack
             tproj[active_frames] = xp
-            ix = lam0>lam0.max()/5
+            ix = lam0 > lam0.max() / 5
             xpix0 = xpix0[ix]
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
@@ -390,8 +386,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             'footprint': ihop[tj]
         })
 
-        if tj%1000==0:
-            print('%d ROIs, score=%2.2f'%(tj, Vmax[tj]))
+        if tj % 1000 == 0:
+            print('%d ROIs, score=%2.2f' % (tj, Vmax[tj]))
     
     new_ops = {
         'max_proj': max_proj,

@@ -73,6 +73,71 @@ def pick_initial_reference(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
+def compute_reference(ops, frames):
+    """ computes the reference image
+
+    picks initial reference then iteratively aligns frames to create reference
+
+    Parameters
+    ----------
+    
+    ops : dictionary
+        need registration options
+
+    frames : 3D array, int16
+        size [nimg_init x Ly x Lx], frames to use to create initial reference
+
+    Returns
+    -------
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
+
+    """
+    
+    refImg = pick_initial_reference(frames)
+
+    if ops['1Preg']:
+        if ops['pre_smooth']:
+            refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
+            frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
+        refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
+        frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
+
+    niter = 8
+    for iter in range(0, niter):
+        # rigid registration
+        ymax, xmax, cmax = rigid.phasecorr(
+            data=rigid.apply_masks(
+                frames,
+                *rigid.compute_masks(
+                    refImg=refImg,
+                    maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+                )
+            ),
+            cfRefImg=rigid.phasecorr_reference(
+                refImg=refImg,
+                smooth_sigma=ops['smooth_sigma'],
+                pad_fft=ops['pad_fft'],
+            ),
+            maxregshift=ops['maxregshift'],
+            smooth_sigma_time=ops['smooth_sigma_time'],
+        )
+
+        for frame, dy, dx in zip(frames, ymax, xmax):
+            frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+
+        nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
+        isort = np.argsort(-cmax)[1:nmax]
+        # reset reference image
+        refImg = frames[isort].mean(axis=0).astype(np.int16)
+        # shift reference image to position of mean shifts
+        refImg = rigid.shift_frame(
+            frame=refImg,
+            dy=int(np.round(-ymax[isort].mean())),
+            dx=int(np.round(-xmax[isort].mean()))
+        )
+
+    return refImg
 
 def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     """ main registration function
@@ -104,7 +169,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         ops['nframes'] = min((ops['nframes'], ops['frames_include']))
     else:
         nbytes = path.getsize(ops['raw_file'] if ops.get('keep_movie_raw') and path.exists(ops['raw_file']) else ops['reg_file'])
-        ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx']))
+        ops['nframes'] = int(nbytes / (2 * ops['Ly'] * ops['Lx'])) # this equation is only true with int16 :)
 
     print('registering %d frames'%ops['nframes'])
     if ops['nframes'] < 50:
@@ -118,64 +183,24 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     raw_file_align = ops.get('raw_file') if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file_chan2')
     raw_file_align = raw_file_align if raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file']) else []
 
-    ### ----- compute reference image -------------- ###
+    ### ----- compute and use bidiphase shift -------------- ###
+    if refImg is None or (ops['do_bidiphase'] and ops['bidiphase'] == 0):
+        # grab frames
+        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
+            frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]    
+        # compute bidiphase shift
+        if ops['do_bidiphase'] and ops['bidiphase'] == 0:
+            ops['bidiphase'] = bidiphase.compute(frames)
+            print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])
+        # shift frames
+        if refImg is None and ops['bidiphase'] != 0:
+            bidiphase.shift(frames, int(ops['bidiphase'])) 
+
     if refImg is not None:
         print('NOTE: user reference frame given')
     else:
         t0 = time.time()
-
-        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
-            frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]
-
-        if ops['do_bidiphase'] and ops['bidiphase'] == 0:
-            ops['bidiphase'] = bidiphase.compute(frames)
-            print('NOTE: estimated bidiphase offset from data: %d pixels' % ops['bidiphase'])
-        if ops['bidiphase'] != 0:
-            bidiphase.shift(frames, int(ops['bidiphase']))
-
-        refImg = pick_initial_reference(frames)
-
-        if ops['1Preg']:
-            if ops['pre_smooth']:
-                refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-                frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
-            refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-            frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
-
-        niter = 8
-        for iter in range(0, niter):
-            # rigid registration
-            ymax, xmax, cmax = rigid.phasecorr(
-                data=rigid.apply_masks(
-                    frames,
-                    *rigid.compute_masks(
-                        refImg=refImg,
-                        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
-                    )
-                ),
-                cfRefImg=rigid.phasecorr_reference(
-                    refImg=refImg,
-                    smooth_sigma=ops['smooth_sigma'],
-                    pad_fft=ops['pad_fft'],
-                ),
-                maxregshift=ops['maxregshift'],
-                smooth_sigma_time=ops['smooth_sigma_time'],
-            )
-
-            for frame, dy, dx in zip(frames, ymax, xmax):
-                frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
-
-            nmax = int(frames.shape[0] * (1. + iter) / (2 * niter))
-            isort = np.argsort(-cmax)[1:nmax]
-            # reset reference image
-            refImg = frames[isort].mean(axis=0).astype(np.int16)
-            # shift reference image to position of mean shifts
-            refImg = rigid.shift_frame(
-                frame=refImg,
-                dy=int(np.round(-ymax[isort].mean())),
-                dx=int(np.round(-xmax[isort].mean()))
-            )
-
+        refImg = compute_reference(ops, frames)
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
     ops['refImg'] = refImg
 
@@ -211,7 +236,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
                        read_file=raw_file_align if raw_file_align else reg_file_align,
                        write_file=reg_file_align) as f:
-        for k, (_, frames) in tqdm(enumerate(f.iter_frames(batch_size=ops['batch_size']))):
+        t0 = time.time()
+        for k, (_, frames) in enumerate(f.iter_frames(batch_size=ops['batch_size'])):
 
             if ops['bidiphase'] and not ops['bidi_corrected']:
                 bidiphase.shift(frames, int(ops['bidiphase']))
@@ -282,12 +308,13 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     ichan=True
                 )
                 io.save_tiff(data=frames, fname=fname)
+            print('Registered %d/%d in %0.2fs'%(min((k+1)*ops['batch_size'], ops['nframes']), ops['nframes'], time.time()-t0))
+
     ops['yoff'], ops['xoff'], ops['corrXY'] = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
     if ops['nonrigid']:
         ops['yoff1'], ops['xoff1'], ops['corrXY1'] = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
-
 
     if ops['nchannels'] > 1:
         reg_file_alt = ops['reg_file_chan2'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file']
@@ -300,7 +327,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                            read_file=raw_file_alt if raw_file_alt else reg_file_alt,
                            write_file=reg_file_alt) as f:
 
-            for iframes, frames in f.iter_frames(batch_size=ops['batch_size']):
+            for k, (iframes, frames) in enumerate(f.iter_frames(batch_size=ops['batch_size'])):
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
                     bidiphase.shift(frames, int(ops['bidiphase']))

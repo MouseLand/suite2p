@@ -77,7 +77,14 @@ def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
 
 
 def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
-    """Returns time-normed movie values, thresholded by 'intensity_threshold'."""
-    return norm(np.where(mov > intensity_threshold, mov, 0), axis=0)
+    """Returns standard deviation of pixels, thresholded by 'intensity_threshold'.
+    Run in a loop to reduce memory footprint.
+    """
+    nbinned, Lyp, Lxp = mov.shape
+    Vt = np.zeros((Lyp,Lxp), 'float32')
+    for t in range(nbinned):
+        Vt += mov[t]**2 * (mov[t] > intensity_threshold)
+    Vt = Vt**.5
+    return Vt
 
 

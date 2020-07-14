@@ -1,14 +1,7 @@
 import argparse
-
 import numpy as np
+import suite2p  # Only case of absolute import
 
-import \
-    suite2p  # Only case of absoluted imports: https://docs.python.org/3/tutorial/modules.html#intra-package-references
-
-
-def main():
-    ops = np.load('ops.npy', allow_pickle=True).item()
-    suite2p.main(ops)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Suite2p parameters')
@@ -51,12 +44,13 @@ def parse_arguments():
                 ops[k] = type(v)(n)
                 print('->> Setting {0} to {1}'.format(k,ops[k]))
 
-
     if len(args.db)>0:
         db = np.load(args.db, allow_pickle=True).item()
-        suite2p.run_s2p(ops, db)
+        from suite2p import run_s2p
+        run_s2p(ops, db)
     else:
-        suite2p.run_gui()
+        from suite2p import gui
+        gui.run()
 
     
 if __name__ == '__main__':

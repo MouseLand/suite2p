@@ -9,7 +9,7 @@ import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from .. import run_s2p
+from .. import run_s2p, default_ops
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -62,7 +62,7 @@ class MainWindow(QtGui.QMainWindow):
         ops_dir.mkdir(exist_ok=True)
         self.opsuser = os.fspath(ops_dir.joinpath('ops_user.npy'))
         if not os.path.isfile(self.opsuser):
-            np.save(self.opsuser, run_s2p.default_ops())
+            np.save(self.opsuser, default_ops())
         self.opsfile = self.opsuser
 
         menus.mainmenu(self)
@@ -664,7 +664,7 @@ class MainWindow(QtGui.QMainWindow):
         self.win.show()
         self.show()
 
-def run_gui(statfile=None):
+def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QtGui.QApplication(sys.argv)

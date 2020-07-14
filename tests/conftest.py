@@ -10,7 +10,7 @@ def data_dir():
 
 
 @pytest.fixture()
-def default_ops(tmpdir, data_dir):
+def test_ops(tmpdir, data_dir):
     """Initializes ops to be used for test. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
     ops = suite2p.default_ops()
     ops['data_path'] = [data_dir]

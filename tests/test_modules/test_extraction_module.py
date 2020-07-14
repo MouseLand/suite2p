@@ -65,28 +65,28 @@ def extract_wrapper(ops):
         np.save(plane_dir.joinpath('spks.npy'), spks)
 
 
-def test_extraction_output_1plane1chan(default_ops):
+def test_extraction_output_1plane1chan(test_ops):
     ops = prepare_for_extraction(
-        default_ops,
-        [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
+        test_ops,
+        [[test_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)
     utils.check_output(
-        default_ops['save_path0'],
+        test_ops['save_path0'],
         ['F', 'Fneu', 'stat', 'spks'],
-        default_ops['data_path'][0],
-        default_ops['nplanes'],
-        default_ops['nchannels'],
+        test_ops['data_path'][0],
+        test_ops['nplanes'],
+        test_ops['nchannels'],
     )
 
 
-def test_extraction_output_2plane2chan(default_ops):
-    default_ops['nchannels'] = 2
-    default_ops['nplanes'] = 2
-    detection_dir = default_ops['data_path'][0].joinpath('detection')
+def test_extraction_output_2plane2chan(test_ops):
+    test_ops['nchannels'] = 2
+    test_ops['nplanes'] = 2
+    detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = prepare_for_extraction(
-        default_ops,
+        test_ops,
         [
             [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
             [detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
@@ -97,9 +97,9 @@ def test_extraction_output_2plane2chan(default_ops):
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     extract_wrapper(ops)
     utils.check_output(
-        default_ops['save_path0'],
+        test_ops['save_path0'],
         ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks'],
-        default_ops['data_path'][0],
-        default_ops['nplanes'],
-        default_ops['nchannels'],
+        test_ops['data_path'][0],
+        test_ops['nplanes'],
+        test_ops['nchannels'],
     )

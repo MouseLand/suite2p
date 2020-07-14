@@ -8,7 +8,7 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 
 from . import io
-from .. import run_s2p
+from .. import default_ops
 
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
@@ -53,7 +53,7 @@ class RunWindow(QtGui.QDialog):
         except Exception as e:
             print('ERROR: %s'%e)
             print('could not load default ops, using built-in ops settings')
-            self.ops = run_s2p.default_ops()
+            self.ops = default_ops()
 
         # remove any remaining ops files
         fs = glob.glob('ops*.npy')
@@ -73,7 +73,7 @@ class RunWindow(QtGui.QDialog):
 
     def reset_ops(self):
         self.ops = np.load(self.opsfile, allow_pickle=True).item()
-        ops0 = run_s2p.default_ops()
+        ops0 = default_ops()
         self.ops = {**ops0, **self.ops}
         if hasattr(self, 'editlist'):
             for k in range(len(self.editlist)):
@@ -89,7 +89,7 @@ class RunWindow(QtGui.QDialog):
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
-        nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp','pre_smooth','spatial_taper']]
+        nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
         neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
@@ -431,7 +431,7 @@ class RunWindow(QtGui.QDialog):
     def save_default_ops(self):
         name = self.opsfile
         ops = self.ops.copy()
-        self.ops = run_s2p.default_ops()
+        self.ops = default_ops()
         self.save_text()
         np.save(name, self.ops)
         self.ops = ops
@@ -454,7 +454,7 @@ class RunWindow(QtGui.QDialog):
                 elif ext == '.json':
                     with open(name, 'r') as f:
                         ops = json.load(f)
-                ops0 = run_s2p.default_ops()
+                ops0 = default_ops()
                 ops = {**ops0, **ops}
                 for key in ops:
                     if key!='data_path' and key!='save_path' and key!='fast_disk' and key!='cleanup' and key!='save_path0' and key!='h5py':

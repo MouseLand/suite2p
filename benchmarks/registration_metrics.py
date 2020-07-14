@@ -1,45 +1,45 @@
-import sys, getopt
-from pathlib import Path
+import argparse
+import suite2p
+import numpy as np
+
+from suite2p.__main__ import add_args, parse_args
 
 
-def invalid_argument():
-    print("ERROR: Please provide a valid input argument.")
-    print('registration_metrics.py -i <input_tif_file_path>')
-    sys.exit(2)
+def print_iter(iter_list, iter_name_list, pre=""):
+    for val, name in zip(iter_list, iter_name_list):
+        print("{} offsets: {}".format(pre + " " + name, val))
 
 
-def main(argv):
-    input_path = ''
-    input_file = None
-    try:
-        opts, args = getopt.getopt(argv, "hi:")
-    except getopt.GetoptError:
-        invalid_argument()
-    # Go through command line arguments
-    for opt, arg in opts:
-        if opt == '-h':
-            print('usage: registration_metrics.py -i <input_tif_file_path>')
-            sys.exit()
-        elif opt in '-i':
-            input_path = arg
-            input_file = Path(input_path)
-    # Check if supplied input_file is
-    if input_file and input_file.exists():
-        print("Input file is : {}".format(input_file))
-        print("Importing suite2p...")
-        # Only import if input properly specified
-        import suite2p
-        default_ops = suite2p.default_ops()
-        default_ops['do_regmetrics'] = True
-        default_ops['roidetect'] = False
-        default_ops['data_path'] = [input_file.parent]
-        default_ops['tiff_list'] = [str(input_file.name)]
-        default_ops['save_path0'] = '/Users/chriski/Desktop/suite2p_ws'
-        print("Calculating registration metrics... ")
-        suite2p.run_s2p(default_ops)
-    else:
-        invalid_argument()
+def registration_metrics():
+    """
+    Displays registration offsets calculated on pclow and pchigh frames. If registration was performed well,
+    the PCs should not contain movement. All offsets calculated on pclow/pchigh frames should be close to zero.
+    """
+    default_parser = add_args(argparse.ArgumentParser(description='Suite2p parameters'))
+    default_parser.add_argument('data_path', type=str, nargs=1, help='Path to directory with input files')
+    default_parser.add_argument('--tiff_list', default=[], type=str, nargs='*', help='Input files selected')
+    args, ops = parse_args(default_parser)
+    # Set registration metrics specific parameters
+    ops['do_regmetrics'] = True
+    ops['roidetect'] = False
+    ops['reg_metric_n_pc'] = 10
+    # Sets each parameter name to corresponding args value for ops dictionary
+    for p_name in ['data_path', 'tiff_list']:
+        pval = getattr(args, p_name)
+        if pval:
+            ops[p_name] = pval
+            print('->> Setting {0} to {1}'.format(p_name, ops[p_name]))
+    print("Calculating registration metrics...")
+    result_ops = suite2p.run_s2p(ops)
+    off_strs = ['rigid', 'avg_non_rigid', 'max_non_rigid']
+    for p in range(ops['nplanes']):
+        print("\nPlane {}: ".format(p))
+        offsets = result_ops[p]['regDX']
+        avg_offs = np.mean(offsets, axis=0)
+        max_offs = np.max(offsets, axis=0)
+        print_iter(avg_offs, off_strs, 'Average')
+        print_iter(max_offs, off_strs, 'Max')
 
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    registration_metrics()

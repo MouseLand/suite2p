@@ -13,13 +13,13 @@ def get_stat_iscell(data_dir_path):
     return stat, expected_output
 
 
-def test_classification_output(default_ops, data_dir):
+def test_classification_output(test_ops, data_dir):
     """
     Regression test that checks to see if the main_classify function works. Only checks iscell output.
     """
-    default_ops['save_path'] = default_ops['save_path0']
+    test_ops['save_path'] = test_ops['save_path0']
     stat, expected_output = get_stat_iscell(data_dir)
-    ops, iscell, stat = classification.classify(default_ops, stat)
+    ops, iscell, stat = classification.classify(test_ops, stat)
     assert np.allclose(iscell, expected_output, atol=2e-4)
 
 

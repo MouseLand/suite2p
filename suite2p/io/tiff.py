@@ -161,12 +161,11 @@ def tiff_to_binary(ops):
                 im = np.expand_dims(im, axis=0)
 
             # check if uint16
-            if type(im[0,0,0]) == np.uint16:
-                im = im // 2
+            if type(im[0,0,0]) != np.int16:
+                if type(im[0,0,0]) == np.uint16:
+                    im = im // 2
                 im = im.astype(np.int16)
-            if type(im[0,0,0]) == np.uint8:
-                im = im.astype(np.int16)
-
+            
             if im.shape[0] > nfr:
                 im = im[:nfr, :, :]
             nframes = im.shape[0]

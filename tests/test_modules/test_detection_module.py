@@ -61,21 +61,21 @@ def detect_wrapper(ops):
         utils.check_dict_dicts_all_close(stat, output_check['stat'])
 
 
-def test_detection_output_1plane1chan(default_ops):
+def test_detection_output_1plane1chan(test_ops):
     ops = prepare_for_detection(
-        default_ops,
-        [[default_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
+        test_ops,
+        [[test_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
         (404, 360)
     )
     detect_wrapper(ops)
 
 
-def test_detection_output_2plane2chan(default_ops):
-    default_ops['nchannels'] = 2
-    default_ops['nplanes'] = 2
-    detection_dir = default_ops['data_path'][0].joinpath('detection')
+def test_detection_output_2plane2chan(test_ops):
+    test_ops['nchannels'] = 2
+    test_ops['nplanes'] = 2
+    detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = prepare_for_detection(
-        default_ops,
+        test_ops,
         [
             [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
             [detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
@@ -86,9 +86,9 @@ def test_detection_output_2plane2chan(default_ops):
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
     utils.check_output(
-        default_ops['save_path0'],
+        test_ops['save_path0'],
         ['redcell'],
-        default_ops['data_path'][0],
-        default_ops['nplanes'],
-        default_ops['nchannels'],
+        test_ops['data_path'][0],
+        test_ops['nplanes'],
+        test_ops['nchannels'],
     )

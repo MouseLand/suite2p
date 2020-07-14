@@ -96,9 +96,8 @@ def add_square(yi,xi,lx,Ly,Lx):
     mask = mask / norm(mask)
     return y0.flatten(), x0.flatten(), mask.flatten()
 
-def iter_extend(ypix, xpix, rez, Lyc,Lxc):
+def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
     """ extend mask based on activity of pixels on active frames
-
     ACTIVE frames determined by threshold
     
     Parameters
@@ -110,21 +109,21 @@ def iter_extend(ypix, xpix, rez, Lyc,Lxc):
     xpix : array
         pixels in x
     
-    rez : 2D array
-        binned movie on active frames [nactive x Lyc*Lxc]
+    mov : 2D array
+        binned residual movie [nbinned x Lyc*Lxc]
+
+    active_frames : 1D array
+        list of active frames
 
     Returns
     ----------------
-
     ypix : array
         extended pixels in y
     
     xpix : array
         extended pixels in x
-
     lam : array
         pixel weighting
-
     """
     npix = 0
     iter = 0
@@ -133,7 +132,7 @@ def iter_extend(ypix, xpix, rez, Lyc,Lxc):
         # extend ROI by 1 pixel on each side
         ypix, xpix = extendROI(ypix, xpix, Lyc, Lxc, 1)
         # activity in proposed ROI on ACTIVE frames
-        usub = rez[:, ypix*Lxc+ xpix]
+        usub = mov[np.ix_(active_frames, ypix*Lxc+ xpix)]
         lam = np.mean(usub,axis=0)
         ix = lam>max(0, lam.max()/5.0)
         if ix.sum()==0:
@@ -359,35 +358,35 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         ypix0, xpix0, lam0 = add_square(int(yi), int(xi), ls, Lyc, Lxc)
         
         # project movie into square to get time series
-        tproj = mov[:, ypix0 * Lxc + xpix0] @ lam0
-        goodframe = np.nonzero(tproj>Th2)[0] # frames with activity > Th2
+        tproj = mov[:, ypix0*Lxc + xpix0] @ lam0
+        active_frames = np.nonzero(tproj>Th2)[0] # frames with activity > Th2
         
         # extend mask based on activity similarity
         for j in range(3):
-            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, mov[goodframe], Lyc, Lxc)
-            tproj = mov[:, ypix0 * Lxc + xpix0] @ lam0
-            goodframe = np.nonzero(tproj>Th2)[0]
-            if len(goodframe)<1:
+            ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, mov, Lyc, Lxc, active_frames)
+            tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
+            active_frames = np.nonzero(tproj>Th2)[0]
+            if len(active_frames)<1:
                 break
-        if len(goodframe)<1:
+        if len(active_frames)<1:
             break
 
         # check if ROI should be split
         vrat[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
         if vrat[tj]>1.25:
-            lam0, xp, goodframe = ipack
-            tproj[goodframe] = xp
+            lam0, xp, active_frames = ipack
+            tproj[active_frames] = xp
             ix = lam0>lam0.max()/5
             xpix0 = xpix0[ix]
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
 
         # update residual on raw movie
-        mov[np.ix_(goodframe, ypix0 * Lxc + xpix0)] -= tproj[goodframe][:, np.newaxis] * lam0
+        mov[np.ix_(active_frames, ypix0*Lxc+ xpix0)] -= tproj[active_frames][:,np.newaxis] * lam0
         # update filtered movie
         ys, xs, lms = multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp)
         for j in range(nscales):
-            movu[j][np.ix_(goodframe, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[goodframe], lms[j])
+            movu[j][np.ix_(active_frames, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[active_frames], lms[j])
             Mx = movu[j][:,xs[j]+Lxp[j]*ys[j]]
             V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
 

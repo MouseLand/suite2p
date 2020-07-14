@@ -133,12 +133,10 @@ def threshold_reduce(movu, Th2):
 
     """
     nbinned, Lyp, Lxp = movu.shape
-    #Vt = np.zeros((1,Lyp,Lxp), 'float32')
-    Vt = (((movu>Th2) * movu)**2).sum(axis=0)**0.5
-   
-    #for t in range(nbinned):
-    #    Vt += movu[t]**2 * (movu[t]>Th2)
-    #Vt = Vt**.5
+    Vt = np.zeros((Lyp,Lxp), 'float32')
+    for t in range(nbinned):
+        Vt += movu[t]**2 * (movu[t]>Th2)
+    Vt = Vt**.5
     return Vt
 
 def multiscale_mask(ypix0,xpix0,lam0, Lyp, Lxp):

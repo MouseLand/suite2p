@@ -1,5 +1,6 @@
 from typing import Tuple, Dict, List, Any
 from copy import deepcopy
+from enum import Enum
 
 import numpy as np
 from numpy.linalg import norm
@@ -250,6 +251,29 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
     return ypix1,xpix1,lam1
 
 
+class EstimateMode(Enum):
+    Forced = 'FORCED'
+    Estimated = 'estimated'
+
+
+def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMode]:
+    """
+    Returns best scale and estimate method (if the spatial scale was forced (if positive) or estimated (the top peaks).
+    """
+    if spatial_scale > 0:
+        return max(1, min(4, spatial_scale)), EstimateMode.Forced
+    else:
+        I0 = I.max(axis=0)
+        imap = np.argmax(I, axis=0).flatten()
+        ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
+        isort = np.argsort(I0.flatten()[ipk])[::-1]
+        im, _ = mode(imap[ipk][isort[:50]])
+        if im == 0:
+            raise ValueError('ERROR: best scale was 0, everything should break now!')
+        else:
+            return im, EstimateMode.Estimated
+
+
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
              max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns ROIs and general detection statistics detected from 'mov' using correlations in time."""
@@ -281,30 +305,17 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
 
     # spline over scales
     I = np.zeros((len(gxy), gxy[0].shape[1], gxy[0].shape[2]))
-    for t in range(1,len(gxy)-1):
-        gmodel = RectBivariateSpline(gxy[t][1,:,0], gxy[t][0, 0,:], movu[t].max(axis=0),
-                                     kx=min(3, gxy[t][1,:,0].size-1), ky=min(3, gxy[t][0,0,:].size-1))
-        I[t] = gmodel.__call__(gxy[0][1,:,0], gxy[0][0, 0,:])
+    for movu0, gxy0, I0 in zip(movu, gxy, I):
+        gmodel = RectBivariateSpline(gxy0[1, :, 0], gxy0[0, 0, :], movu0.max(axis=0),
+                                     kx=min(3, gxy0.shape[1] - 1), ky=min(3, gxy0.shape[2] - 1))
+        I0[:] = gmodel(gxy[0][1, :, 0], gxy[0][0, 0, :])
     I0 = I.max(axis=0)
 
-    # find best scale based on scale of top peaks
-    # (used  to set threshold)
-    imap = np.argmax(I, axis=0).flatten()
-    ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
-    isort = np.argsort(I0.flatten()[ipk])[::-1]
-    im, nm = mode(imap[ipk][isort[:50]])
-    if spatial_scale > 0:
-        im = max(1, min(4, spatial_scale))
-        fstr = 'FORCED'
-    else:
-        fstr = 'estimated'
-    if im==0:
-        print('ERROR: best scale was 0, everything should break now!')
-
-    # threshold for accepted peaks (scale it by spatial scale)
-    Th2 = threshold_scaling * 5 * max(1, im)
-    vmultiplier = max(1, np.float32(mov.shape[0]) / 1200)
-    print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '%(fstr, 3*2**im, vmultiplier, vmultiplier*Th2))
+    # to set threshold, find best scale based on scale of top peaks
+    im, estimate_mode = find_best_scale(I=I, spatial_scale=spatial_scale)
+    Th2 = threshold_scaling * 5 * max(1, im)  # threshold for accepted peaks (scale it by spatial scale)
+    vmultiplier = max(1, mov.shape[0] / 1200)
+    print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f ' % (estimate_mode.value, 3*2**im, vmultiplier, vmultiplier*Th2))
 
     # get standard deviation for pixels for all values > Th2
     V0 = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]

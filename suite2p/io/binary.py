@@ -15,6 +15,8 @@ class BinaryFile:
     def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
         self.Ly = Ly
         self.Lx = Lx
+        # bytes per frame (FIXED for given file)
+        self.nbytesread = np.int64(2 * self.Ly * self.Lx)
         if read_file == write_file:
             self.read_file = open(read_file, mode='r+b')
             self.write_file = self.read_file
@@ -29,10 +31,6 @@ class BinaryFile:
 
         self._index = 0
         self._can_read = True
-
-    @property
-    def nbytesread(self) -> int:
-        return 2 * self.Ly * self.Lx
 
     @property
     def n_frames(self) -> int:

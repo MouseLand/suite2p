@@ -6,7 +6,6 @@ from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
-from cached_property import cached_property
 
 
 def distance_kernel(radius: int) -> np.ndarray:
@@ -62,7 +61,7 @@ class ROI:
     def get_overlap_image(self, overlap_count_image: np.ndarray) -> np.ndarray:
         return overlap_count_image[self.ypix, self.xpix] > 1
 
-    @cached_property
+    @property
     def mean_r_squared(self) -> float:
         return mean_r_squared(y=self.ypix, x=self.xpix)
 
@@ -90,7 +89,7 @@ class ROI:
     def get_n_pixels_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
 
-    @cached_property
+    @property
     def fit_ellipse(self) -> EllipseData:
         if self.dx is None or self.dy is None:
             raise TypeError("dx and dy are required for fitting to an ellipse.")

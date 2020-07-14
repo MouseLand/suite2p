@@ -78,7 +78,7 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
         ops, stats = sourcery.sourcery(mov=mov, ops=ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
-    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy) for stat in stats]
+    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam']) for stat in stats]
 
     mrs_normeds = ROI.get_mean_r_squared_normed_all(rois=rois)
     npix_normeds = ROI.get_n_pixels_normed_all(rois=rois)
@@ -99,9 +99,10 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
                 'overlap': roi.get_overlap_image(n_overlaps),
             })
             if 'radius' not in stat:
+                ellipse = roi.fit_ellipse(dx, dy)
                 stat.update({
-                    'radius': roi.radius,
-                    'aspect_ratio': roi.aspect_ratio,
+                    'radius': ellipse.radius,
+                    'aspect_ratio': ellipse.aspect_ratio,
                 })
             good_stats.append(stat)
 

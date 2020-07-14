@@ -20,10 +20,21 @@ class EllipseData(NamedTuple):
     cov: float
     radii: Tuple[float, float]
     ellipse: np.ndarray
+    dy: int
+    dx: int
 
     @property
     def area(self):
         return (self.radii[0] * self.radii[1]) ** 0.5 * np.pi
+
+    @property
+    def radius(self) -> float:
+        return self.radii[0] * np.mean((self.dx, self.dy))
+
+    @property
+    def aspect_ratio(self) -> float:
+        ry, rx = self.radii
+        return aspect_ratio(width=ry, height=rx)
 
 
 @dataclass(frozen=True)
@@ -31,8 +42,6 @@ class ROI:
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
-    dx: Optional[int]
-    dy: Optional[int]
     rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
 
     def __post_init__(self):
@@ -89,24 +98,8 @@ class ROI:
     def get_n_pixels_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
 
-    @property
-    def fit_ellipse(self) -> EllipseData:
-        if self.dx is None or self.dy is None:
-            raise TypeError("dx and dy are required for fitting to an ellipse.")
-        return fitMVGaus(self.ypix / self.dy, self.xpix / self.dx, self.lam, 2)
-
-    @property
-    def radii(self) -> Tuple[float, float]:
-        return self.fit_ellipse.radii
-
-    @property
-    def radius(self) -> float:
-        return self.radii[0] * np.mean((self.dx, self.dy))
-
-    @property
-    def aspect_ratio(self) -> float:
-        ry, rx = self.radii
-        return aspect_ratio(width=ry, height=rx)
+    def fit_ellipse(self, dx: float, dy: float) -> EllipseData:
+        return fitMVGaus(self.ypix, self.xpix, self.lam, dy=dy, dx=dx, thres=2)
 
 
 def roi_stats(dy: int, dx: int, stats):
@@ -128,15 +121,16 @@ def roi_stats(dy: int, dx: int, stats):
     warn("roi_stats() will be removed in a future release.  Use ROI instead.", PendingDeprecationWarning)
 
     for stat in stats:
-        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy)
+        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'])
         stat['mrs'] = roi.mean_r_squared
         stat['mrs0'] = roi.mean_r_squared0
         stat['compact'] = roi.mean_r_squared_compact
         stat['med'] = list(roi.median_pix)
         stat['npix'] = roi.n_pixels
         if 'radius' not in stat:
-            stat['radius'] = roi.radius
-            stat['aspect_ratio'] = roi.aspect_ratio
+            ellipse = roi.fit_ellipse(dx, dy)
+            stat['radius'] = ellipse.radius
+            stat['aspect_ratio'] = ellipse.aspect_ratio
 
 
     # todo: why specify the first 100?
@@ -158,7 +152,7 @@ def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
     return 2 * width / (width + height + offset)
 
 
-def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
+def fitMVGaus(y, x, lam, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
 
     Parameters
@@ -170,6 +164,8 @@ def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
     lam : float, array
         weights of each pixel
     """
+    y = y / dy
+    x = x / dx
 
     # normalize pixel weights
     lam /= lam.sum()
@@ -190,7 +186,7 @@ def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
     ellipse = (p.T * radii) @ evec.T + mu
     radii = np.sort(radii)[::-1]
 
-    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse)
+    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse, dy=dy, dx=dx)
 
 
 def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:

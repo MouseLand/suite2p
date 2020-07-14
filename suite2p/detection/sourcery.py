@@ -237,7 +237,7 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
         stat['npix'] = xpix.size
         if 'radius' not in stat:
-            ry, rx = fitMVGaus(ypix / d0[0], xpix / d0[1], lam, 2).radii
+            ry, rx = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1], thres=2).radii
             stat['radius'] = ry * d0.mean()
             stat['aspect_ratio'] = 2 * ry/(.01 + ry + rx)
 

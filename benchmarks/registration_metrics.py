@@ -32,6 +32,8 @@ def registration_metrics(data_path, tiff_list, ops, nPC = 10):
     return metric_results
 
 
+
+
 def main():
     default_parser = add_args(argparse.ArgumentParser(description='Suite2p parameters'))
     default_parser.add_argument('data_path', type=str, nargs=1, help='Path to directory with input files')
@@ -39,13 +41,13 @@ def main():
     args, ops = parse_args(default_parser)
     reg_metric_results = registration_metrics(data_path=args.data_path, tiff_list=args.tiff_list, ops=ops)
     for r in reg_metric_results:
-        print(f"""
-        Plane {r.nplane}:
-        Averages:
-        Rigid: {r.avg_offs[0]} \tAverage NR: {r.avg_offs[1]} \tMax NR: {r.avg_offs[2]}
-        Max:
-        Rigid: {r.max_offs[0]} \tAverage NR: {r.max_offs[1]} \tMax NR: {r.max_offs[2]}
-        """)
+        print(
+            f"""
+            Plane {r.nplane}:
+            Avg_Rigid: {r.avg_offs[0]:.6f} \tAvg_Average NR: {r.avg_offs[1]:.6f} \tAvg_Max NR: {r.avg_offs[2]:.6f}
+            Max_Rigid: {r.max_offs[0]:.6f} \tMax_Average NR: {r.max_offs[1]:.6f} \tMax_Max NR: {r.max_offs[2]:.6f}
+            """.replace('            ', '')
+        )
 
 
 if __name__ == "__main__":

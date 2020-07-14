@@ -11,6 +11,7 @@ from scipy.ndimage.filters import uniform_filter
 from scipy.stats import mode
 
 from . import utils
+from .utils import temporal_high_pass_filter
 
 
 def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
@@ -274,11 +275,9 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
             return im, EstimateMode.Estimated
 
 
-def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
+def sparsery(mov: np.ndarray, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
              max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns ROIs and general detection statistics detected from 'mov' using correlations in time."""
-    mov = utils.hp_gaussian_filter(mov, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(mov, high_pass)  # gaussian is slower
-    max_proj = mov.max(axis=0)
 
     sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
     mov = neuropil_subtraction(mov=mov / sdmov, filter_size=neuropil_high_pass)  # subtract low-pass filtered movie
@@ -305,26 +304,27 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         gmodel = RectBivariateSpline(gxy0[1, :, 0], gxy0[0, 0, :], movu0.max(axis=0),
                                      kx=min(3, gxy0.shape[1] - 1), ky=min(3, gxy0.shape[2] - 1))
         I0[:] = gmodel(gxy[0][1, :, 0], gxy[0][0, 0, :])
-    I0 = I.max(axis=0)
+    v_corr = I.max(axis=0)
 
     # to set threshold, find best scale based on scale of top peaks
     im, estimate_mode = find_best_scale(I=I, spatial_scale=spatial_scale)
+    spatscale_pix = 3 * 2 ** im
     Th2 = threshold_scaling * 5 * max(1, im)  # threshold for accepted peaks (scale it by spatial scale)
     vmultiplier = max(1, mov.shape[0] / 1200)
-    print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f ' % (estimate_mode.value, 3*2**im, vmultiplier, vmultiplier*Th2))
+    print('NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f ' % (estimate_mode.value, spatscale_pix, vmultiplier, vmultiplier * Th2))
 
     # get standard deviation for pixels for all values > Th2
-    V0 = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]
+    v_map = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]
     movu = [movu0.reshape(movu0.shape[0], -1) for movu0 in movu]
 
     mov = np.reshape(mov, (-1, Lyc * Lxc))
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
-    Vmax = np.zeros(max_iterations)
+    v_max = np.zeros(max_iterations)
     ihop = np.zeros(max_iterations)
-    vrat = np.zeros(max_iterations)
-    V1 = deepcopy(V0)
+    v_split = np.zeros(max_iterations)
+    V1 = deepcopy(v_map)
     stats = []
     for tj in range(max_iterations):
         # find peaks in stddev's
@@ -336,8 +336,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         yi, xi = gxy[imap][1,yi,xi], gxy[imap][0,yi,xi]
 
         # check if peak is larger than threshold * max(1,nbinned/1200)
-        Vmax[tj] = v0max.max()
-        if Vmax[tj] < vmultiplier*Th2:
+        v_max[tj] = v0max.max()
+        if v_max[tj] < vmultiplier*Th2:
             break
         ls = lxs[imap]
 
@@ -361,8 +361,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             break
 
         # check if ROI should be split
-        vrat[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
-        if vrat[tj] > 1.25:
+        v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
+        if v_split[tj] > 1.25:
             lam0, xp, active_frames = ipack
             tproj[active_frames] = xp
             ix = lam0 > lam0.max() / 5
@@ -381,22 +381,21 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
 
         stats.append({
             'ypix': ypix0 + yrange[0],
-            'lam': lam0 * sdmov[ypix0, xpix0],
             'xpix': xpix0 + xrange[0],
+            'lam': lam0 * sdmov[ypix0, xpix0],
             'footprint': ihop[tj]
         })
 
         if tj % 1000 == 0:
-            print('%d ROIs, score=%2.2f' % (tj, Vmax[tj]))
+            print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
     
     new_ops = {
-        'max_proj': max_proj,
-        'Vmax': Vmax,
+        'Vmax': v_max,
         'ihop': ihop,
-        'Vsplit': vrat,
-        'Vcorr': I0,
-        'Vmap': V0,
-        'spatscale_pix': 3 * 2 ** im,
+        'Vsplit': v_split,
+        'Vcorr': v_corr,
+        'Vmap': v_map,
+        'spatscale_pix': spatscale_pix,
     }
 
     return new_ops, stats

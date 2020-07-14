@@ -7,13 +7,11 @@ from scipy.ndimage import gaussian_filter
 from matplotlib.colors import hsv_to_rgb
 
 from .stats import fitMVGaus
-from . import utils
-
+from .utils import temporal_high_pass_filter, standard_deviation_over_time
 
 def getSVDdata(mov: np.ndarray, ops):
 
-    high_pass_filter = utils.hp_gaussian_filter if ops['high_pass'] < 10 else utils.hp_rolling_mean_filter  # gaussian is slower
-    mov = high_pass_filter(mov, int(ops['high_pass']))
+    mov = temporal_high_pass_filter(mov, width=int(ops['high_pass']))
     ops['max_proj'] = mov.max(axis=0)
     nbins, Lyc, Lxc = np.shape(mov)
 
@@ -22,7 +20,7 @@ def getSVDdata(mov: np.ndarray, ops):
         mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
 
     # compute noise variance across frames
-    sdmov = utils.standard_deviation_over_time(mov, batch_size=ops['batch_size'])
+    sdmov = standard_deviation_over_time(mov, batch_size=ops['batch_size'])
     mov /= sdmov
     mov = np.reshape(mov, (-1,Lyc*Lxc))
     # compute covariance of binned frames
@@ -40,8 +38,7 @@ def getSVDdata(mov: np.ndarray, ops):
 
 def getSVDproj(mov: np.ndarray, ops, u):
 
-    high_pass_filter = utils.hp_gaussian_filter if ops['high_pass'] < 10 else utils.hp_rolling_mean_filter  # gaussian is slower
-    mov = high_pass_filter(mov, int(ops['high_pass']))
+    mov = temporal_high_pass_filter(mov, int(ops['high_pass']))
 
     nbins, Lyc, Lxc = np.shape(mov)
     if ('smooth_masks' in ops) and ops['smooth_masks']:
@@ -49,7 +46,7 @@ def getSVDproj(mov: np.ndarray, ops, u):
         for j in range(nbins):
             mov[j,:,:] = gaussian_filter(mov[j,:,:], sig)
     if 1:
-        sdmov = utils.standard_deviation_over_time(mov, batch_size=ops['batch_size'])
+        sdmov = standard_deviation_over_time(mov, batch_size=ops['batch_size'])
         mov/=sdmov
         mov = np.reshape(mov, (-1,Lyc*Lxc))
 

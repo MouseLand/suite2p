@@ -46,6 +46,11 @@ def hp_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     return mov
 
 
+def temporal_high_pass_filter(mov: np.ndarray, width: int) -> np.ndarray:
+    """Returns hp-filtered mov over time, selecting an algorithm for computational performance based on the kernel width."""
+    return hp_gaussian_filter(mov, width) if width < 10 else hp_rolling_mean_filter(mov, width)  # gaussian is slower
+
+
 def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray:
     """Returns standard deviation of difference between pixels across time, computed in batches of batch_size."""
     nbins, Ly, Lx = mov.shape
@@ -86,5 +91,4 @@ def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
         Vt += mov[t]**2 * (mov[t] > intensity_threshold)
     Vt = Vt**.5
     return Vt
-
 

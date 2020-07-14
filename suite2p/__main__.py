@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from suite2p import default_ops # Only case of absolute import
+from suite2p import default_ops 
 
 
 def add_args(parser: argparse.ArgumentParser):

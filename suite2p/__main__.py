@@ -28,11 +28,12 @@ def parse_args(parser: argparse.ArgumentParser):
     """
     args = parser.parse_args()
     dargs = vars(args)
-    ops = np.load(args.ops, allow_pickle=True).item() if args.ops else default_ops()
+    ops0 = default_ops()
+    ops = np.load(args.ops, allow_pickle=True).item() if args.ops else {}
     set_param_msg = '->> Setting {0} to {1}'
     # options defined in the cli take precedence over the ones in the ops file
-    for k in ops:
-        v = ops[k]
+    for k in ops0:
+        v = ops0[k]
         n = dargs[k]
         if k in ['fast_disk', 'save_folder', 'save_path0']:
             if n:

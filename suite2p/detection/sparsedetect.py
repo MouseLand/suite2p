@@ -1,3 +1,4 @@
+from typing import Tuple, Dict, List, Any
 from copy import deepcopy
 
 import numpy as np
@@ -250,30 +251,11 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
 
 
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
-             max_iterations: int, ops
-             ):
-    """detect ROIs in 'mov' using correlations in time.
-    
-    Parameters
-    ----------------
-
-    ops : dictionary
-        'Ly', 'Lx', 'yrange', 'xrange', 'tau', 'fs', 'nframes'
-
-
-    Returns
-    ----------------
-
-    ops : dictionary
-        adds 'max_proj', 'Vcorr', 'Vmap', 'Vsplit'
-    
-    stat : array of dicts
-        list of ROIs
-
-    """
+             max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Returns ROIs and general detection statistics detected from 'mov' using correlations in time."""
     mov = utils.hp_gaussian_filter(mov, high_pass) if high_pass < 10 else utils.hp_rolling_mean_filter(mov, high_pass)  # gaussian is slower
+    max_proj = mov.max(axis=0)
 
-    ops['max_proj'] = mov.max(axis=0)
     nbinned, Lyc, Lxc = mov.shape
     sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
     mov = mov / sdmov
@@ -391,22 +373,23 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
 
         stats.append({
-            'ypix': ypix0 + ops['yrange'][0],
+            'ypix': ypix0 + yrange[0],
             'lam': lam0 * sdmov[ypix0, xpix0],
-            'xpix': xpix0 + ops['xrange'][0],
+            'xpix': xpix0 + xrange[0],
             'footprint': ihop[tj]
         })
 
         if tj%1000==0:
             print('%d ROIs, score=%2.2f'%(tj, Vmax[tj]))
     
-    ops.update({
+    new_ops = {
+        'max_proj': max_proj,
         'Vmax': Vmax,
         'ihop': ihop,
         'Vsplit': vrat,
         'Vcorr': I0,
         'Vmap': V0,
         'spatscale_pix': 3 * 2 ** im,
-    })
+    }
 
-    return ops, stats
+    return new_ops, stats

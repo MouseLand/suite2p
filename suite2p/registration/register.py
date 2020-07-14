@@ -308,14 +308,13 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     ichan=True
                 )
                 io.save_tiff(data=frames, fname=fname)
-            print('Registered %d/%d in %0.2fs'%((k+1)*ops['batch_size'], ops['nframes'], time.time()-t0))
+            print('Registered %d/%d in %0.2fs'%(min((k+1)*ops['batch_size'], ops['nframes']), ops['nframes'], time.time()-t0))
 
     ops['yoff'], ops['xoff'], ops['corrXY'] = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
     if ops['nonrigid']:
         ops['yoff1'], ops['xoff1'], ops['corrXY1'] = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
     mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
     ops[mean_img_key] = mean_img
-
 
     if ops['nchannels'] > 1:
         reg_file_alt = ops['reg_file_chan2'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file']
@@ -328,7 +327,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                            read_file=raw_file_alt if raw_file_alt else reg_file_alt,
                            write_file=reg_file_alt) as f:
 
-            for iframes, frames in f.iter_frames(batch_size=ops['batch_size']):
+            for k, (iframes, frames) in enumerate(f.iter_frames(batch_size=ops['batch_size'])):
                 # apply shifts
                 if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
                     bidiphase.shift(frames, int(ops['bidiphase']))

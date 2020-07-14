@@ -198,19 +198,17 @@ def two_comps(mpix0, lam, Th2):
     vexp0 = np.sum(mpix0**2) - np.sum(mpix**2)
 
     k = np.argmax(np.sum(mpix * np.float32(mpix>0), axis=1))
-    mu = [mpix[k].copy()]
-    mu.append(mpix[k].copy())
-    mu[0] = lam * np.float32(mu[0]<0)
-    mu[1] = lam * np.float32(mu[1]>0)
+    mu = [lam * np.float32(mpix[k] < 0), lam * np.float32(mpix[k] > 0)]
+
     mpix = mpix0.copy()
     goodframe = []
     xproj = []
-    for k in range(2):
-        mu[k] /=(1e-6 + np.sum(mu[k]**2)**.5)
-        xp = mpix @ mu[k]
+    for mu0 in mu:
+        mu0[:] /= norm(mu0) + 1e-6
+        xp = mpix @ mu0
+        mpix[gf0, :] -= np.outer(xp[gf0], mu0)
         goodframe.append(gf0)
-        xproj.append(xp[goodframe[k]])
-        mpix[goodframe[k],:] -= np.outer(xproj[k], mu[k])
+        xproj.append(xp[gf0])
 
     flag = [False, False]
     V = np.zeros(2)

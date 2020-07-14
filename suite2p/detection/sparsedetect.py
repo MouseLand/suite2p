@@ -99,6 +99,7 @@ def add_square(yi,xi,lx,Ly,Lx):
     mask = mask / norm(mask)
     return y0.flatten(), x0.flatten(), mask.flatten()
 
+
 def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
     """ extend mask based on activity of pixels on active frames
     ACTIVE frames determined by threshold
@@ -257,6 +258,18 @@ class EstimateMode(Enum):
     Estimated = 'estimated'
 
 
+def estimate_spatial_scale(I: np.ndarray) -> int:
+    I0 = I.max(axis=0)
+    imap = np.argmax(I, axis=0).flatten()
+    ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
+    isort = np.argsort(I0.flatten()[ipk])[::-1]
+    im, _ = mode(imap[ipk][isort[:50]])
+    if im == 0:
+        raise ValueError('ERROR: best scale was 0, everything should break now!')
+    return im
+
+
+
 def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMode]:
     """
     Returns best scale and estimate method (if the spatial scale was forced (if positive) or estimated (the top peaks).
@@ -264,20 +277,15 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
     if spatial_scale > 0:
         return max(1, min(4, spatial_scale)), EstimateMode.Forced
     else:
-        I0 = I.max(axis=0)
-        imap = np.argmax(I, axis=0).flatten()
-        ipk = np.abs(I0 - maximum_filter(I0, size=(11,11))).flatten() < 1e-4
-        isort = np.argsort(I0.flatten()[ipk])[::-1]
-        im, _ = mode(imap[ipk][isort[:50]])
-        if im == 0:
-            raise ValueError('ERROR: best scale was 0, everything should break now!')
-        else:
-            return im, EstimateMode.Estimated
+        return estimate_spatial_scale(I=I), EstimateMode.Estimated
 
 
-def sparsery(mov: np.ndarray, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
+def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
              max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """Returns ROIs and general detection statistics detected from 'mov' using correlations in time."""
+    """Returns stats and ops from 'mov' using correlations in time."""
+
+    mov = temporal_high_pass_filter(mov=mov, width=high_pass)
+    max_proj = mov.max(axis=0)
 
     sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
     mov = neuropil_subtraction(mov=mov / sdmov, filter_size=neuropil_high_pass)  # subtract low-pass filtered movie
@@ -390,6 +398,7 @@ def sparsery(mov: np.ndarray, neuropil_high_pass: int, batch_size: int, spatial_
             print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
     
     new_ops = {
+        'max_proj': max_proj,
         'Vmax': v_max,
         'ihop': ihop,
         'Vsplit': v_split,

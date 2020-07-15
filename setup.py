@@ -30,7 +30,6 @@ setuptools.setup(
       'tqdm',
       'scanimage-tiff-reader',
       'pyqtgraph',
-      'cached-property',
     ],
     tests_require=[
       'pytest',
@@ -69,6 +68,7 @@ setuptools.setup(
       entry_points = {
         'console_scripts': [
           'suite2p = suite2p.__main__:parse_arguments',
+          'reg_metrics = benchmarks.registration_metrics:main',
         ]
         },
 )

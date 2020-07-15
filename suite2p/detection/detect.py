@@ -6,7 +6,7 @@ from .stats import ROI
 from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
 from .utils import temporal_high_pass_filter
 from ..io.binary import bin_movie
-from .classification import classify
+from ..classification import classify
 
 def detect(ops):
     if 'aspect' in ops:

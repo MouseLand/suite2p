@@ -6,7 +6,6 @@ from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
-from cached_property import cached_property
 
 from .utils import norm_by_average
 
@@ -58,7 +57,7 @@ class ROI:
         )
 
 
-    @cached_property
+    @property
     def mean_r_squared(self) -> float:
         return mean_r_squared(y=self.ypix, x=self.xpix)
 
@@ -86,7 +85,7 @@ class ROI:
     def get_n_pixels_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
 
-    @cached_property
+    @property
     def fit_ellipse(self) -> EllipseData:
         if self.dx is None or self.dy is None:
             raise TypeError("dx and dy are required for fitting to an ellipse.")
@@ -108,19 +107,15 @@ class ROI:
 
 def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
-
     Parameters
     ----------
     diameters : (dy, dx)
-
     stats : dictionary
         'ypix', 'xpix', 'lam'
-
     Returns
     -------
     stat : dictionary
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
-
     """
     warn("roi_stats() will be removed in a future release.  Use ROI instead.", PendingDeprecationWarning)
 
@@ -157,7 +152,6 @@ def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
 
 def fitMVGaus(y, x, lam, thres=2.5, npts: int = 100) -> EllipseData:
     """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
-
     Parameters
     ----------
     y : float, array

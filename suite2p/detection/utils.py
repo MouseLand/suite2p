@@ -7,7 +7,10 @@ from scipy.ndimage import gaussian_filter
 from ..io.binary import BinaryFile
 
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
-    """Returns an array with the mean of each time bin (of size 'bin_size')."""
+    """Returns an array with the mean of each time bin (of size 'bin_size').
+    
+        inputs are forced to be a multiple of bin_size in bin_movie
+    """
     n_frames, Ly, Lx = mov.shape
     return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
 

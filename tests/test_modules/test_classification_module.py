@@ -19,7 +19,7 @@ def test_classification_output(test_ops, data_dir):
     """
     test_ops['save_path'] = test_ops['save_path0']
     stat, expected_output = get_stat_iscell(data_dir)
-    ops, iscell, stat = classification.classify(test_ops, stat)
+    iscell = classification.classify(test_ops, stat)
     assert np.allclose(iscell, expected_output, atol=2e-4)
 
 

@@ -73,6 +73,11 @@ def pick_initial_reference(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
+def sampled_mean(ops):
+    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=ops['reg_file']) as f:
+        refImg = f.sampled_mean()
+    return refImg
+
 def compute_reference(ops, frames):
     """ computes the reference image
 

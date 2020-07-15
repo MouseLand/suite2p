@@ -43,12 +43,12 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
 
 def detect_wrapper(ops):
     """
-    Calls the main_detect function and compares output dictionaries (cell_pix, cell_masks,
+    Calls the main detect function and compares output dictionaries (cell_pix, cell_masks,
     neuropil_masks, stat) with prior output dicts.
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_pix, cell_masks, neuropil_masks, stat, op = detection.main_detect(ops=op)
+        cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op)
         output_check = np.load(
             op['data_path'][0].joinpath(
                 'detection',

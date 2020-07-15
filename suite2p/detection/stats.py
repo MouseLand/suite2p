@@ -101,33 +101,33 @@ class ROI:
     def fit_ellipse(self, dx: float, dy: float) -> EllipseData:
         return fitMVGaus(self.ypix, self.xpix, self.lam, dy=dy, dx=dx, thres=2)
 
-
-def roi_stats(dy: int, dx: int, stats):
+def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
     """ computes statistics of ROIs
     Parameters
     ----------
-    diameters : (dy, dx)
     stats : dictionary
         'ypix', 'xpix', 'lam'
+    diameters : (dy, dx)
+    
+    FOV size : (Ly, Lx)
     Returns
     -------
     stat : dictionary
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
     """
-    warn("roi_stats() will be removed in a future release.  Use ROI instead.", PendingDeprecationWarning)
-
-    for stat in stats:
-        roi = ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'])
+    
+    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam']) for stat in stats]
+    n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
+    for roi, stat in zip(rois, stats):
         stat['mrs'] = roi.mean_r_squared
         stat['mrs0'] = roi.mean_r_squared0
         stat['compact'] = roi.mean_r_squared_compact
         stat['med'] = list(roi.median_pix)
         stat['npix'] = roi.n_pixels
-        if 'radius' not in stat:
-            ellipse = roi.fit_ellipse(dx, dy)
-            stat['radius'] = ellipse.radius
-            stat['aspect_ratio'] = ellipse.aspect_ratio
-
+        stat['overlap'] = roi.get_overlap_image(n_overlaps)
+        ellipse = roi.fit_ellipse(dx, dy)
+        stat['radius'] = ellipse.radius
+        stat['aspect_ratio'] = ellipse.aspect_ratio
 
     # todo: why specify the first 100?
     mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
@@ -137,7 +137,11 @@ def roi_stats(dy: int, dx: int, stats):
         stat['npix_norm'] = npix_normed
         stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
 
-    return np.array(stats)
+    if max_overlap is not None:
+        keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps, max_overlap=max_overlap)
+        stats = stats[keep_rois]
+
+    return stats
 
 
 def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:

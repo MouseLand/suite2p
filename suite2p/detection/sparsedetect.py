@@ -282,7 +282,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
              max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns stats and ops from 'mov' using correlations in time."""
 
-    mov = temporal_high_pass_filter(mov=mov, width=high_pass)
+    mov = temporal_high_pass_filter(mov=mov, width=int(high_pass))
     max_proj = mov.max(axis=0)
 
     sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)

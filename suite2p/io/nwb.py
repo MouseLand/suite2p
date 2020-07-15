@@ -48,13 +48,13 @@ def read_nwb(fpath):
             d0 = ops['diameter']
             if isinstance(d0, int):
                 d0 = [d0, d0]
-        stat = roi_stats(*d0, stat)
+        
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:
             nplanes = 1
         stat = np.array(stat)
-        
+
         # ops with backgrounds
         ops1 = []
         for iplane in range(nplanes):
@@ -72,8 +72,9 @@ def read_nwb(fpath):
             ops['tau'] = 1.0
             ops['fs'] = nwbfile.acquisition['TwoPhotonSeries'].rate
             ops1.append(ops.copy())
-            
-            
+
+        stat = roi_stats(stat, *d0, ops['Ly'], ops['Lx'])
+    
         # fluorescence
         F = np.array(nwbfile.processing['ophys']['Fluorescence']['roi_response_series'].data)
         Fneu = np.array(nwbfile.processing['ophys']['Neuropil']['roi_response_series'].data)

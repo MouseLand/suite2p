@@ -3,8 +3,10 @@ import numpy as np
 from pathlib import Path
 from . import sourcery, sparsedetect, chan2detect
 from .stats import ROI
-from .masks import create_cell_masks, create_neuropil_masks, create_cell_pix
-from ..classification import classify
+from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
+from .utils import temporal_high_pass_filter
+from ..io.binary import bin_movie
+from .classification import classify
 
 def detect(ops):
     if 'aspect' in ops:
@@ -12,11 +14,29 @@ def detect(ops):
     else:
         d0 = ops['diameter']
         dy, dx = (d0, d0) if isinstance(d0, int) else d0
-    stats = select_rois(dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
+
+    t0 = time.time()
+    bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
+    mov = bin_movie(
+        filename=ops['reg_file'],
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        n_frames=ops['nframes'],
+        bin_size=bin_size,
+        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        y_range=ops['yrange'],
+        x_range=ops['xrange'],
+    )
+    ops['nbinned'] = mov.shape[0]
+    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+
+
+    stats = select_rois(mov=mov, dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
     # extract fluorescence and neuropil
     t0 = time.time()
     cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
-    cell_masks = create_cell_masks(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_masks = [create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
     neuropil_masks = create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in stats],
         xpixs=[stat['xpix'] for stat in stats],
@@ -36,15 +56,28 @@ def detect(ops):
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
     return cell_pix, cell_masks, neuropil_masks, stats, ops
 
-def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
+def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
+
     t0 = time.time()
     if sparse_mode:
-        ops, stats = sparsedetect.sparsery(ops)
+        ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
+        new_ops, stats = sparsedetect.sparsery(
+            mov=mov,
+            high_pass=ops['high_pass'],
+            neuropil_high_pass=ops['spatial_hp_detect'],
+            batch_size=ops['batch_size'],
+            spatial_scale=ops['spatial_scale'],
+            threshold_scaling=ops['threshold_scaling'],
+            max_iterations=250 * ops['max_iterations'],
+            yrange=ops['yrange'],
+            xrange=ops['xrange'],
+        )
+        ops.update(new_ops)
     else:
-        ops, stats = sourcery.sourcery(ops)
+        ops, stats = sourcery.sourcery(mov=mov, ops=ops)
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
 
-    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], dx=dx, dy=dy) for stat in stats]
+    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam']) for stat in stats]
 
     mrs_normeds = ROI.get_mean_r_squared_normed_all(rois=rois)
     npix_normeds = ROI.get_n_pixels_normed_all(rois=rois)
@@ -62,12 +95,13 @@ def select_rois(dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_m
                 'npix': roi.n_pixels,
                 'npix_norm': npix_normed,
                 'footprint': 0 if 'footprint' not in stat else stat['footprint'],
-                'overlap': n_overlaps[roi.ypix, roi.xpix] > 1,
+                'overlap': roi.get_overlap_image(n_overlaps),
             })
             if 'radius' not in stat:
+                ellipse = roi.fit_ellipse(dx, dy)
                 stat.update({
-                    'radius': roi.radius,
-                    'aspect_ratio': roi.aspect_ratio,
+                    'radius': ellipse.radius,
+                    'aspect_ratio': ellipse.aspect_ratio,
                 })
             good_stats.append(stat)
 

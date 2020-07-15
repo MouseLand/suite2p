@@ -2,6 +2,8 @@ from typing import Optional, Tuple, Sequence
 
 import numpy as np
 
+from suite2p.detection.utils import crop, reject_frames, binned_mean
+
 
 def from_slice(s: slice) -> np.ndarray:
     if s.start == None and s.stop == None and s.step == None:
@@ -115,3 +117,24 @@ class BinaryFile:
             self.write_file.seek(-2 * data.size, 1)
             self._can_read = True
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
+
+
+def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
+    """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
+    with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
+        batches = []
+        batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
+        for indices, data in f.iter_frames(batch_size=batch_size):
+
+            if len(x_range) and len(y_range):
+                data = crop(mov=data, y_range=y_range, x_range=x_range)
+
+            if len(bad_frames) > 0:
+                data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
+
+            if data.shape[0] >= batch_size:  # todo: drops the end of the movie
+                dbin = binned_mean(mov=data, bin_size=bin_size)
+                batches.append(dbin)
+
+    mov = np.vstack(batches)
+    return mov

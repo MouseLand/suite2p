@@ -4,7 +4,6 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
 
-from ..io.binary import BinaryFile
 
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     """Returns an array with the mean of each time bin (of size 'bin_size').
@@ -34,28 +33,7 @@ def crop(mov: np.ndarray, y_range: Tuple[int, int], x_range: Tuple[int, int]) ->
     return mov[:, slice(*y_range), slice(*x_range)]
 
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
-    """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
-    with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
-        batches = []
-        batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
-        for indices, data in f.iter_frames(batch_size=batch_size):
-
-            if len(x_range) and len(y_range):
-                data = crop(mov=data, y_range=y_range, x_range=x_range)
-
-            if len(bad_frames) > 0:
-                data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
-
-            if data.shape[0] >= batch_size:  # todo: drops the end of the movie
-                dbin = binned_mean(mov=data, bin_size=bin_size)
-                batches.append(dbin)
-
-    mov = np.vstack(batches)
-    return mov
-
-
-def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
+def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """Returns a high-pass-filtered copy of the 3D array 'mov' using a gaussian kernel."""
     mov = mov.copy()
     for j in range(mov.shape[1]):
@@ -63,12 +41,17 @@ def high_pass_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     return mov
 
 
-def high_pass_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
+def hp_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """Returns a high-pass-filtered copy of the 3D array 'mov' using a non-overlapping rolling mean kernel over time."""
     mov = mov.copy()
     for i in range(0, mov.shape[0], width):
         mov[i:i + width, :, :] -= mov[i:i + width, :, :].mean(axis=0)
     return mov
+
+
+def temporal_high_pass_filter(mov: np.ndarray, width: int) -> np.ndarray:
+    """Returns hp-filtered mov over time, selecting an algorithm for computational performance based on the kernel width."""
+    return hp_gaussian_filter(mov, width) if width < 10 else hp_rolling_mean_filter(mov, width)  # gaussian is slower
 
 
 def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray:
@@ -112,7 +95,3 @@ def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
     Vt = Vt**.5
     return Vt
 
-
-def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
-    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
-    return np.array(values, dtype='float32') / (estimator(values[:first_n]) + offset)

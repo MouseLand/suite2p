@@ -1,11 +1,11 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 from itertools import count
 import numpy as np
 
 from suite2p.detection.sparsedetect import extendROI
 
 
-def create_cell_pix(stats, Ly, Lx, allow_overlap=False) -> np.ndarray:
+def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int, allow_overlap: bool = False) -> np.ndarray:
     """Returns Ly x Lx array of whether it contains a cell (1) or not (0)."""
     cell_pix = np.zeros((Ly, Lx))
     for stat in stats:
@@ -19,41 +19,30 @@ def create_cell_pix(stats, Ly, Lx, allow_overlap=False) -> np.ndarray:
     return cell_pix
 
 
-def create_cell_masks(stats, Ly, Lx, allow_overlap=False) -> List[Tuple[np.ndarray, np.ndarray]]:
-    """ creates cell masks for ROIs in stat and computes radii
+def create_cell_mask(stat: Dict[str, Any], Ly: int, Lx: int, allow_overlap: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    creates cell masks for ROIs in stat and computes radii
 
     Parameters
     ----------
 
-    stats : dictionary
-        'ypix', 'xpix', 'lam'
-
-    Ly : float
-        y size of frame
-
-    Lx : float
-        x size of frame
-
-    allow_overlap : bool (optional, default False)
-        whether or not to include overlapping pixels in cell masks
+    stat : dictionary 'ypix', 'xpix', 'lam'
+    Ly : y size of frame
+    Lx : x size of frame
+    allow_overlap : whether or not to include overlapping pixels in cell masks
 
     Returns
     -------
-    cell_masks : list 
-        len ncells, each has tuple of pixels belonging to each cell and weights
 
+    cell_masks : len ncells, each has tuple of pixels belonging to each cell and weights
+    lam_normed
     """
-    cell_masks = []
-    for stat in stats:
-        mask = ... if allow_overlap else ~stat['overlap']
-        ypix = stat['ypix'][mask]
-        xpix = stat['xpix'][mask]
-        cell_mask = np.ravel_multi_index((ypix, xpix), (Ly, Lx))
-        lam = stat['lam'][mask]
-        lam_normed = lam / lam.sum() if lam.size > 0 else np.empty(0)
-        cell_masks.append((cell_mask, lam_normed))
-
-    return cell_masks
+    mask = ... if allow_overlap else ~stat['overlap']
+    cell_mask = np.ravel_multi_index((stat['ypix'], stat['xpix']), (Ly, Lx))
+    cell_mask = cell_mask[mask]
+    lam = stat['lam'][mask]
+    lam_normed = lam / lam.sum() if lam.size > 0 else np.empty(0)
+    return cell_mask, lam_normed
 
 
 def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neuropil_pixels):

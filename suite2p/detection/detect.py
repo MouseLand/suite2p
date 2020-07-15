@@ -6,9 +6,9 @@ from .stats import ROI
 from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
 from .utils import temporal_high_pass_filter
 from ..io.binary import bin_movie
+from .classification import classify
 
-
-def main_detect(ops):
+def detect(ops):
     if 'aspect' in ops:
         dy, dx = int(ops['aspect'] * 10), 10
     else:
@@ -55,7 +55,6 @@ def main_detect(ops):
         ops, redcell = chan2detect.detect(ops, stats)
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
     return cell_pix, cell_masks, neuropil_masks, stats, ops
-
 
 def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
 
@@ -108,5 +107,4 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
 
     print('After removing overlaps, %d ROIs remain' % (len(good_stats)))
     return good_stats
-
 

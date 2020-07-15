@@ -4,7 +4,7 @@ import os
 import numpy as np
 import scipy
 
-from ..detection import roi_stats
+from ..detection.stats import roi_stats
 from .. import run_s2p
 
 try:

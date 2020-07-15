@@ -159,23 +159,23 @@ def run_plane(ops, flag_binreg=False):
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.main_detect(ops)
+        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
         ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
-        fpath = ops['save_path']
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        ops, stat, iscell = classification.classify(ops, stat)
+        iscell = classification.classify(ops, stat)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############
+        fpath = ops['save_path']
         F = np.load(os.path.join(fpath,'F.npy'))
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         if spikedetect:
@@ -268,7 +268,7 @@ def run_s2p(ops={},db={}):
                         del op['yoff'], op['xoff'], op['corrXY']
                     except:
                         print('no offsets to delete')
-            # use the new False
+            # use the new ops to run
             ops1[i] = {**op, **ops}.copy()
             # for mesoscope tiffs, preserve original lines, etc
             if 'lines' in op:
@@ -347,10 +347,10 @@ def run_s2p(ops={},db={}):
     # set up number of CPU workers for registration and cell detection
     ipl = 0
 
-    for ipl, ops in enumerate(ops1):
+    for ipl, op in enumerate(ops1):
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
-        ops = run_plane(ops, flag_binreg=flag_binreg)
+        op = run_plane(op, flag_binreg=flag_binreg)
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
     print('total = %0.2f sec.'%(time.time()-t0))
 

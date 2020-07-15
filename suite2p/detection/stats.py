@@ -104,19 +104,15 @@ class ROI:
 
 def roi_stats(dy: int, dx: int, stats):
     """ computes statistics of ROIs
-
     Parameters
     ----------
     diameters : (dy, dx)
-
     stats : dictionary
         'ypix', 'xpix', 'lam'
-
     Returns
     -------
     stat : dictionary
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
-
     """
     warn("roi_stats() will be removed in a future release.  Use ROI instead.", PendingDeprecationWarning)
 
@@ -154,7 +150,6 @@ def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
 
 def fitMVGaus(y, x, lam, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
-
     Parameters
     ----------
     y : float, array

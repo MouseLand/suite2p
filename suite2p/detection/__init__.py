@@ -1,2 +1,2 @@
-from .detect import main_detect
-from .stats import roi_stats, ROI
+from .detect import detect
+from .stats import roi_stats

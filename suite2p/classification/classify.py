@@ -4,7 +4,7 @@ from pathlib import Path
 from . import Classifier
 
 
-def classify(ops, stat):
+def classify(ops, stat, keys=['npix_norm', 'compact', 'skew']):
     """
     Applies classifier and saves output to iscell.npy. Also, saves stat.npy.
 
@@ -34,17 +34,12 @@ def classify(ops, stat):
             s2p_dir = Path(__file__).parent.parent
             classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         print('NOTE: applying classifier %s'%classfile)
-        iscell = Classifier(classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
-        # Code Below does not work. Setting ops['preclassify'] gives you typeError.
-        # if 'preclassify' in ops and ops['preclassify'] > 0.0:
-        #     ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
-        #     stat = stat[ic]
-        #     iscell = iscell[ic]
-        #     print('After classification with threshold %0.2f, %d ROIs remain'%(ops['preclassify'], len(stat)))
-        #     np.save(fpath.joinpath(('stat.npy')), stat)
-        # else:
+        for k in keys:
+            if k not in stat[0]:
+                keys.remove(k)
+        iscell = Classifier(classfile, keys=keys).run(stat)
     else:
         iscell = np.zeros((0,2))
     fpath = Path(ops['save_path'])
     np.save(fpath.joinpath(('iscell.npy')), iscell)
-    return ops, iscell, stat
+    return iscell

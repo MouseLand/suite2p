@@ -67,6 +67,13 @@ class BinaryFile:
             frames = self.ix(indices=frame_indices)
         return frames[(slice(None),) + crop] if crop else frames
 
+    def sampled_mean(self):
+        n_frames = self.n_frames
+        nsamps = min(n_frames, 1000)
+        inds = np.linspace(0, n_frames, 1+nsamps).astype(np.int64)[:-1]
+        frames = self.ix(indices=inds).astype(np.float32)
+        return frames.mean(axis=0)
+
     def iter_frames(self, batch_size=1, dtype=np.float32):
         while True:
             results = self.read(batch_size=batch_size, dtype=dtype)
@@ -102,7 +109,7 @@ class BinaryFile:
         return indices, data
 
     def write(self, data: np.ndarray) -> None:
-        if self._can_read:
+        if self._can_read and self.read_file is self.write_file:
             raise IOError("BinaryFile needs to read before it can write again.")
         if not self.write_file:
             raise IOError("No write_file specified, writing not possible.")

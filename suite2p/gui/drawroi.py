@@ -245,9 +245,7 @@ class ROIDraw(QtGui.QMainWindow):
         stat_all = self.new_stat.copy()
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
-        # Calculate overlap before saving
-        stat_all_w_overlap = extraction.get_overlaps(stat_all, self.parent.ops)
-        np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all_w_overlap)
+        np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all)
         iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]), axis=1)
 
         new_iscell = np.ones((self.nROIs, 2))

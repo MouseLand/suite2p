@@ -58,7 +58,7 @@ class ROI:
         return count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois], xpixs=[roi.xpix for roi in rois])
 
     @classmethod
-    def filter_overlappers(cls, rois: Sequence[ROI], overlap_image: np.ndarray, max_overlap: float) -> np.ndarray:
+    def filter_overlappers(cls, rois: Sequence[ROI], overlap_image: np.ndarray, max_overlap: float) -> List[bool]:
         """returns logical array of rois that remain after removing those that overlap more than fraction max_overlap from overlap_img."""
         return filter_overlappers(
             ypixs=[roi.ypix for roi in rois],
@@ -101,8 +101,10 @@ class ROI:
     def fit_ellipse(self, dx: float, dy: float) -> EllipseData:
         return fitMVGaus(self.ypix, self.xpix, self.lam, dy=dy, dx=dx, thres=2)
 
+
 def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
-    """ computes statistics of ROIs
+    """
+    computes statistics of ROIs
     Parameters
     ----------
     stats : dictionary
@@ -130,8 +132,12 @@ def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
         stat['aspect_ratio'] = ellipse.aspect_ratio
 
     # todo: why specify the first 100?
-    mrs_normeds = norm_by_average(values=[stat['mrs'] for stat in stats], estimator=np.nanmedian, offset=1e-10, first_n=100)
-    npix_normeds = norm_by_average(values=[stat['npix'] for stat in stats], first_n=100)
+    mrs_normeds = norm_by_average(
+        values=np.array([stat['mrs'] for stat in stats]), estimator=np.nanmedian, offset=1e-10, first_n=100
+    )
+    npix_normeds = norm_by_average(
+        values=np.array([stat['npix'] for stat in stats]), first_n=100
+    )
     for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
         stat['mrs'] = mrs_normed
         stat['npix_norm'] = npix_normed

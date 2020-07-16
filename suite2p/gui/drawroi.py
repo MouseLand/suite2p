@@ -8,64 +8,77 @@ from matplotlib.colors import hsv_to_rgb
 from scipy import stats
 
 from . import io
-from .. import extraction
+from ..detection.masks import create_cell_pix, create_neuropil_masks, create_cell_mask
+from ..detection.stats import roi_stats
+from ..extraction.extract import extract_traces
+from ..extraction.dcnv import oasis
 
-
-def masks_and_traces(ops, stat, stat_orig):
+def masks_and_traces(ops, stat_manual, stat_orig):
     ''' main extraction function
         inputs: ops and stat
         creates cell and neuropil masks and extracts traces
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
+    if 'aspect' in ops:
+        dy, dx = int(ops['aspect'] * 10), 10
+    else:
+        d0 = ops['diameter']
+        dy, dx = (d0, d0) if isinstance(d0, int) else d0
     t0 = time.time()
     # Concatenate stat so a good neuropil function can be formed
-    stat_all = stat.copy()
+    stat_all = stat_manual.copy()
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
-    stat_all, cell_pix, _ = extraction.create_cell_masks(ops, stat_all)
-    stat = stat_all[:len(stat)]
-
-    neuropil_masks = extraction.create_neuropil_masks(ops, stat, cell_pix)
-    Ly = ops['Ly']
-    Lx = ops['Lx']
-    neuropil_masks = np.reshape(neuropil_masks, (-1, Ly * Lx))
-
-    stat0 = []
-    for n in range(len(stat)):
-        stat0.append({'ipix': stat[n]['ipix'], 'lam': stat[n]['lam'] / stat[n]['lam'].sum()})
+    stat_all = roi_stats(stat_all, dy, dx, ops['Ly'], ops['Lx'])
+    cell_masks = [
+        create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stat_all
+    ]
+    cell_pix = create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    manual_roi_stats = stat_all[:len(stat_manual)]
+    neuropil_masks = create_neuropil_masks(
+        ypixs=[stat['ypix'] for stat in manual_roi_stats],
+        xpixs=[stat['xpix'] for stat in manual_roi_stats],
+        cell_pix=cell_pix,
+        inner_neuropil_radius=ops['inner_neuropil_radius'],
+        min_neuropil_pixels=ops['min_neuropil_pixels'],
+    )
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, ops = extraction.extract_traces(ops, stat0, neuropil_masks, ops['reg_file'])
+    F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
+        stat0 = []
+        for n in range(len(manual_roi_stats)):
+            stat0.append({'lam': manual_roi_stats[n]['lam'] / manual_roi_stats[n]['lam'].sum()})
         print('red channel:')
-        F_chan2, Fneu_chan2, ops2 = extraction.extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []
 
     # compute activity statistics for classifier
     npix = np.array([stat_orig[n]['npix'] for n in range(len(stat_orig))]).astype('float32')
-    for n in range(len(stat)):
-        stat[n]['npix_norm'] = stat[n]['npix'] / np.mean(npix[:100])  # What if there are less than 100 cells?
-        stat[n]['compact'] = 1
-        stat[n]['footprint'] = 2
-        stat[n]['Manual'] = 1  # Add manual key
+    for n in range(len(manual_roi_stats)):
+        manual_roi_stats[n]['npix_norm'] = manual_roi_stats[n]['npix'] / np.mean(npix[:100])  # What if there are less than 100 cells?
+        manual_roi_stats[n]['compact'] = 1
+        manual_roi_stats[n]['footprint'] = 2
+        manual_roi_stats[n]['Manual'] = 1  # Add manual key
 
     # subtract neuropil and compute skew, std from F
     dF = F - ops['neucoeff'] * Fneu
     sk = stats.skew(dF, axis=1)
     sd = np.std(dF, axis=1)
+
     for n in range(F.shape[0]):
-        stat[n]['skew'] = sk[n]
-        stat[n]['std'] = sd[n]
-        stat[n]['med'] = [np.mean(stat[n]['ypix']), np.mean(stat[n]['xpix'])]
+        print(n)
+        manual_roi_stats[n]['skew'] = sk[n]
+        manual_roi_stats[n]['std'] = sd[n]
+        manual_roi_stats[n]['med'] = [np.mean(manual_roi_stats[n]['ypix']), np.mean(manual_roi_stats[n]['xpix'])]
 
     dF = F - ops['neucoeff'] * Fneu
-    spks = extraction.oasis(dF, ops)
+    spks = oasis(dF, ops)
 
-    # print('Ftrace size', np.shape(Fneu), np.shape(F))
-    return F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat
+    return F, Fneu, F_chan2, Fneu_chan2, spks, ops, manual_roi_stats
 
 
 class ViewButton(QtGui.QPushButton):
@@ -232,9 +245,7 @@ class ROIDraw(QtGui.QMainWindow):
         stat_all = self.new_stat.copy()
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
-        # Calculate overlap before saving
-        stat_all_w_overlap = extraction.get_overlaps(stat_all, self.parent.ops)
-        np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all_w_overlap)
+        np.save(os.path.join(self.parent.basename, 'stat.npy'), stat_all)
         iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]), axis=1)
 
         new_iscell = np.ones((self.nROIs, 2))
@@ -402,8 +413,6 @@ class ROIDraw(QtGui.QMainWindow):
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(self.parent.ops, stat0, self.parent.stat)
         print(spks.shape)
-        # print('After', stat[0].keys())
-        # print('Orig', self.parent.stat[0].keys())
         self.Fcell = F
         self.Fneu = Fneu
         self.F_chan2 = F_chan2

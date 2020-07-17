@@ -5,7 +5,6 @@ from warnings import warn
 
 import numpy as np
 from scipy.signal import medfilt
-from tqdm import tqdm
 
 from suite2p import io
 from suite2p.registration import bidiphase, utils, rigid, nonrigid

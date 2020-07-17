@@ -8,7 +8,7 @@ jobs:
         - bash ./miniconda.sh -b
         - export PATH=~/miniconda3/bin:$PATH
         - conda update --yes conda
-    - name: "Python 3.7.4 on macOS"
+    - name: "Python 3.7.7 on macOS"
       os: osx
       osx_image: xcode12
       language: shell

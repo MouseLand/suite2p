@@ -1,20 +1,25 @@
 language: python
 jobs:
   include:
-    - name: "Python 3.7.0 on Linux"
+    - name: "Python 3.7.1 on Linux"
       python: 3.7
+      before_install:
+        - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+        - bash ./miniconda.sh -b
+        - export PATH=~/miniconda3/bin:$PATH
+        - conda update --yes conda
     - name: "Python 3.7.4 on macOS"
       os: osx
       osx_image: xcode12
-      language: shell       # 'language: python' is an error on Travis CI macOS
+      language: shell
+      before_install:
+        - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
+        - bash ./miniconda.sh -b
+        - export PATH=~/miniconda3/bin:$PATH
+        - conda update --yes conda
   allow_failures:
     - os: osx
 
-before_install:
-- wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-- bash ./miniconda.sh -b
-- export PATH=~/miniconda3/bin:$PATH
-- conda update --yes conda
 install:
 - conda env create -f environment.yml
 - source activate suite2p

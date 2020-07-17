@@ -11,6 +11,12 @@ Suite2p depends on `dvc`_ to download the test data. Before testing, make sure y
 .. prompt:: bash
 
     pip install dvc
+The command above may prompt you to install `pydrive2`. Install it and you should be good to go.
+
+.. prompt:: bash
+
+    pip install pydrive2
+
 
 Use to following command to download the test data into the ``data`` subdirectory of your working ``suite2p`` directory.
 

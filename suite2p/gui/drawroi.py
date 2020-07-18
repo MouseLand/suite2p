@@ -47,11 +47,7 @@ def masks_and_traces(ops, stat_manual, stat_orig):
 
     F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
-        stat0 = []
-        for n in range(len(manual_roi_stats)):
-            stat0.append({'lam': manual_roi_stats[n]['lam'] / manual_roi_stats[n]['lam'].sum()})
-        print('red channel:')
-        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), stat0, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file'])
         ops['meanImg_chan2'] = ops2['meanImg_chan2']
     else:
         F_chan2, Fneu_chan2 = [], []

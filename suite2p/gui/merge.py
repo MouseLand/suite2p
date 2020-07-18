@@ -94,14 +94,9 @@ def merge_activity_masks(parent):
         d0 = parent.ops['diameter']
         if isinstance(d0, int):
             d0 = [d0, d0]
-    stat0 = roi_stats(d0, [stat0])[0]
-
-    # npix_norm
-    npix = np.array([parent.stat[n]['npix'] for n in range(len(parent.stat))]).astype('float32')
-    stat0["npix_norm"] = stat0["npix"] / npix.mean()
     
     # red prob
-    stat0['chan2_prob'] = prmean
+    stat0['chan2_prob'] = -1
     # inmerge
     stat0["inmerge"] = -1
 
@@ -113,21 +108,7 @@ def merge_activity_masks(parent):
     stat0["skew"] = stats.skew(dF)
     stat0["std"] = dF.std()
 
-    ### for GUI drawing
-    # compute outline and circle around cell
-    iext = utils.boundary(ypix, xpix)
-    stat0["yext"] = ypix[iext].astype(np.int32)
-    stat0["xext"] = xpix[iext].astype(np.int32)
-    ycirc, xcirc = utils.circle(stat0["med"], stat0["radius"])
-    goodi = (
-            (ycirc >= 0)
-            & (xcirc >= 0)
-            & (ycirc < parent.ops["Ly"])
-            & (xcirc < parent.ops["Lx"])
-            )
-    stat0["ycirc"] = ycirc[goodi]
-    stat0["xcirc"] = xcirc[goodi]
-    # deconvolve activity
+    
     spks = extraction.oasis(dF[np.newaxis, :], parent.ops)
 
     ### remove previously merged cell from FOV (do not replace)
@@ -145,17 +126,32 @@ def merge_activity_masks(parent):
 
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
-    parent.stat = extraction.get_overlaps(parent.stat, parent.ops)
-    parent.stat = np.array(parent.stat)
+    parent.stat = roi_stats(parent.stat, d0[0], d0[1], parent.Ly, parent.Lx)
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
     parent.Spks = np.concatenate((parent.Spks, spks), axis=0)
     iscell = np.array([parent.iscell[parent.ichosen]], dtype=bool)
     parent.iscell = np.concatenate((parent.iscell, iscell), axis=0)
     parent.probcell = np.append(parent.probcell, pmean)
-    parent.probredcell = np.append(parent.probredcell, prmean)
-    parent.redcell = np.append(parent.redcell, prmean > parent.chan2prob)
+    parent.probredcell = np.append(parent.probredcell, -1)
+    parent.redcell = np.append(parent.redcell, False)
     parent.notmerged = np.append(parent.notmerged, False)
+    
+    ### for GUI drawing
+    # compute outline and circle around cell
+    iext = utils.boundary(ypix, xpix)
+    parent.stat[-1]["yext"] = ypix[iext].astype(np.int32)
+    parent.stat[-1]["xext"] = xpix[iext].astype(np.int32)
+    ycirc, xcirc = utils.circle(parent.stat[-1]["med"], parent.stat[-1]["radius"])
+    goodi = (
+            (ycirc >= 0)
+            & (xcirc >= 0)
+            & (ycirc < parent.ops["Ly"])
+            & (xcirc < parent.ops["Lx"])
+            )
+    parent.stat[-1]["ycirc"] = ycirc[goodi]
+    parent.stat[-1]["xcirc"] = xcirc[goodi]
+    
     # * add colors *
     masks.make_colors(parent)
     # recompute binned F

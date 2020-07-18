@@ -158,9 +158,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         stat[k]['skew'] = sk[k]
         stat[k]['std'] = sd[k]
 
-    if len(stat) > 0:
-        ic = np.ones(len(stat), np.bool)
-    else:
+    if len(stat) == 0:
         raise ValueError("Stat array should not be of length 0.")
 
     fpath = ops['save_path']
@@ -168,16 +166,16 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
 
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
-        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2[ic])
-        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2[ic])
+        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
     # save ops
     np.save(ops['ops_path'], ops)
     # save results
-    np.save(os.path.join(fpath,'F.npy'), F[ic])
-    np.save(os.path.join(fpath,'Fneu.npy'), Fneu[ic])
+    np.save(os.path.join(fpath,'F.npy'), F)
+    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
 
     return ops, stat
 

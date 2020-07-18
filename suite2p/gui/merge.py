@@ -86,7 +86,7 @@ def merge_activity_masks(parent):
         stat0['iplane'] = parent.stat[merged_cells[0]]['iplane']
     stat0['ypix'] = ypix
     stat0['xpix'] = xpix
-    stat0['lam'] = lam / lam.sum() * merged_cells.size
+    stat0['lam'] = lam / lam.sum()
 
     if 'aspect' in parent.ops:
         d0 = np.array([int(parent.ops['aspect']*10), 10])
@@ -127,6 +127,7 @@ def merge_activity_masks(parent):
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
     parent.stat = roi_stats(parent.stat, d0[0], d0[1], parent.Ly, parent.Lx)
+    parent.stat[-1]['lam'] = parent.stat[-1]['lam'] * merged_cells.ize
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
     parent.Spks = np.concatenate((parent.Spks, spks), axis=0)

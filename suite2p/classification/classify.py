@@ -4,7 +4,7 @@ from pathlib import Path
 from . import Classifier
 
 
-def classify(ops, stat, keys=['npix_norm', 'compact', 'skew']):
+def classify(ops, stat, classfile=None, keys=['npix_norm', 'compact', 'skew']):
     """
     Applies classifier and saves output to iscell.npy. Also, saves stat.npy.
 
@@ -15,6 +15,9 @@ def classify(ops, stat, keys=['npix_norm', 'compact', 'skew']):
         (optional 'preclassify')
 
     stat : array of dicts
+
+    classfile: string (optional)    
+        path to classifier
 
     Returns
     -------
@@ -28,12 +31,17 @@ def classify(ops, stat, keys=['npix_norm', 'compact', 'skew']):
     """
     # apply default classifier
     if len(stat) > 0:
-        user_dir = Path.home().joinpath('.suite2p')
-        classfile = user_dir.joinpath('classifiers', 'classifier_user.npy')
-        if not Path(classfile).is_file():
-            s2p_dir = Path(__file__).parent.parent
-            classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
-        print('NOTE: applying classifier %s'%classfile)
+        if classfile is None or not Path(classfile).is_file():
+            print('NOTE: applying default $HOME/.suite2p/classifiersclassifier_user.npy')
+            user_dir = Path.home().joinpath('.suite2p')
+            classfile = user_dir.joinpath('classifiers', 'classifier_user.npy')
+            if not Path(classfile).is_file():
+                print('(no user default classifier exists)')
+                print('NOTE: applying $HOME/.suite2p/classifiers/classifier.npy')
+                s2p_dir = Path(__file__).parent.parent
+                classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
+        else:
+            print('NOTE: applying classifier %s'%classfile)
         for k in keys:
             if k not in stat[0]:
                 keys.remove(k)

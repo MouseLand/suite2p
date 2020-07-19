@@ -1,0 +1,1 @@
+pydeps ../../suite2p --max-bacon=1 --cluster --max-cluster-size=3 --keep-target-cluster --show-dot --show-cycles > suite2p.dot

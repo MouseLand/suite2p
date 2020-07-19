@@ -123,7 +123,7 @@ def load_data(parent,keys,trainfiles):
                     stat = np.load(basename+'/stat.npy', allow_pickle=True)
                     ypix = stat[0]['ypix']
                     lstat = len(stat)
-                except (KeyError, OSError, RuntimeError, TypeError, NameError):
+                except (IndexError, KeyError, OSError, RuntimeError, TypeError, NameError):
                     print('\t'+basename+': incorrect or missing stat.npy file :(')
                 if lstat != ncells:
                     print('\t'+basename+': stat.npy is not the same length as iscell.npy')

@@ -37,8 +37,12 @@ extensions = [
     "sphinx.ext.viewcode",
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
-    'sphinxcontrib.apidoc']
- #   'sphinx.ext.autosummary']
+    'sphinx-prompt',
+    'sphinxcontrib.apidoc',
+    'sphinx_autodoc_typehints',
+#   'sphinx.ext.autosummary',
+]
+
 
 #autodoc_default_flags = ['members']
 #autosummary_generate = True

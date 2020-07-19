@@ -1,10 +1,10 @@
 from multiprocessing import Pool
 
 import numpy as np
+from numpy.linalg import norm
 from scipy.signal import convolve2d
 from sklearn.decomposition import PCA
-
-from . import register, nonrigid, utils
+from scipy.ndimage import gaussian_filter1d
 
 try:
     import cv2
@@ -12,9 +12,10 @@ try:
 except ImportError:
     HAS_CV2 = False
 
-import time
+from . import rigid, nonrigid, utils
+from .. import io
 
-def pclowhigh(mov, nlowhigh, nPC):
+def pclowhigh(mov, nlowhigh, nPC, random_state):
     """ get mean of top and bottom PC weights for nPC's of mov
 
         computes nPC PCs of mov and returns average of top and bottom
@@ -41,13 +42,11 @@ def pclowhigh(mov, nlowhigh, nPC):
 
     """
     nframes, Ly, Lx = mov.shape
-    tic=time.time()
     mov = mov.reshape((nframes, -1))
     mov = mov.astype(np.float32)
     mimg = mov.mean(axis=0)
     mov -= mimg
-    tic=time.time()
-    pca = PCA(n_components=nPC).fit(mov.T)
+    pca = PCA(n_components=nPC, random_state=random_state).fit(mov.T)
     v = pca.components_.T
     w = pca.singular_values_
     mov += mimg
@@ -60,7 +59,10 @@ def pclowhigh(mov, nlowhigh, nPC):
         pchigh[i] = mov[:,:,isort[-nlowhigh:, i]].mean(axis=-1)
     return pclow, pchigh, w, v
 
-def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, preg=False):
+
+def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
+                block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
+                is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
     """ register top and bottom of PCs to each other
 
         Parameters
@@ -88,36 +90,105 @@ def pc_register(pclow, pchigh, refImg, smooth_sigma=1.15, block_size=(128,128), 
                 nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
     """
     # registration settings
-    ops = {
-        'num_workers': -1,
-        'snr_thresh': 1.25,
-        'nonrigid': True,
-        'num_workers': -1,
-        'block_size': np.array(block_size),
-        'maxregshiftNR': np.array(maxregshiftNR),
-        'maxregshift': np.array(maxregshift),
-        'subpixel': 10,
-        'smooth_sigma': smooth_sigma,
-        'smooth_sigma_time': 0,
-        '1Preg': preg,
-        'pad_fft': False,
-        'bidiphase': 0,
-        'refImg': refImg,
-        'spatial_taper': 50.0,
-        'spatial_smooth': 2.0
-        }
-    nPC, ops['Ly'], ops['Lx'] = pclow.shape
-    ops = nonrigid.make_blocks(ops)
+    nPC, Ly, Lx = pclow.shape
+    yblock, xblock, nblocks, block_size, NRsm = nonrigid.make_blocks(
+        Ly=Ly, Lx=Lx, block_size=np.array(block_size)
+    )
+    maxregshiftNR = np.array(maxregshiftNR)
+
     X = np.zeros((nPC,3))
     for i in range(nPC):
         refImg = pclow[i]
         Img = pchigh[i][np.newaxis, :, :]
-        refAndMasks = register.prepare_refAndMasks(refImg, ops)
-        dwrite, ymax, xmax, cmax, yxnr = register.compute_motion_and_shift(Img, refAndMasks, ops)
-        X[i,1] = np.mean((yxnr[0]**2 + yxnr[1]**2)**.5)
-        X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
-        X[i,2] = np.amax((yxnr[0]**2 + yxnr[1]**2)**.5)
+
+        if reg_1p:
+            data = refImg
+            data = data.astype(np.float32)
+            if pre_smooth:
+                data = utils.spatial_smooth(data, int(pre_smooth))
+            refImg = utils.spatial_high_pass(data, int(spatial_hp))
+
+        maskMul, maskOffset = rigid.compute_masks(
+            refImg=refImg,
+            maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma
+        )
+        cfRefImg = rigid.phasecorr_reference(
+            refImg=refImg,
+            smooth_sigma=smooth_sigma,
+            pad_fft=pad_fft,
+        )
+        cfRefImg = cfRefImg[np.newaxis, :, :]
+        if is_nonrigid:
+            maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
+            # pre filtering for one-photon data
+            if reg_1p:
+                data = data.astype(np.float32)
+                if pre_smooth:
+                    data = utils.spatial_smooth(data, int(pre_smooth))
+                data = utils.spatial_high_pass(data, int(spatial_hp))
+                refImg = data
+
+
+            maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
+                refImg0=refImg,
+                maskSlope=maskSlope,
+                smooth_sigma=smooth_sigma,
+                yblock=yblock,
+                xblock=xblock,
+                pad_fft=pad_fft,
+            )
+
+        if bidiphase and not bidi_corrected:
+            bidiphase.shift(Img, bidiphase)
+
+        ###
+        dwrite = Img
+        if smooth_sigma_time > 0:
+            dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+            dwrite = dwrite.astype(np.float32)
+
+        # preprocessing for 1P recordings
+        if reg_1p:
+            Img = Img.astype(np.float32)
+
+            if pre_smooth:
+                dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
+
+        # rigid registration
+        ymax, xmax, cmax = rigid.phasecorr(
+            data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
+            cfRefImg=cfRefImg.squeeze(),
+            maxregshift=maxregshift,
+            smooth_sigma_time=smooth_sigma_time,
+        )
+        for frame, dy, dx in zip(Img, ymax.flatten(), xmax.flatten()):
+            frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+        ###
+
+        # non-rigid registration
+        if is_nonrigid:
+
+            if smooth_sigma_time > 0:
+                dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
+
+            ymax1, xmax1, cmax1, = nonrigid.phasecorr(
+                data=dwrite,
+                maskMul=maskMulNR.squeeze(),
+                maskOffset=maskOffsetNR.squeeze(),
+                cfRefImg=cfRefImgNR.squeeze(),
+                snr_thresh=snr_thresh,
+                NRsm=NRsm,
+                xblock=xblock,
+                yblock=yblock,
+                maxregshiftNR=maxregshiftNR,
+            )
+
+            X[i,1] = np.mean((ymax1**2 + xmax1**2)**.5)
+            X[i,0] = np.mean((ymax[0]**2 + xmax[0]**2)**.5)
+            X[i,2] = np.amax((ymax1**2 + xmax1**2)**.5)
     return X
+
 
 def get_pc_metrics(ops, use_red=False):
     """ computes registration metrics using top PCs of registered movie
@@ -131,10 +202,12 @@ def get_pc_metrics(ops, use_red=False):
         Parameters
         ----------
         ops : dictionary
-            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2') 
+            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
             (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
         use_red : :obj:`bool`, optional
             default False, whether to use 'reg_file' or 'reg_file_chan2'
+        nPC : int
+            # n PCs to compute motion for
 
         Returns
         -------
@@ -142,41 +215,38 @@ def get_pc_metrics(ops, use_red=False):
                 adds 'regPC' and 'tPC' and 'regDX'
 
     """
-    nsamp    = min(5000, ops['nframes']) # n frames to pick from full movie
-    if ops['nframes'] < 5000:
-        nsamp = min(2000, ops['nframes'])
-    if ops['Ly'] > 700 or ops['Lx'] > 700:
-        nsamp = min(2000, nsamp)
-    nPC      = 30 # n PCs to compute motion for
-    nlowhigh = np.minimum(300,int(ops['nframes']/2)) # n frames to average at ends of PC coefficient sortings
-    ix   = np.linspace(0,ops['nframes']-1,nsamp).astype('int')
-    if use_red and 'reg_file_chan2' in ops:
-        mov  = utils.get_frames(ops, ix, ops['reg_file_chan2'], crop=True, badframes=True)
-    else:
-        mov  = utils.get_frames(ops, ix, ops['reg_file'], crop=True, badframes=True)
+    random_state = ops['reg_metrics_rs'] if 'reg_metrics_rs' in ops else None
+    nPC = ops['reg_metric_n_pc'] if 'reg_metric_n_pc' in ops else 30
+    # n frames to pick from full movie
+    nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
+    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'],
+                       read_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
+                       ) as f:
+        mov = f[np.linspace(0, ops['nframes'] - 1, nsamp).astype('int')]
+        mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+    pclow, pchigh, sv, ops['tPC'] = pclowhigh(mov, nlowhigh=np.minimum(300, int(ops['nframes'] / 2)),
+                                              nPC=nPC, random_state=random_state
+                                    )
+    ops['regPC'] = np.concatenate((pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)
 
-    pclow, pchigh, sv, v = pclowhigh(mov, nlowhigh, nPC)
-    if 'block_size' not in ops:
-        ops['block_size']   = [128, 128]
-    if 'maxregshiftNR' not in ops:
-        ops['maxregshiftNR'] = 5
-    if 'smooth_sigma' not in ops:
-        ops['smooth_sigma'] = 1.15
-    if 'maxregshift' not in ops:
-        ops['maxregshift'] = 0.1
-    if '1Preg' not in ops:
-        ops['1Preg'] = False
-    if 'refImg' in ops:
-        refImg = ops['refImg']
-
-    else:
-        refImg = mov.mean(axis=0)
-    X    = pc_register(pclow, pchigh, refImg,
-                       ops['smooth_sigma'], ops['block_size'], ops['maxregshift'], ops['maxregshiftNR'], ops['1Preg'])
-    ops['regPC'] = np.concatenate((pclow[np.newaxis, :,:,:], pchigh[np.newaxis, :,:,:]), axis=0)
-    ops['regDX'] = X
-    ops['tPC'] = v
-
+    ops['regDX'] = pc_register(
+        pclow,
+        pchigh,
+        spatial_hp=ops['spatial_hp_reg'],
+        pre_smooth=ops['pre_smooth'],
+        bidi_corrected=ops['bidi_corrected'],
+        smooth_sigma=ops['smooth_sigma'] if 'smooth_sigma' in ops else 1.15,
+        smooth_sigma_time=ops['smooth_sigma_time'],
+        block_size=ops['block_size'] if 'block_size' in ops else [128, 128],
+        maxregshift=ops['maxregshift'] if 'maxregshift' in ops else 0.1,
+        maxregshiftNR=ops['maxregshiftNR'] if 'maxregshiftNR' in ops else 5,
+        reg_1p=ops['1Preg'] if '1Preg' in ops else False,
+        snr_thresh=ops['snr_thresh'],
+        is_nonrigid=ops['nonrigid'],
+        pad_fft=ops['pad_fft'],
+        bidiphase=ops['bidiphase'],
+        spatial_taper=ops['spatial_taper']
+    )
     return ops
 
 
@@ -210,8 +280,7 @@ def local_corr(mov, batch_size, num_cores):
 
     filt = np.ones((3,3),np.float32)
     filt[1,1] = 0
-    fnorm = ((filt**2).sum())**0.5
-    filt /= fnorm
+    filt /= norm(filt)
     ix=0
     k=0
     filtnorm = convolve2d(np.ones((Ly,Lx)),filt,'same')
@@ -286,7 +355,7 @@ def optic_flow(mov, tmpl, nflows):
             tmpl, mov[n,:,:], None, pyr_scale, levels, winsize, iterations, poly_n, poly_sigma, flags)
 
         flows[n,:,:,:] = flow
-        norms[n] = ((flow**2).sum()) ** 0.5
+        norms[n] = norm(flow)
 
     return flows, norms
 

@@ -1,0 +1,7 @@
+md5: ff32a38b0c31b1fa7a9a7b05db1c233c
+outs:
+- md5: 447efca40ad7aa1f343a30ca037b7167
+  path: rigid_registration_test_data.tif
+  cache: true
+  metric: false
+  persist: false

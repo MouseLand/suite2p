@@ -1,0 +1,1 @@
+py-spy top -- python run_pipeline.py

@@ -4,7 +4,7 @@ import os
 import numpy as np
 import scipy
 
-from .. import extraction
+from ..detection.stats import roi_stats
 from .. import run_s2p
 
 try:
@@ -19,13 +19,13 @@ try:
     from pynwb.ophys import Fluorescence
     from pynwb import NWBHDF5IO
     NWB = True
-except:
+except ModuleNotFoundError:
     NWB = False
 
 
 def read_nwb(fpath):
     with NWBHDF5IO(fpath, 'r') as fio:
-        nwbfile = fio.read_nwb()
+        nwbfile = fio.read()
         
         # ROIs
         try:
@@ -42,13 +42,19 @@ def read_nwb(fpath):
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0,-2])
         ops = run_s2p.default_ops()
-        stat = extraction.roi_stats(ops, stat)
+        if 'aspect' in ops:
+            d0 = np.array([int(ops['aspect'] * 10), 10])
+        else:
+            d0 = ops['diameter']
+            if isinstance(d0, int):
+                d0 = [d0, d0]
+        
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
         else:
             nplanes = 1
         stat = np.array(stat)
-        
+
         # ops with backgrounds
         ops1 = []
         for iplane in range(nplanes):
@@ -66,8 +72,9 @@ def read_nwb(fpath):
             ops['tau'] = 1.0
             ops['fs'] = nwbfile.acquisition['TwoPhotonSeries'].rate
             ops1.append(ops.copy())
-            
-            
+
+        stat = roi_stats(stat, *d0, ops['Ly'], ops['Lx'])
+    
         # fluorescence
         F = np.array(nwbfile.processing['ophys']['Fluorescence']['roi_response_series'].data)
         Fneu = np.array(nwbfile.processing['ophys']['Neuropil']['roi_response_series'].data)
@@ -99,7 +106,6 @@ def read_nwb(fpath):
             LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
             LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
             meanImg = np.zeros((LY, LX))
-            #meanImgE = np.zeros((LY, LX))
             max_proj = np.zeros((LY, LX))
             if ops['nchannels']>1:
                 meanImg_chan2 = np.zeros((LY, LX))
@@ -109,7 +115,6 @@ def read_nwb(fpath):
                 xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
                 yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
                 meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
-                #meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
                 Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
                 max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
                 if ops['nchannels']>1:
@@ -143,7 +148,7 @@ def save_nwb(ops1):
         ### INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description='suite2p_proc',
-            identifier=ops['data_path'][0],
+            identifier=str(ops['data_path'][0]),
             session_start_time=(ops['date_proc'] if 'date_proc' in ops 
                                 else datetime.datetime.now())
         )
@@ -267,7 +272,6 @@ def save_nwb(ops1):
                     images.add_image(GrayscaleImage(name=bstr, data=img))
                 
             ophys_module.add(images)
-
 
         with NWBHDF5IO(os.path.join(ops['save_path0'], 'suite2p', 'ophys.nwb'), 'w') as fio:
             fio.write(nwbfile)

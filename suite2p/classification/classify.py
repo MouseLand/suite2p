@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from pathlib import Path
-from . import Classifier
+from .classifier import Classifier
 
 
 def classify(ops, stat, classfile=None, keys=['npix_norm', 'compact', 'skew']):

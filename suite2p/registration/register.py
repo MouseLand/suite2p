@@ -22,7 +22,7 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
     dy = yoff - medfilt(yoff, 101)
     # offset in x and y (normed by mean offset)
     dxy = (dx**2 + dy**2)**.5
-    dxy /= dxy.mean()
+    dxy = dxy / dxy.mean()
     # phase-corr of each frame with reference (normed by median phase-corr)
     cXY = corrXY / medfilt(corrXY, 101)
     # exclude frames which have a large deviation and/or low correlation

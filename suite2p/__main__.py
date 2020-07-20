@@ -50,7 +50,7 @@ def parse_args(parser: argparse.ArgumentParser):
     return args, ops
 
 
-if __name__ == '__main__':
+def main():
     args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
     if len(args.db) > 0:
         db = np.load(args.db, allow_pickle=True).item()
@@ -59,3 +59,7 @@ if __name__ == '__main__':
     else:
         from suite2p import gui
         gui.run()
+
+
+if __name__ == '__main__':
+    main()

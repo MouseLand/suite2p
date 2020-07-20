@@ -366,8 +366,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
     if 'data_path' in ops and len(ops['data_path']) > 0:
         badfrfile = path.abspath(path.join(ops['data_path'][0], 'bad_frames.npy'))
-        print('bad frames file path: %s'%badfrfile)
         if path.isfile(badfrfile):
+            print('bad frames file path: %s'%badfrfile)
             badframes = np.load(badfrfile)
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True

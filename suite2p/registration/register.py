@@ -6,8 +6,8 @@ from warnings import warn
 import numpy as np
 from scipy.signal import medfilt
 
-from suite2p import io
-from suite2p.registration import bidiphase, utils, rigid, nonrigid
+from .. import io
+from . import bidiphase, utils, rigid, nonrigid
 
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
@@ -22,7 +22,7 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
     dy = yoff - medfilt(yoff, 101)
     # offset in x and y (normed by mean offset)
     dxy = (dx**2 + dy**2)**.5
-    dxy /= dxy.mean()
+    dxy = dxy / dxy.mean()
     # phase-corr of each frame with reference (normed by median phase-corr)
     cXY = corrXY / medfilt(corrXY, 101)
     # exclude frames which have a large deviation and/or low correlation
@@ -366,8 +366,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
     if 'data_path' in ops and len(ops['data_path']) > 0:
         badfrfile = path.abspath(path.join(ops['data_path'][0], 'bad_frames.npy'))
-        print('bad frames file path: %s'%badfrfile)
         if path.isfile(badfrfile):
+            print('bad frames file path: %s'%badfrfile)
             badframes = np.load(badfrfile)
             badframes = badframes.flatten().astype(int)
             ops['badframes'][badframes] = True

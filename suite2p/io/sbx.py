@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from . import utils
+from .utils import init_ops, find_files_open_binaries
 
 
 def sbx_get_info(sbxfile):
@@ -95,12 +95,12 @@ def sbx_to_binary(ops,ndeadcols = -1):
 
     """
 
-    ops1 = utils.init_ops(ops)
+    ops1 = init_ops(ops)
     # the following should be taken from the metadata and not needed but the files are initialized before...
     nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
     # open all binary files for writing
-    ops1, sbxlist, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1)
+    ops1, sbxlist, reg_file, reg_file_chan2 = find_files_open_binaries(ops1)
     iall = 0
     for j in range(ops1[0]['nplanes']):
         ops1[j]['nframes_per_folder'] = np.zeros(len(sbxlist), np.int32)

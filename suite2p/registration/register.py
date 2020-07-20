@@ -6,8 +6,8 @@ from warnings import warn
 import numpy as np
 from scipy.signal import medfilt
 
-from suite2p import io
-from suite2p.registration import bidiphase, utils, rigid, nonrigid
+from .. import io
+from . import bidiphase, utils, rigid, nonrigid
 
 
 def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):

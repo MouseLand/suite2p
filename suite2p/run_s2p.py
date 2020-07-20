@@ -368,25 +368,23 @@ def run_s2p(ops={},db={}):
         print('running clean-up script')
         os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
 
-    i=0
-    for ops in ops1:
-        if 'move_bin' in ops and ops['move_bin'] and ops['save_path']!=ops['fast_disk']:
+    for i, ops in enumerate(ops1):
+        if ops.get('move_bin') and ops['save_path'] != ops['fast_disk']:
+            if i == 0:
+                print('moving binary files to save_path')
             shutil.move(ops['reg_file'], os.path.join(ops['save_path'], 'data.bin'))
             if ops['nchannels']>1:
                 shutil.move(ops['reg_file_chan2'], os.path.join(ops['save_path'], 'data_chan2.bin'))
             if 'raw_file' in ops:
                 shutil.move(ops['raw_file'], os.path.join(ops['save_path'], 'data_raw.bin'))
-                if ops['nchannels']>1:
+                if ops['nchannels'] > 1:
                     shutil.move(ops['raw_file_chan2'], os.path.join(ops['save_path'], 'data_chan2_raw.bin'))
-            if i==0:
-                print('moving binary files to save_path')
-        elif ('delete_bin' in ops) and ops['delete_bin']:
-            os.remove(ops['reg_file'])
-            if ops['nchannels']>1:
-                os.remove(ops['reg_file_chan2'])
-            if i==0:
+        elif ops.get('delete_bin'):
+            if i == 0:
                 print('deleting binary files')
-        i+=1
+            os.remove(ops['reg_file'])
+            if ops['nchannels'] > 1:
+                os.remove(ops['reg_file_chan2'])
 
-    print('TOTAL RUNTIME %0.2f sec'%(time.time()-t0))
+    print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
     return ops1

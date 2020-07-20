@@ -33,14 +33,13 @@ def registration_metrics(data_path, tiff_list, ops, nPC = 10):
     return metric_results
 
 
-
-
 def main():
     default_parser = add_args(argparse.ArgumentParser(description='Suite2p parameters'))
     default_parser.add_argument('data_path', type=str, nargs=1, help='Path to directory with input files')
     default_parser.add_argument('--tiff_list', default=[], type=str, nargs='*', help='Input files selected')
+    default_parser.add_argument('--n_pc', default=10, type=int, help='Number of PCs')
     args, ops = parse_args(default_parser)
-    reg_metric_results = registration_metrics(data_path=args.data_path, tiff_list=args.tiff_list, ops=ops)
+    reg_metric_results = registration_metrics(data_path=args.data_path, tiff_list=args.tiff_list, ops=ops, nPC=args.n_pc)
     for r in reg_metric_results:
         print(
             f"""

@@ -66,7 +66,7 @@ setuptools.setup(
     ],
       entry_points = {
         'console_scripts': [
-          'suite2p = suite2p.__main__:parse_arguments',
+          'suite2p = suite2p.__main__:main',
           'reg_metrics = benchmarks.registration_metrics:main',
         ]
         },

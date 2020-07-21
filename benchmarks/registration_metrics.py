@@ -2,6 +2,7 @@ import argparse
 import suite2p
 import numpy as np
 from typing import NamedTuple
+from pathlib import Path
 from suite2p.__main__ import add_args, parse_args
 
 
@@ -17,7 +18,6 @@ def registration_metrics(data_path, tiff_list, ops, nPC=10):
     the PCs should not contain movement. All offsets calculated on pclow/pchigh frames should be close to zero.
     """
     ops['do_regmetrics'] = True
-    ops['delete_bin'] = True  # delete registered binaries
     ops['roidetect'] = False
     ops['reg_metric_n_pc'] = nPC
     ops['data_path'] = data_path

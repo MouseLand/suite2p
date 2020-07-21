@@ -311,7 +311,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     k=k,
                     ichan=True
                 )
-                io.save_tiff(data=frames, fname=fname)
+                io.save_tiff(mov=frames, fname=fname)
             print('Registered %d/%d in %0.2fs'%(min((k+1)*ops['batch_size'], ops['nframes']), ops['nframes'], time.time()-t0))
 
     ops['yoff'], ops['xoff'], ops['corrXY'] = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
@@ -353,7 +353,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                         k=k,
                         ichan=False
                     )
-                    io.save_tiff(data=frames, fname=fname)
+                    io.save_tiff(mov=frames, fname=fname)
 
                 mean_img_sum += frames.mean(axis=0)
 

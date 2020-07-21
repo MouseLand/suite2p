@@ -4,7 +4,7 @@ import json
 import math
 import os
 import time
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 
 import numpy as np
@@ -36,12 +36,11 @@ def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: 
     return fname
 
 
-def save_tiff(data: np.ndarray, fname: str) -> None:
+def save_tiff(mov: np.ndarray, fname: str) -> None:
     """Save image stack array to tiff file."""
-    data = np.floor(data).astype(np.int16)
     with TiffWriter(fname) as tif:
-        for i in range(data.shape[0]):
-            tif.save(data[i])
+        for frame in np.floor(mov).astype(np.int16):
+            tif.save(frame)
 
 
 def open_tiff(file: str, sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
@@ -55,43 +54,15 @@ def open_tiff(file: str, sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffRea
     return tif, Ltif
 
 
-def choose_tiff_reader(fs0, ops):
-    """  chooses tiff reader (ScanImageTiffReader is default)
-
-    tries to open tiff with ScanImageTiffReader and if it fails sets sktiff to True
-
-    Parameters
-    ----------
-    fs0 : string
-        path to first tiff in list
-
-    ops : dictionary
-        'batch_size'
-
-    Returns
-    -------
-    sktiff : bool
-        whether or not to use tifffile tiff reader
-
-    """
-
+def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
+    """Returns False if ScanImageTiffReader works on the tiff file, else True (in which case use tifffile)."""
     try:
-        tif = ScanImageTiffReader(fs0)
-        tsize = tif.shape()
-        if len(tsize) < 3:
-            # single page tiffs
-            im = tif.data()
-        else:
-            im = tif.data(beg=0, end=np.minimum(ops['batch_size'], tif.shape()[0]-1))
-        tif.close()
-        sktiff=False
+        with ScanImageTiffReader(tiff_filename) as tif:
+            tif.data() if len(tif.shape()) < 3 else tif.data(beg=0, end=np.minimum(batch_size, tif.shape()[0] - 1))
+        return False
     except:
-        sktiff = True
         print('NOTE: ScanImageTiffReader not working for this tiff type, using tifffile')
-    if 'force_sktiff' in ops and ops['force_sktiff']:
-        sktiff=True
-        print('NOTE: user chose tifffile for tiff reading')
-    return sktiff
+        return True
 
 def tiff_to_binary(ops):
     """  finds tiff files and writes them to binaries
@@ -121,7 +92,7 @@ def tiff_to_binary(ops):
     ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
     # try tiff readers
-    sktiff = choose_tiff_reader(fs[0], ops1[0])
+    use_sktiff = True if ops['force_sktiff'] else use_sktiff_reader(fs[0], batch_size=ops1[0].get('batch_size'))
     
     batch_size = ops['batch_size']
     batch_size = nplanes*nchannels*math.ceil(batch_size/(nplanes*nchannels))
@@ -131,7 +102,7 @@ def tiff_to_binary(ops):
     ntotal=0
     for ik, file in enumerate(fs):
         # open tiff
-        tif, Ltif = open_tiff(file, sktiff)
+        tif, Ltif = open_tiff(file, use_sktiff)
         # keep track of the plane identity of the first frame (channel identity is assumed always 0)
         if ops['first_tiffs'][ik]:
             which_folder += 1
@@ -143,7 +114,7 @@ def tiff_to_binary(ops):
                 break
             nfr = min(Ltif - ix, batch_size)
             # tiff reading
-            if sktiff:
+            if use_sktiff:
                 im = imread(file, pages=range(ix, ix + nfr))
             elif Ltif == 1:
                 im = tif.data()
@@ -288,14 +259,14 @@ def mesoscan_to_binary(ops):
     batch_size = ops['batch_size']
 
     # which tiff reader works for user's tiffs
-    sktiff = choose_tiff_reader(fs[0], ops1[0])
+    use_sktiff = True if ops['force_sktiff'] else use_sktiff_reader(fs[0], batch_size=ops1[0].get('batch_size'))
 
     # loop over all tiffs
     which_folder = -1
     ntotal=0
     for ik, file in enumerate(fs):
         # open tiff
-        tif, Ltif = open_tiff(file, sktiff)
+        tif, Ltif = open_tiff(file, use_sktiff)
         if ops['first_tiffs'][ik]:
             which_folder += 1
             iplane = 0
@@ -304,7 +275,7 @@ def mesoscan_to_binary(ops):
             if ix >= Ltif:
                 break
             nfr = min(Ltif - ix, batch_size)
-            if sktiff:
+            if use_sktiff:
                 im = imread(file, pages = range(ix, ix + nfr))
             else:
                 if Ltif==1:

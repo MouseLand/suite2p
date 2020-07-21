@@ -1,7 +1,0 @@
-md5: 122d1435202fcaf8fb10f67961ec9bbc
-outs:
-- md5: ee1aeb487577308db3a5798face370d0
-  path: input-scanimage.tif
-  cache: true
-  metric: false
-  persist: false

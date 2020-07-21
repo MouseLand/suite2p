@@ -83,20 +83,3 @@ def test_1plane_2chan_sourcery(test_ops):
         test_ops['nplanes'],
         test_ops['nchannels'],
     )
-
-
-def test_1plane_2chan_scanimage(test_ops):
-    """
-    Tests for case with 1 plane and 2 channel.
-    """
-    test_ops['nchannels'] = 2
-    test_ops['tiff_list'] = ['input-scanimage.tif']
-    suite2p.run_s2p(ops=test_ops)
-    utils.check_output(
-        test_ops['save_path0'],
-        get_outputs_to_check(test_ops['nchannels']),
-        test_ops['data_path'][0],
-        test_ops['nplanes'],
-        test_ops['nchannels'],
-        added_tag="-scanimage",
-    )

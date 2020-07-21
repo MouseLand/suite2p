@@ -19,6 +19,7 @@ def registration_metrics(data_path, tiff_list, ops, nPC = 10):
     """
     ops['do_regmetrics'] = True
     ops['do_registration'] = 2  # forces registration
+    ops['delete_bin'] = True  # delete registered binaries
     ops['roidetect'] = False
     ops['reg_metric_n_pc'] = nPC
     ops['data_path'] = data_path

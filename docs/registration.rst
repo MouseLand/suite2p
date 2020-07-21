@@ -242,8 +242,8 @@ should all be very close to zero.
     .. prompt:: bash
 
         reg_metrics path_to_data_tif --nplanes 2 --smooth_sigma 1.2
-    runs the script with ``ops['nplanes'] = 2`` and ``ops['smooth_sigma'] = 1.2``.
 
+    runs the script with ``ops['nplanes'] = 2`` and ``ops['smooth_sigma'] = 1.2``.
     You can see all the arguments ``reg_metrics`` takes with the following command:
 
     .. prompt:: bash

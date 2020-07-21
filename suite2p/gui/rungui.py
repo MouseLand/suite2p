@@ -616,7 +616,7 @@ class OpsButton(QtGui.QPushButton):
     def press(self, parent, bid):
         try:
             opsdef = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                              'ops/ops_%s.npy'%parent.opsname[bid])
+                                              '../ops/ops_%s.npy'%parent.opsname[bid])
             ops = np.load(opsdef, allow_pickle=True).item()
             for key in ops:
                 if key in parent.keylist:

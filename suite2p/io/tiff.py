@@ -4,6 +4,8 @@ import json
 import math
 import os
 import time
+from typing import Union, Tuple
+
 
 import numpy as np
 from ScanImageTiffReader import ScanImageTiffReader
@@ -42,23 +44,16 @@ def save_tiff(data: np.ndarray, fname: str) -> None:
             tif.save(data[i])
 
 
-def open_tiff(file, sktiff):
-    """ opens tiff with either ScanImageTiffReader or tifffile
-    returns tiff and its length
-
-    """
+def open_tiff(file: str, sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
+    """ Returns image and its length from tiff file with either ScanImageTiffReader or tifffile, based on 'sktiff'"""
     if sktiff:
         tif = TiffFile(file)
         Ltif = len(tif.pages)
     else:
         tif = ScanImageTiffReader(file)
-        tsize = tif.shape()
-        if len(tsize) < 3:
-            # single page tiffs
-            Ltif = 1
-        else:
-            Ltif = tif.shape()[0]
+        Ltif = 1 if len(tif.shape()) < 3 else tif.shape()[0]  # single page tiffs
     return tif, Ltif
+
 
 def choose_tiff_reader(fs0, ops):
     """  chooses tiff reader (ScanImageTiffReader is default)
@@ -149,21 +144,22 @@ def tiff_to_binary(ops):
             nfr = min(Ltif - ix, batch_size)
             # tiff reading
             if sktiff:
-                im = imread(file, pages = range(ix, ix + nfr))
+                im = imread(file, pages=range(ix, ix + nfr))
+            elif Ltif == 1:
+                im = tif.data()
             else:
-                if Ltif==1:
-                    im = tif.data()
-                else:
-                    im = tif.data(beg=ix, end=ix+nfr)
+                im = tif.data(beg=ix, end=ix+nfr)
 
             # for single-page tiffs, add 1st dim
             if len(im.shape) < 3:
                 im = np.expand_dims(im, axis=0)
 
             # check if uint16
-            if type(im[0,0,0]) != np.int16:
-                if type(im[0,0,0]) == np.uint16:
-                    im = im // 2
+            if im.dtype.type == np.uint16:
+                im = (im // 2).astype(np.int16)
+            elif im.dtype.type == np.int32:
+                im = (im // 2).astype(np.int16)
+            elif im.dtype.type != np.int16:
                 im = im.astype(np.int16)
             
             if im.shape[0] > nfr:

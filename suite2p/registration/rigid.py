@@ -60,6 +60,9 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
         maximum of phase correlation for each frame
 
     """
+    if data.ndim == 2:
+        data = data[np.newaxis, :, :]
+    
     data = convolve(data, cfRefImg)
 
     min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed

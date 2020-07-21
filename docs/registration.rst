@@ -209,15 +209,6 @@ To run the script, use the following command:
 
     reg_metrics <INSERT_OPS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
 
-.. note::
-
-    If the ``reg_metrics`` command is not working, make sure the console script has been installed in your
-    environment:
-
-    .. prompt:: bash
-
-        python setup.py develop
-
 Once you run the ``reg_metrics`` command, registration will be performed for the input file and
 an output similar to the following will be shown:
 

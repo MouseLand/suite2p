@@ -157,6 +157,8 @@ def tiff_to_binary(ops):
             # check if uint16
             if im.dtype.type == np.uint16:
                 im = (im // 2).astype(np.int16)
+            elif im.dtype.type == np.int32:
+                im = (im // 2).astype(np.int16)
             elif im.dtype.type != np.int16:
                 im = im.astype(np.int16)
             

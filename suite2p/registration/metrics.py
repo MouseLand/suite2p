@@ -141,26 +141,19 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
-        ###
-        dwrite = Img
-        if smooth_sigma_time > 0:
-            dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
-            dwrite = dwrite.astype(np.float32)
-
         # preprocessing for 1P recordings
+        dwrite = Img.astype(np.float32)
         if reg_1p:
-            Img = Img.astype(np.float32)
-
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
             dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
-
+        
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
             data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
             cfRefImg=cfRefImg.squeeze(),
             maxregshift=maxregshift,
-            smooth_sigma_time=smooth_sigma_time,
+            smooth_sigma_time=0,
         )
         for frame, dy, dx in zip(Img, ymax.flatten(), xmax.flatten()):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)

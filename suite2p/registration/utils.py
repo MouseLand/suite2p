@@ -72,6 +72,8 @@ def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
 
 def spatial_smooth(data, window):
     """spatially smooth data using cumsum over axis=1,2 with window N"""
+    if data.ndim == 2:
+        data = data[np.newaxis, :, :]
     if window and window % 2:
         raise ValueError("Filter window must be an even integer.")
     if data.ndim == 2:
@@ -84,7 +86,7 @@ def spatial_smooth(data, window):
     data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :])  # in X
     data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window])  # in Y
     data_summed /= window ** 2
-
+    
     return data_summed.squeeze()
 
 

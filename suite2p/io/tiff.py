@@ -355,6 +355,7 @@ def ome_to_binary(ops):
         assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     """
     t0 = time.time()
+
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
@@ -407,32 +408,24 @@ def ome_to_binary(ops):
         if ik % 1000 == 0:
             print('%d frames of binary, time %0.2f sec.' % (ik, time.time() - t0))
     
-    if nchannels>1:
+    if nchannels > 1:
 
-        ix=0
-        j=0
         for ik, file in enumerate(fs_Ch2):
-            # open tiff
-            tif = ScanImageTiffReader(file)
-            im = tif.data()
+            with ScanImageTiffReader(file) as tif:
+                im = tif.data()
+            if im.dtype.type == np.uint16:
+                im = (im // 2).astype(np.int16)
 
-            if type(im[0,0]) == np.uint16:
-                im = im // 2
-                im = im.astype(np.int16)
-
-            ops1[j]['meanImg_chan2'] += im
-
-            reg_file_chan2[j].write(bytearray(im))
-            ix+=1
-            if ix%(1000)==0:
-                print('%d frames of binary, time %0.2f sec.'%(ix,time.time()-t0))
+            ix = ik % nplanes
+            ops1[ix]['meanImg_chan2'] += im
+            reg_file_chan2[ix].write(bytearray(im))
             gc.collect()
-            j+=1
-            j = j%nplanes
+
+            if ik % 1000 == 0:
+                print('%d frames of binary, time %0.2f sec.' % (ik, time.time() - t0))
 
     # write ops files
     do_registration = ops['do_registration']
-    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'], ops['Lx'] = im0.shape
         if not do_registration:

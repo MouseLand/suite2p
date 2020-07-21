@@ -146,7 +146,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         if reg_1p:
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
-            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
         
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(

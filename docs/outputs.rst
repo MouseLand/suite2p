@@ -145,5 +145,6 @@ are added to ``ops.npy``:
 -  meanImg: mean of registered frames
 -  meanImgE: a median-filtered version of the mean image
 -  Vcorr: correlation map (computed during cell detection)
+-  filelist: List of the image file names (e.g. tiff) that were loaded, in the order that Suite2p processed them.
 
 .. _npy-matlab: https://github.com/kwikteam/npy-matlab

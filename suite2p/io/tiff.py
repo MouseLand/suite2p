@@ -250,12 +250,7 @@ def mesoscan_to_binary(ops):
     ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
 
-    #nplanes = ops1[0]['nplanes']
     nchannels = ops1[0]['nchannels']
-    if nchannels>1:
-        nfunc = ops['functional_chan']-1
-    else:
-        nfunc = 0
     batch_size = ops['batch_size']
 
     # which tiff reader works for user's tiffs
@@ -284,7 +279,7 @@ def mesoscan_to_binary(ops):
                     im = tif.data(beg=ix, end=ix+nfr)
             if im.size==0:
                 break
-            #im = io.imread(file)
+
             if len(im.shape)<3:
                 im = np.expand_dims(im, axis=0)
 
@@ -325,7 +320,6 @@ def mesoscan_to_binary(ops):
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']
-    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'],ops['Lx'] = ops['meanImg'].shape
         if not do_registration:
@@ -360,13 +354,12 @@ def ome_to_binary(ops):
         creates binaries ops1[j]['reg_file']
         assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     """
-    t0=time.time()
+    t0 = time.time()
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
 
-    # open all binary files for writing
-    # look for tiffs in all requested folders
+    # open all binary files for writing and look for tiffs in all requested folders
     ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
 
@@ -388,41 +381,31 @@ def ome_to_binary(ops):
     nchannels = ops1[0]['nchannels']
 
     # loop over all tiffs
-    which_folder = 0
-    tif = ScanImageTiffReader(fs_Ch1[0])
-    im0 = tif.data()
-    Ly,Lx = im0.shape
-    j=0
+    with ScanImageTiffReader(fs_Ch1[0]) as tif:
+        im0 = tif.data()
 
-    for j in range(nplanes):
-        ops1[j]['nframes'] = 0
-        ops1[j]['frames_per_folder'][0] = 0
-        ops1[j]['meanImg'] = np.zeros((Ly,Lx))
+    for ops1_0 in ops1:
+        ops1_0['nframes'] = 0
+        ops1_0['frames_per_folder'][0] = 0
+        ops1_0['meanImg'] = np.zeros_like(im0)
         if nchannels > 1:
-            ops1[j]['meanImg_chan2'] = np.zeros((Ly,Lx))
-    ix=0
+            ops1_0['meanImg_chan2'] = np.zeros_like(im0)
 
-    j=0
     for ik, file in enumerate(fs_Ch1):
-        # open tiff
-        tif = ScanImageTiffReader(file)
-        im = tif.data()
-        tif.close()
-        if type(im[0,0]) == np.uint16:
-            im = im // 2
-            im = im.astype(np.int16)
+        with ScanImageTiffReader(file) as tif:
+            im = tif.data()
+        if im.dtype.type == np.uint16:
+            im = (im // 2).astype(np.int16)
 
-        ops1[j]['meanImg'] += im
-        ops1[j]['nframes'] += 1
-        ops1[j]['frames_per_folder'][0] += 1
-
-        reg_file[j].write(bytearray(im))
-        ix+=1
-        if ix%(1000)==0:
-            print('%d frames of binary, time %0.2f sec.'%(ix,time.time()-t0))
+        ix = ik % nplanes
+        ops1[ix]['nframes'] += 1
+        ops1[ix]['frames_per_folder'][0] += 1
+        ops1[ix]['meanImg'] += im
+        reg_file[ix].write(bytearray(im))
         gc.collect()
-        j+=1
-        j = j%nplanes
+
+        if ik % 1000 == 0:
+            print('%d frames of binary, time %0.2f sec.' % (ik, time.time() - t0))
     
     if nchannels>1:
 
@@ -451,7 +434,7 @@ def ome_to_binary(ops):
     do_registration = ops['do_registration']
     do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
-        ops['Ly'],ops['Lx'] = Ly,Lx
+        ops['Ly'], ops['Lx'] = im0.shape
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])

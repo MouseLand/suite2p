@@ -129,7 +129,10 @@ def run_plane(ops, flag_binreg=False):
     --------
     ops : :obj:`dict` 
     """
-    if not flag_binreg:
+
+    ops = {**default_ops(), **ops}
+
+    if not flag_binreg or ops['do_registration']>1:
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')

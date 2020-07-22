@@ -6,16 +6,20 @@ Testing
 
 Before contributing to Suite2P, please make sure your changes pass all our tests. To run the tests (located in
 the ``tests`` subdirectory of your working ``suite2p`` directory) , you'll first need to download our test data.
-Suite2p depends on `dvc`_ to download the test data. Before testing, make sure you have dvc installed:
+Suite2p depends on `dvc`_ to download the test data.
 
-.. prompt:: bash
+.. note::
 
-    pip install dvc
-The command above may prompt you to install `pydrive2`. Install it and you should be good to go.
+    Before testing, make sure you have dvc installed:
 
-.. prompt:: bash
+    .. prompt:: bash
 
-    pip install pydrive2
+        pip install dvc
+    The command above may prompt you to install ``pydrive2``. Install it and you should be good to go.
+
+    .. prompt:: bash
+
+        pip install pydrive2
 
 
 Use to following command to download the test data into the ``data`` subdirectory of your working ``suite2p`` directory.

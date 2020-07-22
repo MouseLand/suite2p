@@ -120,14 +120,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
-            # pre filtering for one-photon data
-            if reg_1p:
-                data = data.astype(np.float32)
-                if pre_smooth:
-                    data = utils.spatial_smooth(data, int(pre_smooth))
-                data = utils.spatial_high_pass(data, int(spatial_hp))
-                refImg = data
-
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg0=refImg,
@@ -146,7 +138,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         if reg_1p:
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
-            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
         
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(

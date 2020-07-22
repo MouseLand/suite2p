@@ -323,12 +323,14 @@ def run_s2p(ops={},db={}):
         }
         if ops['input_format'] in convert_funs:
             ops1 = convert_funs[ops['input_format']](ops)
-            print('time %4.2f sec. Wrote %s to binaries for %d planes' % (time.time() - (t0), ops['input_format'], len(ops1)))
+            print('time {:4.2f} sec. Wrote {} files to binaries for {} planes').format(
+                (time.time() - t0), ops['input_format'], len(ops1)
+            )
         else:
             ops1 = io.tiff_to_binary(ops)
-            print('time %4.2f sec. Wrote %d tiff frames to binaries for %d planes' %
-                  (time.time() - (t0), ops1[0]['nframes'], len(ops1)))
-
+            print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(
+                  time.time() - t0, ops1[0]['nframes'], len(ops1)
+            ))
         np.save(fpathops1, ops1) # save ops1
     else:
         print('FOUND BINARIES: %s'%ops1[0]['reg_file'])

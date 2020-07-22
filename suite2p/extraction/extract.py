@@ -225,4 +225,5 @@ def enhanced_mean_image(ops):
     mimg[ops['yrange'][0]:ops['yrange'][1],
         ops['xrange'][0]:ops['xrange'][1]] = mimg0
     ops['meanImgE'] = mimg
+    print('added enhanced mean image')
     return ops

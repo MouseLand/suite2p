@@ -2,11 +2,11 @@ import argparse
 import numpy as np
 from suite2p import default_ops 
 
-
 def add_args(parser: argparse.ArgumentParser):
     """
     Adds suite2p ops arguments to parser.
     """
+    parser.add_argument('--single_plane', action='store_true', help='run single plane ops')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
     ops0 = default_ops()
@@ -52,7 +52,11 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def main():
     args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
-    if len(args.db) > 0:
+    if args.single_plane:
+        from suite2p.run_s2p import run_plane
+        # run single plane (does registration)
+        run_plane(ops)
+    elif len(args.db) > 0:
         db = np.load(args.db, allow_pickle=True).item()
         from suite2p import run_s2p
         run_s2p(ops, db)

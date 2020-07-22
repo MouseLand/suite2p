@@ -32,12 +32,12 @@ def classify(ops, stat, classfile=None, keys=['npix_norm', 'compact', 'skew']):
     # apply default classifier
     if len(stat) > 0:
         if classfile is None or not Path(classfile).is_file():
-            print('NOTE: applying default $HOME/.suite2p/classifiersclassifier_user.npy')
+            print('NOTE: applying default $HOME/.suite2p/classifiers/classifier_user.npy')
             user_dir = Path.home().joinpath('.suite2p')
             classfile = user_dir.joinpath('classifiers', 'classifier_user.npy')
             if not Path(classfile).is_file():
                 print('(no user default classifier exists)')
-                print('NOTE: applying $HOME/.suite2p/classifiers/classifier.npy')
+                print('NOTE: applying built in classifier.npy')
                 s2p_dir = Path(__file__).parent.parent
                 classfile = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
         else:

@@ -42,6 +42,7 @@ def default_ops():
         'fs': 10.,  # sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         'frames_include': -1,
+        'multiplane_parallel': False,
 
         # output settings
         'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
@@ -128,7 +129,10 @@ def run_plane(ops, flag_binreg=False):
     --------
     ops : :obj:`dict` 
     """
-    if not flag_binreg:
+
+    ops = {**default_ops(), **ops}
+
+    if not flag_binreg or ops['do_registration']>1:
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')
@@ -349,6 +353,7 @@ def run_s2p(ops={},db={}):
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
         op = run_plane(op, flag_binreg=flag_binreg)
+        ops1[ipl] = op
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
     print('total = %0.2f sec.'%(time.time()-t0))
 

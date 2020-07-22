@@ -127,7 +127,7 @@ class Classifier:
         self.grid = grid 
         self.p = p
         logp = self._get_logp(self.stats)
-        self.model = LogisticRegression(C = 100.)
+        self.model = LogisticRegression(C = 100., solver='liblinear')
         self.model.fit(logp, self.iscell)
 
     

@@ -353,6 +353,7 @@ def run_s2p(ops={},db={}):
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
         op = run_plane(op, flag_binreg=flag_binreg)
+        ops1[ipl] = op
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
     print('total = %0.2f sec.'%(time.time()-t0))
 

@@ -85,12 +85,7 @@ class Classifier:
 
     def save(self, filename):
         """ save classifier to filename """
-        model = {}
-        model['stats']  = self.stats
-        model['iscell'] = self.iscell
-        model['keys']   = self.keys
-        print('saving classifier in ' + filename)
-        np.save(filename, model)
+        np.save(filename, {'stats': self.stats, 'iscell': self.iscell, 'keys': self.keys})
 
     def _get_logp(self, stats):
         """ compute log probability of set of stats

@@ -1,5 +1,4 @@
 import os
-import pathlib
 import time
 
 import numpy as np
@@ -126,7 +125,7 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
 def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
-    """ detects ROIs, computes fluorescence, and saves to *.npy
+    """ detects ROIs, computes fluorescence, and saves to \*.npy
 
     if stat is None, ROIs are computed from 'reg_file'
 

@@ -2,15 +2,6 @@ from typing import Optional, Tuple, Sequence
 
 import numpy as np
 
-from suite2p.detection.utils import binned_mean
-
-
-def from_slice(s: slice) -> np.ndarray:
-    if s.start == None and s.stop == None and s.step == None:
-        return None
-    else:
-        return np.arange(s.start, s.stop, s.step)
-
 
 class BinaryFile:
 
@@ -134,17 +125,17 @@ class BinaryFile:
             self._can_read = True
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
+    def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
+                  bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
+        """
+        Returns binned movie [nbins x Ly x Lx] that rejects bad_frames (bool array) and crops to (y_range, x_range).
+        """
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int,
-              x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
-              bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
-    """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
+        good_frames = ~bad_frames if bad_frames is not None else np.ones(self.n_frames, dtype=bool)
 
-    with BinaryFile(Ly=Ly, Lx=Lx, read_filename=filename) as f:
-        good_frames = ~bad_frames if bad_frames is not None else np.ones(f.n_frames, dtype=bool)
         batch_size = min(np.sum(good_frames), 500)
         batches = []
-        for indices, data in f.iter_frames(batch_size=batch_size):
+        for indices, data in self.iter_frames(batch_size=batch_size):
             if len(data) != batch_size:
                 break
 
@@ -158,5 +149,22 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int,
             data = binned_mean(mov=data, bin_size=bin_size)
             batches.extend(data)
 
-    mov = np.stack(batches)
-    return mov
+        mov = np.stack(batches)
+        return mov
+
+
+def from_slice(s: slice) -> np.ndarray:
+    if s.start == None and s.stop == None and s.step == None:
+        return None
+    else:
+        return np.arange(s.start, s.stop, s.step)
+
+
+def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
+    """Returns an array with the mean of each time bin (of size 'bin_size').
+
+        inputs will not be shape of bin_size if bad_frames
+    """
+    n_frames, Ly, Lx = mov.shape
+    mov = mov[:(n_frames // bin_size) * bin_size]
+    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)

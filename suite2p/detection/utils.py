@@ -1,18 +1,5 @@
-from typing import Tuple, Sequence, Optional
-
 import numpy as np
-from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
-
-
-def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
-    """Returns an array with the mean of each time bin (of size 'bin_size').
-    
-        inputs will not be shape of bin_size if bad_frames
-    """
-    n_frames, Ly, Lx = mov.shape
-    mov = mov[:(n_frames//bin_size)*bin_size]
-    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
 
 
 def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:

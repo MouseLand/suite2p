@@ -68,7 +68,7 @@ def test_that_BinaryFile_class_counts_frames_correctly(binfile1500):
 
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
     Ly, Lx = binfile1500.Ly, binfile1500.Lx
-    mov = io.binary.bin_movie(filename=binfile1500.read_filename, Ly=Ly, Lx=Lx, bin_size=1)
+    mov = binfile1500.bin_movie(bin_size=1)
     assert mov.shape == (1500, Ly, Lx)
 
 
@@ -76,12 +76,7 @@ def test_that_bin_movie_with_badframes_results_in_a_smaller_array(binfile1500):
 
     np.random.seed(42)
     bad_frames = np.random.randint(2, size=binfile1500.n_frames, dtype=bool)
+    mov = binfile1500.bin_movie(bin_size=1, bad_frames=bad_frames, reject_threshold=0)
 
-    Ly, Lx = binfile1500.Ly, binfile1500.Lx
-    mov = io.binary.bin_movie(
-        filename=binfile1500.read_filename,
-        Ly=Ly, Lx=Lx, bin_size=1, bad_frames=bad_frames,
-        reject_threshold=0  # reject_threshold can produce an unpredictable number of frames
-    )
     assert len(mov) < binfile1500.n_frames, "bin_movie didn't produce a smaller array."
     assert len(mov) == len(bad_frames) - sum(bad_frames), "bin_movie didn't produce the right size array."

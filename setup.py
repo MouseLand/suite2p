@@ -54,7 +54,7 @@ setuptools.setup(
         "mkl>=2019.3",
       ],
       "data": [
-        "dvc>=1.11",
+        "dvc>=1.1",
         "pydrive2",
       ],
     },

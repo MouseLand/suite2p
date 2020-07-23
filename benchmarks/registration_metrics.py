@@ -21,7 +21,8 @@ def registration_metrics(data_path, tiff_list, ops, nPC=10):
     ops['roidetect'] = False
     ops['reg_metric_n_pc'] = nPC
     ops['data_path'] = data_path
-    ops['tiff_list'] = tiff_list
+    if tiff_list:
+        ops['tiff_list'] = tiff_list
 
     result_ops = suite2p.run_s2p(ops)
     metric_results = []

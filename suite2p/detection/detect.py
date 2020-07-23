@@ -22,9 +22,8 @@ def detect(ops):
         filename=ops['reg_file'],
         Ly=ops['Ly'],
         Lx=ops['Lx'],
-        n_frames=ops['nframes'],
         bin_size=bin_size,
-        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
+        bad_frames=ops.get('badframes'),
         y_range=ops['yrange'],
         x_range=ops['xrange'],
     )

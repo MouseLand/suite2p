@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Sequence
 
 import numpy as np
 
-from suite2p.detection.utils import crop, reject_frames, binned_mean
+from suite2p.detection.utils import binned_mean
 
 
 def from_slice(s: slice) -> np.ndarray:
@@ -17,8 +17,7 @@ class BinaryFile:
     def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
         self.Ly = Ly
         self.Lx = Lx
-        # bytes per frame (FIXED for given file)
-        self.nbytesread = np.int64(2 * self.Ly * self.Lx)
+
         if read_file == write_file:
             self.read_file = open(read_file, mode='r+b')
             self.write_file = self.read_file
@@ -35,8 +34,23 @@ class BinaryFile:
         self._can_read = True
 
     @property
+    def nbytesread(self) -> int:
+        """number of bytes per frame (FIXED for given file)"""
+        return 2 * self.Ly * self.Lx
+
+    @property
+    def nbytes(self) -> int:
+        """total number of bytes in the read_file."""
+        currpos = self.read_file.tell()
+        self.read_file.seek(0, 2)
+        size = self.read_file.tell()
+        self.read_file.seek(currpos)
+        return size
+
+    @property
     def n_frames(self) -> int:
-        return int(self.nbytesread / self.Ly / self.Lx)
+        """total number of fraames in the read_file."""
+        return int(self.nbytes // self.nbytesread)
 
     @property
     def shape(self) -> Tuple[int, int, int]:
@@ -119,21 +133,26 @@ class BinaryFile:
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
+def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (),
+              bad_frames: Optional[np.ndarray] = None, reject_threshold : float = 0.5):
     """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
         batches = []
-        batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
+        good_frames = ~bad_frames if bad_frames is not None else np.ones(f.n_frames, dtype=bool)
+        batch_size = min(np.sum(good_frames), 500)
         for indices, data in f.iter_frames(batch_size=batch_size):
+            if len(data) != batch_size:
+                break
 
             if len(x_range) and len(y_range):
-                data = crop(mov=data, y_range=y_range, x_range=x_range)
+                data = data[:, slice(*y_range), slice(*x_range)]  # crop
 
-            if len(bad_frames) > 0:
-                data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
+            good_indices = good_frames[indices]
+            if np.mean(good_indices) > reject_threshold:
+                data = data[good_indices]
 
             dbin = binned_mean(mov=data, bin_size=bin_size)
-            if dbin.shape[0]>0:
+            if len(dbin) > 0:
                 batches.append(dbin)
 
     mov = np.vstack(batches)

@@ -132,8 +132,8 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_r
             if len(bad_frames) > 0:
                 data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
 
-            if data.shape[0] >= batch_size:  # todo: drops the end of the movie
-                dbin = binned_mean(mov=data, bin_size=bin_size)
+            dbin = binned_mean(mov=data, bin_size=bin_size)
+            if dbin.shape[0]>0:
                 batches.append(dbin)
 
     mov = np.vstack(batches)

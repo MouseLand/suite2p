@@ -133,18 +133,20 @@ class BinaryFile:
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (),
-              bad_frames: Optional[np.ndarray] = None, reject_threshold : float = 0.5):
+def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int,
+              x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
+              bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
     """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
+
+    batches = []
     with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
-        batches = []
         good_frames = ~bad_frames if bad_frames is not None else np.ones(f.n_frames, dtype=bool)
         batch_size = min(np.sum(good_frames), 500)
         for indices, data in f.iter_frames(batch_size=batch_size):
             if len(data) != batch_size:
                 break
 
-            if len(x_range) and len(y_range):
+            if x_range is not None and y_range is not None:
                 data = data[:, slice(*y_range), slice(*x_range)]  # crop
 
             good_indices = good_frames[indices]

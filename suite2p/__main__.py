@@ -33,19 +33,25 @@ def parse_args(parser: argparse.ArgumentParser):
     set_param_msg = '->> Setting {0} to {1}'
     # options defined in the cli take precedence over the ones in the ops file
     for k in ops0:
-        v = ops0[k]
-        n = dargs[k]
+        default_key = ops0[k]
+        args_key = dargs[k]
         if k in ['fast_disk', 'save_folder', 'save_path0']:
-            if n:
-                ops[k] = n
+            if args_key:
+                ops[k] = args_key
                 print(set_param_msg.format(k, ops[k]))
-        elif type(v) in [np.ndarray, list]:
-            n = np.array(n)
-            if np.any(n != np.array(v)):
-                ops[k] = n.astype(type(v))
+        elif type(default_key) in [np.ndarray, list]:
+            n = np.array(args_key)
+            if np.any(n != np.array(default_key)):
+                ops[k] = n.astype(type(default_key))
                 print(set_param_msg.format(k, ops[k]))
-        elif not v == type(v)(n):
-            ops[k] = type(v)(n)
+        elif isinstance(default_key, bool):
+            args_key = bool(int(args_key))  # bool('0') is true, must convert to int
+            if default_key != args_key:
+                ops[k] = args_key
+                print(set_param_msg.format(k, ops[k]))
+        # checks default param to args param by converting args to same type
+        elif not (default_key == type(default_key)(args_key)):
+            ops[k] = type(default_key)(args_key)
             print(set_param_msg.format(k, ops[k]))
     return args, ops
 

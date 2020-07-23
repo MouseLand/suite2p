@@ -12,7 +12,7 @@ if you did not add anaconda to the path.
 4. Run ``conda env create -f environment.yml``
 5. To activate this new environment, run ``conda activate suite2p``. Afterwards, You should see ``(suite2p)`` on the left side of the terminal line.
 6. Install suite2p into this environment: ``pip install suite2p``
-7. Now run ``python -m suite2p`` and you're all set.
+7. Now run ``suite2p`` and you're all set.
 
 If you have an older ``suite2p`` environment you can remove it with
 ``conda env remove -n suite2p`` before creating a new one.
@@ -31,7 +31,7 @@ environment:
 
 **Common issues**
 
-If when running ``python -m suite2p``, you receive the error:
+If when running ``suite2p``, you receive the error:
 ``No module named PyQt5.sip``, then try uninstalling and reinstalling
 pyqt5
 
@@ -40,7 +40,7 @@ pyqt5
    pip uninstall pyqt5 pyqt5-tools
    pip install suite2p
 
-If when running ``python -m suite2p``, you receive an error associated
+If when running ``suite2p``, you receive an error associated
 with **matplotlib**, try upgrading it:
 
 ::

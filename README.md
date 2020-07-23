@@ -34,7 +34,7 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. Activate the environment with `conda activate suite2p'
 5. Pip install suite2p into the environment: `pip install suite2p`
-6. Now run `python -m suite2p` and you're all set.
+6. Now run `suite2p` and you're all set.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 
@@ -70,7 +70,7 @@ An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265N
 
 The quickest way to start is to open the GUI from a command line terminal. You might need to open an anaconda prompt if you did not add anaconda to the path. Make sure to run this from a directory in which you have **WRITE** access (suite2p saves a couple temporary files in your current directory):
 ~~~~
-python -m suite2p
+suite2p
 ~~~~
 Then:
 1. File -> Run suite2p (or ctrl+r)
@@ -117,7 +117,7 @@ You can add your manual curation to a pre-built classifier by clicking "Add curr
 
 1. From the command line:
 ~~~~
-python -m suite2p --ops <path to ops.npy> --db <path to db.npy>
+suite2p --ops <path to ops.npy> --db <path to db.npy>
 ~~~~
 
 2. From Python/Jupyter

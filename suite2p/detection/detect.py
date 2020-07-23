@@ -27,7 +27,6 @@ def detect(ops):
         y_range=ops['yrange'],
         x_range=ops['xrange'],
     )
-    ops['nbinned'] = mov.shape[0]
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
 

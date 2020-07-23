@@ -127,9 +127,7 @@ class BinaryFile:
 
     def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
                   bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
-        """
-        Returns binned movie [nbins x Ly x Lx] that rejects bad_frames (bool array) and crops to (y_range, x_range).
-        """
+        """Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range)."""
 
         good_frames = ~bad_frames if bad_frames is not None else np.ones(self.n_frames, dtype=bool)
 
@@ -153,18 +151,12 @@ class BinaryFile:
         return mov
 
 
-def from_slice(s: slice) -> np.ndarray:
-    if s.start == None and s.stop == None and s.step == None:
-        return None
-    else:
-        return np.arange(s.start, s.stop, s.step)
+def from_slice(s: slice) -> Optional[np.ndarray]:
+    return np.arange(s.start, s.stop, s.step) if any([s.start, s.stop, s.step]) else None
 
 
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
-    """Returns an array with the mean of each time bin (of size 'bin_size').
-
-        inputs will not be shape of bin_size if bad_frames
-    """
+    """Returns an array with the mean of each time bin (of size 'bin_size')."""
     n_frames, Ly, Lx = mov.shape
     mov = mov[:(n_frames // bin_size) * bin_size]
     return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)

@@ -73,7 +73,7 @@ def pick_initial_reference(frames):
     return refImg
 
 def sampled_mean(ops):
-    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=ops['reg_file']) as f:
+    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
         refImg = f.sampled_mean()
     return refImg
 
@@ -190,7 +190,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ### ----- compute and use bidiphase shift -------------- ###
     if refImg is None or (ops['do_bidiphase'] and ops['bidiphase'] == 0):
         # grab frames
-        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_file=raw_file_align if raw else reg_file_align) as f:
+        with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=raw_file_align if raw else reg_file_align) as f:
             frames = f[np.linspace(0, ops['nframes'], 1 + np.minimum(ops['nimg_init'], ops['nframes']), dtype=int)[:-1]]    
         # compute bidiphase shift
         if ops['do_bidiphase'] and ops['bidiphase'] == 0:
@@ -238,8 +238,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
     with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
-                       read_file=raw_file_align if raw_file_align else reg_file_align,
-                       write_file=reg_file_align) as f:
+                       read_filename=raw_file_align if raw_file_align else reg_file_align,
+                       write_filename=reg_file_align) as f:
         t0 = time.time()
         for k, (_, frames) in enumerate(f.iter_frames(batch_size=ops['batch_size'])):
 
@@ -328,8 +328,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         t0 = time.time()
         mean_img_sum = np.zeros((ops['Ly'], ops['Lx']))
         with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
-                           read_file=raw_file_alt if raw_file_alt else reg_file_alt,
-                           write_file=reg_file_alt) as f:
+                           read_filename=raw_file_alt if raw_file_alt else reg_file_alt,
+                           write_filename=reg_file_alt) as f:
 
             for k, (iframes, frames) in enumerate(f.iter_frames(batch_size=ops['batch_size'])):
                 # apply shifts

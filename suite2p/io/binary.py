@@ -14,19 +14,21 @@ def from_slice(s: slice) -> np.ndarray:
 
 class BinaryFile:
 
-    def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
+    def __init__(self, Ly: int, Lx: int, read_filename: str, write_filename: Optional[str] = None):
         self.Ly = Ly
         self.Lx = Lx
+        self.read_filename = read_filename
+        self.write_filename = write_filename
 
-        if read_file == write_file:
-            self.read_file = open(read_file, mode='r+b')
+        if read_filename == write_filename:
+            self.read_file = open(read_filename, mode='r+b')
             self.write_file = self.read_file
-        elif read_file and not write_file:
-            self.read_file = open(read_file, mode='rb')
-            self.write_file = write_file
-        elif read_file and write_file and read_file != write_file:
-            self.read_file = open(read_file, mode='rb')
-            self.write_file = open(write_file, mode='wb')
+        elif read_filename and not write_filename:
+            self.read_file = open(read_filename, mode='rb')
+            self.write_file = write_filename
+        elif read_filename and write_filename and read_filename != write_filename:
+            self.read_file = open(read_filename, mode='rb')
+            self.write_file = open(write_filename, mode='wb')
         else:
             raise IOError("Invalid combination of read_file and write_file")
 
@@ -138,10 +140,10 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int,
               bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
     """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
 
-    batches = []
-    with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
+    with BinaryFile(Ly=Ly, Lx=Lx, read_filename=filename) as f:
         good_frames = ~bad_frames if bad_frames is not None else np.ones(f.n_frames, dtype=bool)
         batch_size = min(np.sum(good_frames), 500)
+        batches = []
         for indices, data in f.iter_frames(batch_size=batch_size):
             if len(data) != batch_size:
                 break
@@ -153,9 +155,8 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int,
             if np.mean(good_indices) > reject_threshold:
                 data = data[good_indices]
 
-            dbin = binned_mean(mov=data, bin_size=bin_size)
-            if len(dbin) > 0:
-                batches.append(dbin)
+            data = binned_mean(mov=data, bin_size=bin_size)
+            batches.extend(data)
 
-    mov = np.vstack(batches)
+    mov = np.stack(batches)
     return mov

@@ -1,7 +1,0 @@
-outs:
-- md5: 24b9fc2855d19f49362f33aeeb30e153
-  path: file000_chan0.tif
-  cache: true
-  metric: false
-  persist: false
-md5: 19ec6610d89d890af072bcb4b55b2cd2

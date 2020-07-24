@@ -65,3 +65,6 @@ doctrees/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# data
+data/test_data

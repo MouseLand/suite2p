@@ -251,12 +251,10 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if self.wraw_wred:
                     self.reg_file_raw_chan2.seek(0, 0)
         self.img = np.zeros((self.LY, self.LX), dtype=np.int16)
-        ichan = np.arange(0,3,1,int)
         for n in range(len(self.reg_loc)):
             buff = self.reg_file[n].read(self.nbytesread[n])
             img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[n],self.Lx[n]))
-            img = img[self.ycrop[n][0]:self.ycrop[n][1], self.xcrop[n][0]:self.xcrop[n][1]]
-            self.img[self.yrange[n][0]:self.yrange[n][1], self.xrange[n][0]:self.xrange[n][1]] = img
+            self.img[self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = img
         if self.wred and self.red_on:
             buff = self.reg_file_chan2.read(self.nbytesread[0])
             imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
@@ -365,10 +363,6 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.Lx = []
             self.dy = []
             self.dx = []
-            self.yrange = []
-            self.xrange = []
-            self.ycrop  = []
-            self.xcrop  = []
             self.wraw = False
             self.wred = False
             self.wraw_wred = False
@@ -387,12 +381,6 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.Lx.append(ops['Lx'])
                 self.dy.append(dy[ipl])
                 self.dx.append(dx[ipl])
-                xrange = ops['xrange']
-                yrange = ops['yrange']
-                self.ycrop.append(yrange)
-                self.xcrop.append(xrange)
-                self.yrange.append([self.dy[-1]+yrange[0], self.dy[-1]+yrange[1]])
-                self.xrange.append([self.dx[-1]+xrange[0], self.dx[-1]+xrange[1]])
                 self.LY = np.maximum(self.LY, self.Ly[-1]+self.dy[-1])
                 self.LX = np.maximum(self.LX, self.Lx[-1]+self.dx[-1])
                 good = True
@@ -420,11 +408,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.LX = ops['Lx']
             self.Ly = [ops['Ly']]
             self.Lx = [ops['Lx']]
-            self.ycrop = [ops['yrange']]
-            self.xcrop = [ops['xrange']]
-            self.yrange = self.ycrop
-            self.xrange = self.xcrop
-
+            
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:

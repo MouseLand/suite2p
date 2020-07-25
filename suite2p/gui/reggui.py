@@ -254,10 +254,8 @@ class BinaryPlayer(QtGui.QMainWindow):
         for n in range(len(self.reg_loc)):
             buff = self.reg_file[n].read(self.nbytesread[n])
             img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[n],self.Lx[n]))
-            if len(self.reg_loc)>0:
-                self.img[self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = img
-            else:
-                self.img = img
+            self.img[self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = img
+            
         if self.wred and self.red_on:
             buff = self.reg_file_chan2.read(self.nbytesread[0])
             imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
@@ -411,6 +409,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.LX = ops['Lx']
             self.Ly = [ops['Ly']]
             self.Lx = [ops['Lx']]
+            self.dx = [0]
+            self.dy = [0]
             
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]

@@ -399,8 +399,8 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.Floaded = False
             
         except Exception as e:
-            print("ERROR: incorrect ops1.npy or missing binaries")
-            #print('ERROR: %s'%e)
+            print('ERROR: %s'%e)
+            print("(could be incorrect ops1.npy or missing binaries)")
             good = False
             try:
                 for n in range(len(self.reg_loc)):

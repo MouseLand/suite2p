@@ -3,7 +3,6 @@ import pyqtgraph as pg
 from PyQt5 import QtGui
 from scipy import stats
 
-import suite2p.detection.stats
 from . import masks, io
 from . import utils
 from ..detection import roi_stats

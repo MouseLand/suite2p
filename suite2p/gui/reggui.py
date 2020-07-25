@@ -12,6 +12,7 @@ from . import masks, views, graphics, traces, classgui
 from . import utils
 from .io import enable_views_and_classifier
 from .. import registration
+from ..io.save import compute_dydx
 
 
 class BinaryPlayer(QtGui.QMainWindow):
@@ -372,6 +373,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.wred = False
             self.wraw_wred = False
             # check that all binaries still exist
+            dy, dx = compute_dydx(ops1)
             for ipl,ops in enumerate(ops1):
                 #if os.path.isfile(ops['reg_file']):
                 if os.path.isfile(ops['reg_file']):
@@ -383,8 +385,8 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.reg_file.append(open(self.reg_loc[-1], 'rb'))
                 self.Ly.append(ops['Ly'])
                 self.Lx.append(ops['Lx'])
-                self.dy.append(ops['dy'])
-                self.dx.append(ops['dx'])
+                self.dy.append(dy[ipl])
+                self.dx.append(dx[ipl])
                 xrange = ops['xrange']
                 yrange = ops['yrange']
                 self.ycrop.append(yrange)
@@ -395,18 +397,10 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.LX = np.maximum(self.LX, self.Lx[-1]+self.dx[-1])
                 good = True
             self.Floaded = False
-            if not fromgui:
-                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy'))):
-                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy')))
-                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'stat.npy')), allow_pickle=True)
-                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'iscell.npy')), allow_pickle=True)
-                    self.Floaded = True
-                else:
-                    self.Floaded = False
-            else:
-                self.Floaded = True
+            
         except Exception as e:
             print("ERROR: incorrect ops1.npy or missing binaries")
+            #print('ERROR: %s'%e)
             good = False
             try:
                 for n in range(len(self.reg_loc)):

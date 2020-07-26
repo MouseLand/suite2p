@@ -4,22 +4,18 @@ import numpy as np
 import scipy
 
 
-def save_combined(ops1):
-    """ Combines all the entries in ops1 into a single result file.
-
-    Multi-plane recordings are arranged to best tile a square.
-    Multi-roi recordings are arranged by their dx,dy physical localization.
-    """
+def compute_dydx(ops1):
     ops = ops1[0].copy()
-        
+    dx = np.zeros(len(ops1), np.int64)
+    dy = np.zeros(len(ops1), np.int64)
     if ('dx' not in ops) or ('dy' not in ops):
         Lx = ops['Lx']
         Ly = ops['Ly']
         nX = np.ceil(np.sqrt(ops['Ly'] * ops['Lx'] * len(ops1))/ops['Lx'])
         nX = int(nX)
         for j in range(len(ops1)):
-            ops1[j]['dx'] = (j%nX) * Lx
-            ops1[j]['dy'] = int(j/nX) * Ly
+            dx[j] = (j%nX) * Lx
+            dy[j] = int(j/nX) * Ly
     else:
         dx = np.array([o['dx'] for o in ops1])
         dy = np.array([o['dy'] for o in ops1])
@@ -36,11 +32,21 @@ def save_combined(ops1):
             nY = int(np.ceil(len(ops1)/nX))
             for j in range(nplanes):
                 for k in range(nrois):
-                    ops1[j*nrois + k]['dx'] += (j%nX) * xmax
-                    ops1[j*nrois + k]['dy'] += int(j/nX) * ymax    
+                    dx[j*nrois + k] += (j%nX) * xmax
+                    dy[j*nrois + k] += int(j/nX) * ymax 
+    return dy, dx
 
-    LY = int(np.amax(np.array([ops['Ly']+ops['dy'] for ops in ops1])))
-    LX = int(np.amax(np.array([ops['Lx']+ops['dx'] for ops in ops1])))
+def save_combined(ops1):
+    """ Combines all the entries in ops1 into a single result file.
+
+    Multi-plane recordings are arranged to best tile a square.
+    Multi-roi recordings are arranged by their dx,dy physical localization.
+    """
+    
+    dy, dx = compute_dydx(ops1)
+
+    LY = int(np.amax(np.array([ops['Ly']+dy[k] for ops in ops1])))
+    LX = int(np.amax(np.array([ops['Lx']+dx[k] for ops in ops1])))
     meanImg = np.zeros((LY, LX))
     meanImgE = np.zeros((LY, LX))
     if ops['nchannels']>1:
@@ -55,8 +61,8 @@ def save_combined(ops1):
     for k,ops in enumerate(ops1):
         fpath = ops['save_path']
         stat0 = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-        xrange = np.arange(ops['dx'],ops['dx']+ops['Lx'])
-        yrange = np.arange(ops['dy'],ops['dy']+ops['Ly'])
+        xrange = np.arange(dx[k], dx[k] + Lx[k])
+        yrange = np.arange(dy[k], dy[k] + Ly[k])
         meanImg[np.ix_(yrange, xrange)] = ops['meanImg']
         meanImgE[np.ix_(yrange, xrange)] = ops['meanImgE']
         if ops['nchannels']>1:
@@ -65,16 +71,16 @@ def save_combined(ops1):
         if 'meanImg_chan2_corrected' in ops:
             meanImg_chan2_corrected[np.ix_(yrange, xrange)] = ops['meanImg_chan2_corrected']
 
-        xrange = np.arange(ops['dx']+ops['xrange'][0],ops['dx']+ops['xrange'][-1])
-        yrange = np.arange(ops['dy']+ops['yrange'][0],ops['dy']+ops['yrange'][-1])
+        xrange = np.arange(dx[k]+ops['xrange'][0],dx[k]+ops['xrange'][-1])
+        yrange = np.arange(dy[k]+ops['yrange'][0],dy[k]+ops['yrange'][-1])
         Vcorr[np.ix_(yrange, xrange)] = ops['Vcorr']
         if 'max_proj' in ops:
             max_proj[np.ix_(yrange, xrange)] = ops['max_proj']
         for j in range(len(stat0)):
-            stat0[j]['xpix'] += ops['dx']
-            stat0[j]['ypix'] += ops['dy']
-            stat0[j]['med'][0] += ops['dy']
-            stat0[j]['med'][1] += ops['dx']
+            stat0[j]['xpix'] += dx[k]
+            stat0[j]['ypix'] += dy[k]
+            stat0[j]['med'][0] += dy[k]
+            stat0[j]['med'][1] += dx[k]
             stat0[j]['iplane'] = k
         F0    = np.load(os.path.join(fpath,'F.npy'))
         Fneu0 = np.load(os.path.join(fpath,'Fneu.npy'))

@@ -1,25 +1,26 @@
 language: python
 jobs:
   include:
-    - name: "Python 3.7.1 on Linux"
-      python: 3.7
-      before_install:
-        - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        - bash ./miniconda.sh -b
-        - export PATH=~/miniconda3/bin:$PATH
-        - conda update --yes conda
-    - name: "Python 3.7.7 on macOS"
-      os: osx
-      osx_image: xcode12
-      language: shell
-      before_install:
-        - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
-        - bash ./miniconda.sh -b
-        - export PATH=~/miniconda3/bin:$PATH
-        - conda update --yes conda
+  - name: Python 3.7.1 on Linux
+    python: 3.7
+    before_install:
+    - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O
+      miniconda.sh
+    - bash ./miniconda.sh -b
+    - export PATH=~/miniconda3/bin:$PATH
+    - conda update --yes conda
+  - name: Python 3.7.7 on macOS
+    os: osx
+    osx_image: xcode12
+    language: shell
+    before_install:
+    - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+      -O miniconda.sh
+    - bash ./miniconda.sh -b
+    - export PATH=~/miniconda3/bin:$PATH
+    - conda update --yes conda
   allow_failures:
-    - os: osx
-
+  - os: osx
 install:
 - conda env create -f environment.yml
 - source activate suite2p
@@ -35,6 +36,6 @@ deploy:
   provider: pypi
   user: __token__
   password:
-    secure: KMUsze0SI8xGbgK1pzSRQGFcal8YPLF0eMk1zNGhDA/e5qwk8AToQsbokdyTa7sz/2RAjvsIQUsM2+XIMKXQo/9zCp9Sb5RP9Aqh8E9F9uj5a+UGgC6KDZa+zPFFARDNjcasS/RTm0K77gFAWhfwk0smiuR6mSQjXWYwjAZ8CejOc1CWm11MzaVPcp1AJM8r/h3Q2ulFcwHGgteZEXxgtZh3CQoGgxxAQFLIae3G0TzxoK3Amr7e6WTKDvY16YOEzUWQ+77aB6llOHqNU8edq/qKORnwhjcKsIiwqIsiGAfkYm/zT4n40/+P43dfFGfNj3jB3Yqr0HMhFVs4H9yADaommsBX4nAbSA7lKdxf0ds9wUZLRbwSnkx9RhEG05aALyMXNUZVbd+gUPhK/94o7kWOlaOSzOWQaVZ/2pmNjQbjcQ/cNkt5WM+9PNrmrP2E1VstnalODfyOcvM7G6afU3oKUD1/q5vT19C/EzIayR12w7aVImkGlt8qKI6Fxsg+MVSMrPX/7uxEpQXltX00a15b+5XA9zmyBurdbsAgD6zTPOlkysXaXhOMd4L+XE4Z0iDRQmx6WK2whELL1Qa03F6hI+Y9FVZze86FfewmGDgF+IaU3b5d1C6OdsGBZbHOW3ZEEAmuj6abe7LRF2oDLEi9bCqXiVl0RAR7PFIFEHQ=
+    secure: iIUxK/XrLFS0yu7MwkXaAfuX0/CmaIVe+vFMOOdw+b1P1Yx+Lj+t074wrUS7/Ky0ZO9gY8PELnvqF+HQNbRUprMOl+P+4rdpJ5lw4LPWOMUSD14jiTaal3hYICOZSs/0sKFLYga0+/aCEYhOFfKOsPthlE6VDpUnmCvihGwZAFItnWJdq+/hKkLjOgLQbTCxLlQrudUYDRJWzgomoStjYt/B53YaoY2U2IC/RqfI5e2kOeNTK4qxWC6RnpjA81w0KMywkbWeSwB372j2+z180nvXEvsdln/QIq1bCpM3saKf2JjDDeKpq8r16sJ/pIr2OPldRMTa/UE6CvkssGWy7qA8lNbw/uwnMFIr/yvJboLJk/jG/4JjUWtJnNpDyzVt/o1DbimQDlQiacTwGmHlo4E/DrGQpbneSTU7Dfjg6ka5mvoxp2htMRRDfX1m9rdc/B7yjS49dN34GrWjcJiq24mlhYuACCLjZJvNF/CSUJg5JqR9aXpNjak0NOPs/JDs0mDWZNfdbcjff3+RXNEdpQVqYvayJsmEubnUoIPNm671Dc4xab5saEaxeS6oxwabCThQNhswksDEfzWtW8/7oAv2DfjfBEUClvjV6iD+NqWsRtotUrOXfSA/I6KjVsXVUBh+PhePwKceCT+M0Dp5WiRNbog6S7uEcCd2Nd0as38=
   on:
     tags: true

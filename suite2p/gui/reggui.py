@@ -12,6 +12,7 @@ from . import masks, views, graphics, traces, classgui
 from . import utils
 from .io import enable_views_and_classifier
 from .. import registration
+from ..io.save import compute_dydx
 
 
 class BinaryPlayer(QtGui.QMainWindow):
@@ -250,12 +251,11 @@ class BinaryPlayer(QtGui.QMainWindow):
                 if self.wraw_wred:
                     self.reg_file_raw_chan2.seek(0, 0)
         self.img = np.zeros((self.LY, self.LX), dtype=np.int16)
-        ichan = np.arange(0,3,1,int)
         for n in range(len(self.reg_loc)):
             buff = self.reg_file[n].read(self.nbytesread[n])
             img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[n],self.Lx[n]))
-            img = img[self.ycrop[n][0]:self.ycrop[n][1], self.xcrop[n][0]:self.xcrop[n][1]]
-            self.img[self.yrange[n][0]:self.yrange[n][1], self.xrange[n][0]:self.xrange[n][1]] = img
+            self.img[self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = img
+            
         if self.wred and self.red_on:
             buff = self.reg_file_chan2.read(self.nbytesread[0])
             imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),(self.Ly[0],self.Lx[0]))[:,:,np.newaxis]
@@ -364,14 +364,11 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.Lx = []
             self.dy = []
             self.dx = []
-            self.yrange = []
-            self.xrange = []
-            self.ycrop  = []
-            self.xcrop  = []
             self.wraw = False
             self.wred = False
             self.wraw_wred = False
             # check that all binaries still exist
+            dy, dx = compute_dydx(ops1)
             for ipl,ops in enumerate(ops1):
                 #if os.path.isfile(ops['reg_file']):
                 if os.path.isfile(ops['reg_file']):
@@ -383,30 +380,16 @@ class BinaryPlayer(QtGui.QMainWindow):
                 self.reg_file.append(open(self.reg_loc[-1], 'rb'))
                 self.Ly.append(ops['Ly'])
                 self.Lx.append(ops['Lx'])
-                self.dy.append(ops['dy'])
-                self.dx.append(ops['dx'])
-                xrange = ops['xrange']
-                yrange = ops['yrange']
-                self.ycrop.append(yrange)
-                self.xcrop.append(xrange)
-                self.yrange.append([self.dy[-1]+yrange[0], self.dy[-1]+yrange[1]])
-                self.xrange.append([self.dx[-1]+xrange[0], self.dx[-1]+xrange[1]])
+                self.dy.append(dy[ipl])
+                self.dx.append(dx[ipl])
                 self.LY = np.maximum(self.LY, self.Ly[-1]+self.dy[-1])
                 self.LX = np.maximum(self.LX, self.Lx[-1]+self.dx[-1])
                 good = True
             self.Floaded = False
-            if not fromgui:
-                if os.path.isfile(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy'))):
-                    self.Fcell = np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'F.npy')))
-                    self.stat =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'stat.npy')), allow_pickle=True)
-                    self.iscell =  np.load(os.path.abspath(os.path.join(os.path.dirname(filename), 'combined', 'iscell.npy')), allow_pickle=True)
-                    self.Floaded = True
-                else:
-                    self.Floaded = False
-            else:
-                self.Floaded = True
+            
         except Exception as e:
-            print("ERROR: incorrect ops1.npy or missing binaries")
+            print('ERROR: %s'%e)
+            print("(could be incorrect ops1.npy or missing binaries)")
             good = False
             try:
                 for n in range(len(self.reg_loc)):
@@ -426,11 +409,9 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.LX = ops['Lx']
             self.Ly = [ops['Ly']]
             self.Lx = [ops['Lx']]
-            self.ycrop = [ops['yrange']]
-            self.xcrop = [ops['xrange']]
-            self.yrange = self.ycrop
-            self.xrange = self.xcrop
-
+            self.dx = [0]
+            self.dy = [0]
+            
             if os.path.isfile(ops['reg_file']):
                 self.reg_loc = [ops['reg_file']]
             else:

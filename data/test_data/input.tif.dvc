@@ -1,7 +1,0 @@
-md5: e4bebea55507ed038517140fe9390bf0
-outs:
-- md5: ee1aeb487577308db3a5798face370d0
-  path: input.tif
-  cache: true
-  metric: false
-  persist: false

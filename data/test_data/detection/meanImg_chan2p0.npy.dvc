@@ -1,7 +1,0 @@
-md5: 5b9422aef421f9d4c80962df49852160
-outs:
-- md5: 4715f1d85a2834e85fa4f3619588ef8a
-  path: meanImg_chan2p0.npy
-  cache: true
-  metric: false
-  persist: false

@@ -1,4 +1,4 @@
-"""Utility functions that can be accessed in tests via the utils fixture below."""
+"""Utility functions that can be accessed in tests via the utils fixture below. """
 
 from pathlib import Path
 from tifffile import imread

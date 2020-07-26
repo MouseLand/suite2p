@@ -58,10 +58,10 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def main():
     args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
-    if args.single_plane:
+    if args.single_plane and args.ops:
         from suite2p.run_s2p import run_plane
         # run single plane (does registration)
-        run_plane(ops)
+        run_plane(ops, ops_path=args.ops)
     elif len(args.db) > 0:
         db = np.load(args.db, allow_pickle=True).item()
         from suite2p import run_s2p

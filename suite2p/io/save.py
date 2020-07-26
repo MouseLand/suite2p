@@ -1,5 +1,5 @@
 import os
-
+from natsort import natsorted
 import numpy as np
 import scipy
 
@@ -36,24 +36,28 @@ def compute_dydx(ops1):
                     dy[j*nrois + k] += int(j/nX) * ymax 
     return dy, dx
 
-def save_combined(ops1):
-    """ Combines all the entries in ops1 into a single result file.
+def save_combined(save_folder):
+    """ Combines all the folders in save_folder into a single result file.
 
     Multi-plane recordings are arranged to best tile a square.
     Multi-roi recordings are arranged by their dx,dy physical localization.
+    Multi-plane / multi-roi recordings are tiled after using dx,dy.
     """
-    
-    dy, dx = compute_dydx(ops1)
+    plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
+    ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
 
-    LY = int(np.amax(np.array([ops['Ly']+dy[k] for ops in ops1])))
-    LX = int(np.amax(np.array([ops['Lx']+dx[k] for ops in ops1])))
+    dy, dx = compute_dydx(ops1)
+    Ly = np.array([ops['Ly'] for ops in ops1])
+    Lx = np.array([ops['Lx'] for ops in ops1])
+    LY = int(np.amax(dy + Ly))
+    LX = int(np.amax(dx + Lx))
     meanImg = np.zeros((LY, LX))
     meanImgE = np.zeros((LY, LX))
-    if ops['nchannels']>1:
+    if ops1[0]['nchannels']>1:
         meanImg_chan2 = np.zeros((LY, LX))
-    if 'meanImg_chan2_corrected' in ops:
+    if 'meanImg_chan2_corrected' in ops1[0]:
         meanImg_chan2_corrected = np.zeros((LY, LX))
-    if 'max_proj' in ops:
+    if 'max_proj' in ops1[0]:
         max_proj = np.zeros((LY, LX))
 
     Vcorr = np.zeros((LY, LX))

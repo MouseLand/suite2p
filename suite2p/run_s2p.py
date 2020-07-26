@@ -2,6 +2,7 @@ import datetime
 import os
 import shutil
 import time
+from natsort import natsorted
 
 import numpy as np
 from scipy.io import savemat
@@ -113,11 +114,9 @@ def default_ops():
         'sig_baseline': 10.,  # smoothing constant for gaussian filter
         'prctile_baseline': 8.,  # optional (whether to use a percentile baseline)
         'neucoeff': .7,  # neuropil coefficient
-        'xrange': np.array([0, 0]),
-        'yrange': np.array([0, 0]),
     }
 
-def run_plane(ops, flag_binreg=False):
+def run_plane(ops, ops_path=None):
     """ run suite2p processing on a single binary file
 
     Parameters
@@ -132,13 +131,43 @@ def run_plane(ops, flag_binreg=False):
 
     ops = {**default_ops(), **ops}
 
-    if not flag_binreg or ops['do_registration']>1:
+    ops['date_proc'] = datetime.datetime.now()
+    
+    if ops_path is not None:
+        ops['save_path'] = os.path.split(ops_path)[0]
+        ops['ops_path'] = ops_path 
+        if len(ops['fast_disk'])==0:
+            ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+            if 'reg_file_chan2' in ops:
+                ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
+            if 'raw_file' in ops:
+                ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
+            if 'raw_file_chan2' in ops:
+                ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_raw_chan2.bin')
+
+    # check if registration should be done
+    if ops['do_registration']>0:
+        run_registration = True
+        if 'refImg' not in ops or ops['do_registration']>1:
+            print("NOTE: not registered / registration forced with ops['do_registration']>1")
+            try:
+                # delete previous offsets
+                del op['yoff'], op['xoff'], op['corrXY']
+            except:
+                print('      (no previous offsets to delete)')
+        else:
+            print("NOTE: not running registration, plane already registered")
+            run_registration = False
+    else:
+        print("NOTE: not running registration, ops['do_registration']=0")
+        run_registration = False
+    
+    if run_registration:
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')
         ops = registration.register_binary(ops) # register binary
-        if 'ops_path' in ops:
-            np.save(ops['ops_path'], ops)
+        np.save(ops['ops_path'], ops)
         print('----------- Total %0.2f sec'%(time.time()-t11))
 
         if ops['two_step_registration'] and ops['keep_movie_raw']:
@@ -146,8 +175,7 @@ def run_plane(ops, flag_binreg=False):
             print('(making mean image (excluding bad frames)')
             refImg = registration.sampled_mean(ops)
             ops = registration.register_binary(ops, refImg, raw=False)
-            if 'ops_path' in ops:
-                np.save(ops['ops_path'], ops)
+            np.save(ops['ops_path'], ops)
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
         # compute metrics for registration
@@ -221,7 +249,7 @@ def run_plane(ops, flag_binreg=False):
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
     return ops
 
-def run_s2p(ops={},db={}):
+def run_s2p(ops={}, db={}):
     """ run suite2p pipeline
 
         need to provide a 'data_path' or 'h5py'+'h5py_key' in db or ops
@@ -249,70 +277,35 @@ def run_s2p(ops={},db={}):
             ops['save_path0'], tail = os.path.split(ops['h5py'])
         else:
             ops['save_path0'] = ops['data_path'][0]
-
-    # check if there are files already registered!
-    if len(ops['save_folder']) > 0:
-        fpathops1 = os.path.join(ops['save_path0'], ops['save_folder'], 'ops1.npy')
-    else:
-        fpathops1 = os.path.join(ops['save_path0'], 'suite2p', 'ops1.npy')
-    if os.path.isfile(fpathops1):
-        files_found_flag = True
-        flag_binreg = True
-        ops1 = np.load(fpathops1, allow_pickle=True)
-        print('FOUND OPS IN %s'%ops1[0]['save_path'])
-        for i,op in enumerate(ops1):
-            # default behavior is to look in the ops
-            flag_reg = os.path.isfile(op['reg_file'])
-            if not flag_reg:
-                # otherwise look in the user defined save_path0
-                op['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%i)
-                op['ops_path'] = os.path.join(op['save_path'],'ops.npy')
-                op['reg_file'] = os.path.join(op['save_path'], 'data.bin')
-                flag_reg = os.path.isfile(op['reg_file'])
-            files_found_flag &= flag_reg
-            if 'refImg' not in op or op['do_registration']>1:
-                flag_binreg = False
-                if i==len(ops1)-1:
-                    print("NOTE: not registered / registration forced with ops['do_registration']>1")
-                    try:
-                        # delete previous offsets
-                        del op['yoff'], op['xoff'], op['corrXY']
-                    except:
-                        print('no offsets to delete')
-            # use the new ops to run
-            ops1[i] = {**op, **ops}.copy()
-            # for mesoscope tiffs, preserve original lines, etc
-            if 'lines' in op:
-                ops1[i]['nrois'] = op['nrois']
-                ops1[i]['nplanes'] = op['nplanes']
-                ops1[i]['lines'] = op['lines']
-                ops1[i]['dy'] = op['dy']
-                ops1[i]['dx'] = op['dx']
-                ops1[i]['iplane'] = op['iplane']
-
-            #ops1[i] = ops1[i].copy()
-            # except for registration results
-            ops1[i]['xrange'] = op['xrange']
-            ops1[i]['yrange'] = op['yrange']
+    
+    # check if there are binaries already made
+    if 'save_folder' not in ops or len(ops['save_folder'])==0:
+        ops['save_folder'] = 'suite2p'
+    save_folder = os.path.join(ops['save_path0'], ops['save_folder'])
+    os.makedirs(save_folder, exist_ok=True)
+    fpathops1 = os.path.join(save_folder, 'ops1.npy')
+    plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
+    if len(plane_folders) > 0:
+        ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
+        ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
+        binaries_found_flag = all([os.path.isfile(os.path.join(f, 'data_raw.bin')) or os.path.isfile(os.path.join(f, 'data.bin')) 
+                                    for f in plane_folders])
+        files_found_flag = ops_found_flag and binaries_found_flag
     else:
         files_found_flag = False
-        flag_binreg = False
-        ops['date_proc'] = datetime.datetime.now()
-
-
-    if not 'input_format' in ops.keys():
-        ops['input_format'] = 'tif'
-    if len(ops['h5py']):
-        ops['input_format'] = 'h5'
-    elif 'mesoscan' in ops and ops['mesoscan']:
-        ops['input_format'] = 'mesoscan'
-    elif HAS_HAUS:
-        ops['input_format'] = 'haus'
+    if files_found_flag:
+        print(f'FOUND BINARIES AND OPS IN {ops_paths}')
     # if not set up files and copy tiffs/h5py to binary
-    if not files_found_flag:
-        # combine default options with user options
-        ops = {**default_ops(), **ops}
-
+    else:
+        if not 'input_format' in ops.keys():
+            ops['input_format'] = 'tif'
+        if len(ops['h5py']):
+            ops['input_format'] = 'h5'
+        elif 'mesoscan' in ops and ops['mesoscan']:
+            ops['input_format'] = 'mesoscan'
+        elif HAS_HAUS:
+            ops['input_format'] = 'haus'
+        
         # copy file format to a binary file
         convert_funs = {
             'h5': io.h5py_to_binary,
@@ -331,31 +324,19 @@ def run_s2p(ops={},db={}):
             print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(
                   time.time() - t0, ops1[0]['nframes'], len(ops1)
             ))
-        np.save(fpathops1, ops1) # save ops1
-    else:
-        print('FOUND BINARIES: %s'%ops1[0]['reg_file'])
-
-    ops1 = np.array(ops1)
-    if not ops['do_registration']:
-        flag_binreg = True
-
-    if ops['do_registration']>1:
-        flag_binreg = False
-        print('do_registration>1 => forcing registration')
-
-    if flag_binreg:
-        print('SKIPPING REGISTRATION FOR ALL PLANES...')
-    if flag_binreg and not files_found_flag:
-        print('NOTE: binary file created, but registration not performed')
-
-    # set up number of CPU workers for registration and cell detection
+        plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
+        ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
+    
     ipl = 0
 
-    for ipl, op in enumerate(ops1):
+    ops1 = []
+    for ipl, ops_path in enumerate(ops_paths):
+        op = np.load(ops_path, allow_pickle=True).item()
+        op = {**op, **ops}.copy()
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
-        op = run_plane(op, flag_binreg=flag_binreg)
-        ops1[ipl] = op
+        op = run_plane(op, ops_path=ops_path)
+        ops1.append(op)
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
     print('total = %0.2f sec.'%(time.time()-t0))
 
@@ -364,11 +345,13 @@ def run_s2p(ops={},db={}):
 
     #### COMBINE PLANES or FIELDS OF VIEW ####
     if len(ops1)>1 and ops1[0]['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
-        io.save_combined(ops1)
+        print('Creating combined view')
+        io.save_combined(save_folder)
     
     # save to NWB
     if 'save_NWB' in ops and ops['save_NWB']:
-        io.save_nwb(ops1)
+        print('Saving in nwb format')
+        io.save_nwb(save_folder)
 
     # running a clean up script
     if 'clean_script' in ops1[0]:

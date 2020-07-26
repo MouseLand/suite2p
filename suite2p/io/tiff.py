@@ -169,10 +169,8 @@ def tiff_to_binary(ops):
     do_registration = ops['do_registration']
     for ops in ops1:
         ops['Ly'],ops['Lx'] = ops['meanImg'].shape
-
-        if not do_registration:
-            ops['yrange'] = np.array([0,ops['Ly']])
-            ops['xrange'] = np.array([0,ops['Lx']])
+        ops['yrange'] = np.array([0,ops['Ly']])
+        ops['xrange'] = np.array([0,ops['Lx']])
         ops['meanImg'] /= ops['nframes']
         if nchannels>1:
             ops['meanImg_chan2'] /= ops['nframes']

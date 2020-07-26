@@ -46,7 +46,6 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
         ]
     )
 
-
 def test_2plane_2chan_with_batches(test_ops):
     """
     Tests for case with 2 planes and 2 channels with multiple batches.
@@ -75,6 +74,7 @@ def test_1plane_2chan_sourcery(test_ops):
     test_ops['nchannels'] = 2
     test_ops['sparse_mode'] = 0
     test_ops['tiff_list'] = ['input.tif']
+    test_ops['keep_movie_raw'] = True
     suite2p.run_s2p(ops=test_ops)
     utils.check_output(
         test_ops['save_path0'],

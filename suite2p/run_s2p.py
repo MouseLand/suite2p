@@ -247,6 +247,25 @@ def run_plane(ops, ops_path=None):
                                     'iscell': iscell})
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
+
+    if ops.get('move_bin') and ops['save_path'] != ops['fast_disk']:
+        print('moving binary files to save_path')
+        shutil.move(ops['reg_file'], os.path.join(ops['save_path'], 'data.bin'))
+        if ops['nchannels']>1:
+            shutil.move(ops['reg_file_chan2'], os.path.join(ops['save_path'], 'data_chan2.bin'))
+        if 'raw_file' in ops:
+            shutil.move(ops['raw_file'], os.path.join(ops['save_path'], 'data_raw.bin'))
+            if ops['nchannels'] > 1:
+                shutil.move(ops['raw_file_chan2'], os.path.join(ops['save_path'], 'data_chan2_raw.bin'))
+    elif ops.get('delete_bin'):
+        print('deleting binary files')
+        os.remove(ops['reg_file'])
+        if ops['nchannels'] > 1:
+            os.remove(ops['reg_file_chan2'])
+        if 'raw_file' in ops:
+            os.remove(ops['raw_file'])
+            if ops['nchannels'] > 1:
+                os.remove(ops['raw_file_chan2'])
     return ops
 
 def run_s2p(ops={}, db={}):
@@ -311,16 +330,16 @@ def run_s2p(ops={}, db={}):
             'h5': io.h5py_to_binary,
             'sbx': io.sbx_to_binary,
             'mesoscan': io.mesoscan_to_binary,
-            'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(ops),
+            'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(ops.copy()),
             'bruker': io.ome_to_binary,
         }
         if ops['input_format'] in convert_funs:
-            ops1 = convert_funs[ops['input_format']](ops)
+            ops1 = convert_funs[ops['input_format']](ops.copy())
             print('time {:4.2f} sec. Wrote {} files to binaries for {} planes').format(
                 (time.time() - t0), ops['input_format'], len(ops1)
             )
         else:
-            ops1 = io.tiff_to_binary(ops)
+            ops1 = io.tiff_to_binary(ops.copy())
             print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(
                   time.time() - t0, ops1[0]['nframes'], len(ops1)
             ))
@@ -332,19 +351,21 @@ def run_s2p(ops={}, db={}):
     ops1 = []
     for ipl, ops_path in enumerate(ops_paths):
         op = np.load(ops_path, allow_pickle=True).item()
-        op = {**op, **ops}.copy()
+        # make sure yrange and xrange are not overwritten
+        if 'yrange' in ops: ops.pop('yrange') 
+        if 'xrange' in ops: ops.pop('xrange') 
+        op = {**op, **ops}
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
         op = run_plane(op, ops_path=ops_path)
-        ops1.append(op)
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
+        ops1.append(op)
     print('total = %0.2f sec.'%(time.time()-t0))
 
-    # save final ops1 with all planes
     np.save(fpathops1, ops1)
-
+    
     #### COMBINE PLANES or FIELDS OF VIEW ####
-    if len(ops1)>1 and ops1[0]['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
+    if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
         print('Creating combined view')
         io.save_combined(save_folder)
     
@@ -352,29 +373,6 @@ def run_s2p(ops={}, db={}):
     if 'save_NWB' in ops and ops['save_NWB']:
         print('Saving in nwb format')
         io.save_nwb(save_folder)
-
-    # running a clean up script
-    if 'clean_script' in ops1[0]:
-        print('running clean-up script')
-        os.system('python '+ ops['clean_script'] + ' ' + fpathops1)
-
-    for i, ops in enumerate(ops1):
-        if ops.get('move_bin') and ops['save_path'] != ops['fast_disk']:
-            if i == 0:
-                print('moving binary files to save_path')
-            shutil.move(ops['reg_file'], os.path.join(ops['save_path'], 'data.bin'))
-            if ops['nchannels']>1:
-                shutil.move(ops['reg_file_chan2'], os.path.join(ops['save_path'], 'data_chan2.bin'))
-            if 'raw_file' in ops:
-                shutil.move(ops['raw_file'], os.path.join(ops['save_path'], 'data_raw.bin'))
-                if ops['nchannels'] > 1:
-                    shutil.move(ops['raw_file_chan2'], os.path.join(ops['save_path'], 'data_chan2_raw.bin'))
-        elif ops.get('delete_bin'):
-            if i == 0:
-                print('deleting binary files')
-            os.remove(ops['reg_file'])
-            if ops['nchannels'] > 1:
-                os.remove(ops['reg_file_chan2'])
 
     print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
     return ops1

@@ -143,7 +143,7 @@ def run_plane(ops, ops_path=None):
             if 'raw_file' in ops:
                 ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
             if 'raw_file_chan2' in ops:
-                ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_raw_chan2.bin')
+                ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
 
     # check if registration should be done
     if ops['do_registration']>0:

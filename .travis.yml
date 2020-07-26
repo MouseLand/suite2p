@@ -25,7 +25,7 @@ install:
 - conda env create -f environment.yml
 - source activate suite2p
 - pip install .[data]
-- dvc pull
+- dvc pull -r gdrive-travis
 - pip install coveralls
 script:
 - coverage run --source=suite2p setup.py test

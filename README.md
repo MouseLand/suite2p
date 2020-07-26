@@ -58,7 +58,9 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install .[data]`
-5. Download the data: ``dvc pull``. Follow the authentication instructions in the output.
+5. Download the data: ``dvc pull``. Follow the authentication instructions in the output.  
+   a. (**Note**: do *not* commit the json credentials file that comes out afterwards, git should ignore it.)
+   b. if you only wan to download the data, you can download from the read-only remote with this command: ``dvc pull -r gdrive-travis``
 6. Run tests: `python setup.py test`
 
 

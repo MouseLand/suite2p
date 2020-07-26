@@ -1,40 +1,5 @@
-from typing import Tuple, Sequence, Optional
-
 import numpy as np
-from numpy.linalg import norm
 from scipy.ndimage import gaussian_filter
-
-
-def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
-    """Returns an array with the mean of each time bin (of size 'bin_size').
-    
-        inputs will not be shape of bin_size if bad_frames
-    """
-    n_frames, Ly, Lx = mov.shape
-    mov = mov[:(n_frames//bin_size)*bin_size]
-    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
-
-
-def reject_frames(mov: np.ndarray, bad_indices: Sequence[int], mov_indices: Optional[Sequence[int]] = None, reject_threshold: float = 0.):
-    """
-    Returns only the frames of 'mov' not in 'bad_indices', if the percentage of bad_indices is higher than reject_threshold.
-    Uses the indices of 'mov' by default, but can use alternate indices in 'mov_indices' to match with bad_indices.
-    """
-    n_frames, Ly, Lx = mov.shape
-    indices = mov_indices if mov_indices is not None else np.arange(n_frames)
-    if len(indices) != n_frames:
-        raise TypeError("'mov_indices' must be the same length as the movie, in order to match them up properly.")
-    good_frames = indices[~np.isin(indices, bad_indices)]
-    # we need to subtract first indices from good_frames for this to work
-    # (indices are in reference frame of total movie not chunk)
-    good_frames -= indices[0]
-    good_mov = mov[good_frames] if len(good_frames) / len(indices) > reject_threshold else mov
-    return good_mov
-
-
-def crop(mov: np.ndarray, y_range: Tuple[int, int], x_range: Tuple[int, int]) -> np.ndarray:
-    """Returns cropped frames of 'mov' encompassed by y_range and x_range."""
-    return mov[:, slice(*y_range), slice(*x_range)]
 
 
 def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:

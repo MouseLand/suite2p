@@ -205,7 +205,7 @@ def get_pc_metrics(ops, use_red=False):
     # n frames to pick from full movie
     nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
     with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'],
-                       read_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
+                       read_filename=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
                        ) as f:
         mov = f[np.linspace(0, ops['nframes'] - 1, nsamp).astype('int')]
         mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]

@@ -144,8 +144,9 @@ class BinaryFile:
             if np.mean(good_indices) > reject_threshold:
                 data = data[good_indices]
 
-            data = binned_mean(mov=data, bin_size=bin_size)
-            batches.extend(data)
+            if data.shape[0] > bin_size:
+                data = binned_mean(mov=data, bin_size=bin_size)
+                batches.extend(data)
 
         mov = np.stack(batches)
         return mov

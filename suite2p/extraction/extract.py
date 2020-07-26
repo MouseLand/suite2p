@@ -158,7 +158,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         stat[k]['std'] = sd[k]
 
     if len(stat) == 0:
-        raise ValueError("Stat array should not be of length 0.")
+        raise ValueError("stat array should not be of length 0 (no ROIs were found)")
 
     fpath = ops['save_path']
     np.save(os.path.join(fpath, 'stat.npy'), stat)

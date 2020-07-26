@@ -384,7 +384,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         Ly=ops['Ly'],
         Lx=ops['Lx'],
     )
-
+    
     if not raw:
         ops['bidi_corrected'] = True
 

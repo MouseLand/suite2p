@@ -125,16 +125,16 @@ def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_r
         batches = []
         batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
         for indices, data in f.iter_frames(batch_size=batch_size):
-
             if len(x_range) and len(y_range):
                 data = crop(mov=data, y_range=y_range, x_range=x_range)
 
             if len(bad_frames) > 0:
                 data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
-
-            dbin = binned_mean(mov=data, bin_size=bin_size)
-            if dbin.shape[0]>0:
-                batches.append(dbin)
+            
+            if data.shape[0] > bin_size:
+                dbin = binned_mean(mov=data, bin_size=bin_size)
+                if dbin.shape[0]>0:
+                    batches.append(dbin)
 
     mov = np.vstack(batches)
     return mov

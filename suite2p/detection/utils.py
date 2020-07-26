@@ -21,7 +21,6 @@ def reject_frames(mov: np.ndarray, bad_indices: Sequence[int], mov_indices: Opti
     Uses the indices of 'mov' by default, but can use alternate indices in 'mov_indices' to match with bad_indices.
     """
     n_frames, Ly, Lx = mov.shape
-    print(mov.shape)
     indices = mov_indices if mov_indices is not None else np.arange(n_frames)
     if len(indices) != n_frames:
         raise TypeError("'mov_indices' must be the same length as the movie, in order to match them up properly.")
@@ -30,7 +29,6 @@ def reject_frames(mov: np.ndarray, bad_indices: Sequence[int], mov_indices: Opti
     # (indices are in reference frame of total movie not chunk)
     good_frames -= indices[0]
     good_mov = mov[good_frames] if len(good_frames) / len(indices) > reject_threshold else mov
-    print(good_mov.shape)
     return good_mov
 
 

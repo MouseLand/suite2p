@@ -1,5 +1,6 @@
 import datetime
 import os
+from natsort import natsorted 
 
 import numpy as np
 import scipy
@@ -136,7 +137,12 @@ def read_nwb(fpath):
     return stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 
-def save_nwb(ops1):
+def save_nwb(save_folder):
+    """ convert folder with plane folders to NWB format """
+
+    plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
+    ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
+
     if NWB and not ops1[0]['mesoscan']:
         if len(ops1)>1:
             multiplane = True
@@ -273,7 +279,7 @@ def save_nwb(ops1):
                 
             ophys_module.add(images)
 
-        with NWBHDF5IO(os.path.join(ops['save_path0'], 'suite2p', 'ophys.nwb'), 'w') as fio:
+        with NWBHDF5IO(os.path.join(save_folder, 'ophys.nwb'), 'w') as fio:
             fio.write(nwbfile)
     else:
         print('pip install pynwb OR don"t use mesoscope recording')

@@ -27,16 +27,17 @@ class BinaryFile:
         self._can_read = True
 
     @property
-    def nbytesread(self) -> int:
+    def nbytesread(self):
         """number of bytes per frame (FIXED for given file)"""
-        return 2 * self.Ly * self.Lx
+        return np.int64(2 * self.Ly * self.Lx)
 
     @property
-    def nbytes(self) -> int:
+    def nbytes(self):
         """total number of bytes in the read_file."""
         currpos = self.read_file.tell()
         self.read_file.seek(0, 2)
         size = self.read_file.tell()
+        print(size)
         self.read_file.seek(currpos)
         return size
 
@@ -50,8 +51,8 @@ class BinaryFile:
         return self.n_frames, self.Ly, self.Lx
 
     @property
-    def size(self) -> int:
-        return np.prod(self.shape)
+    def size(self):
+        return np.prod(np.array(self.shape).astype(np.int64))
 
     def close(self) -> None:
         self.read_file.close()

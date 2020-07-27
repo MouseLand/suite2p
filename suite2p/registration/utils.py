@@ -84,7 +84,7 @@ def spatial_smooth(data, window):
     data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :])  # in X
     data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window])  # in Y
     data_summed /= window ** 2
-
+    
     return data_summed.squeeze()
 
 

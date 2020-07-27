@@ -99,6 +99,7 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
     lpad: int
         upsample from a square +/- lpad
     """
+    
     Kmat, nup = mat_upsample(lpad=3)
 
     nimg = data.shape[0]

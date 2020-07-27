@@ -2,7 +2,7 @@ import argparse
 import suite2p
 import numpy as np
 from typing import NamedTuple
-
+from pathlib import Path
 from suite2p.__main__ import add_args, parse_args
 
 
@@ -12,7 +12,7 @@ class RegMetricResult(NamedTuple):
     max_offs: np.array
 
 
-def registration_metrics(data_path, tiff_list, ops, nPC = 10):
+def registration_metrics(data_path, tiff_list, ops, nPC=10):
     """
     Displays registration offsets calculated on pclow and pchigh frames. If registration was performed well,
     the PCs should not contain movement. All offsets calculated on pclow/pchigh frames should be close to zero.
@@ -21,7 +21,8 @@ def registration_metrics(data_path, tiff_list, ops, nPC = 10):
     ops['roidetect'] = False
     ops['reg_metric_n_pc'] = nPC
     ops['data_path'] = data_path
-    ops['tiff_list'] = tiff_list
+    if tiff_list:
+        ops['tiff_list'] = tiff_list
 
     result_ops = suite2p.run_s2p(ops)
     metric_results = []
@@ -32,14 +33,16 @@ def registration_metrics(data_path, tiff_list, ops, nPC = 10):
     return metric_results
 
 
-
-
 def main():
+
     default_parser = add_args(argparse.ArgumentParser(description='Suite2p parameters'))
     default_parser.add_argument('data_path', type=str, nargs=1, help='Path to directory with input files')
     default_parser.add_argument('--tiff_list', default=[], type=str, nargs='*', help='Input files selected')
+    default_parser.add_argument('--n_pc', default=10, type=int, help='Number of PCs')
     args, ops = parse_args(default_parser)
-    reg_metric_results = registration_metrics(data_path=args.data_path, tiff_list=args.tiff_list, ops=ops)
+    reg_metric_results = registration_metrics(
+        data_path=args.data_path, tiff_list=args.tiff_list, ops=ops, nPC=args.n_pc
+    )
     for r in reg_metric_results:
         print(
             f"""

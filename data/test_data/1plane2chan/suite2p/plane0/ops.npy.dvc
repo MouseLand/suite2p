@@ -1,7 +1,0 @@
-md5: c0b1ab8c53625c8fd79b804a541b0caf
-outs:
-- md5: 0234b52424556c7855cfb6cfd8c15d36
-  path: ops.npy
-  cache: true
-  metric: false
-  persist: false

@@ -2,32 +2,24 @@ from typing import Optional, Tuple, Sequence
 
 import numpy as np
 
-from suite2p.detection.utils import crop, reject_frames, binned_mean
-
-
-def from_slice(s: slice) -> np.ndarray:
-    if s.start == None and s.stop == None and s.step == None:
-        return None
-    else:
-        return np.arange(s.start, s.stop, s.step)
-
 
 class BinaryFile:
 
-    def __init__(self, Ly: int, Lx: int, read_file: str, write_file: Optional[str] = None):
+    def __init__(self, Ly: int, Lx: int, read_filename: str, write_filename: Optional[str] = None):
         self.Ly = Ly
         self.Lx = Lx
-        # bytes per frame (FIXED for given file)
-        self.nbytesread = np.int64(2 * self.Ly * self.Lx)
-        if read_file == write_file:
-            self.read_file = open(read_file, mode='r+b')
+        self.read_filename = read_filename
+        self.write_filename = write_filename
+
+        if read_filename == write_filename:
+            self.read_file = open(read_filename, mode='r+b')
             self.write_file = self.read_file
-        elif read_file and not write_file:
-            self.read_file = open(read_file, mode='rb')
-            self.write_file = write_file
-        elif read_file and write_file and read_file != write_file:
-            self.read_file = open(read_file, mode='rb')
-            self.write_file = open(write_file, mode='wb')
+        elif read_filename and not write_filename:
+            self.read_file = open(read_filename, mode='rb')
+            self.write_file = write_filename
+        elif read_filename and write_filename and read_filename != write_filename:
+            self.read_file = open(read_filename, mode='rb')
+            self.write_file = open(write_filename, mode='wb')
         else:
             raise IOError("Invalid combination of read_file and write_file")
 
@@ -35,8 +27,23 @@ class BinaryFile:
         self._can_read = True
 
     @property
+    def nbytesread(self) -> int:
+        """number of bytes per frame (FIXED for given file)"""
+        return 2 * self.Ly * self.Lx
+
+    @property
+    def nbytes(self) -> int:
+        """total number of bytes in the read_file."""
+        currpos = self.read_file.tell()
+        self.read_file.seek(0, 2)
+        size = self.read_file.tell()
+        self.read_file.seek(currpos)
+        return size
+
+    @property
     def n_frames(self) -> int:
-        return int(self.nbytesread / self.Ly / self.Lx)
+        """total number of fraames in the read_file."""
+        return int(self.nbytes // self.nbytesread)
 
     @property
     def shape(self) -> Tuple[int, int, int]:
@@ -118,23 +125,39 @@ class BinaryFile:
             self._can_read = True
         self.write_file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
+    def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
+                  bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
+        """Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range)."""
 
-def bin_movie(filename: str, Ly: int, Lx: int, bin_size: int, n_frames: int, x_range: Tuple[int, int] = (), y_range: Tuple[int, int] = (), bad_frames: Sequence[int] = ()):
-    """Returns binned movie [nbins x Ly x Lx] from filename that has bad frames rejected and cropped to (y_range, x_range)"""
-    with BinaryFile(Ly=Ly, Lx=Lx, read_file=filename) as f:
+        good_frames = ~bad_frames if bad_frames is not None else np.ones(self.n_frames, dtype=bool)
+
+        batch_size = min(np.sum(good_frames), 500)
         batches = []
-        batch_size = min(n_frames - len(bad_frames), 500) // bin_size * bin_size
-        for indices, data in f.iter_frames(batch_size=batch_size):
+        for indices, data in self.iter_frames(batch_size=batch_size):
+            if len(data) != batch_size:
+                break
 
-            if len(x_range) and len(y_range):
-                data = crop(mov=data, y_range=y_range, x_range=x_range)
+            if x_range is not None and y_range is not None:
+                data = data[:, slice(*y_range), slice(*x_range)]  # crop
 
-            if len(bad_frames) > 0:
-                data = reject_frames(mov=data, bad_indices=bad_frames, mov_indices=indices, reject_threshold=0.5)
+            good_indices = good_frames[indices]
+            if np.mean(good_indices) > reject_threshold:
+                data = data[good_indices]
 
-            if data.shape[0] >= batch_size:  # todo: drops the end of the movie
-                dbin = binned_mean(mov=data, bin_size=bin_size)
-                batches.append(dbin)
+            if data.shape[0] > bin_size:
+                data = binned_mean(mov=data, bin_size=bin_size)
+                batches.extend(data)
 
-    mov = np.vstack(batches)
-    return mov
+        mov = np.stack(batches)
+        return mov
+
+
+def from_slice(s: slice) -> Optional[np.ndarray]:
+    return np.arange(s.start, s.stop, s.step) if any([s.start, s.stop, s.step]) else None
+
+
+def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
+    """Returns an array with the mean of each time bin (of size 'bin_size')."""
+    n_frames, Ly, Lx = mov.shape
+    mov = mov[:(n_frames // bin_size) * bin_size]
+    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)

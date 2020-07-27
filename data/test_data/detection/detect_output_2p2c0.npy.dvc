@@ -1,7 +1,0 @@
-md5: 29a50cca9549f174e60e6b7e7d9f5407
-outs:
-- md5: d6f0f1bb1f9abd8191543a4e74246c62
-  path: detect_output_2p2c0.npy
-  cache: true
-  metric: false
-  persist: false

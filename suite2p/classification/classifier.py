@@ -57,12 +57,11 @@ class Classifier:
             print('ERROR: incorrect classifier file')
             self.loaded = False
 
-    def run(self, stat):
-        # compute cell probability
+    def run(self, stat, p_threshold: float = 0.5) -> np.ndarray:
+        """Returns cell classification thresholded with 'p_threshold' and its probability."""
         probcell = self.predict_proba(stat)
-        iscell = probcell > 0.5
-        iscell = np.concatenate((np.expand_dims(iscell,axis=1),np.expand_dims(probcell,axis=1)),axis=1)
-        return iscell
+        is_cell = probcell > p_threshold
+        return np.stack([is_cell, probcell]).T
 
     def predict_proba(self, stat):
         """ apply logistic regression model and predict probabilities
@@ -76,21 +75,14 @@ class Classifier:
             needs self.keys keys
 
         """
-        test_stats = np.reshape(np.array([stat[j][k] for j in range(len(stat)) for k in self.keys]),
-                                (len(stat),-1))
+        test_stats = np.array([stat[j][k] for j in range(len(stat)) for k in self.keys]).reshape(len(stat), -1)
         logp = self._get_logp(test_stats)
-        y_pred = self.model.predict_proba(logp)
-        y_pred = y_pred[:,1]
+        y_pred = self.model.predict_proba(logp)[:, 1]
         return y_pred
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         """ save classifier to filename """
-        model = {}
-        model['stats']  = self.stats
-        model['iscell'] = self.iscell
-        model['keys']   = self.keys
-        print('saving classifier in ' + filename)
-        np.save(filename, model)
+        np.save(filename, {'stats': self.stats, 'iscell': self.iscell, 'keys': self.keys})
 
     def _get_logp(self, stats):
         """ compute log probability of set of stats
@@ -127,7 +119,7 @@ class Classifier:
         self.grid = grid 
         self.p = p
         logp = self._get_logp(self.stats)
-        self.model = LogisticRegression(C = 100.)
+        self.model = LogisticRegression(C = 100., solver='liblinear')
         self.model.fit(logp, self.iscell)
 
     

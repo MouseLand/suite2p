@@ -1,7 +1,0 @@
-md5: 266854da281be5f3f81babae0fc573a8
-outs:
-- md5: 2c4f7401bbcf8855d1571d67cf75b704
-  path: pre_registered12.npy
-  cache: true
-  metric: false
-  persist: false

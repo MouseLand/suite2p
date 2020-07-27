@@ -1,12 +1,13 @@
 import time
 import numpy as np
 from pathlib import Path
+
 from . import sourcery, sparsedetect, chan2detect
-from .stats import ROI, roi_stats
+from .stats import roi_stats
 from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
-from .utils import temporal_high_pass_filter
-from ..io.binary import bin_movie
+from ..io.binary import BinaryFile
 from ..classification import classify
+
 
 def detect(ops):
     if 'aspect' in ops:
@@ -18,17 +19,13 @@ def detect(ops):
     t0 = time.time()
     bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     print('Binning movie in chunks of length %2.2d' % bin_size)
-    mov = bin_movie(
-        filename=ops['reg_file'],
-        Ly=ops['Ly'],
-        Lx=ops['Lx'],
-        n_frames=ops['nframes'],
-        bin_size=bin_size,
-        bad_frames=np.where(ops['badframes'])[0] if 'badframes' in ops else (),
-        y_range=ops['yrange'],
-        x_range=ops['xrange'],
-    )
-    ops['nbinned'] = mov.shape[0]
+    with BinaryFile(read_filename=ops['reg_file'], Ly=ops['Ly'], Lx=ops['Lx']) as f:
+        mov = f.bin_movie(
+            bin_size=bin_size,
+            bad_frames=ops.get('badframes'),
+            y_range=ops['yrange'],
+            x_range=ops['xrange'],
+        )
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
 

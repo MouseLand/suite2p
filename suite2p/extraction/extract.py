@@ -1,5 +1,4 @@
 import os
-import pathlib
 import time
 
 import numpy as np
@@ -126,7 +125,7 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
 def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
-    """ detects ROIs, computes fluorescence, and saves to *.npy
+    """ detects ROIs, computes fluorescence, and saves to \*.npy
 
     if stat is None, ROIs are computed from 'reg_file'
 
@@ -159,7 +158,7 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         stat[k]['std'] = sd[k]
 
     if len(stat) == 0:
-        raise ValueError("Stat array should not be of length 0.")
+        raise ValueError("stat array should not be of length 0 (no ROIs were found)")
 
     fpath = ops['save_path']
     np.save(os.path.join(fpath, 'stat.npy'), stat)
@@ -225,4 +224,5 @@ def enhanced_mean_image(ops):
     mimg[ops['yrange'][0]:ops['yrange'][1],
         ops['xrange'][0]:ops['xrange'][1]] = mimg0
     ops['meanImgE'] = mimg
+    print('added enhanced mean image')
     return ops

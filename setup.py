@@ -54,7 +54,7 @@ setuptools.setup(
         "mkl>=2019.3",
       ],
       "data": [
-        "dvc",
+        "dvc>=1.1",
         "pydrive2",
       ],
     },
@@ -66,8 +66,9 @@ setuptools.setup(
     ],
       entry_points = {
         'console_scripts': [
-          'suite2p = suite2p.__main__:parse_arguments',
+          'suite2p = suite2p.__main__:main',
           'reg_metrics = benchmarks.registration_metrics:main',
+          'tiff2scanimage = scripts.make_tiff_scanimage_compatible:main',
         ]
         },
 )

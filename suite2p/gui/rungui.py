@@ -84,7 +84,7 @@ class RunWindow(QtGui.QDialog):
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
-                     'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid',
+                     'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
                     'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
@@ -616,7 +616,7 @@ class OpsButton(QtGui.QPushButton):
     def press(self, parent, bid):
         try:
             opsdef = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                              'ops/ops_%s.npy'%parent.opsname[bid])
+                                              '../ops/ops_%s.npy'%parent.opsname[bid])
             ops = np.load(opsdef, allow_pickle=True).item()
             for key in ops:
                 if key in parent.keylist:

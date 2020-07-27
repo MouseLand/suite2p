@@ -3,7 +3,6 @@ import pyqtgraph as pg
 from PyQt5 import QtGui
 from scipy import stats
 
-import suite2p.detection.stats
 from . import masks, io
 from . import utils
 from ..detection import roi_stats
@@ -127,7 +126,7 @@ def merge_activity_masks(parent):
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
     parent.stat = roi_stats(parent.stat, d0[0], d0[1], parent.Ly, parent.Lx)
-    parent.stat[-1]['lam'] = parent.stat[-1]['lam'] * merged_cells.ize
+    parent.stat[-1]['lam'] = parent.stat[-1]['lam'] * merged_cells.size
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
     parent.Spks = np.concatenate((parent.Spks, spks), axis=0)

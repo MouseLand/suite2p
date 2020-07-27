@@ -120,14 +120,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
-            # pre filtering for one-photon data
-            if reg_1p:
-                data = data.astype(np.float32)
-                if pre_smooth:
-                    data = utils.spatial_smooth(data, int(pre_smooth))
-                data = utils.spatial_high_pass(data, int(spatial_hp))
-                refImg = data
-
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg0=refImg,
@@ -141,26 +133,19 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
-        ###
-        dwrite = Img
-        if smooth_sigma_time > 0:
-            dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
-            dwrite = dwrite.astype(np.float32)
-
         # preprocessing for 1P recordings
+        dwrite = Img.astype(np.float32)
         if reg_1p:
-            Img = Img.astype(np.float32)
-
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
-            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))
-
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
+        
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
             data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
             cfRefImg=cfRefImg.squeeze(),
             maxregshift=maxregshift,
-            smooth_sigma_time=smooth_sigma_time,
+            smooth_sigma_time=0,
         )
         for frame, dy, dx in zip(Img, ymax.flatten(), xmax.flatten()):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
@@ -220,7 +205,7 @@ def get_pc_metrics(ops, use_red=False):
     # n frames to pick from full movie
     nsamp = min(2000 if ops['nframes'] < 5000 or ops['Ly'] > 700 or ops['Lx'] > 700 else 5000, ops['nframes'])
     with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'],
-                       read_file=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
+                       read_filename=ops['reg_file_chan2'] if use_red and 'reg_file_chan2' in ops else ops['reg_file']
                        ) as f:
         mov = f[np.linspace(0, ops['nframes'] - 1, nsamp).astype('int')]
         mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]

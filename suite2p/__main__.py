@@ -2,11 +2,11 @@ import argparse
 import numpy as np
 from suite2p import default_ops 
 
-
 def add_args(parser: argparse.ArgumentParser):
     """
     Adds suite2p ops arguments to parser.
     """
+    parser.add_argument('--single_plane', action='store_true', help='run single plane ops')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
     ops0 = default_ops()
@@ -33,29 +33,43 @@ def parse_args(parser: argparse.ArgumentParser):
     set_param_msg = '->> Setting {0} to {1}'
     # options defined in the cli take precedence over the ones in the ops file
     for k in ops0:
-        v = ops0[k]
-        n = dargs[k]
+        default_key = ops0[k]
+        args_key = dargs[k]
         if k in ['fast_disk', 'save_folder', 'save_path0']:
-            if n:
-                ops[k] = n
+            if args_key:
+                ops[k] = args_key
                 print(set_param_msg.format(k, ops[k]))
-        elif type(v) in [np.ndarray, list]:
-            n = np.array(n)
-            if np.any(n != np.array(v)):
-                ops[k] = n.astype(type(v))
+        elif type(default_key) in [np.ndarray, list]:
+            n = np.array(args_key)
+            if np.any(n != np.array(default_key)):
+                ops[k] = n.astype(type(default_key))
                 print(set_param_msg.format(k, ops[k]))
-        elif not v == type(v)(n):
-            ops[k] = type(v)(n)
+        elif isinstance(default_key, bool):
+            args_key = bool(int(args_key))  # bool('0') is true, must convert to int
+            if default_key != args_key:
+                ops[k] = args_key
+                print(set_param_msg.format(k, ops[k]))
+        # checks default param to args param by converting args to same type
+        elif not (default_key == type(default_key)(args_key)):
+            ops[k] = type(default_key)(args_key)
             print(set_param_msg.format(k, ops[k]))
     return args, ops
 
 
-if __name__ == '__main__':
+def main():
     args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
-    if len(args.db) > 0:
+    if args.single_plane and args.ops:
+        from suite2p.run_s2p import run_plane
+        # run single plane (does registration)
+        run_plane(ops, ops_path=args.ops)
+    elif len(args.db) > 0:
         db = np.load(args.db, allow_pickle=True).item()
         from suite2p import run_s2p
         run_s2p(ops, db)
     else:
         from suite2p import gui
         gui.run()
+
+
+if __name__ == '__main__':
+    main()

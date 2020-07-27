@@ -9,12 +9,17 @@ import glob
 r_tol, a_tol = 1e-4, 5e-2
 
 
-def get_plane_dir(op, plane):
-    suite_dir = Path(op['save_path0']).joinpath('suite2p')
-    suite_dir.mkdir(exist_ok=True)
-    plane_dir = Path(op['save_path0']).joinpath('suite2p').joinpath('plane{}'.format(plane))
-    plane_dir.mkdir(exist_ok=True)
+def get_plane_dir(op, plane, mkdir=True):
+    plane_dir = Path(op['save_path0']).joinpath('suite2p/plane{}'.format(plane))
+    if mkdir:
+        plane_dir.mkdir(exist_ok=True, parents=True)
     return plane_dir
+
+
+def get_binary_file_data(op):
+    # Read in binary file's contents as int16 np array
+    mov = np.fromfile(str(Path(op['save_path0']).joinpath('suite2p/plane0/data.bin')), np.int16)
+    return mov.reshape(-1, op['Ly'], op['Lx'])
 
 
 def write_data_to_binary(binary_path, data_path):
@@ -25,8 +30,8 @@ def write_data_to_binary(binary_path, data_path):
 
 
 def check_lists_of_arr_all_close(list1, list2):
-    for i in range(len(list1)):
-        assert np.allclose(list1[i], list2[i], rtol=r_tol, atol=a_tol)
+    for l1, l2 in zip(list1, list2):
+        assert np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
 
 
 def check_dict_dicts_all_close(first_dict, second_dict):
@@ -50,9 +55,9 @@ def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, a
                 np.concatenate([imread(tif) for tif in glob.glob(str(test_plane_dir.joinpath(output)) + '/*.tif')])
             )
         else:
-            test_data_list.append(np.load(
-                str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True
-            ))
+            test_data_list.append(
+                np.load(str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True)
+            )
     return test_data_list
 
 

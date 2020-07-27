@@ -6,7 +6,7 @@ from pathlib import Path
 
 @pytest.fixture()
 def data_dir():
-    return Path(__file__).parent.parent.joinpath('data/test_data')
+    return Path('data/test_data')
 
 
 @pytest.fixture()

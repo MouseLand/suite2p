@@ -9,6 +9,15 @@ import glob
 r_tol, a_tol = 1e-4, 5e-2
 
 
+def get_binary_file_data(op):
+    # Read in binary file's contents as int16 np array
+    binary_file_data = np.fromfile(
+        str(Path(op['save_path0']).joinpath('suite2p', 'plane0', 'data.bin')),
+        np.int16
+    )
+    return np.reshape(binary_file_data, (-1, op['Ly'], op['Lx']))
+
+
 def get_plane_dir(op, plane):
     suite_dir = Path(op['save_path0']).joinpath('suite2p')
     suite_dir.mkdir(exist_ok=True)

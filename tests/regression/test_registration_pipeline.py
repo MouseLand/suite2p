@@ -5,7 +5,7 @@ Tests for the Suite2p Registration Module
 import numpy as np
 from pathlib import Path
 from tifffile import imread
-from suite2p.registration import bidiphase, utils, register_binary, get_pc_metrics
+from suite2p.registration import register_binary
 
 
 def prepare_for_registration(op, input_file_name, dimensions):
@@ -95,58 +95,3 @@ def test_register_binary_rigid_registration_only(test_ops):
     assert num_col_lines == 16
     assert num_row_lines == 16
 
-
-def test_spatial_smooth_has_not_regressed_during_refactor():
-    frames = np.ones((2, 3, 3))
-    smoothed = utils.spatial_smooth(frames, 2)
-    expected = np.array([
-        [[1.  , 1.  , 0.5 ],
-         [1.  , 1.  , 0.5 ],
-         [0.5 , 0.5 , 0.25]],
-
-        [[1.  , 1.  , 0.5 ],
-         [1.  , 1.  , 0.5 ],
-         [0.5 , 0.5 , 0.25]]], dtype=np.float32)
-    assert np.allclose(smoothed, expected)
-
-
-def test_positive_bidiphase_shift_shifts_every_other_line():
-    orig = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-    expected = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 1, 2, 3, 4, 5],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 1, 2, 3, 4, 5],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-
-    shifted = orig.copy()
-    bidiphase.shift(shifted, 2)
-    assert np.allclose(shifted, expected)
-
-
-def test_negative_bidiphase_shift_shifts_every_other_line():
-    orig = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-    expected = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [3, 4, 5, 6, 7, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [3, 4, 5, 6, 7, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-
-    shifted = orig.copy()
-    bidiphase.shift(shifted, -2)
-    assert np.allclose(shifted, expected)

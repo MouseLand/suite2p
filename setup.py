@@ -5,7 +5,6 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="suite2p",
-    version="0.8.0",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
     description="Pipeline for calcium imaging",
@@ -15,7 +14,9 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     setup_requires=[
       'pytest-runner',
+      'setuptools_scm',
     ],
+    use_scm_version=True,
     install_requires=[
       'numpy>=1.16',
       'numba>=0.43.1',

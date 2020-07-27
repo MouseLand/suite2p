@@ -148,7 +148,7 @@ def run_plane(ops, ops_path=None):
     # check if registration should be done
     if ops['do_registration']>0:
         run_registration = True
-        if 'refImg' not in ops or ops['do_registration']>1:
+        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration']>1:
             print("NOTE: not registered / registration forced with ops['do_registration']>1")
             try:
                 # delete previous offsets

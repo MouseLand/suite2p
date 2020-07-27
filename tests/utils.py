@@ -9,21 +9,17 @@ import glob
 r_tol, a_tol = 1e-4, 5e-2
 
 
+def get_plane_dir(op, plane, mkdir=True):
+    plane_dir = Path(op['save_path0']).joinpath('suite2p/plane{}'.format(plane))
+    if mkdir:
+        plane_dir.mkdir(exist_ok=True, parents=True)
+    return plane_dir
+
+
 def get_binary_file_data(op):
     # Read in binary file's contents as int16 np array
-    binary_file_data = np.fromfile(
-        str(Path(op['save_path0']).joinpath('suite2p', 'plane0', 'data.bin')),
-        np.int16
-    )
-    return np.reshape(binary_file_data, (-1, op['Ly'], op['Lx']))
-
-
-def get_plane_dir(op, plane):
-    suite_dir = Path(op['save_path0']).joinpath('suite2p')
-    suite_dir.mkdir(exist_ok=True)
-    plane_dir = Path(op['save_path0']).joinpath('suite2p').joinpath('plane{}'.format(plane))
-    plane_dir.mkdir(exist_ok=True)
-    return plane_dir
+    mov = np.fromfile(str(Path(op['save_path0']).joinpath('suite2p/plane0/data.bin')), np.int16)
+    return mov.reshape(-1, op['Ly'], op['Lx'])
 
 
 def write_data_to_binary(binary_path, data_path):
@@ -34,8 +30,8 @@ def write_data_to_binary(binary_path, data_path):
 
 
 def check_lists_of_arr_all_close(list1, list2):
-    for i in range(len(list1)):
-        assert np.allclose(list1[i], list2[i], rtol=r_tol, atol=a_tol)
+    for l1, l2 in zip(list1, list2):
+        assert np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
 
 
 def check_dict_dicts_all_close(first_dict, second_dict):

@@ -55,9 +55,9 @@ def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, a
                 np.concatenate([imread(tif) for tif in glob.glob(str(test_plane_dir.joinpath(output)) + '/*.tif')])
             )
         else:
-            test_data_list.append(np.load(
-                str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True
-            ))
+            test_data_list.append(
+                np.load(str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True)
+            )
     return test_data_list
 
 

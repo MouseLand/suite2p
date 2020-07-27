@@ -35,6 +35,7 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 4. Activate the environment with `conda activate suite2p'
 5. Pip install suite2p into the environment: `pip install suite2p`
 6. Now run `suite2p` and you're all set.
+7. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 

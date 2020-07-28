@@ -16,7 +16,7 @@ def get_outputs_to_check(n_channels):
     return outputs_to_check
 
 
-def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
+def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops, set_def_classifier):
     """
     Tests for case with 1 plane and 1 channel with multiple batches. Results are saved to nwb format
     then checked to see if it contains the necessary parts for use with GUI.
@@ -46,7 +46,8 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
         ]
     )
 
-def test_2plane_2chan_with_batches(test_ops):
+
+def test_2plane_2chan_with_batches(test_ops, set_def_classifier):
     """
     Tests for case with 2 planes and 2 channels with multiple batches.
     """
@@ -67,7 +68,7 @@ def test_2plane_2chan_with_batches(test_ops):
     )
 
 
-def test_1plane_2chan_sourcery(test_ops):
+def test_1plane_2chan_sourcery(test_ops, set_def_classifier):
     """
     Tests for case with 1 plane and 2 channel.
     """

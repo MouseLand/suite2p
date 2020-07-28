@@ -212,7 +212,7 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(ops, stat)
+        iscell = classification.classify(ops['save_path'], stat, classfile=ops.get('classifier_path'))
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############

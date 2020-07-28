@@ -18,8 +18,9 @@ def test_classification_output(test_ops, data_dir):
     Regression test that checks to see if the main_classify function works. Only checks iscell output.
     """
     test_ops['save_path'] = test_ops['save_path0']
+    default_cls_file = data_dir.parent.parent.joinpath('suite2p', 'classifiers', 'classifier.npy')
     stat, expected_output = get_stat_iscell(data_dir)
-    iscell = classification.classify(test_ops, stat)
+    iscell = classification.classify(test_ops, stat, classfile=default_cls_file)
     assert np.allclose(iscell, expected_output, atol=2e-4)
 
 

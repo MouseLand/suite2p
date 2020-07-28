@@ -25,6 +25,9 @@ def classify(save_path, stat, classfile=None, keys=None):
     iscell : array of classifier output
 
     """
+    if keys is None:
+        keys = []
+    keys = keys + ['npix_norm', 'compact', 'skew']
     # apply default classifier
     if len(stat) > 0:
         if classfile is None or not Path(classfile).is_file():

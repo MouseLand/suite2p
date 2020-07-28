@@ -335,9 +335,7 @@ def run_s2p(ops={}, db={}):
         }
         if ops['input_format'] in convert_funs:
             ops1 = convert_funs[ops['input_format']](ops.copy())
-            print('time {:4.2f} sec. Wrote {} files to binaries for {} planes').format(
-                (time.time() - t0), ops['input_format'], len(ops1)
-            )
+            print('time {:4.2f} sec. Wrote {} files to binaries for {} planes'.format( (time.time() - t0), ops['input_format'], len(ops1) ))
         else:
             ops1 = io.tiff_to_binary(ops.copy())
             print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(

@@ -32,7 +32,7 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 1. Download the [`environment.yml`](https://github.com/MouseLand/suite2p/blob/master/environment.yml) file from the repository. You can do this by cloning the repository, or copy-pasting the text from the file into a text document on your local computer.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
-4. Activate the environment with `conda activate suite2p'
+4. Activate the environment with `conda activate suite2p`
 5. Pip install suite2p into the environment: `pip install suite2p`
 6. Now run `suite2p` and you're all set.
 7. Running the command `suite2p --version` in the terminal will print the install version of suite2p.

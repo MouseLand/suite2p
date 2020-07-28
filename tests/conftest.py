@@ -34,7 +34,7 @@ def set_def_classifier(tmpdir_factory):
         print("User has classifier defined in .suite2p.")
         shutil.copy(curr_cls_filepath, tmp_cls_filepath)  # copy curr classifier to tmp
         user_has_classifier_defined = True
-    shutil.copy(default_cls_file, curr_cls_filepath)
+        shutil.copy(default_cls_file, curr_cls_filepath)
     yield default_cls_file
     # Copy user's classifier back during teardown
     if user_has_classifier_defined:

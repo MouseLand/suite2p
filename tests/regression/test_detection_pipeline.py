@@ -60,9 +60,9 @@ def detect_wrapper(ops):
             allow_pickle=True
         )[()]
         assert np.array_equal(output_check['cell_pix'], cell_pix)
-        utils.check_lists_of_arr_all_close(cell_masks, output_check['cell_masks'])
-        utils.check_lists_of_arr_all_close(neuropil_masks, output_check['neuropil_masks'])
-        utils.check_dict_dicts_all_close(stat, output_check['stat'])
+        assert all(utils.check_lists_of_arr_all_close(cell_masks, output_check['cell_masks']))
+        assert all(utils.check_lists_of_arr_all_close(neuropil_masks, output_check['neuropil_masks']))
+        assert all(utils.check_dict_dicts_all_close(stat, output_check['stat']))
 
 
 def test_detection_output_1plane1chan(test_ops):
@@ -91,10 +91,10 @@ def test_detection_output_2plane2chan(test_ops):
     ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
-    utils.check_output(
+    assert all(utils.check_output(
         test_ops['save_path0'],
         ['redcell'],
         test_ops['data_path'][0],
         test_ops['nplanes'],
         test_ops['nchannels'],
-    )
+    ))

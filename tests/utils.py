@@ -1,5 +1,6 @@
 """Utility functions that can be accessed in tests via the utils fixture below. """
 
+from typing import Iterator
 from pathlib import Path
 from tifffile import imread
 
@@ -29,15 +30,15 @@ def write_data_to_binary(binary_path, data_path):
     return binary_path
 
 
-def check_lists_of_arr_all_close(list1, list2):
+def check_lists_of_arr_all_close(list1, list2) -> Iterator[bool]:
     for l1, l2 in zip(list1, list2):
-        assert np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
+        yield np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
 
 
-def check_dict_dicts_all_close(first_dict, second_dict):
+def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
     for gt_dict, output_dict in zip(first_dict, second_dict):
         for k in gt_dict.keys():
-            assert np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
+            yield np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
 
 
 def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, curr_plane):
@@ -79,20 +80,21 @@ def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
     return output_data_list
 
 
-def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag=""):
+def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag="") -> Iterator[bool]:
     """
     Helper function to check if outputs given by a test are exactly the same
     as the ground truth outputs.
     """
     for i in range(nplanes):
-        compare_list_of_outputs(i,
-                                outputs_to_check,
-                                get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, i),
-                                get_list_of_output_data(outputs_to_check, output_root, i)
-        )
+        yield all(compare_list_of_outputs(
+            i,
+            outputs_to_check,
+            get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, i),
+            get_list_of_output_data(outputs_to_check, output_root, i),
+        ))
 
 
-def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two):
+def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
     for i in range(len(output_name_list)):
         output = output_name_list[i]
         print("Comparing {} for plane {}".format(output, plane_num))
@@ -100,4 +102,4 @@ def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_lis
         if output == 'stat':
             check_dict_dicts_all_close(data_list_one[i], data_list_two[i])
         else:
-            assert np.allclose(data_list_one[i], data_list_two[i], rtol=r_tol, atol=a_tol)
+            yield np.allclose(data_list_one[i], data_list_two[i], rtol=r_tol, atol=a_tol)

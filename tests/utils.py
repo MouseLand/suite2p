@@ -87,11 +87,8 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nch
 
 
 def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
-    for i in range(len(output_name_list)):
-        output = output_name_list[i]
-        print("Comparing {} for plane {}".format(output, plane_num))
-        # Handle cases where the elements of npy arrays are dictionaries (e.g: stat.npy)
-        if output == 'stat':
-            check_dict_dicts_all_close(data_list_one[i], data_list_two[i])
+    for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
+        if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
+            yield check_dict_dicts_all_close(data1, data2)
         else:
-            yield np.allclose(data_list_one[i], data_list_two[i], rtol=r_tol, atol=a_tol)
+            yield np.allclose(data1, data2, rtol=r_tol, atol=a_tol)

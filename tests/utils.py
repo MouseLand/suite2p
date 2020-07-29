@@ -5,7 +5,7 @@ from pathlib import Path
 from tifffile import imread
 
 import numpy as np
-import glob
+from glob import glob
 
 r_tol, a_tol = 1e-4, 5e-2
 
@@ -47,18 +47,13 @@ def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, a
     all test_data for given plane number.
     """
     test_data_list = []
-    test_plane_dir = test_data_dir.joinpath(
-        '{}plane{}chan{}'.format(nplanes, nchannels, added_tag), 'suite2p', 'plane{}'.format(curr_plane)
-    )
+    test_plane_dir = test_data_dir.joinpath(f'{nplanes}plane{nchannels}chan{added_tag}/suite2p/plane{curr_plane}')
     for output in outputs_to_check:
         if 'reg_tif' in output:
-            test_data_list.append(
-                np.concatenate([imread(tif) for tif in glob.glob(str(test_plane_dir.joinpath(output)) + '/*.tif')])
-            )
+            filename = np.concatenate([imread(tif) for tif in glob(str(test_plane_dir.joinpath(f"{output}/*.tif")))])
         else:
-            test_data_list.append(
-                np.load(str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True)
-            )
+            filename = np.load(str(test_plane_dir.joinpath(f"{output}.npy")), allow_pickle=True)
+        test_data_list.append(filename)
     return test_data_list
 
 
@@ -70,13 +65,10 @@ def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
     output_data_list = []
     for output in outputs_to_check:
         if 'reg_tif' in output:
-            output_data_list.append(
-                np.concatenate([imread(tif) for tif in glob.glob(str(output_dir.joinpath(output)) + '/*.tif')])
-            )
+            filename = np.concatenate([imread(tif) for tif in glob(str(output_dir.joinpath(f"{output}/*.tif")))])
         else:
-            output_data_list.append(np.load(
-                str(output_dir.joinpath("{}.npy".format(output))), allow_pickle=True
-            ))
+            filename = np.load(str(output_dir.joinpath(f"{output}.npy")), allow_pickle=True)
+        output_data_list.append(filename)
     return output_data_list
 
 

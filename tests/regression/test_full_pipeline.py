@@ -40,7 +40,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
 
     # Read Nwb data and make sure it's identical to output data
     stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
-        io.read_nwb(str(Path(test_ops['save_path0']).joinpath('suite2p').joinpath('ophys.nwb')))
+        io.read_nwb(str(Path(test_ops['save_path0']).joinpath('suite2p/ophys.nwb')))
     assert all(utils.compare_list_of_outputs(
         0,
         outputs_to_check,

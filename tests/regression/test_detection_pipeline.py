@@ -54,9 +54,7 @@ def detect_wrapper(ops):
         op = ops[i]
         cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op)
         output_check = np.load(
-            op['data_path'][0].joinpath(
-                'detection',
-                'detect_output_{0}p{1}c{2}.npy'.format(op['nplanes'], op['nchannels'], i)),
+            op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
         assert np.array_equal(output_check['cell_pix'], cell_pix)
@@ -68,7 +66,7 @@ def detect_wrapper(ops):
 def test_detection_output_1plane1chan(test_ops):
     ops = prepare_for_detection(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     detect_wrapper(ops)

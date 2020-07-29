@@ -72,7 +72,7 @@ def extract_wrapper(ops):
 def test_extraction_output_1plane1chan(test_ops):
     ops = prepare_for_extraction(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)

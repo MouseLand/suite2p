@@ -1,22 +1,27 @@
 import numpy as np
 from pathlib import Path
+from typing import Union, List, Optional
 from .classifier import Classifier
 
 
-def classify(save_path, stat, classfile=None, keys=None):
+def classify(save_path: Union[str, Path], stat: np.ndarray,
+             classfile: Union[str, Path] = None, keys: Optional[List[str]] = None
+             ):
     """
-    Applies classifier and saves output to iscell.npy. Also, saves stat.npy.
+    Applies classifier and saves output to iscell.npy.
 
     Parameters
     ----------
-    save_path : destination of output files
+    save_path : string / Pathlike object
+        destination of output files
 
     stat : array of dicts
+        each dict contains statistics for an ROI
 
     classfile: string (optional)    
         path to classifier
 
-    keys: features (optional)
+    keys: List[str] (optional)
         features
 
     Returns
@@ -26,8 +31,7 @@ def classify(save_path, stat, classfile=None, keys=None):
 
     """
     if keys is None:
-        keys = []
-    keys = keys + ['npix_norm', 'compact', 'skew']
+        keys = ['npix_norm', 'compact', 'skew']
     # apply default classifier
     if len(stat) > 0:
         if classfile is None or not Path(classfile).is_file():
@@ -45,6 +49,5 @@ def classify(save_path, stat, classfile=None, keys=None):
         iscell = Classifier(classfile, keys=keys).run(stat)
     else:
         iscell = np.zeros((0,2))
-    fpath = Path(save_path)
-    np.save(fpath.joinpath(('iscell.npy')), iscell)
+    np.save(Path(save_path).joinpath('iscell.npy'), iscell)
     return iscell

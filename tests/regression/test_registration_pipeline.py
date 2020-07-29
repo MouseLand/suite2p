@@ -13,9 +13,12 @@ def prepare_for_registration(op, input_file_name, dimensions):
     Prepares for registration by performing functions of io module. Fills out necessary ops parameters for
     registration module.
     """
-    op['reg_tif'] = True
-    op['Lx'] = dimensions[0]
-    op['Ly'] = dimensions[1]
+    op.update({
+        'reg_tif': True,
+        'Lx': dimensions[0],
+        'Ly': dimensions[1],
+    })
+
     nc = op['nchannels']
     # Make input data non-negative
     input_data = (imread(

@@ -13,10 +13,14 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
     other modules. Creates pre_registered binary file.
     """
     # Set appropriate ops parameters
-    op['Lx'], op['Ly'] = dimensions
-    op['nframes'] = 500 // op['nplanes'] // op['nchannels']
-    op['frames_per_file'] = 500 // op['nplanes'] // op['nchannels']
-    op['xrange'], op['yrange'] = [[2, 402], [2, 358]]
+    op.update({
+        'Lx': dimensions[0],
+        'Ly': dimensions[1],
+        'nframes': 500 // op['nplanes'] // op['nchannels'],
+        'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
+        'xrange': [2, 402],
+        'yrange': [2, 358],
+    })
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
@@ -71,8 +75,10 @@ def test_detection_output_1plane1chan(test_ops):
 
 
 def test_detection_output_2plane2chan(test_ops):
-    test_ops['nchannels'] = 2
-    test_ops['nplanes'] = 2
+    test_ops.update({
+        'nchannels': 2,
+        'nplanes': 2,
+    })
     detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = prepare_for_detection(
         test_ops,

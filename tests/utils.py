@@ -1,10 +1,11 @@
 """Utility functions that can be accessed in tests via the utils fixture below. """
 
+from typing import Iterator
 from pathlib import Path
 from tifffile import imread
 
 import numpy as np
-import glob
+from glob import glob
 
 r_tol, a_tol = 1e-4, 5e-2
 
@@ -29,15 +30,15 @@ def write_data_to_binary(binary_path, data_path):
     return binary_path
 
 
-def check_lists_of_arr_all_close(list1, list2):
+def check_lists_of_arr_all_close(list1, list2) -> Iterator[bool]:
     for l1, l2 in zip(list1, list2):
-        assert np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
+        yield np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
 
 
-def check_dict_dicts_all_close(first_dict, second_dict):
+def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
     for gt_dict, output_dict in zip(first_dict, second_dict):
         for k in gt_dict.keys():
-            assert np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
+            yield np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
 
 
 def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, curr_plane):
@@ -46,18 +47,13 @@ def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, a
     all test_data for given plane number.
     """
     test_data_list = []
-    test_plane_dir = test_data_dir.joinpath(
-        '{}plane{}chan{}'.format(nplanes, nchannels, added_tag), 'suite2p', 'plane{}'.format(curr_plane)
-    )
+    test_plane_dir = test_data_dir.joinpath(f'{nplanes}plane{nchannels}chan{added_tag}/suite2p/plane{curr_plane}')
     for output in outputs_to_check:
         if 'reg_tif' in output:
-            test_data_list.append(
-                np.concatenate([imread(tif) for tif in glob.glob(str(test_plane_dir.joinpath(output)) + '/*.tif')])
-            )
+            filename = np.concatenate([imread(tif) for tif in glob(str(test_plane_dir.joinpath(f"{output}/*.tif")))])
         else:
-            test_data_list.append(
-                np.load(str(test_plane_dir.joinpath("{}.npy".format(output))), allow_pickle=True)
-            )
+            filename = np.load(str(test_plane_dir.joinpath(f"{output}.npy")), allow_pickle=True)
+        test_data_list.append(filename)
     return test_data_list
 
 
@@ -69,35 +65,30 @@ def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
     output_data_list = []
     for output in outputs_to_check:
         if 'reg_tif' in output:
-            output_data_list.append(
-                np.concatenate([imread(tif) for tif in glob.glob(str(output_dir.joinpath(output)) + '/*.tif')])
-            )
+            filename = np.concatenate([imread(tif) for tif in glob(str(output_dir.joinpath(f"{output}/*.tif")))])
         else:
-            output_data_list.append(np.load(
-                str(output_dir.joinpath("{}.npy".format(output))), allow_pickle=True
-            ))
+            filename = np.load(str(output_dir.joinpath(f"{output}.npy")), allow_pickle=True)
+        output_data_list.append(filename)
     return output_data_list
 
 
-def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag=""):
+def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag="") -> Iterator[bool]:
     """
     Helper function to check if outputs given by a test are exactly the same
     as the ground truth outputs.
     """
     for i in range(nplanes):
-        compare_list_of_outputs(i,
-                                outputs_to_check,
-                                get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, i),
-                                get_list_of_output_data(outputs_to_check, output_root, i)
-        )
+        yield all(compare_list_of_outputs(
+            i,
+            outputs_to_check,
+            get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, i),
+            get_list_of_output_data(outputs_to_check, output_root, i),
+        ))
 
 
-def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two):
-    for i in range(len(output_name_list)):
-        output = output_name_list[i]
-        print("Comparing {} for plane {}".format(output, plane_num))
-        # Handle cases where the elements of npy arrays are dictionaries (e.g: stat.npy)
-        if output == 'stat':
-            check_dict_dicts_all_close(data_list_one[i], data_list_two[i])
+def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
+    for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
+        if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
+            yield check_dict_dicts_all_close(data1, data2)
         else:
-            assert np.allclose(data_list_one[i], data_list_two[i], rtol=r_tol, atol=a_tol)
+            yield np.allclose(data1, data2, rtol=r_tol, atol=a_tol)

@@ -11,11 +11,15 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
     Prepares for extraction by filling out necessary ops parameters. Removes dependence on
     other modules. Creates pre_registered binary file.
     """
-    # Set appropriate ops parameters
-    op['Lx'], op['Ly'] = dimensions
-    op['nframes'] = 500 // op['nplanes'] // op['nchannels']
-    op['frames_per_file'] = 500 // op['nplanes'] // op['nchannels']
-    op['xrange'], op['yrange'] = [[2, 402], [2, 358]]
+    op.update({
+        'Lx': dimensions[0],
+        'Ly': dimensions[1],
+        'nframes': 500 // op['nplanes'] // op['nchannels'],
+        'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
+        'xrange': [2, 402],
+        'yrange': [2, 358],
+    })
+
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
@@ -68,22 +72,25 @@ def extract_wrapper(ops):
 def test_extraction_output_1plane1chan(test_ops):
     ops = prepare_for_extraction(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection', 'pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)
-    utils.check_output(
+    assert all(utils.check_output(
         test_ops['save_path0'],
         ['F', 'Fneu', 'stat', 'spks'],
         test_ops['data_path'][0],
         test_ops['nplanes'],
         test_ops['nchannels'],
-    )
+    ))
 
 
 def test_extraction_output_2plane2chan(test_ops):
-    test_ops['nchannels'] = 2
-    test_ops['nplanes'] = 2
+    test_ops.update({
+        'nchannels': 2,
+        'nplanes': 2,
+    })
+
     detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = prepare_for_extraction(
         test_ops,
@@ -96,10 +103,10 @@ def test_extraction_output_2plane2chan(test_ops):
     ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     extract_wrapper(ops)
-    utils.check_output(
+    assert all(utils.check_output(
         test_ops['save_path0'],
         ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks'],
         test_ops['data_path'][0],
         test_ops['nplanes'],
         test_ops['nchannels'],
-    )
+    ))

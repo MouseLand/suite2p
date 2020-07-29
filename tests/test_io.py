@@ -16,7 +16,7 @@ from utils import get_binary_file_data
 def binfile1500(test_ops):
     test_ops['tiff_list'] = ['input_1500.tif']
     op = io.tiff_to_binary(test_ops)[0]
-    bin_filename = str(Path(op['save_path0']).joinpath('suite2p', 'plane0', 'data.bin'))
+    bin_filename = str(Path(op['save_path0']).joinpath('suite2p/plane0/data.bin'))
     with io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], read_filename=bin_filename) as bin_file:
         yield bin_file
 

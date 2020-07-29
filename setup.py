@@ -30,6 +30,7 @@ setuptools.setup(
       'tifffile',
       'scanimage-tiff-reader>=1.4.1',
       'pyqtgraph',
+      'importlib-metadata',
     ],
     tests_require=[
       'pytest',

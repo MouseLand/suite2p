@@ -19,11 +19,6 @@ setuptools.setup(
     use_scm_version=True,
     install_requires=[
       'numpy>=1.16',
-      'numba>=0.43.1',
-      'matplotlib',
-      'scipy',
-      'h5py',
-      'scikit-learn',
       'natsort',
       'rastermap>0.1.0',
       'tifffile',

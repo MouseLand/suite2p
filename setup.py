@@ -18,7 +18,6 @@ setuptools.setup(
     ],
     use_scm_version=True,
     install_requires=[
-      'numpy>=1.16',
       'natsort',
       'rastermap>0.1.0',
       'tifffile',

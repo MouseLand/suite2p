@@ -18,13 +18,6 @@ setuptools.setup(
     ],
     use_scm_version=True,
     install_requires=[
-      'numpy>=1.16',
-      'numba>=0.43.1',
-      'tbb',  # Parallel processing library used by numba.  Needed when installing numba from pip  https://github.com/numba/numba/issues/4068
-      'matplotlib',
-      'scipy',
-      'h5py',
-      'scikit-learn',
       'natsort',
       'rastermap>0.1.0',
       'tifffile',

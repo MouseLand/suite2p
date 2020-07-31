@@ -37,7 +37,8 @@ def oasis_matrix(F, v, w, t, l, s, tau, fs):
     for n in prange(F.shape[0]):
         oasis_trace(F[n], v[n], w[n], t[n], l[n], s[n], tau, fs)
 
-def oasis(F, ops):
+
+def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
     """ computes non-negative deconvolution
 
     no sparsity constraints
@@ -48,8 +49,16 @@ def oasis(F, ops):
     F : float, 2D array
         size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
 
-    ops : dictionary
-        'batch_size', 'tau', 'fs'
+    batch_size : int
+        number of frames processed per batch
+
+    tau : float
+        timescale of the sensor, used for the deconvolution kernel
+
+    fs : float
+        sampling rate per plane
+
+
     Returns
     ----------------
 
@@ -59,7 +68,6 @@ def oasis(F, ops):
     """
     NN,NT = F.shape
     F = F.astype(np.float32)
-    batch_size = ops['batch_size']
     S = np.zeros((NN,NT), dtype=np.float32)
     for i in range(0, NN, batch_size):
         f = F[i:i+batch_size]
@@ -68,11 +76,12 @@ def oasis(F, ops):
         t = np.zeros((f.shape[0],NT), dtype=np.int64)
         l = np.zeros((f.shape[0],NT), dtype=np.float32)
         s = np.zeros((f.shape[0],NT), dtype=np.float32)
-        oasis_matrix(f, v, w, t, l, s, ops['tau'], ops['fs'])
+        oasis_matrix(f, v, w, t, l, s, tau, fs)
         S[i:i+batch_size] = s
     return S
 
-def preprocess(F,ops):
+
+def preprocess(F: np.ndarray, ops):
     """ preprocesses fluorescence traces for spike deconvolution
 
     baseline-subtraction with window 'win_baseline'

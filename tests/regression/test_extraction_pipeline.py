@@ -61,7 +61,7 @@ def extract_wrapper(ops):
         Fneu = np.load(plane_dir.joinpath('Fneu.npy'))
         dF = F - curr_op['neucoeff'] * Fneu
         dF = extraction.preprocess(dF, curr_op)
-        spks = extraction.oasis(dF, curr_op)
+        spks = extraction.oasis(dF, curr_op['batch_size'], curr_op['tau'], curr_op['fs'])
         np.save(plane_dir.joinpath('spks.npy'), spks)
 
 

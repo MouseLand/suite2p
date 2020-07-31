@@ -13,6 +13,7 @@ from ..detection.stats import roi_stats
 from ..extraction.extract import extract_traces
 from ..extraction.dcnv import oasis
 
+
 def masks_and_traces(ops, stat_manual, stat_orig):
     ''' main extraction function
         inputs: ops and stat
@@ -72,7 +73,7 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         manual_roi_stats[n]['med'] = [np.mean(manual_roi_stats[n]['ypix']), np.mean(manual_roi_stats[n]['xpix'])]
 
     dF = F - ops['neucoeff'] * Fneu
-    spks = oasis(dF, ops)
+    spks = oasis(dF, ops['batch_size'], ops['tau'], ops['fs'])
 
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, manual_roi_stats
 

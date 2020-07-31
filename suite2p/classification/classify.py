@@ -8,6 +8,11 @@ def classify(stat: np.ndarray, use_builtin_classifier: bool = False,
              classfile: Union[str, Path] = None, keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
              ):
     """Returns array of classifier output from classification process."""
+
+    for key in keys:
+        if key not in stat[0]:
+            raise KeyError("Key '{}' not found in stats dictionary.".format(key))
+
     builtin_classfile = Path(__file__).joinpath('../../classifiers/classifier.npy').resolve()
     user_classfile = Path.home().joinpath('.suite2p', 'classifiers', 'classifier_user.npy')
     if use_builtin_classifier:
@@ -22,5 +27,5 @@ def classify(stat: np.ndarray, use_builtin_classifier: bool = False,
     else:
         print(f'NOTE: applying classifier {str(classfile)}')
         classfile = classfile
-    keys = list(set(keys).intersection(set(stat[0])))
+
     return Classifier(classfile, keys=keys).run(stat)

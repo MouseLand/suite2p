@@ -21,14 +21,3 @@ def test_classification_output(test_ops, data_dir):
     stat, expected_output = get_stat_iscell(data_dir)
     iscell = classification.classify(stat, test_ops['use_builtin_classifier'])
     assert np.allclose(iscell, expected_output, atol=2e-4)
-
-
-def test_classifier_output(data_dir):
-    """
-    Regression test that checks to see if classifier works.
-    """
-    default_cls_file = data_dir.parent.parent.joinpath('suite2p', 'classifiers', 'classifier.npy')
-    stat, expected_output = get_stat_iscell(data_dir)
-    iscell = classification.Classifier(default_cls_file, keys=['npix_norm', 'compact', 'skew']).run(stat)
-    # Logistic Regression has differences in tolerance due to dependence on C
-    assert np.allclose(iscell, expected_output, atol=2e-4)

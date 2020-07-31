@@ -214,8 +214,12 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(ops['save_path'], stat, ops['use_builtin_classifier'],
-                                         classfile=ops.get('classifier_path'))
+        classification.classify(
+            save_path=ops['save_path'],
+            stat=stat,
+            use_builtin_classifier=ops['use_builtin_classifier'],
+            classfile=ops.get('classifier_path')
+        )
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############
@@ -236,18 +240,20 @@ def run_plane(ops, ops_path=None):
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 
         # save as matlab file
-        if 'save_mat' in ops and ops['save_mat']:
+        if ops.get('save_mat'):
             if 'date_proc' in ops:
                 ops['date_proc'] = []
-            stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-            iscell = np.load(os.path.join(fpath,'iscell.npy'))
-            matpath = os.path.join(ops['save_path'],'Fall.mat')
-            savemat(matpath, {'stat': stat,
-                                    'ops': ops,
-                                    'F': F,
-                                    'Fneu': Fneu,
-                                    'spks': spks,
-                                    'iscell': iscell})
+            savemat(
+                file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+                mdict={
+                    'stat': np.load(os.path.join(fpath, 'stat.npy'), allow_pickle=True),
+                    'ops': ops,
+                    'F': F,
+                    'Fneu': Fneu,
+                    'spks': spks,
+                    'iscell': np.load(os.path.join(fpath, 'iscell.npy'))
+                }
+            )
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
 

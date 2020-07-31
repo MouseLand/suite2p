@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Union, Sequence
 from .classifier import Classifier
 
+builtin_classfile = Path(__file__).joinpath('../../classifiers/classifier.npy').resolve()
+user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
+
 
 def classify(stat: np.ndarray, use_builtin_classifier: bool = False,
              classfile: Union[str, Path] = None, keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
@@ -13,8 +16,6 @@ def classify(stat: np.ndarray, use_builtin_classifier: bool = False,
         if key not in stat[0]:
             raise KeyError("Key '{}' not found in stats dictionary.".format(key))
 
-    builtin_classfile = Path(__file__).joinpath('../../classifiers/classifier.npy').resolve()
-    user_classfile = Path.home().joinpath('.suite2p', 'classifiers', 'classifier_user.npy')
     if use_builtin_classifier:
         print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
         classfile = builtin_classfile

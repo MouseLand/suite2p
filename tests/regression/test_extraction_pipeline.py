@@ -77,7 +77,6 @@ def run_preprocess(f: np.ndarray, test_ops):
         pre_f = extraction.preprocess(f, bv, test_ops['win_baseline'], test_ops['sig_baseline'],
                                      test_ops['fs'], test_ops['prctile_baseline'])
         test_f = np.load('data/test_data/detection/{}_f.npy'.format(bv))
-        print(bv)
         yield np.array_equal(pre_f, test_f)
 
 

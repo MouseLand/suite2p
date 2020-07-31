@@ -77,7 +77,8 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
 
     if ops['preclassify'] > 0:
         stats =  roi_stats(stats, dy, dx, Ly, Lx)
-        iscell = classify(ops['save_path'], stats, ops['use_builtin_classifier'])
+        iscell = classify(stats, ops['use_builtin_classifier'])
+        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
         ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
         stats = stats[ic]
         print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))

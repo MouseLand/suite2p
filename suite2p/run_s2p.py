@@ -16,6 +16,7 @@ except ImportError:
     HAS_HAUS = False
 
 from functools import partial
+from pathlib import Path
 print = partial(print,flush=True)
 
 
@@ -214,12 +215,12 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        classification.classify(
-            save_path=ops['save_path'],
+        iscell = classification.classify(
             stat=stat,
             use_builtin_classifier=ops['use_builtin_classifier'],
             classfile=ops.get('classifier_path')
         )
+        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############

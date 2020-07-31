@@ -4,7 +4,7 @@ Tests for the Suite2p Detection module.
 
 import numpy as np
 import utils
-from suite2p import detection
+from suite2p import detection, builtin_classfile
 
 
 def prepare_for_detection(op, input_file_name_list, dimensions):
@@ -52,7 +52,7 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op)
+        cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
         output_check = np.load(
             op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True

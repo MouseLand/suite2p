@@ -3,7 +3,7 @@ Tests for the Suite2p Classification module.
 """
 
 import numpy as np
-from suite2p import classification
+from suite2p import classification, builtin_classfile
 
 
 def get_stat_iscell(data_dir_path):
@@ -19,5 +19,5 @@ def test_classification_output(test_ops, data_dir):
     """
     test_ops['save_path'] = test_ops['save_path0']
     stat, expected_output = get_stat_iscell(data_dir)
-    iscell = classification.classify(stat, test_ops['use_builtin_classifier'])
+    iscell = classification.classify(stat, classfile=builtin_classfile)
     assert np.allclose(iscell, expected_output, atol=2e-4)

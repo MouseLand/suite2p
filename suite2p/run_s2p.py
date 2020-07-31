@@ -18,6 +18,8 @@ except ImportError:
 from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
+builtin_classfile = Path(__file__).joinpath('../classifiers/classifier.npy').resolve()
+user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
 
 
 def default_ops():
@@ -200,10 +202,27 @@ def run_plane(ops, ops_path=None):
         spikedetect = ops['spikedetect']
 
     if roidetect:
+
+        # Select file for classification
+        ops_classfile = ops.get('classifier_path')
+
+        if ops['use_builtin_classifier']:
+            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        elif not user_classfile.is_file():
+            print(f'NOTE: no user default classifier.  applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        elif ops_classfile is None or not Path(ops_classfile).is_file():
+            print(f'NOTE: applying default {str(user_classfile)}')
+            classfile = user_classfile
+        else:
+            print(f'NOTE: applying classifier {str(ops_classfile)}')
+            classfile = ops_classfile
+
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops)
+        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######## ROI EXTRACTION ##############
@@ -220,12 +239,8 @@ def run_plane(ops, ops_path=None):
         else:
             np.save(
                 Path(ops['save_path']).joinpath('iscell.npy'),
-                classification.classify(
-                    stat=stat,
-                    use_builtin_classifier=ops['use_builtin_classifier'],
-                    classfile=ops.get('classifier_path')
+                classification.classify(stat=stat, classfile=classfile),
             )
-        )
 
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 

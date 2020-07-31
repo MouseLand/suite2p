@@ -77,7 +77,14 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
 
     if ops['preclassify'] > 0:
         stats =  roi_stats(stats, dy, dx, Ly, Lx)
-        iscell = classify(stats, ops['use_builtin_classifier'])
+        if len(stats) == 0:
+            iscell = np.zeros((0, 2))
+        else:
+            iscell = classify(
+                    stat=stats,
+                    use_builtin_classifier=ops['use_builtin_classifier'],
+                    classfile=ops.get('classifier_path')
+            )
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
         ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
         stats = stats[ic]

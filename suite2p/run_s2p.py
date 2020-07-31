@@ -215,12 +215,18 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(
-            stat=stat,
-            use_builtin_classifier=ops['use_builtin_classifier'],
-            classfile=ops.get('classifier_path')
+        if len(stat) == 0:
+            np.save(Path(ops['save_path']).joinpath('iscell.npy'), np.zeros((0, 2)))
+        else:
+            np.save(
+                Path(ops['save_path']).joinpath('iscell.npy'),
+                classification.classify(
+                    stat=stat,
+                    use_builtin_classifier=ops['use_builtin_classifier'],
+                    classfile=ops.get('classifier_path')
+            )
         )
-        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
+
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############

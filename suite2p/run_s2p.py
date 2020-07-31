@@ -239,7 +239,7 @@ def run_plane(ops, ops_path=None):
         else:
             np.save(
                 Path(ops['save_path']).joinpath('iscell.npy'),
-                classification.classify(stat=stat, classfile=classfile),
+                classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat),
             )
 
         print('----------- Total %0.2f sec.'%(time.time()-t11))

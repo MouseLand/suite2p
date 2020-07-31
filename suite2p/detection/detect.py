@@ -6,7 +6,7 @@ from . import sourcery, sparsedetect, chan2detect
 from .stats import roi_stats
 from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
 from ..io.binary import BinaryFile
-from ..classification import classify
+from ..classification import Classifier
 
 
 def detect(ops, classfile: Path):
@@ -90,7 +90,7 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
         if len(stats) == 0:
             iscell = np.zeros((0, 2))
         else:
-            iscell = classify(stat=stats, classfile=classfile)
+            iscell = Classifier(classfile=classfile,keys=['npix_norm', 'compact', 'skew']).run(stats)
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
         ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
         stats = stats[ic]

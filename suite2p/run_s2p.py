@@ -16,7 +16,10 @@ except ImportError:
     HAS_HAUS = False
 
 from functools import partial
+from pathlib import Path
 print = partial(print,flush=True)
+builtin_classfile = Path(__file__).joinpath('../classifiers/classifier.npy').resolve()
+user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
 
 
 def default_ops():
@@ -96,9 +99,11 @@ def default_ops():
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
         'max_iterations': 20,  # maximum number of iterations to do cell detection
-        'threshold_scaling': 1.0, # adjust the automatically determined threshold by this scalar multiplier
+        'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
+        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
+                                         # classifier specified in classifier_path if set to True)
 
         # ROI extraction parameters
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
@@ -197,10 +202,27 @@ def run_plane(ops, ops_path=None):
         spikedetect = ops['spikedetect']
 
     if roidetect:
+
+        # Select file for classification
+        ops_classfile = ops.get('classifier_path')
+
+        if ops['use_builtin_classifier']:
+            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        elif not user_classfile.is_file():
+            print(f'NOTE: no user default classifier.  applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        elif ops_classfile is None or not Path(ops_classfile).is_file():
+            print(f'NOTE: applying default {str(user_classfile)}')
+            classfile = user_classfile
+        else:
+            print(f'NOTE: applying classifier {str(ops_classfile)}')
+            classfile = ops_classfile
+
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops)
+        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######## ROI EXTRACTION ##############
@@ -212,7 +234,14 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(ops, stat)
+        if len(stat) == 0:
+            np.save(Path(ops['save_path']).joinpath('iscell.npy'), np.zeros((0, 2)))
+        else:
+            np.save(
+                Path(ops['save_path']).joinpath('iscell.npy'),
+                classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat),
+            )
+
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############
@@ -233,18 +262,20 @@ def run_plane(ops, ops_path=None):
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
 
         # save as matlab file
-        if 'save_mat' in ops and ops['save_mat']:
+        if ops.get('save_mat'):
             if 'date_proc' in ops:
                 ops['date_proc'] = []
-            stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-            iscell = np.load(os.path.join(fpath,'iscell.npy'))
-            matpath = os.path.join(ops['save_path'],'Fall.mat')
-            savemat(matpath, {'stat': stat,
-                                    'ops': ops,
-                                    'F': F,
-                                    'Fneu': Fneu,
-                                    'spks': spks,
-                                    'iscell': iscell})
+            savemat(
+                file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+                mdict={
+                    'stat': np.load(os.path.join(fpath, 'stat.npy'), allow_pickle=True),
+                    'ops': ops,
+                    'F': F,
+                    'Fneu': Fneu,
+                    'spks': spks,
+                    'iscell': np.load(os.path.join(fpath, 'iscell.npy'))
+                }
+            )
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
 

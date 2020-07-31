@@ -48,6 +48,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
         [F, Fneu, spks, np.stack([iscell.astype(np.float32), probcell.astype(np.float32)]).T],
     ))
 
+
 def test_2plane_2chan_with_batches(test_ops):
     """
     Tests for case with 2 planes and 2 channels with multiple batches.

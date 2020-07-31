@@ -9,7 +9,7 @@ def get_built_in_classifier_path() -> Path:
     return Path(__file__).parent.parent.joinpath('classifiers', 'classifier.npy')
 
 
-def classify(save_path: Union[str, Path], stat: np.ndarray, use_builtin_classifier: bool,
+def classify(save_path: Union[str, Path], stat: np.ndarray, use_builtin_classifier: bool = False,
              classfile: Union[str, Path] = None, keys: Optional[List[str]] = None,
              ):
     """

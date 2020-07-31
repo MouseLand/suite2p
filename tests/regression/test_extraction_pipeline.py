@@ -3,6 +3,7 @@ Tests for the Suite2p Extraction module.
 """
 import numpy as np
 from suite2p import extraction
+from pathlib import Path
 import utils
 
 
@@ -68,6 +69,21 @@ def extract_wrapper(ops):
                                        curr_op['sig_baseline'], curr_op['fs'], curr_op['prctile_baseline'])
         spks = extraction.oasis(dF, curr_op['batch_size'], curr_op['tau'], curr_op['fs'])
         np.save(plane_dir.joinpath('spks.npy'), spks)
+
+
+def run_preprocess(f: np.ndarray, test_ops):
+    baseline_vals = ['maximin', 'constant', 'constant_prctile']
+    for bv in baseline_vals:
+        pre_f = extraction.preprocess(f, bv, test_ops['win_baseline'], test_ops['sig_baseline'],
+                                     test_ops['fs'], test_ops['prctile_baseline'])
+        test_f = np.load('data/test_data/detection/{}_f.npy'.format(bv))
+        print(bv)
+        yield np.array_equal(pre_f, test_f)
+
+
+def test_pre_process_baseline(test_ops):
+    f = np.load(Path('data/test_data/1plane1chan/suite2p/plane0/F.npy'))
+    assert all(run_preprocess(f, test_ops))
 
 
 def test_extraction_output_1plane1chan(test_ops):

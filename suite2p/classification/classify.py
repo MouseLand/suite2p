@@ -6,7 +6,7 @@ from .classifier import Classifier
 
 def get_built_in_classifier_path() -> Path:
     print('NOTE: applying built-in classifier.npy')
-    return Path(__file__).joinpath('../../classifiers/classifier.npy')
+    return Path(__file__).joinpath('../../classifiers/classifier.npy').resolve()
 
 
 def classify(save_path: Union[str, Path], stat: np.ndarray, use_builtin_classifier: bool = False,

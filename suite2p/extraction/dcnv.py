@@ -81,7 +81,8 @@ def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
     return S
 
 
-def preprocess(F: np.ndarray, ops):
+def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
+               sig_baseline: float, fs: float, prctile_baseline: float) -> np.ndarray:
     """ preprocesses fluorescence traces for spike deconvolution
 
     baseline-subtraction with window 'win_baseline'
@@ -92,9 +93,20 @@ def preprocess(F: np.ndarray, ops):
     F : float, 2D array
         size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
 
-    ops : dictionary
-        'baseline', 'win_baseline', 'sig_baseline', 'fs',
-        (optional 'prctile_baseline' needed if ops['baseline']=='constant_prctile')
+    baseline : str
+        setting that describes how to compute the baseline of each trace
+
+    win_baseline : float
+        window (in seconds) for max filter
+
+    sig_baseline : float
+        width of Gaussian filter in seconds
+
+    fs : float
+        sampling rate per plane
+
+    prctile_baseline : float
+        percentile of trace to use as baseline if using `constant_prctile` for baseline
     
     Returns
     ----------------
@@ -103,17 +115,16 @@ def preprocess(F: np.ndarray, ops):
         size [neurons x time], baseline-corrected fluorescence
 
     """
-    sig = ops['sig_baseline']
-    win = int(ops['win_baseline']*ops['fs'])
-    if ops['baseline']=='maximin':
-        Flow = filters.gaussian_filter(F,    [0., sig])
+    win = int(win_baseline*fs)
+    if baseline == 'maximin':
+        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
         Flow = filters.minimum_filter1d(Flow,    win)
         Flow = filters.maximum_filter1d(Flow,    win)
-    elif ops['baseline']=='constant':
-        Flow = filters.gaussian_filter(F,    [0., sig])
+    elif baseline == 'constant':
+        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
         Flow = np.amin(Flow)
-    elif ops['baseline']=='constant_prctile':
-        Flow = np.percentile(F, ops['prctile_baseline'], axis=1)
+    elif baseline == 'constant_prctile':
+        Flow = np.percentile(F, prctile_baseline, axis=1)
         Flow = np.expand_dims(Flow, axis = 1)
     else:
         Flow = 0.

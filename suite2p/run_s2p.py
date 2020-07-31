@@ -147,14 +147,13 @@ def run_plane(ops, ops_path=None):
 
     # check if registration should be done
     if ops['do_registration']>0:
-        run_registration = True
-        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration']>1:
+        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration'] > 1:
             print("NOTE: not registered / registration forced with ops['do_registration']>1")
             try:
-                # delete previous offsets
-                del op['yoff'], op['xoff'], op['corrXY']
-            except:
+                del ops['yoff'], ops['xoff'], ops['corrXY']  # delete previous offsets
+            except KeyError:
                 print('      (no previous offsets to delete)')
+            run_registration = True
         else:
             print("NOTE: not running registration, plane already registered")
             run_registration = False

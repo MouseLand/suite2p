@@ -13,8 +13,12 @@ def data_dir():
 def test_ops(tmpdir, data_dir):
     """Initializes ops to be used for test. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
     ops = suite2p.default_ops()
-    ops['classifier_path'] = data_dir.parent.parent.joinpath('suite2p', 'classifiers', 'classifier.npy')
-    ops['data_path'] = [data_dir]
-    ops['save_path0'] = str(tmpdir)
+    ops.update(
+        {
+            'use_builtin_classifier': True,
+            'data_path': [data_dir],
+            'save_path': str(tmpdir)
+        }
+    )
     return ops
 

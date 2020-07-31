@@ -96,9 +96,11 @@ def default_ops():
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
         'max_iterations': 20,  # maximum number of iterations to do cell detection
-        'threshold_scaling': 1.0, # adjust the automatically determined threshold by this scalar multiplier
+        'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
+        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
+                                         # classifier specified in classifier_path if set to True)
 
         # ROI extraction parameters
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
@@ -212,7 +214,8 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(ops['save_path'], stat, classfile=ops.get('classifier_path'))
+        iscell = classification.classify(ops['save_path'], stat, ops['use_builtin_classifier'],
+                                         classfile=ops.get('classifier_path'))
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############

@@ -4,8 +4,8 @@ from typing import Union, List, Optional
 from .classifier import Classifier
 
 
-def classify(save_path: Union[str, Path], stat: np.ndarray,
-             classfile: Union[str, Path] = None, keys: Optional[List[str]] = None
+def classify(save_path: Union[str, Path], stat: np.ndarray, use_builtin_classifier: bool,
+             classfile: Union[str, Path] = None, keys: Optional[List[str]] = None,
              ):
     """
     Applies classifier and saves output to iscell.npy.
@@ -21,6 +21,9 @@ def classify(save_path: Union[str, Path], stat: np.ndarray,
     classfile: string (optional)    
         path to classifier
 
+    use_builtin_classifier: bool
+        whether or not classify should use built-in classifier
+
     keys: List[str] (optional)
         features
 
@@ -34,13 +37,13 @@ def classify(save_path: Union[str, Path], stat: np.ndarray,
         keys = ['npix_norm', 'compact', 'skew']
     # apply default classifier
     if len(stat) > 0:
-        if classfile is None or not Path(classfile).is_file():
-            print('NOTE: applying default $HOME/.suite2p/classifiers/classifier_user.npy')
+        if classfile is None:
+            print('NOTE: applying user default $HOME/.suite2p/classifiers/classifier_user.npy')
             classfile = Path.home().joinpath('.suite2p', 'classifiers', 'classifier_user.npy')
-            if not Path(classfile).is_file():
-                print('(no user default classifier exists)')
-                print('NOTE: applying built in classifier.npy')
-                classfile = Path(__file__).parent.parent.joinpath('classifiers', 'classifier.npy')
+        if (not Path(classfile).is_file()) or use_builtin_classifier:
+            print('No user default was found or use_builtin_classifier set to True.')
+            print('NOTE: applying built-in classifier.npy')
+            classfile = Path(__file__).parent.parent.joinpath('classifiers', 'classifier.npy')
         else:
             print('NOTE: applying classifier %s' % classfile)
         for k in keys:

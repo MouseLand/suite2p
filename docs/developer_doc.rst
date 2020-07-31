@@ -1,6 +1,16 @@
 Developer Documentation
 ---------------------------
 
+Versioning
+~~~~~~~~~~~~~~~~~~~~~
+There's a rare issue that developers may face when calling `suite2p --version` on their command line. You
+may get an incorrect version number. To fix this issue, one should use the following command:
+
+.. prompt:: bash
+
+        git fetch --prune --unshallow
+
+
 Testing
 ~~~~~~~~~~~~~~~~~~~~~
 

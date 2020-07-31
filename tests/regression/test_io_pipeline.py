@@ -26,11 +26,11 @@ def test_tiff_reconstruction_from_binary_file(test_ops):
     )
     io.save_tiff(output_data, fname=fname)
     reconstructed_tiff_data = imread(
-        str(Path(test_ops['save_path0']).joinpath('suite2p', 'plane0', 'reg_tif', 'file000_chan0.tif'))
+        str(Path(test_ops['save_path0']).joinpath('suite2p/plane0/reg_tif/file000_chan0.tif'))
     )
     # Compare to our test data
     prior_data = imread(
-        str(Path(test_ops['data_path'][0]).joinpath('1plane1chan', 'suite2p', 'test_write_tiff.tif'))
+        str(Path(test_ops['data_path'][0]).joinpath('1plane1chan/suite2p/test_write_tiff.tif'))
     )
     assert np.array_equal(reconstructed_tiff_data, prior_data)
 

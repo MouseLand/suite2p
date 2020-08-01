@@ -107,8 +107,12 @@ def merge_activity_masks(parent):
     stat0["skew"] = stats.skew(dF)
     stat0["std"] = dF.std()
 
-    
-    spks = extraction.oasis(dF[np.newaxis, :], parent.ops)
+    spks = extraction.oasis(
+        F=dF[np.newaxis, :],
+        batch_size=parent.ops['batch_size'],
+        tau=parent.ops['tau'],
+        fs=parent.ops['fs']
+    )
 
     ### remove previously merged cell from FOV (do not replace)
     for k in remove_merged:

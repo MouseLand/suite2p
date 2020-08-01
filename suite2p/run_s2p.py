@@ -251,8 +251,15 @@ def run_plane(ops, ops_path=None):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
             dF = F - ops['neucoeff']*Fneu
-            dF = extraction.preprocess(dF,ops)
-            spks = extraction.oasis(dF, ops)
+            dF = extraction.preprocess(
+                F=dF,
+                baseline=ops['baseline'],
+                win_baseline=ops['win_baseline'],
+                sig_baseline=ops['sig_baseline'],
+                fs=ops['fs'],
+                prctile_baseline=ops['prctile_baseline']
+            )
+            spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
             np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
             print('----------- Total %0.2f sec.'%(time.time()-t11))
         else:

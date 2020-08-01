@@ -12,7 +12,7 @@ def sbx_get_info(sbxfile):
     '''
     matfile = os.path.splitext(sbxfile)[0] + '.mat'
     if not os.path.exists(matfile):
-        raise('Metadata not found: {0}'.format(matfile))
+        raise FileNotFoundError('Metadata not found: {0}'.format(matfile))
     from scipy.io import loadmat
     info = loadmat(matfile,squeeze_me=True,struct_as_record=False)
     return info['info']

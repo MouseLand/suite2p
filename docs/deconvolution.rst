@@ -32,10 +32,17 @@ run your own data separately if you want):
    Fc = F - ops['neucoeff'] * Fneu
 
    # baseline operation
-   Fc = dcnv.preprocess(Fc, ops['baseline'], ops['win_baseline'], ops['sig_baseline'], ops['fs'], ops['prctile_baseline'])
+   Fc = dcnv.preprocess(
+        F=Fc,
+        baseline=ops['baseline'],
+        win_baseline=ops['win_baseline'],
+        sig_baseline=ops['sig_baseline'],
+        fs=ops['fs'],
+        prctile_baseline=ops['prctile_baseline']
+    )
 
    # get spikes
-   spks = dcnv.oasis(Fc, ops['batch_size'], ops['tau'], ops['fs'])
+   spks = dcnv.oasis(F=Fc, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
 
 .. _OASIS paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423
 .. _paper: http://www.jneurosci.org/content/38/37/7976

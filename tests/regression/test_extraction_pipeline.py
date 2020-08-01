@@ -65,17 +65,29 @@ def extract_wrapper(ops):
         F = np.load(plane_dir.joinpath('F.npy'))
         Fneu = np.load(plane_dir.joinpath('Fneu.npy'))
         dF = F - curr_op['neucoeff'] * Fneu
-        dF = extraction.preprocess(dF, curr_op['baseline'], curr_op['win_baseline'],
-                                       curr_op['sig_baseline'], curr_op['fs'], curr_op['prctile_baseline'])
-        spks = extraction.oasis(dF, curr_op['batch_size'], curr_op['tau'], curr_op['fs'])
+        dF = extraction.preprocess(
+            F=dF,
+            baseline=curr_op['baseline'],
+            win_baseline=curr_op['win_baseline'],
+            sig_baseline=curr_op['sig_baseline'],
+            fs=curr_op['fs'],
+            prctile_baseline=curr_op['prctile_baseline']
+        )
+        spks = extraction.oasis(F=dF, batch_size=curr_op['batch_size'], tau=curr_op['tau'], fs=curr_op['fs'])
         np.save(plane_dir.joinpath('spks.npy'), spks)
 
 
 def run_preprocess(f: np.ndarray, test_ops):
     baseline_vals = ['maximin', 'constant', 'constant_prctile']
     for bv in baseline_vals:
-        pre_f = extraction.preprocess(f, bv, test_ops['win_baseline'], test_ops['sig_baseline'],
-                                     test_ops['fs'], test_ops['prctile_baseline'])
+        pre_f = extraction.preprocess(
+            F=f,
+            baseline=bv,
+            win_baseline=test_ops['win_baseline'],
+            sig_baseline=test_ops['sig_baseline'],
+            fs=test_ops['fs'],
+            prctile_baseline=test_ops['prctile_baseline']
+        )
         test_f = np.load('data/test_data/detection/{}_f.npy'.format(bv))
         yield np.array_equal(pre_f, test_f)
 

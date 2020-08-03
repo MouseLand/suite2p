@@ -189,14 +189,7 @@ def run_plane(ops, ops_path=None):
             print('Registration metrics, %0.2f sec.'%(time.time()-t0))
             np.save(os.path.join(ops['save_path'],'ops.npy'), ops)
 
-    roidetect = True
-    spikedetect = True
-    if 'roidetect' in ops:
-        roidetect = ops['roidetect']
-    if 'spikedetect' in ops:
-        spikedetect = ops['spikedetect']
-
-    if roidetect:
+    if ops.get('roidetect', True):
 
         # Select file for classification
         ops_classfile = ops.get('classifier_path')
@@ -243,7 +236,7 @@ def run_plane(ops, ops_path=None):
         fpath = ops['save_path']
         F = np.load(os.path.join(fpath,'F.npy'))
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-        if spikedetect:
+        if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
             dF = F - ops['neucoeff']*Fneu

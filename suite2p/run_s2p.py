@@ -314,10 +314,7 @@ def run_s2p(ops={}, db={}):
         ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
     print(db)
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if ('h5py' in ops) and len(ops['h5py'])>0:
-            ops['save_path0'], tail = os.path.split(ops['h5py'])
-        else:
-            ops['save_path0'] = ops['data_path'][0]
+        ops['save_path0'] = os.path.split(ops['h5py'])[0] if ops.get('h5py') else ops['data_path'][0]
     
     # check if there are binaries already made
     if 'save_folder' not in ops or len(ops['save_folder'])==0:
@@ -342,7 +339,7 @@ def run_s2p(ops={}, db={}):
             ops['input_format'] = 'tif'
         if len(ops['h5py']):
             ops['input_format'] = 'h5'
-        elif 'mesoscan' in ops and ops['mesoscan']:
+        elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
@@ -365,19 +362,16 @@ def run_s2p(ops={}, db={}):
             ))
         plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-    
-    ipl = 0
 
     ops1 = []
     for ipl, ops_path in enumerate(ops_paths):
         op = np.load(ops_path, allow_pickle=True).item()
         # make sure yrange and xrange are not overwritten
-        if 'yrange' in ops: ops.pop('yrange') 
-        if 'xrange' in ops: ops.pop('xrange') 
-        op = {**op, **ops}
+        ops.pop('yrange', None)
+        ops.pop('xrange', None)
         print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
         t1 = time.time()
-        op = run_plane(op, ops_path=ops_path)
+        op = run_plane({**op, **ops}, ops_path=ops_path)
         print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
         ops1.append(op)
     print('total = %0.2f sec.'%(time.time()-t0))
@@ -385,12 +379,12 @@ def run_s2p(ops={}, db={}):
     np.save(fpathops1, ops1)
     
     #### COMBINE PLANES or FIELDS OF VIEW ####
-    if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
+    if len(ops_paths) > 1 and ops['combined'] and ops.get('roidetect', True):
         print('Creating combined view')
         io.save_combined(save_folder)
     
     # save to NWB
-    if 'save_NWB' in ops and ops['save_NWB']:
+    if ops.get('save_NWB'):
         print('Saving in nwb format')
         io.save_nwb(save_folder)
 

@@ -183,11 +183,7 @@ def run_plane(ops, ops_path=None):
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
         # compute metrics for registration
-        if 'do_regmetrics' in ops:
-            do_regmetrics = ops['do_regmetrics']
-        else:
-            do_regmetrics = True
-        if do_regmetrics and ops['nframes']>=1500:
+        if ops.get('do_regmetrics', True) and ops['nframes']>=1500:
             t0=time.time()
             ops = registration.get_pc_metrics(ops)
             print('Registration metrics, %0.2f sec.'%(time.time()-t0))

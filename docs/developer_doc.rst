@@ -14,22 +14,29 @@ may get an incorrect version number. To fix this issue, one should use the follo
 Testing
 ~~~~~~~~~~~~~~~~~~~~~
 
-Before contributing to Suite2P, please make sure your changes pass all our tests. To run the tests (located in
+Before contributing to Suite2P, please make sure your changes pass all our tests.
+
+Downloading Test Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run the tests (located in
 the ``tests`` subdirectory of your working ``suite2p`` directory) , you'll first need to download our test data.
 Suite2p depends on `dvc`_ to download the test data.
 
 .. note::
 
-    Before testing, make sure you have dvc installed:
+    Before testing, make sure you have dvc and pydrive2 installed. Navigate to the suite2p
+    directory and use the following command to install both dvc and pydrive2.
 
     .. prompt:: bash
 
-        pip install dvc
-    The command above may prompt you to install ``pydrive2``. Install it and you should be good to go.
+        pip install -e .[data]
+
+    zsh users should use the following:
 
     .. prompt:: bash
 
-        pip install pydrive2
+        pip install -e .\[docs\]
 
 
 Use to following command to download the test data into the ``data`` subdirectory of your working ``suite2p`` directory.
@@ -37,6 +44,9 @@ Use to following command to download the test data into the ``data`` subdirector
 .. prompt:: bash
 
     dvc pull
+
+Running the tests
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Tests can then be easily run with the following command:
 

@@ -230,6 +230,8 @@ def run_plane(ops, ops_path=None):
         ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
+        ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
+
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')

@@ -246,12 +246,11 @@ def run_plane(ops, ops_path=None):
                 prctile_baseline=ops['prctile_baseline']
             )
             spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
             print('----------- Total %0.2f sec.'%(time.time()-t11))
         else:
             print("WARNING: skipping spike detection (ops['spikedetect']=False)")
             spks = np.zeros_like(F)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+        np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
 
         # save as matlab file
         if ops.get('save_mat'):

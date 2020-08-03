@@ -331,15 +331,16 @@ def run_s2p(ops={}, db={}):
 
     # if not set up files and copy tiffs/h5py to binary
     else:
-        if not 'input_format' in ops.keys():
-            ops['input_format'] = 'tif'
         if len(ops['h5py']):
             ops['input_format'] = 'h5'
         elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
-        
+        elif not 'input_format' in ops:
+            ops['input_format'] = 'tif'
+
+
         # copy file format to a binary file
         convert_funs = {
             'h5': io.h5py_to_binary,

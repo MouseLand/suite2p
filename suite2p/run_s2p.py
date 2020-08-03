@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 from natsort import natsorted
+from itertools import chain
 
 import numpy as np
 from scipy.io import savemat
@@ -325,14 +326,9 @@ def run_s2p(ops={}, db={}):
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     if len(plane_folders) > 0:
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-        ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
-        binaries_found_flag = all([os.path.isfile(os.path.join(f, 'data_raw.bin')) or os.path.isfile(os.path.join(f, 'data.bin')) 
-                                    for f in plane_folders])
-        files_found_flag = ops_found_flag and binaries_found_flag
-    else:
-        files_found_flag = False
-    if files_found_flag:
-        print(f'FOUND BINARIES AND OPS IN {ops_paths}')
+        if all(map(os.path.isfile, chain(ops_paths, *[Path(f).glob('data*.bin') for f in plane_folders]))):
+            print(f'FOUND BINARIES AND OPS IN {ops_paths}')
+
     # if not set up files and copy tiffs/h5py to binary
     else:
         if not 'input_format' in ops.keys():

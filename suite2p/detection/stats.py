@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, Optional, NamedTuple, Sequence, List
+from typing import Tuple, Optional, NamedTuple, Sequence, List, Dict, Any
 from dataclasses import dataclass, field
 from warnings import warn
 
@@ -48,6 +48,38 @@ class ROI:
         """Validate inputs."""
         if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
             raise TypeError("xpix, ypix, and lam should all be the same size.")
+
+    @classmethod
+    def from_stat_dict(cls, stat: Dict[str, Any]) -> ROI:
+        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'])
+
+    def to_array(self, Ly: int, Lx: int) -> np.ndarray:
+        """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""
+        arr = np.zeros((Ly, Lx), dtype=float)
+        arr[self.ypix, self.xpix] = 1
+        return arr
+
+    @classmethod
+    def stats_dicts_to_3d_array(cls, stats: Sequence[Dict[str, Any]], Ly: int, Lx: int, label_id: bool = False):
+        """
+        Outputs a (roi x Ly x Lx) float array from a sequence of stat dicts.
+        Convenience function that repeatedly calls ROI.from_stat_dict() and ROI.to_array() for all rois.
+
+        Parameters
+        ----------
+        stats : List of dictionary 'ypix', 'xpix', 'lam'
+        Ly : y size of frame
+        Lx : x size of frame
+        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating precence of ROI).
+        """
+        arrays = []
+        for i, stat in enumerate(stats):
+            array = cls.from_stat_dict(stat=stat).to_array(Ly=Ly, Lx=Lx)
+            if label_id:
+                array *= i + 1
+            arrays.append(array)
+        return np.stack(arrays)
+
 
     def ravel_indices(self, Ly: int, Lx: int) -> np.ndarray:
         """Returns a 1-dimensional array of indices from the ypix and xpix coordinates, assuming an image shape Ly x Lx."""

@@ -9,6 +9,12 @@ def test_cli_help_test_appears_when_suite2p_is_called(capfd):
     assert 'parameters' in captured.out
 
 
+def test_cli_version_test_appears_when_suite2p_is_called(capfd):
+    os.system('suite2p --version')
+    captured = capfd.readouterr()
+    assert 'suite2p v' in captured.out
+
+
 def test_cli_help_test_appears_when_suite2p_is_called2(capfd):
     os.system('python -m suite2p --help')
     captured = capfd.readouterr()

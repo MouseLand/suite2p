@@ -46,7 +46,7 @@ def default_ops():
         'fs': 10.,  # sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         'frames_include': -1,
-        'multiplane_parallel': False,
+        'multiplane_parallel': False, # whether or not to run on server
 
         # output settings
         'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
@@ -385,31 +385,35 @@ def run_s2p(ops={}, db={}):
     
     ipl = 0
 
-    ops1 = []
-    for ipl, ops_path in enumerate(ops_paths):
-        op = np.load(ops_path, allow_pickle=True).item()
-        # make sure yrange and xrange are not overwritten
-        if 'yrange' in ops: ops.pop('yrange') 
-        if 'xrange' in ops: ops.pop('xrange') 
-        op = {**op, **ops}
-        print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
-        t1 = time.time()
-        op = run_plane(op, ops_path=ops_path)
-        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
-        ops1.append(op)
-    print('total = %0.2f sec.'%(time.time()-t0))
+    if ops.get('multiplane_parallel', False):
+        io.server.send_jobs(save_folder)
+        return None
+    else:
+        ops1 = []
+        for ipl, ops_path in enumerate(ops_paths):
+            op = np.load(ops_path, allow_pickle=True).item()
+            # make sure yrange and xrange are not overwritten
+            if 'yrange' in ops: ops.pop('yrange') 
+            if 'xrange' in ops: ops.pop('xrange') 
+            op = {**op, **ops}
+            print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
+            t1 = time.time()
+            op = run_plane(op, ops_path=ops_path)
+            print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
+            ops1.append(op)
+        print('total = %0.2f sec.'%(time.time()-t0))
 
-    np.save(fpathops1, ops1)
-    
-    #### COMBINE PLANES or FIELDS OF VIEW ####
-    if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
-        print('Creating combined view')
-        io.save_combined(save_folder)
-    
-    # save to NWB
-    if 'save_NWB' in ops and ops['save_NWB']:
-        print('Saving in nwb format')
-        io.save_nwb(save_folder)
+        np.save(fpathops1, ops1)
+            
+        #### COMBINE PLANES or FIELDS OF VIEW ####
+        if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
+            print('Creating combined view')
+            io.save_combined(save_folder)
+        
+        # save to NWB
+        if 'save_NWB' in ops and ops['save_NWB']:
+            print('Saving in nwb format')
+            io.save_nwb(save_folder)
 
-    print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
-    return ops1
+        print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
+        return ops1

@@ -24,6 +24,7 @@ setuptools.setup(
       'scanimage-tiff-reader>=1.4.1',
       'pyqtgraph',
       'importlib-metadata',
+      'paramiko'
     ],
     tests_require=[
       'pytest',

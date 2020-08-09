@@ -19,6 +19,13 @@ jobs:
     - bash ./miniconda.sh -b
     - export PATH=~/miniconda3/bin:$PATH
     - conda update --yes conda
+  - name: Python 3.7.7 on Windows
+    os: windows
+    language: shell
+    before_install:
+    - choco install python --version 3.7.7
+    - wget https://raw.githubusercontent.com/trichter/conda4travis/latest/conda4travis.sh -O conda4travis.sh
+    - source conda4travis.sh
   allow_failures:
   - os: osx
 install:

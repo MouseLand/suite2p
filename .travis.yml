@@ -28,6 +28,7 @@ install:
 - dvc pull -r gdrive-travis
 - pip install coveralls
 script:
+- xvfb-run make test
 - coverage run --source=suite2p setup.py test
 after_success: coveralls
 deploy:

@@ -24,8 +24,14 @@ jobs:
     language: shell
     before_install:
     - choco install python --version 3.7.7
-    - wget https://raw.githubusercontent.com/trichter/conda4travis/latest/conda4travis.sh -O conda4travis.sh
-    - source conda4travis.sh
+    - export MINICONDA=/c/miniconda
+    - MINICONDA_WIN=$(cygpath --windows $MINICONDA)
+    - choco install openssl.light
+    - choco install miniconda3 --params="'/AddToPath:0 /D:$MINICONDA_WIN'"
+    - PATH=$(echo "$PATH" | sed -e 's|:/c/ProgramData/chocolatey/bin||')
+    - PATH=$(echo "$PATH" | sed -e 's|:/c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin||')
+    - source $MINICONDA/Scripts/activate
+    - source $MINICONDA/etc/profile.d/conda.sh
   allow_failures:
   - os: osx
 install:

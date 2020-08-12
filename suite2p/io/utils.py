@@ -147,7 +147,7 @@ def get_tif_list(ops):
         first_tiffs = []
         for k,fld in enumerate(fold_list):
             fs, ftiffs = list_files(fld, ops['look_one_level_down'],
-                                    ["*.tif", "*.tiff"])
+                                    ["*.tif", "*.tiff", "*.TIF"])
             fsall.extend(fs)
             first_tiffs.extend(list(ftiffs))
         if len(fsall)==0:

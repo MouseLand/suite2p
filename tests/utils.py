@@ -91,4 +91,7 @@ def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_lis
         if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
             yield check_dict_dicts_all_close(data1, data2)
         else:
+            if output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
+                data1 = data1[:, 0]
+                data2 = data2[:, 0]
             yield np.allclose(data1, data2, rtol=r_tol, atol=a_tol)

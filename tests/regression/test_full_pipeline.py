@@ -89,13 +89,20 @@ def test_1plane_2chan_sourcery(test_ops):
     ))
 
 
-# def test_mesoscan_2plane_2z(test_ops):
-#     """
-#     Tests for case with 2 planes and 2 ROIs for a mesoscan.
-#     """
-#     with open('data/test_data/mesoscan/ops.json') as f:
-#         meso_ops = json.load(f)
-#     for key in meso_ops.keys():
-#         if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
-#             test_ops[key] = meso_ops[key]
-#     suite2p.run_s2p(ops=test_ops)
+def test_mesoscan_2plane_2z(test_ops):
+    """
+    Tests for case with 2 planes and 2 ROIs for a mesoscan.
+    """
+    with open('data/test_data/mesoscan/ops.json') as f:
+        meso_ops = json.load(f)
+    for key in meso_ops.keys():
+        if key not in ['save_path0', 'do_registration', 'roidetect']:
+            test_ops[key] = meso_ops[key]
+    test_ops['data_path'] = test_ops['data_path'].joinpath('mesoscan')
+    suite2p.run_s2p(ops=test_ops)
+    assert all(utils.check_output(
+        output_root=test_ops['save_path0'],
+        outputs_to_check=get_outputs_to_check(test_ops['nchannels']),
+        test_data_dir=test_ops['data_path'][0].joinpath('suite2p'),
+        nplanes=test_ops['nplanes']*test_ops['nrois'],
+    ))

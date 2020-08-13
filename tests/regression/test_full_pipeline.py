@@ -95,10 +95,10 @@ def test_mesoscan_2plane_2z(test_ops):
     """
     with open('data/test_data/mesoscan/ops.json') as f:
         meso_ops = json.load(f)
+    test_ops['data_path'] = [Path(test_ops['data_path'][0]).joinpath('mesoscan')]
     for key in meso_ops.keys():
-        if key not in ['save_path0', 'do_registration', 'roidetect']:
+        if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
             test_ops[key] = meso_ops[key]
-    test_ops['data_path'] = test_ops['data_path'].joinpath('mesoscan')
     suite2p.run_s2p(ops=test_ops)
     assert all(utils.check_output(
         output_root=test_ops['save_path0'],

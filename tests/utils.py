@@ -41,13 +41,12 @@ def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
             yield np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
 
 
-def get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, curr_plane):
+def get_list_of_test_data(outputs_to_check, test_plane_dir):
     """
     Gets list of test_data from test data directory matching provided nplanes, nchannels, and added_tag. Returns
     all test_data for given plane number.
     """
     test_data_list = []
-    test_plane_dir = test_data_dir.joinpath(f'{nplanes}plane{nchannels}chan{added_tag}/suite2p/plane{curr_plane}')
     for output in outputs_to_check:
         if 'reg_tif' in output:
             filename = np.concatenate([imread(tif) for tif in glob(str(test_plane_dir.joinpath(f"{output}/*.tif")))])
@@ -78,10 +77,11 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nch
     as the ground truth outputs.
     """
     for i in range(nplanes):
+        test_plane_dir = test_data_dir.joinpath(f'{nplanes}plane{nchannels}chan{added_tag}/suite2p/plane{i}')
         yield all(compare_list_of_outputs(
             i,
             outputs_to_check,
-            get_list_of_test_data(outputs_to_check, test_data_dir, nplanes, nchannels, added_tag, i),
+            get_list_of_test_data(outputs_to_check, test_plane_dir),
             get_list_of_output_data(outputs_to_check, output_root, i),
         ))
 

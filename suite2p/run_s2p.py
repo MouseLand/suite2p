@@ -230,7 +230,7 @@ def run_plane(ops, ops_path=None):
         t11=time.time()
         print('----------- CLASSIFICATION')
         if len(stat):
-            iscell = classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
+            iscell = classification.classify(stat=stat, classfile=classfile)
         else:
             iscell = np.zeros((0, 2))
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)

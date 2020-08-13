@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 from natsort import natsorted
+from itertools import chain
 
 import numpy as np
 from scipy.io import savemat
@@ -181,24 +182,13 @@ def run_plane(ops, ops_path=None):
             print('----------- Total %0.2f sec'%(time.time()-t11))
 
         # compute metrics for registration
-        if 'do_regmetrics' in ops:
-            do_regmetrics = ops['do_regmetrics']
-        else:
-            do_regmetrics = True
-        if do_regmetrics and ops['nframes']>=1500:
+        if ops.get('do_regmetrics', True) and ops['nframes']>=1500:
             t0=time.time()
             ops = registration.get_pc_metrics(ops)
             print('Registration metrics, %0.2f sec.'%(time.time()-t0))
             np.save(os.path.join(ops['save_path'],'ops.npy'), ops)
 
-    roidetect = True
-    spikedetect = True
-    if 'roidetect' in ops:
-        roidetect = ops['roidetect']
-    if 'spikedetect' in ops:
-        spikedetect = ops['spikedetect']
-
-    if roidetect:
+    if ops.get('roidetect', True):
 
         # Select file for classification
         ops_classfile = ops.get('classifier_path')
@@ -234,21 +224,20 @@ def run_plane(ops, ops_path=None):
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        if len(stat) == 0:
-            np.save(Path(ops['save_path']).joinpath('iscell.npy'), np.zeros((0, 2)))
+        if len(stat):
+            iscell = classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
         else:
             np.save(
                 Path(ops['save_path']).joinpath('iscell.npy'),
                 classification.classify(stat=stat, classfile=classfile)
             )
-
         print('----------- Total %0.2f sec.'%(time.time()-t11))
 
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
         F = np.load(os.path.join(fpath,'F.npy'))
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-        if spikedetect:
+        if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
             dF = F - ops['neucoeff']*Fneu
@@ -261,12 +250,11 @@ def run_plane(ops, ops_path=None):
                 prctile_baseline=ops['prctile_baseline']
             )
             spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
             print('----------- Total %0.2f sec.'%(time.time()-t11))
         else:
             print("WARNING: skipping spike detection (ops['spikedetect']=False)")
             spks = np.zeros_like(F)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+        np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
 
         # save as matlab file
         if ops.get('save_mat'):
@@ -330,10 +318,7 @@ def run_s2p(ops={}, db={}):
         ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
     print(db)
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if ('h5py' in ops) and len(ops['h5py'])>0:
-            ops['save_path0'], tail = os.path.split(ops['h5py'])
-        else:
-            ops['save_path0'] = ops['data_path'][0]
+        ops['save_path0'] = os.path.split(ops['h5py'])[0] if ops.get('h5py') else ops['data_path'][0]
     
     # check if there are binaries already made
     if 'save_folder' not in ops or len(ops['save_folder'])==0:
@@ -344,25 +329,21 @@ def run_s2p(ops={}, db={}):
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     if len(plane_folders) > 0:
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-        ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
-        binaries_found_flag = all([os.path.isfile(os.path.join(f, 'data_raw.bin')) or os.path.isfile(os.path.join(f, 'data.bin')) 
-                                    for f in plane_folders])
-        files_found_flag = ops_found_flag and binaries_found_flag
-    else:
-        files_found_flag = False
-    if files_found_flag:
-        print(f'FOUND BINARIES AND OPS IN {ops_paths}')
+        if all(map(os.path.isfile, chain(ops_paths, *[Path(f).glob('data*.bin') for f in plane_folders]))):
+            print(f'FOUND BINARIES AND OPS IN {ops_paths}')
+
     # if not set up files and copy tiffs/h5py to binary
     else:
-        if not 'input_format' in ops.keys():
-            ops['input_format'] = 'tif'
         if len(ops['h5py']):
             ops['input_format'] = 'h5'
-        elif 'mesoscan' in ops and ops['mesoscan']:
+        elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
-        
+        elif not 'input_format' in ops:
+            ops['input_format'] = 'tif'
+
+
         # copy file format to a binary file
         convert_funs = {
             'h5': io.h5py_to_binary,
@@ -381,10 +362,8 @@ def run_s2p(ops={}, db={}):
             ))
         plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-    
-    ipl = 0
 
-    if ops.get('multiplane_parallel', False):
+    if ops.get('multiplane_parallel'):
         io.server.send_jobs(save_folder)
         return None
     else:
@@ -405,12 +384,12 @@ def run_s2p(ops={}, db={}):
         np.save(fpathops1, ops1)
             
         #### COMBINE PLANES or FIELDS OF VIEW ####
-        if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
+        if len(ops_paths)>1 and ops['combined'] and ops.get('roidetect', True):
             print('Creating combined view')
             io.save_combined(save_folder)
         
         # save to NWB
-        if 'save_NWB' in ops and ops['save_NWB']:
+        if ops.get('save_NWB'):
             print('Saving in nwb format')
             io.save_nwb(save_folder)
 

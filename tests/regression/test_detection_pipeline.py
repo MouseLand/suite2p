@@ -4,7 +4,8 @@ Tests for the Suite2p Detection module.
 
 import numpy as np
 import utils
-from suite2p import detection, builtin_classfile
+from suite2p import detection
+from suite2p.classification import builtin_classfile
 
 
 def prepare_for_detection(op, input_file_name_list, dimensions):

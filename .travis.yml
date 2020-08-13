@@ -44,7 +44,7 @@ install:
 - dvc pull -r gdrive-travis
 - pip install coveralls
 script:
-- coverage run --source=suite2p setup.py test
+- travis_wait 30 coverage run --source=suite2p setup.py test
 after_success: coveralls
 deploy:
   skip_cleanup: true

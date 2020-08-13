@@ -28,7 +28,6 @@ setuptools.setup(
     ],
     tests_require=[
       'pytest',
-      'pynwb',
     ],
     extras_require={
       "docs": [
@@ -53,6 +52,9 @@ setuptools.setup(
         "dvc>=1.1",
         "pydrive2",
       ],
+      "nwb": [
+        "pynwb<1.4",
+      ]
     },
     include_package_data=True,
     classifiers=[

@@ -40,7 +40,7 @@ jobs:
 install:
 - conda env create -f environment.yml
 - source activate suite2p
-- pip install .[data]
+- pip install .[data,nwb]
 - dvc pull -r gdrive-travis
 - pip install coveralls
 script:

@@ -58,14 +58,14 @@ def test_2plane_2chan_with_batches(test_ops):
                 'reg_tif': True,
                 'reg_tif_chan2': True,
             })
-            suite2p.run_s2p(ops=test_ops)
-            nplanes = test_ops['nplanes']
-            assert all(utils.check_output(
-                output_root=test_ops['save_path0'],
-                outputs_to_check=get_outputs_to_check(test_ops['nchannels']) + ['reg_tif', 'reg_tif_chan2'],
-                test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan1500/suite2p/"),
-                nplanes=nplanes,
-            ))
+        suite2p.run_s2p(ops=test_ops)
+        nplanes = test_ops['nplanes']
+        assert all(utils.check_output(
+            output_root=test_ops['save_path0'],
+            outputs_to_check=get_outputs_to_check(test_ops['nchannels']) + ['reg_tif', 'reg_tif_chan2'],
+            test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan1500/suite2p/"),
+            nplanes=nplanes,
+        ))
 
 
 def test_1plane_2chan_sourcery(test_ops):

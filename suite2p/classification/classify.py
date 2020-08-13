@@ -8,7 +8,7 @@ user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy'
 
 
 def classify(stat: np.ndarray,
-             classfile: Union[str, Path] = None,
+             classfile: Union[str, Path],
              keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
              ):
     """Returns array of classifier output from classification process."""

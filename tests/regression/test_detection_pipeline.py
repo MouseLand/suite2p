@@ -91,8 +91,8 @@ def test_detection_output_2plane2chan(test_ops):
     detect_wrapper(ops)
     nplanes = test_ops['nplanes']
     assert all(utils.check_output(
-        test_ops['save_path0'],
-        ['redcell'],
-        test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes
+        output_root=test_ops['save_path0'],
+        outputs_to_check=['redcell'],
+        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
+        nplanes=nplanes
     ))

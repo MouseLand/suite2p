@@ -106,10 +106,10 @@ def test_extraction_output_1plane1chan(test_ops):
     extract_wrapper(ops)
     nplanes = test_ops['nplanes']
     assert all(utils.check_output(
-        test_ops['save_path0'],
-        ['F', 'Fneu', 'stat', 'spks'],
-        test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes
+        output_root=test_ops['save_path0'],
+        outputs_to_check=['F', 'Fneu', 'stat', 'spks'],
+        test_data_dir= test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
+        nplanes=nplanes
     ))
 
 
@@ -133,8 +133,8 @@ def test_extraction_output_2plane2chan(test_ops):
     extract_wrapper(ops)
     nplanes = test_ops['nplanes']
     assert all(utils.check_output(
-        test_ops['save_path0'],
-        ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks'],
-        test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes
+        output_root=test_ops['save_path0'],
+        outputs_to_check=['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks'],
+        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
+        nplanes=nplanes
     ))

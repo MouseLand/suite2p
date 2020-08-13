@@ -28,6 +28,7 @@ setuptools.setup(
     ],
     tests_require=[
       'pytest',
+      'pytest-qt',
     ],
     extras_require={
       "docs": [

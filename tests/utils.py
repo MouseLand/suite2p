@@ -71,13 +71,13 @@ def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
     return output_data_list
 
 
-def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int, nchannels: int, added_tag="") -> Iterator[bool]:
+def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> Iterator[bool]:
     """
     Helper function to check if outputs given by a test are exactly the same
     as the ground truth outputs.
     """
     for i in range(nplanes):
-        test_plane_dir = test_data_dir.joinpath(f'{nplanes}plane{nchannels}chan{added_tag}/suite2p/plane{i}')
+        test_plane_dir = test_data_dir.joinpath(f'plane{i}')
         yield all(compare_list_of_outputs(
             i,
             outputs_to_check,

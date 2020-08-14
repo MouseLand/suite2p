@@ -9,6 +9,7 @@ import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
+from . import version
 
 try:
     from haussmeister import haussio
@@ -26,6 +27,9 @@ user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy'
 def default_ops():
     """ default options to run pipeline """
     return {
+        # Suite2p version
+        'suite2p_version': version,
+
         # file paths
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
         'fast_disk': [],  # used to store temporary binary file, defaults to save_path0

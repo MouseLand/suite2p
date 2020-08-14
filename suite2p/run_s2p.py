@@ -303,7 +303,7 @@ def run_plane(ops, ops_path=None):
             os.remove(ops['raw_file'])
             if ops['nchannels'] > 1:
                 os.remove(ops['raw_file_chan2'])
-    if ops.get('time_report'):
+    if ops.get('report_time'):
         ops['timing'] = plane_time_dict.copy()
     return ops
 
@@ -393,6 +393,8 @@ def run_s2p(ops={}, db={}):
             op = run_plane(op, ops_path=ops_path)
             plane_time = time.time()-t1
             print('Plane %d processed in %0.2f sec (can open in GUI).' % (ipl, plane_time))
+            if ops.get('report_time'):
+                op['timing']['total_plane_runtime'] = plane_time
             ops1.append(op)
         run_time = time.time()-t0
         print('total = %0.2f sec.' % run_time)

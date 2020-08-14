@@ -5,8 +5,7 @@ Class that tests common use cases for pipeline.
 from suite2p import io
 from pathlib import Path
 import numpy as np
-import suite2p
-import utils
+import suite2p, utils, json
 
 
 def get_outputs_to_check(n_channels):
@@ -87,4 +86,24 @@ def test_1plane_2chan_sourcery(test_ops):
         outputs_to_check=get_outputs_to_check(test_ops['nchannels']),
         test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
         nplanes=nplanes,
+    ))
+
+
+def test_mesoscan_2plane_2z(test_ops):
+    """
+    Tests for case with 2 planes and 2 ROIs for a mesoscan.
+    """
+    with open('data/test_data/mesoscan/ops.json') as f:
+        meso_ops = json.load(f)
+    test_ops['data_path'] = [Path(test_ops['data_path'][0]).joinpath('mesoscan')]
+    for key in meso_ops.keys():
+        if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
+            test_ops[key] = meso_ops[key]
+    test_ops['delete_bin'] = True
+    suite2p.run_s2p(ops=test_ops)
+    assert all(utils.check_output(
+        output_root=test_ops['save_path0'],
+        outputs_to_check=get_outputs_to_check(test_ops['nchannels']),
+        test_data_dir=test_ops['data_path'][0].joinpath('suite2p'),
+        nplanes=test_ops['nplanes']*test_ops['nrois'],
     ))

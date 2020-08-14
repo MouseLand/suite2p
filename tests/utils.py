@@ -7,7 +7,7 @@ from tifffile import imread
 import numpy as np
 from glob import glob
 
-r_tol, a_tol = 1e-4, 5e-2
+r_tol, a_tol = 5e-3, 9e-1  # Matters for F, Fneu, spks, and stat
 
 
 def get_plane_dir(op, plane, mkdir=True):
@@ -90,8 +90,9 @@ def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_lis
     for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
         if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
             yield check_dict_dicts_all_close(data1, data2)
+        elif output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
+            data1 = data1[:, 0]
+            data2 = data2[:, 0]
+            yield np.array_equal(data1, data2)
         else:
-            if output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
-                data1 = data1[:, 0]
-                data2 = data2[:, 0]
             yield np.allclose(data1, data2, rtol=r_tol, atol=a_tol)

@@ -65,6 +65,10 @@ Output settings
    to um/pixels in Y (ONLY for correct aspect ratio in GUI, not used for
    other processing)
 
+-  **report_time**: (*bool, default: True) (**new**) whether or not to return
+   a timing dictionary for each plane. Timing dictionary will contain keys
+   corresponding to stages and values corresponding to the duration of that stage.
+
 Registration
 ~~~~~~~~~~~~
 

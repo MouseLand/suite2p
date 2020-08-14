@@ -59,7 +59,7 @@ def default_ops():
         'save_NWB': False,  # whether to save output as NWB file
         'combined': True,  # combine multiple planes into a single result /single canvas for GUI
         'aspect': 1.0,  # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
-        'report_time': True,
+        'report_time': True,  # whether to return a plane-specific dictionary with times for each pipeline stage
 
         # bidirectional phase offset
         'do_bidiphase': False,

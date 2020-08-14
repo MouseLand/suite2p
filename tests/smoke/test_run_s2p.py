@@ -12,17 +12,22 @@ def test_do_registration_do_roi_detect_settings_check_timing(test_ops):
         'do_registration': False,
         'spikedetect': False,
     })
-    suite2p.run_s2p(ops=test_ops)  # conversion only
+    conv_only_ops = suite2p.run_s2p(ops=test_ops)  # conversion only
+    assert list(conv_only_ops[0]['timing'].keys()) == ['total_plane_runtime']
     test_ops.update({
         'do_registration': True
     })
-    suite2p.run_s2p(ops=test_ops)  # registration only
+    reg_only_ops = suite2p.run_s2p(ops=test_ops)  # registration only
+    assert list(reg_only_ops[0]['timing'].keys()) == ['registration', 'total_plane_runtime']
     test_ops.update({
         'do_registration': False,
         'roidetect': True,
     })
-    suite2p.run_s2p(ops=test_ops)  # detection only
+    det_only_ops = suite2p.run_s2p(ops=test_ops)  # detection step only
+    assert list(det_only_ops[0]['timing'].keys()) == ['detection', 'extraction', 'classification', 'total_plane_runtime']
     test_ops.update({
         'spikedetect': True
     })
-    suite2p.run_s2p(ops=test_ops)  # detection & deconvolution
+    det_dec_ops = suite2p.run_s2p(ops=test_ops)  # detection & deconvolution
+    assert list(det_dec_ops[0]['timing'].keys()) == ['detection', 'extraction', 'classification',
+                                                     'deconvolution', 'total_plane_runtime']

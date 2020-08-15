@@ -5,7 +5,6 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="suite2p",
-    version="0.8.0",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
     description="Pipeline for calcium imaging",
@@ -15,24 +14,21 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     setup_requires=[
       'pytest-runner',
+      'setuptools_scm',
     ],
+    use_scm_version=True,
     install_requires=[
-      'numpy>=1.16',
-      'numba>=0.43.1',
-      'tbb',  # Parallel processing library used by numba.  Needed when installing numba from pip  https://github.com/numba/numba/issues/4068
-      'matplotlib',
-      'scipy',
-      'h5py',
-      'scikit-learn',
       'natsort',
       'rastermap>0.1.0',
       'tifffile',
       'scanimage-tiff-reader>=1.4.1',
       'pyqtgraph',
+      'importlib-metadata',
+      'paramiko'
     ],
     tests_require=[
       'pytest',
-      'pynwb',
+      'pytest-qt',
     ],
     extras_require={
       "docs": [
@@ -57,6 +53,9 @@ setuptools.setup(
         "dvc>=1.1",
         "pydrive2",
       ],
+      "nwb": [
+        "pynwb<1.4",
+      ]
     },
     include_package_data=True,
     classifiers=[

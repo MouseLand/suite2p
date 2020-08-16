@@ -75,7 +75,7 @@ def default_ops():
         'reg_tif_chan2': False,  # whether to save channel 2 registered tiffs
         'subpixel' : 10,  # precision of subpixel registration (1/subpixel steps)
         'smooth_sigma_time': 0,  # gaussian smoothing in time
-        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend >5 for 1P recordings
+        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
 
@@ -87,11 +87,11 @@ def default_ops():
 
         # 1P settings
         '1Preg': False,  # whether to perform high-pass filtering and tapering
-        'spatial_hp': 25,  # window for spatial high-pass filtering before registration
-        'spatial_hp_reg': 26,  # window for spatial high-pass filtering before registration
+        'spatial_hp': 42,  # window for spatial high-pass filtering before registration
+        'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
-        'pre_smooth': 2,  # whether to smooth before high-pass filtering before registration
-        'spatial_taper': 50,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
+        'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
+        'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction

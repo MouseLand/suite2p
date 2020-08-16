@@ -20,8 +20,6 @@ except ImportError:
 from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
-builtin_classfile = Path(__file__).joinpath('../classifiers/classifier.npy').resolve()
-user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
 
 
 def default_ops():
@@ -198,7 +196,8 @@ def run_plane(ops, ops_path=None):
 
         # Select file for classification
         ops_classfile = ops.get('classifier_path')
-
+        builtin_classfile = classification.builtin_classfile
+        user_classfile = classification.user_classfile
         if ops['use_builtin_classifier']:
             print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
             classfile = builtin_classfile
@@ -230,7 +229,7 @@ def run_plane(ops, ops_path=None):
         t11=time.time()
         print('----------- CLASSIFICATION')
         if len(stat):
-            iscell = classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
+            iscell = classification.classify(stat=stat, classfile=classfile)
         else:
             iscell = np.zeros((0, 2))
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)

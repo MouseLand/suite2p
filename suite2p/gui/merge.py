@@ -142,10 +142,6 @@ def merge_activity_masks(parent):
     parent.notmerged = np.append(parent.notmerged, False)
     
     ### for GUI drawing
-    # compute outline and circle around cell
-    iext = utils.boundary(ypix, xpix)
-    parent.stat[-1]["yext"] = ypix[iext].astype(np.int32)
-    parent.stat[-1]["xext"] = xpix[iext].astype(np.int32)
     ycirc, xcirc = utils.circle(parent.stat[-1]["med"], parent.stat[-1]["radius"])
     goodi = (
             (ycirc >= 0)

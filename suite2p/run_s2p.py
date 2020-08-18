@@ -374,7 +374,7 @@ def run_s2p(ops={}, db={}):
         }
         if ops['input_format'] in convert_funs:
             ops0 = convert_funs[ops['input_format']](ops.copy())
-            if isinstance(ops, 'list'):
+            if isinstance(ops, list):
                 ops0 = ops0[0]
         else:
             ops0 = io.tiff_to_binary(ops.copy())
@@ -390,10 +390,13 @@ def run_s2p(ops={}, db={}):
     else:
         for ipl, ops_path in enumerate(ops_paths):
             op = np.load(ops_path, allow_pickle=True).item()
+            
             # make sure yrange and xrange are not overwritten
-            if 'yrange' in ops: ops.pop('yrange') 
-            if 'xrange' in ops: ops.pop('xrange') 
-            op = {**op, **ops}
+            for key in default_ops().keys():
+                if key not in ['data_path', 'save_path0', 'fast_disk', 'save_folder', 'subfolders']:
+                    if key in op and key in ops:
+                        op[key] = ops[key]
+            
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
             op = run_plane(op, ops_path=ops_path)
             print('Plane %d processed in %0.2f sec (can open in GUI).' % 

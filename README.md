@@ -23,7 +23,9 @@ See this **twitter [thread](https://twitter.com/marius10p/status/103280477663388
 
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
-## *NEW* detailed github [page](http://mouseland.github.io/suite2p)
+Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb).
+
+## Read the Documentation at https://suite2p.readthedocs.io/
 
 ## Installation
 

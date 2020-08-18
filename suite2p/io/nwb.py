@@ -77,9 +77,9 @@ def read_nwb(fpath):
         stat = roi_stats(stat, *d0, ops['Ly'], ops['Lx'])
     
         # fluorescence
-        F = np.array(nwbfile.processing['ophys']['Fluorescence']['roi_response_series'].data)
-        Fneu = np.array(nwbfile.processing['ophys']['Neuropil']['roi_response_series'].data)
-        spks = np.array(nwbfile.processing['ophys']['Deconvolved']['roi_response_series'].data)
+        F = np.array(nwbfile.processing['ophys']['Fluorescence']['Fluorescence'].data)
+        Fneu = np.array(nwbfile.processing['ophys']['Neuropil']['Neuropil'].data)
+        spks = np.array(nwbfile.processing['ophys']['Deconvolved']['Deconvolved'].data)
         dF = F - ops['neucoeff'] * Fneu
         for n in range(len(stat)):
             stat[n]['skew'] = scipy.stats.skew(dF[n])

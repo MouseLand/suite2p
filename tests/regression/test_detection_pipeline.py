@@ -4,7 +4,8 @@ Tests for the Suite2p Detection module.
 
 import numpy as np
 import utils
-from suite2p import detection, builtin_classfile
+from suite2p import detection
+from suite2p.classification import builtin_classfile
 
 
 def prepare_for_detection(op, input_file_name_list, dimensions):
@@ -89,10 +90,10 @@ def test_detection_output_2plane2chan(test_ops):
     ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
+    nplanes = test_ops['nplanes']
     assert all(utils.check_output(
-        test_ops['save_path0'],
-        ['redcell'],
-        test_ops['data_path'][0],
-        test_ops['nplanes'],
-        test_ops['nchannels'],
+        output_root=test_ops['save_path0'],
+        outputs_to_check=['redcell'],
+        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
+        nplanes=nplanes
     ))

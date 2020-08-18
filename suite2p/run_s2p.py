@@ -20,8 +20,6 @@ except ImportError:
 from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
-builtin_classfile = Path(__file__).joinpath('../classifiers/classifier.npy').resolve()
-user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
 
 
 def default_ops():
@@ -77,7 +75,7 @@ def default_ops():
         'reg_tif_chan2': False,  # whether to save channel 2 registered tiffs
         'subpixel' : 10,  # precision of subpixel registration (1/subpixel steps)
         'smooth_sigma_time': 0,  # gaussian smoothing in time
-        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend >5 for 1P recordings
+        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
 
@@ -89,11 +87,11 @@ def default_ops():
 
         # 1P settings
         '1Preg': False,  # whether to perform high-pass filtering and tapering
-        'spatial_hp': 25,  # window for spatial high-pass filtering before registration
-        'spatial_hp_reg': 26,  # window for spatial high-pass filtering before registration
+        'spatial_hp': 42,  # window for spatial high-pass filtering before registration
+        'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
-        'pre_smooth': 2,  # whether to smooth before high-pass filtering before registration
-        'spatial_taper': 50,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
+        'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
+        'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
@@ -201,7 +199,8 @@ def run_plane(ops, ops_path=None):
 
         # Select file for classification
         ops_classfile = ops.get('classifier_path')
-
+        builtin_classfile = classification.builtin_classfile
+        user_classfile = classification.user_classfile
         if ops['use_builtin_classifier']:
             print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
             classfile = builtin_classfile
@@ -235,7 +234,7 @@ def run_plane(ops, ops_path=None):
         t11=time.time()
         print('----------- CLASSIFICATION')
         if len(stat):
-            iscell = classification.Classifier(classfile=classfile, keys=['npix_norm', 'compact', 'skew']).run(stat)
+            iscell = classification.classify(stat=stat, classfile=classfile)
         else:
             iscell = np.zeros((0, 2))
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
@@ -313,15 +312,15 @@ def run_s2p(ops={}, db={}):
 
         Parameters
         ----------
-        ops : :obj:`dict`, optional
+        ops : :obj:`dict`
             specify 'nplanes', 'nchannels', 'tau', 'fs'
-        db : :obj:`dict`, optional
+        db : :obj:`dict`
             specify 'data_path' or 'h5py'+'h5py_key' here or in ops
 
         Returns
         -------
-            ops1 : list
-                list of ops for each plane
+            ops : :obj:`dict`
+                ops settings used to run suite2p
 
     """
     t0 = time.time()
@@ -337,13 +336,18 @@ def run_s2p(ops={}, db={}):
         ops['save_folder'] = 'suite2p'
     save_folder = os.path.join(ops['save_path0'], ops['save_folder'])
     os.makedirs(save_folder, exist_ok=True)
-    fpathops1 = os.path.join(save_folder, 'ops1.npy')
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     if len(plane_folders) > 0:
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-        if all(map(os.path.isfile, chain(ops_paths, *[Path(f).glob('data*.bin') for f in plane_folders]))):
-            print(f'FOUND BINARIES AND OPS IN {ops_paths}')
-
+        ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
+        binaries_found_flag = all([os.path.isfile(os.path.join(f, 'data_raw.bin')) or os.path.isfile(os.path.join(f, 'data.bin')) 
+                                    for f in plane_folders])
+        files_found_flag = ops_found_flag and binaries_found_flag
+    else:
+        files_found_flag = False
+    
+    if files_found_flag:
+        print(f'FOUND BINARIES AND OPS IN {ops_paths}')
     # if not set up files and copy tiffs/h5py to binary
     else:
         if len(ops['h5py']):
@@ -365,21 +369,21 @@ def run_s2p(ops={}, db={}):
             'bruker': io.ome_to_binary,
         }
         if ops['input_format'] in convert_funs:
-            ops1 = convert_funs[ops['input_format']](ops.copy())
-            print('time {:4.2f} sec. Wrote {} files to binaries for {} planes'.format( (time.time() - t0), ops['input_format'], len(ops1) ))
+            ops0 = convert_funs[ops['input_format']](ops.copy())
+            if isinstance(ops, 'list'):
+                ops0 = ops0[0]
         else:
-            ops1 = io.tiff_to_binary(ops.copy())
-            print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(
-                  time.time() - t0, ops1[0]['nframes'], len(ops1)
-            ))
+            ops0 = io.tiff_to_binary(ops.copy())
         plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
+        print('time {:0.2f} sec. Wrote {} frames per binary for {} planes'.format(
+                  time.time() - t0, ops0['nframes'], len(plane_folders)
+            ))
 
     if ops.get('multiplane_parallel'):
         io.server.send_jobs(save_folder)
         return None
     else:
-        ops1 = []
         for ipl, ops_path in enumerate(ops_paths):
             op = np.load(ops_path, allow_pickle=True).item()
             # make sure yrange and xrange are not overwritten
@@ -392,15 +396,13 @@ def run_s2p(ops={}, db={}):
             plane_runtime = time.time()-t1
             print('Plane %d processed in %0.2f sec (can open in GUI).' % (ipl, plane_runtime))
             op['timing']['total_plane_runtime'] = plane_runtime
-            ops1.append(op)
         run_time = time.time()-t0
         print('total = %0.2f sec.' % run_time)
 
-        np.save(fpathops1, ops1)
         #### COMBINE PLANES or FIELDS OF VIEW ####
         if len(ops_paths)>1 and ops['combined'] and ops.get('roidetect', True):
             print('Creating combined view')
-            io.save_combined(save_folder)
+            io.combined(save_folder, save=True)
         
         # save to NWB
         if ops.get('save_NWB'):
@@ -408,4 +410,4 @@ def run_s2p(ops={}, db={}):
             io.save_nwb(save_folder)
 
         print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
-        return ops1
+        return ops

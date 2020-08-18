@@ -36,8 +36,10 @@ def compute_dydx(ops1):
                     dy[j*nrois + k] += int(j/nX) * ymax 
     return dy, dx
 
-def save_combined(save_folder):
+def combined(save_folder, save=True):
     """ Combines all the folders in save_folder into a single result file.
+
+    can turn off saving (for gui loading)
 
     Multi-plane recordings are arranged to best tile a square.
     Multi-roi recordings are arranged by their dx,dy physical localization.
@@ -45,7 +47,6 @@ def save_combined(save_folder):
     """
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
-
     dy, dx = compute_dydx(ops1)
     Ly = np.array([ops['Ly'] for ops in ops1])
     Lx = np.array([ops['Lx'] for ops in ops1])
@@ -105,7 +106,7 @@ def save_combined(save_folder):
             spks0   = np.concatenate((spks0, fcat), axis=1)
             Fneu0   = np.concatenate((Fneu0, fcat), axis=1)
         if k==0:
-            F, Fneu, spks,stat,iscell,redcell = F0, Fneu0, spks0,stat0, iscell0, redcell0
+            F, Fneu, spks, stat, iscell, redcell = F0, Fneu0, spks0, stat0, iscell0, redcell0
         else:
             F    = np.concatenate((F, F0))
             Fneu = np.concatenate((Fneu, Fneu0))
@@ -134,24 +135,31 @@ def save_combined(save_folder):
     if not os.path.isdir(fpath):
         os.makedirs(fpath)
     ops['save_path'] = fpath
-    np.save(os.path.join(fpath, 'F.npy'), F)
-    np.save(os.path.join(fpath, 'Fneu.npy'), Fneu)
-    np.save(os.path.join(fpath, 'spks.npy'), spks)
-    np.save(os.path.join(fpath, 'ops.npy'), ops)
-    np.save(os.path.join(fpath, 'stat.npy'), stat)
+
+    # need to save iscell regardless (required for GUI function)
     np.save(os.path.join(fpath, 'iscell.npy'), iscell)
     if hasred:
         np.save(os.path.join(fpath, 'redcell.npy'), redcell)
+    else:
+        redcell = np.zeros_like(iscell)
 
-    # save as matlab file
-    if ('save_mat' in ops) and ops['save_mat']:
-        matpath = os.path.join(ops['save_path'],'Fall.mat')
-        scipy.io.savemat(matpath, {'stat': stat,
-                                    'ops': ops,
-                                    'F': F,
-                                    'Fneu': Fneu,
-                                    'spks': spks,
-                                    'iscell': iscell,
-                                    'redcell': redcell})
-    return ops
+    if save:
+        np.save(os.path.join(fpath, 'F.npy'), F)
+        np.save(os.path.join(fpath, 'Fneu.npy'), Fneu)
+        np.save(os.path.join(fpath, 'spks.npy'), spks)
+        np.save(os.path.join(fpath, 'ops.npy'), ops)
+        np.save(os.path.join(fpath, 'stat.npy'), stat)
+        
+        # save as matlab file
+        if ('save_mat' in ops) and ops['save_mat']:
+            matpath = os.path.join(ops['save_path'],'Fall.mat')
+            scipy.io.savemat(matpath, {'stat': stat,
+                                        'ops': ops,
+                                        'F': F,
+                                        'Fneu': Fneu,
+                                        'spks': spks,
+                                        'iscell': iscell,
+                                        'redcell': redcell})
+
+    return stat, ops, F, Fneu, spks, iscell[:,0], iscell[:,1], redcell[:,0], redcell[:,1], hasred
 

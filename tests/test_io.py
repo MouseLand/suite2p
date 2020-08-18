@@ -15,7 +15,7 @@ from utils import get_binary_file_data
 @fixture()
 def binfile1500(test_ops):
     test_ops['tiff_list'] = ['input_1500.tif']
-    op = io.tiff_to_binary(test_ops)[0]
+    op = io.tiff_to_binary(test_ops)
     bin_filename = str(Path(op['save_path0']).joinpath('suite2p/plane0/data.bin'))
     with io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], read_filename=bin_filename) as bin_file:
         yield bin_file
@@ -25,7 +25,7 @@ def binfile1500(test_ops):
 def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     test_ops['h5py'] = Path(test_ops['data_path'][0]).joinpath('input.h5')
     test_ops['data_path'] = []
-    op = io.h5py_to_binary(test_ops)[0]
+    op = io.h5py_to_binary(test_ops)
     output_data = get_binary_file_data(op)
     assert np.all(output_data >= 0)
 

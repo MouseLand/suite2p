@@ -125,14 +125,14 @@ Registration
   spatial filtering and tapering (parameters set below), which help
   with 1P registration
 
-- **spatial_hp**: (*int, default: 50*) window in pixels for spatial
+- **spatial_hp**: (*int, default: 42*) window in pixels for spatial
   high-pass filtering before registration
 
-- **pre_smooth**: (*float, default: 2*) if > 0, defines stddev of
+- **pre_smooth**: (*float, default: 0*) if > 0, defines stddev of
   Gaussian smoothing, which is applied before spatial high-pass
   filtering
 
-- **spatial_taper**: (*float, default: 50*) how many pixels to ignore
+- **spatial_taper**: (*float, default: 40*) how many pixels to ignore
   on edges - they are set to zero (important for vignetted windows, for
   FFT padding do not set BELOW 3*ops['smooth_sigma'])
 

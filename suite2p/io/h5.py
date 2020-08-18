@@ -18,8 +18,8 @@ def h5py_to_binary(ops):
 
     Returns
     -------
-        ops1 : list of dictionaries
-            'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+        ops : dictionary of first plane
+            'Ly', 'Lx', ops['reg_file'] or ops['raw_file'] is created binary
 
     """
     ops1 = init_ops(ops)
@@ -104,4 +104,4 @@ def h5py_to_binary(ops):
         reg_file[j].close()
         if nchannels > 1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]

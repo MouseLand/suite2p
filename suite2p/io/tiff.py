@@ -74,8 +74,8 @@ def tiff_to_binary(ops):
 
     Returns
     -------
-        ops1 : list of dictionaries
-            ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+        ops : dictionary of first plane
+            ops['reg_file'] or ops['raw_file'] is created binary
             assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
             'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'
 
@@ -180,7 +180,7 @@ def tiff_to_binary(ops):
         reg_file[j].close()
         if nchannels>1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]
 
 def mesoscan_to_binary(ops):
     """ finds mesoscope tiff files and writes them to binaries
@@ -193,8 +193,8 @@ def mesoscan_to_binary(ops):
 
     Returns
     -------
-        ops1 : list of dictionaries
-            ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+        ops : dictionary of first plane
+            ops['reg_file'] or ops['raw_file'] is created binary
             assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs', 'frames_per_folder',
             'nframes', 'meanImg', 'meanImg_chan2'
 
@@ -332,7 +332,7 @@ def mesoscan_to_binary(ops):
         reg_file[j].close()
         if nchannels>1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]
 
 
 def ome_to_binary(ops):
@@ -348,8 +348,8 @@ def ome_to_binary(ops):
 
     Returns
     -------
-    ops1 : list of dictionaries
-        creates binaries ops1[j]['reg_file']
+    ops : dictionary of first plane
+        creates binaries ops['reg_file']
         assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     """
     t0 = time.time()
@@ -438,4 +438,4 @@ def ome_to_binary(ops):
         reg_file[j].close()
         if nchannels>1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]

@@ -104,6 +104,9 @@ class MainWindow(QtGui.QMainWindow):
         #statfile = 'C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy'
         #statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
         #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
+        #folder = 'D:/DATA/GT1/singlechannel_half/suite2p/'
+        #self.fname = folder
+        #io.load_folder(self)
         if statfile is not None:
             self.fname = statfile
             io.load_proc(self)

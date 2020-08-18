@@ -7,7 +7,7 @@ from tifffile import imread
 import numpy as np
 from glob import glob
 
-r_tol, a_tol = 5e-3, 9e-1  # Matters for F, Fneu, spks, and stat
+r_tol, a_tol = 1e-4, 5e-2
 
 
 def get_plane_dir(op, plane, mkdir=True):

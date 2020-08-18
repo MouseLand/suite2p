@@ -124,6 +124,7 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
     }
 
+
 def run_plane(ops, ops_path=None):
     """ run suite2p processing on a single binary file
 
@@ -136,11 +137,11 @@ def run_plane(ops, ops_path=None):
     --------
     ops : :obj:`dict` 
     """
-
-    ops = {**default_ops(), **ops}
-
-    ops['date_proc'] = datetime.datetime.now()
+    t1 = time.time()
     
+    ops = {**default_ops(), **ops}
+    ops['date_proc'] = datetime.datetime.now()
+    plane_times = {}
     if ops_path is not None:
         ops['save_path'] = os.path.split(ops_path)[0]
         ops['ops_path'] = ops_path 
@@ -175,7 +176,8 @@ def run_plane(ops, ops_path=None):
         print('----------- REGISTRATION')
         ops = registration.register_binary(ops) # register binary
         np.save(ops['ops_path'], ops)
-        print('----------- Total %0.2f sec'%(time.time()-t11))
+        plane_times['registration'] = time.time()-t11
+        print('----------- Total %0.2f sec' % plane_times['registration'])
 
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
@@ -183,14 +185,16 @@ def run_plane(ops, ops_path=None):
             refImg = registration.sampled_mean(ops)
             ops = registration.register_binary(ops, refImg, raw=False)
             np.save(ops['ops_path'], ops)
-            print('----------- Total %0.2f sec'%(time.time()-t11))
+            plane_times['two_step_registration'] = time.time()-t11
+            print('----------- Total %0.2f sec' % plane_times['two_step_registration'])
 
         # compute metrics for registration
         if ops.get('do_regmetrics', True) and ops['nframes']>=1500:
-            t0=time.time()
+            t0 = time.time()
             ops = registration.get_pc_metrics(ops)
-            print('Registration metrics, %0.2f sec.'%(time.time()-t0))
-            np.save(os.path.join(ops['save_path'],'ops.npy'), ops)
+            plane_times['registration_metrics'] = time.time()-t0
+            print('Registration metrics, %0.2f sec.' % plane_times['registration_metrics'])
+            np.save(os.path.join(ops['save_path'], 'ops.npy'), ops)
 
     if ops.get('roidetect', True):
 
@@ -215,13 +219,15 @@ def run_plane(ops, ops_path=None):
         t11=time.time()
         print('----------- ROI DETECTION')
         cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        plane_times['detection'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
         ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        plane_times['extraction'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
         ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
@@ -233,7 +239,8 @@ def run_plane(ops, ops_path=None):
         else:
             iscell = np.zeros((0, 2))
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        plane_times['classification'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['classification'])
 
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
@@ -252,7 +259,8 @@ def run_plane(ops, ops_path=None):
                 prctile_baseline=ops['prctile_baseline']
             )
             spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
-            print('----------- Total %0.2f sec.'%(time.time()-t11))
+            plane_times['deconvolution'] = time.time()-t11
+            print('----------- Total %0.2f sec.' % plane_times['deconvolution'])
         else:
             print("WARNING: skipping spike detection (ops['spikedetect']=False)")
             spks = np.zeros_like(F)
@@ -294,7 +302,12 @@ def run_plane(ops, ops_path=None):
             os.remove(ops['raw_file'])
             if ops['nchannels'] > 1:
                 os.remove(ops['raw_file_chan2'])
+    ops['timing'] = plane_times.copy()
+    plane_runtime = time.time()-t1
+    ops['timing']['total_plane_runtime'] = plane_runtime
+    np.save(ops['ops_path'], ops)
     return ops
+
 
 def run_s2p(ops={}, db={}):
     """ run suite2p pipeline
@@ -382,12 +395,12 @@ def run_s2p(ops={}, db={}):
             if 'xrange' in ops: ops.pop('xrange') 
             op = {**op, **ops}
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
-            t1 = time.time()
             op = run_plane(op, ops_path=ops_path)
-            print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
-        print('total = %0.2f sec.'%(time.time()-t0))
+            print('Plane %d processed in %0.2f sec (can open in GUI).' % 
+                    (ipl, op['timing']['total_plane_runtime']))  
+        run_time = time.time()-t0
+        print('total = %0.2f sec.' % run_time)
 
-            
         #### COMBINE PLANES or FIELDS OF VIEW ####
         if len(ops_paths)>1 and ops['combined'] and ops.get('roidetect', True):
             print('Creating combined view')
@@ -399,4 +412,4 @@ def run_s2p(ops={}, db={}):
             io.save_nwb(save_folder)
 
         print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
-        return ops
+        return op

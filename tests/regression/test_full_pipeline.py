@@ -99,8 +99,14 @@ def test_mesoscan_2plane_2z(test_ops):
     for key in meso_ops.keys():
         if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
             test_ops[key] = meso_ops[key]
-    test_ops['delete_bin'] = True
+    test_ops['delete_bin'] = False
     suite2p.run_s2p(ops=test_ops)
+    print(utils.check_output(
+        output_root=test_ops['save_path0'],
+        outputs_to_check=get_outputs_to_check(test_ops['nchannels']),
+        test_data_dir=test_ops['data_path'][0].joinpath('suite2p'),
+        nplanes=test_ops['nplanes']*test_ops['nrois'],
+    ))
     assert all(utils.check_output(
         output_root=test_ops['save_path0'],
         outputs_to_check=get_outputs_to_check(test_ops['nchannels']),

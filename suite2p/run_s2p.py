@@ -137,7 +137,8 @@ def run_plane(ops, ops_path=None):
     --------
     ops : :obj:`dict` 
     """
-
+    t1 = time.time()
+    
     ops = {**default_ops(), **ops}
     ops['date_proc'] = datetime.datetime.now()
     plane_times = {}
@@ -302,6 +303,9 @@ def run_plane(ops, ops_path=None):
             if ops['nchannels'] > 1:
                 os.remove(ops['raw_file_chan2'])
     ops['timing'] = plane_times.copy()
+    plane_runtime = time.time()-t1
+    ops['timing']['total_plane_runtime'] = plane_runtime
+    np.save(ops['ops_path'], ops)
     return ops
 
 
@@ -391,11 +395,9 @@ def run_s2p(ops={}, db={}):
             if 'xrange' in ops: ops.pop('xrange') 
             op = {**op, **ops}
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
-            t1 = time.time()
             op = run_plane(op, ops_path=ops_path)
-            plane_runtime = time.time()-t1
-            print('Plane %d processed in %0.2f sec (can open in GUI).' % (ipl, plane_runtime))
-            op['timing']['total_plane_runtime'] = plane_runtime
+            print('Plane %d processed in %0.2f sec (can open in GUI).' % 
+                    (ipl, op['timing']['total_plane_runtime']))  
         run_time = time.time()-t0
         print('total = %0.2f sec.' % run_time)
 
@@ -410,4 +412,4 @@ def run_s2p(ops={}, db={}):
             io.save_nwb(save_folder)
 
         print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
-        return ops
+        return op

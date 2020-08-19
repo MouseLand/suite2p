@@ -271,6 +271,11 @@ class BinaryPlayer(QtGui.QMainWindow):
             if hasattr(self, 'zmax'):
                 self.Zedit.setText(str(self.zmax[self.cframe]))
             self.iside.setImage(self.zstack[int(self.Zedit.text())], levels=self.zrange)
+        #if self.maskbox.isChecked():
+        #    imgmin = self.img.min()
+        #    self.allmasks[:,:,-1] = np.maximum(0, ((self.img - imgmin) / (self.img.max() - imgmin) - 0.5)*2) * 255 * self.mask_bool
+        #    self.maskmain.setImage(self.allmasks, levels=[0, 255])
+        #    self.maskside.setImage(self.allmasks, levels=[0, 255])
 
         self.imain.setImage(self.img, levels=self.srange)
         self.frameSlider.setValue(self.cframe)
@@ -298,6 +303,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.RGB = -1*np.ones((self.LY, self.LX, 3), np.int32)
         self.cellpix = -1*np.ones((self.LY, self.LX), np.int32)
         self.sroi = np.zeros((self.LY, self.LX), np.uint8)
+        
         for n in np.nonzero(self.iscell)[0]:
             ypix = self.stat[n]['ypix'].flatten()
             xpix = self.stat[n]['xpix'].flatten()
@@ -305,13 +311,19 @@ class BinaryPlayer(QtGui.QMainWindow):
                 ypix = ypix[~self.stat[n]['overlap']]
                 xpix = xpix[~self.stat[n]['overlap']]
             yext, xext = utils.boundary(ypix, xpix)
-            goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
-            self.stat[n]['yext'] = yext[goodi] + 0.5
-            self.stat[n]['xext'] = xext[goodi] + 0.5
+            if len(yext)>0:
+                goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
+                self.stat[n]['yext'] = yext[goodi] + 0.5
+                self.stat[n]['xext'] = xext[goodi] + 0.5
+                self.sroi[yext[goodi], xext[goodi]] = 200
+                #self.sroi[ypix, xpix] = 100
+                #self.RGB[ypix, xpix] = self.colors[n]
+                self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
+            else:
+                self.stat[n]['yext'] = yext
+                self.stat[n]['xext'] = xext
             self.cellpix[ypix, xpix] = n
-            self.sroi[yext[goodi], xext[goodi]] = 200
-            self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
-
+        self.mask_bool = self.sroi > 0    
         self.allmasks = np.concatenate((self.RGB,
                                         self.sroi[:,:,np.newaxis]), axis=-1)
         self.maskmain.setImage(self.allmasks, levels=[0, 255])

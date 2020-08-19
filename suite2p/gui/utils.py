@@ -6,18 +6,20 @@ def boundary(ypix,xpix):
     ypix = np.expand_dims(ypix.flatten(),axis=1)
     xpix = np.expand_dims(xpix.flatten(),axis=1)
     npix = ypix.shape[0]
+    if npix>0:
+        msk = np.zeros((np.ptp(ypix)+6, np.ptp(xpix)+6), np.bool)
+        msk[ypix-ypix.min()+3, xpix-xpix.min()+3] = True
+        msk = binary_dilation(msk)
+        msk = binary_fill_holes(msk)
+        k = np.ones((3,3),dtype=int) # for 4-connected
+        k = np.zeros((3,3),dtype=int); k[1] = 1; k[:,1] = 1 # for 8-connected
+        out = binary_dilation(msk==0, k) & msk
 
-    msk = np.zeros((np.ptp(ypix)+6, np.ptp(xpix)+6), np.bool)
-    msk[ypix-ypix.min()+3, xpix-xpix.min()+3] = True
-    msk = binary_dilation(msk)
-    msk = binary_fill_holes(msk)
-    k = np.ones((3,3),dtype=int) # for 4-connected
-    k = np.zeros((3,3),dtype=int); k[1] = 1; k[:,1] = 1 # for 8-connected
-    out = binary_dilation(msk==0, k) & msk
-
-    yext, xext = np.nonzero(out)
-    yext, xext = yext+ypix.min()-3, xext+xpix.min()-3
-
+        yext, xext = np.nonzero(out)
+        yext, xext = yext+ypix.min()-3, xext+xpix.min()-3
+    else:
+        yext = np.zeros((0,))
+        xext = np.zeros((0,))
     return yext, xext
 
 

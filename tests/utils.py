@@ -89,12 +89,10 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> 
 def compare_list_of_outputs(plane_num, output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
     for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
         if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
-            print(check_dict_dicts_all_close(data1, data2))
             yield check_dict_dicts_all_close(data1, data2)
         elif output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
             data1 = data1[:, 0]
             data2 = data2[:, 0]
             yield np.array_equal(data1, data2)
         else:
-            print(output, np.allclose(data1, data2, rtol=r_tol, atol=a_tol))
             yield np.allclose(data1, data2, rtol=r_tol, atol=a_tol)

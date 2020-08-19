@@ -9,6 +9,5 @@ dependencies:
   - matplotlib
   - scipy
   - h5py
-  - scikit-image
   - scikit-learn
   - pyqt

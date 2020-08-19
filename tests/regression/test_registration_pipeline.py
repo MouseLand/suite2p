@@ -5,7 +5,7 @@ Tests for the Suite2p Registration Module
 import numpy as np
 from pathlib import Path
 from tifffile import imread
-from suite2p.registration import bidiphase, utils, register_binary, get_pc_metrics
+from suite2p.registration import register_binary
 
 
 def prepare_for_registration(op, input_file_name, dimensions):
@@ -13,9 +13,12 @@ def prepare_for_registration(op, input_file_name, dimensions):
     Prepares for registration by performing functions of io module. Fills out necessary ops parameters for
     registration module.
     """
-    op['reg_tif'] = True
-    op['Lx'] = dimensions[0]
-    op['Ly'] = dimensions[1]
+    op.update({
+        'reg_tif': True,
+        'Lx': dimensions[0],
+        'Ly': dimensions[1],
+    })
+
     nc = op['nchannels']
     # Make input data non-negative
     input_data = (imread(
@@ -70,9 +73,9 @@ def test_register_binary_do_bidi_output(test_ops):
     test_ops['do_bidiphase'] = True
     check_registration_output(
         test_ops, (404, 360),
-        test_ops['data_path'][0].joinpath('registration', 'bidi_shift_input.tif'),
-        [str(Path(test_ops['save_path0']).joinpath('reg_tif', 'file000_chan0.tif'))],
-        [str(Path(test_ops['data_path'][0]).joinpath('registration', 'regression_bidi_output.tif'))]
+        test_ops['data_path'][0].joinpath('registration/bidi_shift_input.tif'),
+        [str(Path(test_ops['save_path0']).joinpath('reg_tif/file000_chan0.tif'))],
+        [str(Path(test_ops['data_path'][0]).joinpath('registration/regression_bidi_output.tif'))]
     )
 
 
@@ -82,10 +85,12 @@ def test_register_binary_rigid_registration_only(test_ops):
     """
     test_ops['nonrigid'] = False
     op = prepare_for_registration(
-        test_ops, test_ops['data_path'][0].joinpath('registration', 'rigid_registration_test_data.tif'), (256,256)
+        test_ops,
+        test_ops['data_path'][0].joinpath('registration/rigid_registration_test_data.tif'),
+        (256, 256),
     )[0]
     op = register_binary(op)
-    registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif', 'file000_chan0.tif')))
+    registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif/file000_chan0.tif')))
     # Make sure registered_data is identical across frames
     check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)
     assert np.array_equal(check_data, registered_data)
@@ -95,58 +100,3 @@ def test_register_binary_rigid_registration_only(test_ops):
     assert num_col_lines == 16
     assert num_row_lines == 16
 
-
-def test_spatial_smooth_has_not_regressed_during_refactor():
-    frames = np.ones((2, 3, 3))
-    smoothed = utils.spatial_smooth(frames, 2)
-    expected = np.array([
-        [[1.  , 1.  , 0.5 ],
-         [1.  , 1.  , 0.5 ],
-         [0.5 , 0.5 , 0.25]],
-
-        [[1.  , 1.  , 0.5 ],
-         [1.  , 1.  , 0.5 ],
-         [0.5 , 0.5 , 0.25]]], dtype=np.float32)
-    assert np.allclose(smoothed, expected)
-
-
-def test_positive_bidiphase_shift_shifts_every_other_line():
-    orig = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-    expected = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 1, 2, 3, 4, 5],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 1, 2, 3, 4, 5],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-
-    shifted = orig.copy()
-    bidiphase.shift(shifted, 2)
-    assert np.allclose(shifted, expected)
-
-
-def test_negative_bidiphase_shift_shifts_every_other_line():
-    orig = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-    expected = np.array([
-        [[1, 2, 3, 4, 5, 6, 7],
-         [3, 4, 5, 6, 7, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7],
-         [3, 4, 5, 6, 7, 6, 7],
-         [1, 2, 3, 4, 5, 6, 7]]
-    ])
-
-    shifted = orig.copy()
-    bidiphase.shift(shifted, -2)
-    assert np.allclose(shifted, expected)

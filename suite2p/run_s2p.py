@@ -3,11 +3,13 @@ import os
 import shutil
 import time
 from natsort import natsorted
+from itertools import chain
 
 import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
+from . import version
 
 try:
     from haussmeister import haussio
@@ -16,12 +18,16 @@ except ImportError:
     HAS_HAUS = False
 
 from functools import partial
+from pathlib import Path
 print = partial(print,flush=True)
 
 
 def default_ops():
     """ default options to run pipeline """
     return {
+        # Suite2p version
+        'suite2p_version': version,
+
         # file paths
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
         'fast_disk': [],  # used to store temporary binary file, defaults to save_path0
@@ -43,7 +49,7 @@ def default_ops():
         'fs': 10.,  # sampling rate (PER PLANE e.g. for 12 plane recordings it will be around 2.5)
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         'frames_include': -1,
-        'multiplane_parallel': False,
+        'multiplane_parallel': False, # whether or not to run on server
 
         # output settings
         'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
@@ -69,7 +75,7 @@ def default_ops():
         'reg_tif_chan2': False,  # whether to save channel 2 registered tiffs
         'subpixel' : 10,  # precision of subpixel registration (1/subpixel steps)
         'smooth_sigma_time': 0,  # gaussian smoothing in time
-        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend >5 for 1P recordings
+        'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'pad_fft': False,
 
@@ -81,11 +87,11 @@ def default_ops():
 
         # 1P settings
         '1Preg': False,  # whether to perform high-pass filtering and tapering
-        'spatial_hp': 25,  # window for spatial high-pass filtering before registration
-        'spatial_hp_reg': 26,  # window for spatial high-pass filtering before registration
+        'spatial_hp': 42,  # window for spatial high-pass filtering before registration
+        'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
-        'pre_smooth': 2,  # whether to smooth before high-pass filtering before registration
-        'spatial_taper': 50,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
+        'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
+        'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
@@ -96,9 +102,11 @@ def default_ops():
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
         'max_iterations': 20,  # maximum number of iterations to do cell detection
-        'threshold_scaling': 1.0, # adjust the automatically determined threshold by this scalar multiplier
+        'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
+        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
+                                         # classifier specified in classifier_path if set to True)
 
         # ROI extraction parameters
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
@@ -116,6 +124,7 @@ def default_ops():
         'neucoeff': .7,  # neuropil coefficient
     }
 
+
 def run_plane(ops, ops_path=None):
     """ run suite2p processing on a single binary file
 
@@ -128,11 +137,11 @@ def run_plane(ops, ops_path=None):
     --------
     ops : :obj:`dict` 
     """
-
-    ops = {**default_ops(), **ops}
-
-    ops['date_proc'] = datetime.datetime.now()
+    t1 = time.time()
     
+    ops = {**default_ops(), **ops}
+    ops['date_proc'] = datetime.datetime.now()
+    plane_times = {}
     if ops_path is not None:
         ops['save_path'] = os.path.split(ops_path)[0]
         ops['ops_path'] = ops_path 
@@ -147,14 +156,13 @@ def run_plane(ops, ops_path=None):
 
     # check if registration should be done
     if ops['do_registration']>0:
-        run_registration = True
-        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration']>1:
+        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration'] > 1:
             print("NOTE: not registered / registration forced with ops['do_registration']>1")
             try:
-                # delete previous offsets
-                del op['yoff'], op['xoff'], op['corrXY']
-            except:
+                del ops['yoff'], ops['xoff'], ops['corrXY']  # delete previous offsets
+            except KeyError:
                 print('      (no previous offsets to delete)')
+            run_registration = True
         else:
             print("NOTE: not running registration, plane already registered")
             run_registration = False
@@ -168,7 +176,8 @@ def run_plane(ops, ops_path=None):
         print('----------- REGISTRATION')
         ops = registration.register_binary(ops) # register binary
         np.save(ops['ops_path'], ops)
-        print('----------- Total %0.2f sec'%(time.time()-t11))
+        plane_times['registration'] = time.time()-t11
+        print('----------- Total %0.2f sec' % plane_times['registration'])
 
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
@@ -176,75 +185,99 @@ def run_plane(ops, ops_path=None):
             refImg = registration.sampled_mean(ops)
             ops = registration.register_binary(ops, refImg, raw=False)
             np.save(ops['ops_path'], ops)
-            print('----------- Total %0.2f sec'%(time.time()-t11))
+            plane_times['two_step_registration'] = time.time()-t11
+            print('----------- Total %0.2f sec' % plane_times['two_step_registration'])
 
         # compute metrics for registration
-        if 'do_regmetrics' in ops:
-            do_regmetrics = ops['do_regmetrics']
-        else:
-            do_regmetrics = True
-        if do_regmetrics and ops['nframes']>=1500:
-            t0=time.time()
+        if ops.get('do_regmetrics', True) and ops['nframes']>=1500:
+            t0 = time.time()
             ops = registration.get_pc_metrics(ops)
-            print('Registration metrics, %0.2f sec.'%(time.time()-t0))
-            np.save(os.path.join(ops['save_path'],'ops.npy'), ops)
+            plane_times['registration_metrics'] = time.time()-t0
+            print('Registration metrics, %0.2f sec.' % plane_times['registration_metrics'])
+            np.save(os.path.join(ops['save_path'], 'ops.npy'), ops)
 
-    roidetect = True
-    spikedetect = True
-    if 'roidetect' in ops:
-        roidetect = ops['roidetect']
-    if 'spikedetect' in ops:
-        spikedetect = ops['spikedetect']
+    if ops.get('roidetect', True):
 
-    if roidetect:
+        # Select file for classification
+        ops_classfile = ops.get('classifier_path')
+        builtin_classfile = classification.builtin_classfile
+        user_classfile = classification.user_classfile
+        if ops_classfile:
+            print(f'NOTE: applying classifier {str(ops_classfile)}')
+            classfile = ops_classfile
+        elif ops['use_builtin_classifier'] or not user_classfile.is_file():
+            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        else:
+            print(f'NOTE: applying default {str(user_classfile)}')
+            classfile = user_classfile
+
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
+        plane_times['detection'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
         ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        plane_times['extraction'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['extraction'])
+
+        ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
         print('----------- CLASSIFICATION')
-        iscell = classification.classify(ops, stat)
-        print('----------- Total %0.2f sec.'%(time.time()-t11))
+        if len(stat):
+            iscell = classification.classify(stat=stat, classfile=classfile)
+        else:
+            iscell = np.zeros((0, 2))
+        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
+        plane_times['classification'] = time.time()-t11
+        print('----------- Total %0.2f sec.' % plane_times['classification'])
 
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
         F = np.load(os.path.join(fpath,'F.npy'))
         Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
-        if spikedetect:
+        if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
             dF = F - ops['neucoeff']*Fneu
-            dF = extraction.preprocess(dF,ops)
-            spks = extraction.oasis(dF, ops)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
-            print('----------- Total %0.2f sec.'%(time.time()-t11))
+            dF = extraction.preprocess(
+                F=dF,
+                baseline=ops['baseline'],
+                win_baseline=ops['win_baseline'],
+                sig_baseline=ops['sig_baseline'],
+                fs=ops['fs'],
+                prctile_baseline=ops['prctile_baseline']
+            )
+            spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
+            plane_times['deconvolution'] = time.time()-t11
+            print('----------- Total %0.2f sec.' % plane_times['deconvolution'])
         else:
             print("WARNING: skipping spike detection (ops['spikedetect']=False)")
             spks = np.zeros_like(F)
-            np.save(os.path.join(ops['save_path'],'spks.npy'), spks)
+        np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
 
         # save as matlab file
-        if 'save_mat' in ops and ops['save_mat']:
+        if ops.get('save_mat'):
             if 'date_proc' in ops:
                 ops['date_proc'] = []
-            stat = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
-            iscell = np.load(os.path.join(fpath,'iscell.npy'))
-            matpath = os.path.join(ops['save_path'],'Fall.mat')
-            savemat(matpath, {'stat': stat,
-                                    'ops': ops,
-                                    'F': F,
-                                    'Fneu': Fneu,
-                                    'spks': spks,
-                                    'iscell': iscell})
+            savemat(
+                file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+                mdict={
+                    'stat': np.load(os.path.join(fpath, 'stat.npy'), allow_pickle=True),
+                    'ops': ops,
+                    'F': F,
+                    'Fneu': Fneu,
+                    'spks': spks,
+                    'iscell': np.load(os.path.join(fpath, 'iscell.npy'))
+                }
+            )
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
 
@@ -266,7 +299,12 @@ def run_plane(ops, ops_path=None):
             os.remove(ops['raw_file'])
             if ops['nchannels'] > 1:
                 os.remove(ops['raw_file_chan2'])
+    ops['timing'] = plane_times.copy()
+    plane_runtime = time.time()-t1
+    ops['timing']['total_plane_runtime'] = plane_runtime
+    np.save(ops['ops_path'], ops)
     return ops
+
 
 def run_s2p(ops={}, db={}):
     """ run suite2p pipeline
@@ -275,15 +313,15 @@ def run_s2p(ops={}, db={}):
 
         Parameters
         ----------
-        ops : :obj:`dict`, optional
+        ops : :obj:`dict`
             specify 'nplanes', 'nchannels', 'tau', 'fs'
-        db : :obj:`dict`, optional
+        db : :obj:`dict`
             specify 'data_path' or 'h5py'+'h5py_key' here or in ops
 
         Returns
         -------
-            ops1 : list
-                list of ops for each plane
+            ops : :obj:`dict`
+                ops settings used to run suite2p
 
     """
     t0 = time.time()
@@ -292,17 +330,13 @@ def run_s2p(ops={}, db={}):
         ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
     print(db)
     if 'save_path0' not in ops or len(ops['save_path0'])==0:
-        if ('h5py' in ops) and len(ops['h5py'])>0:
-            ops['save_path0'], tail = os.path.split(ops['h5py'])
-        else:
-            ops['save_path0'] = ops['data_path'][0]
+        ops['save_path0'] = os.path.split(ops['h5py'])[0] if ops.get('h5py') else ops['data_path'][0]
     
     # check if there are binaries already made
     if 'save_folder' not in ops or len(ops['save_folder'])==0:
         ops['save_folder'] = 'suite2p'
     save_folder = os.path.join(ops['save_path0'], ops['save_folder'])
     os.makedirs(save_folder, exist_ok=True)
-    fpathops1 = os.path.join(save_folder, 'ops1.npy')
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     if len(plane_folders) > 0:
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
@@ -312,19 +346,21 @@ def run_s2p(ops={}, db={}):
         files_found_flag = ops_found_flag and binaries_found_flag
     else:
         files_found_flag = False
+    
     if files_found_flag:
         print(f'FOUND BINARIES AND OPS IN {ops_paths}')
     # if not set up files and copy tiffs/h5py to binary
     else:
-        if not 'input_format' in ops.keys():
-            ops['input_format'] = 'tif'
         if len(ops['h5py']):
             ops['input_format'] = 'h5'
-        elif 'mesoscan' in ops and ops['mesoscan']:
+        elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
-        
+        elif not 'input_format' in ops:
+            ops['input_format'] = 'tif'
+
+
         # copy file format to a binary file
         convert_funs = {
             'h5': io.h5py_to_binary,
@@ -334,45 +370,46 @@ def run_s2p(ops={}, db={}):
             'bruker': io.ome_to_binary,
         }
         if ops['input_format'] in convert_funs:
-            ops1 = convert_funs[ops['input_format']](ops.copy())
-            print('time {:4.2f} sec. Wrote {} files to binaries for {} planes'.format(
-                (time.time() - t0), ops['input_format'], len(ops1)
-            ))
+            ops0 = convert_funs[ops['input_format']](ops.copy())
+            if isinstance(ops, list):
+                ops0 = ops0[0]
         else:
-            ops1 = io.tiff_to_binary(ops.copy())
-            print('time {:4.2f} sec. Wrote {} tiff frames to binaries for {} planes'.format(
-                  time.time() - t0, ops1[0]['nframes'], len(ops1)
-            ))
+            ops0 = io.tiff_to_binary(ops.copy())
         plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
         ops_paths = [os.path.join(f, 'ops.npy') for f in plane_folders]
-    
-    ipl = 0
+        print('time {:0.2f} sec. Wrote {} frames per binary for {} planes'.format(
+                  time.time() - t0, ops0['nframes'], len(plane_folders)
+            ))
 
-    ops1 = []
-    for ipl, ops_path in enumerate(ops_paths):
-        op = np.load(ops_path, allow_pickle=True).item()
-        # make sure yrange and xrange are not overwritten
-        if 'yrange' in ops: ops.pop('yrange') 
-        if 'xrange' in ops: ops.pop('xrange') 
-        op = {**op, **ops}
-        print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
-        t1 = time.time()
-        op = run_plane(op, ops_path=ops_path)
-        print('Plane %d processed in %0.2f sec (can open in GUI).'%(ipl,time.time()-t1))
-        ops1.append(op)
-    print('total = %0.2f sec.'%(time.time()-t0))
+    if ops.get('multiplane_parallel'):
+        io.server.send_jobs(save_folder)
+        return None
+    else:
+        for ipl, ops_path in enumerate(ops_paths):
+            op = np.load(ops_path, allow_pickle=True).item()
+            
+            # make sure yrange and xrange are not overwritten
+            for key in default_ops().keys():
+                if key not in ['data_path', 'save_path0', 'fast_disk', 'save_folder', 'subfolders']:
+                    if key in op and key in ops:
+                        op[key] = ops[key]
+            
+            print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
+            op = run_plane(op, ops_path=ops_path)
+            print('Plane %d processed in %0.2f sec (can open in GUI).' % 
+                    (ipl, op['timing']['total_plane_runtime']))  
+        run_time = time.time()-t0
+        print('total = %0.2f sec.' % run_time)
 
-    np.save(fpathops1, ops1)
-    
-    #### COMBINE PLANES or FIELDS OF VIEW ####
-    if len(ops_paths)>1 and ops['combined'] and (('roidetect' in ops and ops['roidetect']) or 'roidetect' not in ops):
-        print('Creating combined view')
-        io.save_combined(save_folder)
-    
-    # save to NWB
-    if 'save_NWB' in ops and ops['save_NWB']:
-        print('Saving in nwb format')
-        io.save_nwb(save_folder)
+        #### COMBINE PLANES or FIELDS OF VIEW ####
+        if len(ops_paths)>1 and ops['combined'] and ops.get('roidetect', True):
+            print('Creating combined view')
+            io.combined(save_folder, save=True)
+        
+        # save to NWB
+        if ops.get('save_NWB'):
+            print('Saving in nwb format')
+            io.save_nwb(save_folder)
 
-    print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
-    return ops1
+        print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
+        return op

@@ -9,7 +9,7 @@ from ..io.binary import BinaryFile
 from ..classification import classify
 
 
-def detect(ops):
+def detect(ops, classfile: Path):
     if 'aspect' in ops:
         dy, dx = int(ops['aspect'] * 10), 10
     else:
@@ -29,7 +29,17 @@ def detect(ops):
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
 
-    stats = select_rois(mov=mov, dy=dy, dx=dx, Ly=ops['Ly'], Lx=ops['Lx'], max_overlap=ops['max_overlap'], sparse_mode=ops['sparse_mode'], ops=ops)
+    stats = select_rois(
+        mov=mov,
+        dy=dy,
+        dx=dx,
+        Ly=ops['Ly'],
+        Lx=ops['Lx'],
+        max_overlap=ops['max_overlap'],
+        sparse_mode=ops['sparse_mode'],
+        classfile=classfile,
+        ops=ops
+    )
     # extract fluorescence and neuropil
     t0 = time.time()
     cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
@@ -53,7 +63,7 @@ def detect(ops):
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
     return cell_pix, cell_masks, neuropil_masks, stats, ops
 
-def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, ops):
+def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, classfile: Path, ops):
 
     t0 = time.time()
     if sparse_mode:
@@ -77,7 +87,11 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
 
     if ops['preclassify'] > 0:
         stats =  roi_stats(stats, dy, dx, Ly, Lx)
-        iscell = classify(ops, stats)
+        if len(stats) == 0:
+            iscell = np.zeros((0, 2))
+        else:
+            iscell = classify(stat=stats, classfile=classfile)
+        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
         ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
         stats = stats[ic]
         print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))

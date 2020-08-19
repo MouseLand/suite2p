@@ -12,7 +12,7 @@ def sbx_get_info(sbxfile):
     '''
     matfile = os.path.splitext(sbxfile)[0] + '.mat'
     if not os.path.exists(matfile):
-        raise('Metadata not found: {0}'.format(matfile))
+        raise FileNotFoundError('Metadata not found: {0}'.format(matfile))
     from scipy.io import loadmat
     info = loadmat(matfile,squeeze_me=True,struct_as_record=False)
     return info['info']
@@ -90,8 +90,8 @@ def sbx_to_binary(ops,ndeadcols = -1):
 
     Returns
     -------
-        ops1 : list of dictionaries
-            'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+        ops : dictionary of first plane
+            'Ly', 'Lx', ops['reg_file'] or ops['raw_file'] is created binary
 
     """
 
@@ -180,4 +180,4 @@ def sbx_to_binary(ops,ndeadcols = -1):
         reg_file[j].close()
         if nchannels>1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]

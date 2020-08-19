@@ -71,7 +71,8 @@ def list_files(froot, look_one_level_down, exts):
     fs = []
     for e in exts:
         lpath = os.path.join(froot, e)
-        fs.extend(natsorted(glob.glob(lpath)))
+        fs.extend(glob.glob(lpath))
+    fs = natsorted(set(fs))
     if len(fs) > 0:
         first_tiffs = np.zeros((len(fs),), np.bool)
         first_tiffs[0] = True
@@ -84,7 +85,8 @@ def list_files(froot, look_one_level_down, exts):
             fsnew = []
             for e in exts:
                 lpath = os.path.join(folder_down, e)
-                fsnew.extend(natsorted(glob.glob(lpath)))
+                fsnew.extend(glob.glob(lpath))
+            fsnew = natsorted(set(fsnew))
             if len(fsnew) > 0:
                 fs.extend(fsnew)
                 first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), np.bool))
@@ -147,7 +149,7 @@ def get_tif_list(ops):
         first_tiffs = []
         for k,fld in enumerate(fold_list):
             fs, ftiffs = list_files(fld, ops['look_one_level_down'],
-                                    ["*.tif", "*.tiff"])
+                                    ["*.tif", "*.tiff", "*.TIF", "*.TIFF"])
             fsall.extend(fs)
             first_tiffs.extend(list(ftiffs))
         if len(fsall)==0:

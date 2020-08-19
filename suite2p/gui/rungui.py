@@ -86,7 +86,7 @@ class RunWindow(QtGui.QDialog):
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
                     'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
-        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase']
+        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
@@ -101,6 +101,7 @@ class RunWindow(QtGui.QDialog):
                     'sampling rate (per plane)',
                     'whether or not to compute bidirectional phase offset of recording (from line scanning)',
                     'set a fixed number (in pixels) for the bidirectional phase offset',
+                    'process each plane with a separate job on a computing cluster',
                     'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
                     'save output also as mat file "Fall.mat"',
                     'save output also as NWB file "ophys.nwb"',

@@ -37,7 +37,8 @@ def oasis_matrix(F, v, w, t, l, s, tau, fs):
     for n in prange(F.shape[0]):
         oasis_trace(F[n], v[n], w[n], t[n], l[n], s[n], tau, fs)
 
-def oasis(F, ops):
+
+def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
     """ computes non-negative deconvolution
 
     no sparsity constraints
@@ -48,8 +49,16 @@ def oasis(F, ops):
     F : float, 2D array
         size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
 
-    ops : dictionary
-        'batch_size', 'tau', 'fs'
+    batch_size : int
+        number of frames processed per batch
+
+    tau : float
+        timescale of the sensor, used for the deconvolution kernel
+
+    fs : float
+        sampling rate per plane
+
+
     Returns
     ----------------
 
@@ -59,7 +68,6 @@ def oasis(F, ops):
     """
     NN,NT = F.shape
     F = F.astype(np.float32)
-    batch_size = ops['batch_size']
     S = np.zeros((NN,NT), dtype=np.float32)
     for i in range(0, NN, batch_size):
         f = F[i:i+batch_size]
@@ -68,11 +76,13 @@ def oasis(F, ops):
         t = np.zeros((f.shape[0],NT), dtype=np.int64)
         l = np.zeros((f.shape[0],NT), dtype=np.float32)
         s = np.zeros((f.shape[0],NT), dtype=np.float32)
-        oasis_matrix(f, v, w, t, l, s, ops['tau'], ops['fs'])
+        oasis_matrix(f, v, w, t, l, s, tau, fs)
         S[i:i+batch_size] = s
     return S
 
-def preprocess(F,ops):
+
+def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
+               sig_baseline: float, fs: float, prctile_baseline: float) -> np.ndarray:
     """ preprocesses fluorescence traces for spike deconvolution
 
     baseline-subtraction with window 'win_baseline'
@@ -83,9 +93,20 @@ def preprocess(F,ops):
     F : float, 2D array
         size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
 
-    ops : dictionary
-        'baseline', 'win_baseline', 'sig_baseline', 'fs',
-        (optional 'prctile_baseline' needed if ops['baseline']=='constant_prctile')
+    baseline : str
+        setting that describes how to compute the baseline of each trace
+
+    win_baseline : float
+        window (in seconds) for max filter
+
+    sig_baseline : float
+        width of Gaussian filter in seconds
+
+    fs : float
+        sampling rate per plane
+
+    prctile_baseline : float
+        percentile of trace to use as baseline if using `constant_prctile` for baseline
     
     Returns
     ----------------
@@ -94,17 +115,16 @@ def preprocess(F,ops):
         size [neurons x time], baseline-corrected fluorescence
 
     """
-    sig = ops['sig_baseline']
-    win = int(ops['win_baseline']*ops['fs'])
-    if ops['baseline']=='maximin':
-        Flow = filters.gaussian_filter(F,    [0., sig])
+    win = int(win_baseline*fs)
+    if baseline == 'maximin':
+        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
         Flow = filters.minimum_filter1d(Flow,    win)
         Flow = filters.maximum_filter1d(Flow,    win)
-    elif ops['baseline']=='constant':
-        Flow = filters.gaussian_filter(F,    [0., sig])
+    elif baseline == 'constant':
+        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
         Flow = np.amin(Flow)
-    elif ops['baseline']=='constant_prctile':
-        Flow = np.percentile(F, ops['prctile_baseline'], axis=1)
+    elif baseline == 'constant_prctile':
+        Flow = np.percentile(F, prctile_baseline, axis=1)
         Flow = np.expand_dims(Flow, axis = 1)
     else:
         Flow = 0.

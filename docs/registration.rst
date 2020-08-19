@@ -209,8 +209,8 @@ To run the script, use the following command:
 
     reg_metrics <INSERT_OPS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
 
-Once you run the ``reg_metrics`` command, registration will be performed for the input file and
-an output similar to the following will be shown:
+Once you run the ``reg_metrics`` command, registration will be performed for the input file with default
+ops parameters and an output similar to the following will be shown:
 
 ::
 
@@ -224,6 +224,14 @@ For each ``nplane``, these statistics (Average and Max) are calculated across PC
 If the registration works perfectly and most of the motion is removed from the registered dataset, these scores
 should all be very close to zero.
 
+.. Important::
+
+    Make sure to also inspect the registered video to check the quality of registration. You can see an example
+    of how this is done in the GUI `here <https://youtu.be/M7UjvCUn74Y?t=810>`_.
+
+You may notice that upon visual inspection, the registered video may look fine/contain little motion even
+if the statistics are not close to zero. You should always visually check the registration output and prioritize
+what your eyes say over what the CLI script reports.
 
 .. note::
 

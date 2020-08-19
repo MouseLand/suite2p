@@ -6,11 +6,10 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
 from scipy.ndimage import gaussian_filter1d
+from natsort import natsorted
 from tifffile import imread
 
-from . import masks, views, graphics, traces, classgui
-from . import utils
-from .io import enable_views_and_classifier
+from . import masks, views, graphics, traces, classgui, utils
 from .. import registration
 from ..io.save import compute_dydx
 
@@ -272,6 +271,11 @@ class BinaryPlayer(QtGui.QMainWindow):
             if hasattr(self, 'zmax'):
                 self.Zedit.setText(str(self.zmax[self.cframe]))
             self.iside.setImage(self.zstack[int(self.Zedit.text())], levels=self.zrange)
+        #if self.maskbox.isChecked():
+        #    imgmin = self.img.min()
+        #    self.allmasks[:,:,-1] = np.maximum(0, ((self.img - imgmin) / (self.img.max() - imgmin) - 0.5)*2) * 255 * self.mask_bool
+        #    self.maskmain.setImage(self.allmasks, levels=[0, 255])
+        #    self.maskside.setImage(self.allmasks, levels=[0, 255])
 
         self.imain.setImage(self.img, levels=self.srange)
         self.frameSlider.setValue(self.cframe)
@@ -299,22 +303,27 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.RGB = -1*np.ones((self.LY, self.LX, 3), np.int32)
         self.cellpix = -1*np.ones((self.LY, self.LX), np.int32)
         self.sroi = np.zeros((self.LY, self.LX), np.uint8)
+        
         for n in np.nonzero(self.iscell)[0]:
             ypix = self.stat[n]['ypix'].flatten()
             xpix = self.stat[n]['xpix'].flatten()
             if not self.ops[0]['allow_overlap']:
                 ypix = ypix[~self.stat[n]['overlap']]
                 xpix = xpix[~self.stat[n]['overlap']]
-            iext = utils.boundary(ypix, xpix)
-            yext = ypix[iext]
-            xext = xpix[iext]
-            goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
-            self.stat[n]['yext'] = yext[goodi] + 0.5
-            self.stat[n]['xext'] = xext[goodi] + 0.5
+            yext, xext = utils.boundary(ypix, xpix)
+            if len(yext)>0:
+                goodi = (yext>=0) & (xext>=0) & (yext<self.LY) & (xext<self.LX)
+                self.stat[n]['yext'] = yext[goodi] + 0.5
+                self.stat[n]['xext'] = xext[goodi] + 0.5
+                self.sroi[yext[goodi], xext[goodi]] = 200
+                #self.sroi[ypix, xpix] = 100
+                #self.RGB[ypix, xpix] = self.colors[n]
+                self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
+            else:
+                self.stat[n]['yext'] = yext
+                self.stat[n]['xext'] = xext
             self.cellpix[ypix, xpix] = n
-            self.sroi[yext[goodi], xext[goodi]] = 200
-            self.RGB[yext[goodi], xext[goodi]] = self.colors[n]
-
+        self.mask_bool = self.sroi > 0    
         self.allmasks = np.concatenate((self.RGB,
                                         self.sroi[:,:,np.newaxis]), axis=-1)
         self.maskmain.setImage(self.allmasks, levels=[0, 255])
@@ -342,20 +351,17 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.openFile(filename[0], False)
 
     def open_combined(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self,
-                            "Open multiplane ops1.npy file",filter="ops*.npy")
+        filename = QtGui.QFileDialog.getExistingDirectory(self,
+                            "Load binaries for all planes (choose folder with planeX folders)")
         # load ops in same folder
         if filename:
-            print(filename[0])
-            self.openCombined(filename[0])
+            print(filename)
+            self.openCombined(filename)
 
-    def openCombined(self, filename):
+    def openCombined(self, save_folder):
         try:
-            ops1 = np.load(filename, allow_pickle=True)
-            basefolder = ops1[0]['save_path0']
-            #opsCombined = np.load(os.path.abspath(os.path.join(basefolder, 'suite2p/combined/ops.npy'), allow_pickle=True).item()
-            #self.LY = opsCombined['Ly']
-            #self.LX = opsCombined['Lx']
+            plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
+            ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
             self.LY = 0
             self.LX = 0
             self.reg_loc = []
@@ -389,7 +395,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             
         except Exception as e:
             print('ERROR: %s'%e)
-            print("(could be incorrect ops1.npy or missing binaries)")
+            print("(could be incorrect folder or missing binaries)")
             good = False
             try:
                 for n in range(len(self.reg_loc)):
@@ -398,7 +404,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             except:
                 print('tried to close binaries')
         if good:
-            self.filename = filename
+            self.filename = save_folder
             self.ops = ops1
             self.setup_views()
 
@@ -700,15 +706,11 @@ class BinaryPlayer(QtGui.QMainWindow):
     def createButtons(self):
         iconSize = QtCore.QSize(30, 30)
         openButton = QtGui.QPushButton('load ops.npy')
-        #openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
-        #openButton.setIconSize(iconSize)
         openButton.setToolTip("Open single-plane ops.npy")
         openButton.clicked.connect(self.open)
 
-        openButton2 = QtGui.QPushButton('load ops1.npy')
-        #openButton2.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DirOpenIcon))
-        #openButton2.setIconSize(iconSize)
-        #openButton2.setToolTip("Open multi-plane ops1.npy")
+        openButton2 = QtGui.QPushButton('load folder')
+        openButton2.setToolTip("Choose a folder with planeX folders to load together")
         openButton2.clicked.connect(self.open_combined)
 
         loadZ = QtGui.QPushButton('load z-stack tiff')
@@ -1100,96 +1102,3 @@ class PCViewer(QtGui.QMainWindow):
                     self.start()
                 else:
                     self.pause()
-
-
-def make_masks_and_enable_buttons(parent):
-    parent.checkBox.setChecked(True)
-    parent.ops_plot['color'] = 0
-    parent.ops_plot['view'] = 0
-    parent.colors['cols'] = 0
-    parent.colors['istat'] = 0
-
-    parent.loadBeh.setEnabled(True)
-    parent.saveMat.setEnabled(True)
-    parent.saveMerge.setEnabled(True)
-    parent.sugMerge.setEnabled(True)
-    parent.manual.setEnabled(True)
-    parent.bloaded = False
-    parent.ROI_remove()
-    parent.isROI = False
-    parent.setWindowTitle(parent.fname)
-    # set bin size to be 0.5s by default
-    parent.bin = int(parent.ops["tau"] * parent.ops["fs"] / 2)
-    parent.binedit.setText(str(parent.bin))
-    if "chan2_thres" not in parent.ops:
-        parent.ops["chan2_thres"] = 0.6
-    parent.chan2prob = parent.ops["chan2_thres"]
-    parent.chan2edit.setText(str(parent.chan2prob))
-    # add boundaries to stat for ROI overlays
-    ncells = len(parent.stat)
-    for n in range(0, ncells):
-        ypix = parent.stat[n]["ypix"].flatten()
-        xpix = parent.stat[n]["xpix"].flatten()
-        iext = utils.boundary(ypix, xpix)
-        parent.stat[n]["yext"] = ypix[iext]
-        parent.stat[n]["xext"] = xpix[iext]
-        ycirc, xcirc = utils.circle(
-            parent.stat[n]["med"],
-            parent.stat[n]["radius"]
-        )
-        goodi = (
-            (ycirc >= 0)
-            & (xcirc >= 0)
-            & (ycirc < parent.ops["Ly"])
-            & (xcirc < parent.ops["Lx"])
-        )
-        parent.stat[n]["ycirc"] = ycirc[goodi]
-        parent.stat[n]["xcirc"] = xcirc[goodi]
-        parent.stat[n]["inmerge"] = 0
-    # enable buttons
-    enable_views_and_classifier(parent)
-
-    # make views
-    views.init_views(parent)
-    # make color arrays for various views
-    masks.make_colors(parent)
-
-    if parent.iscell.sum() > 0:
-        ich = np.nonzero(parent.iscell)[0][0]
-    else:
-        ich = 0
-    parent.ichosen = int(ich)
-    parent.imerge = [int(ich)]
-    parent.iflip = int(ich)
-    parent.ichosen_stats()
-    parent.comboBox.setCurrentIndex(2)
-    # colorbar
-    parent.colormat = masks.draw_colorbar()
-    masks.plot_colorbar(parent)
-    tic = time.time()
-    masks.init_masks(parent)
-    print(time.time() - tic)
-    M = masks.draw_masks(parent)
-    masks.plot_masks(parent, M)
-    parent.lcell1.setText("%d" % (ncells - parent.iscell.sum()))
-    parent.lcell0.setText("%d" % (parent.iscell.sum()))
-    graphics.init_range(parent)
-    traces.plot_trace(parent)
-    parent.xyrat = 1.0
-    if (isinstance(parent.ops['diameter'], list) and
-        len(parent.ops['diameter'])>1 and
-        parent.ops['aspect']==1.0):
-        parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
-    else:
-        if 'aspect' in parent.ops:
-            parent.xyrat = parent.ops['aspect']
-
-    parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
-    parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)
-    #parent.p2.setXLink(parent.p1)
-    #parent.p2.setYLink(parent.p1)
-    parent.loaded = True
-    parent.mode_change(2)
-    parent.show()
-    # no classifier loaded
-    classgui.activate(parent, False)

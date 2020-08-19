@@ -1,4 +1,7 @@
 language: python
+dist: xenial
+services:
+  - xvfb
 jobs:
   include:
   - name: Python 3.7.1 on Linux
@@ -19,12 +22,25 @@ jobs:
     - bash ./miniconda.sh -b
     - export PATH=~/miniconda3/bin:$PATH
     - conda update --yes conda
+  - name: Python 3.7.7 on Windows
+    os: windows
+    language: shell
+    before_install:
+    - choco install python --version 3.7.7
+    - export MINICONDA=/c/miniconda
+    - MINICONDA_WIN=$(cygpath --windows $MINICONDA)
+    - choco install openssl.light
+    - choco install miniconda3 --params="'/AddToPath:0 /D:$MINICONDA_WIN'"
+    - PATH=$(echo "$PATH" | sed -e 's|:/c/ProgramData/chocolatey/bin||')
+    - PATH=$(echo "$PATH" | sed -e 's|:/c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin||')
+    - source $MINICONDA/Scripts/activate
+    - source $MINICONDA/etc/profile.d/conda.sh
   allow_failures:
   - os: osx
 install:
 - conda env create -f environment.yml
 - source activate suite2p
-- pip install .[data]
+- pip install .[data,nwb]
 - dvc pull -r gdrive-travis
 - pip install coveralls
 script:

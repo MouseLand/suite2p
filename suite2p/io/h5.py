@@ -18,8 +18,8 @@ def h5py_to_binary(ops):
 
     Returns
     -------
-        ops1 : list of dictionaries
-            'Ly', 'Lx', ops1[j]['reg_file'] or ops1[j]['raw_file'] is created binary
+        ops : dictionary of first plane
+            'Ly', 'Lx', ops['reg_file'] or ops['raw_file'] is created binary
 
     """
     ops1 = init_ops(ops)
@@ -30,9 +30,7 @@ def h5py_to_binary(ops):
     # open all binary files for writing
     ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True)
     for ops in ops1:
-        if 'data_path' in ops and len(ops['data_path'])==0:
-            ops['data_path'] = [os.path.dirname(ops['h5py'])]
-        elif 'data_path' not in ops:
+        if not ops.get('data_path'):
             ops['data_path'] = [os.path.dirname(ops['h5py'])]
     ops1[0]['h5list'] = h5list
     keys = ops1[0]['h5py_key']
@@ -50,15 +48,9 @@ def h5py_to_binary(ops):
                 hdims = f[key].ndim
                 # keep track of the plane identity of the first frame (channel identity is assumed always 0)
                 nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
-                if hdims==3:
-                    nframes_all = f[key].shape[0]
-                else:
-                    nframes_all = f[key].shape[0] * f[key].shape[1]
+                nframes_all = f[key].shape[0] if hdims == 3 else f[key].shape[0] * f[key].shape[1]
                 nbatch = min(nbatch, nframes_all)
-                if nchannels>1:
-                    nfunc = ops['functional_chan'] - 1
-                else:
-                    nfunc = 0
+                nfunc = ops['functional_chan'] - 1 if nchannels > 1 else 0
                 # loop over all tiffs
                 ik = 0
                 while 1:
@@ -97,7 +89,6 @@ def h5py_to_binary(ops):
 
     # write ops files
     do_registration = ops1[0]['do_registration']
-    do_nonrigid = ops1[0]['nonrigid']
     for ops in ops1:
         ops['Ly'] = im2write.shape[1]
         ops['Lx'] = im2write.shape[2]
@@ -105,12 +96,12 @@ def h5py_to_binary(ops):
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
         ops['meanImg'] /= ops['nframes']
-        if nchannels>1:
+        if nchannels > 1:
             ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
-    for j in range(0,nplanes):
+    for j in range(nplanes):
         reg_file[j].close()
-        if nchannels>1:
+        if nchannels > 1:
             reg_file_chan2[j].close()
-    return ops1
+    return ops1[0]

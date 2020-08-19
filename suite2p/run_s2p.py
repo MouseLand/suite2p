@@ -202,18 +202,15 @@ def run_plane(ops, ops_path=None):
         ops_classfile = ops.get('classifier_path')
         builtin_classfile = classification.builtin_classfile
         user_classfile = classification.user_classfile
-        if ops['use_builtin_classifier']:
-            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
-            classfile = builtin_classfile
-        elif not user_classfile.is_file():
-            print(f'NOTE: no user default classifier.  applying builtin classifier at {str(builtin_classfile)}')
-            classfile = builtin_classfile
-        elif ops_classfile is None or not Path(ops_classfile).is_file():
-            print(f'NOTE: applying default {str(user_classfile)}')
-            classfile = user_classfile
-        else:
+        if ops_classfile:
             print(f'NOTE: applying classifier {str(ops_classfile)}')
             classfile = ops_classfile
+        elif ops['use_builtin_classifier'] or not user_classfile.is_file():
+            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
+            classfile = builtin_classfile
+        else:
+            print(f'NOTE: applying default {str(user_classfile)}')
+            classfile = user_classfile
 
         ######## CELL DETECTION ##############
         t11=time.time()

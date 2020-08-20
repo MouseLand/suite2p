@@ -102,6 +102,10 @@ class BinaryFile:
         self.read_file.seek(orig_ptr)
         return frames
 
+    @property
+    def data(self):
+        return np.fromfile(self.read_file, np.int16).reshape(-1, self.Ly, self.Lx)
+
     def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")

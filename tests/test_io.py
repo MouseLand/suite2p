@@ -27,10 +27,6 @@ def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     assert np.all(output_data >= 0)
 
 
-def test_that_BinaryFile_class_counts_frames_correctly(binfile1500):
-    assert binfile1500.n_frames == 1500
-
-
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
     Ly, Lx = binfile1500.Ly, binfile1500.Lx
     mov = binfile1500.bin_movie(bin_size=1)

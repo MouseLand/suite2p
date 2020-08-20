@@ -16,10 +16,6 @@ def get_plane_dir(save_path0: str, plane: int) -> Path:
     return plane_dir
 
 
-def convert_npz_to_suite2p_binary(binary_path, data_path):
-    np.load(data_path).tofile(binary_path)
-
-
 def check_lists_of_arr_all_close(list1, list2) -> Iterator[bool]:
     for l1, l2 in zip(list1, list2):
         yield np.allclose(l1, l2, rtol=r_tol, atol=a_tol)

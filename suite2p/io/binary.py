@@ -27,6 +27,11 @@ class BinaryFile:
         self._index = 0
         self._can_read = True
 
+    @staticmethod
+    def convert_numpy_file_to_suite2p_binary(from_filename, to_filename):
+        """Works with npz files, pickled npy files, etc."""
+        np.load(from_filename).tofile(to_filename)
+
     @property
     def nbytesread(self):
         """number of bytes per frame (FIXED for given file)"""

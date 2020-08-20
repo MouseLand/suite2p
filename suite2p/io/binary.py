@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, Sequence
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -34,12 +35,9 @@ class BinaryFile:
     @property
     def nbytes(self):
         """total number of bytes in the read_file."""
-        currpos = self.read_file.tell()
-        self.read_file.seek(0, 2)
-        size = self.read_file.tell()
-        print(size)
-        self.read_file.seek(currpos)
-        return size
+        with temporary_pointer(self.read_file) as f:
+            f.seek(0, 2)
+            return f.tell()
 
     @property
     def n_frames(self) -> int:
@@ -93,21 +91,18 @@ class BinaryFile:
     def ix(self, indices: Sequence[int]):
         frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
         # load and bin data
-        orig_ptr = self.read_file.tell()
-        for frame, ixx in zip(frames, indices):
-            self.read_file.seek(self.nbytesread * ixx)
-            buff = self.read_file.read(self.nbytesread)
-            data = np.frombuffer(buff, dtype=np.int16, offset=0)
-            frame[:] = np.reshape(data, (self.Ly, self.Lx))
-        self.read_file.seek(orig_ptr)
+        with temporary_pointer(self.read_file) as f:
+            for frame, ixx in zip(frames, indices):
+                f.seek(self.nbytesread * ixx)
+                buff = f.read(self.nbytesread)
+                data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                frame[:] = np.reshape(data, (self.Ly, self.Lx))
         return frames
 
     @property
-    def data(self):
-        orig_ptr = self.read_file.tell()
-        mov = np.fromfile(self.read_file, np.int16).reshape(-1, self.Ly, self.Lx)
-        self.read_file.seek(orig_ptr)
-        return mov
+    def data(self) -> np.ndarray:
+        with temporary_pointer(self.read_file) as f:
+            return np.fromfile(f, np.int16).reshape(-1, self.Ly, self.Lx)
 
     def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:
@@ -169,3 +164,11 @@ def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     n_frames, Ly, Lx = mov.shape
     mov = mov[:(n_frames // bin_size) * bin_size]
     return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
+
+
+@contextmanager
+def temporary_pointer(file):
+    """context manager that resets file pointer location to its original place upon exit."""
+    orig_pointer = file.tell()
+    yield file
+    file.seek(orig_pointer)

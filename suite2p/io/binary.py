@@ -104,7 +104,10 @@ class BinaryFile:
 
     @property
     def data(self):
-        return np.fromfile(self.read_file, np.int16).reshape(-1, self.Ly, self.Lx)
+        orig_ptr = self.read_file.tell()
+        mov = np.fromfile(self.read_file, np.int16).reshape(-1, self.Ly, self.Lx)
+        self.read_file.seek(orig_ptr)
+        return mov
 
     def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         if not self._can_read:

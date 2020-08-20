@@ -40,3 +40,14 @@ def test_that_bin_movie_with_badframes_results_in_a_smaller_array(binfile1500):
 
     assert len(mov) < binfile1500.n_frames, "bin_movie didn't produce a smaller array."
     assert len(mov) == len(bad_frames) - sum(bad_frames), "bin_movie didn't produce the right size array."
+
+
+
+def test_that_binaryfile_data_is_repeatable(binfile1500):
+    data1 = binfile1500.data
+    assert data1.shape == (1500, binfile1500.Ly, binfile1500.Lx)
+
+    data2 = binfile1500.data
+    assert data2.shape == (1500, binfile1500.Ly, binfile1500.Lx)
+
+    assert np.allclose(data1, data2)

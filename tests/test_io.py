@@ -28,7 +28,8 @@ def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
 
 
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
-    assert binfile1500.bin_movie(bin_size=1).shape == (1500, binfile1500.Ly, binfile1500.Lx)
+    mov = binfile1500.bin_movie(bin_size=1)
+    assert mov.shape == (1500, binfile1500.Ly, binfile1500.Lx)
 
 
 def test_that_bin_movie_with_badframes_results_in_a_smaller_array(binfile1500):

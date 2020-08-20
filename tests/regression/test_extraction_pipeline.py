@@ -24,7 +24,7 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
-        plane_dir = utils.get_plane_dir(op, plane)
+        plane_dir = utils.get_plane_dir(save_path0=op['save_path0'], plane=plane)
         bin_path = utils.write_data_to_binary(
             str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
         )
@@ -48,7 +48,7 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
 def extract_wrapper(ops):
     for plane in range(ops[0]['nplanes']):
         curr_op = ops[plane]
-        plane_dir = utils.get_plane_dir(curr_op, plane)
+        plane_dir = utils.get_plane_dir(save_path0=curr_op['save_path0'], plane=plane)
         extract_input = np.load(
             curr_op['data_path'][0].joinpath(
                 'detection',

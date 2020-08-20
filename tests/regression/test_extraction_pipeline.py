@@ -25,9 +25,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
     for plane in range(op['nplanes']):
         curr_op = op.copy()
         plane_dir = utils.get_plane_dir(save_path0=op['save_path0'], plane=plane)
-        bin_path = utils.write_data_to_binary(
-            str(plane_dir.joinpath('data.bin')), str(input_file_name_list[plane][0])
-        )
+        bin_path = str(plane_dir.joinpath('data.bin'))
+        utils.convert_npz_to_suite2p_binary(bin_path, str(input_file_name_list[plane][0]))
         curr_op['meanImg'] = np.reshape(
             np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
         ).mean(axis=0)
@@ -35,9 +34,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
         if plane == 1: # Second plane result has different crop.
             curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]
         if curr_op['nchannels'] == 2:
-            bin2_path = utils.write_data_to_binary(
-                str(plane_dir.joinpath('data_chan2.bin')), str(input_file_name_list[plane][1])
-            )
+            bin2_path = str(plane_dir.joinpath('data_chan2.bin'))
+            utils.convert_npz_to_suite2p_binary(bin2_path, str(input_file_name_list[plane][1]))
             curr_op['reg_file_chan2'] = bin2_path
         curr_op['save_path'] = plane_dir
         curr_op['ops_path'] = plane_dir.joinpath('ops.npy')

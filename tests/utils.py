@@ -7,8 +7,6 @@ from tifffile import imread
 import numpy as np
 from glob import glob
 
-from suite2p.io import BinaryFile
-
 r_tol, a_tol = 1e-4, 5e-2
 
 
@@ -16,10 +14,6 @@ def get_plane_dir(save_path0: str, plane: int) -> Path:
     plane_dir = Path(save_path0).joinpath(f'suite2p/plane{plane}')
     plane_dir.mkdir(exist_ok=True, parents=True)
     return plane_dir
-
-
-def get_binary_file_data(op) -> np.ndarray:
-    return BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data
 
 
 def write_data_to_binary(binary_path, data_path):

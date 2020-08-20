@@ -1,15 +1,12 @@
 """
 Tests for the Suite2p IO module
 """
+from pathlib import Path
 
 import numpy as np
-from pathlib import Path
-from suite2p import io
 from pytest import fixture
 
-from utils import get_binary_file_data
-
-
+from suite2p import io
 
 
 @fixture()
@@ -26,7 +23,7 @@ def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     test_ops['h5py'] = Path(test_ops['data_path'][0]).joinpath('input.h5')
     test_ops['data_path'] = []
     op = io.h5py_to_binary(test_ops)
-    output_data = get_binary_file_data(op)
+    output_data = io.BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data
     assert np.all(output_data >= 0)
 
 

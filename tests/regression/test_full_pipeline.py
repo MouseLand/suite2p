@@ -38,7 +38,6 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
     stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
         io.read_nwb(str(Path(test_ops['save_path0']).joinpath('suite2p/ophys.nwb')))
     assert all(utils.compare_list_of_outputs(
-        0,
         get_outputs_to_check(test_ops['nchannels']),
         utils.get_list_of_output_data(get_outputs_to_check(test_ops['nchannels']), test_ops['save_path0'], 0),
         [F, Fneu, np.stack([iscell.astype(np.float32), probcell.astype(np.float32)]).T, spks, stat],

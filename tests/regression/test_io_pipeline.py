@@ -5,8 +5,6 @@ from pathlib import Path
 from tifffile import imread
 from suite2p import io
 
-from utils import get_binary_file_data
-
 
 def test_tiff_reconstruction_from_binary_file(test_ops):
     """
@@ -14,7 +12,7 @@ def test_tiff_reconstruction_from_binary_file(test_ops):
     """
     test_ops['tiff_list'] = ['input.tif']
     op = io.tiff_to_binary(test_ops)
-    output_data = get_binary_file_data(op)
+    output_data = io.BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data
     # Make sure data in matrix is nonnegative
     assert np.all(output_data >= 0)
     fname = io.generate_tiff_filename(

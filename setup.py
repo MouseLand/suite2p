@@ -17,15 +17,7 @@ setuptools.setup(
       'setuptools_scm',
     ],
     use_scm_version=True,
-    install_requires=[
-      'natsort',
-      'rastermap>0.1.0',
-      'tifffile',
-      'scanimage-tiff-reader>=1.4.1',
-      'pyqtgraph',
-      'importlib-metadata',
-      'paramiko'
-    ],
+    install_requires=[],  # see environment.yml for this info.
     tests_require=[
       'pytest',
       'pytest-qt',

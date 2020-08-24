@@ -11,3 +11,11 @@ dependencies:
   - h5py
   - scikit-learn
   - pyqt
+  - pip:
+    - natsort
+    - rastermap>0.1.0
+    - tifffile
+    - scanimage-tiff-reader>=1.4.1
+    - pyqtgraph
+    - importlib-metadata
+    - paramiko

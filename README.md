@@ -35,7 +35,6 @@ Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
 4. Activate the environment with `conda activate suite2p`
-5. Pip install suite2p into the environment: `pip install suite2p`
 6. Now run `suite2p` and you're all set.
 7. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
@@ -45,7 +44,7 @@ Note you will always have to run **conda activate suite2p** before you run suite
 
 To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:
 ~~~~
-pip install git+https://github.com/MouseLand/suite2p
+pip install --upgrade suite2p
 ~~~~
 
 
@@ -60,7 +59,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install .[data]`
+4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install -e .[data]`
 5. Download the data with ``dvc pull -r gdrive-travis`` (read-only access). If you need to have read/write access to the files, run ``dvc pull`` and follow the authentication instructions in the output. **Note**: do *not* commit the json credentials file that comes out afterwards, git should ignore it.
 6. Run tests: `python setup.py test`
 

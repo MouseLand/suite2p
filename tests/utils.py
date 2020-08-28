@@ -43,11 +43,10 @@ def get_list_of_test_data(outputs_to_check, test_plane_dir):
     return test_data
 
 
-def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
+def get_list_of_output_data(outputs_to_check, output_dir):
     """
     Gets list of output data from output_directory. Returns all data for given plane number.
     """
-    output_dir = Path(output_root).joinpath(f"suite2p/plane{curr_plane}")
     output_data_list = []
     for output in outputs_to_check:
         data_path = output_dir.joinpath(f"{output}")
@@ -65,10 +64,11 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> 
     as the ground truth outputs.
     """
     for i in range(nplanes):
+        output_dir = Path(output_root).joinpath(f"suite2p/plane{i}")
         yield all(compare_list_of_outputs(
             outputs_to_check,
             get_list_of_test_data(outputs_to_check, test_data_dir.joinpath(f'plane{i}')),
-            get_list_of_output_data(outputs_to_check, output_root, i),
+            get_list_of_output_data(outputs_to_check, output_dir),
         ))
 
 

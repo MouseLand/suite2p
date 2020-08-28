@@ -1,10 +1,10 @@
 language: python
-dist: xenial
-services:
-  - xvfb
 jobs:
   include:
   - name: Python 3.7.1 on Linux
+    dist: xenial
+    services:
+      - xvfb
     python: 3.7
     before_install:
     - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O

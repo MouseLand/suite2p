@@ -16,11 +16,6 @@ def get_plane_dir(save_path0: str, plane: int) -> Path:
     return plane_dir
 
 
-def check_lists_of_arr_all_close(list1, list2) -> Iterator[bool]:
-    for l1, l2 in zip(list1, list2):
-        yield np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
-
-
 def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
     for gt_dict, output_dict in zip(first_dict, second_dict):
         for k in gt_dict.keys():

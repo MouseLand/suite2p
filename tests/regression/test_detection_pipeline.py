@@ -59,8 +59,8 @@ def detect_wrapper(ops):
             allow_pickle=True
         )[()]
         assert np.array_equal(output_check['cell_pix'], cell_pix)
-        assert all(utils.check_lists_of_arr_all_close(cell_masks, output_check['cell_masks']))
-        assert all(utils.check_lists_of_arr_all_close(neuropil_masks, output_check['neuropil_masks']))
+        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
+        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
         assert all(utils.check_dict_dicts_all_close(stat, output_check['stat']))
 
 

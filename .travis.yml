@@ -1,4 +1,5 @@
 language: python
+dist: xenial
 jobs:
   include:
   - name: Python 3.7 on Linux Xenial

@@ -12,6 +12,17 @@ jobs:
     - bash ./miniconda.sh -b
     - export PATH=~/miniconda3/bin:$PATH
     - conda update --yes conda
+  - name: Python 3.7 on Linux Bionic
+      dist: bionic
+      services:
+        - xvfb
+      python: 3.7
+      before_install:
+        - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O
+          miniconda.sh
+        - bash ./miniconda.sh -b
+        - export PATH=~/miniconda3/bin:$PATH
+        - conda update --yes conda
   - name: Python 3.7.7 on macOS
     os: osx
     osx_image: xcode12

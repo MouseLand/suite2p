@@ -1,7 +1,7 @@
 language: python
 jobs:
   include:
-  - name: Python 3.7.1 on Linux
+  - name: Python 3.7 on Linux Xenial
     dist: xenial
     services:
       - xvfb

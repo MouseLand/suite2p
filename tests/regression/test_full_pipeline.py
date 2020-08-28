@@ -40,7 +40,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
     output_dir = Path(test_ops['save_path0']).joinpath(f"suite2p/plane0")
     assert all(utils.compare_list_of_outputs(
         get_outputs_to_check(test_ops['nchannels']),
-        utils.get_list_of_output_data(get_outputs_to_check(test_ops['nchannels']), output_dir),
+        utils.get_list_of_data(get_outputs_to_check(test_ops['nchannels']), output_dir),
         [F, Fneu, np.stack([iscell.astype(np.float32), probcell.astype(np.float32)]).T, spks, stat],
     ))
 

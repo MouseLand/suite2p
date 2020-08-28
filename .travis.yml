@@ -48,6 +48,7 @@ jobs:
     - source $MINICONDA/etc/profile.d/conda.sh
   allow_failures:
   - os: osx
+  - dist: bionic
 install:
 - conda env create -f environment.yml
 - source activate suite2p

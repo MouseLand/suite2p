@@ -16,47 +16,20 @@ def get_plane_dir(save_path0: str, plane: int) -> Path:
     return plane_dir
 
 
-def check_lists_of_arr_all_close(list1, list2) -> Iterator[bool]:
-    for l1, l2 in zip(list1, list2):
-        yield np.allclose(l1, l2, rtol=r_tol, atol=a_tol)
-
-
 def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
     for gt_dict, output_dict in zip(first_dict, second_dict):
         for k in gt_dict.keys():
             yield np.allclose(gt_dict[k], output_dict[k], rtol=r_tol, atol=a_tol)
 
 
-def get_list_of_test_data(outputs_to_check, test_plane_dir):
-    """
-    Gets list of test_data from test data directory matching provided nplanes, nchannels, and added_tag. Returns
-    all test_data for given plane number.
-    """
-    test_data = []
-    for output in outputs_to_check:
-        data_path = test_plane_dir.joinpath(f"{output}")
-        if 'reg_tif' in output:
-            data = np.concatenate([imread(tif) for tif in glob(str(data_path.joinpath("*.tif")))])
-        else:
-            data = np.load(str(data_path) + ".npy", allow_pickle=True)
-        test_data.append(data)
-    return test_data
-
-
-def get_list_of_output_data(outputs_to_check, output_root, curr_plane):
-    """
-    Gets list of output data from output_directory. Returns all data for given plane number.
-    """
-    output_dir = Path(output_root).joinpath(f"suite2p/plane{curr_plane}")
-    output_data_list = []
+def get_list_of_data(outputs_to_check, output_dir):
+    """Gets list of output data from output_directory."""
     for output in outputs_to_check:
         data_path = output_dir.joinpath(f"{output}")
         if 'reg_tif' in output:
-            filename = np.concatenate([imread(tif) for tif in glob(str(data_path.joinpath("*.tif")))])
+            yield np.concatenate([imread(tif) for tif in glob(str(data_path.joinpath("*.tif")))])
         else:
-            filename = np.load(str(data_path) + ".npy", allow_pickle=True)
-        output_data_list.append(filename)
-    return output_data_list
+            yield np.load(str(data_path) + ".npy", allow_pickle=True)
 
 
 def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> Iterator[bool]:
@@ -67,8 +40,8 @@ def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> 
     for i in range(nplanes):
         yield all(compare_list_of_outputs(
             outputs_to_check,
-            get_list_of_test_data(outputs_to_check, test_data_dir.joinpath(f'plane{i}')),
-            get_list_of_output_data(outputs_to_check, output_root, i),
+            get_list_of_data(outputs_to_check, Path(test_data_dir).joinpath(f'plane{i}')),
+            get_list_of_data(outputs_to_check, Path(output_root).joinpath(f"suite2p/plane{i}")),
         ))
 
 

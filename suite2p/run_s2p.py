@@ -225,7 +225,7 @@ def run_plane(ops, ops_path=None):
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
-        ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
+        #ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()

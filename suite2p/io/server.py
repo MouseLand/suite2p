@@ -132,6 +132,3 @@ def send_jobs(save_folder,
     
     print("Command done, closing SSH connection")
     ssh.close()
-
-if __name__ == '__main__':
-    send_jobs()

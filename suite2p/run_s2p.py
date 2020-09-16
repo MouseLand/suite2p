@@ -1,9 +1,8 @@
-import datetime
 import os
 import shutil
 import time
 from natsort import natsorted
-from itertools import chain
+from datetime import datetime
 
 import numpy as np
 from scipy.io import savemat
@@ -140,7 +139,7 @@ def run_plane(ops, ops_path=None):
     t1 = time.time()
     
     ops = {**default_ops(), **ops}
-    ops['date_proc'] = datetime.datetime.now()
+    ops['date_proc'] = datetime.now()
     plane_times = {}
     if ops_path is not None:
         ops['save_path'] = os.path.split(ops_path)[0]
@@ -226,7 +225,7 @@ def run_plane(ops, ops_path=None):
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
-        ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
+        #ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
@@ -265,8 +264,8 @@ def run_plane(ops, ops_path=None):
 
         # save as matlab file
         if ops.get('save_mat'):
-            if 'date_proc' in ops:
-                ops['date_proc'] = []
+            if isinstance(ops.get('date_proc'), datetime):
+                ops['date_proc'] = datetime.strftime(ops['date_proc'], "%Y-%m-%d %H:%M:%S.%f"),
             savemat(
                 file_name=os.path.join(ops['save_path'], 'Fall.mat'),
                 mdict={

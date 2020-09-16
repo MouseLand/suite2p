@@ -129,22 +129,20 @@ This will include all of the options you ran the pipeline with,
 including file paths. During the running of the pipeline, some outputs
 are added to ``ops.npy``:
 
--  reg_file: location of registered binary file
--  Ly: size of Y dimension of tiffs/h5
--  Lx: size of X dimension of tiffs/h5
--  nframes: number of frames in recording
--  yrange: valid y-range used for cell detection (excludes edges that
-   were shifted out of the FOV during registration)
--  xrange: valid x-range used for cell detection (excludes edges that
-   were shifted out of the FOV during registration)
--  refImg: reference image used for registration
--  yoff: y-shifts of recording at each timepoint
--  xoff: x-shifts of recording at each timepoint
--  corrXY: peak of phase correlation between frame and reference image
-   at each timepoint
--  meanImg: mean of registered frames
--  meanImgE: a median-filtered version of the mean image
--  Vcorr: correlation map (computed during cell detection)
--  filelist: List of the image file names (e.g. tiff) that were loaded, in the order that Suite2p processed them.
+    -  **reg_file**: location of registered binary file
+    -  **Ly**: size of Y dimension of tiffs/h5
+    -  **Lx**: size of X dimension of tiffs/h5
+    -  **nframes**: number of frames in recording
+    -  **yrange**: valid y-range used for cell detection (excludes edges that were shifted out of the FOV during registration)
+    -  **xrange**: valid x-range used for cell detection (excludes edges that were shifted out of the FOV during registration)
+    -  **refImg**: reference image used for registration
+    -  **yoff**: y-shifts of recording at each timepoint
+    -  **xoff**: x-shifts of recording at each timepoint
+    -  **corrXY**: peak of phase correlation between frame and reference image at each timepoint
+    -  **meanImg**: mean of registered frames
+    -  **meanImgE**: a median-filtered version of the mean image
+    -  **Vcorr**: correlation map (computed during cell detection)
+    -  **filelist**: List of the image file names (e.g. tiff) that were loaded, in the order that Suite2p processed them.
+    -  **date_proc**: Date and time that the analysis was run.
 
 .. _npy-matlab: https://github.com/kwikteam/npy-matlab

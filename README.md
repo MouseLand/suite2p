@@ -6,9 +6,12 @@
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/suite2p)](https://pypistats.org/packages/suite2p)
 
-[![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/)
+[![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/blob/main/LICENSE)
+[![Contributors](https://img.shields.io/github/contributors-anon/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/graphs/contributors)
 [![GitHub stars](https://img.shields.io/github/stars/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
 [![GitHub forks](https://img.shields.io/github/forks/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
+[![website](https://img.shields.io/website?url=https%3A%2F%2Fsuite2p.org)](https://suite2p.org)
+[![repo size](https://img.shields.io/github/repo-size/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/)
 
 
 Pipeline for processing two-photon calcium imaging data.  

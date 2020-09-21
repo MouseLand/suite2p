@@ -210,6 +210,7 @@ def load_NWB(parent):
     #    print('ERROR with NWB: %s'%e)
 
 def load_folder(parent):
+    print(parent.fname)
     save_folder = parent.fname
     plane_folders = [ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane']
     stat_found = False

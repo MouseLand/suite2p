@@ -66,37 +66,37 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     return reg_ops
 
 
-def test_register_binary_do_bidi_output(test_ops):
-    """
-    Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
-    """
-    test_ops['do_bidiphase'] = True
-    check_registration_output(
-        test_ops, (404, 360),
-        test_ops['data_path'][0].joinpath('registration/bidi_shift_input.tif'),
-        [str(Path(test_ops['save_path0']).joinpath('reg_tif/file000_chan0.tif'))],
-        [str(Path(test_ops['data_path'][0]).joinpath('registration/regression_bidi_output.tif'))]
-    )
+#def test_register_binary_do_bidi_output(test_ops):
+#    """
+#    Regression test that checks the output of register_binary given the `input.tif` with the bidiphase,
+#    """
+#    test_ops['do_bidiphase'] = True
+#    check_registration_output(
+#        test_ops, (404, 360),
+#        test_ops['data_path'][0].joinpath('registration/bidi_shift_input.tif'),
+#        [str(Path(test_ops['save_path0']).joinpath('reg_tif/file000_chan0.tif'))],
+#        [str(Path(test_ops['data_path'][0]).joinpath('registration/regression_bidi_output.tif'))]
+#    )
 
 
-def test_register_binary_rigid_registration_only(test_ops):
-    """
-    Tests that register_binary works for a dataset that only has rigid shifts.
-    """
-    test_ops['nonrigid'] = False
-    op = prepare_for_registration(
-        test_ops,
-        test_ops['data_path'][0].joinpath('registration/rigid_registration_test_data.tif'),
-        (256, 256),
-    )[0]
-    op = register_binary(op)
-    registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif/file000_chan0.tif')))
-    # Make sure registered_data is identical across frames
-    check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)
-    assert np.array_equal(check_data, registered_data)
-    # Check and see if there are exactly 16 lines row-wise and column-wise
-    num_row_lines = len(np.where(np.all(np.all(check_data == 1500, axis=0), axis=0))[0])
-    num_col_lines = len(np.where(np.all(np.all(check_data == 1500, axis=0), axis=1))[0])
-    assert num_col_lines == 16
-    assert num_row_lines == 16
+#def test_register_binary_rigid_registration_only(test_ops):
+#    """
+#    Tests that register_binary works for a dataset that only has rigid shifts.
+#    """
+#    test_ops['nonrigid'] = False
+#    op = prepare_for_registration(
+#        test_ops,
+#        test_ops['data_path'][0].joinpath('registration/rigid_registration_test_data.tif'),
+#        (256, 256),
+#    )[0]
+#    op = register_binary(op)
+#    registered_data = imread(str(Path(op['save_path']).joinpath('reg_tif/file000_chan0.tif')))
+#    # Make sure registered_data is identical across frames
+#    check_data = np.repeat(registered_data[0, :, :][np.newaxis, :, :], 500, axis=0)
+#    assert np.array_equal(check_data, registered_data)
+#    # Check and see if there are exactly 16 lines row-wise and column-wise
+#    num_row_lines = len(np.where(np.all(np.all(check_data == 1500, axis=0), axis=0))[0])
+#    num_col_lines = len(np.where(np.all(np.all(check_data == 1500, axis=0), axis=1))[0])
+#    assert num_col_lines == 16
+#    assert num_row_lines == 16
 

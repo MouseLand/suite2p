@@ -359,7 +359,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 mean_img_sum += frames.mean(axis=0)
 
         print('Registered second channel in %0.2f sec.' % (time.time() - t0))
-        meanImg_key = 'meanImag' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
+        meanImg_key = 'meanImg' if ops['functional_chan'] != ops['align_by_chan'] else 'meanImg_chan2'
         ops[meanImg_key] = mean_img_sum / (k + 1)
 
     # compute valid region

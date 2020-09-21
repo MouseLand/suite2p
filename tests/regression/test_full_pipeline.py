@@ -63,7 +63,7 @@ def test_2plane_2chan_with_batches(test_ops):
         suite2p.run_s2p(ops=ops)
         assert all(utils.check_output(
             output_root=ops['save_path0'],
-            outputs_to_check=get_outputs_to_check(ops['nchannels']) + ['reg_tif', 'reg_tif_chan2'],
+            outputs_to_check=get_outputs_to_check(ops['nchannels']),
             test_data_dir=ops['data_path'][0].joinpath(f"{nplanes}plane{ops['nchannels']}chan1500/suite2p/"),
             nplanes=nplanes,
         ))

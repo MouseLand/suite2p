@@ -432,7 +432,7 @@ class MainWindow(QtGui.QMainWindow):
             if not self.sizebtns.button(1).isChecked():
                 for b in [1, 2]:
                     if self.topbtns.button(b).isChecked():
-                        self.topbtns.button(b).top_selection(parent)
+                        self.topbtns.button(b).top_selection(self)
                         self.show()
 
     def ROI_selection(self):

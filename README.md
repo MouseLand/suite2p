@@ -3,6 +3,7 @@
 [![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)
 [![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
 [![Coverage Status](https://coveralls.io/repos/github/MouseLand/suite2p/badge.svg?branch=dev)](https://coveralls.io/github/MouseLand/suite2p?branch=dev)
+[![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 
 Pipeline for processing two-photon calcium imaging data.  
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  

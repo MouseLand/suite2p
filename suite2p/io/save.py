@@ -129,8 +129,19 @@ def combined(save_folder, save=True):
     ops['xrange'] = [0, ops['Lx']]
     ops['yrange'] = [0, ops['Ly']]
 
-    fpath = os.path.join(save_folder, 'combined')
+    if save:
+        if len(ops['save_folder']) > 0:
+            fpath = os.path.join(ops['save_path0'], ops['save_folder'], 'combined')
+        else:
+            fpath = os.path.join(ops['save_path0'], 'suite2p', 'combined')
+    else:
+        fpath = os.path.join(save_folder, 'combined')
     
+    if not os.path.isdir(fpath):
+        os.makedirs(fpath)
+
+    ops['save_path'] = fpath
+
     # need to save iscell regardless (required for GUI function)
     np.save(os.path.join(fpath, 'iscell.npy'), iscell)
     if hasred:

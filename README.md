@@ -6,7 +6,6 @@
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/suite2p)](https://pypistats.org/packages/suite2p)
 [![Python version](https://img.shields.io/pypi/pyversions/suite2p)](https://pypistats.org/packages/suite2p)
-
 [![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors-anon/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/graphs/contributors)
 [![website](https://img.shields.io/website?url=https%3A%2F%2Fwww.suite2p.org)](https://www.suite2p.org)

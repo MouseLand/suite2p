@@ -29,7 +29,14 @@ setuptools.setup(
         'sphinx_rtd_theme',
         'sphinx-prompt',
         'sphinx-autodoc-typehints',
-        'importlib-metadata'
+        'importlib-metadata',
+        'natsort',
+        'rastermap>0.1.0',
+        'tifffile',
+        'scanimage-tiff-reader>=1.4.1',
+        'pyqtgraph',
+        'importlib-metadata',
+        'paramiko',
       ],
       # Note: Available in pypi, but cleaner to install as pyqt from conda.
       "gui": [

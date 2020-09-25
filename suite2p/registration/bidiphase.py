@@ -3,7 +3,8 @@ from numpy import fft
 
 
 def compute(frames) -> int:
-    """ computes the bidirectional phase offset
+    """
+    Returns the bidirectional phase offset.
 
     sometimes in line scanning there will be offsets between lines;
     if ops['do_bidiphase'], then bidiphase is computed and applied

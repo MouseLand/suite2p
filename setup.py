@@ -29,6 +29,7 @@ setuptools.setup(
         'sphinx_rtd_theme',
         'sphinx-prompt',
         'sphinx-autodoc-typehints',
+        'importlib-metadata'
       ],
       # Note: Available in pypi, but cleaner to install as pyqt from conda.
       "gui": [

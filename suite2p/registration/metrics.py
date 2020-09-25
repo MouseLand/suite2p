@@ -16,30 +16,32 @@ from . import rigid, nonrigid, utils
 from .. import io
 
 def pclowhigh(mov, nlowhigh, nPC, random_state):
-    """ get mean of top and bottom PC weights for nPC's of mov
+    """
+    Compute mean of top and bottom PC weights for nPC's of mov
 
-        computes nPC PCs of mov and returns average of top and bottom
+    computes nPC PCs of mov and returns average of top and bottom
 
-        Parameters
-        ----------
-        mov : int16, array
-            subsampled frames from movie size frames x Ly x Lx
-        nlowhigh : int
-            number of frames to average at top and bottom of each PC
-        nPC : int
-            number of PCs to compute
+    Parameters
+    ----------
+    mov : frames x Ly x Lx
+        subsampled frames from movie
+    nlowhigh : int
+        number of frames to average at top and bottom of each PC
+    nPC : int
+        number of PCs to compute
+    random_state:
+        a value that sets the seed for the PCA randomizer.
 
-        Returns
-        -------
-            pclow : float, array
-                average of bottom of spatial PC: nPC x Ly x Lx
-            pchigh : float, array
-                average of top of spatial PC: nPC x Ly x Lx
-            w : float, array
-                singular values of decomposition of mov
-            v : float, array
-                frames x nPC, how the PCs vary across frames
-
+    Returns
+    -------
+        pclow : float, array
+            average of bottom of spatial PC: nPC x Ly x Lx
+        pchigh : float, array
+            average of top of spatial PC: nPC x Ly x Lx
+        w : float, array
+            singular values of decomposition of mov
+        v : float, array
+            frames x nPC, how the PCs vary across frames
     """
     nframes, Ly, Lx = mov.shape
     mov = mov.reshape((nframes, -1))
@@ -63,31 +65,44 @@ def pclowhigh(mov, nlowhigh, nPC, random_state):
 def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
                 block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
                 is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
-    """ register top and bottom of PCs to each other
+    """
+    register top and bottom of PCs to each other
 
-        Parameters
-        ----------
-        pclow : float, array
-            average of bottom of spatial PC: nPC x Ly x Lx
-        pchigh : float, array
-            average of top of spatial PC: nPC x Ly x Lx
-        refImg : int16, array
-            reference image from registration
-        smooth_sigma : :obj:`int`, optional
-            default 1.15, see registration settings
-        block_size : :obj:`tuple`, optional
-            default (128,128), see registration settings
-        maxregshift : :obj:`float`, optional
-            default 0.1, see registration settings
-        maxregshiftNR : :obj:`int`, optional
-            default 10, see registration settings
-        1Preg : :obj:`bool`, optional
-            default True, see 1Preg settings
+    Parameters
+    ----------
+    pclow : float, array
+        average of bottom of spatial PC: nPC x Ly x Lx
+    pchigh : float, array
+        average of top of spatial PC: nPC x Ly x Lx
+    bidi_corrected: bool
+        whether to do bidi correction.
+    spatial_hp: int
+        high-pass filter window size for the spatial dimensions
+    pre_smooth: int
+        low-pass filter window size for the spatial dimensions
+    smooth_sigma : int
+        see registration settings
+    smooth_sigma_time: int
+        see registration settings
+    block_size : int, int
+        see registration settings
+    maxregshift : float
+        see registration settings
+    maxregshiftNR : int
+        see registration settings
+    reg_1p : bool
+        see 1Preg settings
+    snr_thresh: float
+        signal to noise threshold to use.
+    is_nonrigid: bool
+    pad_fft: bool
+    bidiphase: int
+    spatial_taper: float
 
-        Returns
-        -------
-            X : float, array
-                nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+    Returns
+    -------
+        X : float array
+            nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
     """
     # registration settings
     nPC, Ly, Lx = pclow.shape
@@ -176,28 +191,27 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
 
 
 def get_pc_metrics(ops, use_red=False):
-    """ computes registration metrics using top PCs of registered movie
+    """
+    Computes registration metrics using top PCs of registered movie
 
-        movie saved as binary file ops['reg_file']
-        metrics saved to ops['regPC'] and ops['X']
-        'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
-        'regPC' is average of top and bottom frames for each PC
-        'tPC' is PC across time frames
+    movie saved as binary file ops['reg_file']
+    metrics saved to ops['regPC'] and ops['X']
+    'regDX' is nPC x 3 where X[:,0] is rigid, X[:,1] is average nonrigid, X[:,2] is max nonrigid shifts
+    'regPC' is average of top and bottom frames for each PC
+    'tPC' is PC across time frames
 
-        Parameters
-        ----------
-        ops : dictionary
-            'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
-            (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
-        use_red : :obj:`bool`, optional
-            default False, whether to use 'reg_file' or 'reg_file_chan2'
-        nPC : int
-            # n PCs to compute motion for
+    Parameters
+    ----------
+    ops : dict
+        'nframes', 'Ly', 'Lx', 'reg_file' (if use_red=True, 'reg_file_chan2')
+        (optional, 'refImg', 'block_size', 'maxregshiftNR', 'smooth_sigma', 'maxregshift', '1Preg')
+    use_red : :obj:`bool`, optional
+        default False, whether to use 'reg_file' or 'reg_file_chan2'
 
-        Returns
-        -------
-            ops : dictionary
-                adds 'regPC' and 'tPC' and 'regDX'
+    Returns
+    -------
+    ops : dict
+        The same as the ops input, but will now include 'regPC', 'tPC', and 'regDX'.
 
     """
     random_state = ops['reg_metrics_rs'] if 'reg_metrics_rs' in ops else None

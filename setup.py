@@ -37,6 +37,12 @@ setuptools.setup(
         'pyqtgraph',
         'importlib-metadata',
         'paramiko',
+        'numpy>=1.16',
+        'numba>=0.43.1',
+        'matplotlib',
+        'scipy',
+        'h5py',
+        'scikit-learn',
       ],
       # Note: Available in pypi, but cleaner to install as pyqt from conda.
       "gui": [

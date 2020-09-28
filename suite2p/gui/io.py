@@ -1,10 +1,7 @@
 import os, time
-from pathlib import Path
 import numpy as np
 import scipy.io
 from PyQt5 import QtGui
-from pynwb import NWBHDF5IO
-from natsort import natsorted
 
 from . import utils, masks, views, graphics, traces, classgui
 from .. import io
@@ -392,71 +389,16 @@ def save_redcell(parent):
             np.expand_dims(parent.probredcell[parent.notmerged],axis=1)), axis=1))
 
 def save_iscell(parent):
-    save_folder = Path(parent.basename)
-    iscell = np.concatenate(
-        (
-            np.expand_dims(parent.iscell[parent.notmerged], axis=1),
-            np.expand_dims(parent.probcell[parent.notmerged], axis=1),
-        ),
-        axis=1,
-        )
     np.save(
-        save_folder.joinpath("iscell.npy"),
-        iscell
+        parent.basename + "/iscell.npy",
+        np.concatenate(
+            (
+                np.expand_dims(parent.iscell[parent.notmerged], axis=1),
+                np.expand_dims(parent.probcell[parent.notmerged], axis=1),
+            ),
+            axis=1,
+        ),
     )
-
-    # Save to NWB file if it exists
-    nwb_path = save_folder.parent.joinpath("ophys.nwb")
-    if nwb_path.exists():
-        with NWBHDF5IO(str(nwb_path), 'r') as read_io:
-            nwbfile = read_io.read()
-            img_seg = nwbfile.processing.get("ophys").data_interfaces.get("ImageSegmentation")
-            PlaneSegmentationOld = img_seg.get_plane_segmentation("PlaneSegmentation")
-            # PlaneSegmentationOld["iscell"][()] = iscell
-            img_seg.plane_segmentations.pop("PlaneSegmentation")
-            PlaneSegmentationNew = img_seg.create_plane_segmentation(
-                description=PlaneSegmentationOld.description,
-                imaging_plane=PlaneSegmentationOld.imaging_plane,
-                name=PlaneSegmentationOld.name,
-                reference_images=PlaneSegmentationOld.reference_images,
-                # id=PlaneSegmentationOld.id,
-                # columns=(PlaneSegmentationOld["voxel_mask"], iscell),
-                # colnames=PlaneSegmentationOld.colnames,
-            )
-
-            # ROIs
-            try:
-                rois = PlaneSegmentationOld['pixel_mask']
-                multiplane = False
-            except KeyError:
-                rois = PlaneSegmentationOld['voxel_mask']
-                multiplane = True
-            stat = np.load(save_folder.joinpath("stat.npy"), allow_pickle=True)
-            ncells = len(stat)
-            plane_folders = natsorted([
-                f.path for f in os.scandir(save_folder.parent) if f.is_dir() and f.name[:5]=='plane'])
-            ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
-
-            for iplane, ops in enumerate(ops1):
-                for n in range(ncells):
-                    if multiplane:
-                        pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'],
-                                            iplane*np.ones(stat[n]['npix']),
-                                            stat[n]['lam']])
-                        PlaneSegmentationNew.add_roi(voxel_mask=pixel_mask.T)
-                    else:
-                        pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'],
-                                            stat[n]['lam']])
-                        PlaneSegmentationNew.add_roi(pixel_mask=pixel_mask.T)
-
-            PlaneSegmentationNew.add_column('iscell', 'two columns - iscell & probcell', iscell)
-            # read_io.write(nwbfile)
-            export_filename = nwb_path.parent.joinpath("tmp.nwb")
-            with NWBHDF5IO(str(export_filename), mode='w') as export_io:
-                export_io.export(src_io=read_io, nwbfile=nwbfile)
-        nwb_path.unlink()
-        export_filename.rename(nwb_path)
-
     parent.lcell0.setText("%d" % (parent.iscell.sum()))
     parent.lcell1.setText("%d" % (parent.iscell.size - parent.iscell.sum()))
 

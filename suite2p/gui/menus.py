@@ -30,7 +30,6 @@ def mainmenu(parent):
     loadFolder.triggered.connect(lambda: io.load_dialog_folder(parent))
     parent.addAction(loadFolder)
 
-
     # load a behavioral trace
     parent.loadBeh = QtGui.QAction(
         "Load behavior or stim trace (1D only)", parent
@@ -46,6 +45,11 @@ def mainmenu(parent):
     parent.saveMat.setEnabled(False)
     parent.addAction(parent.saveMat)
 
+
+    # Save NWB file
+    parent.saveNWB = QtGui.QAction("Save NWB file", parent)
+    parent.saveNWB.setEnabled(False)
+    parent.addAction(parent.saveNWB)
 
     # export figure
     exportFig = QtGui.QAction("Export as image (svg)", parent)
@@ -66,6 +70,7 @@ def mainmenu(parent):
     file_menu.addAction(loadNWB)
     file_menu.addAction(loadFolder)
     file_menu.addAction(parent.loadBeh)
+    file_menu.addAction(parent.saveNWB)
     file_menu.addAction(parent.saveMat)
     file_menu.addAction(exportFig)
     file_menu.addAction(parent.manual)

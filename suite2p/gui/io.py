@@ -8,6 +8,7 @@ from natsort import natsorted
 
 from . import utils, masks, views, graphics, traces, classgui
 from .. import io
+from suite2p.io.nwb import save_nwb
 
 
 def export_fig(parent):
@@ -23,6 +24,8 @@ def make_masks_and_enable_buttons(parent):
 
     parent.loadBeh.setEnabled(True)
     parent.saveMat.setEnabled(True)
+    parent.saveNWB.triggered.connect(lambda: save_nwb(parent.basename))
+    parent.saveNWB.setEnabled(True)
     parent.saveMerge.setEnabled(True)
     parent.sugMerge.setEnabled(True)
     parent.manual.setEnabled(True)

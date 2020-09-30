@@ -2,15 +2,16 @@
 Tests for the Suite2p IO module
 """
 from pathlib import Path
+import os
 
 import numpy as np
-from pytest import fixture
+import pytest
 from pynwb import NWBHDF5IO
 
 from suite2p import io
 from suite2p.io.nwb import save_nwb
 
-@fixture()
+@pytest.fixture()
 def binfile1500(test_ops):
     test_ops['tiff_list'] = ['input_1500.tif']
     op = io.tiff_to_binary(test_ops)
@@ -53,14 +54,19 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
 
     assert np.allclose(data1, data2)
 
-def test_save_nwb():
-    save_folder = Path("data").joinpath("test_data", "1plane1chan", "suite2p")
+@pytest.mark.parametrize("data_folder", [
+    ("1plane1chan"), ("1plane1chan1500"), ("2plane2chan"), ("2plane2chan1500")])
+def test_save_nwb(data_folder):
+    save_folder = Path("data").joinpath("test_data", data_folder, "suite2p")
 
     # Change temporarily the save_folder variable saved in the NumPy file
-    ops1 = np.load(save_folder.joinpath("plane0", "ops.npy"), allow_pickle=True)
-    save_path = ops1.item(0)["save_path"]
-    ops1.item(0)["save_path"] = str(save_folder.joinpath("plane0").absolute())
-    np.save(save_folder.joinpath("plane0", "ops.npy"), ops1)
+    save_path = {}
+    for plane in os.listdir(save_folder):
+        if save_folder.joinpath(plane).is_dir():
+            ops1 = np.load(save_folder.joinpath(plane, "ops.npy"), allow_pickle=True)
+            save_path[plane] = ops1.item(0)["save_path"]
+            ops1.item(0)["save_path"] = str(save_folder.joinpath(plane).absolute())
+            np.save(save_folder.joinpath(plane, "ops.npy"), ops1)
 
     save_nwb(save_folder)
     with NWBHDF5IO(str(save_folder.joinpath("ophys.nwb")), "r") as io:
@@ -71,5 +77,11 @@ def test_save_nwb():
         assert read_nwbfile.processing["ophys"].data_interfaces["Neuropil"]
 
     # Undo the variable change
-    ops1.item(0)["save_path"] = save_path
-    np.save(save_folder.joinpath("plane0", "ops.npy"), ops1)
+    for plane in os.listdir(save_folder):
+        if save_folder.joinpath(plane).is_dir():
+            ops1 = np.load(save_folder.joinpath(plane, "ops.npy"), allow_pickle=True)
+            ops1.item(0)["save_path"] = save_path[plane]
+            np.save(save_folder.joinpath(plane, "ops.npy"), ops1)
+
+    # Remove NWB file
+    save_folder.joinpath("ophys.nwb").unlink()

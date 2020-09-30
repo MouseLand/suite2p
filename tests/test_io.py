@@ -5,9 +5,10 @@ from pathlib import Path
 
 import numpy as np
 from pytest import fixture
+from pynwb import NWBHDF5IO
 
 from suite2p import io
-
+from suite2p.io.nwb import save_nwb
 
 @fixture()
 def binfile1500(test_ops):
@@ -51,3 +52,24 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
     assert data2.shape == (1500, binfile1500.Ly, binfile1500.Lx)
 
     assert np.allclose(data1, data2)
+
+def test_save_nwb():
+    save_folder = Path("data").joinpath("test_data", "1plane1chan", "suite2p")
+
+    # Change temporarily the save_folder variable saved in the NumPy file
+    ops1 = np.load(save_folder.joinpath("plane0", "ops.npy"), allow_pickle=True)
+    save_path = ops1.item(0)["save_path"]
+    ops1.item(0)["save_path"] = str(save_folder.joinpath("plane0").absolute())
+    np.save(save_folder.joinpath("plane0", "ops.npy"), ops1)
+
+    save_nwb(save_folder)
+    with NWBHDF5IO(str(save_folder.joinpath("ophys.nwb")), "r") as io:
+        read_nwbfile = io.read()
+        assert read_nwbfile.processing
+        assert read_nwbfile.processing["ophys"].data_interfaces["Deconvolved"]
+        assert read_nwbfile.processing["ophys"].data_interfaces["Fluorescence"]
+        assert read_nwbfile.processing["ophys"].data_interfaces["Neuropil"]
+
+    # Undo the variable change
+    ops1.item(0)["save_path"] = save_path
+    np.save(save_folder.joinpath("plane0", "ops.npy"), ops1)

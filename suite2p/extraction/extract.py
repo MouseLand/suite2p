@@ -21,7 +21,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
 
     ops : dictionary
         'Ly', 'Lx', 'nframes', 'batch_size'
-        (optional 'reg_file_chan2', 'chan2_thres')
+
         
     cell_masks : list
         each is a tuple where first element are cell pixels (flattened), and
@@ -89,9 +89,12 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     ----------------
 
     ops : dictionary
-        'Ly', 'Lx', 'reg_file', 'neucoeff', 'ops_path', 
-        'save_path', 'sparse_mode', 'nframes', 'batch_size'
-        (optional 'reg_file_chan2', 'chan2_thres')
+        'Ly', 'Lx', 'nframes', 'batch_size', optionally 'reg_file' or 'reg_file_chan2'
+    cell_masks : list
+        each is a tuple where first element are cell pixels (flattened), and
+        second element are pixel weights normalized to sum 1 (lam)
+    neuropil_masks : 2D array
+        size [ncells x npixels] where weights of each mask are elements
 
 
     Returns
@@ -110,15 +113,11 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
         size [ROIs x time]
 
     ops : dictionaray
-
-    stat : array of dicts
-        adds 'skew', 'std'    
-
     """
 
-    F,Fneu,ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
+    F,Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
     else:
         F_chan2, Fneu_chan2 = [], []
 

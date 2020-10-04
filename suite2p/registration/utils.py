@@ -1,5 +1,6 @@
 import warnings
 from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
@@ -35,7 +36,22 @@ def combine_offsets_across_batches(offset_list, rigid):
         return np.vstack(yoff), np.vstack(xoff), np.vstack(corr_xy)
 
 
-def meshgrid_mean_centered(x, y):
+def meshgrid_mean_centered(x: int, y: int) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns a mean-centered meshgrid
+
+    Parameters
+    ----------
+    x: int
+        The height of the meshgrid
+    y: int
+        The width of the mehgrid
+
+    Returns
+    -------
+    xx: int array
+    yy: int array
+    """
     x = np.arange(0, x)
     y = np.arange(0, y)
     x = np.abs(x - x.mean())
@@ -44,19 +60,51 @@ def meshgrid_mean_centered(x, y):
     return xx, yy
 
 
-def gaussian_fft(sig, Ly, Lx):
-    ''' gaussian filter in the fft domain with std sig and size Ly,Lx '''
+def gaussian_fft(sig, Ly: int, Lx: int):
+    '''
+    gaussian filter in the fft domain with std sig and size Ly,Lx
+
+    Parameters
+    ----------
+    sig
+    Ly: int
+        frame height
+    Lx: int
+        frame width
+
+    Returns
+    -------
+    fhg: np.ndarray
+        smoothing filter in Fourier domain
+
+    '''
     xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
     hgx = np.exp(-np.square(xx/sig) / 2)
     hgy = np.exp(-np.square(yy/sig) / 2)
     hgg = hgy * hgx
     hgg /= hgg.sum()
-    fhg = np.real(fft2(fft.ifftshift(hgg))); # smoothing filter in Fourier domain
+    fhg = np.real(fft2(fft.ifftshift(hgg)))
     return fhg
 
 
 def spatial_taper(sig, Ly, Lx):
-    ''' spatial taper  on edges with gaussian of std sig '''
+    '''
+    Returns spatial taper  on edges with gaussian of std sig
+
+    Parameters
+    ----------
+    sig
+    Ly: int
+        frame height
+    Lx: int
+        frame width
+
+    Returns
+    -------
+    maskMul
+
+
+    '''
     xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
     mY = ((Ly - 1) / 2) - 2 * sig
     mX = ((Lx - 1) / 2) - 2 * sig
@@ -66,12 +114,41 @@ def spatial_taper(sig, Ly, Lx):
     return maskMul
 
 def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
-    """returns Gaussian filtered 'frames' ndarray over first dimension"""
+    """
+    Returns Gaussian filtered 'frames' ndarray over first dimension
+
+    Parameters
+    ----------
+    data: nImg x Ly x Lx
+    sigma: float
+        windowing parameter
+
+    Returns
+    -------
+    smoothed_data: nImg x Ly x Lx
+        Smoothed data
+
+    """
     return gaussian_filter1d(data, sigma=sigma, axis=0)
 
 
-def spatial_smooth(data, window):
-    """spatially smooth data using cumsum over axis=1,2 with window N"""
+def spatial_smooth(data: np.ndarray, window: int):
+    """
+    Spatially smooth data using cumsum over axis=1,2 with window N
+
+    Parameters
+    ----------
+    data: Ly x Lx
+        The image to smooth.
+    window: int
+        The window size
+
+    Returns
+    -------
+    smoothed_data: Ly x Lx
+        The smoothed frame
+
+    """
     if window and window % 2:
         raise ValueError("Filter window must be an even integer.")
     if data.ndim == 2:
@@ -89,7 +166,21 @@ def spatial_smooth(data, window):
 
 
 def spatial_high_pass(data, N):
-    """high pass filters data over axis=1,2 with window N"""
+    """
+    high pass filters data over axis=1,2 with window N
+
+    Parameters
+    ----------
+    data: Ly x Lx
+        The image to smooth.
+    N: int
+        The window size
+
+    Returns
+    -------
+    smoothed_data: Ly x Lx
+        The smoothed frame
+    """
     if data.ndim == 2:
         data = data[np.newaxis, :, :]
     data_filtered = data - (spatial_smooth(data, N) / spatial_smooth(np.ones((1, data.shape[1], data.shape[2])), N))
@@ -97,18 +188,54 @@ def spatial_high_pass(data, N):
 
 
 def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
-    """Returns the 3D array 'mov' convolved by a 2D array 'img'."""
+    """
+    Returns the 3D array 'mov' convolved by a 2D array 'img'.
+
+    Parameters
+    ----------
+    mov: nImg x Ly x Lx
+        The frames to process
+    img: 2D array
+        The convolution kernel
+
+    Returns
+    -------
+    convolved_data: nImg x Ly x Lx
+    """
     return ifft2(apply_dotnorm(fft2(mov), img))
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
-    """Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed."""
+    """
+    Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed.
+
+    Parameters
+    ----------
+    img: Ly x Lx
+        The image to process
+    pad_fft: bool
+        Whether to pad the image
+
+
+    """
     Ly, Lx = img.shape
     return np.conj(fft2(img, (next_fast_len(Ly), next_fast_len(Lx)))) if pad_fft else np.conj(fft2(img))
 
 
 def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
-    """Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)"""
+    """
+    Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)
+
+    Parameters
+    ----------
+    xs:
+    ys
+    sigL
+
+    Returns
+    -------
+
+    """
     xs0, xs1 = np.meshgrid(xs, xs)
     ys0, ys1 = np.meshgrid(ys, ys)
     dxs = xs0.reshape(-1, 1) - ys0.reshape(1, -1)
@@ -118,6 +245,16 @@ def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
 
 
 def kernelD2(xs: int, ys: int) -> np.ndarray:
+    """
+    Parameters
+    ----------
+    xs
+    ys
+
+    Returns
+    -------
+
+    """
     ys, xs = np.meshgrid(xs, ys)
     ys = ys.flatten().reshape(1, -1)
     xs = xs.flatten().reshape(1, -1)
@@ -127,8 +264,20 @@ def kernelD2(xs: int, ys: int) -> np.ndarray:
 
 
 @lru_cache(maxsize=5)
-def mat_upsample(lpad, subpixel: int = 10):
-    """ upsampling matrix using gaussian kernels """
+def mat_upsample(lpad: int, subpixel: int = 10):
+    """
+    upsampling matrix using gaussian kernels
+
+    Parameters
+    ----------
+    lpad: int
+    subpixel: int
+
+    Returns
+    -------
+    Kmat: np.ndarray
+    nup: int
+    """
     lar = np.arange(-lpad, lpad + 1)
     larUP = np.arange(-lpad, lpad + .001, 1. / subpixel)
     nup = larUP.shape[0]

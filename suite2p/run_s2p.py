@@ -181,7 +181,8 @@ def run_plane(ops, ops_path=None):
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
             print('(making mean image (excluding bad frames)')
-            refImg = registration.sampled_mean(ops)
+            with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
+                refImg = f.sampled_mean()
             ops = registration.register_binary(ops, refImg, raw=False)
             np.save(ops['ops_path'], ops)
             plane_times['two_step_registration'] = time.time()-t11

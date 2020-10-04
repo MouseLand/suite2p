@@ -63,7 +63,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xblock, pad_fft: bool = False):
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np.ndarray, xblock: np.ndarray, pad_fft: bool = False):
     """
     Computes taper and fft'ed reference image for phasecorr.
 
@@ -72,8 +72,8 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xb
     refImg0: array
     maskSlope
     smooth_sigma
-    yblock
-    xblock
+    yblock: float array
+    xblock: float array
     pad_fft: bool
         whether to do border padding in the fft step
 
@@ -110,15 +110,17 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xb
     return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
 
 
-def getSNR(cc, lcorr, lpad):
+def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
     """
-    Compute SNR of phase-correlation - is it an accurate predicted shift?
+    Compute SNR of phase-correlation.
 
     Parameters
     ----------
-    cc
-    lcorr
-    lpad
+    cc: nimg x Ly x Lx
+        The frame data to analyze
+    lcorr: int
+    lpad: int
+        border padding width
 
     Returns
     -------
@@ -134,25 +136,25 @@ def getSNR(cc, lcorr, lpad):
     return snr
 
 
-def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
+def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
     """
     Compute phase correlations for each block
     
     Parameters
     ----------
     data : nimg x Ly x Lx
-    maskMul
+    maskMul: ndarray
         gaussian filter
-    maskOffset
+    maskOffset: ndarray
         mask offset
     cfRefImg
         FFT of reference image
     snr_thresh : float
         signal to noise ratio threshold
     NRsm
-    xblock
-    yblock
-    maxregshiftNR
+    xblock: float array
+    yblock: float array
+    maxregshiftNR: int
     subpixel: int
     lpad: int
         upsample from a square +/- lpad
@@ -231,9 +233,9 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
 
 @njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
         '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'], cache=True)
-def map_coordinates(I, yc, xc, Y):
+def map_coordinates(I, yc, xc, Y) -> None:
     """
-    bilinear transform of image 'I' in-place with ycoordinates yc and xcoordinates xc to Y
+    In-place bilinear transform of image 'I' with ycoordinates yc and xcoordinates xc to Y
     
     Parameters
     -------------
@@ -324,9 +326,9 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
         number of pixels in the horizontal dimension
     Ly: int
         number of pixels in the vertical dimension
-    nblocks
-    xblock
-    yblock
+    nblocks: (int, int)
+    xblock: float array
+    yblock: float array
     ymax1: nimg x nblocks
         y shifts of blocks
     xmax1: nimg x nblocks
@@ -371,9 +373,9 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     ----------
 
     data : nimg x Ly x Lx
-    nblocks
-    xblock
-    yblock
+    nblocks: (int, int)
+    xblock: float array
+    yblock: float array
     ymax1 : nimg x nblocks
         y shifts of blocks
     xmax1 : nimg x nblocks

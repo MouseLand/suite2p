@@ -8,6 +8,20 @@ from . import nonrigid, rigid, utils
 
 # This function doesn't work. Has a bunch of name errors. 
 def register_stack(Z, ops):
+    """
+
+    Parameters
+    ----------
+    Z
+    ops: dict
+
+    Returns
+    -------
+    Zreg: nplanes x Ly x Lx
+        Z-stack
+    ops: dict
+    """
+
     if 'refImg' not in ops:
         ops['refImg'] = Z.mean(axis=0)
     ops['nframes'], ops['Ly'], ops['Lx'] = Z.shape
@@ -99,7 +113,7 @@ def compute_zpos(Zreg, ops):
     """ compute z position of frames given z-stack Zreg
 
     Parameters
-    ------------
+    ----------
 
     Zreg : 3D array
         size [nplanes x Ly x Lx], z-stack
@@ -108,7 +122,10 @@ def compute_zpos(Zreg, ops):
         'reg_file' <- binary to register to z-stack, 'smooth_sigma',
         'Ly', 'Lx', 'batch_size'
 
-
+    Returns
+    -------
+    ops_orig
+    zcorr
     """
     if 'reg_file' not in ops:
         raise IOError('no binary specified')
@@ -121,13 +138,8 @@ def compute_zpos(Zreg, ops):
     ops_orig = ops.copy()
     ops['nonrigid'] = False
     nplanes, zLy, zLx = Zreg.shape
-    if Zreg.shape[1] != Ly or Zreg.shape[2] != Lx:
-        # padding
-        if Zreg.shape[1] > Ly:
-            Zreg = Zreg[:, ]
-
-        half_pad = N // 2
-        dsmooth = np.pad(Zreg, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)), mode='constant', constant_values=0)
+    if Zreg.shape[1] > Ly or Zreg.shape[2] != Lx:
+        Zreg = Zreg[:, ]
 
     nbytes = os.path.getsize(ops['reg_file'])
     nFrames = int(nbytes/(2 * Ly * Lx))

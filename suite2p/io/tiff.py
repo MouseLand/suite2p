@@ -15,6 +15,26 @@ from . import utils
 
 
 def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: str, k: int, ichan: bool) -> str:
+    """
+    Calculates a suite2p tiff filename from different parameters.
+
+    Parameters
+    ----------
+    functional_chan: int
+        The channel number with functional information
+    align_by_chan: int
+        Which channel to use for alignment
+    save_path: str
+        The directory to save to
+    k: int
+        The file number
+    wchan: int
+        The channel number.
+
+    Returns
+    -------
+    filename: str
+    """
     if ichan:
         if functional_chan == align_by_chan:
             tifroot = os.path.join(save_path, 'reg_tif')
@@ -37,7 +57,17 @@ def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: 
 
 
 def save_tiff(mov: np.ndarray, fname: str) -> None:
-    """Save image stack array to tiff file."""
+    """
+    Save image stack array to tiff file.
+
+    Parameters
+    ----------
+    mov: nImg x Ly x Lx
+        The frames to save
+    fname: str
+        The tiff filename to save to
+
+    """
     with TiffWriter(fname) as tif:
         for frame in np.floor(mov).astype(np.int16):
             tif.save(frame)

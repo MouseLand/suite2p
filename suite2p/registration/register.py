@@ -10,13 +10,32 @@ from .. import io
 from . import bidiphase, utils, rigid, nonrigid
 
 
-def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
+def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregshift, Ly: int, Lx:int):
     """ determines how much to crop FOV based on motion
     
     determines badframes which are frames with large outlier shifts
     (threshold of outlier is th_badframes) and
     it excludes these badframes when computing valid ranges
     from registration in y and x
+
+    Parameters
+    __________
+    xoff: int
+    yoff: int
+    corrXY
+    th_badframes
+    badframes
+    maxregshift
+    Ly: int
+        Height of a frame
+    Lx: int
+        Width of a frame
+
+    Returns
+    _______
+    badframes
+    yrange
+    xrange
     """
     dx = xoff - medfilt(xoff, 101)
     dy = yoff - medfilt(yoff, 101)
@@ -40,7 +59,7 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
     return badframes, yrange, xrange
 
 
-def pick_initial_reference(frames):
+def pick_initial_reference(frames: np.ndarray):
     """ computes the initial reference image
 
     the seed frame is the frame with the largest correlations with other frames;
@@ -72,10 +91,6 @@ def pick_initial_reference(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
-def sampled_mean(ops):
-    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
-        refImg = f.sampled_mean()
-    return refImg
 
 def compute_reference(ops, frames):
     """ computes the reference image

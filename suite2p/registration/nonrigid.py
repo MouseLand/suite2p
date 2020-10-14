@@ -10,12 +10,43 @@ from .utils import addmultiply, spatial_taper, gaussian_fft, kernelD2, mat_upsam
 
 
 def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:
-    """Returns block_size and nblocks from dimension length and desired block size"""
+    """
+    Returns block_size and nblocks from dimension length and desired block size
+
+    Parameters
+    ----------
+    L: int
+    block_size: int
+
+    Returns
+    -------
+    block_size: int
+    nblocks: int
+    """
     return (L, 1) if block_size >= L else (block_size, int(np.ceil(1.5 * L / block_size)))
 
 
 def make_blocks(Ly, Lx, block_size=(128, 128)):
-    """ computes overlapping blocks to split FOV into to register separately"""
+    """
+    Computes overlapping blocks to split FOV into to register separately
+
+    Parameters
+    ----------
+    Ly: int
+        Number of pixels in the vertical dimension
+    Lx: int
+        Number of pixels in the horizontal dimension
+    block_size: int, int
+        block size
+
+    Returns
+    -------
+    yblock: float array
+    xblock: float array
+    nblocks: int, int
+    block_size: int, int
+    NRsm: array
+    """
 
     block_size_y, ny = calculate_nblocks(L=Ly, block_size=block_size[0])
     block_size_x, nx = calculate_nblocks(L=Lx, block_size=block_size[1])
@@ -32,8 +63,27 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xblock, pad_fft: bool = False):
-    """ computes taper and fft'ed reference image for phasecorr"""
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np.ndarray, xblock: np.ndarray, pad_fft: bool = False):
+    """
+    Computes taper and fft'ed reference image for phasecorr.
+
+    Parameters
+    ----------
+    refImg0: array
+    maskSlope
+    smooth_sigma
+    yblock: float array
+    xblock: float array
+    pad_fft: bool
+        whether to do border padding in the fft step
+
+    Returns
+    -------
+    maskMul
+    maskOffset
+    cfRefImg
+
+    """
     nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
     cfRef_dims = (nb, next_fast_len(Ly), next_fast_len(Lx)) if pad_fft else dims
@@ -60,8 +110,22 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock, xb
     return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
 
 
-def getSNR(cc, lcorr, lpad):
-    """ compute SNR of phase-correlation - is it an accurate predicted shift? """
+def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
+    """
+    Compute SNR of phase-correlation.
+
+    Parameters
+    ----------
+    cc: nimg x Ly x Lx
+        The frame data to analyze
+    lcorr: int
+    lpad: int
+        border padding width
+
+    Returns
+    -------
+    snr: float
+    """
     cc0 = cc[:, lpad:-lpad, lpad:-lpad].reshape(cc.shape[0], -1)
     # set to 0 all pts +-lpad from ymax,xmax
     cc1 = cc.copy()
@@ -72,32 +136,34 @@ def getSNR(cc, lcorr, lpad):
     return snr
 
 
-def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
-    """ compute phase correlations for each block 
+def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
+    """
+    Compute phase correlations for each block
     
     Parameters
-    -------------
-
-    data : int16 or float32, 3D array
-        size [nimg x Ly x Lx]
-
-    refAndMasks : list
-        gaussian filter, mask offset, FFT of reference image
-
-    ymax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
-
-    xmax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
-
-    cmax1 : 2D array
-        size [nimg x nblocks], value of peak of phase correlation
-
-    ccsm : 4D array
-        size [nimg x nblocks x ly x lx], smoothed phase correlations
-
+    ----------
+    data : nimg x Ly x Lx
+    maskMul: ndarray
+        gaussian filter
+    maskOffset: ndarray
+        mask offset
+    cfRefImg
+        FFT of reference image
+    snr_thresh : float
+        signal to noise ratio threshold
+    NRsm
+    xblock: float array
+    yblock: float array
+    maxregshiftNR: int
+    subpixel: int
     lpad: int
         upsample from a square +/- lpad
+
+    Returns
+    -------
+    ymax1
+    xmax1
+    cmax1
     """
     
     Kmat, nup = mat_upsample(lpad=3)
@@ -167,28 +233,19 @@ def phasecorr(data, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, ybl
 
 @njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
         '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'], cache=True)
-def map_coordinates(I, yc, xc, Y):
-    """ bilinear transform of image with ycoordinates yc and xcoordinates xc to Y 
+def map_coordinates(I, yc, xc, Y) -> None:
+    """
+    In-place bilinear transform of image 'I' with ycoordinates yc and xcoordinates xc to Y
     
     Parameters
     -------------
-
-    I : int16 or float32, 2D array
-        size [Ly x Lx]     
-
-    yc : 2D array
-        size [Ly x Lx], new y coordinates
-
-    xc : 2D array
-        size [Ly x Lx], new x coordinates
-
-    Returns
-    -----------
-
-    Y : float32, 2D array
-        size [Ly x Lx], shifted I
-
-
+    I : Ly x Lx
+    yc : Ly x Lx
+        new y coordinates
+    xc : Ly x Lx
+        new x coordinates
+    Y : Ly x Lx
+        shifted I
     """
     Ly,Lx = I.shape
     yc_floor = yc.astype(np.int32)
@@ -212,31 +269,22 @@ def map_coordinates(I, yc, xc, Y):
 @njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
        'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True, cache=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
-    """ shift data into yup and xup coordinates
+    """
+    Shift data into yup and xup coordinates
 
     Parameters
-    -------------
-
-    data : int16 or float32, 3D array
-        size [nimg x Ly x Lx]     
-
-    yup : 3D array
-        size [nimg x Ly x Lx], y shifts for each coordinate
-
-    xup : 3D array
-        size [nimg x Ly x Lx], x shifts for each coordinate
-
-    mshy : 2D array
-        size [Ly x Lx], meshgrid in y
-
-    mshx : 2D array
-        size [Ly x Lx], meshgrid in x
-        
-    Returns
-    -----------
-    Y : float32, 3D array
-        size [nimg x Ly x Lx], shifted data
-
+    ----------
+    data : nimg x Ly x Lx
+    yup : nimg x Ly x Lx
+        y shifts for each coordinate
+    xup : nimg x Ly x Lx
+        x shifts for each coordinate
+    mshy : Ly x Lx
+        meshgrid in y
+    mshx : Ly x Lx
+        meshgrid in x
+    Y : nimg x Ly x Lx
+        shifted data
     """
     for t in prange(data.shape[0]):
         map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
@@ -244,7 +292,22 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
 
 @njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True, cache=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
-    """ interpolate from ymax1 to mshy to create coordinate transforms """
+    """
+    interpolate from ymax1 to mshy to create coordinate transforms
+
+    Parameters
+    ----------
+    ymax1
+    xmax1
+    mshy: Ly x Lx
+        meshgrid in y
+    mshx: Ly x Lx
+        meshgrid in x
+    yup: nimg x Ly x Lx
+        y shifts for each coordinate
+    xup: nimg x Ly x Lx
+        x shifts for each coordinate
+    """
     for t in prange(ymax1.shape[0]):
         map_coordinates(ymax1[t], mshy, mshx, yup[t])  # y shifts for blocks to coordinate map
         map_coordinates(xmax1[t], mshy, mshx, xup[t])  # x shifts for blocks to coordinate map
@@ -258,22 +321,25 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
         
 
     Parameters
-    ------------
+    ----------
+    Lx: int
+        number of pixels in the horizontal dimension
+    Ly: int
+        number of pixels in the vertical dimension
+    nblocks: (int, int)
+    xblock: float array
+    yblock: float array
+    ymax1: nimg x nblocks
+        y shifts of blocks
+    xmax1: nimg x nblocks
+        y shifts of blocks
 
-    ymax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
-
-    xmax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
-    
     Returns
-    -----------
-
-    yup : 3D array
-        size [nimg x Ly x Lx], y shifts for each coordinate
-
-    xup : 3D array
-        size [nimg x Ly x Lx], x shifts for each coordinate
+    -------
+    yup : nimg x Ly x Lx
+        y shifts for each coordinate
+    xup : nimg x Ly x Lx
+        x shifts for each coordinate
 
     """
     # make arrays of control points for piecewise-affine transform
@@ -300,25 +366,25 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
 
 
 def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
-    """ piecewise affine transformation of data using block shifts ymax1, xmax1 
+    """
+    Piecewise affine transformation of data using block shifts ymax1, xmax1
     
     Parameters
-    -------------
+    ----------
 
-    data : int16 or float32, 3D array
-        size [nimg x Ly x Lx]
-
-    ymax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
-
-    xmax1 : 2D array
-        size [nimg x nblocks], y shifts of blocks
+    data : nimg x Ly x Lx
+    nblocks: (int, int)
+    xblock: float array
+    yblock: float array
+    ymax1 : nimg x nblocks
+        y shifts of blocks
+    xmax1 : nimg x nblocks
+        y shifts of blocks
 
     Returns
     -----------
-    Y : float32, 3D array
-        size [nimg x Ly x Lx], shifted data
-
+    Y : float32, nimg x Ly x Lx
+        shifted data
     """
     _, Ly, Lx = data.shape
     yup, xup = upsample_block_shifts(

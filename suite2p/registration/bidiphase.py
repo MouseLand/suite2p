@@ -2,15 +2,13 @@ import numpy as np
 from numpy import fft
 
 
-def compute(frames) -> int:
-    """ computes the bidirectional phase offset
-
-    sometimes in line scanning there will be offsets between lines;
-    if ops['do_bidiphase'], then bidiphase is computed and applied
+def compute(frames: np.ndarray) -> int:
+    """
+    Returns the bidirectional phase offset, the offset between lines that sometimes occurs in line scanning.
 
     Parameters
     ----------
-    frames : int16
+    frames : frames x Ly x Lx
         random subsample of frames in binary (frames x Ly x Lx)
 
     Returns
@@ -38,14 +36,12 @@ def compute(frames) -> int:
 
 
 def shift(frames: np.ndarray, bidiphase: int) -> None:
-    """ shift frames by bidirectional phase offset in-place, bidiphase
-
-    sometimes in line scanning there will be offsets between lines;
-    shifts last axis by bidiphase
+    """
+    Shift last axis of 'frames' by bidirectional phase offset in-place, bidiphase.
 
     Parameters
     ----------
-    frames : (frames x Ly x Lx)
+    frames : frames x Ly x Lx
     bidiphase : int
         bidirectional phase offset in pixels
     """

@@ -17,7 +17,19 @@ setuptools.setup(
       'setuptools_scm',
     ],
     use_scm_version=True,
-    install_requires=[],  # see environment.yml for this info.
+    install_requires=['importlib-metadata',
+        'natsort',
+        'rastermap>0.1.0',
+        'tifffile',
+        'scanimage-tiff-reader>=1.4.1',
+        'pyqtgraph',
+        'paramiko',
+        'numpy>=1.16',
+        'numba>=0.43.1',
+        'matplotlib',
+        'scipy',
+        'h5py',
+        'scikit-learn',],  # see environment.yml for this info.
     tests_require=[
       'pytest',
       'pytest-qt',

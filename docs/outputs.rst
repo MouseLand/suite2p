@@ -21,13 +21,13 @@ All can be loaded in python with numpy
 
    import numpy as np
 
-   F = np.load('F.npy')
-   Fneu = np.load('F.npy')
-   spks = np.load('spks.npy')
-   stat = np.load('stat.npy')
-   ops =  np.load('ops.npy')
+   F = np.load('F.npy', allow_pickle=True)
+   Fneu = np.load('F.npy', allow_pickle=True)
+   spks = np.load('spks.npy', allow_pickle=True)
+   stat = np.load('stat.npy', allow_pickle=True)
+   ops =  np.load('ops.npy', allow_pickle=True)
    ops = ops.item()
-   iscell = np.load('iscell.npy')
+   iscell = np.load('iscell.npy', allow_pickle=True)
 
 MATLAB output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

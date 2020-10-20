@@ -412,6 +412,8 @@ def ome_to_binary(ops):
     # loop over all tiffs
     with ScanImageTiffReader(fs_Ch1[0]) as tif:
         im0 = tif.data()
+    if im0.dtype.type == np.uint16:
+        im0 = (im0 // 2).astype(np.int16)
 
     for ops1_0 in ops1:
         ops1_0['nframes'] = 0
@@ -459,9 +461,9 @@ def ome_to_binary(ops):
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
-        ops['meanImg'] /= ops['nframes']
+        ops['meanImg'] //= ops['nframes']
         if nchannels>1:
-            ops['meanImg_chan2'] /= ops['nframes']
+            ops['meanImg_chan2'] //= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
     for j in range(0,nplanes):

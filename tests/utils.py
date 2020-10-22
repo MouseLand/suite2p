@@ -1,7 +1,6 @@
 """Utility functions that can be accessed in tests via the utils fixture below. """
 
 from typing import Iterator
-from pathlib import Path
 from tifffile import imread
 
 import numpy as np
@@ -23,19 +22,6 @@ def get_list_of_data(outputs_to_check, output_dir):
             yield np.concatenate([imread(tif) for tif in glob(str(data_path.joinpath("*.tif")))])
         else:
             yield np.load(str(data_path) + ".npy", allow_pickle=True)
-
-
-def check_output(output_root, outputs_to_check, test_data_dir, nplanes: int) -> Iterator[bool]:
-    """
-    Helper function to check if outputs given by a test are exactly the same
-    as the ground truth outputs.
-    """
-    for i in range(nplanes):
-        yield all(compare_list_of_outputs(
-            outputs_to_check,
-            get_list_of_data(outputs_to_check, Path(test_data_dir).joinpath(f'plane{i}')),
-            get_list_of_data(outputs_to_check, Path(output_root).joinpath(f"suite2p/plane{i}")),
-        ))
 
 
 def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> Iterator[bool]:

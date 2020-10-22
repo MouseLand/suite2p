@@ -92,9 +92,11 @@ def test_detection_output_2plane2chan(test_ops):
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
     nplanes = test_ops['nplanes']
-    assert all(utils.check_output(
-        output_root=test_ops['save_path0'],
-        outputs_to_check=['redcell'],
-        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes=nplanes
-    ))
+
+    outputs_to_check = ['redcell']
+    for i in range(nplanes):
+        assert all(utils.compare_list_of_outputs(
+            outputs_to_check,
+            utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
+        ))

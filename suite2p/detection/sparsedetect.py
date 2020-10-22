@@ -1,6 +1,7 @@
 from typing import Tuple, Dict, List, Any
 from copy import deepcopy
 from enum import Enum
+from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
@@ -262,8 +263,6 @@ def estimate_spatial_scale(I: np.ndarray) -> int:
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
     im, _ = mode(imap[ipk][isort[:50]])
-    if im == 0:
-        raise ValueError('ERROR: best scale was 0, everything should break now!')
     return im
 
 
@@ -275,7 +274,13 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
     if spatial_scale > 0:
         return max(1, min(4, spatial_scale)), EstimateMode.Forced
     else:
-        return estimate_spatial_scale(I=I), EstimateMode.Estimated
+        scale = estimate_spatial_scale(I=I)
+        if scale > 0:
+            return scale, EstimateMode.Estimated
+        else:
+            warn("Spatial scale estimation failed.  Setting spatial scale to 1 in order to continue.")
+            return 1, EstimateMode.Forced
+
 
 
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,

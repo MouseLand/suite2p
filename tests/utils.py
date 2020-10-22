@@ -9,13 +9,6 @@ from glob import glob
 
 r_tol, a_tol = 1e-4, 5e-2
 
-
-def get_plane_dir(save_path0: str, plane: int) -> Path:
-    plane_dir = Path(save_path0).joinpath(f'suite2p/plane{plane}')
-    plane_dir.mkdir(exist_ok=True, parents=True)
-    return plane_dir
-
-
 def check_dict_dicts_all_close(first_dict, second_dict) -> Iterator[bool]:
     for gt_dict, output_dict in zip(first_dict, second_dict):
         for k in gt_dict.keys():

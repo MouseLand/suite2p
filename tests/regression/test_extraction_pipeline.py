@@ -26,7 +26,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
-        plane_dir = utils.get_plane_dir(save_path0=op['save_path0'], plane=plane)
+        plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
+        plane_dir.mkdir(exist_ok=True, parents=True)
         bin_path = str(plane_dir.joinpath('data.bin'))
         BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
         curr_op['meanImg'] = np.reshape(
@@ -48,7 +49,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
 def extract_wrapper(ops):
     for plane in range(ops[0]['nplanes']):
         curr_op = ops[plane]
-        plane_dir = utils.get_plane_dir(save_path0=curr_op['save_path0'], plane=plane)
+        plane_dir = Path(curr_op['save_path0']).joinpath(f'suite2p/plane{plane}')
+        plane_dir.mkdir(exist_ok=True, parents=True)
         extract_input = np.load(
             curr_op['data_path'][0].joinpath(
                 'detection',

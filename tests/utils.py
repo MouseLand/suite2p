@@ -27,7 +27,7 @@ def get_list_of_data(outputs_to_check, output_dir):
 def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
     for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
         if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
-            yield check_dict_dicts_all_close(data1, data2)
+            yield from check_dict_dicts_all_close(data1, data2)
         elif output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
             yield np.array_equal(data1[:, 0], data2[:, 0])
         else:

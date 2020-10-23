@@ -26,13 +26,18 @@ def sbx_get_shape(sbxfile):
     info = sbx_get_info(sbxfile)
     fsize = os.path.getsize(sbxfile)
     nrows,ncols = info.sz
-    chan = info.channels
-    if chan == 1:
-        chan = 2; 
-    elif chan == 2:
-        chan = 1
-    elif chan == 3:
-        chan = 1
+    
+    if hasattr(info,'chan'):
+        chan = info.chan.nchan
+    else:
+        chan = info.channels
+        if chan == 1:
+            chan = 2 # both PMT0 & 1
+        elif chan == 2:
+            chan = 1 # PMT 0 
+        elif chan == 3:
+            chan = 1 # PMT 1 
+        
     max_idx = fsize/nrows/ncols/chan/2
     if max_idx != info.config.frames:
         print('SBX filesize doesnt match accompaning MAT [{0},{1}]. Check recording.'.format(

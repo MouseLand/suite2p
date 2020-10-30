@@ -866,12 +866,12 @@ class PCViewer(QtGui.QMainWindow):
         self.p4.setMouseEnabled(x=False)
         self.p4.setMenuEnabled(False)
 
-        self.PCedit = QtGui.QLineEdit(self)
-        self.PCedit.setText('1')
-        self.PCedit.setFixedWidth(40)
+        self.PCedit = QtGui.QSpinBox(self)
+        self.PCedit.setValue(1)
+        self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        self.PCedit.returnPressed.connect(self.plot_frame)
-        self.PCedit.textEdited.connect(self.pause)
+        self.PCedit.valueChanged.connect(self.plot_frame)
+        #self.PCedit.valueChanged.connect(self.pause) # It is nice to go over PCs and see how the video changes
         qlabel = QtGui.QLabel('PC: ')
         boldfont = QtGui.QFont("Arial", 14, QtGui.QFont.Bold)
         bigfont = QtGui.QFont("Arial", 14)
@@ -902,7 +902,7 @@ class PCViewer(QtGui.QMainWindow):
         self.cframe = 0
         self.createButtons()
         self.nPCs = 50
-        self.PCedit.setValidator(QtGui.QIntValidator(1,self.nPCs))
+        self.PCedit.setRange(1,self.nPCs)
         # play button
         self.updateTimer = QtCore.QTimer()
         self.updateTimer.timeout.connect(self.next_frame)
@@ -987,7 +987,7 @@ class PCViewer(QtGui.QMainWindow):
         if good:
             self.loaded=True
             self.nPCs = self.PC.shape[1]
-            self.PCedit.setValidator(QtGui.QIntValidator(1,self.nPCs))
+            self.PCedit.setRange(1,self.nPCs)
             self.plot_frame()
             self.playButton.setEnabled(True)
 

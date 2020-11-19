@@ -206,10 +206,15 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         t0 = time.time()
         refImg = compute_reference(ops, frames)
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
+
     ops['refImg'] = refImg
 
-
     ### ------------- register binary to reference image ------------ ###
+
+    # normalize reference image
+    refImg = ops['refImg'].copy()
+    rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+    refImg = np.clip(refImg, rmin, rmax)
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
@@ -257,6 +262,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
 
             # rigid registration
+            fsmooth = np.clip(fsmooth, rmin, rmax)
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
@@ -277,6 +283,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 else:
                     fsmooth = frames
 
+                fsmooth = np.clip(fsmooth, rmin, rmax)
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
                     data=fsmooth,
                     maskMul=maskMulNR.squeeze(),

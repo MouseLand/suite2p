@@ -213,8 +213,9 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     # normalize reference image
     refImg = ops['refImg'].copy()
-    rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
-    refImg = np.clip(refImg, rmin, rmax)
+    if ops.get('norm_frames', False):
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
@@ -262,7 +263,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
 
             # rigid registration
-            fsmooth = np.clip(fsmooth, rmin, rmax)
+            if ops.get('norm_frames', False):
+                fsmooth = np.clip(fsmooth, rmin, rmax)
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
@@ -281,9 +283,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     for fsm, dy, dx in zip(fsmooth, ymax, xmax):
                         fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
                 else:
-                    fsmooth = frames
+                    fsmooth = frames.copy()
 
-                fsmooth = np.clip(fsmooth, rmin, rmax)
+                if ops.get('norm_frames', False):
+                    fsmooth = np.clip(fsmooth, rmin, rmax)
+                    
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
                     data=fsmooth,
                     maskMul=maskMulNR.squeeze(),

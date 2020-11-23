@@ -11,4 +11,4 @@
     url = gdrive://0ACw_QYaWTX7mUk9PVA
     gdrive_use_service_account = true
     gdrive_service_account_email = travis4@suite2p-testdata-dvc.iam.gserviceaccount.com
-    gdrive_service_account_p12_file_path = .dvc/creds/suite2p-testdata-dvc-b0d23791539c.p12
+    gdrive_service_account_p12_file_path = creds/suite2p-testdata-dvc-b0d23791539c.p12

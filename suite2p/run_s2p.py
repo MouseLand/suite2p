@@ -88,7 +88,7 @@ def default_ops():
         '1Preg': False,  # whether to perform high-pass filtering and tapering
         'spatial_hp': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
-        'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
+        'spatial_hp_detect': 25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 

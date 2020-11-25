@@ -8,6 +8,12 @@ from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
 from ..io.binary import BinaryFile
 from ..classification import classify
 
+try:
+    from cellpose.models import Cellpose
+    CELLPOSE_INSTALLED = True
+except:
+    CELLPOSE_INSTALLED = False
+
 
 def detect(ops, classfile: Path):
     if 'aspect' in ops:
@@ -63,12 +69,12 @@ def detect(ops, classfile: Path):
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
     return cell_pix, cell_masks, neuropil_masks, stats, ops
 
-def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, classfile: Path, ops):
+def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, classfile: Path, ops, masks=None):
 
     t0 = time.time()
     if sparse_mode:
         ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
-        new_ops, stats = sparsedetect.sparsery(
+        new_ops, stats, masks = sparsedetect.sparsery(
             mov=mov,
             high_pass=ops['high_pass'],
             neuropil_high_pass=ops['spatial_hp_detect'],
@@ -76,12 +82,31 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
             spatial_scale=ops['spatial_scale'],
             threshold_scaling=ops['threshold_scaling'],
             max_iterations=250 * ops['max_iterations'],
+            smooth_masks=ops.get('smooth_masks', False),
             yrange=ops['yrange'],
             xrange=ops['xrange'],
+            masks=masks
         )
         ops.update(new_ops)
     else:
         ops, stats = sourcery.sourcery(mov=mov, ops=ops)
+
+    # if masks is not None:
+    #     ious, matches, iou = utils.mask_ious(masks[yrange[0]:yrange[-1], 
+    #                                                 xrange[0]:xrange[-1]], 
+    #                                             detected_masks[yrange[0]:yrange[-1], 
+    #                                                         xrange[0]:xrange[-1]])
+    #     proposed_masks = np.nonzero(np.logical_and(ious<0.5, ~(iou>0.5).sum(axis=1)))[0]
+    #     proposals = proposed_masks.copy()
+    #     Thresh = Th2 / 5.
+    # if len(proposed_masks) > 0:
+    #     yi, xi, diameter = utils.mask_stats(masks[yrange[0]:yrange[-1], 
+    #                                             xrange[0]:xrange[-1]]==proposed_masks[0]+1)
+    #     imap = np.argmin(np.abs(lxs - diameter))
+    #     proposed_masks = np.delete(proposed_masks, 0)
+    # else:
+    #     break
+    
     print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     stats = np.array(stats)
 
@@ -100,5 +125,5 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
     stats = roi_stats(stats, dy, dx, Ly, Lx, max_overlap=max_overlap)
 
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
-    return stats
+    return stats, masks
 

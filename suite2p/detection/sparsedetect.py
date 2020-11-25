@@ -6,8 +6,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.interpolate import RectBivariateSpline
-from scipy.ndimage import maximum_filter
-from scipy.ndimage.filters import uniform_filter
+from scipy.ndimage import maximum_filter, gaussian_filter, uniform_filter
 from scipy.stats import mode
 
 from . import utils
@@ -64,9 +63,6 @@ def add_square(yi,xi,lx,Ly,Lx):
 
     lx : int
         x-width
-
-    ly : int
-        y-width
 
     Ly : int
         full y frame
@@ -140,8 +136,7 @@ def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
         lam = np.mean(usub,axis=0)
         ix = lam>max(0, lam.max()/5.0)
         if ix.sum()==0:
-            print('break')
-            break;
+            break
         ypix, xpix,lam = ypix[ix],xpix[ix], lam[ix]
         if iter == 0:
             sgn = 1.
@@ -279,7 +274,7 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
 
 
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
-             max_iterations: int, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+             max_iterations: int, smooth_masks: bool, yrange, xrange) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns stats and ops from 'mov' using correlations in time."""
 
     mov = temporal_high_pass_filter(mov=mov, width=int(high_pass))
@@ -332,6 +327,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     v_split = np.zeros(max_iterations)
     V1 = deepcopy(v_map)
     stats = []
+    Thresh = Th2
+
+    masks = []
     for tj in range(max_iterations):
         # find peaks in stddev's
         v0max = np.array([V1[j].max() for j in range(5)])
@@ -345,29 +343,40 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         v_max[tj] = v0max.max()
         if v_max[tj] < vmultiplier*Th2:
             break
+            
         ls = lxs[imap]
 
         ihop[tj] = imap
 
         # make square of initial pixels based on spatial scale of peak
-        ypix0, xpix0, lam0 = add_square(int(yi), int(xi), ls, Lyc, Lxc)
+        yi, xi = int(yi), int(xi)
+        ypix0, xpix0, lam0 = add_square(yi, xi, ls, Lyc, Lxc)
         
         # project movie into square to get time series
         tproj = mov[:, ypix0*Lxc + xpix0] @ lam0
-        active_frames = np.nonzero(tproj>Th2)[0] # frames with activity > Th2
+        active_frames = np.nonzero(tproj>Thresh)[0] # frames with activity > Th2
         
+        # get square around seed
+        #wind = 32
+        #yinds = [max(yi-wind, 0), min(yi+wind, Lyc)]
+        #xinds = [max(xi-wind, 0), min(xi+wind, Lxc)]
+        #mask = mov[active_frames].mean(axis=0).reshape(yrange[1]-yrange[0], xrange[1]-xrange[0])
+        #mask0 = np.zeros((2*wind,2*wind), np.float32)
+        #mask0[max(0,wind-yi):min(2*wind,Lyc+wind-yi), max(0,wind-xi):min(2*wind,Lxc+wind-xi)] = mask[yinds[0]:yinds[1], xinds[0]:xinds[1]]
+        #masks.append(mask0)
+
         # extend mask based on activity similarity
         for j in range(3):
             ypix0, xpix0, lam0 = iter_extend(ypix0, xpix0, mov, Lyc, Lxc, active_frames)
             tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
-            active_frames = np.nonzero(tproj>Th2)[0]
+            active_frames = np.nonzero(tproj>Thresh)[0]
             if len(active_frames)<1:
-                break
+                continue
         if len(active_frames)<1:
-            break
+            continue
 
         # check if ROI should be split
-        v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Th2)
+        v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Thresh)
         if v_split[tj] > 1.25:
             lam0, xp, active_frames = ipack
             tproj[active_frames] = xp
@@ -376,6 +385,20 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
 
+        if smooth_masks:
+            mask = np.zeros((np.ptp(ypix0)+1, np.ptp(xpix0)+1), np.float32)
+            ypmin, xpmin = ypix0.min(), xpix0.min()
+            mask[ypix0-ypmin, xpix0-xpmin] = lam0 
+            lammax = lam0.max() 
+            mask = gaussian_filter(mask, max(1, ls//12))
+            ypix0, xpix0 = np.nonzero(mask > lam0.min()*0.75)
+            if len(ypix0) == 0:
+                continue
+            lam0 = mask[ypix0, xpix0]
+            ypix0, xpix0 = ypix0 + ypmin, xpix0 + xpmin
+            lam0 /= lam0.max() * lammax
+            tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
+
         # update residual on raw movie
         mov[np.ix_(active_frames, ypix0*Lxc+ xpix0)] -= tproj[active_frames][:,np.newaxis] * lam0
         # update filtered movie
@@ -383,7 +406,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         for j in range(nscales):
             movu[j][np.ix_(active_frames, xs[j]+Lxp[j]*ys[j])] -= np.outer(tproj[active_frames], lms[j])
             Mx = movu[j][:,xs[j]+Lxp[j]*ys[j]]
-            V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Th2)).sum(axis=0)**.5
+            V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Thresh)).sum(axis=0)**.5
 
         stats.append({
             'ypix': ypix0 + yrange[0],
@@ -405,4 +428,4 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         'spatscale_pix': spatscale_pix,
     }
 
-    return new_ops, stats
+    return new_ops, stats, masks

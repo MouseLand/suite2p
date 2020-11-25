@@ -123,9 +123,8 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 data = utils.spatial_smooth(data, int(pre_smooth))
             refImg = utils.spatial_high_pass(data, int(spatial_hp))
 
-        if ops.get('norm_frames', False):
-            rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
-            refImg = np.clip(refImg, rmin, rmax)
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
 
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
@@ -161,9 +160,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
             dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
-        
-        if ops.get('norm_frames', False):
-            dwrite = np.clip(dwrite, rmin, rmax)
+        dwrite = np.clip(dwrite, rmin, rmax)
 
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(

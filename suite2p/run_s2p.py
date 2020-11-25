@@ -76,6 +76,7 @@ def default_ops():
         'smooth_sigma_time': 0,  # gaussian smoothing in time
         'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
+        'norm_frames': True, # normalize frames when detecting shifts
         'pad_fft': False,
 
         # non rigid registration settings

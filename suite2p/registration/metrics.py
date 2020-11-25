@@ -123,6 +123,9 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 data = utils.spatial_smooth(data, int(pre_smooth))
             refImg = utils.spatial_high_pass(data, int(spatial_hp))
 
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
+
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
             maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma
@@ -132,6 +135,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             smooth_sigma=smooth_sigma,
             pad_fft=pad_fft,
         )
+
         cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
@@ -145,6 +149,8 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 pad_fft=pad_fft,
             )
 
+
+
         if bidiphase and not bidi_corrected:
             bidiphase.shift(Img, bidiphase)
 
@@ -154,7 +160,8 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
             dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
-        
+        dwrite = np.clip(dwrite, rmin, rmax)
+
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
             data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),

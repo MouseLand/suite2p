@@ -973,6 +973,9 @@ class PCViewer(QtGui.QMainWindow):
         try:
             ops = np.load(filename, allow_pickle=True).item()
             self.PC = ops['regPC']
+            self.PC = np.clip(self.PC, np.percentile(self.PC, 1), 
+                                np.percentile(self.PC, 99))
+            
             self.Ly, self.Lx = self.PC.shape[2:]
             self.DX = ops['regDX']
             if 'tPC' in ops:

@@ -70,8 +70,8 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
     ----------
     data : int16
         array that's frames x Ly x Lx
-    lcorr : int
-        maximum shift in pixels
+    maxregshift : float
+        maximum shift as a fraction of the minimum dimension of data (min(Ly,Lx) * maxregshift)
     smooth_sigma_time : float
         how many frames to smooth in time
 

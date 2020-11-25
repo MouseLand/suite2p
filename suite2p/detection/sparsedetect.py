@@ -329,7 +329,6 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     stats = []
     Thresh = Th2
 
-    masks = []
     for tj in range(max_iterations):
         # find peaks in stddev's
         v0max = np.array([V1[j].max() for j in range(5)])
@@ -371,9 +370,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
             active_frames = np.nonzero(tproj>Thresh)[0]
             if len(active_frames)<1:
-                continue
+                break
         if len(active_frames)<1:
-            continue
+            break
 
         # check if ROI should be split
         v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, Thresh)
@@ -409,12 +408,11 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             V1[j][ys[j], xs[j]] = (Mx**2 * np.float32(Mx>Thresh)).sum(axis=0)**.5
 
         stats.append({
-            'ypix': ypix0 + yrange[0],
-            'xpix': xpix0 + xrange[0],
+            'ypix': (ypix0 + yrange[0]).astype(int),
+            'xpix': (xpix0 + xrange[0]).astype(int),
             'lam': lam0 * sdmov[ypix0, xpix0],
             'footprint': ihop[tj]
         })
-
         if tj % 1000 == 0:
             print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
     
@@ -428,4 +426,4 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         'spatscale_pix': spatscale_pix,
     }
 
-    return new_ops, stats, masks
+    return new_ops, stats

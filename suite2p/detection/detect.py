@@ -34,7 +34,6 @@ def detect(ops, classfile: Path):
         )
     print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
-
     stats = select_rois(
         mov=mov,
         dy=dy,
@@ -74,7 +73,7 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
     t0 = time.time()
     if sparse_mode:
         ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
-        new_ops, stats, masks = sparsedetect.sparsery(
+        new_ops, stats = sparsedetect.sparsery(
             mov=mov,
             high_pass=ops['high_pass'],
             neuropil_high_pass=ops['spatial_hp_detect'],
@@ -84,8 +83,7 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
             max_iterations=250 * ops['max_iterations'],
             smooth_masks=ops.get('smooth_masks', False),
             yrange=ops['yrange'],
-            xrange=ops['xrange'],
-            masks=masks
+            xrange=ops['xrange']
         )
         ops.update(new_ops)
     else:
@@ -125,5 +123,5 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap
     stats = roi_stats(stats, dy, dx, Ly, Lx, max_overlap=max_overlap)
 
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
-    return stats, masks
+    return stats
 

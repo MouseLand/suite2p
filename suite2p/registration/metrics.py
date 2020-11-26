@@ -12,7 +12,7 @@ try:
 except ImportError:
     HAS_CV2 = False
 
-from . import rigid, nonrigid, utils
+from . import rigid, nonrigid, utils, bidiphase
 from .. import io
 
 def pclowhigh(mov, nlowhigh, nPC, random_state):
@@ -64,7 +64,7 @@ def pclowhigh(mov, nlowhigh, nPC, random_state):
 
 def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
                 block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
-                is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
+                is_nonrigid=True, pad_fft=False, bidiphase_offset=0, spatial_taper=50.0):
     """
     register top and bottom of PCs to each other
 
@@ -96,7 +96,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         signal to noise threshold to use.
     is_nonrigid: bool
     pad_fft: bool
-    bidiphase: int
+    bidiphase_offset: int
     spatial_taper: float
 
     Returns
@@ -151,8 +151,8 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
 
 
 
-        if bidiphase and not bidi_corrected:
-            bidiphase.shift(Img, bidiphase)
+        if bidiphase_offset and not bidi_corrected:
+            bidiphase.shift(Img, bidiphase_offset)
 
         # preprocessing for 1P recordings
         dwrite = Img.astype(np.float32)
@@ -250,7 +250,7 @@ def get_pc_metrics(ops, use_red=False):
         snr_thresh=ops['snr_thresh'],
         is_nonrigid=ops['nonrigid'],
         pad_fft=ops['pad_fft'],
-        bidiphase=ops['bidiphase'],
+        bidiphase_offset=ops['bidiphase'],
         spatial_taper=ops['spatial_taper']
     )
     return ops

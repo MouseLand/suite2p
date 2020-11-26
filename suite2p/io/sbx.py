@@ -122,7 +122,7 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=-1):
             ndeadrows = 0
         # do not remove dead columns in unidirectional scanning mode
         if sbxinfo.scanmode != 1:
-            ndeadcols = np.argmax(np.diff(colprofile, axis=0)) + 1
+            ndeadcols = np.argmax(np.diff(colprofile, axis=-1)) + 1
         else:
             ndeadcols = 0
         del tmpsbx

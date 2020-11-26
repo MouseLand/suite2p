@@ -77,7 +77,9 @@ def default_ops():
         'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'norm_frames': True, # normalize frames when detecting shifts
+        'force_refImg': False, # if True, use refImg stored in ops if available
         'pad_fft': False,
+        
 
         # non rigid registration settings
         'nonrigid': True,  # whether to use nonrigid registration
@@ -134,6 +136,9 @@ def run_plane(ops, ops_path=None):
     ops : :obj:`dict` 
         specify 'reg_file', 'nchannels', 'tau', 'fs'
 
+    ops_path: str
+        absolute path to ops file (use if files were moved)
+
     Returns
     --------
     ops : :obj:`dict` 
@@ -175,7 +180,8 @@ def run_plane(ops, ops_path=None):
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')
-        ops = registration.register_binary(ops) # register binary
+        refImg = ops['refImg'] if 'refImg' in ops and ops.get('force_refImg', False) else None
+        ops = registration.register_binary(ops, refImg=refImg) # register binary
         np.save(ops['ops_path'], ops)
         plane_times['registration'] = time.time()-t11
         print('----------- Total %0.2f sec' % plane_times['registration'])

@@ -181,6 +181,7 @@ def tiff_to_binary(ops):
                 im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels]
 
                 reg_file[j].write(bytearray(im2write))
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_file'][ik] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
@@ -188,6 +189,8 @@ def tiff_to_binary(ops):
                 if nchannels>1:
                     im2write = im[int(i0)+1-nfunc:nframes:nplanes*nchannels]
                     reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.mean(axis=0)
+
 
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
@@ -331,7 +334,7 @@ def mesoscan_to_binary(ops):
                 #frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
                 im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels, jlines[0]:(jlines[-1]+1), :]
                 #im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
-                #ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
@@ -339,7 +342,7 @@ def mesoscan_to_binary(ops):
                     frange = np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels)
                     im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
                     reg_file_chan2[j].write(bytearray(im2write))
-                    #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
             ntotal+=nframes
@@ -412,26 +415,25 @@ def ome_to_binary(ops):
     # loop over all tiffs
     with ScanImageTiffReader(fs_Ch1[0]) as tif:
         im0 = tif.data()
-    if im0.dtype.type == np.uint16:
-        im0 = (im0 // 2).astype(np.int16)
-
+    
     for ops1_0 in ops1:
         ops1_0['nframes'] = 0
         ops1_0['frames_per_folder'][0] = 0
-        ops1_0['meanImg'] = np.zeros_like(im0)
+        ops1_0['meanImg'] = np.zeros(im0.shape, np.float32)
         if nchannels > 1:
-            ops1_0['meanImg_chan2'] = np.zeros_like(im0)
+            ops1_0['meanImg_chan2'] = np.zeros(im0.shape, np.float32)
 
     for ik, file in enumerate(fs_Ch1):
         with ScanImageTiffReader(file) as tif:
             im = tif.data()
         if im.dtype.type == np.uint16:
-            im = (im // 2).astype(np.int16)
+            im = (im // 2)  
+        im = im.astype(np.int16)
 
         ix = ik % nplanes
         ops1[ix]['nframes'] += 1
         ops1[ix]['frames_per_folder'][0] += 1
-        ops1[ix]['meanImg'] += im
+        ops1[ix]['meanImg'] += im.astype(np.float32)
         reg_file[ix].write(bytearray(im))
         gc.collect()
 
@@ -444,10 +446,12 @@ def ome_to_binary(ops):
             with ScanImageTiffReader(file) as tif:
                 im = tif.data()
             if im.dtype.type == np.uint16:
-                im = (im // 2).astype(np.int16)
+                im = (im // 2)
+                
+            im = im.astype(np.int16)
 
             ix = ik % nplanes
-            ops1[ix]['meanImg_chan2'] += im
+            ops1[ix]['meanImg_chan2'] += im.astype(np.float32)
             reg_file_chan2[ix].write(bytearray(im))
             gc.collect()
 
@@ -461,9 +465,9 @@ def ome_to_binary(ops):
         if not do_registration:
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
-        ops['meanImg'] //= ops['nframes']
+        ops['meanImg'] /= ops['nframes']
         if nchannels>1:
-            ops['meanImg_chan2'] //= ops['nframes']
+            ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files
     for j in range(0,nplanes):

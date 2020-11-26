@@ -248,24 +248,20 @@ class MergeWindow(QtGui.QDialog):
         merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
         parent.update_plot()
-        for ilist in self.merge_list:
-            for n in range(ilist.size):
-                if parent.stat[ilist[n]]['inmerge'] > 0:
-                    ilist[n] = parent.stat[ilist[n]]['inmerge']
-            ilist = np.unique(ilist)
-        self.unmerged[self.n-1] = False
-
+        
         self.cc_row  = np.matmul(parent.Fbin[parent.iscell], parent.Fbin[-1].T) / parent.Fbin.shape[-1]
         self.cc_row /= parent.Fstd[parent.iscell] * parent.Fstd[-1] + 1e-3
         self.cc_row[-1] = 0
         self.CC = np.concatenate((self.CC, self.cc_row[np.newaxis, :-1]), axis=0)
         self.CC = np.concatenate((self.CC, self.cc_row[:,np.newaxis]), axis=1)
+        for n in parent.imerge:
+            self.CC[parent.imerge] = 0
+            self.CC[:,parent.imerge] = 0
 
         parent.ichosen = parent.stat.size-1
         parent.imerge = [parent.ichosen]
-        self.iMerge.setText('ROIs merged: %s'%parent.stat[parent.ichosen]['imerge'])
-        self.doMerge.setEnabled(False)
-        parent.update_plot()
+        print('ROIs merged: %s'%parent.stat[parent.ichosen]['imerge'])
+        self.compute_merge_list(parent)
 
     def compute_merge_list(self, parent):
         print('computing automated merge suggestions...')
@@ -294,9 +290,9 @@ class MergeWindow(QtGui.QDialog):
                             for i in ilist:
                                 notused[parent.iscell[:i].sum()] = False
                             goodind.append(ilist)
-        self.set_merge_list(goodind)
-        
-    def set_merge_list(self, goodind)
+        self.set_merge_list(parent, goodind)
+
+    def set_merge_list(self, parent, goodind):
         self.nMerge.setText('= %d possible merges found with these parameters'%len(goodind))
         self.merge_list = goodind
         self.n = 0

@@ -421,6 +421,8 @@ def save_merge(parent):
     np.save(os.path.join(parent.basename, 'stat.npy'), parent.stat)
     np.save(os.path.join(parent.basename, 'F.npy'), parent.Fcell)
     np.save(os.path.join(parent.basename, 'Fneu.npy'), parent.Fneu)
+    np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
+    np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'), parent.Fneu_chan2)
     np.save(os.path.join(parent.basename, 'spks.npy'), parent.Spks)
     iscell =  np.concatenate((parent.iscell[:,np.newaxis],
                               parent.probcell[:,np.newaxis]), axis=1)

@@ -59,7 +59,6 @@ def extract_wrapper(ops):
         )[()]
         extraction.extract(
             curr_op,
-            extract_input['cell_pix'],
             extract_input['cell_masks'],
             extract_input['neuropil_masks'],
             extract_input['stat']

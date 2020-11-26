@@ -217,14 +217,14 @@ def run_plane(ops, ops_path=None):
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
+        cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
+        ops, stat = extraction.extract(ops, cell_masks, neuropil_masks, stat)
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 

@@ -124,10 +124,8 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
 
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
-def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
-    """ detects ROIs, computes fluorescence, and saves to \*.npy
-
-    if stat is None, ROIs are computed from 'reg_file'
+def extract(ops, cell_masks, neuropil_masks, stat):
+    """ computes fluorescence, and saves to \*.npy
 
     Parameters
     ----------------
@@ -137,9 +135,8 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         'save_path', 'sparse_mode', 'nframes', 'batch_size'
         (optional 'reg_file_chan2', 'chan2_thres')
 
-    stat : array of dicts (optional, default None)
-        'lam' - pixel weights, 'ypix' - pixels in y, 'xpix' - pixels in x
-        
+    stat : array of dicts 
+
     Returns
     ----------------
 

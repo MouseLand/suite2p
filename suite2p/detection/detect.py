@@ -68,7 +68,7 @@ def detect(ops, classfile: Path):
             ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stats)
         np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
-    return cell_pix, cell_masks, neuropil_masks, stats, ops
+    return cell_masks, neuropil_masks, stats, ops
 
 def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, max_overlap: float, sparse_mode: bool, classfile: Path, ops, masks=None):
 

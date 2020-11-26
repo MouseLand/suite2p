@@ -50,7 +50,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = neuropil_masks.shape[0]
+    ncells = len(cell_masks)
     
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
@@ -74,7 +74,8 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         # extract traces and neuropil
         for n in range(ncells):
             F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-        Fneu[:,inds] = np.dot(neuropil_masks , data.T)
+        if neuropil_masks is not None:
+            Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         ix += nimg
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
     reg_file.close()

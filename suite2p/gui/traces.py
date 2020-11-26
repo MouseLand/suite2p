@@ -10,8 +10,12 @@ def plot_trace(parent):
         f = parent.Fcell[n,:]
         fneu = parent.Fneu[n,:]
         sp = parent.Spks[n,:]
-        fmax = np.maximum(f.max(), fneu.max())
-        fmin = np.minimum(f.min(), fneu.min())
+        if np.ptp(fneu)==0:
+            fmax = f.max()
+            fmin = f.min()
+        else:
+            fmax = np.maximum(f.max(), fneu.max())
+            fmin = np.minimum(f.min(), fneu.min())
         #sp from 0 to fmax
         sp /= sp.max()
         #agus

@@ -49,14 +49,16 @@ def detect(ops, classfile: Path):
     t0 = time.time()
     cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
     cell_masks = [create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
-    neuropil_masks = create_neuropil_masks(
-        ypixs=[stat['ypix'] for stat in stats],
-        xpixs=[stat['xpix'] for stat in stats],
-        cell_pix=cell_pix,
-        inner_neuropil_radius=ops['inner_neuropil_radius'],
-        min_neuropil_pixels=ops['min_neuropil_pixels'],
-    )
-
+    if ops.get('neuropil_extract', True):
+        neuropil_masks = create_neuropil_masks(
+            ypixs=[stat['ypix'] for stat in stats],
+            xpixs=[stat['xpix'] for stat in stats],
+            cell_pix=cell_pix,
+            inner_neuropil_radius=ops['inner_neuropil_radius'],
+            min_neuropil_pixels=ops['min_neuropil_pixels'],
+        )
+    else:
+        neuropil_masks = None
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
     ic = np.ones(len(stats), np.bool)

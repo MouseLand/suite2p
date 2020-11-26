@@ -109,6 +109,7 @@ def default_ops():
                                          # classifier specified in classifier_path if set to True)
 
         # ROI extraction parameters
+        'neuropil_extract': True, # whether or not to extract neuropil; if False, Fneu is set to zero
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
         'min_neuropil_pixels': 350,  # minimum number of pixels in the neuropil
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)

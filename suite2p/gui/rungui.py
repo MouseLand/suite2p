@@ -85,13 +85,13 @@ class RunWindow(QtGui.QDialog):
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
-                    'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
+                    'connected', 'roidetect', 'neuropil_extract', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
         cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
-        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
+        neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
@@ -134,10 +134,11 @@ class RunWindow(QtGui.QDialog):
                     'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
                     'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
-                    'adjust the automatically determined threshold by this scalar multiplier',
+                    'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
                     'running mean subtraction with window of size "high_pass" (use low values for 1P)',
+                    'whether or not to extract neuropil; if 0, Fneu is set to 0',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',

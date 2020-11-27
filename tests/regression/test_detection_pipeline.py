@@ -54,12 +54,12 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
+        cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
         output_check = np.load(
             op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
-        assert np.array_equal(output_check['cell_pix'], cell_pix)
+        #assert np.array_equal(output_check['cell_pix'], cell_pix)
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
         for gt_dict, output_dict in zip(stat, output_check['stat']):

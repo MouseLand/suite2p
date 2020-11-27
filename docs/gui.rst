@@ -236,6 +236,21 @@ added to the *.npy files as the first N ROIs (where N is the number that you dre
 .. image:: _static/manual_roi.png
    :width: 600
 
+Merging ROIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You can merge selected ROIs (multi-select with CTRL) by pressing ALT+ENTER, 
+or get suggested merges in the "Merge ROI" menu. The merged ROIs then must 
+be saved before you close the GUI to write the new ROIs to the *.npy files. 
+Each merged ROI is appended to the end of the list of ROIs (in stat), and the
+ROIs that were merged to create it are in the key 'imerge'. Note in the stat file 
+and other files the original ROIs (that create the ROI) are NOT removed so that 
+you retain the original signals and original suite2p output. In the GUI 
+ROI view the merged ROIs are shown.
+
+The merging of fluorescence is done by taking the mean of the selected cells' 
+fluorescences. The list of merges are available in the stat for you to choose 
+alternative strategies for combining signals.
+
 View registered binary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

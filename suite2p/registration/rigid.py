@@ -6,7 +6,20 @@ from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_
 
 
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
-    """Returns maskMul and maskOffset from an image and slope parameter"""
+    """
+    Returns maskMul and maskOffset from an image and slope parameter
+
+    Parameters
+    ----------
+    refImg: Ly x Lx
+        The image
+    maskSlope
+
+    Returns
+    -------
+    maskMul: float arrray
+    maskOffset: float array
+    """
     Ly, Lx = refImg.shape
     maskMul = spatial_taper(maskSlope, Ly, Lx)
     maskOffset = refImg.mean() * (1. - maskMul)
@@ -14,7 +27,19 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -> np.ndarray:
-    """Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'."""
+    """
+    Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'.
+
+    Parameters
+    ----------
+    data: nImg x Ly x Lx
+    maskMul
+    maskOffset
+
+    Returns
+    --------
+    maskedData: nImg x Ly x Lx
+    """
     return addmultiply(data, maskMul, maskOffset)
 
 
@@ -45,8 +70,8 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
     ----------
     data : int16
         array that's frames x Ly x Lx
-    lcorr : int
-        maximum shift in pixels
+    maxregshift : float
+        maximum shift as a fraction of the minimum dimension of data (min(Ly,Lx) * maxregshift)
     smooth_sigma_time : float
         how many frames to smooth in time
 
@@ -83,5 +108,21 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
 
 
 def shift_frame(frame: np.ndarray, dy: int, dx: int) -> np.ndarray:
-    """returns frame, shifted by dy and dx"""
+    """
+    Returns frame, shifted by dy and dx
+
+    Parameters
+    ----------
+    frame: Ly x Lx
+    dy: int
+        vertical shift amount
+    dx: int
+        horizontal shift amount
+
+    Returns
+    -------
+    frame_shifted: Ly x Lx
+        The shifted frame
+
+    """
     return np.roll(frame, (-dy, -dx), axis=(0, 1))

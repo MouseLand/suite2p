@@ -10,7 +10,7 @@ from scipy import stats
 from . import io
 from ..detection.masks import create_cell_pix, create_neuropil_masks, create_cell_mask
 from ..detection.stats import roi_stats
-from ..extraction.extract import extract_traces
+from ..extraction.extract import extract_traces_from_masks
 from ..extraction.dcnv import oasis
 
 
@@ -37,7 +37,8 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     ]
     cell_pix = create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
     manual_roi_stats = stat_all[:len(stat_manual)]
-    neuropil_masks = create_neuropil_masks(
+    manual_cell_masks = cell_masks[:len(stat_manual)]
+    manual_neuropil_masks = create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in manual_roi_stats],
         xpixs=[stat['xpix'] for stat in manual_roi_stats],
         cell_pix=cell_pix,
@@ -46,12 +47,9 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     )
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
-    if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file'])
-        ops['meanImg_chan2'] = ops2['meanImg_chan2']
-    else:
-        F_chan2, Fneu_chan2 = [], []
+    F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, 
+                                                                  manual_cell_masks, 
+                                                                  manual_neuropil_masks)
 
     # compute activity statistics for classifier
     npix = np.array([stat_orig[n]['npix'] for n in range(len(stat_orig))]).astype('float32')
@@ -59,7 +57,7 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         manual_roi_stats[n]['npix_norm'] = manual_roi_stats[n]['npix'] / np.mean(npix[:100])  # What if there are less than 100 cells?
         manual_roi_stats[n]['compact'] = 1
         manual_roi_stats[n]['footprint'] = 2
-        manual_roi_stats[n]['Manual'] = 1  # Add manual key
+        manual_roi_stats[n]['manual'] = 1  # Add manual key
 
     # subtract neuropil and compute skew, std from F
     dF = F - ops['neucoeff'] * Fneu
@@ -67,7 +65,6 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     sd = np.std(dF, axis=1)
 
     for n in range(F.shape[0]):
-        print(n)
         manual_roi_stats[n]['skew'] = sk[n]
         manual_roi_stats[n]['std'] = sd[n]
         manual_roi_stats[n]['med'] = [np.mean(manual_roi_stats[n]['ypix']), np.mean(manual_roi_stats[n]['xpix'])]
@@ -362,6 +359,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.ROIs.append(sROI(iROI=self.nROIs, parent=self, pos=pos, diameter=int(self.diam.text())))
         self.ROIs[-1].position(self)
         self.nROIs += 1
+        print('%d cells added to manual GUI'%self.nROIs)
         self.closeGUI.setEnabled(False)
 
     def plot_clicked(self, event):
@@ -409,7 +407,6 @@ class ROIDraw(QtGui.QMainWindow):
             self.parent.ops['reg_file'] = os.path.join(self.parent.basename, 'data.bin')
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(self.parent.ops, stat0, self.parent.stat)
-        print(spks.shape)
         self.Fcell = F
         self.Fneu = Fneu
         self.F_chan2 = F_chan2

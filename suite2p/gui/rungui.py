@@ -85,13 +85,14 @@ class RunWindow(QtGui.QDialog):
                    'min_neuropil_pixels', 'spatial_scale', 'do_registration']
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
-                    'connected', 'roidetect', 'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
+                    'connected', 'roidetect', 'neuropil_extract', 
+                    'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','sparse_mode','diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
-        neudeconvkeys = [['allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
+        cellkeys = ['roidetect','sparse_mode','anatomical_only', 'diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
+        neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
         labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
@@ -131,13 +132,15 @@ class RunWindow(QtGui.QDialog):
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'if 1, run cell (ROI) detection',
                     'whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)',
+                    'run cellpose to get masks on 1: max_proj / mean_img; or 2: mean_img',
                     'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
                     'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
-                    'adjust the automatically determined threshold by this scalar multiplier',
+                    'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
                     'running mean subtraction with window of size "high_pass" (use low values for 1P)',
+                    'whether or not to extract neuropil; if 0, Fneu is set to 0',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
@@ -154,13 +157,16 @@ class RunWindow(QtGui.QDialog):
         loadOps.clicked.connect(self.load_ops)
         saveDef = QtGui.QPushButton('Save ops as default')
         saveDef.clicked.connect(self.save_default_ops)
+        revertDef = QtGui.QPushButton('Revert default ops to built-in')
+        revertDef.clicked.connect(self.revert_default_ops)
         saveOps = QtGui.QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
         self.layout.addWidget(loadOps,0,2,1,2)
         self.layout.addWidget(saveDef,1,2,1,2)
-        self.layout.addWidget(saveOps,2,2,1,2)
-        self.layout.addWidget(QtGui.QLabel(''),3,2,1,2)
-        self.layout.addWidget(QtGui.QLabel('Load example ops'),4,2,1,2)
+        self.layout.addWidget(revertDef,2,2,1,2)
+        self.layout.addWidget(saveOps,3,2,1,2)
+        self.layout.addWidget(QtGui.QLabel(''),4,2,1,2)
+        self.layout.addWidget(QtGui.QLabel('Load example ops'),5,2,1,2)
         for k in range(3):
             qw = QtGui.QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
@@ -170,7 +176,7 @@ class RunWindow(QtGui.QDialog):
         for b in range(len(opsstr)):
             btn = OpsButton(b, opsstr[b], self)
             self.opsbtns.addButton(btn, b)
-            self.layout.addWidget(btn, 5+b,2,1,2)
+            self.layout.addWidget(btn, 6+b,2,1,2)
         l=0
         self.keylist = []
         self.editlist = []
@@ -281,6 +287,7 @@ class RunWindow(QtGui.QDialog):
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QtGui.QLabel('')
         self.layout.addWidget(self.cleanLabel,n0,4,1,12)
+        n0+=1
         self.listOps = QtGui.QPushButton('save settings and\n add more (batch)')
         self.listOps.clicked.connect(self.add_batch)
         self.layout.addWidget(self.listOps,n0,12,1,2)
@@ -438,15 +445,24 @@ class RunWindow(QtGui.QDialog):
         self.ops = ops
         print('saved current settings in GUI as default ops')
 
+    def revert_default_ops(self):
+        name = self.opsfile
+        ops = self.ops.copy()
+        self.ops = default_ops()
+        np.save(name, self.ops)
+        self.load_ops(name)
+        print('reverted default ops to built-in ops')
+
     def save_text(self):
         for k in range(len(self.editlist)):
             key = self.keylist[k]
             self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
 
-    def load_ops(self):
+    def load_ops(self, name=None):
         print('loading ops')
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
-        name = name[0]
+        if name is None:
+            name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
+            name = name[0]
         if len(name)>0:
             ext = os.path.splitext(name)[1]
             try:

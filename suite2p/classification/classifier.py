@@ -99,6 +99,7 @@ class Classifier:
             x = stats[:,n]
             x[x<self.grid[0,n]]   = self.grid[0,n]
             x[x>self.grid[-1,n]]  = self.grid[-1,n]
+            x[np.isnan(x)] = self.grid[0,n]
             ibin = np.digitize(x, self.grid[:,n], right=True) - 1
             logp[:,n] = np.log(self.p[ibin,n] + 1e-6) - np.log(1-self.p[ibin,n] + 1e-6)
         return logp

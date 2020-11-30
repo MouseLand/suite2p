@@ -21,7 +21,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
 
     ops : dictionary
         'Ly', 'Lx', 'nframes', 'batch_size'
-        (optional 'reg_file_chan2', 'chan2_thres')
+
         
     cell_masks : list
         each is a tuple where first element are cell pixels (flattened), and
@@ -50,7 +50,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     nframes = int(ops['nframes'])
     Ly = ops['Ly']
     Lx = ops['Lx']
-    ncells = neuropil_masks.shape[0]
+    ncells = len(cell_masks)
     
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
@@ -74,7 +74,8 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         # extract traces and neuropil
         for n in range(ncells):
             F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-        Fneu[:,inds] = np.dot(neuropil_masks , data.T)
+        if neuropil_masks is not None:
+            Fneu[:,inds] = np.dot(neuropil_masks , data.T)
         ix += nimg
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
     reg_file.close()
@@ -89,9 +90,12 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     ----------------
 
     ops : dictionary
-        'Ly', 'Lx', 'reg_file', 'neucoeff', 'ops_path', 
-        'save_path', 'sparse_mode', 'nframes', 'batch_size'
-        (optional 'reg_file_chan2', 'chan2_thres')
+        'Ly', 'Lx', 'nframes', 'batch_size', optionally 'reg_file' or 'reg_file_chan2'
+    cell_masks : list
+        each is a tuple where first element are cell pixels (flattened), and
+        second element are pixel weights normalized to sum 1 (lam)
+    neuropil_masks : 2D array
+        size [ncells x npixels] where weights of each mask are elements
 
 
     Returns
@@ -110,24 +114,18 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
         size [ROIs x time]
 
     ops : dictionaray
-
-    stat : array of dicts
-        adds 'skew', 'std'    
-
     """
 
-    F,Fneu,ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
+    F,Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, ops2 = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
+        F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
     else:
         F_chan2, Fneu_chan2 = [], []
 
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
-def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
-    """ detects ROIs, computes fluorescence, and saves to \*.npy
-
-    if stat is None, ROIs are computed from 'reg_file'
+def extract(ops, cell_masks, neuropil_masks, stat):
+    """ computes fluorescence, and saves to \*.npy
 
     Parameters
     ----------------
@@ -137,9 +135,8 @@ def extract(ops, cell_pix, cell_masks, neuropil_masks, stat):
         'save_path', 'sparse_mode', 'nframes', 'batch_size'
         (optional 'reg_file_chan2', 'chan2_thres')
 
-    stat : array of dicts (optional, default None)
-        'lam' - pixel weights, 'ypix' - pixels in y, 'xpix' - pixels in x
-        
+    stat : array of dicts 
+
     Returns
     ----------------
 

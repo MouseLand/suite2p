@@ -93,13 +93,22 @@ def drawClusters(stat, ops):
 
 
 def create_neuropil_basis(ops, Ly, Lx):
-    ''' computes neuropil basis functions
-        inputs:
-            ops, Ly, Lx
-            from ops: ratio_neuropil, tile_factor, diameter, neuropil_type
-        outputs:
-            basis functions (pixels x nbasis functions)
-    '''
+    """
+    computes neuropil basis functions
+
+    Parameters
+    ----------
+    ops:
+        ratio_neuropil, tile_factor, diameter, neuropil_type
+    Ly: int
+    Lx: int
+
+    Returns
+    -------
+    S:
+        basis functions (pixels x nbasis functions)
+    """
+
     if 'ratio_neuropil' in ops:
         ratio_neuropil = ops['ratio_neuropil']
     else:
@@ -147,20 +156,30 @@ def create_neuropil_basis(ops, Ly, Lx):
     return S
 
 def circleMask(d0):
-    ''' creates array with indices which are the radius of that x,y point
-        inputs:
-            d0 (patch of (-d0,d0+1) over which radius computed
-        outputs:
-            rs: array (2*d0+1,2*d0+1) of radii
-            dx,dy: indices in rs where the radius is less than d0
-    '''
-    dx  = np.tile(np.arange(-d0[1],d0[1]+1)/d0[1], (2*d0[0]+1,1))
-    dy  = np.tile(np.arange(-d0[0],d0[0]+1)/d0[0], (2*d0[1]+1,1))
-    dy  = dy.transpose()
+    """
+    creates array with indices which are the radius of that x,y point
 
-    rs  = (dy**2 + dx**2) ** 0.5
-    dx  = dx[rs<=1.]
-    dy  = dy[rs<=1.]
+    Parameters
+    ----------
+    d0
+        (patch of (-d0,d0+1) over which radius computed
+
+    Returns
+    -------
+    rs:
+        array (2*d0+1,2*d0+1) of radii
+    dx:
+        indices in rs where the radius is less than d0
+    dy:
+        indices in rs where the radius is less than d0
+    """
+    dx = np.tile(np.arange(-d0[1],d0[1]+1)/d0[1], (2*d0[0]+1,1))
+    dy = np.tile(np.arange(-d0[0],d0[0]+1)/d0[0], (2*d0[1]+1,1))
+    dy = dy.transpose()
+
+    rs = (dy**2 + dx**2) ** 0.5
+    dx = dx[rs<=1.]
+    dy = dy[rs<=1.]
     return rs, dx, dy
 
 def morphOpen(V, footprint):
@@ -170,12 +189,20 @@ def morphOpen(V, footprint):
     return vrem
 
 def localMax(V, footprint, thres):
-    ''' find local maxima of V (correlation map) using a filter with (usually circular) footprint
-        inputs:
-            V, footprint, thres
-        outputs:
-            i,j: indices of local max greater than thres
-    '''
+    """
+    find local maxima of V (correlation map) using a filter with (usually circular) footprint
+
+    Parameters
+    ----------
+    V
+    footprint
+    thres
+
+
+    Returns
+    -------
+    i,j: indices of local max greater than thres
+    """
     maxV = filters.maximum_filter(V, footprint=footprint, mode = 'reflect')
     imax = V > np.maximum(thres, maxV - 1e-10)
     i,j  = imax.nonzero()
@@ -206,11 +233,22 @@ def r_squared(yp, xp, ypix, xpix, diam_y, diam_x, estimator=np.median):
 
 # this function needs to be updated with the new stat
 def get_stat(ops, stats, Ucell, codes, frac=0.5):
-    '''computes statistics of cells found using sourcery
-    inputs:
-        Ly, Lx, d0, mPix (pixels,ncells), mLam (weights,ncells), codes (ncells,nsvd), Ucell (nsvd,Ly,Lx)
-    outputs:
-        stat
+    '''
+    computes statistics of cells found using sourcery
+
+    Parameters
+    ----------
+    Ly
+    Lx
+    d0
+    mPix: (pixels,ncells)
+    mLam: (weights,ncells)
+    codes: (ncells,nsvd)
+    Ucell: (nsvd,Ly,Lx)
+
+    Returns
+    -------
+    stat
         assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
     '''
     d0, Ly, Lx = ops['diameter'], ops['Lyc'], ops['Lxc']

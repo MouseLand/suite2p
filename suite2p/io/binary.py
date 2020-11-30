@@ -7,6 +7,20 @@ import numpy as np
 class BinaryFile:
 
     def __init__(self, Ly: int, Lx: int, read_filename: str, write_filename: Optional[str] = None):
+        """
+        Creates/Opens a Suite2p BinaryFile for reading and writing image data
+
+        Parameters
+        ----------
+        Ly: int
+            The height of each frame
+        Lx: int
+            The width of each frame
+        read_filename: str
+            The filename of the file to read from
+        write_filename: str
+            The filename to write to, if different from the read_filename (optional)
+        """
         self.Ly = Ly
         self.Lx = Lx
         self.read_filename = read_filename
@@ -28,8 +42,17 @@ class BinaryFile:
         self._can_read = True
 
     @staticmethod
-    def convert_numpy_file_to_suite2p_binary(from_filename, to_filename):
-        """Works with npz files, pickled npy files, etc."""
+    def convert_numpy_file_to_suite2p_binary(from_filename: str, to_filename: str) -> None:
+        """
+        Works with npz files, pickled npy files, etc.
+
+        Parameters
+        ----------
+        from_filename: str
+            The npy file to convert
+        to_filename: str
+            The binary file that will be created
+        """
         np.load(from_filename).tofile(to_filename)
 
     @property
@@ -51,13 +74,35 @@ class BinaryFile:
 
     @property
     def shape(self) -> Tuple[int, int, int]:
+        """
+        The dimensions of the data in the file
+
+        Returns
+        -------
+        n_frames: int
+            The number of frames
+        Ly: int
+            The height of each frame
+        Lx: int
+            The width of each frame
+        """
         return self.n_frames, self.Ly, self.Lx
 
     @property
-    def size(self):
+    def size(self) -> int:
+        """
+        Returns the total number of pixels
+
+        Returns
+        -------
+        size: int
+        """
         return np.prod(np.array(self.shape).astype(np.int64))
 
     def close(self) -> None:
+        """
+        Closes the file.
+        """
         self.read_file.close()
         if self.write_file:
             self.write_file.close()
@@ -78,14 +123,34 @@ class BinaryFile:
             frames = self.ix(indices=frame_indices)
         return frames[(slice(None),) + crop] if crop else frames
 
-    def sampled_mean(self):
+    def sampled_mean(self) -> float:
+        """
+        Returns the sampled mean.
+        """
         n_frames = self.n_frames
         nsamps = min(n_frames, 1000)
         inds = np.linspace(0, n_frames, 1+nsamps).astype(np.int64)[:-1]
         frames = self.ix(indices=inds).astype(np.float32)
         return frames.mean(axis=0)
 
-    def iter_frames(self, batch_size=1, dtype=np.float32):
+    def iter_frames(self, batch_size: int = 1, dtype=np.float32):
+        """
+        Iterates through each set of frames, depending on batch_size, yielding both the frame index and frame data.
+
+        Parameters
+        ---------
+        batch_size: int
+            The number of frames to get at a time
+        dtype: np.dtype
+            The nympy data type that the data should return as
+
+        Yields
+        ------
+        indices: array int
+            The frame indices.
+        data: batch_size x Ly x Lx
+            The frames
+        """
         while True:
             results = self.read(batch_size=batch_size, dtype=dtype)
             if results is None:
@@ -94,6 +159,19 @@ class BinaryFile:
             yield indices, data
 
     def ix(self, indices: Sequence[int]):
+        """
+        Returns the frames at index values "indices".
+
+        Parameters
+        ----------
+        indices: int array
+            The frame indices to get
+
+        Returns
+        -------
+        frames: len(indices) x Ly x Lx
+            The requested frames
+        """
         frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
         # load and bin data
         with temporary_pointer(self.read_file) as f:
@@ -106,10 +184,28 @@ class BinaryFile:
 
     @property
     def data(self) -> np.ndarray:
+        """
+        Returns all the frames in the file.
+
+        Returns
+        -------
+        frames: nImg x Ly x Lx
+            The frame data
+        """
         with temporary_pointer(self.read_file) as f:
             return np.fromfile(f, np.int16).reshape(-1, self.Ly, self.Lx)
 
     def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns the next frame(s) in the file and its associated indices.
+
+        Parameters
+        ----------
+        batch_size: int
+            The number of frames to read at once.
+        frames: batch_size x Ly x Lx
+            The frame data
+        """
         if not self._can_read:
             raise IOError("BinaryFile needs to write before it can read again.")
         nbytes = self.nbytesread * batch_size
@@ -124,6 +220,14 @@ class BinaryFile:
         return indices, data
 
     def write(self, data: np.ndarray) -> None:
+        """
+        Writes frame(s) to the file.
+
+        Parameters
+        ----------
+        data: 2D or 3D array
+            The frame(s) to write.  Should be the same width and height as the other frames in the file.
+        """
         if self._can_read and self.read_file is self.write_file:
             raise IOError("BinaryFile needs to read before it can write again.")
         if not self.write_file:
@@ -135,7 +239,26 @@ class BinaryFile:
 
     def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
                   bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
-        """Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range)."""
+        """
+        Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range).
+
+        Parameters
+        ----------
+        bin_size: int
+            The size of each bin
+        x_range: int, int
+            Crops the data to a minimum and maximum x range.
+        y_range: int, int
+            Crops the data to a minimum and maximum y range.
+        bad_frames: int array
+            The indices to *not* include.
+        reject_threshold: float
+
+        Returns
+        -------
+        frames: nImg x Ly x Lx
+            The frames
+        """
 
         good_frames = ~bad_frames if bad_frames is not None else np.ones(self.n_frames, dtype=bool)
 
@@ -161,6 +284,7 @@ class BinaryFile:
 
 
 def from_slice(s: slice) -> Optional[np.ndarray]:
+    """Creates an np.arange() array from a Python slice object.  Helps provide numpy-like slicing interfaces."""
     return np.arange(s.start, s.stop, s.step) if any([s.start, s.stop, s.step]) else None
 
 
@@ -168,7 +292,7 @@ def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     """Returns an array with the mean of each time bin (of size 'bin_size')."""
     n_frames, Ly, Lx = mov.shape
     mov = mov[:(n_frames // bin_size) * bin_size]
-    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
+    return mov.reshape(-1, bin_size, Ly, Lx).astype(np.float32).mean(axis=1)
 
 
 @contextmanager

@@ -1,7 +1,7 @@
 """
 Tests for the Suite2p Detection module.
 """
-
+from pathlib import Path
 import numpy as np
 import utils
 from suite2p import detection
@@ -26,7 +26,8 @@ def prepare_for_detection(op, input_file_name_list, dimensions):
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
-        plane_dir = utils.get_plane_dir(save_path0=op['save_path0'], plane=plane)
+        plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
+        plane_dir.mkdir(exist_ok=True, parents=True)
         bin_path = str(plane_dir.joinpath('data.bin'))
         BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
         curr_op['meanImg'] = np.reshape(
@@ -53,15 +54,17 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_pix, cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
+        cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
         output_check = np.load(
             op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
-        assert np.array_equal(output_check['cell_pix'], cell_pix)
+        #assert np.array_equal(output_check['cell_pix'], cell_pix)
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
-        assert all(utils.check_dict_dicts_all_close(stat, output_check['stat']))
+        for gt_dict, output_dict in zip(stat, output_check['stat']):
+            for k in gt_dict.keys():
+                assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
 
 
 def test_detection_output_1plane1chan(test_ops):
@@ -91,9 +94,11 @@ def test_detection_output_2plane2chan(test_ops):
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     detect_wrapper(ops)
     nplanes = test_ops['nplanes']
-    assert all(utils.check_output(
-        output_root=test_ops['save_path0'],
-        outputs_to_check=['redcell'],
-        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes=nplanes
-    ))
+
+    outputs_to_check = ['redcell']
+    for i in range(nplanes):
+        assert all(utils.compare_list_of_outputs(
+            outputs_to_check,
+            utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
+        ))

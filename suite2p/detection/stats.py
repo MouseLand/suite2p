@@ -80,7 +80,6 @@ class ROI:
             arrays.append(array)
         return np.stack(arrays)
 
-
     def ravel_indices(self, Ly: int, Lx: int) -> np.ndarray:
         """Returns a 1-dimensional array of indices from the ypix and xpix coordinates, assuming an image shape Ly x Lx."""
         return np.ravel_multi_index((self.ypix, self.xpix), (Ly, Lx))
@@ -175,7 +174,7 @@ def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
         stat['npix_norm'] = npix_normed
         stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
 
-    if max_overlap is not None:
+    if  max_overlap is not None and max_overlap<1.0:
         keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps, max_overlap=max_overlap)
         stats = stats[keep_rois]
     return stats
@@ -242,7 +241,6 @@ def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray, max_overlap: flo
         if not keep_roi:
             n_overlaps[ypix, xpix] -= 1
     return keep_rois[::-1]
-
 
 def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100, offset: float = 0.) -> np.ndarray:
     """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""

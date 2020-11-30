@@ -12,7 +12,7 @@ try:
 except ImportError:
     HAS_CV2 = False
 
-from . import rigid, nonrigid, utils
+from . import rigid, nonrigid, utils, bidiphase
 from .. import io
 
 def pclowhigh(mov, nlowhigh, nPC, random_state):
@@ -64,7 +64,7 @@ def pclowhigh(mov, nlowhigh, nPC, random_state):
 
 def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
                 block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
-                is_nonrigid=True, pad_fft=False, bidiphase=0, spatial_taper=50.0):
+                is_nonrigid=True, pad_fft=False, bidiphase_offset=0, spatial_taper=50.0):
     """
     register top and bottom of PCs to each other
 
@@ -96,7 +96,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         signal to noise threshold to use.
     is_nonrigid: bool
     pad_fft: bool
-    bidiphase: int
+    bidiphase_offset: int
     spatial_taper: float
 
     Returns
@@ -123,6 +123,9 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 data = utils.spatial_smooth(data, int(pre_smooth))
             refImg = utils.spatial_high_pass(data, int(spatial_hp))
 
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
+
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
             maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma
@@ -132,6 +135,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             smooth_sigma=smooth_sigma,
             pad_fft=pad_fft,
         )
+
         cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
             maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
@@ -145,8 +149,10 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 pad_fft=pad_fft,
             )
 
-        if bidiphase and not bidi_corrected:
-            bidiphase.shift(Img, bidiphase)
+
+
+        if bidiphase_offset and not bidi_corrected:
+            bidiphase.shift(Img, bidiphase_offset)
 
         # preprocessing for 1P recordings
         dwrite = Img.astype(np.float32)
@@ -154,7 +160,8 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
             dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
-        
+        dwrite = np.clip(dwrite, rmin, rmax)
+
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
             data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
@@ -243,7 +250,7 @@ def get_pc_metrics(ops, use_red=False):
         snr_thresh=ops['snr_thresh'],
         is_nonrigid=ops['nonrigid'],
         pad_fft=ops['pad_fft'],
-        bidiphase=ops['bidiphase'],
+        bidiphase_offset=ops['bidiphase'],
         spatial_taper=ops['spatial_taper']
     )
     return ops

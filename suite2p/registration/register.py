@@ -10,13 +10,32 @@ from .. import io
 from . import bidiphase, utils, rigid, nonrigid
 
 
-def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, Lx):
+def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregshift, Ly: int, Lx:int):
     """ determines how much to crop FOV based on motion
     
     determines badframes which are frames with large outlier shifts
     (threshold of outlier is th_badframes) and
     it excludes these badframes when computing valid ranges
     from registration in y and x
+
+    Parameters
+    __________
+    xoff: int
+    yoff: int
+    corrXY
+    th_badframes
+    badframes
+    maxregshift
+    Ly: int
+        Height of a frame
+    Lx: int
+        Width of a frame
+
+    Returns
+    _______
+    badframes
+    yrange
+    xrange
     """
     dx = xoff - medfilt(xoff, 101)
     dy = yoff - medfilt(yoff, 101)
@@ -40,7 +59,7 @@ def compute_crop(xoff, yoff, corrXY, th_badframes, badframes, maxregshift, Ly, L
     return badframes, yrange, xrange
 
 
-def pick_initial_reference(frames):
+def pick_initial_reference(frames: np.ndarray):
     """ computes the initial reference image
 
     the seed frame is the frame with the largest correlations with other frames;
@@ -72,10 +91,6 @@ def pick_initial_reference(frames):
     refImg = np.reshape(refImg, (Ly,Lx))
     return refImg
 
-def sampled_mean(ops):
-    with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
-        refImg = f.sampled_mean()
-    return refImg
 
 def compute_reference(ops, frames):
     """ computes the reference image
@@ -183,9 +198,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     # get binary file paths
     raw = raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
-    reg_file_align = ops['reg_file'] if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file_chan2']
-    raw_file_align = ops.get('raw_file') if ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file_chan2')
-    raw_file_align = raw_file_align if raw and ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file']) else []
+    reg_file_align = ops['reg_file'] if (ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan']) else ops['reg_file_chan2']
+    if raw:
+        raw_file_align = ops.get('raw_file') if (ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan']) else ops.get('raw_file_chan2')
+    else:
+        raw_file_align = None
 
     ### ----- compute and use bidiphase shift -------------- ###
     if refImg is None or (ops['do_bidiphase'] and ops['bidiphase'] == 0):
@@ -206,10 +223,16 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         t0 = time.time()
         refImg = compute_reference(ops, frames)
         print('Reference frame, %0.2f sec.'%(time.time()-t0))
+
     ops['refImg'] = refImg
 
+    # normalize reference image
+    refImg = ops['refImg'].copy()
+    if ops.get('norm_frames', False):
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
 
-    ### ------------- register binary to reference image ------------ ###
+    ### ------------- compute registration masks ----------------- ###
 
     maskMul, maskOffset = rigid.compute_masks(
         refImg=refImg,
@@ -235,6 +258,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             pad_fft=ops['pad_fft'],
         )
 
+    ### ------------- register binary to reference image ------------ ###
+
     mean_img = np.zeros((ops['Ly'], ops['Lx']))
     rigid_offsets, nonrigid_offsets = [], []
     with io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
@@ -257,6 +282,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
 
             # rigid registration
+            if ops.get('norm_frames', False):
+                fsmooth = np.clip(fsmooth, rmin, rmax)
             ymax, xmax, cmax = rigid.phasecorr(
                 data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
                 cfRefImg=cfRefImg,
@@ -275,8 +302,11 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     for fsm, dy, dx in zip(fsmooth, ymax, xmax):
                         fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
                 else:
-                    fsmooth = frames
+                    fsmooth = frames.copy()
 
+                if ops.get('norm_frames', False):
+                    fsmooth = np.clip(fsmooth, rmin, rmax)
+                    
                 ymax1, xmax1, cmax1 = nonrigid.phasecorr(
                     data=fsmooth,
                     maskMul=maskMulNR.squeeze(),
@@ -303,7 +333,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             mean_img += frames.sum(axis=0) / ops['nframes']
 
             f.write(frames)
-            if ops['reg_tif']:
+            if (ops['reg_tif'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_tif_chan2']):
                 fname = io.generate_tiff_filename(
                     functional_chan=ops['functional_chan'],
                     align_by_chan=ops['align_by_chan'],
@@ -318,7 +348,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ops['yoff'], ops['xoff'], ops['corrXY'] = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
     if ops['nonrigid']:
         ops['yoff1'], ops['xoff1'], ops['corrXY1'] = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
-    mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImage_chan2'
+    mean_img_key = 'meanImg' if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan'] else 'meanImg_chan2'
     ops[mean_img_key] = mean_img
 
     if ops['nchannels'] > 1:
@@ -346,7 +376,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
                 # write
                 f.write(frames)
-                if ops['reg_tif_chan2']:
+                if (ops['reg_tif_chan2'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_tif']):
                     fname = io.generate_tiff_filename(
                         functional_chan=ops['functional_chan'],
                         align_by_chan=ops['align_by_chan'],

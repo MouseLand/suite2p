@@ -15,6 +15,26 @@ from . import utils
 
 
 def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: str, k: int, ichan: bool) -> str:
+    """
+    Calculates a suite2p tiff filename from different parameters.
+
+    Parameters
+    ----------
+    functional_chan: int
+        The channel number with functional information
+    align_by_chan: int
+        Which channel to use for alignment
+    save_path: str
+        The directory to save to
+    k: int
+        The file number
+    wchan: int
+        The channel number.
+
+    Returns
+    -------
+    filename: str
+    """
     if ichan:
         if functional_chan == align_by_chan:
             tifroot = os.path.join(save_path, 'reg_tif')
@@ -37,7 +57,17 @@ def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: 
 
 
 def save_tiff(mov: np.ndarray, fname: str) -> None:
-    """Save image stack array to tiff file."""
+    """
+    Save image stack array to tiff file.
+
+    Parameters
+    ----------
+    mov: nImg x Ly x Lx
+        The frames to save
+    fname: str
+        The tiff filename to save to
+
+    """
     with TiffWriter(fname) as tif:
         for frame in np.floor(mov).astype(np.int16):
             tif.save(frame)
@@ -151,6 +181,7 @@ def tiff_to_binary(ops):
                 im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels]
 
                 reg_file[j].write(bytearray(im2write))
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_file'][ik] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
@@ -158,6 +189,8 @@ def tiff_to_binary(ops):
                 if nchannels>1:
                     im2write = im[int(i0)+1-nfunc:nframes:nplanes*nchannels]
                     reg_file_chan2[j].write(bytearray(im2write))
+                    ops1[j]['meanImg_chan2'] += im2write.mean(axis=0)
+
 
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
@@ -301,7 +334,7 @@ def mesoscan_to_binary(ops):
                 #frange = np.arange(int(i0)+nfunc, nframes, nplanes*nchannels)
                 im2write = im[int(i0)+nfunc:nframes:nplanes*nchannels, jlines[0]:(jlines[-1]+1), :]
                 #im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
-                #ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
+                ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                 reg_file[j].write(bytearray(im2write))
                 ops1[j]['nframes'] += im2write.shape[0]
                 ops1[j]['frames_per_folder'][which_folder] += im2write.shape[0]
@@ -309,7 +342,7 @@ def mesoscan_to_binary(ops):
                     frange = np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels)
                     im2write = im[np.ix_(frange, jlines, np.arange(0,im.shape[2],1,int))]
                     reg_file_chan2[j].write(bytearray(im2write))
-                    #ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
+                    ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
             ntotal+=nframes
@@ -382,24 +415,25 @@ def ome_to_binary(ops):
     # loop over all tiffs
     with ScanImageTiffReader(fs_Ch1[0]) as tif:
         im0 = tif.data()
-
+    
     for ops1_0 in ops1:
         ops1_0['nframes'] = 0
         ops1_0['frames_per_folder'][0] = 0
-        ops1_0['meanImg'] = np.zeros_like(im0)
+        ops1_0['meanImg'] = np.zeros(im0.shape, np.float32)
         if nchannels > 1:
-            ops1_0['meanImg_chan2'] = np.zeros_like(im0)
+            ops1_0['meanImg_chan2'] = np.zeros(im0.shape, np.float32)
 
     for ik, file in enumerate(fs_Ch1):
         with ScanImageTiffReader(file) as tif:
             im = tif.data()
         if im.dtype.type == np.uint16:
-            im = (im // 2).astype(np.int16)
+            im = (im // 2)  
+        im = im.astype(np.int16)
 
         ix = ik % nplanes
         ops1[ix]['nframes'] += 1
         ops1[ix]['frames_per_folder'][0] += 1
-        ops1[ix]['meanImg'] += im
+        ops1[ix]['meanImg'] += im.astype(np.float32)
         reg_file[ix].write(bytearray(im))
         gc.collect()
 
@@ -412,10 +446,12 @@ def ome_to_binary(ops):
             with ScanImageTiffReader(file) as tif:
                 im = tif.data()
             if im.dtype.type == np.uint16:
-                im = (im // 2).astype(np.int16)
+                im = (im // 2)
+                
+            im = im.astype(np.int16)
 
             ix = ik % nplanes
-            ops1[ix]['meanImg_chan2'] += im
+            ops1[ix]['meanImg_chan2'] += im.astype(np.float32)
             reg_file_chan2[ix].write(bytearray(im))
             gc.collect()
 

@@ -79,7 +79,7 @@ def sbx_memmap(filename,plane_axis=True):
         raise ValueError('Not sbx:  ' + filename)
 
 
-def sbx_to_binary(ops,ndeadcols = -1):
+def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=-1):
     """  finds scanbox files and writes them to binaries
 
     Parameters
@@ -107,19 +107,30 @@ def sbx_to_binary(ops,ndeadcols = -1):
     ik = 0
     if 'sbx_ndeadcols' in ops1[0].keys():
         ndeadcols = int(ops1[0]['sbx_ndeadcols'])
-    if ndeadcols == -1:
+    if 'sbx_ndeadrows' in ops1[0].keys():
+        ndeadrows = int(ops1[0]['sbx_ndeadrows'])
+    
+    if ndeadcols==-1 or ndeadrows==-1:
         sbxinfo = sbx_get_info(sbxlist[0])
-        if sbxinfo.scanmode == 1:
-            # do not remove dead columns in unidirectional scanning mode
-            ndeadcols = 0
+        # compute dead rows and cols from the first file
+        tmpsbx = sbx_memmap(sbxlist[0])
+        colprofile = np.mean(tmpsbx[0][0][0], axis=0)
+        # do not remove dead rows in non-multiplane mode
+        if nplanes > 1:
+            ndeadrows = np.argmax(np.diff(colprofile, axis=0)) + 1
         else:
-            # compute dead cols from the first file
-            tmpsbx = sbx_memmap(sbxlist[0])
-            colprofile = np.mean(tmpsbx[0][0][0],axis = 0)
-            ndeadcols = np.argmax(np.diff(colprofile)) + 1
-            del tmpsbx
-            print('Removing {0} dead columns while loading sbx data.'.format(ndeadcols))
+            ndeadrows = 0
+        # do not remove dead columns in unidirectional scanning mode
+        if sbxinfo.scanmode != 1:
+            ndeadcols = np.argmax(np.diff(colprofile, axis=-1)) + 1
+        else:
+            ndeadcols = 0
+        del tmpsbx
+        print('Removing {0} dead columns while loading sbx data.'.format(ndeadcols))
+        print('Removing {0} dead rows while loading sbx data.'.format(ndeadrows))
+
     ops1[0]['sbx_ndeadcols'] = ndeadcols
+    ops1[0]['sbx_ndeadrows'] = ndeadrows
     
     for ifile,sbxfname in enumerate(sbxlist):
         f = sbx_memmap(sbxfname)
@@ -138,7 +149,7 @@ def sbx_to_binary(ops,ndeadcols = -1):
         # loop over all frames
         for ichunk,onset  in enumerate(iblocks[:-1]):
             offset = iblocks[ichunk+1]
-            im = (np.uint16(65535)-f[onset:offset,:,:,:,ndeadcols:])//2
+            im = (np.uint16(65535)-f[onset:offset,:,:,ndeadrows:,ndeadcols:])//2
             im = im.astype(np.int16)
             im2mean = im.mean(axis = 0).astype(np.float32)/len(iblocks) 
             for ichan in range(nchannels):

@@ -10,19 +10,23 @@ def plot_trace(parent):
         f = parent.Fcell[n,:]
         fneu = parent.Fneu[n,:]
         sp = parent.Spks[n,:]
-        fmax = np.maximum(f.max(), fneu.max())
-        fmin = np.minimum(f.min(), fneu.min())
+        if np.ptp(fneu)==0:
+            fmax = f.max()
+            fmin = f.min()
+        else:
+            fmax = np.maximum(f.max(), fneu.max())
+            fmin = np.minimum(f.min(), fneu.min())
         #sp from 0 to fmax
         sp /= sp.max()
         #agus
         sp *= fmax - fmin
         #sp += fmin*0.95
         if parent.tracesOn:
-            parent.p3.plot(parent.trange,f,pen='b')
+            parent.p3.plot(parent.trange,f,pen='c')
         if parent.neuropilOn:
             parent.p3.plot(parent.trange,fneu,pen='r')
         if parent.deconvOn:
-            parent.p3.plot(parent.trange,(sp+fmin),pen=(255,255,255,100))
+            parent.p3.plot(parent.trange,(sp+fmin),pen=(255,255,255,150))
         parent.fmin= fmin
         parent.fmax=fmax
         ax.setTicks(None)
@@ -161,7 +165,7 @@ def make_buttons(parent, b0):
     # traces CHECKBOX
     parent.l0.setVerticalSpacing(4)
     parent.checkBoxt = QtGui.QCheckBox("raw fluor [V]")
-    parent.checkBoxt.setStyleSheet("color: blue;")
+    parent.checkBoxt.setStyleSheet("color: cyan;")
     parent.checkBoxt.toggled.connect(lambda: traces_on(parent))
     parent.tracesOn = True
     parent.checkBoxt.toggle()

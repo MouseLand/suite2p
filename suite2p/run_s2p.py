@@ -20,7 +20,6 @@ from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
 
-
 def default_ops():
     """ default options to run pipeline """
     return {
@@ -76,8 +75,10 @@ def default_ops():
         'smooth_sigma_time': 0,  # gaussian smoothing in time
         'smooth_sigma': 1.15,  # ~1 good for 2P recordings, recommend 3-5 for 1P recordings
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
+        'norm_frames': True, # normalize frames when detecting shifts
+        'force_refImg': False, # if True, use refImg stored in ops if available
         'pad_fft': False,
-
+        
         # non rigid registration settings
         'nonrigid': True,  # whether to use nonrigid registration
         'block_size': [128, 128],  # block size to register (** keep this a multiple of 2 **)
@@ -88,13 +89,14 @@ def default_ops():
         '1Preg': False,  # whether to perform high-pass filtering and tapering
         'spatial_hp': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
-        'spatial_hp_detect': 25,  # window for spatial high-pass filtering before registration
+        'spatial_hp_detect': 25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
+        'anatomical_only': False, # use cellpose masks from mean image (no functional segmentation)
         'sparse_mode': True,  # whether or not to run sparse_mode
         'diameter': 12,  # if not sparse_mode, use diameter for filtering and extracting
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
@@ -108,6 +110,7 @@ def default_ops():
                                          # classifier specified in classifier_path if set to True)
 
         # ROI extraction parameters
+        'neuropil_extract': True, # whether or not to extract neuropil; if False, Fneu is set to zero
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
         'min_neuropil_pixels': 350,  # minimum number of pixels in the neuropil
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
@@ -131,6 +134,9 @@ def run_plane(ops, ops_path=None):
     -----------
     ops : :obj:`dict` 
         specify 'reg_file', 'nchannels', 'tau', 'fs'
+
+    ops_path: str
+        absolute path to ops file (use if files were moved)
 
     Returns
     --------
@@ -173,7 +179,8 @@ def run_plane(ops, ops_path=None):
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')
-        ops = registration.register_binary(ops) # register binary
+        refImg = ops['refImg'] if 'refImg' in ops and ops.get('force_refImg', False) else None
+        ops = registration.register_binary(ops, refImg=refImg) # register binary
         np.save(ops['ops_path'], ops)
         plane_times['registration'] = time.time()-t11
         print('----------- Total %0.2f sec' % plane_times['registration'])
@@ -181,7 +188,8 @@ def run_plane(ops, ops_path=None):
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
             print('(making mean image (excluding bad frames)')
-            refImg = registration.sampled_mean(ops)
+            with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
+                refImg = f.sampled_mean()
             ops = registration.register_binary(ops, refImg, raw=False)
             np.save(ops['ops_path'], ops)
             plane_times['two_step_registration'] = time.time()-t11
@@ -214,14 +222,14 @@ def run_plane(ops, ops_path=None):
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_pix, cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
+        cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat = extraction.extract(ops, cell_pix, cell_masks, neuropil_masks, stat)
+        ops, stat = extraction.extract(ops, cell_masks, neuropil_masks, stat)
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
@@ -390,7 +398,7 @@ def run_s2p(ops={}, db={}):
             # make sure yrange and xrange are not overwritten
             for key in default_ops().keys():
                 if key not in ['data_path', 'save_path0', 'fast_disk', 'save_folder', 'subfolders']:
-                    if key in op and key in ops:
+                    if key in ops:
                         op[key] = ops[key]
             
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)

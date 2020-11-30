@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui
@@ -6,7 +7,7 @@ from scipy import stats
 from . import masks, io
 from . import utils
 from ..detection import roi_stats
-from .. import extraction
+from ..extraction.dcnv import oasis
 
 def distance_matrix(parent, ilist):
     idist = 1e6 * np.ones((len(ilist), len(ilist)))
@@ -42,6 +43,13 @@ def merge_activity_masks(parent):
     footprints  = np.array([])
     F    = np.zeros((0,parent.Fcell.shape[1]), np.float32)
     Fneu = np.zeros((0,parent.Fcell.shape[1]), np.float32)
+    if parent.hasred:
+        F_chan2    = np.zeros((0,parent.Fcell.shape[1]), np.float32)
+        Fneu_chan2 = np.zeros((0,parent.Fcell.shape[1]), np.float32)
+        if not hasattr(parent, 'F_chan2'):
+            parent.F_chan2 = np.load(os.path.join(parent.basename, 'F_chan2.npy'))
+            parent.Fneu_chan2 = np.load(os.path.join(parent.basename, 'Fneu_chan2.npy'))
+
     probcell = []
     probredcell = []
     merged_cells = []
@@ -62,6 +70,9 @@ def merge_activity_masks(parent):
         footprints = np.append(footprints, parent.stat[n]["footprint"])
         F    = np.append(F, parent.Fcell[n,:][np.newaxis,:], axis=0)
         Fneu = np.append(Fneu, parent.Fneu[n,:][np.newaxis,:], axis=0)
+        if parent.hasred:
+            F_chan2    = np.append(F_chan2, parent.F_chan2[n,:][np.newaxis,:], axis=0)
+            Fneu_chan2 = np.append(Fneu_chan2, parent.Fneu_chan2[n,:][np.newaxis,:], axis=0)
         probcell.append(parent.probcell[n])
         probredcell.append(parent.probredcell[n])
 
@@ -102,12 +113,15 @@ def merge_activity_masks(parent):
     ### compute activity of merged cells
     F = F.mean(axis=0)
     Fneu = Fneu.mean(axis=0)
+    if parent.hasred:
+        F_chan2 = F_chan2.mean(axis=0)
+        Fneu_chan2 = Fneu_chan2.mean(axis=0)
     dF = F - parent.ops["neucoeff"]*Fneu
     # activity stats
     stat0["skew"] = stats.skew(dF)
     stat0["std"] = dF.std()
 
-    spks = extraction.oasis(
+    spks = oasis(
         F=dF[np.newaxis, :],
         batch_size=parent.ops['batch_size'],
         tau=parent.ops['tau'],
@@ -120,6 +134,8 @@ def merge_activity_masks(parent):
         np.delete(parent.stat, k, 0)
         np.delete(parent.Fcell, k, 0)
         np.delete(parent.Fneu, k, 0)
+        np.delete(parent.F_chan2, k, 0)
+        np.delete(parent.Fneu_chan2, k, 0)
         np.delete(parent.Spks, k, 0)
         np.delete(parent.iscell, k, 0)
         np.delete(parent.probcell, k, 0)
@@ -133,6 +149,9 @@ def merge_activity_masks(parent):
     parent.stat[-1]['lam'] = parent.stat[-1]['lam'] * merged_cells.size
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
+    if parent.hasred:
+        parent.F_chan2 = np.concatenate((parent.F_chan2, F_chan2[np.newaxis,:]), axis=0)
+        parent.Fneu_chan2 = np.concatenate((parent.Fneu_chan2, Fneu_chan2[np.newaxis,:]), axis=0)
     parent.Spks = np.concatenate((parent.Spks, spks), axis=0)
     iscell = np.array([parent.iscell[parent.ichosen]], dtype=bool)
     parent.iscell = np.concatenate((parent.iscell, iscell), axis=0)
@@ -229,24 +248,20 @@ class MergeWindow(QtGui.QDialog):
         merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
         parent.update_plot()
-        for ilist in self.merge_list:
-            for n in range(ilist.size):
-                if parent.stat[ilist[n]]['inmerge'] > 0:
-                    ilist[n] = parent.stat[ilist[n]]['inmerge']
-            ilist = np.unique(ilist)
-        self.unmerged[self.n-1] = False
-
+        
         self.cc_row  = np.matmul(parent.Fbin[parent.iscell], parent.Fbin[-1].T) / parent.Fbin.shape[-1]
         self.cc_row /= parent.Fstd[parent.iscell] * parent.Fstd[-1] + 1e-3
         self.cc_row[-1] = 0
         self.CC = np.concatenate((self.CC, self.cc_row[np.newaxis, :-1]), axis=0)
         self.CC = np.concatenate((self.CC, self.cc_row[:,np.newaxis]), axis=1)
+        for n in parent.imerge:
+            self.CC[parent.imerge] = 0
+            self.CC[:,parent.imerge] = 0
 
         parent.ichosen = parent.stat.size-1
         parent.imerge = [parent.ichosen]
-        self.iMerge.setText('ROIs merged: %s'%parent.stat[parent.ichosen]['imerge'])
-        self.doMerge.setEnabled(False)
-        parent.update_plot()
+        print('ROIs merged: %s'%parent.stat[parent.ichosen]['imerge'])
+        self.compute_merge_list(parent)
 
     def compute_merge_list(self, parent):
         print('computing automated merge suggestions...')
@@ -275,6 +290,9 @@ class MergeWindow(QtGui.QDialog):
                             for i in ilist:
                                 notused[parent.iscell[:i].sum()] = False
                             goodind.append(ilist)
+        self.set_merge_list(parent, goodind)
+
+    def set_merge_list(self, parent, goodind):
         self.nMerge.setText('= %d possible merges found with these parameters'%len(goodind))
         self.merge_list = goodind
         self.n = 0

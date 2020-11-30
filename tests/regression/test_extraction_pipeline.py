@@ -26,7 +26,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
     ops = []
     for plane in range(op['nplanes']):
         curr_op = op.copy()
-        plane_dir = utils.get_plane_dir(save_path0=op['save_path0'], plane=plane)
+        plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
+        plane_dir.mkdir(exist_ok=True, parents=True)
         bin_path = str(plane_dir.joinpath('data.bin'))
         BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
         curr_op['meanImg'] = np.reshape(
@@ -48,7 +49,8 @@ def prepare_for_extraction(op, input_file_name_list, dimensions):
 def extract_wrapper(ops):
     for plane in range(ops[0]['nplanes']):
         curr_op = ops[plane]
-        plane_dir = utils.get_plane_dir(save_path0=curr_op['save_path0'], plane=plane)
+        plane_dir = Path(curr_op['save_path0']).joinpath(f'suite2p/plane{plane}')
+        plane_dir.mkdir(exist_ok=True, parents=True)
         extract_input = np.load(
             curr_op['data_path'][0].joinpath(
                 'detection',
@@ -57,7 +59,6 @@ def extract_wrapper(ops):
         )[()]
         extraction.extract(
             curr_op,
-            extract_input['cell_pix'],
             extract_input['cell_masks'],
             extract_input['neuropil_masks'],
             extract_input['stat']
@@ -105,12 +106,13 @@ def test_extraction_output_1plane1chan(test_ops):
     )
     extract_wrapper(ops)
     nplanes = test_ops['nplanes']
-    assert all(utils.check_output(
-        output_root=test_ops['save_path0'],
-        outputs_to_check=['F', 'Fneu', 'stat', 'spks'],
-        test_data_dir= test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes=nplanes
-    ))
+    outputs_to_check = ['F', 'Fneu', 'stat', 'spks']
+    for i in range(nplanes):
+        assert all(utils.compare_list_of_outputs(
+            outputs_to_check,
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['data_path'][0]).joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
+        ))
 
 
 def test_extraction_output_2plane2chan(test_ops):
@@ -132,9 +134,10 @@ def test_extraction_output_2plane2chan(test_ops):
     ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
     extract_wrapper(ops)
     nplanes = test_ops['nplanes']
-    assert all(utils.check_output(
-        output_root=test_ops['save_path0'],
-        outputs_to_check=['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks'],
-        test_data_dir=test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/"),
-        nplanes=nplanes
-    ))
+    outputs_to_check = ['F', 'Fneu', 'F_chan2', 'Fneu_chan2', 'stat', 'spks']
+    for i in range(nplanes):
+        assert all(utils.compare_list_of_outputs(
+            outputs_to_check,
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}"))),
+            utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
+        ))

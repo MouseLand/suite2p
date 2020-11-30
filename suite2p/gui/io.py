@@ -196,7 +196,7 @@ def load_dialog_folder(parent):
 def load_NWB(parent):
     name = parent.fname
     print(name)
-    if 1:
+    try:
         procs = list(io.read_nwb(name))
         if procs[1]['nchannels']==2:
             hasred = True
@@ -206,8 +206,8 @@ def load_NWB(parent):
         load_to_GUI(parent, os.path.split(name)[0], procs)
             
         parent.loaded = True
-    #except Exception as e:
-    #    print('ERROR with NWB: %s'%e)
+    except Exception as e:
+        print('ERROR with NWB: %s'%e)
 
 def load_folder(parent):
     print(parent.fname)
@@ -421,6 +421,8 @@ def save_merge(parent):
     np.save(os.path.join(parent.basename, 'stat.npy'), parent.stat)
     np.save(os.path.join(parent.basename, 'F.npy'), parent.Fcell)
     np.save(os.path.join(parent.basename, 'Fneu.npy'), parent.Fneu)
+    np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
+    np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'), parent.Fneu_chan2)
     np.save(os.path.join(parent.basename, 'spks.npy'), parent.Spks)
     iscell =  np.concatenate((parent.iscell[:,np.newaxis],
                               parent.probcell[:,np.newaxis]), axis=1)

@@ -49,7 +49,8 @@ def detect(ops, classfile: Path):
             weights = max_proj
         else:
             mproj = mean_img
-            weights = mean_img - mean_img.min()*1.1
+            weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
+                                    (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
         stats = anatomical.select_rois(mproj, weights, ops['Ly'], ops['Lx'], 
                                        ops['yrange'][0], ops['xrange'][0])
         

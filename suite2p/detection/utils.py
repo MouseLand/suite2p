@@ -3,6 +3,16 @@ from numba import jit
 from scipy.optimize import linear_sum_assignment
 from scipy.ndimage import gaussian_filter
 
+def square_mask(mask, ly, yi, xi):
+    """ crop from mask a square of size ly at position yi,xi """
+    Lyc, Lxc = mask.shape
+    mask0 = np.zeros((2*ly, 2*ly), mask.dtype)
+    yinds = [max(0, yi-ly), min(yi+ly, Lyc)]
+    xinds = [max(0, xi-ly), min(xi+ly, Lxc)]        
+    mask0[max(0, ly-yi) : min(2*ly, Lyc+ly-yi), 
+          max(0, ly-xi) : min(2*ly, Lxc+ly-xi)] = mask[yinds[0]:yinds[1], xinds[0]:xinds[1]]
+    return mask0
+
 def mask_stats(mask):
     """ median and diameter of mask """
     y,x = np.nonzero(mask)

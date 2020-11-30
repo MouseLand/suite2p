@@ -20,7 +20,6 @@ from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
 
-
 def default_ops():
     """ default options to run pipeline """
     return {
@@ -80,7 +79,6 @@ def default_ops():
         'force_refImg': False, # if True, use refImg stored in ops if available
         'pad_fft': False,
         
-
         # non rigid registration settings
         'nonrigid': True,  # whether to use nonrigid registration
         'block_size': [128, 128],  # block size to register (** keep this a multiple of 2 **)
@@ -98,6 +96,7 @@ def default_ops():
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
+        'anatomical_only': False, # use cellpose masks from mean image (no functional segmentation)
         'sparse_mode': True,  # whether or not to run sparse_mode
         'diameter': 12,  # if not sparse_mode, use diameter for filtering and extracting
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
@@ -399,7 +398,7 @@ def run_s2p(ops={}, db={}):
             # make sure yrange and xrange are not overwritten
             for key in default_ops().keys():
                 if key not in ['data_path', 'save_path0', 'fast_disk', 'save_folder', 'subfolders']:
-                    if key in op and key in ops:
+                    if key in ops:
                         op[key] = ops[key]
             
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)

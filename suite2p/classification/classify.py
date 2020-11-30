@@ -13,4 +13,6 @@ def classify(stat: np.ndarray,
              ):
     """Returns array of classifier output from classification process."""
     keys = list(set(keys).intersection(set(stat[0])))
-    return Classifier(classfile, keys=keys).run(stat)
+    print(keys)
+    iscell = Classifier(classfile, keys=keys).run(stat)
+    return iscell

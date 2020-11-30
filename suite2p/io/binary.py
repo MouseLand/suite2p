@@ -292,7 +292,7 @@ def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     """Returns an array with the mean of each time bin (of size 'bin_size')."""
     n_frames, Ly, Lx = mov.shape
     mov = mov[:(n_frames // bin_size) * bin_size]
-    return mov.reshape(-1, bin_size, Ly, Lx).mean(axis=1)
+    return mov.reshape(-1, bin_size, Ly, Lx).astype(np.float32).mean(axis=1)
 
 
 @contextmanager

@@ -2,13 +2,14 @@ from PyQt5 import QtGui
 from pkg_resources import iter_entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
+from suite2p.io.nwb import save_nwb
 
 
 def mainmenu(parent):
     main_menu = parent.menuBar()
     # --------------- MENU BAR --------------------------
     # run suite2p from scratch
-    runS2P = QtGui.QAction("&Run suite2p ", parent)
+    runS2P = QtGui.QAction("&Run suite2p", parent)
     runS2P.setShortcut("Ctrl+R")
     runS2P.triggered.connect(lambda: run_suite2p(parent))
     parent.addAction(runS2P)
@@ -45,9 +46,9 @@ def mainmenu(parent):
     parent.saveMat.setEnabled(False)
     parent.addAction(parent.saveMat)
 
-
     # Save NWB file
     parent.saveNWB = QtGui.QAction("Save NWB file", parent)
+    parent.saveNWB.triggered.connect(lambda: save_nwb(parent.basename))
     parent.saveNWB.setEnabled(False)
     parent.addAction(parent.saveNWB)
 

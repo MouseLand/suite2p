@@ -1,15 +1,17 @@
 """
 Tests for the Suite2p IO module
 """
+import re
 from pathlib import Path
 
 import numpy as np
 import pytest
-from pynwb import NWBHDF5IO
 from natsort import natsorted
+from pynwb import NWBHDF5IO
 
 from suite2p import io
 from suite2p.io.nwb import save_nwb
+
 
 @pytest.fixture()
 def binfile1500(test_ops):
@@ -19,6 +21,50 @@ def binfile1500(test_ops):
     with io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], read_filename=bin_filename) as bin_file:
         yield bin_file
 
+
+@pytest.fixture(scope="function")
+def replace_ops_save_path_with_local_path(request):
+    """
+    This fixture replaces the `save_path` variable in the `ops.npy` file
+    by its local path version
+    """
+
+    # Get the `data_folder` variable from the running test name
+    data_folder = re.search(r"\[(.*)\]", request.node.name).group(1)
+    save_folder = Path("data").joinpath("test_data", data_folder, "suite2p")
+
+    save_path = {}
+    plane_folders = [
+        dir
+        for dir in natsorted(save_folder.iterdir())
+        if dir.is_dir() and "plane" in dir.name
+    ]
+    for plane_idx, plane_dir in enumerate(plane_folders):
+
+        # Temporarily change the `save_folder` variable in the NumPy file
+        ops1 = np.load(plane_dir.joinpath("ops.npy"), allow_pickle=True)
+        save_path[plane_dir] = ops1.item(0)["save_path"]
+        ops1.item(0)["save_path"] = str(plane_dir.absolute())
+        np.save(plane_dir.joinpath("ops.npy"), ops1)
+
+        # Concatenate iscell arrays from the NumPy files
+        if plane_idx == 0:
+            iscell_npy = np.load(plane_dir.joinpath("iscell.npy"), allow_pickle=True)
+        else:
+            iscell_npy = np.append(
+                iscell_npy,
+                np.load(plane_dir.joinpath("iscell.npy"), allow_pickle=True),
+                axis=0,
+            )
+
+    yield save_folder, iscell_npy
+
+    # Teardown the fixture
+    for plane_dir in plane_folders:
+        # Undo the changes made in the NumPy file
+        ops1 = np.load(plane_dir.joinpath("ops.npy"), allow_pickle=True)
+        ops1.item(0)["save_path"] = save_path[plane_dir]
+        np.save(plane_dir.joinpath("ops.npy"), ops1)
 
 
 def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
@@ -54,59 +100,39 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
     assert np.allclose(data1, data2)
 
 
-@pytest.mark.parametrize("data_folder", [
-    ("1plane1chan"),
-    ("1plane1chan1500"),
-    # ("1plane2chan"),
-    # ("1plane2chan-scanimage"),
-    ("2plane2chan"),
-    ("2plane2chan1500"),
-    ])
-def test_save_nwb(data_folder):
-    save_folder = Path("data").joinpath("test_data", data_folder, "suite2p")
-
-    save_path = {}
-    plane_folders = [dir for dir in natsorted(save_folder.iterdir())
-                     if dir.is_dir() and "plane" in dir.name]
-    for plane_idx, plane_dir in enumerate(plane_folders):
-
-        # Temporarily change the save_folder variable in the NumPy file
-        ops1 = np.load(
-            plane_dir.joinpath("ops.npy"),
-            allow_pickle=True)
-        save_path[plane_dir] = ops1.item(0)["save_path"]
-        ops1.item(0)["save_path"] = str(plane_dir.absolute())
-        np.save(plane_dir.joinpath("ops.npy"), ops1)
-
-        # Concatenate iscell arrays in the NumPy files
-        if plane_idx == 0:
-            iscell_npy = np.load(
-                plane_dir.joinpath("iscell.npy"),
-                allow_pickle=True)
-        else:
-            iscell_npy = np.append(iscell_npy, np.load(
-                plane_dir.joinpath("iscell.npy"),
-                allow_pickle=True), axis=0)
+@pytest.mark.parametrize(
+    "data_folder",
+    [
+        ("1plane1chan"),
+        ("1plane1chan1500"),
+        # ("1plane2chan"),
+        # ("1plane2chan-scanimage"),
+        # TODO: Make the test work with the commented folders above
+        # `np.load("ops.npy")` with `allow_pickle=True` currently fails with:
+        # NotImplementedError: cannot instantiate 'WindowsPath' on your system
+        ("2plane2chan"),
+        ("2plane2chan1500"),
+    ],
+)
+def test_save_nwb(replace_ops_save_path_with_local_path, data_folder):
+    save_folder, iscell_npy = replace_ops_save_path_with_local_path
 
     save_nwb(save_folder)
+
     with NWBHDF5IO(str(save_folder.joinpath("ophys.nwb")), "r") as io:
         read_nwbfile = io.read()
         assert read_nwbfile.processing
         assert read_nwbfile.processing["ophys"].data_interfaces["Deconvolved"]
         assert read_nwbfile.processing["ophys"].data_interfaces["Fluorescence"]
         assert read_nwbfile.processing["ophys"].data_interfaces["Neuropil"]
-        iscell_nwb = read_nwbfile.processing["ophys"].data_interfaces[
-            "ImageSegmentation"].plane_segmentations[
-                "PlaneSegmentation"].columns[2].data[:]
+        iscell_nwb = (
+            read_nwbfile.processing["ophys"]
+            .data_interfaces["ImageSegmentation"]
+            .plane_segmentations["PlaneSegmentation"]
+            .columns[2]
+            .data[:]
+        )
         np.testing.assert_array_equal(iscell_nwb, iscell_npy)
-
-    # Undo the changes in the NumPy file
-    for plane_dir in plane_folders:
-        ops1 = np.load(
-            plane_dir.joinpath("ops.npy"),
-            allow_pickle=True)
-        ops1.item(0)["save_path"] = save_path[plane_dir]
-        np.save(plane_dir.joinpath("ops.npy"), ops1)
 
     # Remove NWB file
     save_folder.joinpath("ophys.nwb").unlink()

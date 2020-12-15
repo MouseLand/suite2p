@@ -3,6 +3,7 @@ from pkg_resources import iter_entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
 from suite2p.io.nwb import save_nwb
+from suite2p.io.utils import get_suite2p_path
 
 
 def mainmenu(parent):
@@ -48,7 +49,9 @@ def mainmenu(parent):
 
     # Save NWB file
     parent.saveNWB = QtGui.QAction("Save NWB file", parent)
-    parent.saveNWB.triggered.connect(lambda: save_nwb(parent.basename))
+    parent.saveNWB.triggered.connect(
+        lambda: save_nwb(get_suite2p_path(parent.basename))
+    )
     parent.saveNWB.setEnabled(False)
     parent.addAction(parent.saveNWB)
 

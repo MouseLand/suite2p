@@ -1,5 +1,6 @@
 import glob
 import os
+from pathlib import Path
 
 import numpy as np
 from natsort import natsorted
@@ -289,3 +290,22 @@ def init_ops(ops):
             os.makedirs(ops['save_path'])
         ops1.append(ops.copy())
     return ops1
+
+
+def get_suite2p_path(path: Path) -> Path:
+    """Find the root `suite2p` folder in the `path` variable"""
+
+    path = Path(path)  # In case `path` is a string
+
+    # Cheap sanity check
+    if "suite2p" in str(path):
+        # Walk the folders in path backwards
+        for path_idx in range(len(path.parts) - 1, 0, -1):
+            if path.parts[path_idx] == "suite2p":
+                new_path = Path(path.parts[0])
+                for path_part in path.parts[1 : path_idx + 1]:
+                    new_path = new_path.joinpath(path_part)
+                break
+    else:
+        raise FileNotFoundError("The `suite2p` folder was not found in path")
+    return new_path

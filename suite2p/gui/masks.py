@@ -1,3 +1,4 @@
+from pathlib import Path
 import matplotlib.cm
 import numpy as np
 import pyqtgraph as pg
@@ -163,6 +164,15 @@ def flip_plot(parent):
             for k in parent.stat[n]['imerge']:
                 parent.iscell[k] = ~parent.iscell[k]
     parent.update_plot()
+
+    # Check if `iscell.npy` file exists
+    if not Path(parent.basename).joinpath("iscell.npy").exists():
+        # Try the `plane0` folder in case of NWB file loaded
+        if Path(parent.basename).joinpath("plane0", "iscell.npy").exists():
+            parent.basename = str(Path(parent.basename).joinpath("plane0"))
+        else:
+            raise FileNotFoundError("Unable to find `iscell.npy` file")
+
     io.save_iscell(parent)
 
 def chan2_prob(parent):

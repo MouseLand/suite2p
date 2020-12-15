@@ -37,9 +37,13 @@ def read_nwb(fpath):
             multiplane = True
         stat = []
         for n in range(len(rois)):
-            stat.append({'ypix': rois[n][:,0].astype('int'), 
-                         'xpix': rois[n][:,1].astype('int'), 
-                         'lam': rois[n][:,-1]})
+            stat.append(
+                {
+                    "ypix": rois[n]["x"].astype("int"),
+                    "xpix": rois[n]["y"].astype("int"),
+                    "lam": rois[n]["weight"],
+                }
+            )
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0,-2])
         ops = run_s2p.default_ops()

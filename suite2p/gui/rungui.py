@@ -460,10 +460,11 @@ class RunWindow(QtGui.QDialog):
 
     def load_ops(self, name=None):
         print('loading ops')
-        if name is None:
+        if not (isinstance(name, str) and len(name)>0):
             name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
             name = name[0]
-        if len(name)>0:
+        
+        if len(name) > 0:
             ext = os.path.splitext(name)[1]
             try:
                 if ext == '.npy':

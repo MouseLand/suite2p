@@ -1,8 +1,4 @@
-import os
-import pathlib
-import shutil
-import sys
-import warnings
+import os, pathlib, shutil, sys, warnings
 
 import numpy as np
 import pyqtgraph as pg

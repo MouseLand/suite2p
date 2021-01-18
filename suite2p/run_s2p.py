@@ -8,7 +8,7 @@ import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
-from . import version
+#from . import version
 
 try:
     from haussmeister import haussio
@@ -24,7 +24,7 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        'suite2p_version': version,
+        #'suite2p_version': version,
 
         # file paths
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
@@ -127,7 +127,7 @@ def default_ops():
     }
 
 
-def run_plane(ops, ops_path=None):
+def run_plane(ops, ops_path=None, stat=None):
     """ run suite2p processing on a single binary file
 
     Parameters
@@ -222,18 +222,17 @@ def run_plane(ops, ops_path=None):
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
+        if stat is None:
+            ops, stat = detection.detect(ops=ops, classfile=classfile)
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat = extraction.extract(ops, cell_masks, neuropil_masks, stat)
+        ops, stat = extraction.create_masks_and_extract(ops, stat)
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
-
-        #ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()

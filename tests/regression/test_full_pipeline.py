@@ -21,7 +21,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
     suite2p.run_s2p(ops=test_ops)
 
     nplanes = test_ops['nplanes']
-    outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
+    outputs_to_check = ['F', 'iscell', 'stat']
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
@@ -66,9 +66,9 @@ def test_2plane_2chan_with_batches(test_ops):
         nplanes = ops['nplanes']
         suite2p.run_s2p(ops=ops)
 
-        outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
-        if ops['nchannels'] == 2:
-            outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
+        outputs_to_check = ['F', 'iscell', 'stat']
+        #if ops['nchannels'] == 2:
+        #    outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
         for i in range(nplanes):
             assert all(utils.compare_list_of_outputs(
                 outputs_to_check,
@@ -89,7 +89,7 @@ def test_1plane_2chan_sourcery(test_ops):
     })
     suite2p.run_s2p(ops=test_ops)
     nplanes = test_ops['nplanes']
-    outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat', 'F_chan2', 'Fneu_chan2']
+    outputs_to_check = ['F', 'iscell', 'stat']
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
@@ -112,7 +112,7 @@ def test_mesoscan_2plane_2z(test_ops):
     suite2p.run_s2p(ops=test_ops)
 
     nplanes = test_ops['nplanes'] * test_ops['nrois']
-    outputs_to_check = ['F', 'Fneu', 'iscell', 'spks', 'stat']
+    outputs_to_check = ['F', 'iscell', 'stat']
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,

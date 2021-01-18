@@ -1,12 +1,12 @@
 import time
 import numpy as np
 from pathlib import Path
+from typing import Dict, Any
 
 from . import sourcery, sparsedetect, chan2detect, utils
 from .stats import roi_stats
-from .masks import create_cell_mask, create_neuropil_masks, create_cell_pix
 from ..io.binary import BinaryFile
-from ..classification import classify
+from ..classification import classify, user_classfile
 
 try:
     from . import anatomical
@@ -15,7 +15,8 @@ except:
     CELLPOSE_INSTALLED = False
 
 
-def detect(ops, classfile: Path):
+def detect(ops, classfile=None):
+    
     if 'aspect' in ops:
         dy, dx = int(ops['aspect'] * 10), 10
     else:
@@ -32,7 +33,43 @@ def detect(ops, classfile: Path):
             y_range=ops['yrange'],
             x_range=ops['xrange'],
         )
-    print('Binned movie [%d,%d,%d], %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+    print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+    t0 = time.time()
+
+    if ops.get('denoise', 1):
+        from sklearn.decomposition import PCA
+        from suite2p.registration.nonrigid import make_blocks, spatial_taper
+
+        nframes, Ly, Lx = mov.shape
+        yblock, xblock, _, block_size, _ = make_blocks(Ly, Lx, block_size=[ops['block_size'][0]//2, ops['block_size'][1]//2])
+
+        mov_mean = mov.mean(axis=0)
+        mov -= mov_mean
+
+        tic=time.time()
+
+        nblocks = len(yblock)
+        Lyb, Lxb = block_size
+        n_comps = min(Lyb, Lxb) // 2
+        maskMul = spatial_taper(Lyb//4, Lyb, Lxb)
+        norm = np.zeros((Ly, Lx), np.float32)
+        reconstruction = np.zeros_like(mov)
+        block_re = np.zeros((nblocks, nframes, Lyb*Lxb))
+        for i in range(nblocks):
+            block = mov[:, yblock[i][0] : yblock[i][-1], xblock[i][0] : xblock[i][-1]].reshape(-1, Lyb*Lxb)
+            model = PCA(n_components=n_comps, random_state=0).fit(block)
+            block_re[i] = (block @ model.components_.T) @ model.components_
+            norm[yblock[i][0] : yblock[i][-1], xblock[i][0] : xblock[i][-1]] += maskMul
+
+        block_re = block_re.reshape(nblocks, nframes, Lyb, Lxb)
+        block_re *= maskMul
+        for i in range(nblocks):
+            reconstruction[:, yblock[i][0] : yblock[i][-1], xblock[i][0] : xblock[i][-1]] += block_re[i]
+        reconstruction /= norm
+        print('Binned movie denoised (for cell detection only) in %0.2f sec.' % (time.time() - t0))
+        t0 = time.time()
+        mov = reconstruction + mov_mean
+
 
     if ops.get('anatomical_only', 0) and not CELLPOSE_INSTALLED:
         print('~~~ tried anatomical but failed, install cellpose to use: ~~~')
@@ -64,8 +101,9 @@ def detect(ops, classfile: Path):
             'spatscale_pix': 0
         }
         ops.update(new_ops)
-    else:
+    else:            
         stats = select_rois(
+            ops=ops,
             mov=mov,
             dy=dy,
             dx=dx,
@@ -74,36 +112,19 @@ def detect(ops, classfile: Path):
             max_overlap=ops['max_overlap'],
             sparse_mode=ops['sparse_mode'],
             classfile=classfile,
-            ops=ops
         )
 
-    # extract fluorescence and neuropil
-    t0 = time.time()
-    cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
-    cell_masks = [create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
-    if ops.get('neuropil_extract', True):
-        neuropil_masks = create_neuropil_masks(
-            ypixs=[stat['ypix'] for stat in stats],
-            xpixs=[stat['xpix'] for stat in stats],
-            cell_pix=cell_pix,
-            inner_neuropil_radius=ops['inner_neuropil_radius'],
-            min_neuropil_pixels=ops['min_neuropil_pixels'],
-        )
-    else:
-        neuropil_masks = None
-    print('Masks made in %0.2f sec.' % (time.time() - t0))
-
-    ic = np.ones(len(stats), np.bool)
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
         if 'chan2_thres' not in ops:
             ops['chan2_thres'] = 0.65
         ops, redcell = chan2detect.detect(ops, stats)
-        np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell[ic])
-    return cell_masks, neuropil_masks, stats, ops
+        np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell)
 
-def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, 
-                max_overlap: float, sparse_mode: bool, classfile: Path, ops):
+    return ops, stats
+
+def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, 
+                max_overlap: float = True, sparse_mode: bool = True, classfile: Path = None):
     
     t0 = time.time()
     if sparse_mode:
@@ -126,10 +147,14 @@ def select_rois(mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int,
     else:
         ops, stats = sourcery.sourcery(mov=mov, ops=ops)
 
-    print('Found %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
+    print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     stats = np.array(stats)
 
     if ops['preclassify'] > 0:
+        if classfile is None:
+            print(f'NOTE: Applying user classifier at {str(user_classfile)}')
+            classfile = user_classfile
+
         stats =  roi_stats(stats, dy, dx, Ly, Lx)
         if len(stats) == 0:
             iscell = np.zeros((0, 2))

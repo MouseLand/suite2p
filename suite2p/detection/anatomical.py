@@ -119,8 +119,10 @@ def masks_to_stats(masks, weights):
     return stats
     
 def select_rois(meanImg, weights, Ly, Lx, ymin, xmin):
+    t0 = time.time()
     masks, centers, median_diam, mask_diams = roi_detect(meanImg)
     stats = masks_to_stats(masks, weights)
+    print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     for stat in stats:
         stat['ypix'] += int(ymin)
         stat['xpix'] += int(xmin)

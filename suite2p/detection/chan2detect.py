@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .masks import create_cell_mask, create_cell_pix, create_neuropil_masks
+from ..extraction import masks 
 from . import utils
 
 '''
@@ -46,9 +46,9 @@ def intensity_ratio(ops, stats):
     """ compute pixels in cell and in area around cell (including overlaps)
         (exclude pixels from other cells) """
     Ly, Lx = ops['Ly'], ops['Lx']
-    cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
-    cell_masks0 = [create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
-    neuropil_masks = create_neuropil_masks(
+    cell_pix = masks.create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'])
+    cell_masks0 = [masks.create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
+    neuropil_ipix = masks.create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in stats],
         xpixs=[stat['xpix'] for stat in stats],
         cell_pix=cell_pix,
@@ -56,8 +56,10 @@ def intensity_ratio(ops, stats):
         min_neuropil_pixels=ops['min_neuropil_pixels'],
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
-    for cell_mask, cell_mask0 in zip(cell_masks, cell_masks0):
+    neuropil_masks = np.zeros((len(stats), Ly * Lx), np.float32)
+    for cell_mask, cell_mask0, neuropil_mask, neuropil_mask0 in zip(cell_masks, cell_masks0, neuropil_masks, neuropil_ipix):
         cell_mask[cell_mask0[0]] = cell_mask0[1]
+        neuropil_mask[neuropil_mask0.astype(np.int64)] = 1. / len(neuropil_mask0)
 
     mimg2 = ops['meanImg_chan2']
     inpix = cell_masks @ mimg2.flatten()

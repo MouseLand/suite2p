@@ -18,7 +18,11 @@ def test_ops(tmpdir, data_dir):
             'use_builtin_classifier': True,
             'data_path': [data_dir],
             'save_path0': str(tmpdir),
-            'norm_frames': False
+            'norm_frames': False,
+            'circular_neuropil': True,
+            'lam_percentile': 0.0,
+            'denoise': False,
+            'smooth_masks': False
         }
     )
     return ops

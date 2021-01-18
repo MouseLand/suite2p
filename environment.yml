@@ -19,5 +19,5 @@ dependencies:
     - pyqtgraph
     - importlib-metadata
     - paramiko
-    - pynwb
+    - pynwb<1.4.0
     - suite2p

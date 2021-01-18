@@ -188,7 +188,7 @@ def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
     return 2 * width / (width + height + offset)
 
 
-def fitMVGaus(y, x, lam, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
+def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
     Parameters
     ----------
@@ -196,13 +196,14 @@ def fitMVGaus(y, x, lam, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
         pixel locations in y
     x : float, array
         pixel locations in x
-    lam : float, array
+    lam0 : float, array
         weights of each pixel
     """
     y = y / dy
     x = x / dx
 
     # normalize pixel weights
+    lam = lam0.copy()
     lam /= lam.sum()
 
     # mean of gaussian

@@ -57,11 +57,12 @@ def extract_wrapper(ops):
                 'detect_output_{0}p{1}c{2}.npy'.format(curr_op['nplanes'], curr_op['nchannels'], plane)),
             allow_pickle=True
         )[()]
-        extraction.extract(
+        #extraction.create_masks_and_extract(curr_op, extract_input['stat'])
+        extraction.create_masks_and_extract(
             curr_op,
+            extract_input['stat'],
             extract_input['cell_masks'],
-            extract_input['neuropil_masks'],
-            extract_input['stat']
+            extract_input['neuropil_masks']
         )
         F = np.load(plane_dir.joinpath('F.npy'))
         Fneu = np.load(plane_dir.joinpath('Fneu.npy'))

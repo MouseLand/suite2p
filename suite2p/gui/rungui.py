@@ -1,7 +1,4 @@
-import glob
-import json
-import os
-import shutil
+import glob, json, os, shutil, pathlib
 from datetime import datetime
 
 import numpy as np
@@ -47,6 +44,7 @@ class RunWindow(QtGui.QDialog):
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = parent.opsuser
+        self.ops_path = os.fspath(pathlib.Path.home().joinpath('.suite2p').joinpath('ops'))
         try:
             self.reset_ops()
             print('loaded default ops')
@@ -344,8 +342,8 @@ class RunWindow(QtGui.QDialog):
         self.f = 0
         self.compile_ops_db()
         L = len(self.opslist)
-        np.save('ops%d.npy'%L, self.ops)
-        np.save('db%d.npy'%L, self.db)
+        np.save(os.path.join(self.ops_path, 'ops%d.npy'%L), self.ops)
+        np.save(os.path.join(self.ops_path, 'db%d.npy'%L), self.db)
         self.opslist.append('ops%d.npy'%L)
         if hasattr(self, 'h5_key') and len(self.h5_key) > 0:
             self.db['h5py_key'] = self.h5_key
@@ -378,13 +376,15 @@ class RunWindow(QtGui.QDialog):
             self.add_ops()
         self.finish = True
         self.error = False
-        shutil.copy('ops%d.npy'%self.f, 'ops.npy')
-        shutil.copy('db%d.npy'%self.f, 'db.npy')
-        self.db = np.load('db.npy', allow_pickle=True).item()
+        ops_file = os.path.join(self.ops_path, 'ops.npy')
+        db_file = os.path.join(self.ops_path, 'db.npy')
+        shutil.copy(os.path.join(self.ops_path, 'ops%d.npy'%self.f), ops_file)
+        shutil.copy(os.path.join(self.ops_path, 'db%d.npy'%self.f), db_file)
+        self.db = np.load(db_file, allow_pickle=True).item()
         print('Running suite2p!')
         print('starting process')
         print(self.db)
-        self.process.start('python -u -W ignore -m suite2p --ops ops.npy --db db.npy')
+        self.process.start('python -u -W ignore -m suite2p --ops %s --db %s'%(ops_file, db_file))
 
     def stop(self):
         self.finish = False

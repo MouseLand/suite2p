@@ -421,7 +421,6 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             'lam': lam0 * sdmov[ypix0, xpix0],
             'footprint': ihop[tj]
         })
-
         
         if tj % 1000 == 0:
             print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))

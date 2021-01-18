@@ -58,7 +58,7 @@ setuptools.setup(
         "pydrive2",
       ],
       "nwb": [
-        "pynwb",
+        "pynwb<1.4.0",
       ]
     },
     include_package_data=True,

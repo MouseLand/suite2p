@@ -108,6 +108,7 @@ def default_ops():
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
                                          # classifier specified in classifier_path if set to True)
+        'denoise': True, # denoise binned movie for cell detection in sparse_mode
 
         # ROI extraction parameters
         'neuropil_extract': True, # whether or not to extract neuropil; if False, Fneu is set to zero

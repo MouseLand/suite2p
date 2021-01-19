@@ -70,7 +70,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         if isinstance(neuropil_masks, np.ndarray) and neuropil_masks.shape[1] == Ly*Lx:
             neuropil_ipix = [np.nonzero(neuropil_mask)[0] for neuropil_mask in neuropil_masks]
         else:
-            neuropil_ipix = neuropil_masks
+            neuropil_ipix = [neuropil_mask.astype(np.int64) for neuropil_mask in neuropil_masks]
         neuropil_ipix = List(neuropil_ipix)
         neuropil_npix = np.array([len(neuropil_ipixi) for neuropil_ipixi in neuropil_ipix]).astype(np.float32)
 

@@ -46,8 +46,6 @@ def detect(ops, classfile=None):
         mov_mean = mov.mean(axis=0)
         mov -= mov_mean
 
-        tic=time.time()
-
         nblocks = len(yblock)
         Lyb, Lxb = block_size
         n_comps = min(Lyb, Lxb) // 2

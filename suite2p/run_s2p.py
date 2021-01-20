@@ -148,17 +148,20 @@ def run_plane(ops, ops_path=None, stat=None):
     ops = {**default_ops(), **ops}
     ops['date_proc'] = datetime.now()
     plane_times = {}
+    
+    # for running on server or on moved files, specify ops_path
     if ops_path is not None:
         ops['save_path'] = os.path.split(ops_path)[0]
         ops['ops_path'] = ops_path 
-        if len(ops['fast_disk'])==0:
-            ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
-            if 'reg_file_chan2' in ops:
-                ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
-            if 'raw_file' in ops:
-                ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
-            if 'raw_file_chan2' in ops:
-                ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
+        if len(ops['fast_disk'])==0 or ops['save_path']!=ops['fast_disk']:
+            if os.path.exists(os.path.join(ops['save_path'], 'data.bin')):
+                ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+                if 'reg_file_chan2' in ops:
+                    ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
+                if 'raw_file' in ops:
+                    ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
+                if 'raw_file_chan2' in ops:
+                    ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
 
     # check if registration should be done
     if ops['do_registration']>0:
@@ -171,9 +174,11 @@ def run_plane(ops, ops_path=None, stat=None):
             run_registration = True
         else:
             print("NOTE: not running registration, plane already registered")
+            print('binary path: %s'%ops['reg_file'])
             run_registration = False
     else:
         print("NOTE: not running registration, ops['do_registration']=0")
+        print('binary path: %s'%ops['reg_file'])
         run_registration = False
     
     if run_registration:
@@ -203,7 +208,7 @@ def run_plane(ops, ops_path=None, stat=None):
             plane_times['registration_metrics'] = time.time()-t0
             print('Registration metrics, %0.2f sec.' % plane_times['registration_metrics'])
             np.save(os.path.join(ops['save_path'], 'ops.npy'), ops)
-
+    
     if ops.get('roidetect', True):
 
         # Select file for classification

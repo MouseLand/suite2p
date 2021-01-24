@@ -158,6 +158,37 @@ def compute_reference(ops, frames):
 
     return refImg
 
+def compute_reference_masks(refImg, ops=None):
+    ### ------------- compute registration masks ----------------- ###
+
+    maskMul, maskOffset = rigid.compute_masks(
+        refImg=refImg,
+        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+    )
+    cfRefImg = rigid.phasecorr_reference(
+        refImg=refImg,
+        smooth_sigma=ops['smooth_sigma'],
+        pad_fft=ops['pad_fft'],
+    )
+
+    if ops.get('nonrigid'):
+        if 'yblock' not in ops:
+            ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
+                'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
+
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
+            refImg0=refImg,
+            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'], # slope of taper mask at the edges
+            smooth_sigma=ops['smooth_sigma'],
+            yblock=ops['yblock'],
+            xblock=ops['xblock'],
+            pad_fft=ops['pad_fft'],
+        )
+    else:
+        maskMulNR, maskOffsetNR, cfRefImgNR = [], [], []
+
+    return maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR
+
 def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     """ main registration function
 
@@ -232,31 +263,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
         refImg = np.clip(refImg, rmin, rmax)
 
-    ### ------------- compute registration masks ----------------- ###
-
-    maskMul, maskOffset = rigid.compute_masks(
-        refImg=refImg,
-        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
-    )
-    cfRefImg = rigid.phasecorr_reference(
-        refImg=refImg,
-        smooth_sigma=ops['smooth_sigma'],
-        pad_fft=ops['pad_fft'],
-    )
-
-    if ops.get('nonrigid'):
-        if 'yblock' not in ops:
-            ops['yblock'], ops['xblock'], ops['nblocks'], ops['block_size'], ops[
-                'NRsm'] = nonrigid.make_blocks(Ly=ops['Ly'], Lx=ops['Lx'], block_size=ops['block_size'])
-
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-            refImg0=refImg,
-            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'], # slope of taper mask at the edges
-            smooth_sigma=ops['smooth_sigma'],
-            yblock=ops['yblock'],
-            xblock=ops['xblock'],
-            pad_fft=ops['pad_fft'],
-        )
+    maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR = compute_reference_masks(refImg, ops)
 
     ### ------------- register binary to reference image ------------ ###
 
@@ -290,8 +297,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                 maxregshift=ops['maxregshift'],
                 smooth_sigma_time=ops['smooth_sigma_time'],
             )
-            rigid_offsets.append([ymax, xmax, cmax])
-
+            
             for frame, dy, dx in zip(frames, ymax, xmax):
                 frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
@@ -328,6 +334,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
                     xmax1=xmax1,
                 )
 
+            rigid_offsets.append([ymax, xmax, cmax])
+            if ops['nonrigid']:
                 nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
             mean_img += frames.sum(axis=0) / ops['nframes']

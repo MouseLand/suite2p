@@ -23,8 +23,6 @@ def create_masks(ops: Dict[str, Any], stats: List[Dict[str, Any]]):
         )
     else:
         neuropil_masks = None
-    print(cell_masks[0])
-    print(neuropil_masks[0])
     return cell_masks, neuropil_masks
 
 def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int, 

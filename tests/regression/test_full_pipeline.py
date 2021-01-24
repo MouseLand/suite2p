@@ -77,7 +77,7 @@ def test_2plane_2chan_with_batches(test_ops):
             ))
 
 
-def test_1plane_2chan_sourcery(test_ops):
+def temp_test_1plane_2chan_sourcery(test_ops):
     """
     Tests for case with 1 plane and 2 channel.
     """

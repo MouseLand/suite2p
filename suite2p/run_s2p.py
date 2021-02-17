@@ -96,9 +96,9 @@ def default_ops():
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
-        'anatomical_only': False, # use cellpose masks from mean image (no functional segmentation)
+        'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
         'sparse_mode': True,  # whether or not to run sparse_mode
-        'diameter': 12,  # if not sparse_mode, use diameter for filtering and extracting
+        'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
@@ -106,9 +106,7 @@ def default_ops():
         'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
-        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
-                                         # classifier specified in classifier_path if set to True)
-        'denoise': True, # denoise binned movie for cell detection in sparse_mode
+        'denoise': False, # denoise binned movie for cell detection in sparse_mode
 
         # classification parameters
         'soma_crop': True, # crop dendrites for cell classification stats like compactness
@@ -118,7 +116,10 @@ def default_ops():
         'min_neuropil_pixels': 350,  # minimum number of pixels in the neuropil
         'lam_percentile': 50., # percentile of lambda within area to ignore when excluding cell pixels for neuropil extraction
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
-
+        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
+                                         # classifier specified in classifier_path if set to True)
+        'classifier_path': None,
+        
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
         'chan2_thres': 0.65,  # minimum for detection of brightness on channel 2
 
@@ -269,7 +270,7 @@ def run_plane(ops, ops_path=None, stat=None):
         if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
-            dF = F - ops['neucoeff']*Fneu
+            dF = F.copy() - ops['neucoeff']*Fneu
             dF = extraction.preprocess(
                 F=dF,
                 baseline=ops['baseline'],

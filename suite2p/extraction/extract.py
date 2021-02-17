@@ -194,7 +194,7 @@ def enhanced_mean_image(ops):
     Parameters
     ----------
     ops : dictionary
-        uses 'meanImg', 'aspect', 'diameter', 'yrange' and 'xrange'
+        uses 'meanImg', 'aspect', 'spatscale_pix', 'yrange' and 'xrange'
 
     Returns
     -------
@@ -209,6 +209,8 @@ def enhanced_mean_image(ops):
             diameter = np.array([ops['diameter'], ops['diameter']])
         else:
             diameter = np.array(ops['diameter'])
+        if diameter[0]==0:
+            diameter[:] = 12
         ops['spatscale_pix'] = diameter[1]
         ops['aspect'] = diameter[0]/diameter[1]
 

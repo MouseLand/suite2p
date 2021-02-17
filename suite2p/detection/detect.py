@@ -53,7 +53,8 @@ def detect(ops, classfile=None):
                     dy=dy,
                     dx=dx,
                     Ly=ops['Ly'],
-                    Lx=ops['Lx'])
+                    Lx=ops['Lx'],
+                    diameter=ops['daimeter'])
         
     else:            
         stats = select_rois(

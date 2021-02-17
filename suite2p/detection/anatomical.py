@@ -119,7 +119,8 @@ def masks_to_stats(masks, weights):
         })
     return stats
     
-def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int):
+def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int,
+                diameter=None):
     """ find ROIs in static frames
     
     Parameters:
@@ -146,7 +147,12 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
                                 (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
     t0 = time.time()
+    if diameter is not None:
+        if isinstance(ops['diameter'], (list, np.ndarray)) and len(ops['diameter'])>1:
+            rescale = ops['diameter'][1] / ops['diameter'][0]
+            mproj = cv2.resize(mproj, (int(Ly*rescale), Lx))
     masks, centers, median_diam, mask_diams = roi_detect(mproj)
+    masks = cv2.resize(masks, (Ly, Lx), interpolation=cv2.INTER_NEAREST)
     stats = masks_to_stats(masks, weights)
     print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     if 'yrange' in ops:

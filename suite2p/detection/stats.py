@@ -125,7 +125,10 @@ class ROI:
                 ida = np.nonzero(darea > threshold)[0][0]
                 if len(np.nonzero(darea[ida:] < threshold)[0]):
                     radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
-            return dists < radius
+            crop = dists < radius
+            if crop.sum()==0:
+                crop = np.ones(self.ypix.size, np.bool)
+            return crop
         else:
             return np.ones(self.ypix.size, np.bool)
 
@@ -145,13 +148,16 @@ class ROI:
 
     @property
     def solidity(self) -> float:
-        if self.npix_soma > 4:
+        if self.npix_soma > 10:
             points = np.stack((self.ypix[self.soma_crop], 
                                self.xpix[self.soma_crop]), axis=1)
-            hull = ConvexHull(points)
-            volume = hull.volume
+            try:
+                hull = ConvexHull(points)
+                volume = hull.volume
+            except:
+                volume = 10
         else:
-            volume = 100
+            volume = 10
         return self.npix_soma / volume
 
     @classmethod

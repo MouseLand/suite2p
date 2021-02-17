@@ -224,8 +224,8 @@ def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
     )
     for s, mrs_normed, npix_normed, npix_soma_normed in zip(stat, mrs_normeds, npix_normeds, npix_soma_normeds):
         s['mrs'] = mrs_normed
-        s['npix_norm'] = npix_normed
-        s['npix_soma_norm'] = npix_soma_normed
+        s['npix_norm_no_crop'] = npix_normed
+        s['npix_norm'] = npix_soma_normed
         s['footprint'] = 0 if 'footprint' not in s else s['footprint']
 
     if  max_overlap is not None and max_overlap<1.0:

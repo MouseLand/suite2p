@@ -110,10 +110,13 @@ def default_ops():
                                          # classifier specified in classifier_path if set to True)
         'denoise': True, # denoise binned movie for cell detection in sparse_mode
 
+        # classification parameters
+        'soma_crop': True, # crop dendrites for cell classification stats like compactness
         # ROI extraction parameters
         'neuropil_extract': True, # whether or not to extract neuropil; if False, Fneu is set to zero
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
         'min_neuropil_pixels': 350,  # minimum number of pixels in the neuropil
+        'lam_percentile': 50., # percentile of lambda within area to ignore when excluding cell pixels for neuropil extraction
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
 
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
@@ -236,7 +239,17 @@ def run_plane(ops, ops_path=None, stat=None):
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat = extraction.create_masks_and_extract(ops, stat)
+        ops, stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(ops, stat)
+        # save results
+        np.save(ops['ops_path'], ops)
+        fpath = ops['save_path']
+        np.save(os.path.join(fpath, 'stat.npy'), stat)
+        np.save(os.path.join(fpath,'F.npy'), F)
+        np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+        # if second channel, save F_chan2 and Fneu_chan2
+        if 'meanImg_chan2' in ops:
+            np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+            np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
@@ -253,8 +266,6 @@ def run_plane(ops, ops_path=None, stat=None):
 
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
-        F = np.load(os.path.join(fpath,'F.npy'))
-        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')

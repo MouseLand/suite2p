@@ -25,7 +25,7 @@ def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> I
                     d['lam'] /= d['lam'].sum()
             for gt_dict, output_dict in zip(data1, data2):
                 for k in gt_dict.keys():
-                    if k!='skew' and k!='std':
+                    if k=='ypix' or k=='xpix' or k=='lam':
                         yield np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
         elif output == 'iscell':  # just check the first column; are cells/noncells classified the same way?
             yield np.array_equal(data1[:, 0], data2[:, 0])

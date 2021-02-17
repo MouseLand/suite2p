@@ -6,6 +6,7 @@ from warnings import warn
 
 import numpy as np
 from numpy.linalg import norm
+from scipy.spatial import ConvexHull
 
 
 def distance_kernel(radius: int) -> np.ndarray:
@@ -14,6 +15,12 @@ def distance_kernel(radius: int) -> np.ndarray:
     dists_2d = norm(np.meshgrid(d, d), axis=0)
     return dists_2d
 
+def median_pix(ypix, xpix):
+    ymed, xmed = np.median(ypix), np.median(xpix)
+    imin = np.argmin((xpix-xmed)**2 + (ypix-ymed)**2)
+    xmed = xpix[imin]
+    ymed = ypix[imin]
+    return [ymed, xmed]
 
 class EllipseData(NamedTuple):
     mu: float
@@ -42,6 +49,8 @@ class ROI:
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
+    med: np.ndarray
+    do_crop: bool
     rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
 
     def __post_init__(self):
@@ -101,25 +110,57 @@ class ROI:
     def get_overlap_image(self, overlap_count_image: np.ndarray) -> np.ndarray:
         return overlap_count_image[self.ypix, self.xpix] > 1
 
+    @property 
+    def soma_crop(self) -> np.ndarray:
+        if self.do_crop:
+            dists = ((self.ypix - self.med[0])**2 + (self.xpix - self.med[1])**2)**0.5
+            radii = np.arange(0, dists.max(), 1)
+            area = np.zeros_like(radii)
+            for k, radius in enumerate(radii):
+                area[k] = self.lam[dists < radius].sum()
+            darea = np.diff(area)
+            radius = radii[-1]
+            threshold = darea.max() / 3
+            if len(np.nonzero(darea > threshold)[0]) > 0:
+                ida = np.nonzero(darea > threshold)[0][0]
+                if len(np.nonzero(darea[ida:] < threshold)[0]):
+                    radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
+            return dists < radius
+        else:
+            return np.ones(self.ypix.size, np.bool)
+
     @property
     def mean_r_squared(self) -> float:
-        return mean_r_squared(y=self.ypix, x=self.xpix)
+        return mean_r_squared(y=self.ypix[self.soma_crop], x=self.xpix[self.soma_crop])
+        #return mean_r_squared(y=self.ypix[self.lam > self.lam.max()/5], x=self.xpix[self.lam > self.lam.max()/5])
 
     @property
     def mean_r_squared0(self) -> float:
-        return np.mean(self.rsort[:self.ypix.size])
+        return np.mean(self.rsort[:self.npix_soma])
+        #return np.mean(self.rsort[:self.ypix[self.lam > self.lam.max()/5].size])
 
     @property
     def mean_r_squared_compact(self) -> float:
         return self.mean_r_squared / (1e-10 + self.mean_r_squared0)
 
+    @property
+    def solidity(self) -> float:
+        if self.npix_soma > 4:
+            points = np.stack((self.ypix[self.soma_crop], 
+                               self.xpix[self.soma_crop]), axis=1)
+            hull = ConvexHull(points)
+            volume = hull.volume
+        else:
+            volume = 100
+        return self.npix_soma / volume
+
     @classmethod
     def get_mean_r_squared_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.mean_r_squared for roi in rois], estimator=np.nanmedian, offset=1e-10, first_n=first_n)
 
-    @property
-    def median_pix(self) -> Tuple[float, float]:
-        return np.median(self.ypix), np.median(self.xpix)
+    @property 
+    def npix_soma(self) -> int:
+        return self.soma_crop.sum()
 
     @property
     def n_pixels(self) -> int:
@@ -129,16 +170,20 @@ class ROI:
     def get_n_pixels_normed_all(cls, rois: Sequence[ROI], first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
 
-    def fit_ellipse(self, dx: float, dy: float) -> EllipseData:
-        return fitMVGaus(self.ypix, self.xpix, self.lam, dy=dy, dx=dx, thres=2)
+    def fit_ellipse(self, dy: float, dx: float) -> EllipseData:
+        return fitMVGaus(self.ypix[self.soma_crop], 
+                         self.xpix[self.soma_crop], 
+                         self.lam[self.soma_crop], 
+                         dy=dy, dx=dx, thres=2)
 
 
-def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
+def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
+              do_crop=True):
     """
     computes statistics of ROIs
     Parameters
     ----------
-    stats : dictionary
+    stat : dictionary
         'ypix', 'xpix', 'lam'
     diameters : (dy, dx)
     
@@ -148,36 +193,45 @@ def roi_stats(stats, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None):
     stat : dictionary
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
     """
+    if 'med' not in stat[0]:
+        for s in stat:
+            s['med'] = median_pix(s['ypix'], s['xpix'])
     
-    rois = [ROI(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam']) for stat in stats]
+    rois = [ROI(ypix=s['ypix'], xpix=s['xpix'], 
+                lam=s['lam'], med=s['med'], do_crop=do_crop) for s in stat]
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
-    for roi, stat in zip(rois, stats):
-        stat['mrs'] = roi.mean_r_squared
-        stat['mrs0'] = roi.mean_r_squared0
-        stat['compact'] = roi.mean_r_squared_compact
-        stat['med'] = list(roi.median_pix)
-        stat['npix'] = roi.n_pixels
-        stat['overlap'] = roi.get_overlap_image(n_overlaps)
-        ellipse = roi.fit_ellipse(dx, dy)
-        stat['radius'] = ellipse.radius
-        stat['aspect_ratio'] = ellipse.aspect_ratio
+    for roi, s in zip(rois, stat):
+        s['mrs'] = roi.mean_r_squared
+        s['mrs0'] = roi.mean_r_squared0
+        s['compact'] = roi.mean_r_squared_compact
+        s['solidity'] = roi.solidity
+        s['npix'] = roi.n_pixels
+        s['npix_soma'] = roi.npix_soma
+        s['soma_crop'] = roi.soma_crop
+        s['overlap'] = roi.get_overlap_image(n_overlaps)
+        ellipse = roi.fit_ellipse(dy, dx)
+        s['radius'] = ellipse.radius
+        s['aspect_ratio'] = ellipse.aspect_ratio
 
-    # todo: why specify the first 100?
     mrs_normeds = norm_by_average(
-        values=np.array([stat['mrs'] for stat in stats]), estimator=np.nanmedian, offset=1e-10, first_n=100
+        values=np.array([s['mrs'] for s in stat]), estimator=np.nanmedian, offset=1e-10, first_n=100
     )
     npix_normeds = norm_by_average(
-        values=np.array([stat['npix'] for stat in stats]), first_n=100
+        values=np.array([s['npix'] for s in stat]), first_n=100
     )
-    for stat, mrs_normed, npix_normed in zip(stats, mrs_normeds, npix_normeds):
-        stat['mrs'] = mrs_normed
-        stat['npix_norm'] = npix_normed
-        stat['footprint'] = 0 if 'footprint' not in stat else stat['footprint']
+    npix_soma_normeds = norm_by_average(
+        values=np.array([s['npix_soma'] for s in stat]), first_n=100
+    )
+    for s, mrs_normed, npix_normed, npix_soma_normed in zip(stat, mrs_normeds, npix_normeds, npix_soma_normeds):
+        s['mrs'] = mrs_normed
+        s['npix_norm'] = npix_normed
+        s['npix_soma_norm'] = npix_soma_normed
+        s['footprint'] = 0 if 'footprint' not in s else s['footprint']
 
     if  max_overlap is not None and max_overlap<1.0:
         keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps, max_overlap=max_overlap)
-        stats = stats[keep_rois]
-    return stats
+        stat = stat[keep_rois]
+    return stat
 
 
 def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:
@@ -204,6 +258,8 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
 
     # normalize pixel weights
     lam = lam0.copy()
+    ix = lam > 0#lam.max()/5
+    y, x, lam = y[ix], x[ix], lam[ix]
     lam /= lam.sum()
 
     # mean of gaussian
@@ -221,16 +277,13 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     p = np.stack((np.cos(theta), np.sin(theta)))
     ellipse = (p.T * radii) @ evec.T + mu
     radii = np.sort(radii)[::-1]
-
     return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse, dy=dy, dx=dx)
-
 
 def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
     overlap = np.zeros((Ly, Lx))
     for xpix, ypix in zip(xpixs, ypixs):
         overlap[ypix, xpix] += 1
     return overlap
-
 
 def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray, max_overlap: float) -> List[bool]:
     """returns ROI indices that remain after removing those that overlap more than fraction max_overlap from overlap_img."""

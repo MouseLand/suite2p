@@ -176,24 +176,12 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std'] = sd[k]
-
-    fpath = ops['save_path']
-    np.save(os.path.join(fpath, 'stat.npy'), stat)
-
-    # if second channel, detect bright cells in second channel
-    if 'meanImg_chan2' in ops:
-        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
-        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+    
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
-    # save ops
-    np.save(ops['ops_path'], ops)
-    # save results
-    np.save(os.path.join(fpath,'F.npy'), F)
-    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
 
-    return ops, stat
+    return ops, stat, F, Fneu, F_chan2, Fneu_chan2
 
 
 def enhanced_mean_image(ops):

@@ -339,6 +339,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         yi, xi = np.unravel_index(imax, (Lyp[imap], Lxp[imap]))
         # position of peak
         yi, xi = gxy[imap][1,yi,xi], gxy[imap][0,yi,xi]
+        med = [int(yi), int(xi)]
 
         # check if peak is larger than threshold * max(1,nbinned/1200)
         v_max[tj] = v0max.max()
@@ -391,7 +392,11 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             xpix0 = xpix0[ix]
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
-
+            ymed = np.median(ypix0)
+            xmed = np.median(xpix0)
+            imin = np.argmin((xpix0-xmed)**2 + (ypix0-ymed)**2)
+            med = [ypix0[imin], xpix0[imin]]
+            
         # update residual on raw movie
         mov[np.ix_(active_frames, ypix0*Lxc+ xpix0)] -= tproj[active_frames][:,np.newaxis] * lam0
         # update filtered movie
@@ -405,6 +410,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             'ypix': ypix0.astype(int),
             'xpix': xpix0.astype(int),
             'lam': lam0 * sdmov[ypix0, xpix0],
+            'med': med,
             'footprint': ihop[tj]
         })
         
@@ -414,7 +420,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     for stat in stats:
         stat['ypix'] += int(yrange[0])
         stat['xpix'] += int(xrange[0])
-
+        stat['med'][0] += int(yrange[0])
+        stat['med'][1] += int(xrange[0])
+        
     new_ops = {
         'max_proj': max_proj,
         'Vmax': v_max,

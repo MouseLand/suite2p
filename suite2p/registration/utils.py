@@ -4,7 +4,7 @@ from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
-from numpy import fft
+from numpy.fft import ifftshift, fft2, ifft2
 from scipy.fftpack import next_fast_len
 from scipy.ndimage import gaussian_filter1d
 
@@ -83,7 +83,7 @@ def gaussian_fft(sig, Ly: int, Lx: int):
     hgy = np.exp(-np.square(yy/sig) / 2)
     hgg = hgy * hgx
     hgg /= hgg.sum()
-    fhg = np.real(fft2(fft.ifftshift(hgg)))
+    fhg = np.real(fft2(ifftshift(hgg)))
     return fhg
 
 

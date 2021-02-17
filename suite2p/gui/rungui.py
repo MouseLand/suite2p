@@ -89,10 +89,10 @@ class RunWindow(QtGui.QDialog):
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect','sparse_mode','anatomical_only', 'diameter','spatial_scale','connected','threshold_scaling','max_overlap','max_iterations','high_pass']
-        neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['spikedetect','win_baseline','sig_baseline','neucoeff']]
+        cellkeys = ['roidetect', 'denoise', 'anatomical_only', 'diameter', 'spatial_scale', 'threshold_scaling', 'max_overlap','max_iterations','high_pass']
+        neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['soma_crop','spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
-        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Deconvolution']]
+        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Classification/Deconvolution']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -129,11 +129,10 @@ class RunWindow(QtGui.QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'if 1, run cell (ROI) detection',
-                    'whether to run sparse_mode cell extraction (scale-free) or original algorithm (default is original)',
+                    'if 1, run PCA denoising on binned movie to improve cell detection',
                     'run cellpose to get masks on 1: max_proj / mean_img; or 2: mean_img',
-                    'if sparse_mode=0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
-                    'if sparse_mode=1, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
-                    'whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)',
+                    'if anatomical_only>0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
+                    'if anatomical_only=0, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
@@ -142,6 +141,7 @@ class RunWindow(QtGui.QDialog):
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
                     'minimum number of pixels in the neuropil',
+                    'if 1, crop dendrites for cell classification stats like compactness',
                     'if 1, run spike detection (deconvolution)',
                     'window for maximin',
                     'smoothing constant for gaussian filter',

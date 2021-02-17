@@ -65,6 +65,7 @@ def detect(ops, classfile=None):
             Lx=ops['Lx'],
             max_overlap=ops['max_overlap'],
             sparse_mode=ops['sparse_mode'],
+            do_crop=ops['soma_crop'],
             classfile=classfile,
         )
 
@@ -78,7 +79,8 @@ def detect(ops, classfile=None):
     return ops, stats
 
 def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, 
-                max_overlap: float = True, sparse_mode: bool = True, classfile: Path = None):
+                max_overlap: float = True, sparse_mode: bool = True, do_crop: bool=True,
+                classfile: Path = None):
     
     t0 = time.time()
     if sparse_mode:
@@ -107,7 +109,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
             print(f'NOTE: Applying user classifier at {str(user_classfile)}')
             classfile = user_classfile
 
-        stats =  roi_stats(stats, dy, dx, Ly, Lx)
+        stats =  roi_stats(stats, dy, dx, Ly, Lx, do_crop=do_crop)
         if len(stats) == 0:
             iscell = np.zeros((0, 2))
         else:
@@ -118,7 +120,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
         
     # add ROI stats to stats
-    stats = roi_stats(stats, dy, dx, Ly, Lx, max_overlap=max_overlap)
+    stats = roi_stats(stats, dy, dx, Ly, Lx, max_overlap=max_overlap, do_crop=do_crop)
 
     print('After removing overlaps, %d ROIs remain' % (len(stats)))
     return stats

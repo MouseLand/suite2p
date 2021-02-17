@@ -67,7 +67,8 @@ def detect_wrapper(ops):
             s['lam'] /= s['lam'].sum()
         for gt_dict, output_dict in zip(stat, output_check['stat']):
             for k in gt_dict.keys():
-                assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
+                if k=='ypix' or k=='xpix' or k=='lam':
+                    assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
 
 
 def test_detection_output_1plane1chan(test_ops):

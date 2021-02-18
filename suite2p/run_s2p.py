@@ -48,6 +48,7 @@ def default_ops():
         'force_sktiff': False, # whether or not to use scikit-image for tiff reading
         'frames_include': -1,
         'multiplane_parallel': False, # whether or not to run on server
+        'ignore_flyback': [],
 
         # output settings
         'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
@@ -410,6 +411,9 @@ def run_s2p(ops={}, db={}):
         return None
     else:
         for ipl, ops_path in enumerate(ops_paths):
+            if ipl in ops['ignore_flyback']:
+                print('>>>> skipping flyback PLANE', ipl)
+                continue
             op = np.load(ops_path, allow_pickle=True).item()
             
             # make sure yrange and xrange are not overwritten

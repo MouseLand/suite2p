@@ -57,16 +57,18 @@ def combined(save_folder, save=True):
     meanImgE = np.zeros((LY, LX))
     if ops1[0]['nchannels']>1:
         meanImg_chan2 = np.zeros((LY, LX))
-    if 'meanImg_chan2_corrected' in ops1[0]:
+    if any(['meanImg_chan2_corrected' in ops for ops in ops1]):
         meanImg_chan2_corrected = np.zeros((LY, LX))
-    if 'max_proj' in ops1[0]:
+    if any(['max_proj' in ops for ops in ops1]):
         max_proj = np.zeros((LY, LX))
 
     Vcorr = np.zeros((LY, LX))
     Nfr = np.amax(np.array([ops['nframes'] for ops in ops1]))
-    
+    ii=0
     for k,ops in enumerate(ops1):
         fpath = plane_folders[k]
+        if not os.path.exists(os.path.join(fpath,'stat.npy')):
+            continue
         stat0 = np.load(os.path.join(fpath,'stat.npy'), allow_pickle=True)
         xrange = np.arange(dx[k], dx[k] + Lx[k])
         yrange = np.arange(dy[k], dy[k] + Ly[k])
@@ -107,7 +109,7 @@ def combined(save_folder, save=True):
             F0      = np.concatenate((F0, fcat), axis=1)
             spks0   = np.concatenate((spks0, fcat), axis=1)
             Fneu0   = np.concatenate((Fneu0, fcat), axis=1)
-        if k==0:
+        if ii==0:
             F, Fneu, spks, stat, iscell, redcell = F0, Fneu0, spks0, stat0, iscell0, redcell0
         else:
             F    = np.concatenate((F, F0))
@@ -117,6 +119,7 @@ def combined(save_folder, save=True):
             iscell = np.concatenate((iscell,iscell0))
             if hasred:
                 redcell = np.concatenate((redcell,redcell0))
+        ii+=1
         print('appended plane %d to combined view'%k)
     ops['meanImg']  = meanImg
     ops['meanImgE'] = meanImgE

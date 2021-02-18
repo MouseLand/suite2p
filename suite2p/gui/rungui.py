@@ -85,7 +85,7 @@ class RunWindow(QtGui.QDialog):
                      'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
                     'connected', 'roidetect', 'neuropil_extract', 
                     'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
-        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel']
+        tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel', 'ignore_flyback']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
@@ -101,6 +101,7 @@ class RunWindow(QtGui.QDialog):
                     'whether or not to compute bidirectional phase offset of recording (from line scanning)',
                     'set a fixed number (in pixels) for the bidirectional phase offset',
                     'process each plane with a separate job on a computing cluster',
+                    'ignore flyback planes 0-indexed separated by a comma e.g. "0,10"; "-1" means no planes ignored so all planes processed',
                     'apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)',
                     'save output also as mat file "Fall.mat"',
                     'save output also as NWB file "ophys.nwb"',
@@ -196,7 +197,7 @@ class RunWindow(QtGui.QDialog):
                 k+=1
                 for key in keyl[kl]:
                     lops = 1
-                    if self.ops[key] or (self.ops[key] == 0):
+                    if self.ops[key] or (self.ops[key] == 0) or len(self.ops[key])==0:
                         qedit = LineEdit(wk,key,self)
                         qlabel = QtGui.QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
@@ -602,6 +603,12 @@ class LineEdit(QtGui.QLineEdit):
                 okey = [int(diams[0]), int(diams[1])]
             else:
                 okey = int(diams[0])
+        elif key=='ignore_flyback':
+            okey = self.text().replace(' ','').split(',')
+            for i in range(len(okey)):
+                okey[i] = int(okey[i])
+            if len(okey)==1 and okey[0]==-1:
+                okey = []
         else:
             if key in intkeys:
                 okey = int(float(self.text()))
@@ -618,6 +625,17 @@ class LineEdit(QtGui.QLineEdit):
                 dstr = str(int(ops[key][0])) + ', ' + str(int(ops[key][1]))
             else:
                 dstr = str(int(ops[key]))
+        elif key=='ignore_flyback':
+            if not isinstance(ops[key], (list, np.ndarray)):
+                ops[key] = [ops[key]]
+            if len(ops[key])==0:
+                dstr = '-1'
+            else:
+                dstr = ''
+                for i in ops[key]:
+                    dstr+= str(int(ops[key][i]))
+                    if i<len(ops[key])-1:
+                        dstr+=', '
         else:
             if type(ops[key]) is not bool:
                 dstr = str(ops[key])

@@ -113,12 +113,12 @@ def make_colors(parent):
         allcols = allcols / 1.4
         allcols = allcols + 0.1
         print(parent.redcell.sum())
-        parent.randcols = allcols
+        parent.randcols = allcols.copy()
         allcols[parent.redcell] = 0
     else:
         parent.randcols = allcols
     parent.colors['istat'][0] = parent.randcols
-    parent.colors['cols'][0] = hsv2rgb(parent.randcols)
+    parent.colors['cols'][0] = hsv2rgb(allcols)
 
     b=0
     for names in parent.color_names[:-3]:
@@ -320,11 +320,11 @@ def make_chosen_circle(M0, ycirc, xcirc, col, sat):
 
 def chan2_masks(parent):
     c = 0
-    col = parent.randcols
+    col = parent.randcols.copy()
     col[parent.redcell] = 0
     col = col.flatten()
     parent.colors['cols'][c] = hsv2rgb(col)
-    rgb_masks(parent, col, c)
+    rgb_masks(parent, parent.colors['cols'][c], c)
 
 def custom_masks(parent):
     c = 9

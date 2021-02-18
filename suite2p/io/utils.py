@@ -80,7 +80,7 @@ def list_files(froot, look_one_level_down, exts):
         first_tiffs = np.zeros(0, np.bool)
     lfs = len(fs)
     if look_one_level_down:
-        fdir = glob.glob(os.path.join(froot, "*/"))
+        fdir = natsorted(glob.glob(os.path.join(froot, "*/")))
         for folder_down in fdir:
             fsnew = []
             for e in exts:

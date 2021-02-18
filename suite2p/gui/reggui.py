@@ -669,12 +669,13 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.zloaded = True
             self.zbox.setEnabled(True)
             self.zbox.setChecked(True)
+            self.zmax = np.zeros(self.nframes, 'int')
             if 'zcorr' in self.ops[0]:
                 if self.zstack.shape[0]==self.ops[0]['zcorr'].shape[0]:
                     zcorr = self.ops[0]['zcorr']
                     self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
                     self.plot_zcorr()
-
+            
         except Exception as e:
             print('ERROR: %s'%e)
 

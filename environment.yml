@@ -4,11 +4,11 @@ channels:
 dependencies:
   - python>=3.7.6,<3.8
   - pip
-  - mkl_fft=1.2.0
+  - mkl_fft
   - pyqt
   - mkl
   - tbb
-  - numpy
+  - numpy<1.19.4
   - numba
   - matplotlib
   - scipy

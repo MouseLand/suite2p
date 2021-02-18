@@ -112,7 +112,7 @@ class ROI:
 
     @property 
     def soma_crop(self) -> np.ndarray:
-        if self.do_crop:
+        if self.do_crop and self.ypix.size > 10:
             dists = ((self.ypix - self.med[0])**2 + (self.xpix - self.med[1])**2)**0.5
             radii = np.arange(0, dists.max(), 1)
             area = np.zeros_like(radii)

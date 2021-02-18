@@ -2,8 +2,10 @@ import os
 import time
 
 import numpy as np
+from numba import prange, njit, jit
+from numba.typed import List
 from scipy import stats, signal
-
+from .masks import create_masks
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -27,8 +29,9 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         each is a tuple where first element are cell pixels (flattened), and
         second element are pixel weights normalized to sum 1 (lam)
 
-    neuropil_masks : 2D array
-        size [ncells x npixels] where weights of each mask are elements
+    neuropil_masks : list
+        each element is neuropil pixels in (Ly*Lx) coordinates
+        GOING TO BE DEPRECATED: size [ncells x npixels] where weights of each mask are elements
 
     reg_file : string
         path to registered binary file
@@ -61,6 +64,19 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     ix = 0
     data = 1
 
+    cell_ipix = List()
+    [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
+    cell_lam = List()
+    [cell_lam.append(cell_mask[1].astype(np.float32)) for cell_mask in cell_masks]
+    if neuropil_masks is not None:
+        if isinstance(neuropil_masks, np.ndarray) and neuropil_masks.shape[1] == Ly*Lx:
+            neuropil_masks = [np.nonzero(neuropil_mask)[0] for neuropil_mask in neuropil_masks]
+        else:
+            neuropil_masks = [neuropil_mask.astype(np.int64) for neuropil_mask in neuropil_masks]
+        neuropil_ipix = List()
+        [neuropil_ipix.append(neuropil_mask) for neuropil_mask in neuropil_masks]
+        neuropil_npix = np.array([len(neuropil_ipixi) for neuropil_ipixi in neuropil_ipix]).astype(np.float32)
+
     while data is not None:
         buff = reg_file.read(block_size)
         data = np.frombuffer(buff, dtype=np.int16, offset=0)
@@ -69,63 +85,54 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
             break
         data = np.reshape(data, (-1, Ly, Lx))
         inds = ix+np.arange(0,nimg,1,int)
-        data = np.reshape(data, (nimg,-1))
-
+        data = np.reshape(data, (nimg,-1)).astype(np.float32)
+        Fi = np.zeros((ncells, data.shape[0]), np.float32)
         # extract traces and neuropil
-        for n in range(ncells):
-            F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-        if neuropil_masks is not None:
-            Fneu[:,inds] = np.dot(neuropil_masks , data.T)
+        
+        # (WITHOUT NUMBA)
+        # for n in range(ncells):
+        #    F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
+        # Fneu[:,inds] = np.dot(neuropil_masks , data.T)
+
+        # WITH NUMBA
+        F[:,inds] = matmul_traces(Fi, data, cell_ipix, cell_lam)
+        if neuropil_ipix is not None:
+            Fneu[:,inds] = matmul_neuropil(Fi, data, neuropil_ipix, neuropil_npix)
+
         ix += nimg
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
     reg_file.close()
     return F, Fneu, ops
 
+@njit(parallel=True)
+def matmul_traces(Fi, data, cell_ipix, cell_lam):
+    ncells = len(cell_ipix)
+    for n in prange(ncells):
+        Fi[n] = np.dot(data[:, cell_ipix[n]], cell_lam[n])
+    return Fi
+
+@njit(parallel=True)
+def matmul_neuropil(Fi, data, neuropil_ipix, neuropil_npix):
+    ncells = Fi.shape[0]
+    for n in prange(ncells):
+        Fi[n] = data[:, neuropil_ipix[n]].sum(axis=1) / neuropil_npix[n]
+    return Fi
+
+
 def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
-    """ extracts activity from ops['reg_file'] using masks in stat
+    """ extract fluorescence from both channels 
     
-    computes fluorescence F as sum of pixels weighted by 'lam'
-
-    Parameters
-    ----------------
-
-    ops : dictionary
-        'Ly', 'Lx', 'nframes', 'batch_size', optionally 'reg_file' or 'reg_file_chan2'
-    cell_masks : list
-        each is a tuple where first element are cell pixels (flattened), and
-        second element are pixel weights normalized to sum 1 (lam)
-    neuropil_masks : 2D array
-        size [ncells x npixels] where weights of each mask are elements
-
-
-    Returns
-    ----------------
-
-    F : float, 2D array
-        size [ROIs x time]
-
-    Fneu : float, 2D array
-        size [ROIs x time]
-
-    F_chan2 : float, 2D array
-        size [ROIs x time]
-
-    Fneu_chan2 : float, 2D array
-        size [ROIs x time]
-
-    ops : dictionaray
+    also used in drawroi.py
+    
     """
-
-    F,Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
+    F_chan2, Fneu_chan2 = [], []
+    F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
     if 'reg_file_chan2' in ops:
         F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
-    else:
-        F_chan2, Fneu_chan2 = [], []
-
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
-def extract(ops, cell_masks, neuropil_masks, stat):
-    """ computes fluorescence, and saves to \*.npy
+def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
+    """ creates masks, computes fluorescence, and saves stat, F, and Fneu to \*.npy
 
     Parameters
     ----------------
@@ -135,15 +142,31 @@ def extract(ops, cell_masks, neuropil_masks, stat):
         'save_path', 'sparse_mode', 'nframes', 'batch_size'
         (optional 'reg_file_chan2', 'chan2_thres')
 
-    stat : array of dicts 
+    stat : array of dicts
 
     Returns
     ----------------
 
     ops : dictionary
 
+    stat : list of dictionaries
+        adds keys 'skew' and 'std'
+
     """
+
+    if len(stat) == 0:
+        raise ValueError("stat array should not be of length 0 (no ROIs were found)")
+
+    # create cell and neuropil masks
+    if cell_masks is None:
+        t10 = time.time()
+        cell_masks, neuropil_masks0 = create_masks(ops, stat)
+        if neuropil_masks is None:
+            neuropil_masks = neuropil_masks0
+        print('Masks created, %0.2f sec.' % (time.time() - t10))    
+
     F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)
+    
     # subtract neuropil
     dF = F - ops['neucoeff'] * Fneu
 
@@ -153,27 +176,12 @@ def extract(ops, cell_masks, neuropil_masks, stat):
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std'] = sd[k]
-
-    if len(stat) == 0:
-        raise ValueError("stat array should not be of length 0 (no ROIs were found)")
-
-    fpath = ops['save_path']
-    np.save(os.path.join(fpath, 'stat.npy'), stat)
-
-    # if second channel, detect bright cells in second channel
-    if 'meanImg_chan2' in ops:
-        np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
-        np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+    
 
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
-    # save ops
-    np.save(ops['ops_path'], ops)
-    # save results
-    np.save(os.path.join(fpath,'F.npy'), F)
-    np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
 
-    return ops, stat
+    return ops, stat, F, Fneu, F_chan2, Fneu_chan2
 
 
 def enhanced_mean_image(ops):
@@ -186,7 +194,7 @@ def enhanced_mean_image(ops):
     Parameters
     ----------
     ops : dictionary
-        uses 'meanImg', 'aspect', 'diameter', 'yrange' and 'xrange'
+        uses 'meanImg', 'aspect', 'spatscale_pix', 'yrange' and 'xrange'
 
     Returns
     -------
@@ -201,6 +209,8 @@ def enhanced_mean_image(ops):
             diameter = np.array([ops['diameter'], ops['diameter']])
         else:
             diameter = np.array(ops['diameter'])
+        if diameter[0]==0:
+            diameter[:] = 12
         ops['spatscale_pix'] = diameter[1]
         ops['aspect'] = diameter[0]/diameter[1]
 

@@ -50,14 +50,19 @@ def mask_ious(masks_true, masks_pred):
 
     """
     iou = _intersection_over_union(masks_true, masks_pred)[1:,1:]
+    iout, preds = match_masks(iou)
+    return iout, preds, iou
+
+def match_masks(iou):
     n_min = min(iou.shape[0], iou.shape[1])
     costs = -(iou >= 0.5).astype(float) - iou / (2*n_min)
     true_ind, pred_ind = linear_sum_assignment(costs)
-    iout = np.zeros(masks_true.max())
+    iout = np.zeros(iou.shape[0])
     iout[true_ind] = iou[true_ind,pred_ind]
-    preds = np.zeros(masks_true.max(), 'int')
+    preds = np.zeros(iou.shape[0], 'int')
     preds[true_ind] = pred_ind+1
-    return iout, preds, iou
+    return iout, preds
+    
 
 @jit(nopython=True)
 def _label_overlap(x, y):

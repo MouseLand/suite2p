@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import utils
 from suite2p import detection
-from suite2p.classification import builtin_classfile
+from suite2p.extraction import masks
 from suite2p.io import BinaryFile
 
 
@@ -54,17 +54,21 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
-        cell_masks, neuropil_masks, stat, op = detection.detect(ops=op, classfile=builtin_classfile)
+        op, stat = detection.detect(ops=op)
         output_check = np.load(
             op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
         #assert np.array_equal(output_check['cell_pix'], cell_pix)
+        cell_masks = masks.create_masks(op, stat)[0]
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
-        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
+        #assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
+        for s in stat:
+            s['lam'] /= s['lam'].sum()
         for gt_dict, output_dict in zip(stat, output_check['stat']):
             for k in gt_dict.keys():
-                assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
+                if k=='ypix' or k=='xpix' or k=='lam':
+                    assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
 
 
 def test_detection_output_1plane1chan(test_ops):

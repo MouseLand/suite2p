@@ -8,9 +8,9 @@ from matplotlib.colors import hsv_to_rgb
 from scipy import stats
 
 from . import io
-from ..detection.masks import create_cell_pix, create_neuropil_masks, create_cell_mask
+from ..extraction import masks
 from ..detection.stats import roi_stats
-from ..extraction.extract import extract_traces_from_masks
+from ..extraction import extract_traces_from_masks
 from ..extraction.dcnv import oasis
 
 
@@ -33,12 +33,12 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         stat_all.append(stat_orig[n])
     stat_all = roi_stats(stat_all, dy, dx, ops['Ly'], ops['Lx'])
     cell_masks = [
-        create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stat_all
+        masks.create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stat_all
     ]
-    cell_pix = create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_pix = masks.create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
     manual_roi_stats = stat_all[:len(stat_manual)]
     manual_cell_masks = cell_masks[:len(stat_manual)]
-    manual_neuropil_masks = create_neuropil_masks(
+    manual_neuropil_masks = masks.create_neuropil_masks(
         ypixs=[stat['ypix'] for stat in manual_roi_stats],
         xpixs=[stat['xpix'] for stat in manual_roi_stats],
         cell_pix=cell_pix,

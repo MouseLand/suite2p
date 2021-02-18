@@ -346,8 +346,8 @@ def mesoscan_to_binary(ops):
             iplane = (iplane-nframes/nchannels)%nplanes
             ix+=nframes
             ntotal+=nframes
-            if ntotal%(batch_size*4)==0:
-                print('%d frames per binary, time %0.2f sec.'%(ntotal,time.time()-t0))
+            if ops1[0]['nframes']%(batch_size*4)==0:
+                print('%d frames of binary, time %0.2f sec.'%(ops1[0]['nframes'],time.time()-t0))
         gc.collect()
     # write ops files
     do_registration = ops['do_registration']

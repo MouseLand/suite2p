@@ -118,7 +118,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.movieLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.nframes = 0
         self.cframe = 0
-        self.createButtons()
+        self.createButtons(parent)
         # create ROI chooser
         self.l0.addWidget(QtGui.QLabel(''),6,0,1,2)
         qlabel = QtGui.QLabel(self)
@@ -669,12 +669,13 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.zloaded = True
             self.zbox.setEnabled(True)
             self.zbox.setChecked(True)
+            self.zmax = np.zeros(self.nframes, 'int')
             if 'zcorr' in self.ops[0]:
                 if self.zstack.shape[0]==self.ops[0]['zcorr'].shape[0]:
                     zcorr = self.ops[0]['zcorr']
                     self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
                     self.plot_zcorr()
-
+            
         except Exception as e:
             print('ERROR: %s'%e)
 
@@ -703,7 +704,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.pauseButton.setEnabled(False)
         self.pauseButton.setChecked(True)
 
-    def createButtons(self):
+    def createButtons(self, parent):
         iconSize = QtCore.QSize(30, 30)
         openButton = QtGui.QPushButton('load ops.npy')
         openButton.setToolTip("Open single-plane ops.npy")
@@ -718,7 +719,7 @@ class BinaryPlayer(QtGui.QMainWindow):
 
         self.computeZ = QtGui.QPushButton('compute z position')
         self.computeZ.setEnabled(False)
-        self.computeZ.clicked.connect(self.compute_z)
+        self.computeZ.clicked.connect(lambda: self.compute_z(parent))
 
         self.playButton = QtGui.QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
@@ -788,8 +789,9 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.frameSlider.setEnabled(True)
         print('paused')
 
-    def compute_z(self):
+    def compute_z(self, parent):
         ops, zcorr = registration.compute_zpos(self.zstack, self.ops[0])
+        parent.ops = ops
         self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
         np.save(self.filename, ops)
         self.plot_zcorr()
@@ -1017,8 +1019,11 @@ class PCViewer(QtGui.QMainWindow):
             iPC = int(self.PCedit.text()) - 1
             pc1 = self.PC[1,iPC,:,:]
             pc0 = self.PC[0,iPC,:,:]
-            self.img0.setImage(np.tile(pc1[:,:,np.newaxis]-pc0[:,:,np.newaxis],(1,1,3)))
-            self.img0.setLevels([(pc1-pc0).min(),(pc1-pc0).max()])
+            diff = pc1[:,:,np.newaxis]-pc0[:,:,np.newaxis]
+            diff /= np.abs(diff).max()*2
+            diff += 0.5
+            self.img0.setImage(np.tile(diff*255,(1,1,3)))
+            self.img0.setLevels([0,255])
             rgb = np.zeros((self.PC.shape[2], self.PC.shape[3],3), np.float32)
             rgb[:,:,0] = (pc1-pc1.min())/(pc1.max()-pc1.min())*255
             rgb[:,:,1] = np.minimum(1, np.maximum(0,(pc0-pc1.min())/(pc1.max()-pc1.min())))*255

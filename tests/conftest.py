@@ -18,7 +18,9 @@ def test_ops(tmpdir, data_dir):
             'use_builtin_classifier': True,
             'data_path': [data_dir],
             'save_path0': str(tmpdir),
-            'norm_frames': False
+            'norm_frames': False,
+            'denoise': False,
+            'soma_crop': False
         }
     )
     return ops

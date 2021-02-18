@@ -365,7 +365,7 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     return yup, xup
 
 
-def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
+def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1, bilinear=True):
     """
     Piecewise affine transformation of data using block shifts ymax1, xmax1
     
@@ -380,6 +380,8 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
         y shifts of blocks
     xmax1 : nimg x nblocks
         y shifts of blocks
+    bilinear: bool (optional, default=True)
+        do bilinear interpolation, if False do nearest neighbor
 
     Returns
     -----------
@@ -396,6 +398,9 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
         ymax1=ymax1,
         xmax1=xmax1,
     )
+    if not bilinear:
+        yup = np.round(yup)
+        xup = np.round(xup)
 
     # use shifts and do bilinear interpolation
     mshx, mshy = np.meshgrid(np.arange(Lx, dtype=np.float32), np.arange(Ly, dtype=np.float32))

@@ -270,7 +270,7 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
             return 1, EstimateMode.Forced
 
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
-             max_iterations: int, yrange, xrange, percentile=0, smooth_masks=False, anatomical=False) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+             max_iterations: int, yrange, xrange, percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns stats and ops from 'mov' using correlations in time."""
 
     mean_img = mov.mean(axis=0)
@@ -339,6 +339,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         yi, xi = np.unravel_index(imax, (Lyp[imap], Lxp[imap]))
         # position of peak
         yi, xi = gxy[imap][1,yi,xi], gxy[imap][0,yi,xi]
+        med = [int(yi), int(xi)]
 
         # check if peak is larger than threshold * max(1,nbinned/1200)
         v_max[tj] = v0max.max()
@@ -391,21 +392,11 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             xpix0 = xpix0[ix]
             ypix0 = ypix0[ix]
             lam0 = lam0[ix]
-
-        if smooth_masks:
-            mask = np.zeros((np.ptp(ypix0)+1, np.ptp(xpix0)+1), np.float32)
-            ypmin, xpmin = ypix0.min(), xpix0.min()
-            mask[ypix0-ypmin, xpix0-xpmin] = lam0 
-            lammax = lam0.max() 
-            mask = gaussian_filter(mask, max(1, ls//12))
-            ypix0, xpix0 = np.nonzero(mask > lam0.min()*0.75)
-            if len(ypix0) == 0:
-                continue
-            lam0 = mask[ypix0, xpix0]
-            ypix0, xpix0 = ypix0 + ypmin, xpix0 + xpmin
-            lam0 /= lam0.max() * lammax
-            tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
-
+            ymed = np.median(ypix0)
+            xmed = np.median(xpix0)
+            imin = np.argmin((xpix0-xmed)**2 + (ypix0-ymed)**2)
+            med = [ypix0[imin], xpix0[imin]]
+            
         # update residual on raw movie
         mov[np.ix_(active_frames, ypix0*Lxc+ xpix0)] -= tproj[active_frames][:,np.newaxis] * lam0
         # update filtered movie
@@ -419,9 +410,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             'ypix': ypix0.astype(int),
             'xpix': xpix0.astype(int),
             'lam': lam0 * sdmov[ypix0, xpix0],
+            'med': med,
             'footprint': ihop[tj]
         })
-
         
         if tj % 1000 == 0:
             print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
@@ -429,7 +420,9 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     for stat in stats:
         stat['ypix'] += int(yrange[0])
         stat['xpix'] += int(xrange[0])
-
+        stat['med'][0] += int(yrange[0])
+        stat['med'][1] += int(xrange[0])
+        
     new_ops = {
         'max_proj': max_proj,
         'Vmax': v_max,

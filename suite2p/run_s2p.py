@@ -8,7 +8,7 @@ import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
-from . import version
+#from . import version
 
 try:
     from haussmeister import haussio
@@ -24,7 +24,7 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        'suite2p_version': version,
+        #'suite2p_version': version,
 
         # file paths
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
@@ -96,9 +96,9 @@ def default_ops():
         # cell detection settings
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
-        'anatomical_only': False, # use cellpose masks from mean image (no functional segmentation)
+        'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
         'sparse_mode': True,  # whether or not to run sparse_mode
-        'diameter': 12,  # if not sparse_mode, use diameter for filtering and extracting
+        'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
@@ -106,15 +106,20 @@ def default_ops():
         'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
-        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
-                                         # classifier specified in classifier_path if set to True)
+        'denoise': False, # denoise binned movie for cell detection in sparse_mode
 
+        # classification parameters
+        'soma_crop': True, # crop dendrites for cell classification stats like compactness
         # ROI extraction parameters
         'neuropil_extract': True, # whether or not to extract neuropil; if False, Fneu is set to zero
         'inner_neuropil_radius': 2,  # number of pixels to keep between ROI and neuropil donut
         'min_neuropil_pixels': 350,  # minimum number of pixels in the neuropil
+        'lam_percentile': 50., # percentile of lambda within area to ignore when excluding cell pixels for neuropil extraction
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
-
+        'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
+                                         # classifier specified in classifier_path if set to True)
+        'classifier_path': 0, # path to classifier
+        
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
         'chan2_thres': 0.65,  # minimum for detection of brightness on channel 2
 
@@ -127,7 +132,7 @@ def default_ops():
     }
 
 
-def run_plane(ops, ops_path=None):
+def run_plane(ops, ops_path=None, stat=None):
     """ run suite2p processing on a single binary file
 
     Parameters
@@ -147,17 +152,20 @@ def run_plane(ops, ops_path=None):
     ops = {**default_ops(), **ops}
     ops['date_proc'] = datetime.now()
     plane_times = {}
+    
+    # for running on server or on moved files, specify ops_path
     if ops_path is not None:
         ops['save_path'] = os.path.split(ops_path)[0]
         ops['ops_path'] = ops_path 
-        if len(ops['fast_disk'])==0:
-            ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
-            if 'reg_file_chan2' in ops:
-                ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
-            if 'raw_file' in ops:
-                ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
-            if 'raw_file_chan2' in ops:
-                ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
+        if len(ops['fast_disk'])==0 or ops['save_path']!=ops['fast_disk']:
+            if os.path.exists(os.path.join(ops['save_path'], 'data.bin')):
+                ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+                if 'reg_file_chan2' in ops:
+                    ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
+                if 'raw_file' in ops:
+                    ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
+                if 'raw_file_chan2' in ops:
+                    ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
 
     # check if registration should be done
     if ops['do_registration']>0:
@@ -170,9 +178,11 @@ def run_plane(ops, ops_path=None):
             run_registration = True
         else:
             print("NOTE: not running registration, plane already registered")
+            print('binary path: %s'%ops['reg_file'])
             run_registration = False
     else:
         print("NOTE: not running registration, ops['do_registration']=0")
+        print('binary path: %s'%ops['reg_file'])
         run_registration = False
     
     if run_registration:
@@ -202,7 +212,7 @@ def run_plane(ops, ops_path=None):
             plane_times['registration_metrics'] = time.time()-t0
             print('Registration metrics, %0.2f sec.' % plane_times['registration_metrics'])
             np.save(os.path.join(ops['save_path'], 'ops.npy'), ops)
-
+    
     if ops.get('roidetect', True):
 
         # Select file for classification
@@ -222,18 +232,27 @@ def run_plane(ops, ops_path=None):
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
-        cell_masks, neuropil_masks, stat, ops = detection.detect(ops=ops, classfile=classfile)
+        if stat is None:
+            ops, stat = detection.detect(ops=ops, classfile=classfile)
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat = extraction.extract(ops, cell_masks, neuropil_masks, stat)
+        ops, stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(ops, stat)
+        # save results
+        np.save(ops['ops_path'], ops)
+        fpath = ops['save_path']
+        np.save(os.path.join(fpath, 'stat.npy'), stat)
+        np.save(os.path.join(fpath,'F.npy'), F)
+        np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+        # if second channel, save F_chan2 and Fneu_chan2
+        if 'meanImg_chan2' in ops:
+            np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+            np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
-
-        #ops['neuropil_masks'] = neuropil_masks.reshape(neuropil_masks.shape[0], ops['Ly'], ops['Lx'])
 
         ######## ROI CLASSIFICATION ##############
         t11=time.time()
@@ -248,12 +267,10 @@ def run_plane(ops, ops_path=None):
 
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
-        F = np.load(os.path.join(fpath,'F.npy'))
-        Fneu = np.load(os.path.join(fpath,'Fneu.npy'))
         if ops.get('spikedetect', True):
             t11=time.time()
             print('----------- SPIKE DECONVOLUTION')
-            dF = F - ops['neucoeff']*Fneu
+            dF = F.copy() - ops['neucoeff']*Fneu
             dF = extraction.preprocess(
                 F=dF,
                 baseline=ops['baseline'],

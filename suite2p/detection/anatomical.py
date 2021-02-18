@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any, Dict
 from scipy.ndimage import find_objects
 from cellpose.models import Cellpose
 from cellpose import transforms, dynamics
@@ -118,13 +119,62 @@ def masks_to_stats(masks, weights):
         })
     return stats
     
-def select_rois(meanImg, weights, Ly, Lx, ymin, xmin):
-    masks, centers, median_diam, mask_diams = roi_detect(meanImg)
+def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int,
+                diameter=None):
+    """ find ROIs in static frames
+    
+    Parameters:
+
+        ops: dictionary
+            requires keys 'high_pass', 'anatomical_only', optional 'yrange', 'xrange'
+        
+        mov: ndarray t x Lyc x Lxc, binned movie
+    
+    Returns:
+        stats: list of dicts
+    
+    """
+
+    mean_img = mov.mean(axis=0)
+    mov = utils.temporal_high_pass_filter(mov=mov, width=int(ops['high_pass']))
+    max_proj = mov.max(axis=0)
+    #max_proj = np.percentile(mov, 90, axis=0) #.mean(axis=0)
+    if ops['anatomical_only'] == 1:
+        mproj = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
+        weights = max_proj
+    else:
+        mproj = mean_img
+        weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
+                                (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
+    t0 = time.time()
+    if diameter is not None:
+        if isinstance(ops['diameter'], (list, np.ndarray)) and len(ops['diameter'])>1:
+            rescale = ops['diameter'][1] / ops['diameter'][0]
+            mproj = cv2.resize(mproj, (int(Ly*rescale), Lx))
+    masks, centers, median_diam, mask_diams = roi_detect(mproj)
+    masks = cv2.resize(masks, (Ly, Lx), interpolation=cv2.INTER_NEAREST)
     stats = masks_to_stats(masks, weights)
+    print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
+    if 'yrange' in ops:
+        ymin, xmin = ops['yrange'][0], ops['xrange'][0]
+    else:
+        ymin, xmin = 0, 0
     for stat in stats:
         stat['ypix'] += int(ymin)
         stat['xpix'] += int(xmin)
-    stats = roi_stats(stats, median_diam, median_diam, Ly, Lx)
+    stats = roi_stats(stats, dy, dx, Ly, Lx)
+
+    new_ops = {
+            'max_proj': max_proj,
+            'Vmax': 0,
+            'ihop': 0,
+            'Vsplit': 0,
+            'Vcorr': mproj,
+            'Vmap': 0,
+            'spatscale_pix': 0
+        }
+    ops.update(new_ops)
+
     return stats
 
 # def run_assist():

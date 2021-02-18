@@ -366,7 +366,7 @@ def load_behavior(parent):
             parent.beh_resampled = resample_frames(parent.beh, parent.beh_time, np.arange(0,parent.Fcell.shape[1]))
         else:
             parent.beh_resampled = parent.beh
-        b = len(parent.colors)
+        b = 8
         parent.colorbtns.button(b).setEnabled(True)
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         masks.beh_masks(parent)

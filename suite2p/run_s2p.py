@@ -118,7 +118,7 @@ def default_ops():
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
         'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
                                          # classifier specified in classifier_path if set to True)
-        'classifier_path': None,
+        'classifier_path': 0, # path to classifier
         
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
         'chan2_thres': 0.65,  # minimum for detection of brightness on channel 2

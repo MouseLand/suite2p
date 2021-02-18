@@ -76,14 +76,17 @@ def init_views(parent):
             mimg     = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0,np.minimum(1,mimg))
         elif k==3:
-            vcorr = parent.ops['Vcorr']
-            mimg1 = np.percentile(vcorr,1)
-            mimg99 = np.percentile(vcorr,99)
-            vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
-            mimg = mimg1 * np.ones((parent.Ly, parent.Lx),np.float32)
-            mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
-            mimg = np.maximum(0,np.minimum(1,mimg))
+            if 'Vcorr' in ops:
+                vcorr = parent.ops['Vcorr']
+                mimg1 = np.percentile(vcorr,1)
+                mimg99 = np.percentile(vcorr,99)
+                vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
+                mimg = mimg1 * np.ones((parent.Ly, parent.Lx),np.float32)
+                mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
+                    parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
+                mimg = np.maximum(0,np.minimum(1,mimg))
+            else:
+                mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
         elif k==4:
             if 'max_proj' in parent.ops:
                 mproj = parent.ops['max_proj']

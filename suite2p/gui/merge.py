@@ -6,7 +6,7 @@ from scipy import stats
 
 from . import masks, io
 from . import utils
-from ..detection import roi_stats
+from ..detection.stats import roi_stats, median_pix
 from ..extraction.dcnv import oasis
 
 def distance_matrix(parent, ilist):
@@ -96,6 +96,7 @@ def merge_activity_masks(parent):
         stat0['iplane'] = parent.stat[merged_cells[0]]['iplane']
     stat0['ypix'] = ypix
     stat0['xpix'] = xpix
+    stat0['med'] = median_pix(ypix, xpix)
     stat0['lam'] = lam / lam.sum()
 
     if 'aspect' in parent.ops:

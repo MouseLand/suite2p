@@ -85,7 +85,7 @@ def make_masks_and_enable_buttons(parent):
     graphics.init_range(parent)
     traces.plot_trace(parent)
     parent.xyrat = 1.0
-    if (isinstance(parent.ops['diameter'], list) and
+    if (isinstance(parent.ops['diameter'], (list, np.ndarray)) and
         len(parent.ops['diameter'])>1 and
         parent.ops['aspect']==1.0):
         parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
@@ -421,8 +421,9 @@ def save_merge(parent):
     np.save(os.path.join(parent.basename, 'stat.npy'), parent.stat)
     np.save(os.path.join(parent.basename, 'F.npy'), parent.Fcell)
     np.save(os.path.join(parent.basename, 'Fneu.npy'), parent.Fneu)
-    np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
-    np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'), parent.Fneu_chan2)
+    if parent.hasred:
+        np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
+        np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'), parent.Fneu_chan2)
     np.save(os.path.join(parent.basename, 'spks.npy'), parent.Spks)
     iscell =  np.concatenate((parent.iscell[:,np.newaxis],
                               parent.probcell[:,np.newaxis]), axis=1)

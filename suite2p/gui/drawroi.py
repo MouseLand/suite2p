@@ -392,11 +392,12 @@ class ROIDraw(QtGui.QMainWindow):
             ellipse = self.ROIs[n].ellipse
             yrange = self.ROIs[n].yrange
             xrange = self.ROIs[n].xrange
+            med = self.ROIs[n].med
             x, y = np.meshgrid(xrange, yrange)
             ypix = y[ellipse].flatten()
             xpix = x[ellipse].flatten()
             lam = np.ones(ypix.shape)
-            stat0.append({'ypix': ypix, 'xpix': xpix, 'lam': lam, 'npix': ypix.size})
+            stat0.append({'ypix': ypix, 'xpix': xpix, 'lam': lam, 'npix': ypix.size, 'med': med})
             self.tlabel.append(pg.TextItem(str(n), self.ROIs[n].color, anchor=(0, 0)))
             self.tlabel[-1].setPos(xpix.mean(), ypix.mean())
             self.p0.addItem(self.tlabel[-1])
@@ -494,6 +495,7 @@ class sROI():
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
         self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
         self.ROI.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
+        self.med = [imy, imx]
         parent.p0.addItem(self.ROI)
 
     def remove(self, parent):

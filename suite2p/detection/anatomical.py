@@ -156,6 +156,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
     masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1])
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
+        mproj = cv2.resize(mproj, (Lxc, Lyc))
     stats = masks_to_stats(masks, weights)
     print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     if 'yrange' in ops:

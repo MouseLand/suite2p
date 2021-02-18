@@ -320,7 +320,8 @@ def load_to_GUI(parent, basename, procs):
     parent.hasred = hasred
     parent.notmerged = np.ones_like(parent.iscell).astype(np.bool)
     for n in range(len(parent.stat)):
-        parent.stat[n]['chan2_prob'] = parent.probredcell[n]
+        if parent.hasred:
+            parent.stat[n]['chan2_prob'] = parent.probredcell[n]
         parent.stat[n]['inmerge'] = 0
     parent.stat = np.array(parent.stat)
     make_masks_and_enable_buttons(parent)
@@ -424,13 +425,14 @@ def save_merge(parent):
     if parent.hasred:
         np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
         np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'), parent.Fneu_chan2)
+        np.save(os.path.join(parent.basename, 'redcell.npy'),
+                np.concatenate((np.expand_dims(parent.redcell,axis=1),
+                np.expand_dims(parent.probredcell,axis=1)), axis=1))
     np.save(os.path.join(parent.basename, 'spks.npy'), parent.Spks)
     iscell =  np.concatenate((parent.iscell[:,np.newaxis],
                               parent.probcell[:,np.newaxis]), axis=1)
     np.save(os.path.join(parent.basename, 'iscell.npy'), iscell)
-    np.save(os.path.join(parent.basename, 'redcell.npy'),
-            np.concatenate((np.expand_dims(parent.redcell,axis=1),
-            np.expand_dims(parent.probredcell,axis=1)), axis=1))
+    
     parent.notmerged = np.ones(parent.iscell.size, np.bool)
 
 def load_custom_mask(parent):

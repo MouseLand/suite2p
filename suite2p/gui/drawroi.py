@@ -35,7 +35,7 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     cell_masks = [
         masks.create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stat_all
     ]
-    cell_pix = masks.create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap'])
+    cell_pix = masks.create_cell_pix(stat_all, Ly=ops['Ly'], Lx=ops['Lx'])
     manual_roi_stats = stat_all[:len(stat_manual)]
     manual_cell_masks = cell_masks[:len(stat_manual)]
     manual_neuropil_masks = masks.create_neuropil_masks(

@@ -4,7 +4,6 @@ from scipy.ndimage import find_objects
 from cellpose.models import Cellpose
 from cellpose import transforms, dynamics
 from cellpose.utils import fill_holes_and_remove_small_masks
-from mxnet import nd
 import time
 import cv2
 
@@ -40,8 +39,7 @@ def patch_detect(patches, diam):
     batch_size = 8 * 224 // ly
     tic=time.time()
     for j in np.arange(0, npatches, batch_size):
-        img = nd.array(imgs[j:j+batch_size])
-        y = model.cp.net(img)[0]
+        y = model.cp.network(imgs[j:j+batch_size])[0]
         y = y[:, :, ysub[0]:ysub[-1]+1, xsub[0]:xsub[-1]+1]
         y = y.asnumpy()
         for i,yi in enumerate(y):
@@ -134,7 +132,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         stats: list of dicts
     
     """
-
+    Lyc,Lxc = mov.shape[1:]
     mean_img = mov.mean(axis=0)
     mov = utils.temporal_high_pass_filter(mov=mov, width=int(ops['high_pass']))
     max_proj = mov.max(axis=0)
@@ -150,9 +148,14 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
     if diameter is not None:
         if isinstance(ops['diameter'], (list, np.ndarray)) and len(ops['diameter'])>1:
             rescale = ops['diameter'][1] / ops['diameter'][0]
-            mproj = cv2.resize(mproj, (int(Ly*rescale), Lx))
-    masks, centers, median_diam, mask_diams = roi_detect(mproj)
-    masks = cv2.resize(masks, (Ly, Lx), interpolation=cv2.INTER_NEAREST)
+            mproj = cv2.resize(mproj, (int(Lyc*rescale), Lxc))
+        else:
+            rescale = 1.0
+            ops['diameter'] = [ops['diameter'], ops['diameter']]
+        print("!NOTE! ops['diameter'] set to %0.2f for cell detection with cellpose"%ops['diameter'][1])
+    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1])
+    if rescale != 1.0:
+        masks = cv2.resize(masks, (Lyc, Lxc), interpolation=cv2.INTER_NEAREST)
     stats = masks_to_stats(masks, weights)
     print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     if 'yrange' in ops:

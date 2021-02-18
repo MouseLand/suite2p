@@ -1,4 +1,4 @@
-name: suite2p2
+name: suite2p
 channels:
   - conda-forge
 dependencies:

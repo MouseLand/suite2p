@@ -2,13 +2,15 @@ from PyQt5 import QtGui
 from pkg_resources import iter_entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
+from suite2p.io.nwb import save_nwb
+from suite2p.io.utils import get_suite2p_path
 
 
 def mainmenu(parent):
     main_menu = parent.menuBar()
     # --------------- MENU BAR --------------------------
     # run suite2p from scratch
-    runS2P = QtGui.QAction("&Run suite2p ", parent)
+    runS2P = QtGui.QAction("&Run suite2p", parent)
     runS2P.setShortcut("Ctrl+R")
     runS2P.triggered.connect(lambda: run_suite2p(parent))
     parent.addAction(runS2P)
@@ -30,7 +32,6 @@ def mainmenu(parent):
     loadFolder.triggered.connect(lambda: io.load_dialog_folder(parent))
     parent.addAction(loadFolder)
 
-
     # load a behavioral trace
     parent.loadBeh = QtGui.QAction(
         "Load behavior or stim trace (1D only)", parent
@@ -46,6 +47,13 @@ def mainmenu(parent):
     parent.saveMat.setEnabled(False)
     parent.addAction(parent.saveMat)
 
+    # Save NWB file
+    parent.saveNWB = QtGui.QAction("Save NWB file", parent)
+    parent.saveNWB.triggered.connect(
+        lambda: save_nwb(get_suite2p_path(parent.basename))
+    )
+    parent.saveNWB.setEnabled(False)
+    parent.addAction(parent.saveNWB)
 
     # export figure
     exportFig = QtGui.QAction("Export as image (svg)", parent)
@@ -66,6 +74,7 @@ def mainmenu(parent):
     file_menu.addAction(loadNWB)
     file_menu.addAction(loadFolder)
     file_menu.addAction(parent.loadBeh)
+    file_menu.addAction(parent.saveNWB)
     file_menu.addAction(parent.saveMat)
     file_menu.addAction(exportFig)
     file_menu.addAction(parent.manual)

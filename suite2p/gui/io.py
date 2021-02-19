@@ -20,6 +20,7 @@ def make_masks_and_enable_buttons(parent):
 
     parent.loadBeh.setEnabled(True)
     parent.saveMat.setEnabled(True)
+    parent.saveNWB.setEnabled(True)
     parent.saveMerge.setEnabled(True)
     parent.sugMerge.setEnabled(True)
     parent.manual.setEnabled(True)

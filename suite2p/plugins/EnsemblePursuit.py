@@ -7,11 +7,10 @@ from matplotlib import cm
 from sklearn.decomposition import PCA
 import time
 import sys,os
-from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel, QPushButton, QComboBox
 import matplotlib.pyplot as plt
 from pylab import *
-from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
+from ..gui import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 from pyqtgraph.Qt import QtCore
 from scipy.stats.stats import pearsonr
 try:

@@ -2,7 +2,7 @@ from PyQt5 import QtGui
 from pkg_resources import iter_entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
-
+from ..plugins import EnsemblePursuit
 
 def mainmenu(parent):
     main_menu = parent.menuBar()
@@ -150,12 +150,19 @@ def plugins(parent):
     main_menu = parent.menuBar()
     parent.plugins = {}
     plugin_menu = main_menu.addMenu('&Plugins')
+    parent.EP = QtGui.QAction('Run ensemble pursuit decomposition', parent)
+    parent.EP.triggered.connect(lambda: EP_window(parent))
+    plugin_menu.addAction(parent.EP)
     for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
         plugin_obj = entry_pt.load() # load the advertised class from entry_points
         parent.plugins[entry_pt.name] = plugin_obj(parent) # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
         action = QtGui.QAction(parent.plugins[entry_pt.name].name, parent) # create plugin menu item with the name property of the loaded class
         action.triggered.connect(parent.plugins[entry_pt.name].trigger) # attach class method 'trigger' to plugin menu action
         plugin_menu.addAction(action)
+
+def EP_window(parent):
+    EP = EnsemblePursuit.EPWindow(parent)
+    EP.show()
 
 def run_suite2p(parent):
     RW = rungui.RunWindow(parent)

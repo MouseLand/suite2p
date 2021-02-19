@@ -23,4 +23,5 @@ dependencies:
     - importlib-metadata
     - paramiko
     - pynwb<1.4.0
+    - sbxreader
     - suite2p

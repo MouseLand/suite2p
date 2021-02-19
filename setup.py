@@ -29,6 +29,7 @@ setuptools.setup(
         'matplotlib',
         'scipy',
         'h5py',
+        'sbxreader',
         'scikit-learn',],  # see environment.yml for this info.
     tests_require=[
       'pytest',

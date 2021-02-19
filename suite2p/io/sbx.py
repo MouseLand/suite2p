@@ -4,82 +4,17 @@ import numpy as np
 
 from .utils import init_ops, find_files_open_binaries
 
-
-def sbx_get_info(sbxfile):
-    ''' 
-    Read info from a scanbox mat file [pass the sbx extension].
-    info = sbx_get_info(sbxfile)
-    '''
-    matfile = os.path.splitext(sbxfile)[0] + '.mat'
-    if not os.path.exists(matfile):
-        raise FileNotFoundError('Metadata not found: {0}'.format(matfile))
-    from scipy.io import loadmat
-    info = loadmat(matfile,squeeze_me=True,struct_as_record=False)
-    return info['info']
-
-def sbx_get_shape(sbxfile):
-    ''' 
-    Get shape from scanbox file.
-    Reads it from the file size and the info mat file.
-    (chan,ncols,nrows,max_idx),nplanes = sbx_get_shape(sbxfile)
-    '''
-    info = sbx_get_info(sbxfile)
-    fsize = os.path.getsize(sbxfile)
-    nrows,ncols = info.sz
-    chan = info.channels
-    if chan == 1:
-        chan = 2; 
-    elif chan == 2:
-        chan = 1
-    elif chan == 3:
-        chan = 1
-    max_idx = fsize/nrows/ncols/chan/2
-    if max_idx != info.config.frames:
-        print('SBX filesize doesnt match accompaning MAT [{0},{1}]. Check recording.'.format(
-            max_idx,
-            info.config.frames))
-    nplanes = 1
-    if not isinstance(info.otwave,int):
-        if len(info.otwave) and info.volscan:
-            nplanes = len(info.otwave)
-    # make sure that if there are multiple planes it works regardless of the number of recorded  frames
-    max_idx = np.floor((max_idx/nplanes)) * nplanes
-    return (int(chan),int(ncols),int(nrows),int(max_idx)),nplanes
-
-def sbx_memmap(filename,plane_axis=True):
-    '''
-    Memory maps a scanbox file.
-
-    npmap = sbx_memmap(filename,reshape_planes=True)
-    Returns a N x 1 x NChannels x H x W memory map object; data can be accessed like a numpy array.
-    Reshapes data to (N,nplanes,nchan,H,W) if plane_axis=1
-
-    Actual data are 65535 - sbxmmap; data format is uint16
-    '''
-    if filename[-3:] == 'sbx':
-        sbxshape,nplanes = sbx_get_shape(filename)
-        if plane_axis:
-            return np.memmap(filename,
-                             dtype='uint16',
-                             shape=sbxshape,order='F').transpose([3,0,2,1]).reshape(
-                int(sbxshape[3]/nplanes),
-                nplanes,
-                sbxshape[0],
-                sbxshape[2],
-                sbxshape[1])
-        else:
-            return np.memmap(filename,
-                             dtype='uint16',
-                             shape=sbxshape,order='F').transpose([3,0,2,1]).reshape(
-                int(sbxshape[3]),
-                sbxshape[0],
-                sbxshape[2],
-                sbxshape[1])            
-    else:
-        raise ValueError('Not sbx:  ' + filename)
+try:
+    from sbxreader import sbx_memmap
+except:
+    print('Could not load the sbx reader, installing with pip.')
+    from subprocess import call
+    call('pip install sbxreader',shell = True)
+    from sbxreader import sbx_memmap
 
 
-def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=-1):
+
+def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
     """  finds scanbox files and writes them to binaries
 
     Parameters
@@ -111,18 +46,20 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=-1):
         ndeadrows = int(ops1[0]['sbx_ndeadrows'])
     
     if ndeadcols==-1 or ndeadrows==-1:
-        sbxinfo = sbx_get_info(sbxlist[0])
         # compute dead rows and cols from the first file
         tmpsbx = sbx_memmap(sbxlist[0])
-        colprofile = np.mean(tmpsbx[0][0][0], axis=0)
         # do not remove dead rows in non-multiplane mode
-        if nplanes > 1:
-            ndeadrows = np.argmax(np.diff(colprofile, axis=0)) + 1
+        # This number should be different for each plane since the artifact is larger
+        # for larger ETL jumps. 
+        if nplanes > 1 and ndeadrows==-1:
+            colprofile = np.array(np.mean(tmpsbx[0][0][0], axis=1))
+            ndeadrows = np.argmax(np.diff(colprofile)) + 1
         else:
             ndeadrows = 0
         # do not remove dead columns in unidirectional scanning mode
-        if sbxinfo.scanmode != 1:
-            ndeadcols = np.argmax(np.diff(colprofile, axis=-1)) + 1
+        # do this only if ndeadcols is -1 
+        if tmpsbx.metadata['scanning_mode'] == 'bidirectional' and ndeadcols==-1:
+            ndeadcols = tmpsbx.ndeadcols
         else:
             ndeadcols = 0
         del tmpsbx
@@ -149,7 +86,7 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=-1):
         # loop over all frames
         for ichunk,onset  in enumerate(iblocks[:-1]):
             offset = iblocks[ichunk+1]
-            im = (np.uint16(65535)-f[onset:offset,:,:,ndeadrows:,ndeadcols:])//2
+            im = np.array(f[onset:offset,:,:,ndeadrows:,ndeadcols:])//2
             im = im.astype(np.int16)
             im2mean = im.mean(axis = 0).astype(np.float32)/len(iblocks) 
             for ichan in range(nchannels):

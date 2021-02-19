@@ -177,10 +177,6 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
         stat[k]['skew'] = sk[k]
         stat[k]['std'] = sd[k]
     
-
-    # add enhanced mean image
-    ops = enhanced_mean_image(ops)
-
     return ops, stat, F, Fneu, F_chan2, Fneu_chan2
 
 

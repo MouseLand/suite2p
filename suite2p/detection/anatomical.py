@@ -90,9 +90,10 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
             stat['anatomical'] = False
     return stats   
 
-def roi_detect(mproj, diameter=None):
+def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5):
     model = Cellpose()
-    masks = model.eval(mproj, net_avg=True, channels=[0,0], diameter=diameter, flow_threshold=1.5)[0]
+    masks = model.eval(mproj, net_avg=True, channels=[0,0], diameter=diameter, 
+                        cellprob_threshold=cellprob_threshold, flow_threshold=flow_threshold)[0]
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
@@ -140,8 +141,16 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
     if ops['anatomical_only'] == 1:
         mproj = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
         weights = max_proj
-    else:
+    elif ops['anatomical_only']==2:
         mproj = mean_img
+        weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
+                                (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
+    else:
+        if 'meanImgE' in ops:
+            mproj = ops['meanImgE'][ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+        else:
+            mproj = mean_img
+            print('no enhanced mean image, using mean image instead')
         weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
                                 (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
     t0 = time.time()
@@ -153,7 +162,9 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
             rescale = 1.0
             ops['diameter'] = [ops['diameter'], ops['diameter']]
         print("!NOTE! ops['diameter'] set to %0.2f for cell detection with cellpose"%ops['diameter'][1])
-    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1])
+    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1],
+                                                         flow_threshold=ops['flow_threshold'],
+                                                         cellprob_threshold=ops['cellprob_threshold'])
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
         mproj = cv2.resize(mproj, (Lxc, Lyc))

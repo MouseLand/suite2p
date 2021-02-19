@@ -131,7 +131,7 @@ class RunWindow(QtGui.QDialog):
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'if 1, run cell (ROI) detection',
                     'if 1, run PCA denoising on binned movie to improve cell detection',
-                    'run cellpose to get masks on 1: max_proj / mean_img; or 2: mean_img',
+                    'run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; or 3: mean_img enhanced',
                     'if anatomical_only>0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
                     'if anatomical_only=0, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',

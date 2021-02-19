@@ -98,6 +98,8 @@ def default_ops():
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
         'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
+        'cellprob_threshold': 0.0, # cellprob_threshold for cellpose (if anatomical_only > 1)
+        'flow_threshold': 1.5, # flow_threshold for cellpose (if anatomical_only > 1)
         'sparse_mode': True,  # whether or not to run sparse_mode
         'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels

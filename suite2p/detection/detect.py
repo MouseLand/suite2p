@@ -46,7 +46,7 @@ def detect(ops, classfile=None):
         print('$ pip install cellpose')
 
     if ops.get('anatomical_only', 0) > 0 and CELLPOSE_INSTALLED:
-        print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img'][int(ops['anatomical_only'])-1])
+        print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img', 'enhanced_mean_img'][int(ops['anatomical_only'])-1])
         stats = anatomical.select_rois(
                     ops=ops,
                     mov=mov,

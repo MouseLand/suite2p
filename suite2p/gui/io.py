@@ -468,4 +468,4 @@ def load_again(parent, Text):
         parent, "ERROR", Text, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
     )
     if tryagain == QtGui.QMessageBox.Yes:
-        parent.load_dialog()
+        load_dialog(parent)

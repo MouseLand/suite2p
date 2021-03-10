@@ -137,29 +137,3 @@ def test_save_nwb(replace_ops_save_path_with_local_path, data_folder):
 
     # Remove NWB file
     save_folder.joinpath("ophys.nwb").unlink()
-
-
-@pytest.mark.parametrize(
-    "input_path, expected_path, success",
-    [
-        (
-            "D:/kjkcc/jodendopn/suite2p/ncconoc/onowcno",
-            "D:/kjkcc/jodendopn/suite2p",
-            True,
-        ),
-        (
-            "/home/bla/kjkcc/jodendopn/suite2p/ops.npy",
-            "/home/bla/kjkcc/jodendopn/suite2p",
-            True,
-        ),
-        ("/etc/bla/kjkcc/jodendopn/suite2p", "/etc/bla/kjkcc/jodendopn/suite2p", True),
-        ("/etc/bla/kjkcc/jodendopn/", "", False),
-    ],
-)
-def test_get_suite2p_path(input_path, expected_path, success):
-    if success:
-        res_path = get_suite2p_path(input_path)
-        assert res_path == Path(expected_path)
-    else:
-        with pytest.raises(FileNotFoundError):
-            get_suite2p_path(Path(input_path))

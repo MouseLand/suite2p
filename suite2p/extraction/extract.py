@@ -63,6 +63,7 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     block_size = Ly*Lx*nimgbatch*2
     ix = 0
     data = 1
+    neuropil_ipix = None
 
     cell_ipix = List()
     [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
@@ -176,7 +177,8 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     for k in range(F.shape[0]):
         stat[k]['skew'] = sk[k]
         stat[k]['std'] = sd[k]
-        stat[k]['neuropil_mask'] = neuropil_masks[k]
+        if not neuropil_masks is None:
+            stat[k]['neuropil_mask'] = neuropil_masks[k]
     
     return ops, stat, F, Fneu, F_chan2, Fneu_chan2
 

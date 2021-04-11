@@ -168,7 +168,7 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(QtGui.QLabel('Load example ops'),5,2,1,2)
         for k in range(3):
             qw = QtGui.QPushButton('Save ops to file')
-        saveOps.clicked.connect(self.save_ops)
+        #saveOps.clicked.connect(self.save_ops)
         self.opsbtns = QtGui.QButtonGroup(self)
         opsstr = ['1P imaging', 'dendrites/axons']
         self.opsname = ['1P', 'dendrite']

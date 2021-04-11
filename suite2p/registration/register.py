@@ -49,9 +49,14 @@ def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregsh
     badframes = np.logical_or(px > th_badframes * 100, badframes)
     badframes = np.logical_or(abs(xoff) > (maxregshift * Lx * 0.95), badframes)
     badframes = np.logical_or(abs(yoff) > (maxregshift * Ly * 0.95), badframes)
-    ymin = np.ceil(np.abs(yoff[np.logical_not(badframes)]).max())
+    if badframes.sum() > 5:
+        ymin = np.ceil(np.abs(yoff[np.logical_not(badframes)]).max())
+        xmin = np.ceil(np.abs(xoff[np.logical_not(badframes)]).max())
+    else:
+        print('WARNING: most frames have large movements, registration likely')
+        ymin = np.ceil(np.abs(yoff).max())
+        xmin = np.ceil(np.abs(xoff).max())
     ymax = Ly - ymin
-    xmin = np.ceil(np.abs(xoff[np.logical_not(badframes)]).max())
     xmax = Lx - xmin
     yrange = [int(ymin), int(ymax)]
     xrange = [int(xmin), int(xmax)]

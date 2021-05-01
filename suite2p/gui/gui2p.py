@@ -398,7 +398,7 @@ class MainWindow(QtGui.QMainWindow):
         self.activityMode = i
         if self.loaded:
             # activity used for correlations
-            self.bin = int(self.binedit.text())
+            self.bin = max(1, int(self.binedit.text()))
             nb = int(np.floor(float(self.Fcell.shape[1]) / float(self.bin)))
             if i == 0:
                 f = self.Fcell

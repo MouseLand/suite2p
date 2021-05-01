@@ -12,8 +12,9 @@ dependencies:
   - matplotlib
   - scipy
   - scikit-learn
-  - pyqt
   - pip:
+    - pyqt5
+    - pyqt5.sip
     - h5py==2.10.0
     - natsort
     - rastermap>0.1.0

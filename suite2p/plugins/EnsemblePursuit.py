@@ -7,6 +7,7 @@ from matplotlib import cm
 from sklearn.decomposition import PCA
 import time
 import sys,os
+from EnsemblePursuit.EnsemblePursuit import EnsemblePursuit
 from PyQt5.QtWidgets import QGridLayout, QWidget, QLabel, QPushButton, QComboBox
 import matplotlib.pyplot as plt
 from pylab import *
@@ -27,19 +28,13 @@ class ArrowWidgt(QtGui.QWidget):
     Custom widget for flipping through ensembles that a neuron belongs to.
     The widget is situated in the upper right corner of the EP window.
     You can type the index of the neuron in the box in the middle.
-
     Attributes
     -------------
     ep_win: the current ensemble pursuit window.
-
     parent: the main window.
-
     current_ens_text: text indicating the current selected ensemble that the indicated neuron belongs to.
-
     neuron: the indicated neuron which can belong to multiple ensembles.
-
     ens_ind: the index of the currently indicated ensemble.
-
     ens_lst: all the ensembles that the indicated neuron belongs to.
     '''
     def __init__(self,ep_win,parent=None):
@@ -128,7 +123,6 @@ class ArrowWidgt(QtGui.QWidget):
     def compute_ens_lst(self,neuron_ind):
         '''
         Function for computing which ensembles the indicated neuron belongs to.
-
         Parameters
         -----------
         neuron_ind: int, the index of the indicated neuron.
@@ -141,7 +135,6 @@ class ArrowWidgt(QtGui.QWidget):
     def select_cells(self,ensemble_ind):
         '''
         Selects cells that belong to the ensemble in the main window.
-
         Parameters
         -----------
         ensemble_ind: int, from which ensemble to select neurons in the main window.
@@ -277,13 +270,10 @@ class BoxRangeWidget(QtGui.QWidget):
 class HeatMapBox(QLabel):
     '''
     Class for a single clickable box in a heatmap boxplot layout.
-
     Attributes
     -----------
     ep_win: the ensemble pursuit window.
-
     ensemble: which ensemble the box represents.
-
     color_ind: index of the color map of the box.
     '''
     def __init__(self,ep_win,ensemble,color_ind):
@@ -310,7 +300,6 @@ class HeatMapBox(QLabel):
         An event for selecting a box and passing the selected ensemble index to
         the EP window class. Passing the ensemble to the EP window class is
         necessary for the select_cells function in the main window to work.
-
         Parameters
         -----------
         event: mouse press event on the ensemble box.
@@ -360,63 +349,36 @@ class BoxLayout(pg.LayoutWidget):
 class EPWindow(QtGui.QMainWindow):
     '''
     Main EnsemblePursuit window.
-
     Parameters
     -----------
     parent: the main window of suite2p.
-
     Attributes
     -----------
     cwidget: central widget of the window.
-
     l0: grid layout for the window.
-
     win: window of ensemble pursuit.
-
     sc_plots: layout for the scatter plots at the bottom of the window.
-
     box_layout: layout for boxes representing ensembles.
-
     sp: calcium signals from the main window.
-
     n_components: number of ensembles to fit.
-
     ptr: int, index which indicates which page of scatter plots is currently visible.
-
     box_block_ind: int, index which indicates which page of ensemble heatmap boxes is currently visible.
-
     box_rng: range for box plot.
-
     box_rm: ensemble boxes that don't fill a single line in the heatmap plot.
-
     range: scatter plot range widget.
-
     epOn: button to compute ensemble pursuit.
-
     nr_ens_text: text demarcating the number of ensembles to fit.
-
     n_ens: text box for inputting how many ensembles to fit.
-
     lam_text: lambda parameter descriptive text label.
-
     lam_input: text box for setting the value of the parameter lambda.
-
     box_plot_arrows: arrows custom widget for flipping between box plot pages.
-
     arrows: widget for flipping through which ensembles a neuron belongs to.
-
     ens_selector: button for highlighting the cells in the selected ensemble in the main window.
-
     pc: principal components from PCA.
-
     data_selector: dropdown for selecting which data to plot against ensembles in the scatter plots.
-
     enter_ind: text box for inputting which data index to plot against the ensembles.
-
     widget_lst: list, holds the ensemble heatmap boxes.
-
     color_lst: list, colors for the ensemble heatmap boxes.
-
     '''
     def __init__(self, parent=None):
         super(EPWindow, self).__init__(parent)
@@ -736,25 +698,43 @@ class EPWindow(QtGui.QMainWindow):
         elif dat_type=='Behavior':
             if parent.bloaded==True:
                 y_ax_data=parent.beh[ind,:].flatten()
-            else:
-                print('Behavior data not loaded!')
         elif dat_type=='Other Ensembles':
             y_ax_data=self.V[:,ind].flatten()
-        scatter_plot=ScatterPlot()
-        one_sc=self.sc_plots.addItem(scatter_plot)
-        color=lut[self.color_lst[cells_inds[col_ind]]]*255
-        color[-1]=5
-        #print('col',color)
-        color=tuple(color)
-        if last_plot==True:
-            scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=15, symbolBrush=color)
-        else:
-            scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=5, symbolBrush=color)
-        scatter_plot.hideAxis('bottom')
-        scatter_plot.hideAxis('left')
-        r=pearsonr(x_ax_data,y_ax_data)
-        corrcoef=r[0]
-        scatter_plot.setTitle('# '+str(cells_inds[ens_ind])+', '+'r= %6.4f'%corrcoef)
+        if dat_type!='Behavior':
+            scatter_plot=ScatterPlot()
+            one_sc=self.sc_plots.addItem(scatter_plot)
+            color=lut[self.color_lst[cells_inds[col_ind]]]*255
+            color[-1]=5
+            #print('col',color)
+            color=tuple(color)
+            if last_plot==True:
+                scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=15, symbolBrush=color)
+            else:
+                scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=5, symbolBrush=color)
+            scatter_plot.hideAxis('bottom')
+            scatter_plot.hideAxis('left')
+            r=pearsonr(x_ax_data,y_ax_data)
+            corrcoef=r[0]
+            scatter_plot.setTitle('# '+str(cells_inds[ens_ind])+', '+'r= %6.4f'%corrcoef)
+        elif dat_type=='Behavior' and parent.bloaded==True:
+            scatter_plot=ScatterPlot()
+            one_sc=self.sc_plots.addItem(scatter_plot)
+            color=lut[self.color_lst[cells_inds[col_ind]]]*255
+            color[-1]=5
+            #print('col',color)
+            color=tuple(color)
+            if last_plot==True:
+                scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=15, symbolBrush=color)
+            else:
+                scatter_plot.plot(x_ax_data, y_ax_data, pen=None, symbol='t', symbolPen=None, symbolSize=5, symbolBrush=color)
+            scatter_plot.hideAxis('bottom')
+            scatter_plot.hideAxis('left')
+            r=pearsonr(x_ax_data,y_ax_data)
+            corrcoef=r[0]
+            scatter_plot.setTitle('# '+str(cells_inds[ens_ind])+', '+'r= %6.4f'%corrcoef)
+        elif dat_type=='Behavior' and parent.bloaded==False:
+            pass
+            print('Behavior not loaded!')
 
     def plot_multiple_scatter(self,parent,pc_ind,cells_inds,dat_type,ind):
         '''

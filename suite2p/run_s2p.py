@@ -3,6 +3,7 @@ import shutil
 import time
 from natsort import natsorted
 from datetime import datetime
+from getpass import getpass
 
 import numpy as np
 from scipy.io import savemat
@@ -333,7 +334,7 @@ def run_plane(ops, ops_path=None, stat=None):
     return ops
 
 
-def run_s2p(ops={}, db={}):
+def run_s2p(ops={}, db={}, server={}):
     """ run suite2p pipeline
 
         need to provide a 'data_path' or 'h5py'+'h5py_key' in db or ops
@@ -344,6 +345,9 @@ def run_s2p(ops={}, db={}):
             specify 'nplanes', 'nchannels', 'tau', 'fs'
         db : :obj:`dict`
             specify 'data_path' or 'h5py'+'h5py_key' here or in ops
+        server : :obj:`dict`
+            specify 'host', 'username', 'server_root', 'n_cores' ( for multiplane_parallel )
+
 
         Returns
         -------
@@ -409,7 +413,11 @@ def run_s2p(ops={}, db={}):
             ))
 
     if ops.get('multiplane_parallel'):
-        io.server.send_jobs(save_folder)
+        if server:
+            io.server.send_jobs(save_folder, host=server['host'], username=server['username'],
+                password=getpass('Enter your server password'),server_root=server['server_root'],n_cores=server['n_cores'])
+        else:
+            io.server.send_jobs(save_folder)
         return None
     else:
         for ipl, ops_path in enumerate(ops_paths):

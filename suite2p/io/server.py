@@ -36,7 +36,8 @@ def send_jobs(save_folder,
          username=None, 
          password=None, 
          server_root=None, 
-         n_cores=4):
+         local_root=None,
+         n_cores=8):
 
     """ send each plane to compute on server separately
 
@@ -48,9 +49,10 @@ def send_jobs(save_folder,
     if host is None:
         raise Exception('No server specified, please edit suite2p/io/server.py')
     
-    # server_root is different from where you created the binaries
-    # this line will depend on your set up
-    save_folder_server =  Path(*Path(save_folder).parts[1:])
+    # server_root is different from where you created the binaries, which is local_root
+    nparts = len(Path(local_root).parts)
+    # e.g. if server is Z:/path on local computer, and server_root+path on remote, then nparts=1
+    save_folder_server =  Path(*Path(save_folder).parts[nparts:])
     save_folder_server = Path(server_root) / save_folder_server
     save_path0_server = Path(*Path(save_folder_server).parts[:-1])
     save_folder_name = Path(save_folder).parts[-1]
@@ -121,7 +123,9 @@ def send_jobs(save_folder,
         
         # save final version of ops and send to server
         np.save(ops_path_orig, op)
-        ftp_client.put(ops_path_orig, op['ops_path'])
+        if copy:
+            print('copying ops')
+            ftp_client.put(ops_path_orig, op['ops_path'])
 
         # run plane (server-specific command)
         run_command = '''bsub -n %d -J test_s2p%d -R"select[avx512]" -o out%d.txt "~/run_script.sh '%s' > log%d.txt"'''%(n_cores, ipl, ipl, op['ops_path'], ipl)

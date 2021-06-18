@@ -346,7 +346,7 @@ def run_s2p(ops={}, db={}, server={}):
         db : :obj:`dict`
             specify 'data_path' or 'h5py'+'h5py_key' here or in ops
         server : :obj:`dict`
-            specify 'host', 'username', 'server_root', 'n_cores' ( for multiplane_parallel )
+            specify 'host', 'username', 'password', 'server_root', 'local_root', 'n_cores' ( for multiplane_parallel )
 
 
         Returns
@@ -414,9 +414,12 @@ def run_s2p(ops={}, db={}, server={}):
 
     if ops.get('multiplane_parallel'):
         if server:
+            # if user puts in server settings
             io.server.send_jobs(save_folder, host=server['host'], username=server['username'],
-                password=getpass('Enter your server password'),server_root=server['server_root'],n_cores=server['n_cores'])
+                                password=server['password'], server_root=server['server_root'],
+                                local_root=server['local_root'], n_cores=server['n_cores'])
         else:
+            # otherwise use settings modified in io/server.py
             io.server.send_jobs(save_folder)
         return None
     else:

@@ -414,10 +414,14 @@ def run_s2p(ops={}, db={}, server={}):
 
     if ops.get('multiplane_parallel'):
         if server:
-            # if user puts in server settings
-            io.server.send_jobs(save_folder, host=server['host'], username=server['username'],
-                                password=server['password'], server_root=server['server_root'],
-                                local_root=server['local_root'], n_cores=server['n_cores'])
+            if 'fnc' in server.keys():
+                # Call custom function.
+                server['fnc'](save_folder, server)
+            else:
+                # if user puts in server settings
+                io.server.send_jobs(save_folder, host=server['host'], username=server['username'],
+                                    password=server['password'], server_root=server['server_root'],
+                                    local_root=server['local_root'], n_cores=server['n_cores'])
         else:
             # otherwise use settings modified in io/server.py
             io.server.send_jobs(save_folder)

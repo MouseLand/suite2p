@@ -7,16 +7,18 @@ import numpy as np
 def unix_path(path):
     return str(path).replace(os.sep, '/')
 
-def ssh_connect(host, username, password):
+def ssh_connect(host, username, password,verbose=True):
     """ from paramiko example """
     i=0
     while True:
-        print("Trying to connect to %s (attempt %i/30)" % (host, i+1))
+        if verbose:
+            print("Trying to connect to %s (attempt %i/30)" % (host, i+1))
         try:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(host, username=username, password=password)
-            print("Connected to %s" % host)
+            if verbose:
+                print("Connected to %s" % host)
             break
         except paramiko.AuthenticationException:
             print("Authentication failed when connecting to %s" % host)

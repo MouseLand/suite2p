@@ -19,10 +19,8 @@ setuptools.setup(
     use_scm_version=True,
     install_requires=['importlib-metadata',
         'natsort',
-        'rastermap>0.1.0',
         'tifffile',
         'scanimage-tiff-reader>=1.4.1',
-        'pyqtgraph',
         'paramiko',
         'numpy>=1.16',
         'numba>=0.43.1',
@@ -48,6 +46,8 @@ setuptools.setup(
         "pyqt5",
         "pyqt5-tools",
         "pyqt5.sip",
+        'pyqtgraph',
+        'rastermap>0.1.0',
       ],
       # Note: Not currently available in pip: use conda to install.
       "mkl": [

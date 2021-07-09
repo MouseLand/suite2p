@@ -301,3 +301,129 @@ def temporary_pointer(file):
     orig_pointer = file.tell()
     yield file
     file.seek(orig_pointer)
+
+class BinaryFileCombined:
+
+    def __init__(self, LY: int, LX: int, Ly: np.ndarray, Lx: np.ndarray, 
+                 dy: np.ndarray, dx: np.ndarray, read_filenames: str):
+        """
+        Creates/Opens a Suite2p BinaryFile for reading image data across planes
+
+        Parameters
+        ----------
+        LY: int
+            The height of full frame
+        LX: int
+            The width of full frame
+        Ly: numpy array of ints
+            The heights of each frame
+        Lx: numpy array of ints
+            The widths of each frame
+        dy: numpy array of ints
+            The y-positions of each frame
+        dx: numpy array of ints
+            The x-positions of each frame
+        read_filenames: array of str
+            The filenames of the files to read from
+        """
+        self.LY = LY
+        self.LX = LX
+        self.Ly = Ly
+        self.Lx = Lx
+        self.dy = dy
+        self.dx = dx
+        self.read_filenames = read_filenames
+        
+        self.read_files = [open(read_filename, mode='rb') for read_filename in self.read_filenames]
+        self._index = 0
+        self._can_read = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self) -> None:
+        """
+        Closes the file.
+        """
+        for n in range(len(self.read_files)):
+            self.read_files[n].close()
+
+    @property
+    def nbytesread(self):
+        """number of bytes per frame (FIXED for given file)"""
+        return (2 * self.Ly * self.Lx).astype(np.int64)
+
+    @property
+    def nbytes(self):
+        """total number of bytes in the read_file."""
+        nbytes = np.zeros(len(self.read_files), np.int64)
+        for i,read_file in enumerate(self.read_files):
+            with temporary_pointer(read_file) as f:
+                f.seek(0, 2)
+                nbytes[i] = f.tell()
+        return nbytes
+
+    @property
+    def n_frames(self) -> int:
+        """total number of fraames in the read_file."""
+        return int(self.nbytes[0] // self.nbytesread[0])
+
+
+    def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns the next frame(s) in the file and its associated indices.
+
+        Parameters
+        ----------
+        batch_size: int
+            The number of frames to read at once.
+        frames: batch_size x Ly x Lx
+            The frame data
+        """
+        if not self._can_read:
+            raise IOError("BinaryFile needs to write before it can read again.")
+
+        for n, (nbytesr, read_file) in enumerate(zip(self.nbytesread, self.read_files)):
+            nbytes = nbytesr * batch_size
+            buff = read_file.read(nbytes)
+            data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly[n], self.Lx[n]).astype(dtype)
+            if data.size == 0:
+                return None
+            if n==0:
+                data_all = np.zeros((data.shape[0], self.LY, self.LX), dtype=np.int16)
+            data_all[:, self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = data
+            
+        indices = np.arange(self._index, self._index + data.shape[0])
+        self._index += data.shape[0]
+        
+        return indices, data_all
+
+    def iter_frames(self, batch_size: int = 1, dtype=np.float32):
+        """
+        Iterates through each set of frames, depending on batch_size, yielding both the frame index and frame data.
+
+        Parameters
+        ---------
+        batch_size: int
+            The number of frames to get at a time
+        dtype: np.dtype
+            The nympy data type that the data should return as
+
+        Yields
+        ------
+        indices: array int
+            The frame indices.
+        data: batch_size x Ly x Lx
+            The frames
+        """
+        while True:
+            results = self.read(batch_size=batch_size, dtype=dtype)
+            if results is None:
+                break
+            indices, data = results
+            yield indices, data
+
+

@@ -1,5 +1,30 @@
 import setuptools
 
+install_deps = ['importlib-metadata',
+        'natsort',
+        'rastermap>0.1.0',
+        'tifffile',
+        'scanimage-tiff-reader>=1.4.1',
+        'pyqtgraph',
+        'torch>=1.6',
+        'paramiko',
+        'numpy>=1.16',
+        'numba>=0.43.1',
+        'matplotlib',
+        'scipy',
+        'h5py',
+        'sbxreader',
+        'scikit-learn',]
+
+try:
+    import torch
+    a = torch.ones(2, 3)
+    version = int(torch.__version__[2])
+    if version >= 6:
+        install_deps.remove('torch')
+except:
+    pass
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -17,20 +42,7 @@ setuptools.setup(
       'setuptools_scm',
     ],
     use_scm_version=True,
-    install_requires=['importlib-metadata',
-        'natsort',
-        'rastermap>0.1.0',
-        'tifffile',
-        'scanimage-tiff-reader>=1.4.1',
-        'pyqtgraph',
-        'paramiko',
-        'numpy>=1.16',
-        'numba>=0.43.1',
-        'matplotlib',
-        'scipy',
-        'h5py',
-        'sbxreader',
-        'scikit-learn',],  # see environment.yml for this info.
+    install_requires=install_deps,
     tests_require=[
       'pytest',
       'pytest-qt',

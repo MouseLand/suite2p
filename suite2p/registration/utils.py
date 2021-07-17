@@ -4,14 +4,24 @@ from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
-from numpy.fft import ifftshift, fft2, ifft2
-from scipy.fftpack import next_fast_len
+from numpy.fft import ifftshift#, fft2, ifft2
+from scipy.fft import next_fast_len#, fft2, ifft2
 from scipy.ndimage import gaussian_filter1d
 
-try:
-    from mkl_fft import fft2, ifft2
-except ModuleNotFoundError:
-    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
+import torch
+def fft2(data, size=None):
+    data_torch = torch.from_numpy(data)
+    data2 = torch.fft.fft2(data_torch, s=size)
+    return data2.cpu().numpy()
+def ifft2(data, size=None):
+    data_torch = torch.from_numpy(data)
+    data2 = torch.fft.ifft2(data_torch, s=size)
+    return data2.cpu().numpy()
+
+#try:
+#    from mkl_fft import fft2, ifft2
+#except ModuleNotFoundError:
+#    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
@@ -202,7 +212,7 @@ def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     -------
     convolved_data: nImg x Ly x Lx
     """
-    return ifft2(apply_dotnorm(fft2(mov), img))
+    return ifft2(apply_dotnorm(fft2(mov), img)) #.astype(np.complex64)
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:

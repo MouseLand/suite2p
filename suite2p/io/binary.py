@@ -69,7 +69,7 @@ class BinaryFile:
 
     @property
     def n_frames(self) -> int:
-        """total number of fraames in the read_file."""
+        """total number of frames in the read_file."""
         return int(self.nbytes // self.nbytesread)
 
     @property
@@ -116,9 +116,9 @@ class BinaryFile:
     def __getitem__(self, *items):
         frame_indices, *crop = items
         if isinstance(frame_indices, int):
-            frames = self.ix(indices=[frame_indices])
+            frames = self.ix(indices=[frame_indices], is_slice=False)
         elif isinstance(frame_indices, slice):
-            frames = self.ix(indices=from_slice(frame_indices))
+            frames = self.ix(indices=from_slice(frame_indices), is_slice=True)
         else:
             frames = self.ix(indices=frame_indices)
         return frames[(slice(None),) + crop] if crop else frames
@@ -158,7 +158,7 @@ class BinaryFile:
             indices, data = results
             yield indices, data
 
-    def ix(self, indices: Sequence[int]):
+    def ix(self, indices: Sequence[int], is_slice=False):
         """
         Returns the frames at index values "indices".
 
@@ -167,19 +167,33 @@ class BinaryFile:
         indices: int array
             The frame indices to get
 
+        is_slice: bool, default False
+            if indices are slice, read slice with "read" function and return
+
         Returns
         -------
         frames: len(indices) x Ly x Lx
             The requested frames
         """
-        frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
-        # load and bin data
-        with temporary_pointer(self.read_file) as f:
-            for frame, ixx in zip(frames, indices):
-                f.seek(self.nbytesread * ixx)
-                buff = f.read(self.nbytesread)
-                data = np.frombuffer(buff, dtype=np.int16, offset=0)
-                frame[:] = np.reshape(data, (self.Ly, self.Lx))
+        if not is_slice:
+            frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
+            # load and bin data
+            with temporary_pointer(self.read_file) as f:
+                for frame, ixx in zip(frames, indices):
+                    if ixx!=self._index:
+                        f.seek(self.nbytesread * ixx)
+                    buff = f.read(self.nbytesread)
+                    data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                    frame[:] = np.reshape(data, (self.Ly, self.Lx))
+                    self._index = ixx+1
+        else:
+            i0 = indices[0]
+            batch_size = len(indices)
+            if self._index != i0:
+                f.seek(self.nbytesread * i0)
+            _, frames = self.read(batch_size=batch_size, dtype=np.int16)
+            self._index = i0 + batch_size
+        
         return frames
 
     @property

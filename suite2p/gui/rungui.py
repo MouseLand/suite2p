@@ -44,7 +44,7 @@ class RunWindow(QtGui.QDialog):
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = parent.opsuser
-        self.ops_path = os.fspath(pathlib.Path.home().joinpath('.suite2p').joinpath('ops'))
+        self.ops_path = os.fspath(pathlib.Path.home().joinpath('.suite2p').joinpath('ops').absolute())
         try:
             self.reset_ops()
             print('loaded default ops')

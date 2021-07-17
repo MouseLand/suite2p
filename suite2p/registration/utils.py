@@ -202,7 +202,7 @@ def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     -------
     convolved_data: nImg x Ly x Lx
     """
-    return ifft2(apply_dotnorm(fft2(mov), img))
+    return ifft2(apply_dotnorm(fft2(mov).astype(np.complex64), img))
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:

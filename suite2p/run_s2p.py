@@ -27,12 +27,13 @@ def default_ops():
         # Suite2p version
         #'suite2p_version': version,
 
-        # file paths
+        # file input/output settings
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
         'fast_disk': [],  # used to store temporary binary file, defaults to save_path0
         'delete_bin': False,  # whether to delete binary file after processing
         'mesoscan': False,  # for reading in scanimage mesoscope files
         'bruker': False,  # whether or not single page BRUKER tiffs!
+        'bruker_bidirectional': False, # bidirectional multiplane in bruker: 0, 1, 2, 2, 1, 0 (True) vs 0, 1, 2, 0, 1, 2 (False)
         'h5py': [],  # take h5py as input (deactivates data_path)
         'h5py_key': 'data',  #key in h5py where data array is stored
         'save_path0': [],  # stores results, defaults to first item in data_path

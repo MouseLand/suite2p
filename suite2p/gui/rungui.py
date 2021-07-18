@@ -3,6 +3,7 @@ from datetime import datetime
 
 import numpy as np
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
 
 from . import io
 from .. import default_ops
@@ -11,18 +12,18 @@ from .. import default_ops
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 
 # type in h5py key
-class TextChooser(QtGui.QDialog):
+class TextChooser(QDialog):
     def __init__(self,parent=None):
         super(TextChooser, self).__init__(parent)
         self.setGeometry(300,300,180,100)
         self.setWindowTitle('h5 key')
-        self.win = QtGui.QWidget(self)
-        layout = QtGui.QGridLayout()
+        self.win = QWidget(self)
+        layout = QGridLayout()
         self.win.setLayout(layout)
-        self.qedit = QtGui.QLineEdit('data')
-        layout.addWidget(QtGui.QLabel('h5 key for data field'),0,0,1,3)
+        self.qedit = QLineEdit('data')
+        layout.addWidget(QLabel('h5 key for data field'),0,0,1,3)
         layout.addWidget(self.qedit,1,0,1,2)
-        done = QtGui.QPushButton('OK')
+        done = QPushButton('OK')
         done.clicked.connect(self.exit_list)
         layout.addWidget(done,2,1,1,1)
 
@@ -31,14 +32,14 @@ class TextChooser(QtGui.QDialog):
         self.accept()
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
-class RunWindow(QtGui.QDialog):
+class RunWindow(QDialog):
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
         self.setGeometry(10,10,1500,900)
         self.setWindowTitle('Choose run options (hold mouse over parameters to see descriptions)')
         self.parent = parent
-        self.win = QtGui.QWidget(self)
-        self.layout = QtGui.QGridLayout()
+        self.win = QWidget(self)
+        self.layout = QGridLayout()
         self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
         self.win.setLayout(self.layout)
@@ -149,27 +150,27 @@ class RunWindow(QtGui.QDialog):
                     'neuropil coefficient']
 
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
-        qlabel = QtGui.QLabel('File paths')
+        qlabel = QLabel('File paths')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,0,0,1,1)
-        loadOps = QtGui.QPushButton('Load ops file')
+        loadOps = QPushButton('Load ops file')
         loadOps.clicked.connect(self.load_ops)
-        saveDef = QtGui.QPushButton('Save ops as default')
+        saveDef = QPushButton('Save ops as default')
         saveDef.clicked.connect(self.save_default_ops)
-        revertDef = QtGui.QPushButton('Revert default ops to built-in')
+        revertDef = QPushButton('Revert default ops to built-in')
         revertDef.clicked.connect(self.revert_default_ops)
-        saveOps = QtGui.QPushButton('Save ops to file')
+        saveOps = QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
         self.layout.addWidget(loadOps,0,2,1,2)
         self.layout.addWidget(saveDef,1,2,1,2)
         self.layout.addWidget(revertDef,2,2,1,2)
         self.layout.addWidget(saveOps,3,2,1,2)
-        self.layout.addWidget(QtGui.QLabel(''),4,2,1,2)
-        self.layout.addWidget(QtGui.QLabel('Load example ops'),5,2,1,2)
+        self.layout.addWidget(QLabel(''),4,2,1,2)
+        self.layout.addWidget(QLabel('Load example ops'),5,2,1,2)
         for k in range(3):
-            qw = QtGui.QPushButton('Save ops to file')
+            qw = QPushButton('Save ops to file')
         #saveOps.clicked.connect(self.save_ops)
-        self.opsbtns = QtGui.QButtonGroup(self)
+        self.opsbtns = QButtonGroup(self)
         opsstr = ['1P imaging', 'dendrites/axons']
         self.opsname = ['1P', 'dendrite']
         for b in range(len(opsstr)):
@@ -191,7 +192,7 @@ class RunWindow(QtGui.QDialog):
                 labs = [labels[l]]
                 keyl = [lkey]
             for label in labs:
-                qlabel = QtGui.QLabel(label)
+                qlabel = QLabel(label)
                 qlabel.setFont(bigfont)
                 self.layout.addWidget(qlabel,k*2,2*(l+2),1,2)
                 k+=1
@@ -199,7 +200,7 @@ class RunWindow(QtGui.QDialog):
                     lops = 1
                     if self.ops[key] or (self.ops[key] == 0) or len(self.ops[key])==0:
                         qedit = LineEdit(wk,key,self)
-                        qlabel = QtGui.QLabel(key)
+                        qlabel = QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
                         qedit.set_text(self.ops)
                         qedit.setToolTip(tooltips[kk])
@@ -216,17 +217,17 @@ class RunWindow(QtGui.QDialog):
 
         # data_path
         key = 'input_format'
-        qlabel = QtGui.QLabel(key)
+        qlabel = QLabel(key)
         qlabel.setFont(bigfont)
         qlabel.setToolTip('File format (selects which parser to use)')
         self.layout.addWidget(qlabel,1,0,1,1)
-        self.inputformat = QtGui.QComboBox()
+        self.inputformat = QComboBox()
         [self.inputformat.addItem(f) for f in ['tif','bruker','sbx', 'h5','mesoscan','haus']]
         self.inputformat.currentTextChanged.connect(self.parse_inputformat)
         self.layout.addWidget(self.inputformat,2,0,1,1)
 
         key = 'look_one_level_down'
-        qlabel = QtGui.QLabel(key)
+        qlabel = QLabel(key)
         qlabel.setToolTip('whether to look in all subfolders when searching for files')
         self.layout.addWidget(qlabel,3,0,1,1)
         qedit = LineEdit(wk,key,self)
@@ -235,35 +236,35 @@ class RunWindow(QtGui.QDialog):
         self.layout.addWidget(qedit,4,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
-        self.btiff = QtGui.QPushButton('Add directory to data_path')
+        self.btiff = QPushButton('Add directory to data_path')
         self.btiff.clicked.connect(self.get_folders)
         self.layout.addWidget(self.btiff,5,0,1,2)
-        qlabel = QtGui.QLabel('data_path')
+        qlabel = QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,6,0,1,1)
         self.qdata = []
         for n in range(9):
-            self.qdata.append(QtGui.QLabel(''))
+            self.qdata.append(QLabel(''))
             self.layout.addWidget(self.qdata[n],
                                   n+7,0,1,2)
 
-        self.bsave = QtGui.QPushButton('Add save_path (default is 1st data_path)')
+        self.bsave = QPushButton('Add save_path (default is 1st data_path)')
         self.bsave.clicked.connect(self.save_folder)
         self.layout.addWidget(self.bsave,16,0,1,2)
-        self.savelabel = QtGui.QLabel('')
+        self.savelabel = QLabel('')
         self.layout.addWidget(self.savelabel,17,0,1,2)
         # fast_disk
-        self.bbin = QtGui.QPushButton('Add fast_disk (default is save_path)')
+        self.bbin = QPushButton('Add fast_disk (default is save_path)')
         self.bbin.clicked.connect(self.bin_folder)
         self.layout.addWidget(self.bbin,18,0,1,2)
-        self.binlabel = QtGui.QLabel('')
+        self.binlabel = QLabel('')
         self.layout.addWidget(self.binlabel,19,0,1,2)
-        self.runButton = QtGui.QPushButton('RUN SUITE2P')
+        self.runButton = QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(self.run_S2P)
         n0 = 21
         self.layout.addWidget(self.runButton,n0,0,1,1)
         self.runButton.setEnabled(False)
-        self.textEdit = QtGui.QTextEdit()
+        self.textEdit = QTextEdit()
         self.layout.addWidget(self.textEdit, n0+1,0,30,2*l)
         self.textEdit.setFixedHeight(300)
         self.process = QtCore.QProcess(self)
@@ -273,31 +274,31 @@ class RunWindow(QtGui.QDialog):
         self.process.started.connect(self.started)
         self.process.finished.connect(self.finished)
         # stop process
-        self.stopButton = QtGui.QPushButton('STOP')
+        self.stopButton = QPushButton('STOP')
         self.stopButton.setEnabled(False)
         self.layout.addWidget(self.stopButton, n0,1,1,1)
         self.stopButton.clicked.connect(self.stop)
         # cleanup button
-        self.cleanButton = QtGui.QPushButton('Add a clean-up *.py')
+        self.cleanButton = QPushButton('Add a clean-up *.py')
         self.cleanButton.setToolTip('will run at end of processing')
         self.cleanButton.setEnabled(True)
         self.layout.addWidget(self.cleanButton, n0,2,1,2)
         self.cleanup = False
         self.cleanButton.clicked.connect(self.clean_script)
-        self.cleanLabel = QtGui.QLabel('')
+        self.cleanLabel = QLabel('')
         self.layout.addWidget(self.cleanLabel,n0,4,1,12)
         n0+=1
-        self.listOps = QtGui.QPushButton('save settings and\n add more (batch)')
+        self.listOps = QPushButton('save settings and\n add more (batch)')
         self.listOps.clicked.connect(self.add_batch)
         self.layout.addWidget(self.listOps,n0,12,1,2)
         self.listOps.setEnabled(False)
-        self.removeOps = QtGui.QPushButton('remove last added')
+        self.removeOps = QPushButton('remove last added')
         self.removeOps.clicked.connect(self.remove_ops)
         self.layout.addWidget(self.removeOps,n0,14,1,2)
         self.removeOps.setEnabled(False)
         self.odata = []
         for n in range(10):
-            self.odata.append(QtGui.QLabel(''))
+            self.odata.append(QLabel(''))
             self.layout.addWidget(self.odata[n],
                                   n0+1+n,12,1,4)
 
@@ -430,7 +431,7 @@ class RunWindow(QtGui.QDialog):
             del self.opslist[0]
     
     def save_ops(self):
-        name = QtGui.QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
+        name = QFileDialog.getSaveFileName(self,'Ops name (*.npy)')
         name = name[0]
         self.save_text()
         if name:
@@ -462,7 +463,7 @@ class RunWindow(QtGui.QDialog):
     def load_ops(self, name=None):
         print('loading ops')
         if not (isinstance(name, str) and len(name)>0):
-            name = QtGui.QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
+            name = QFileDialog.getOpenFileName(self, 'Open ops file (npy or json)')
             name = name[0]
         
         if len(name) > 0:
@@ -542,7 +543,7 @@ class RunWindow(QtGui.QDialog):
         self.logfile.write(output)
 
     def clean_script(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')
+        name = QFileDialog.getOpenFileName(self, 'Open clean up file',filter='*.py')
         name = name[0]
         if name:
             self.cleanup = True
@@ -551,7 +552,7 @@ class RunWindow(QtGui.QDialog):
             self.ops['clean_script'] = name
 
     def get_folders(self):
-        name = QtGui.QFileDialog.getExistingDirectory(self, "Add directory to data path")
+        name = QFileDialog.getExistingDirectory(self, "Add directory to data path")
         if len(name)>0:
             self.data_path.append(name)
             self.qdata[len(self.data_path)-1].setText(name)
@@ -579,17 +580,17 @@ class RunWindow(QtGui.QDialog):
 
 
     def save_folder(self):
-        name = QtGui.QFileDialog.getExistingDirectory(self, "Save folder for data")
+        name = QFileDialog.getExistingDirectory(self, "Save folder for data")
         if len(name)>0:
             self.save_path = name
             self.savelabel.setText(name)
 
     def bin_folder(self):
-        name = QtGui.QFileDialog.getExistingDirectory(self, "Folder for binary file")
+        name = QFileDialog.getExistingDirectory(self, "Folder for binary file")
         self.fast_disk = name
         self.binlabel.setText(name)
 
-class LineEdit(QtGui.QLineEdit):
+class LineEdit(QLineEdit):
     def __init__(self,k,key,parent=None):
         super(LineEdit,self).__init__(parent)
         self.key = key
@@ -643,7 +644,7 @@ class LineEdit(QtGui.QLineEdit):
                 dstr = str(int(ops[key]))
         self.setText(dstr)
 
-class OpsButton(QtGui.QPushButton):
+class OpsButton(QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(OpsButton,self).__init__(parent)
         self.setText(Text)
@@ -664,7 +665,7 @@ class OpsButton(QtGui.QPushButton):
 
 
 # custom vertical label
-class VerticalLabel(QtGui.QWidget):
+class VerticalLabel(QWidget):
     def __init__(self, text=None):
         super(self.__class__, self).__init__()
         self.text = text

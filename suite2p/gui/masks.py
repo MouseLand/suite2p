@@ -3,6 +3,7 @@ import matplotlib.cm
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
 from matplotlib.colors import hsv_to_rgb
 
 import suite2p.gui.merge
@@ -24,8 +25,8 @@ def make_buttons(parent, b0):
         "L: corr with 1D var, bin=^^^",
         "M: rastermap / custom"
     ]
-    parent.colorbtns = QtGui.QButtonGroup(parent)
-    clabel = QtGui.QLabel(parent)
+    parent.colorbtns = QButtonGroup(parent)
+    clabel = QLabel(parent)
     clabel.setText("<font color='white'>Colors</font>")
     clabel.setFont(parent.boldfont)
     parent.l0.addWidget(clabel, b0, 0, 1, 1)
@@ -33,7 +34,7 @@ def make_buttons(parent, b0):
     iwid = 65
 
     # add colormaps
-    parent.CmapChooser = QtGui.QComboBox()
+    parent.CmapChooser = QComboBox()
     cmaps = ['hsv', 'viridis', 'plasma', 'inferno', 'magma', 'cividis',
              'viridis_r', 'plasma_r', 'inferno_r', 'magma_r', 'cividis_r']
     parent.CmapChooser.addItems(cmaps)
@@ -57,14 +58,14 @@ def make_buttons(parent, b0):
         btn.setEnabled(False)
         parent.color_names[b] = parent.color_names[b][3:]
         b += 1
-    parent.chan2edit = QtGui.QLineEdit(parent)
+    parent.chan2edit = QLineEdit(parent)
     parent.chan2edit.setText("0.6")
     parent.chan2edit.setFixedWidth(iwid)
     parent.chan2edit.setAlignment(QtCore.Qt.AlignRight)
     parent.chan2edit.returnPressed.connect(lambda: chan2_prob(parent))
     parent.l0.addWidget(parent.chan2edit, nv + b - 4, 1, 1, 1)
 
-    parent.probedit = QtGui.QLineEdit(parent)
+    parent.probedit = QLineEdit(parent)
     parent.probedit.setText("0.5")
     parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
@@ -73,7 +74,7 @@ def make_buttons(parent, b0):
     )
     parent.l0.addWidget(parent.probedit, nv + b - 3, 1, 1, 1)
 
-    parent.binedit = QtGui.QLineEdit(parent)
+    parent.binedit = QLineEdit(parent)
     parent.binedit.setValidator(QtGui.QIntValidator(0, 500))
     parent.binedit.setText("1")
     parent.binedit.setFixedWidth(iwid)
@@ -550,7 +551,7 @@ def istat_transform(istat, colormap='hsv'):
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
-class ColorButton(QtGui.QPushButton):
+class ColorButton(QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ColorButton,self).__init__(parent)
         self.setText(Text)

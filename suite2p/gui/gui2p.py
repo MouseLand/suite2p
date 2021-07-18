@@ -3,12 +3,13 @@ import os, pathlib, shutil, sys, warnings
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 from .. import run_s2p, default_ops
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self, statfile=None):
         super(MainWindow, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
@@ -78,8 +79,8 @@ class MainWindow(QtGui.QMainWindow):
         self.colors = {'RGB':0, 'cols':0, 'colorbar':[]}
 
         # --------- MAIN WIDGET LAYOUT ---------------------
-        cwidget = QtGui.QWidget()
-        self.l0 = QtGui.QGridLayout()
+        cwidget = QWidget()
+        self.l0 = QGridLayout()
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
 
@@ -132,7 +133,7 @@ class MainWindow(QtGui.QMainWindow):
     def make_buttons(self):
         # ROI CHECKBOX
         self.l0.setVerticalSpacing(4)
-        self.checkBox = QtGui.QCheckBox("ROIs On [space bar]")
+        self.checkBox = QCheckBox("ROIs On [space bar]")
         self.checkBox.setStyleSheet("color: white;")
         self.checkBox.toggle()
         self.checkBox.stateChanged.connect(self.ROIs_on)
@@ -158,11 +159,11 @@ class MainWindow(QtGui.QMainWindow):
             "aspect_ratio"
         ]
         lilfont = QtGui.QFont("Arial", 8)
-        qlabel = QtGui.QLabel(self)
+        qlabel = QLabel(self)
         qlabel.setFont(self.boldfont)
         qlabel.setText("<font color='white'>Selected ROI:</font>")
         self.l0.addWidget(qlabel, b0, 0, 1, 1)
-        self.ROIedit = QtGui.QLineEdit(self)
+        self.ROIedit = QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0, 10000))
         self.ROIedit.setText("0")
         self.ROIedit.setFixedWidth(45)
@@ -173,21 +174,21 @@ class MainWindow(QtGui.QMainWindow):
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1, len(self.stats_to_show) + 1):
-            llabel = QtGui.QLabel(self.stats_to_show[k - 1])
+            llabel = QLabel(self.stats_to_show[k - 1])
             self.ROIstats.append(llabel)
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].setStyleSheet("color: white;")
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
             self.l0.addWidget(self.ROIstats[k], b0, 0, 1, 2)
             b0+=1
-        self.l0.addWidget(QtGui.QLabel(""), b0 , 0, 1, 2)
+        self.l0.addWidget(QLabel(""), b0 , 0, 1, 2)
         self.l0.setRowStretch(b0, 1)
         b0+=2
         b0 = traces.make_buttons(self, b0)
 
         # zoom to cell CHECKBOX
         self.l0.setVerticalSpacing(4)
-        self.checkBoxz = QtGui.QCheckBox("zoom to cell")
+        self.checkBoxz = QCheckBox("zoom to cell")
         self.checkBoxz.setStyleSheet("color: white;")
         self.zoomtocell = False
         self.checkBoxz.stateChanged.connect(self.zoom_cell)
@@ -666,7 +667,7 @@ class MainWindow(QtGui.QMainWindow):
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     import suite2p
     s2ppath = os.path.dirname(os.path.realpath(suite2p.__file__))
     icon_path = os.path.join(s2ppath, "logo","logo.png"

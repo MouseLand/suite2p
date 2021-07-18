@@ -63,7 +63,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np.ndarray, xblock: np.ndarray, pad_fft: bool = False):
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np.ndarray, xblock: np.ndarray):
     """
     Computes taper and fft'ed reference image for phasecorr.
 
@@ -74,9 +74,7 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
     smooth_sigma
     yblock: float array
     xblock: float array
-    pad_fft: bool
-        whether to do border padding in the fft step
-
+    
     Returns
     -------
     maskMul
@@ -86,7 +84,7 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
     """
     nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
-    cfRef_dims = (nb, next_fast_len(Ly), next_fast_len(Lx)) if pad_fft else dims
+    cfRef_dims = dims
     gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
     cfRefImg1 = np.empty(cfRef_dims, 'complex64')
 

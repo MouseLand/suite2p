@@ -140,7 +140,6 @@ def compute_reference(ops, frames):
             cfRefImg=rigid.phasecorr_reference(
                 refImg=refImg,
                 smooth_sigma=ops['smooth_sigma'],
-                pad_fft=ops['pad_fft'],
             ),
             maxregshift=ops['maxregshift'],
             smooth_sigma_time=ops['smooth_sigma_time'],
@@ -171,7 +170,6 @@ def compute_reference_masks(refImg, ops=None):
     cfRefImg = rigid.phasecorr_reference(
         refImg=refImg,
         smooth_sigma=ops['smooth_sigma'],
-        pad_fft=ops['pad_fft'],
     )
 
     if ops.get('nonrigid'):
@@ -185,7 +183,6 @@ def compute_reference_masks(refImg, ops=None):
             smooth_sigma=ops['smooth_sigma'],
             yblock=ops['yblock'],
             xblock=ops['xblock'],
-            pad_fft=ops['pad_fft'],
         )
     else:
         maskMulNR, maskOffsetNR, cfRefImgNR = [], [], []

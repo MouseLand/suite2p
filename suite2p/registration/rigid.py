@@ -45,7 +45,7 @@ def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -
     return addmultiply(data, maskMul, maskOffset)
 
 
-def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:
+def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     """
     Returns reference image fft'ed and complex conjugate and multiplied by gaussian filter in the fft domain,
     with standard deviation 'smooth_sigma' computes fft'ed reference image for phasecorr.
@@ -59,7 +59,7 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = F
     -------
     cfRefImg : 2D array, complex64
     """
-    cfRefImg = complex_fft2(img=refImg, pad_fft=pad_fft)
+    cfRefImg = complex_fft2(img=refImg)
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
     cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
     return cfRefImg.astype('complex64')

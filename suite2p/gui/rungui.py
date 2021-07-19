@@ -299,7 +299,8 @@ class RunWindow(QDialog):
         self.layout.addWidget(self.removeOps,n0,14,1,2)
         self.removeOps.setEnabled(False)
         self.odata = []
-        for n in range(10):
+        self.n_batch = 15
+        for n in range(self.n_batch):
             self.odata.append(QLabel(''))
             self.layout.addWidget(self.odata[n],
                                   n0+1+n,12,1,4)
@@ -313,25 +314,27 @@ class RunWindow(QDialog):
         else:
             del self.opslist[L-1]
         self.odata[L-1].setText('')
+        self.odata[L-1].setToolTip('')
         self.f = 0
 
     def add_batch(self):
         self.add_ops()
         L = len(self.opslist)
         self.odata[L].setText(self.datastr)
+        self.odata[L].setToolTip(self.datastr)
 
         # clear file fields
         self.db = {}
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        for n in range(9):
+        for n in range(self.n_batch):
             self.qdata[n].setText('')
         self.savelabel.setText('')
         self.binlabel.setText('')
 
         # clear all ops
-        self.reset_ops()
+        # self.reset_ops()
 
         # enable all the file loaders again
         self.btiff.setEnabled(True)

@@ -634,7 +634,7 @@ class LineEdit(QLineEdit):
             else:
                 dstr = ''
                 for i in ops[key]:
-                    dstr+= str(int(ops[key][i]))
+                    dstr += str(int(i))
                     if i<len(ops[key])-1:
                         dstr+=', '
         else:

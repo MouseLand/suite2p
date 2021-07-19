@@ -195,7 +195,32 @@ class MainWindow(QMainWindow):
         self.l0.addWidget(self.checkBoxz,
         b0,15,
         1, 2)
+
+        #self.checkBoxN = QCheckBox("add ROI # to plot")
+        #self.checkBoxN.setStyleSheet("color: white;")
+        #self.roitext = False
+        #self.checkBoxN.stateChanged.connect(self.roi_text)
+        #self.l0.addWidget(self.checkBoxN,
+        #b0,18,
+        #1, 2)
+        
         return b0
+
+    def roi_text(self, state):
+        if state == QtCore.Qt.Checked:
+            for n, txt in enumerate(self.roi_text_labels):
+                if self.iscell[n]:
+                    self.p1.addItem(txt)
+                else:
+                    self.p2.addItem(txt)
+            self.roitext = True
+        else:
+            for n, txt in enumerate(self.roi_text_labels):
+                if self.iscell[n]:
+                    self.p1.removeItem(txt)
+                else:
+                    self.p2.removeItem(txt)
+            self.roitext = False
 
     def zoom_cell(self, state):
         if self.loaded:

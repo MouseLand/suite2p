@@ -230,6 +230,7 @@ def init_masks(parent):
 
     # ignore merged cells
     iignore = np.zeros(ncells, np.bool)
+    parent.roi_text_labels = []
     for n in np.arange(ncells-1,-1,-1,int):
         ypix = stat[n]['ypix']
         if ypix is not None and not iignore[n]:
@@ -252,6 +253,15 @@ def init_masks(parent):
             parent.rois['Lam'][i,0,ypix,xpix] = lam
             parent.rois['Sroi'][i,ypix,xpix] = 1
             LamAll[ypix,xpix] = lam
+            med = stat[n]['med']
+            cell_str = str(n)
+        else:
+            cell_str = ''
+        txt = pg.TextItem(cell_str, color=(255,255,255),
+                          anchor=(0.5,0.5))
+        txt.setPos(med[1], med[0])
+        txt.setFont(QtGui.QFont("Times", 10, weight=QtGui.QFont.Bold))
+        parent.roi_text_labels.append(txt)
 
     parent.rois['LamMean'] = LamAll[LamAll>1e-10].mean()
     parent.rois['LamNorm'] = np.maximum(0, np.minimum(1, 0.75*parent.rois['Lam'][:,0]/parent.rois['LamMean']))
@@ -440,6 +450,8 @@ def plot_masks(parent, M):
     #M = parent.RGB[:,:,np.newaxis], parent.Alpha[]
     parent.color1.setImage(M[0], levels=(0., 255.))
     parent.color2.setImage(M[1], levels=(0., 255.))
+    
+    #    parent.p1.addItem(txt)
     parent.color1.show()
     parent.color2.show()
 

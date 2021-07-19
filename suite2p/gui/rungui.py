@@ -161,12 +161,12 @@ class RunWindow(QDialog):
         revertDef.clicked.connect(self.revert_default_ops)
         saveOps = QPushButton('Save ops to file')
         saveOps.clicked.connect(self.save_ops)
-        self.layout.addWidget(loadOps,0,2,1,2)
-        self.layout.addWidget(saveDef,1,2,1,2)
-        self.layout.addWidget(revertDef,2,2,1,2)
-        self.layout.addWidget(saveOps,3,2,1,2)
-        self.layout.addWidget(QLabel(''),4,2,1,2)
-        self.layout.addWidget(QLabel('Load example ops'),5,2,1,2)
+        self.layout.addWidget(loadOps,0,4,1,2)
+        self.layout.addWidget(saveDef,1,4,1,2)
+        self.layout.addWidget(revertDef,2,4,1,2)
+        self.layout.addWidget(saveOps,3,4,1,2)
+        self.layout.addWidget(QLabel(''),4,4,1,2)
+        self.layout.addWidget(QLabel('Load example ops'),5,4,1,2)
         for k in range(3):
             qw = QPushButton('Save ops to file')
         #saveOps.clicked.connect(self.save_ops)
@@ -176,7 +176,7 @@ class RunWindow(QDialog):
         for b in range(len(opsstr)):
             btn = OpsButton(b, opsstr[b], self)
             self.opsbtns.addButton(btn, b)
-            self.layout.addWidget(btn, 6+b,2,1,2)
+            self.layout.addWidget(btn, 6+b,4,1,2)
         l=0
         self.keylist = []
         self.editlist = []
@@ -194,7 +194,7 @@ class RunWindow(QDialog):
             for label in labs:
                 qlabel = QLabel(label)
                 qlabel.setFont(bigfont)
-                self.layout.addWidget(qlabel,k*2,2*(l+2),1,2)
+                self.layout.addWidget(qlabel,k*2,2*(l+4),1,2)
                 k+=1
                 for key in keyl[kl]:
                     lops = 1
@@ -205,8 +205,8 @@ class RunWindow(QDialog):
                         qedit.set_text(self.ops)
                         qedit.setToolTip(tooltips[kk])
                         qedit.setFixedWidth(90)
-                        self.layout.addWidget(qlabel,k*2-1,2*(l+2),1,2)
-                        self.layout.addWidget(qedit,k*2,2*(l+2),1,2)
+                        self.layout.addWidget(qlabel,k*2-1,2*(l+4),1,2)
+                        self.layout.addWidget(qedit,k*2,2*(l+4),1,2)
                         self.keylist.append(key)
                         self.editlist.append(qedit)
                         wk+=1
@@ -236,9 +236,11 @@ class RunWindow(QDialog):
         self.layout.addWidget(qedit,4,0,1,1)
         self.keylist.append(key)
         self.editlist.append(qedit)
+
+        cw=4
         self.btiff = QPushButton('Add directory to data_path')
         self.btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(self.btiff,5,0,1,2)
+        self.layout.addWidget(self.btiff,5,0,1,cw)
         qlabel = QLabel('data_path')
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel,6,0,1,1)
@@ -246,19 +248,19 @@ class RunWindow(QDialog):
         for n in range(9):
             self.qdata.append(QLabel(''))
             self.layout.addWidget(self.qdata[n],
-                                  n+7,0,1,2)
+                                  n+7,0,1,cw)
 
         self.bsave = QPushButton('Add save_path (default is 1st data_path)')
         self.bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(self.bsave,16,0,1,2)
+        self.layout.addWidget(self.bsave,16,0,1,cw)
         self.savelabel = QLabel('')
-        self.layout.addWidget(self.savelabel,17,0,1,2)
+        self.layout.addWidget(self.savelabel,17,0,1,cw)
         # fast_disk
         self.bbin = QPushButton('Add fast_disk (default is save_path)')
         self.bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(self.bbin,18,0,1,2)
+        self.layout.addWidget(self.bbin,18,0,1,cw)
         self.binlabel = QLabel('')
-        self.layout.addWidget(self.binlabel,19,0,1,2)
+        self.layout.addWidget(self.binlabel,19,0,1,cw)
         self.runButton = QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(self.run_S2P)
         n0 = 21
@@ -556,6 +558,7 @@ class RunWindow(QDialog):
         if len(name)>0:
             self.data_path.append(name)
             self.qdata[len(self.data_path)-1].setText(name)
+            self.qdata[len(self.data_path)-1].setToolTip(name)
             self.runButton.setEnabled(True)
             self.listOps.setEnabled(True)
             #self.loadDb.setEnabled(False)
@@ -584,11 +587,15 @@ class RunWindow(QDialog):
         if len(name)>0:
             self.save_path = name
             self.savelabel.setText(name)
+            self.savelabel.setToolTip(name)
+
 
     def bin_folder(self):
         name = QFileDialog.getExistingDirectory(self, "Folder for binary file")
         self.fast_disk = name
         self.binlabel.setText(name)
+        self.binlabel.setToolTip(name)
+
 
 class LineEdit(QLineEdit):
     def __init__(self,k,key,parent=None):

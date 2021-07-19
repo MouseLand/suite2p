@@ -53,8 +53,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel setuptools tox tox-gh-actions
-          pip install .[gui,data,nwb]
           dvc pull -r gdrive-travis
+      - name: Install package
+        run: |
+          pip install -e .[gui,data,nwb]
       # this runs the platform-specific tests declared in tox.ini
       - name: Test with tox
         run: tox

@@ -18,7 +18,14 @@ def make_masks_and_enable_buttons(parent):
     parent.ops_plot['view'] = 0
     parent.colors['cols'] = 0
     parent.colors['istat'] = 0
-
+    try:
+        parent.roi_text(False)
+    except:
+        0
+    parent.roi_text_labels=[]
+    parent.roitext = False 
+    parent.checkBoxN.setChecked(False)
+    parent.checkBoxN.setEnabled(True)
     parent.loadBeh.setEnabled(True)
     parent.saveMat.setEnabled(True)
     parent.saveNWB.setEnabled(True)

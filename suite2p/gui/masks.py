@@ -158,12 +158,14 @@ def flip_plot(parent):
     parent.iflip = parent.ichosen
     for n in parent.imerge:
         iscell = int(parent.iscell[n])
+            
         parent.iscell[n] = ~parent.iscell[n]
         parent.ichosen = n
         flip_roi(parent)
         if 'imerge' in parent.stat[n]:
             for k in parent.stat[n]['imerge']:
                 parent.iscell[k] = ~parent.iscell[k]
+        
     parent.update_plot()
 
     # Check if `iscell.npy` file exists
@@ -228,6 +230,17 @@ def init_masks(parent):
     parent.rois['Lam']    = np.zeros((2,3,Ly,Lx), np.float32)
     parent.rois['iROI']   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
+    for n in range(len(parent.roi_text_labels)):
+        parent.checkBoxN.setChecked(False)
+        try:
+            parent.p1.removeItem(parent.roi_text_labels[n])
+        except:
+            pass 
+        try:
+            parent.p2.removeItem(parent.roi_text_labels[n])
+        except:
+            pass 
+        
     # ignore merged cells
     iignore = np.zeros(ncells, np.bool)
     parent.roi_text_labels = []
@@ -257,11 +270,13 @@ def init_masks(parent):
             cell_str = str(n)
         else:
             cell_str = ''
-        txt = pg.TextItem(cell_str, color=(255,255,255),
+            med = (0,0)
+        txt = pg.TextItem(cell_str, color=(180,180,180),
                           anchor=(0.5,0.5))
         txt.setPos(med[1], med[0])
-        txt.setFont(QtGui.QFont("Times", 10, weight=QtGui.QFont.Bold))
+        txt.setFont(QtGui.QFont("Times", 8, weight=QtGui.QFont.Bold))
         parent.roi_text_labels.append(txt)
+    parent.roi_text_labels = parent.roi_text_labels[::-1]
 
     parent.rois['LamMean'] = LamAll[LamAll>1e-10].mean()
     parent.rois['LamNorm'] = np.maximum(0, np.minimum(1, 0.75*parent.rois['Lam'][:,0]/parent.rois['LamMean']))
@@ -521,6 +536,15 @@ def flip_roi(parent):
     n = parent.ichosen
     i = int(1-parent.iscell[n])
     i0 = 1-i
+    if parent.roitext:
+        if i0==1:
+            parent.p1.removeItem(parent.roi_text_labels[n])
+            parent.p2.addItem(parent.roi_text_labels[n])
+        else:
+            parent.p2.removeItem(parent.roi_text_labels[n])
+            parent.p1.addItem(parent.roi_text_labels[n])
+        
+    
     # remove ROI
     remove_roi(parent, n, i0)
     # add cell to other side (on top) and push down overlaps

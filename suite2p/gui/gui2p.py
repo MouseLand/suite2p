@@ -196,30 +196,38 @@ class MainWindow(QMainWindow):
         b0,15,
         1, 2)
 
-        #self.checkBoxN = QCheckBox("add ROI # to plot")
-        #self.checkBoxN.setStyleSheet("color: white;")
-        #self.roitext = False
-        #self.checkBoxN.stateChanged.connect(self.roi_text)
-        #self.l0.addWidget(self.checkBoxN,
-        #b0,18,
-        #1, 2)
+        self.checkBoxN = QCheckBox("add ROI # to plot")
+        self.checkBoxN.setStyleSheet("color: white;")
+        self.roitext = False
+        self.checkBoxN.stateChanged.connect(self.roi_text)
+        self.checkBoxN.setEnabled(False)
+        self.l0.addWidget(self.checkBoxN,
+        b0,18,
+        1, 2)
         
         return b0
 
     def roi_text(self, state):
         if state == QtCore.Qt.Checked:
-            for n, txt in enumerate(self.roi_text_labels):
-                if self.iscell[n]:
-                    self.p1.addItem(txt)
+            for n in range(len(self.roi_text_labels)):
+                if self.iscell[n]==1:
+                    self.p1.addItem(self.roi_text_labels[n])
                 else:
-                    self.p2.addItem(txt)
+                    self.p2.addItem(self.roi_text_labels[n])
             self.roitext = True
         else:
-            for n, txt in enumerate(self.roi_text_labels):
-                if self.iscell[n]:
-                    self.p1.removeItem(txt)
+            for n in range(len(self.roi_text_labels)):
+                if self.iscell[n]==1:
+                    try:
+                        self.p1.removeItem(self.roi_text_labels[n])
+                    except:
+                        pass
                 else:
-                    self.p2.removeItem(txt)
+                    try:
+                        self.p2.removeItem(self.roi_text_labels[n])
+                    except:
+                        pass
+
             self.roitext = False
 
     def zoom_cell(self, state):
@@ -403,6 +411,8 @@ class MainWindow(QMainWindow):
         traces.plot_trace(self)
         if self.zoomtocell:
             self.zoom_to_cell()
+        self.p1.show()
+        self.p2.show()
         self.win.show()
         self.show()
 
@@ -705,6 +715,7 @@ def run(statfile=None):
     app_icon.addFile(icon_path, QtCore.QSize(64, 64))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
+    statfile='C:/DATA/1P dorsal/suite2p/plane0/stat.npy'
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
     # GUI.save_gui_data()

@@ -715,7 +715,6 @@ def run(statfile=None):
     app_icon.addFile(icon_path, QtCore.QSize(64, 64))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
-    statfile='C:/DATA/1P dorsal/suite2p/plane0/stat.npy'
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
     # GUI.save_gui_data()

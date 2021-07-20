@@ -82,7 +82,7 @@ def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
 
 
 def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
-               sig_baseline: float, fs: float, prctile_baseline: float = 0.9) -> np.ndarray:
+               sig_baseline: float, fs: float, prctile_baseline: float = 8) -> np.ndarray:
     """ preprocesses fluorescence traces for spike deconvolution
 
     baseline-subtraction with window 'win_baseline'

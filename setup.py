@@ -31,7 +31,7 @@ nwb_deps = [
       ]
 test_deps = [
       'pytest',
-      'pytest-qt',
+      'pytest-qt=3.3.0',
     ]
 
 all_deps = gui_deps + data_deps + nwb_deps

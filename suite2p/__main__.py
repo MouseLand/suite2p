@@ -9,7 +9,7 @@ def add_args(parser: argparse.ArgumentParser):
     parser.add_argument('--single_plane', action='store_true', help='run single plane ops')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
-    #parser.add_argument('--version', action='store_true', help='print version number.')
+    parser.add_argument('--version', action='store_true', help='print version number.')
     ops0 = default_ops()
     for k in ops0.keys():
         v = dict(default=ops0[k], help='{0} : {1}'.format(k, ops0[k]))
@@ -59,7 +59,7 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def main():
     args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
-    if 0:#args.version:
+    if args.version:
         print("suite2p v{}".format(version))
     elif args.single_plane and args.ops:
         from suite2p.run_s2p import run_plane

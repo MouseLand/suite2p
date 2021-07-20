@@ -67,14 +67,12 @@ def replace_ops_save_path_with_local_path(request):
         ops1.item(0)["save_path"] = save_path[plane_dir]
         np.save(plane_dir.joinpath("ops.npy"), ops1)
 
-
 def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     test_ops['h5py'] = Path(test_ops['data_path'][0]).joinpath('input.h5')
     test_ops['data_path'] = []
     op = io.h5py_to_binary(test_ops)
     output_data = io.BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data
     assert np.all(output_data >= 0)
-
 
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
     mov = binfile1500.bin_movie(bin_size=1)
@@ -115,7 +113,7 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
         ("2plane2chan1500"),
     ],
 )
-def test_save_nwb(replace_ops_save_path_with_local_path, data_folder):
+def temp_test_save_nwb(replace_ops_save_path_with_local_path, data_folder):
     save_folder, iscell_npy = replace_ops_save_path_with_local_path
 
     save_nwb(save_folder)

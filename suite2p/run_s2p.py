@@ -9,7 +9,7 @@ import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
-#from . import version
+from . import version
 
 try:
     from haussmeister import haussio
@@ -25,7 +25,7 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        #'suite2p_version': version,
+        'suite2p_version': version,
 
         # file input/output settings
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs

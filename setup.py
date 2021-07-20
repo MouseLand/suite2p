@@ -15,6 +15,27 @@ install_deps = ['importlib-metadata',
         'sbxreader',
         'scikit-learn',]
 
+gui_deps = [
+        "pyqt5",
+        "pyqt5-tools",
+        "pyqt5.sip",
+        'pyqtgraph',
+        'rastermap>0.1.0',
+      ]
+data_deps = [
+        "dvc==1.11.0",
+        "pydrive2",
+      ]
+nwb_deps = [
+        "pynwb",
+      ]
+test_deps = [
+      'pytest',
+      'pytest-qt',
+    ]
+
+all_deps = gui_deps + data_deps + nwb_deps
+
 try:
     import torch
     a = torch.ones(2, 3)
@@ -42,10 +63,7 @@ setuptools.setup(
     ],
     use_scm_version=True,
     install_requires=install_deps,
-    tests_require=[
-      'pytest',
-      'pytest-qt',
-    ],
+    tests_require=test_deps,
     extras_require={
       "docs": [
         'sphinx>=3.0',
@@ -54,26 +72,10 @@ setuptools.setup(
         'sphinx-prompt',
         'sphinx-autodoc-typehints',
       ],
-      # Note: Available in pypi, but cleaner to install as pyqt from conda.
-      "gui": [
-        "pyqt5",
-        "pyqt5-tools",
-        "pyqt5.sip",
-        'pyqtgraph',
-        'rastermap>0.1.0',
-      ],
-      # Note: Not currently available in pip: use conda to install.
-      "mkl": [
-        "mkl_fft>=1.0.10",
-        "mkl>=2019.3",
-      ],
-      "data": [
-        "dvc==1.11.0",
-        "pydrive2",
-      ],
-      "nwb": [
-        "pynwb",
-      ]
+      "gui": gui_deps,
+      "data": data_deps,
+      "nwb": nwb_deps,
+      "all": all_deps
     },
     include_package_data=True,
     classifiers=[

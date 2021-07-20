@@ -55,7 +55,7 @@ jobs:
           pip install wheel setuptools tox tox-gh-actions
       - name: Install package
         run: |
-          pip install -e .[gui,data,nwb]
+          pip install -e .[all]
       - name: Get test data
         run: |
           dvc pull -r gdrive-travis

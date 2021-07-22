@@ -9,7 +9,7 @@ import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
-from . import version
+from .version import version
 
 try:
     from haussmeister import haussio

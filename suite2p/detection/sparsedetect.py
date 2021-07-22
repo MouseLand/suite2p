@@ -157,7 +157,8 @@ def extendROI(ypix, xpix, Ly, Lx,niter=1):
         ypix,xpix = yu[:, ix]
     return ypix,xpix
 
-def two_comps(mpix0, lam, Th2):
+
+def two_comps(mpix0,  lam, Th2):
     """ check if splitting ROI increases variance explained
 
     Parameters

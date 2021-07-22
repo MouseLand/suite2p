@@ -24,7 +24,8 @@ def fft2(data, size=None):
     size (padding) is not used
     """
     data_torch = torch.from_numpy(data)
-    data2 = torch_fft(torch_fft(data_torch, dim=-1), dim=-2)
+    data2 = torch_fft(data_torch, dim=-1)
+    data2 = torch_fft(data2, dim=-2)
     return data2.cpu().numpy()
 
 def ifft2(data, size=None):
@@ -32,7 +33,8 @@ def ifft2(data, size=None):
     size (padding) is not used
     """
     data_torch = torch.from_numpy(data)
-    data2 = torch_ifft(torch_ifft(data_torch, dim=-1), dim=-2)
+    data2 = torch_ifft(data_torch, dim=-1)
+    data2 = torch_ifft(data2, dim=-2)
     return data2.cpu().numpy()
 
 #try:

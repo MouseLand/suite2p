@@ -476,5 +476,6 @@ def load_again(parent, Text):
     tryagain = QMessageBox.question(
         parent, "ERROR", Text, QMessageBox.Yes | QMessageBox.No
     )
+
     if tryagain == QMessageBox.Yes:
-        parent.load_dialog()
+        load_dialog(parent)

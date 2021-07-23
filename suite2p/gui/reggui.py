@@ -5,6 +5,8 @@ import time
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QStyle
+from PyQt5.QtWidgets import QMainWindow, QGridLayout, QCheckBox, QLabel, QLineEdit, QSlider, QFileDialog, QPushButton, QToolButton, QButtonGroup, QWidget
 from scipy.ndimage import gaussian_filter1d
 from natsort import natsorted
 from tifffile import imread
@@ -14,15 +16,15 @@ from .. import registration
 from ..io.save import compute_dydx
 
 
-class BinaryPlayer(QtGui.QMainWindow):
+class BinaryPlayer(QMainWindow):
     def __init__(self, parent=None):
         super(BinaryPlayer, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1070,1070)
         self.setWindowTitle('View registered binary')
-        self.cwidget = QtGui.QWidget(self)
+        self.cwidget = QWidget(self)
         self.setCentralWidget(self.cwidget)
-        self.l0 = QtGui.QGridLayout()
+        self.l0 = QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
@@ -56,35 +58,35 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.maskside = pg.ImageItem()
 
         # view red channel
-        self.redbox = QtGui.QCheckBox("view red channel")
+        self.redbox = QCheckBox("view red channel")
         self.redbox.setStyleSheet("color: white;")
         self.redbox.setEnabled(False)
         self.redbox.toggled.connect(self.add_red)
         self.l0.addWidget(self.redbox, 0, 5, 1, 1)
         # view masks
-        self.maskbox = QtGui.QCheckBox("view masks")
+        self.maskbox = QCheckBox("view masks")
         self.maskbox.setStyleSheet("color: white;")
         self.maskbox.setEnabled(False)
         self.maskbox.toggled.connect(self.add_masks)
         self.l0.addWidget(self.maskbox, 0, 6, 1, 1)
         # view raw binary
-        self.rawbox = QtGui.QCheckBox("view raw binary")
+        self.rawbox = QCheckBox("view raw binary")
         self.rawbox.setStyleSheet("color: white;")
         self.rawbox.setEnabled(False)
         self.rawbox.toggled.connect(self.add_raw)
         self.l0.addWidget(self.rawbox, 0, 7, 1, 1)
         # view zstack
-        self.zbox = QtGui.QCheckBox("view z-stack")
+        self.zbox = QCheckBox("view z-stack")
         self.zbox.setStyleSheet("color: white;")
         self.zbox.setEnabled(False)
         self.zbox.toggled.connect(self.add_zstack)
         self.l0.addWidget(self.zbox, 0, 8, 1, 1)
 
-        zlabel = QtGui.QLabel('Z-plane:')
+        zlabel = QLabel('Z-plane:')
         zlabel.setStyleSheet("color: white;")
         self.l0.addWidget(zlabel, 0, 9, 1, 1)
 
-        self.Zedit = QtGui.QLineEdit(self)
+        self.Zedit = QLineEdit(self)
         self.Zedit.setValidator(QtGui.QIntValidator(0, 0))
         self.Zedit.setText('0')
         self.Zedit.setFixedWidth(30)
@@ -113,18 +115,18 @@ class BinaryPlayer(QtGui.QMainWindow):
 
         #self.p2.autoRange(padding=0.01)
         self.win.ci.layout.setRowStretchFactor(0,12)
-        self.movieLabel = QtGui.QLabel("No ops chosen")
+        self.movieLabel = QLabel("No ops chosen")
         self.movieLabel.setStyleSheet("color: white;")
         self.movieLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.nframes = 0
         self.cframe = 0
         self.createButtons(parent)
         # create ROI chooser
-        self.l0.addWidget(QtGui.QLabel(''),6,0,1,2)
-        qlabel = QtGui.QLabel(self)
+        self.l0.addWidget(QLabel(''),6,0,1,2)
+        qlabel = QLabel(self)
         qlabel.setText("<font color='white'>Selected ROI:</font>")
         self.l0.addWidget(qlabel,7,0,1,2)
-        self.ROIedit = QtGui.QLineEdit(self)
+        self.ROIedit = QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0,10000))
         self.ROIedit.setText('0')
         self.ROIedit.setFixedWidth(45)
@@ -132,25 +134,25 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.ROIedit.returnPressed.connect(self.number_chosen)
         self.l0.addWidget(self.ROIedit, 8,0,1,1)
         # create frame slider
-        self.frameLabel = QtGui.QLabel("Current frame:")
+        self.frameLabel = QLabel("Current frame:")
         self.frameLabel.setStyleSheet("color: white;")
-        self.frameNumber = QtGui.QLabel("0")
+        self.frameNumber = QLabel("0")
         self.frameNumber.setStyleSheet("color: white;")
-        self.frameSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        #self.frameSlider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.frameSlider = QSlider(QtCore.Qt.Horizontal)
+        #self.frameSlider.setTickPosition(QSlider.TicksBelow)
         self.frameSlider.setTickInterval(5)
         self.frameSlider.setTracking(False)
         self.frameDelta = 10
-        self.l0.addWidget(QtGui.QLabel(''),12,0,1,1)
+        self.l0.addWidget(QLabel(''),12,0,1,1)
         self.l0.setRowStretch(12,1)
         self.l0.addWidget(self.frameLabel, 13,0,1,2)
         self.l0.addWidget(self.frameNumber, 14,0,1,2)
         self.l0.addWidget(self.frameSlider, 13,2,14,13)
-        self.l0.addWidget(QtGui.QLabel(''),14,1,1,1)
-        ll = QtGui.QLabel('(when paused, left/right arrow keys can move slider)')
+        self.l0.addWidget(QLabel(''),14,1,1,1)
+        ll = QLabel('(when paused, left/right arrow keys can move slider)')
         ll.setStyleSheet("color: white;")
         self.l0.addWidget(ll,16,0,1,3)
-        #speedLabel = QtGui.QLabel("Speed:")
+        #speedLabel = QLabel("Speed:")
         #self.speedSpinBox = QtGui.QSpinBox()
         #self.speedSpinBox.setRange(1, 9999)
         #self.speedSpinBox.setValue(100)
@@ -343,7 +345,7 @@ class BinaryPlayer(QtGui.QMainWindow):
         self.p2.setLimits(xMin=0,xMax=self.nframes)
 
     def open(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QFileDialog.getOpenFileName(self,
                             "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
         if filename:
@@ -351,7 +353,7 @@ class BinaryPlayer(QtGui.QMainWindow):
             self.openFile(filename[0], False)
 
     def open_combined(self):
-        filename = QtGui.QFileDialog.getExistingDirectory(self,
+        filename = QFileDialog.getExistingDirectory(self,
                             "Load binaries for all planes (choose folder with planeX folders)")
         # load ops in same folder
         if filename:
@@ -655,7 +657,7 @@ class BinaryPlayer(QtGui.QMainWindow):
                 #self.jump_to_frame()
 
     def load_zstack(self):
-        name = QtGui.QFileDialog.getOpenFileName(
+        name = QFileDialog.getOpenFileName(
             self, "Open zstack", filter="*.tif"
         )
         self.fname = name[0]
@@ -706,42 +708,42 @@ class BinaryPlayer(QtGui.QMainWindow):
 
     def createButtons(self, parent):
         iconSize = QtCore.QSize(30, 30)
-        openButton = QtGui.QPushButton('load ops.npy')
+        openButton = QPushButton('load ops.npy')
         openButton.setToolTip("Open single-plane ops.npy")
         openButton.clicked.connect(self.open)
 
-        openButton2 = QtGui.QPushButton('load folder')
+        openButton2 = QPushButton('load folder')
         openButton2.setToolTip("Choose a folder with planeX folders to load together")
         openButton2.clicked.connect(self.open_combined)
 
-        loadZ = QtGui.QPushButton('load z-stack tiff')
+        loadZ = QPushButton('load z-stack tiff')
         loadZ.clicked.connect(self.load_zstack)
 
-        self.computeZ = QtGui.QPushButton('compute z position')
+        self.computeZ = QPushButton('compute z position')
         self.computeZ.setEnabled(False)
         self.computeZ.clicked.connect(lambda: self.compute_z(parent))
 
-        self.playButton = QtGui.QToolButton()
-        self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+        self.playButton = QToolButton()
+        self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.setIconSize(iconSize)
         self.playButton.setToolTip("Play")
         self.playButton.setCheckable(True)
         self.playButton.clicked.connect(self.start)
 
-        self.pauseButton = QtGui.QToolButton()
+        self.pauseButton = QToolButton()
         self.pauseButton.setCheckable(True)
-        self.pauseButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPause))
+        self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
         self.pauseButton.setIconSize(iconSize)
         self.pauseButton.setToolTip("Pause")
         self.pauseButton.clicked.connect(self.pause)
 
-        btns = QtGui.QButtonGroup(self)
+        btns = QButtonGroup(self)
         btns.addButton(self.playButton,0)
         btns.addButton(self.pauseButton,1)
         btns.setExclusive(True)
 
-        quitButton = QtGui.QToolButton()
-        quitButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogCloseButton))
+        quitButton = QToolButton()
+        quitButton.setIcon(self.style().standardIcon(QStyle.SP_DialogCloseButton))
         quitButton.setIconSize(iconSize)
         quitButton.setToolTip("Quit")
         quitButton.clicked.connect(self.close)
@@ -824,15 +826,15 @@ def subsample_frames(ops, nsamps, reg_loc):
     reg_file.close()
     return frames
 
-class PCViewer(QtGui.QMainWindow):
+class PCViewer(QMainWindow):
     def __init__(self, parent=None):
         super(PCViewer, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1300,800)
         self.setWindowTitle('Metrics for registration')
-        self.cwidget = QtGui.QWidget(self)
+        self.cwidget = QWidget(self)
         self.setCentralWidget(self.cwidget)
-        self.l0 = QtGui.QGridLayout()
+        self.l0 = QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
 
@@ -868,30 +870,30 @@ class PCViewer(QtGui.QMainWindow):
         self.p4.setMouseEnabled(x=False)
         self.p4.setMenuEnabled(False)
 
-        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit = QLineEdit(self)
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(40)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
         self.PCedit.returnPressed.connect(self.plot_frame)
         self.PCedit.textEdited.connect(self.pause)
-        qlabel = QtGui.QLabel('PC: ')
+        qlabel = QLabel('PC: ')
         boldfont = QtGui.QFont("Arial", 14, QtGui.QFont.Bold)
         bigfont = QtGui.QFont("Arial", 14)
         qlabel.setFont(boldfont)
         self.PCedit.setFont(bigfont)
         qlabel.setStyleSheet('color: white;')
         #qlabel.setAlignment(QtCore.Qt.AlignRight)
-        self.l0.addWidget(QtGui.QLabel(''),1,0,1,1)
+        self.l0.addWidget(QLabel(''),1,0,1,1)
         self.l0.addWidget(qlabel,2,0,1,1)
         self.l0.addWidget(self.PCedit,2,1,1,1)
         self.nums = []
         self.titles=[]
         for j in range(3):
-            num1 = QtGui.QLabel('')
+            num1 = QLabel('')
             num1.setStyleSheet('color: white;')
             self.l0.addWidget(num1,3+j,0,1,2)
             self.nums.append(num1)
-            t1 = QtGui.QLabel('')
+            t1 = QLabel('')
             t1.setStyleSheet('color: white;')
             self.l0.addWidget(t1,12,4+j*4,1,2)
             self.titles.append(t1)
@@ -899,7 +901,7 @@ class PCViewer(QtGui.QMainWindow):
         self.wraw = False
         self.wred = False
         self.wraw_wred = False
-        self.l0.addWidget(QtGui.QLabel(''),7,0,1,1)
+        self.l0.addWidget(QLabel(''),7,0,1,1)
         self.l0.setRowStretch(7,1)
         self.cframe = 0
         self.createButtons()
@@ -918,27 +920,27 @@ class PCViewer(QtGui.QMainWindow):
 
     def createButtons(self):
         iconSize = QtCore.QSize(30, 30)
-        openButton = QtGui.QToolButton()
-        openButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_DialogOpenButton))
+        openButton = QToolButton()
+        openButton.setIcon(self.style().standardIcon(QStyle.SP_DialogOpenButton))
         openButton.setIconSize(iconSize)
         openButton.setToolTip("Open ops file")
         openButton.clicked.connect(self.open)
 
-        self.playButton = QtGui.QToolButton()
-        self.playButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPlay))
+        self.playButton = QToolButton()
+        self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.setIconSize(iconSize)
         self.playButton.setToolTip("Play")
         self.playButton.setCheckable(True)
         self.playButton.clicked.connect(self.start)
 
-        self.pauseButton = QtGui.QToolButton()
+        self.pauseButton = QToolButton()
         self.pauseButton.setCheckable(True)
-        self.pauseButton.setIcon(self.style().standardIcon(QtGui.QStyle.SP_MediaPause))
+        self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
         self.pauseButton.setIconSize(iconSize)
         self.pauseButton.setToolTip("Pause")
         self.pauseButton.clicked.connect(self.pause)
 
-        btns = QtGui.QButtonGroup(self)
+        btns = QButtonGroup(self)
         btns.addButton(self.playButton,0)
         btns.addButton(self.pauseButton,1)
         btns.setExclusive(True)
@@ -964,7 +966,7 @@ class PCViewer(QtGui.QMainWindow):
         self.pauseButton.setEnabled(False)
 
     def open(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QFileDialog.getOpenFileName(self,
                             "Open single-plane ops.npy file",filter="ops*.npy")
         # load ops in same folder
         if filename:

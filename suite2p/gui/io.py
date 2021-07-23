@@ -2,6 +2,7 @@ import os, time
 import numpy as np
 import scipy.io
 from PyQt5 import QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from . import utils, masks, views, graphics, traces, classgui
 from .. import io
@@ -17,9 +18,17 @@ def make_masks_and_enable_buttons(parent):
     parent.ops_plot['view'] = 0
     parent.colors['cols'] = 0
     parent.colors['istat'] = 0
-
+    try:
+        parent.roi_text(False)
+    except:
+        0
+    parent.roi_text_labels=[]
+    parent.roitext = False 
+    parent.checkBoxN.setChecked(False)
+    parent.checkBoxN.setEnabled(True)
     parent.loadBeh.setEnabled(True)
     parent.saveMat.setEnabled(True)
+    parent.saveNWB.setEnabled(True)
     parent.saveMerge.setEnabled(True)
     parent.sugMerge.setEnabled(True)
     parent.manual.setEnabled(True)
@@ -164,9 +173,9 @@ def enable_views_and_classifier(parent):
     # parent.p1.scene().showExportDialog()
 
 def load_dialog(parent):
-    options=QtGui.QFileDialog.Options()
-    options |= QtGui.QFileDialog.DontUseNativeDialog
-    name = QtGui.QFileDialog.getOpenFileName(
+    options = QFileDialog.Options()
+    options |= QFileDialog.DontUseNativeDialog
+    name = QFileDialog.getOpenFileName(
         parent, "Open stat.npy", filter="stat.npy",
         options=options
     )
@@ -174,9 +183,9 @@ def load_dialog(parent):
     load_proc(parent)
 
 def load_dialog_NWB(parent):
-    options=QtGui.QFileDialog.Options()
-    options |= QtGui.QFileDialog.DontUseNativeDialog
-    name = QtGui.QFileDialog.getOpenFileName(
+    options=QFileDialog.Options()
+    options |= QFileDialog.DontUseNativeDialog
+    name = QFileDialog.getOpenFileName(
         parent, "Open ophys.nwb", filter="*.nwb",
         options=options
     )
@@ -184,9 +193,9 @@ def load_dialog_NWB(parent):
     load_NWB(parent)
     
 def load_dialog_folder(parent):
-    options=QtGui.QFileDialog.Options()
-    options |= QtGui.QFileDialog.DontUseNativeDialog
-    name = QtGui.QFileDialog.getExistingDirectory(
+    options=QFileDialog.Options()
+    options |= QFileDialog.DontUseNativeDialog
+    name = QFileDialog.getExistingDirectory(
         parent, "Open folder with planeX folders",
         options=options
     )
@@ -332,7 +341,7 @@ def load_to_GUI(parent, basename, procs):
             parent.stat[n]['imerge'] = []
 
 def load_behavior(parent):
-    name = QtGui.QFileDialog.getOpenFileName(
+    name = QFileDialog.getOpenFileName(
         parent, "Open *.npy", filter="*.npy"
     )
     name = name[0]
@@ -436,7 +445,7 @@ def save_merge(parent):
     parent.notmerged = np.ones(parent.iscell.size, np.bool)
 
 def load_custom_mask(parent):
-    name = QtGui.QFileDialog.getOpenFileName(
+    name = QFileDialog.getOpenFileName(
         parent, "Open *.npy", filter="*.npy"
     )
     name = name[0]
@@ -464,8 +473,9 @@ def load_custom_mask(parent):
 
 
 def load_again(parent, Text):
-    tryagain = QtGui.QMessageBox.question(
-        parent, "ERROR", Text, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+    tryagain = QMessageBox.question(
+        parent, "ERROR", Text, QMessageBox.Yes | QMessageBox.No
     )
-    if tryagain == QtGui.QMessageBox.Yes:
+
+    if tryagain == QMessageBox.Yes:
         load_dialog(parent)

@@ -1,3 +1,5 @@
+Note: Marius and Carsen are currently at The Neuromatch Academy, and we won't do anything Suite2p-related until after the deep learning course!
+
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 [![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)

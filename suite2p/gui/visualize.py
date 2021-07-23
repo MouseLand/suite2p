@@ -4,6 +4,8 @@ import time
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QStyle 
+from PyQt5.QtWidgets import QWidget, QSlider, QMainWindow, QGridLayout, QStyleOptionSlider, QApplication, QLabel, QLineEdit, QPushButton, QComboBox, QCheckBox
 from matplotlib import cm
 from rastermap.mapping import Rastermap
 from scipy.ndimage import gaussian_filter1d
@@ -13,7 +15,7 @@ from . import masks
 
 
 # custom vertical label
-class VerticalLabel(QtGui.QWidget):
+class VerticalLabel(QWidget):
     def __init__(self, text=None):
         super(self.__class__, self).__init__()
         self.text = text
@@ -27,7 +29,7 @@ class VerticalLabel(QtGui.QWidget):
             painter.drawText(0, 0, self.text)
         painter.end()
 
-class RangeSlider(QtGui.QSlider):
+class RangeSlider(QSlider):
     """ A slider for ranges.
 
         This class provides a dual-slider for ranges, where there is a defined
@@ -46,12 +48,12 @@ class RangeSlider(QtGui.QSlider):
         self._low = self.minimum()
         self._high = self.maximum()
 
-        self.pressed_control = QtGui.QStyle.SC_None
-        self.hover_control = QtGui.QStyle.SC_None
+        self.pressed_control = QStyle.SC_None
+        self.hover_control = QStyle.SC_None
         self.click_offset = 0
 
         self.setOrientation(QtCore.Qt.Vertical)
-        self.setTickPosition(QtGui.QSlider.TicksRight)
+        self.setTickPosition(QSlider.TicksRight)
         self.setStyleSheet(\
                 "QSlider::handle:horizontal {\
                 background-color: white;\
@@ -86,33 +88,33 @@ class RangeSlider(QtGui.QSlider):
     def paintEvent(self, event):
         # based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp
         painter = QtGui.QPainter(self)
-        style = QtGui.QApplication.style()
+        style = QApplication.style()
         for i, value in enumerate([self._low, self._high]):
-            opt = QtGui.QStyleOptionSlider()
+            opt = QStyleOptionSlider()
             self.initStyleOption(opt)
             # Only draw the groove for the first slider so it doesn't get drawn
             # on top of the existing ones every time
             if i == 0:
-                opt.subControls = QtGui.QStyle.SC_SliderHandle#QtGui.QStyle.SC_SliderGroove | QtGui.QStyle.SC_SliderHandle
+                opt.subControls = QStyle.SC_SliderHandle#QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
             else:
-                opt.subControls = QtGui.QStyle.SC_SliderHandle
+                opt.subControls = QStyle.SC_SliderHandle
             if self.tickPosition() != self.NoTicks:
-                opt.subControls |= QtGui.QStyle.SC_SliderTickmarks
+                opt.subControls |= QStyle.SC_SliderTickmarks
             if self.pressed_control:
                 opt.activeSubControls = self.pressed_control
-                opt.state |= QtGui.QStyle.State_Sunken
+                opt.state |= QStyle.State_Sunken
             else:
                 opt.activeSubControls = self.hover_control
             opt.sliderPosition = value
             opt.sliderValue = value
-            style.drawComplexControl(QtGui.QStyle.CC_Slider, opt, painter, self)
+            style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
 
     def mousePressEvent(self, event):
         event.accept()
-        style = QtGui.QApplication.style()
+        style = QApplication.style()
         button = event.button()
         if button:
-            opt = QtGui.QStyleOptionSlider()
+            opt = QStyleOptionSlider()
             self.initStyleOption(opt)
             self.active_slider = -1
             for i, value in enumerate([self._low, self._high]):
@@ -126,19 +128,19 @@ class RangeSlider(QtGui.QSlider):
                     self.setSliderDown(True)
                     break
             if self.active_slider < 0:
-                self.pressed_control = QtGui.QStyle.SC_SliderHandle
+                self.pressed_control = QStyle.SC_SliderHandle
                 self.click_offset = self.__pixelPosToRangeValue(self.__pick(event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
         else:
             event.ignore()
     def mouseMoveEvent(self, event):
-        if self.pressed_control != QtGui.QStyle.SC_SliderHandle:
+        if self.pressed_control != QStyle.SC_SliderHandle:
             event.ignore()
             return
         event.accept()
         new_pos = self.__pixelPosToRangeValue(self.__pick(event.pos()))
-        opt = QtGui.QStyleOptionSlider()
+        opt = QStyleOptionSlider()
         self.initStyleOption(opt)
         if self.active_slider < 0:
             offset = new_pos - self.click_offset
@@ -170,9 +172,9 @@ class RangeSlider(QtGui.QSlider):
         else:
             return pt.y()
     def __pixelPosToRangeValue(self, pos):
-        opt = QtGui.QStyleOptionSlider()
+        opt = QStyleOptionSlider()
         self.initStyleOption(opt)
-        style = QtGui.QApplication.style()
+        style = QApplication.style()
 
         gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
         sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)
@@ -222,14 +224,14 @@ class NeuronSlider(RangeSlider):
         self.parent.imgROI.setLevels([self.parent.sat[0],self.parent.sat[1]])
         self.parent.win.show()
 
-class Slider(QtGui.QSlider):
+class Slider(QSlider):
     def __init__(self, bid, parent=None):
         super(self.__class__, self).__init__()
         self.bid = bid
         self.setMinimum(0)
         self.setMaximum(100)
         self.setValue(parent.sat[bid]*100)
-        self.setTickPosition(QtGui.QSlider.TicksLeft)
+        self.setTickPosition(QSlider.TicksLeft)
         self.setTickInterval(10)
         self.valueChanged.connect(lambda: self.level_change(parent,bid))
         self.setTracking(False)
@@ -243,16 +245,16 @@ class Slider(QtGui.QSlider):
 
 
 ### custom QDialog which allows user to fill in ops and run suite2p!
-class VisWindow(QtGui.QMainWindow):
+class VisWindow(QMainWindow):
     def __init__(self, parent=None):
         super(VisWindow, self).__init__(parent)
         self.parent = parent
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.setGeometry(70,70,1100,900)
         self.setWindowTitle('Visualize data')
-        self.cwidget = QtGui.QWidget(self)
+        self.cwidget = QWidget(self)
         self.setCentralWidget(self.cwidget)
-        self.l0 = QtGui.QGridLayout()
+        self.l0 = QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
         #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
@@ -328,7 +330,7 @@ class VisWindow(QtGui.QMainWindow):
         # add slider for levels
         self.sat = [0.3,0.7]
         slider = SatSlider(self)
-        slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        slider.setTickPosition(QSlider.TicksBelow)
         self.l0.addWidget(slider, 0,2,5,1)
         qlabel = VerticalLabel(text='saturation')
         qlabel.setStyleSheet('color: white;')
@@ -389,22 +391,22 @@ class VisWindow(QtGui.QMainWindow):
 
         self.neural_sorting(2)
         # buttons for computations
-        self.mapOn = QtGui.QPushButton('compute rastermap + PCs')
+        self.mapOn = QPushButton('compute rastermap + PCs')
         self.mapOn.clicked.connect(self.compute_map)
         self.l0.addWidget(self.mapOn,0,0,1,2)
-        self.comboBox = QtGui.QComboBox(self)
+        self.comboBox = QComboBox(self)
         self.l0.addWidget(self.comboBox,1,0,1,2)
-        self.l0.addWidget(QtGui.QLabel('PC 1:'),2,0,1,2)
-        #self.l0.addWidget(QtGui.QLabel(''),4,0,1,1)
-        self.selectBtn = QtGui.QPushButton('show selected cells in GUI')
+        self.l0.addWidget(QLabel('PC 1:'),2,0,1,2)
+        #self.l0.addWidget(QLabel(''),4,0,1,1)
+        self.selectBtn = QPushButton('show selected cells in GUI')
         self.selectBtn.clicked.connect(self.select_cells)
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn,3,0,1,2)
-        self.sortTime = QtGui.QCheckBox('&Time sort')
+        self.sortTime = QCheckBox('&Time sort')
         self.sortTime.setStyleSheet("color: white;")
         self.sortTime.stateChanged.connect(self.sort_time)
         self.l0.addWidget(self.sortTime,4,0,1,2)
-        self.l0.addWidget(QtGui.QLabel(''),5,0,1,1)
+        self.l0.addWidget(QLabel(''),5,0,1,1)
         self.l0.setRowStretch(6, 1)
         self.raster = False
 
@@ -577,12 +579,12 @@ class VisWindow(QtGui.QMainWindow):
 
     def PC_on(self, plot):
         # edit buttons
-        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit = QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        qlabel = QtGui.QLabel('PC: ')
+        qlabel = QLabel('PC: ')
         qlabel.setStyleSheet('color: white;')
         self.l0.addWidget(qlabel,3,0,1,1)
         self.l0.addWidget(self.PCedit,3,1,1,1)
@@ -600,12 +602,12 @@ class VisWindow(QtGui.QMainWindow):
 
     def activate(self):
         # activate buttons
-        self.PCedit = QtGui.QLineEdit(self)
+        self.PCedit = QLineEdit(self)
         self.PCedit.setValidator(QtGui.QIntValidator(1,np.minimum(self.sp.shape[0],self.sp.shape[1])))
         self.PCedit.setText('1')
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        qlabel = QtGui.QLabel('PC: ')
+        qlabel = QLabel('PC: ')
         qlabel.setStyleSheet('color: white;')
         self.l0.addWidget(qlabel,2,0,1,1)
         self.l0.addWidget(self.PCedit,2,1,1,1)

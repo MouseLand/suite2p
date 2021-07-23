@@ -3,6 +3,7 @@ import shutil
 
 import numpy as np
 from PyQt5 import QtGui
+from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QMessageBox, QFileDialog, QListWidget, QGridLayout, QWidget, QAbstractItemView
 
 from . import masks
 from .. import classification
@@ -10,15 +11,15 @@ from .. import classification
 
 def make_buttons(parent,b0):
     # ----- CLASSIFIER BUTTONS -------
-    cllabel = QtGui.QLabel("")
+    cllabel = QLabel("")
     cllabel.setFont(parent.boldfont)
     cllabel.setText("<font color='white'>Classifier</font>")
-    parent.classLabel = QtGui.QLabel("<font color='white'>not loaded (using prob from iscell.npy)</font>")
+    parent.classLabel = QLabel("<font color='white'>not loaded (using prob from iscell.npy)</font>")
     parent.classLabel.setFont(QtGui.QFont("Arial", 8))
     parent.l0.addWidget(cllabel, b0, 0, 1, 2)
     b0+=1
     parent.l0.addWidget(parent.classLabel, b0, 0, 1, 2)
-    parent.addtoclass = QtGui.QPushButton(" add current data to classifier")
+    parent.addtoclass = QPushButton(" add current data to classifier")
     parent.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.addtoclass.clicked.connect(lambda: add_to(parent))
     parent.addtoclass.setStyleSheet(parent.styleInactive)
@@ -27,7 +28,7 @@ def make_buttons(parent,b0):
     return b0
 
 def load_classifier(parent):
-    name = QtGui.QFileDialog.getOpenFileName(parent, "Open File")
+    name = QFileDialog.getOpenFileName(parent, "Open File")
     if name:
         load(parent, name[0])
         class_activated(parent)
@@ -60,25 +61,25 @@ def class_activated(parent):
     parent.addtoclass.setEnabled(True)
 
 def class_default(parent):
-    dm = QtGui.QMessageBox.question(
+    dm = QMessageBox.question(
         parent,
         "Default classifier",
         "Are you sure you want to overwrite your default classifier?",
-        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+        QMessageBox.Yes | QMessageBox.No,
     )
-    if dm == QtGui.QMessageBox.Yes:
+    if dm == QMessageBox.Yes:
         classfile = parent.classuser
         save_model(classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
 
 def reset_default(parent):
-    dm = QtGui.QMessageBox.question(
+    dm = QMessageBox.question(
         parent,
         "Default classifier",
         ("Are you sure you want to reset the default classifier "
          "to the built-in suite2p classifier?"),
-        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+        QMessageBox.Yes | QMessageBox.No,
     )
-    if dm == QtGui.QMessageBox.Yes:
+    if dm == QMessageBox.Yes:
         shutil.copy(parent.classorig, parent.classuser)
 
 def load(parent, name):
@@ -142,10 +143,10 @@ def load_data(parent,keys,trainfiles):
             parent.classfile = classfile
             loaded = True
         else:
-            msg = QtGui.QMessageBox.information(parent,'Incorrect file path',
+            msg = QMessageBox.information(parent,'Incorrect file path',
                                                 'Incorrect save path for classifier, classifier not built.')
     else:
-        msg = QtGui.QMessageBox.information(parent,'Incorrect files',
+        msg = QMessageBox.information(parent,'Incorrect files',
                                             'No valid datasets chosen to build classifier, classifier not built.')
     return loaded
 
@@ -156,22 +157,22 @@ def add_to(parent):
         cfile = 'the default classifier'
     else:
         cfile = parent.classfile
-    dm = QtGui.QMessageBox.question(parent,'Default classifier',
+    dm = QMessageBox.question(parent,'Default classifier',
                                     'Current classifier is '+cfile+'. Add to this classifier?',
-                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-    if dm == QtGui.QMessageBox.Yes:
+                                    QMessageBox.Yes | QMessageBox.No)
+    if dm == QMessageBox.Yes:
         stats = np.reshape(np.array([parent.stat[j][k] for j in range(len(parent.stat)) for k in parent.model.keys]),
                                 (len(parent.stat),-1))
         parent.model.stats = np.concatenate((parent.model.stats,stats),axis=0)
         parent.model.iscell = np.concatenate((parent.model.iscell,parent.iscell),axis=0)
         save_model(parent.classfile, parent.model.stats, parent.model.iscell, parent.model.keys)
         activate(parent, True)
-        msg = QtGui.QMessageBox.information(parent,'Classifier saved and loaded',
+        msg = QMessageBox.information(parent,'Classifier saved and loaded',
                                             'Current dataset added to classifier, and cell probabilities computed and in GUI')
 
 
 def save(parent, train_stats, train_iscell, keys):
-    name = QtGui.QFileDialog.getSaveFileName(parent,'Classifier name (*.npy)')
+    name = QFileDialog.getSaveFileName(parent,'Classifier name (*.npy)')
     name = name[0]
     saved = False
     if name:
@@ -183,7 +184,7 @@ def save(parent, train_stats, train_iscell, keys):
     return name, saved
 
 def save_list(parent):
-    name = QtGui.QFileDialog.getSaveFileName(parent,'Save list of iscell.npy')
+    name = QFileDialog.getSaveFileName(parent,'Save list of iscell.npy')
     if name:
         try:
             with open(name[0],'w') as fid:
@@ -207,44 +208,44 @@ def disable(parent):
         btns.setEnabled(False)
 
 ### custom QDialog which makes a list of items you can include/exclude
-class ListChooser(QtGui.QDialog):
+class ListChooser(QDialog):
     def __init__(self, Text, parent=None):
         super(ListChooser, self).__init__(parent)
         self.setGeometry(300,300,500,320)
         self.setWindowTitle(Text)
-        self.win = QtGui.QWidget(self)
-        layout = QtGui.QGridLayout()
+        self.win = QWidget(self)
+        layout = QGridLayout()
         self.win.setLayout(layout)
         #self.setCentralWidget(self.win)
-        loadcell = QtGui.QPushButton('Load iscell.npy')
+        loadcell = QPushButton('Load iscell.npy')
         loadcell.resize(200,50)
         loadcell.clicked.connect(self.load_cell)
         layout.addWidget(loadcell,0,0,1,1)
-        loadtext = QtGui.QPushButton('Load txt file list')
+        loadtext = QPushButton('Load txt file list')
         loadtext.clicked.connect(self.load_text)
         layout.addWidget(loadtext,0,1,1,1)
-        layout.addWidget(QtGui.QLabel('(select multiple using ctrl)'),1,0,1,1)
-        self.list = QtGui.QListWidget(parent)
+        layout.addWidget(QLabel('(select multiple using ctrl)'),1,0,1,1)
+        self.list = QListWidget(parent)
         layout.addWidget(self.list,2,0,5,4)
         #self.list.resize(450,250)
-        self.list.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        save = QtGui.QPushButton('build classifier')
+        self.list.setSelectionMode(QAbstractItemView.MultiSelection)
+        save = QPushButton('build classifier')
         save.clicked.connect(lambda: self.build_classifier(parent))
         layout.addWidget(save,8,0,1,1)
-        self.apply = QtGui.QPushButton('load in GUI')
+        self.apply = QPushButton('load in GUI')
         self.apply.clicked.connect(lambda: self.apply_class(parent))
         self.apply.setEnabled(False)
         layout.addWidget(self.apply,8,1,1,1)
-        self.saveasdefault = QtGui.QPushButton('save as default')
+        self.saveasdefault = QPushButton('save as default')
         self.saveasdefault.clicked.connect(lambda: self.save_default(parent))
         self.saveasdefault.setEnabled(False)
         layout.addWidget(self.saveasdefault,8,2,1,1)
-        done = QtGui.QPushButton('close')
+        done = QPushButton('close')
         done.clicked.connect(self.exit_list)
         layout.addWidget(done,8,3,1,1)
 
     def load_cell(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
+        name = QFileDialog.getOpenFileName(self, 'Open iscell.npy file',filter='iscell.npy')
         if name:
             try:
                 iscell = np.load(name[0])
@@ -254,14 +255,14 @@ class ListChooser(QtGui.QDialog):
                         badfile = False
                         self.list.addItem(name[0])
                 if badfile:
-                    QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+                    QMessageBox.information(self, 'iscell.npy should be 0/1')
             except (OSError, RuntimeError, TypeError, NameError):
-                QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+                QMessageBox.information(self, 'iscell.npy should be 0/1')
         else:
-            QtGui.QMessageBox.information(self, 'iscell.npy should be 0/1')
+            QMessageBox.information(self, 'iscell.npy should be 0/1')
 
     def load_text(self):
-        name = QtGui.QFileDialog.getOpenFileName(self, 'Open *.txt file', filter='text file (*.txt)')
+        name = QFileDialog.getOpenFileName(self, 'Open *.txt file', filter='text file (*.txt)')
         if name:
             try:
                 txtfile = open(name[0], 'r')
@@ -271,7 +272,7 @@ class ListChooser(QtGui.QDialog):
                 for f in files:
                     self.list.addItem(f)
             except (OSError, RuntimeError, TypeError, NameError):
-                QtGui.QMessageBox.information(self, 'not a text file')
+                QMessageBox.information(self, 'not a text file')
                 print('not a good list')
 
     def build_classifier(self, parent):
@@ -288,7 +289,7 @@ class ListChooser(QtGui.QDialog):
             keys = parent.default_keys
             loaded = load_data(parent, keys, parent.trainfiles)
             if loaded:
-                msg = QtGui.QMessageBox.information(parent,'Classifier saved',
+                msg = QMessageBox.information(parent,'Classifier saved',
                                                     'Classifier built from valid files and saved.')
                 self.apply.setEnabled(True)
                 self.saveasdefault.setEnabled(True)
@@ -298,10 +299,10 @@ class ListChooser(QtGui.QDialog):
         activate(parent, True)
 
     def save_default(self, parent):
-        dm = QtGui.QMessageBox.question(self,'Default classifier',
+        dm = QMessageBox.question(self,'Default classifier',
                                         'Are you sure you want to overwrite your default classifier?',
-                                        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-        if dm == QtGui.QMessageBox.Yes:
+                                        QMessageBox.Yes | QMessageBox.No)
+        if dm == QMessageBox.Yes:
             shutil.copy(parent.classfile, parent.classuser)
 
     def exit_list(self):

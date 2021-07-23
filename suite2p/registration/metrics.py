@@ -64,7 +64,7 @@ def pclowhigh(mov, nlowhigh, nPC, random_state):
 
 def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
                 block_size=(128,128), maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
-                is_nonrigid=True, pad_fft=False, bidiphase_offset=0, spatial_taper=50.0):
+                is_nonrigid=True, bidiphase_offset=0, spatial_taper=50.0):
     """
     register top and bottom of PCs to each other
 
@@ -95,7 +95,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
     snr_thresh: float
         signal to noise threshold to use.
     is_nonrigid: bool
-    pad_fft: bool
     bidiphase_offset: int
     spatial_taper: float
 
@@ -133,7 +132,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
         cfRefImg = rigid.phasecorr_reference(
             refImg=refImg,
             smooth_sigma=smooth_sigma,
-            pad_fft=pad_fft,
         )
 
         cfRefImg = cfRefImg[np.newaxis, :, :]
@@ -146,7 +144,6 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
                 smooth_sigma=smooth_sigma,
                 yblock=yblock,
                 xblock=xblock,
-                pad_fft=pad_fft,
             )
 
 
@@ -249,7 +246,6 @@ def get_pc_metrics(ops, use_red=False):
         reg_1p=ops['1Preg'] if '1Preg' in ops else False,
         snr_thresh=ops['snr_thresh'],
         is_nonrigid=ops['nonrigid'],
-        pad_fft=ops['pad_fft'],
         bidiphase_offset=ops['bidiphase'],
         spatial_taper=ops['spatial_taper']
     )

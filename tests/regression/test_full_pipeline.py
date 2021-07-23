@@ -16,7 +16,8 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
     test_ops.update({
         'tiff_list': ['input_1500.tif'],
         'do_regmetrics': True,
-        'save_NWB': True
+        'save_NWB': True,
+        'save_mat': True
     })
     suite2p.run_s2p(ops=test_ops)
 

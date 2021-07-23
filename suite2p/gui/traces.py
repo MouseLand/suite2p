@@ -1,5 +1,6 @@
 import numpy as np
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit, QCheckBox
 
 
 def plot_trace(parent):
@@ -79,10 +80,10 @@ def plot_trace(parent):
 
 def make_buttons(parent, b0):
     # combo box to decide what kind of activity to view
-    qlabel = QtGui.QLabel(parent)
+    qlabel = QLabel(parent)
     qlabel.setText("<font color='white'>Activity mode:</font>")
     parent.l0.addWidget(qlabel, b0, 0, 1, 1)
-    parent.comboBox = QtGui.QComboBox(parent)
+    parent.comboBox = QComboBox(parent)
     parent.comboBox.setFixedWidth(100)
     parent.l0.addWidget(parent.comboBox, b0+1, 0, 1, 1)
     parent.comboBox.addItem("F")
@@ -96,8 +97,8 @@ def make_buttons(parent, b0):
     # up/down arrows to resize view
     parent.level = 1
     parent.arrowButtons = [
-        QtGui.QPushButton(u" \u25b2"),
-        QtGui.QPushButton(u" \u25bc"),
+        QPushButton(u" \u25b2"),
+        QPushButton(u" \u25bc"),
     ]
     parent.arrowButtons[0].clicked.connect(lambda: expand_trace(parent))
     parent.arrowButtons[1].clicked.connect(lambda: collapse_trace(parent))
@@ -113,7 +114,7 @@ def make_buttons(parent, b0):
         )
         b += 1
 
-    parent.pmButtons = [QtGui.QPushButton(" +"), QtGui.QPushButton(" -")]
+    parent.pmButtons = [QPushButton(" +"), QPushButton(" -")]
     parent.pmButtons[0].clicked.connect(lambda: expand_scale(parent))
     parent.pmButtons[1].clicked.connect(lambda: collapse_scale(parent))
     b = 0
@@ -126,14 +127,14 @@ def make_buttons(parent, b0):
         b += 1
     # choose max # of cells plotted
     parent.l0.addWidget(
-        QtGui.QLabel("<font color='white'>max # plotted:</font>"),
+        QLabel("<font color='white'>max # plotted:</font>"),
         b0+2,
         0,
         1,
         1,
     )
     b0+=3
-    parent.ncedit = QtGui.QLineEdit(parent)
+    parent.ncedit = QLineEdit(parent)
     parent.ncedit.setValidator(QtGui.QIntValidator(0, 400))
     parent.ncedit.setText("40")
     parent.ncedit.setFixedWidth(35)
@@ -143,7 +144,7 @@ def make_buttons(parent, b0):
     #Agus
     # Deconv CHECKBOX
     parent.l0.setVerticalSpacing(4)
-    parent.checkBoxd = QtGui.QCheckBox("deconv [N]")
+    parent.checkBoxd = QCheckBox("deconv [N]")
     parent.checkBoxd.setStyleSheet("color: white;")
     parent.checkBoxd.toggled.connect(lambda: deconv_on(parent))
     parent.deconvOn = True
@@ -154,7 +155,7 @@ def make_buttons(parent, b0):
     1, 2)
     # neuropil CHECKBOX
     parent.l0.setVerticalSpacing(4)
-    parent.checkBoxn = QtGui.QCheckBox("neuropil [B]")
+    parent.checkBoxn = QCheckBox("neuropil [B]")
     parent.checkBoxn.setStyleSheet("color: red;")
     parent.checkBoxn.toggled.connect(lambda: neuropil_on(parent))
     parent.neuropilOn = True
@@ -164,7 +165,7 @@ def make_buttons(parent, b0):
     1, 2)
     # traces CHECKBOX
     parent.l0.setVerticalSpacing(4)
-    parent.checkBoxt = QtGui.QCheckBox("raw fluor [V]")
+    parent.checkBoxt = QCheckBox("raw fluor [V]")
     parent.checkBoxt.setStyleSheet("color: cyan;")
     parent.checkBoxt.toggled.connect(lambda: traces_on(parent))
     parent.tracesOn = True

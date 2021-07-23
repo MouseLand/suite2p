@@ -95,7 +95,7 @@ def run_preprocess(f: np.ndarray, test_ops):
             prctile_baseline=test_ops['prctile_baseline']
         )
         test_f = np.load('data/test_data/detection/{}_f.npy'.format(bv))
-        yield np.array_equal(pre_f, test_f)
+        yield np.allclose(pre_f, test_f, rtol=1e-4, atol=5e-2)
 
 
 def test_pre_process_baseline(test_ops):

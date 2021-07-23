@@ -237,6 +237,12 @@ def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
     if  max_overlap is not None and max_overlap<1.0:
         keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps, max_overlap=max_overlap)
         stat = stat[keep_rois]
+        n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
+        rois = [ROI(ypix=s['ypix'], xpix=s['xpix'], 
+                lam=s['lam'], med=s['med'], do_crop=do_crop) for s in stat]
+        for roi, s in zip(rois, stat):
+            s['overlap'] = roi.get_overlap_image(n_overlaps)
+        
     return stat
 
 

@@ -4,6 +4,7 @@ import time
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget
 from matplotlib.colors import hsv_to_rgb
 from scipy import stats
 
@@ -75,7 +76,7 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, manual_roi_stats
 
 
-class ViewButton(QtGui.QPushButton):
+class ViewButton(QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ViewButton, self).__init__(parent)
         self.setText(Text)
@@ -98,16 +99,16 @@ class ViewButton(QtGui.QPushButton):
         parent.show()
 
 
-class ROIDraw(QtGui.QMainWindow):
+class ROIDraw(QMainWindow):
     def __init__(self, parent):
         super(ROIDraw, self).__init__(parent)
         pg.setConfigOptions(imageAxisOrder='row-major')
         self.parent = parent
         self.setGeometry(70, 70, 1400, 800)
         self.setWindowTitle('extract ROI activity')
-        self.cwidget = QtGui.QWidget(self)
+        self.cwidget = QWidget(self)
         self.setCentralWidget(self.cwidget)
-        self.l0 = QtGui.QGridLayout()
+        self.l0 = QGridLayout()
         # layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
         self.stylePressed = ("QPushButton {Text-align: left; "
@@ -135,26 +136,26 @@ class ROIDraw(QtGui.QMainWindow):
 
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
 
-        self.instructions = QtGui.QLabel("Add ROI: button / Alt+CLICK")
+        self.instructions = QLabel("Add ROI: button / Alt+CLICK")
         self.instructions.setStyleSheet("color: white;")
         self.l0.addWidget(self.instructions, 0, 0, 1, 4)
-        self.instructions = QtGui.QLabel("Remove last clicked ROI: D")
+        self.instructions = QLabel("Remove last clicked ROI: D")
         self.instructions.setStyleSheet("color: white;")
         self.l0.addWidget(self.instructions, 1, 0, 1, 4)
 
-        self.addROI = QtGui.QPushButton("add ROI")
+        self.addROI = QPushButton("add ROI")
         self.addROI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.addROI.clicked.connect(lambda: self.add_ROI(pos=None))
         self.addROI.setEnabled(True)
         self.addROI.setFixedWidth(60)
         self.addROI.setStyleSheet(self.styleUnpressed)
         self.l0.addWidget(self.addROI, 2, 0, 1, 1)
-        lbl = QtGui.QLabel('diameter:')
+        lbl = QLabel('diameter:')
         lbl.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         lbl.setStyleSheet("color: white;")
         lbl.setFixedWidth(60)
         self.l0.addWidget(lbl, 2, 1, 1, 1)
-        self.diam = QtGui.QLineEdit(self)
+        self.diam = QLineEdit(self)
         self.diam.setValidator(QtGui.QIntValidator(0, 10000))
         self.diam.setText("12")
         self.diam.setFixedWidth(35)
@@ -163,18 +164,18 @@ class ROIDraw(QtGui.QMainWindow):
         self.ROIs = []
         self.cell_pos = []
         self.extracted = False
-        self.procROI = QtGui.QPushButton("extract ROIs")
+        self.procROI = QPushButton("extract ROIs")
         self.procROI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.procROI.setStyleSheet(self.styleUnpressed)
         self.procROI.setCheckable(False)
         self.procROI.clicked.connect(self.proc_ROI)
         self.l0.addWidget(self.procROI, 3, 0, 1, 3)
-        self.l0.addWidget(QtGui.QLabel(""), 4, 0, 1, 3)
+        self.l0.addWidget(QLabel(""), 4, 0, 1, 3)
         self.l0.setRowStretch(4, 1)
 
         # CloseGUI button - once done save the ROIs to stat.npy
         self.saveGUI = False
-        self.closeGUI = QtGui.QPushButton("Save and Quit")
+        self.closeGUI = QPushButton("Save and Quit")
         self.closeGUI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.closeGUI.clicked.connect(self.close_GUI)
         self.closeGUI.setEnabled(False)
@@ -188,7 +189,7 @@ class ROIDraw(QtGui.QMainWindow):
                       "R: correlation map",
                       "T: max projection"]
         b = 0
-        self.viewbtns = QtGui.QButtonGroup(self)
+        self.viewbtns = QButtonGroup(self)
         for names in self.views:
             btn = ViewButton(b, "&" + names, self)
             self.viewbtns.addButton(btn, b)
@@ -199,7 +200,7 @@ class ROIDraw(QtGui.QMainWindow):
         self.viewbtns.button(b).setChecked(True)
         self.viewbtns.button(b).setStyleSheet(self.stylePressed)
 
-        self.l0.addWidget(QtGui.QLabel("neuropil"), 13, 13, 1, 1)
+        self.l0.addWidget(QLabel("neuropil"), 13, 13, 1, 1)
 
         self.Ly = self.parent.ops['Ly']
         self.Lx = self.parent.ops['Lx']
@@ -217,13 +218,13 @@ class ROIDraw(QtGui.QMainWindow):
             self.check_proc(event)
 
     def check_proc(self, event):
-        cproc = QtGui.QMessageBox.question(
+        cproc = QMessageBox.question(
             self, "PROC", 'Would you like to save traces before closing? (if you havent extracted the traces, click Cancel and extract!)', 
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel 
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel 
         )
-        if cproc == QtGui.QMessageBox.Yes:
+        if cproc == QMessageBox.Yes:
             self.close_GUI()
-        elif cproc == QtGui.QMessageBox.Cancel:
+        elif cproc == QMessageBox.Cancel:
             event.ignore()
 
     def close_GUI(self):

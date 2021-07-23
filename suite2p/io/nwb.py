@@ -37,11 +37,24 @@ def read_nwb(fpath):
             multiplane = True
         stat = []
         for n in range(len(rois)):
-            stat.append({'ypix': rois[n][:,0].astype('int'), 
-                         'xpix': rois[n][:,1].astype('int'), 
-                         'lam': rois[n][:,-1]})
+            if isinstance(rois[0], np.ndarray):
+                stat.append(
+                    {
+                        "ypix": np.array([rois[n][i][0].astype("int") for i in range(len(rois[n]))]),
+                        "xpix": np.array([rois[n][i][1].astype("int") for i in range(len(rois[n]))]),
+                        "lam": np.array([rois[n][i][-1] for i in range(len(rois[n]))])
+                    }
+                )
+            else:
+                stat.append(
+                    {
+                        "ypix": rois[n]["x"].astype("int"),
+                        "xpix": rois[n]["y"].astype("int"),
+                        "lam": rois[n]["weight"]
+                    }
+                )
             if multiplane:
-                stat[-1]['iplane'] = int(rois[n][0,-2])
+                stat[-1]['iplane'] = int(rois[n][0][-2])
         ops = run_s2p.default_ops()
         if 'aspect' in ops:
             d0 = np.array([int(ops['aspect'] * 10), 10])
@@ -214,6 +227,7 @@ def save_nwb(save_folder):
         file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
         traces = []
         ncells_all = 0
+        Nfr = np.array([ops['nframes'] for ops in ops1]).max()
         for iplane, ops in enumerate(ops1):
             if iplane==0:
                 iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
@@ -222,8 +236,11 @@ def save_nwb(save_folder):
             else:
                 iscell = np.append(iscell, np.load(os.path.join(ops['save_path'], 'iscell.npy')), axis=0)
                 for i,fstr in enumerate(file_strs):
-                    traces[i] = np.append(traces[i], 
-                                        np.load(os.path.join(ops['save_path'], fstr)), axis=0) 
+                    trace = np.load(os.path.join(ops['save_path'], fstr))
+                    if trace.shape[1] < Nfr:
+                        fcat    = np.zeros((trace.shape[0],Nfr-trace.shape[1]), 'float32')
+                        trace   = np.concatenate((trace, fcat), axis=1)
+                    traces[i] = np.append(traces[i], trace, axis=0) 
             
             stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
             ncells = len(stat)

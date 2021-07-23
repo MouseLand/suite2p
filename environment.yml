@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - python>=3.8
+  - python>=3.8,<3.9
   - pip
   - mkl
   - tbb

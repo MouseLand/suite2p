@@ -1,21 +1,22 @@
 name: suite2p
 channels:
   - conda-forge
+  - pytorch
 dependencies:
-  - python>=3.7.6,<3.8
+  - python>=3.8
   - pip
-  - mkl_fft=1.0.10
-  - mkl=2019.3
+  - mkl
   - tbb
-  - numpy<1.19.0
-  - numba<0.50.0
+  - numpy
+  - numba
   - matplotlib
   - scipy
   - scikit-learn
+  - pytorch>=1.7.1
+  - h5py=2.10.0
   - pip:
     - pyqt5
     - pyqt5.sip
-    - h5py==2.10.0
     - natsort
     - rastermap>0.1.0
     - tifffile

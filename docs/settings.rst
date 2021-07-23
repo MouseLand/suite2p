@@ -104,7 +104,7 @@ Registration
   of the gaussian used to smooth the data before phase correlation is computed.
   Might need this to be set to 1 or 2 for low SNR data.
 
-- **keep_movie_raw**: (*bool, default: True*) whether or not to keep
+- **keep_movie_raw**: (*bool, default: False*) whether or not to keep
   the binary file of the non-registered frames. You can view the
   registered and non-registered binaries together in the GUI in the
   "View registered binaries" view if you set this to *True*.

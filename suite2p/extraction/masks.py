@@ -104,7 +104,7 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neu
     neuropil_ipix = []
     idx=0
     for ypix, xpix in zip(ypixs, xpixs):
-        neuropil_mask = np.zeros((Ly, Lx), np.bool)
+        neuropil_mask = np.zeros((Ly, Lx), bool)
         # extend to get ring of dis-allowed pixels
         ypix, xpix = extendROI(ypix, xpix, Ly, Lx, niter=inner_neuropil_radius)
         nring = np.sum(valid_pixels(cell_pix, ypix, xpix))  # count how many pixels are valid

@@ -3,12 +3,14 @@ import shutil
 import time
 from natsort import natsorted
 from datetime import datetime
+from getpass import getpass
+import pathlib
 
 import numpy as np
 from scipy.io import savemat
 
 from . import extraction, io, registration, detection, classification
-#from . import version
+from .version import version
 
 try:
     from haussmeister import haussio
@@ -24,14 +26,15 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        #'suite2p_version': version,
+        'suite2p_version': version,
 
-        # file paths
+        # file input/output settings
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
         'fast_disk': [],  # used to store temporary binary file, defaults to save_path0
         'delete_bin': False,  # whether to delete binary file after processing
         'mesoscan': False,  # for reading in scanimage mesoscope files
         'bruker': False,  # whether or not single page BRUKER tiffs!
+        'bruker_bidirectional': False, # bidirectional multiplane in bruker: 0, 1, 2, 2, 1, 0 (True) vs 0, 1, 2, 0, 1, 2 (False)
         'h5py': [],  # take h5py as input (deactivates data_path)
         'h5py_key': 'data',  #key in h5py where data array is stored
         'save_path0': [],  # stores results, defaults to first item in data_path
@@ -292,13 +295,18 @@ def run_plane(ops, ops_path=None, stat=None):
 
         # save as matlab file
         if ops.get('save_mat'):
-            if isinstance(ops.get('date_proc'), datetime):
-                ops['date_proc'] = datetime.strftime(ops['date_proc'], "%Y-%m-%d %H:%M:%S.%f"),
+            ops_matlab = ops.copy()
+            if isinstance(ops_matlab.get('date_proc'), datetime):
+                ops_matlab['date_proc'] = datetime.strftime(ops_matlab['date_proc'], "%Y-%m-%d %H:%M:%S.%f"),
+            for k in ops_matlab.keys():
+                if isinstance(ops_matlab[k], pathlib.Path):
+                    ops_matlab[k] = os.fspath(ops_matlab[k].absolute())
+            ops_matlab['data_path'] = [os.fspath(p.absolute()) for p in ops_matlab['data_path']]
             savemat(
                 file_name=os.path.join(ops['save_path'], 'Fall.mat'),
                 mdict={
                     'stat': np.load(os.path.join(fpath, 'stat.npy'), allow_pickle=True),
-                    'ops': ops,
+                    'ops': ops_matlab,
                     'F': F,
                     'Fneu': Fneu,
                     'spks': spks,
@@ -333,7 +341,7 @@ def run_plane(ops, ops_path=None, stat=None):
     return ops
 
 
-def run_s2p(ops={}, db={}):
+def run_s2p(ops={}, db={}, server={}):
     """ run suite2p pipeline
 
         need to provide a 'data_path' or 'h5py'+'h5py_key' in db or ops
@@ -344,6 +352,9 @@ def run_s2p(ops={}, db={}):
             specify 'nplanes', 'nchannels', 'tau', 'fs'
         db : :obj:`dict`
             specify 'data_path' or 'h5py'+'h5py_key' here or in ops
+        server : :obj:`dict`
+            specify 'host', 'username', 'password', 'server_root', 'local_root', 'n_cores' ( for multiplane_parallel )
+
 
         Returns
         -------
@@ -409,7 +420,18 @@ def run_s2p(ops={}, db={}):
             ))
 
     if ops.get('multiplane_parallel'):
-        io.server.send_jobs(save_folder)
+        if server:
+            if 'fnc' in server.keys():
+                # Call custom function.
+                server['fnc'](save_folder, server)
+            else:
+                # if user puts in server settings
+                io.server.send_jobs(save_folder, host=server['host'], username=server['username'],
+                                    password=server['password'], server_root=server['server_root'],
+                                    local_root=server['local_root'], n_cores=server['n_cores'])
+        else:
+            # otherwise use settings modified in io/server.py
+            io.server.send_jobs(save_folder)
         return None
     else:
         for ipl, ops_path in enumerate(ops_paths):

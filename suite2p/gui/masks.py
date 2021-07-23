@@ -3,6 +3,7 @@ import matplotlib.cm
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
 from matplotlib.colors import hsv_to_rgb
 
 import suite2p.gui.merge
@@ -24,8 +25,8 @@ def make_buttons(parent, b0):
         "L: corr with 1D var, bin=^^^",
         "M: rastermap / custom"
     ]
-    parent.colorbtns = QtGui.QButtonGroup(parent)
-    clabel = QtGui.QLabel(parent)
+    parent.colorbtns = QButtonGroup(parent)
+    clabel = QLabel(parent)
     clabel.setText("<font color='white'>Colors</font>")
     clabel.setFont(parent.boldfont)
     parent.l0.addWidget(clabel, b0, 0, 1, 1)
@@ -33,7 +34,7 @@ def make_buttons(parent, b0):
     iwid = 65
 
     # add colormaps
-    parent.CmapChooser = QtGui.QComboBox()
+    parent.CmapChooser = QComboBox()
     cmaps = ['hsv', 'viridis', 'plasma', 'inferno', 'magma', 'cividis',
              'viridis_r', 'plasma_r', 'inferno_r', 'magma_r', 'cividis_r']
     parent.CmapChooser.addItems(cmaps)
@@ -57,14 +58,14 @@ def make_buttons(parent, b0):
         btn.setEnabled(False)
         parent.color_names[b] = parent.color_names[b][3:]
         b += 1
-    parent.chan2edit = QtGui.QLineEdit(parent)
+    parent.chan2edit = QLineEdit(parent)
     parent.chan2edit.setText("0.6")
     parent.chan2edit.setFixedWidth(iwid)
     parent.chan2edit.setAlignment(QtCore.Qt.AlignRight)
     parent.chan2edit.returnPressed.connect(lambda: chan2_prob(parent))
     parent.l0.addWidget(parent.chan2edit, nv + b - 4, 1, 1, 1)
 
-    parent.probedit = QtGui.QLineEdit(parent)
+    parent.probedit = QLineEdit(parent)
     parent.probedit.setText("0.5")
     parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
@@ -73,7 +74,7 @@ def make_buttons(parent, b0):
     )
     parent.l0.addWidget(parent.probedit, nv + b - 3, 1, 1, 1)
 
-    parent.binedit = QtGui.QLineEdit(parent)
+    parent.binedit = QLineEdit(parent)
     parent.binedit.setValidator(QtGui.QIntValidator(0, 500))
     parent.binedit.setText("1")
     parent.binedit.setFixedWidth(iwid)
@@ -157,12 +158,14 @@ def flip_plot(parent):
     parent.iflip = parent.ichosen
     for n in parent.imerge:
         iscell = int(parent.iscell[n])
+            
         parent.iscell[n] = ~parent.iscell[n]
         parent.ichosen = n
         flip_roi(parent)
         if 'imerge' in parent.stat[n]:
             for k in parent.stat[n]['imerge']:
                 parent.iscell[k] = ~parent.iscell[k]
+        
     parent.update_plot()
 
     # Check if `iscell.npy` file exists
@@ -227,8 +230,20 @@ def init_masks(parent):
     parent.rois['Lam']    = np.zeros((2,3,Ly,Lx), np.float32)
     parent.rois['iROI']   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
+    for n in range(len(parent.roi_text_labels)):
+        parent.checkBoxN.setChecked(False)
+        try:
+            parent.p1.removeItem(parent.roi_text_labels[n])
+        except:
+            pass 
+        try:
+            parent.p2.removeItem(parent.roi_text_labels[n])
+        except:
+            pass 
+        
     # ignore merged cells
     iignore = np.zeros(ncells, np.bool)
+    parent.roi_text_labels = []
     for n in np.arange(ncells-1,-1,-1,int):
         ypix = stat[n]['ypix']
         if ypix is not None and not iignore[n]:
@@ -251,6 +266,17 @@ def init_masks(parent):
             parent.rois['Lam'][i,0,ypix,xpix] = lam
             parent.rois['Sroi'][i,ypix,xpix] = 1
             LamAll[ypix,xpix] = lam
+            med = stat[n]['med']
+            cell_str = str(n)
+        else:
+            cell_str = ''
+            med = (0,0)
+        txt = pg.TextItem(cell_str, color=(180,180,180),
+                          anchor=(0.5,0.5))
+        txt.setPos(med[1], med[0])
+        txt.setFont(QtGui.QFont("Times", 8, weight=QtGui.QFont.Bold))
+        parent.roi_text_labels.append(txt)
+    parent.roi_text_labels = parent.roi_text_labels[::-1]
 
     parent.rois['LamMean'] = LamAll[LamAll>1e-10].mean()
     parent.rois['LamNorm'] = np.maximum(0, np.minimum(1, 0.75*parent.rois['Lam'][:,0]/parent.rois['LamMean']))
@@ -439,6 +465,8 @@ def plot_masks(parent, M):
     #M = parent.RGB[:,:,np.newaxis], parent.Alpha[]
     parent.color1.setImage(M[0], levels=(0., 255.))
     parent.color2.setImage(M[1], levels=(0., 255.))
+    
+    #    parent.p1.addItem(txt)
     parent.color1.show()
     parent.color2.show()
 
@@ -508,6 +536,15 @@ def flip_roi(parent):
     n = parent.ichosen
     i = int(1-parent.iscell[n])
     i0 = 1-i
+    if parent.roitext:
+        if i0==1:
+            parent.p1.removeItem(parent.roi_text_labels[n])
+            parent.p2.addItem(parent.roi_text_labels[n])
+        else:
+            parent.p2.removeItem(parent.roi_text_labels[n])
+            parent.p1.addItem(parent.roi_text_labels[n])
+        
+    
     # remove ROI
     remove_roi(parent, n, i0)
     # add cell to other side (on top) and push down overlaps
@@ -550,7 +587,7 @@ def istat_transform(istat, colormap='hsv'):
 
 ### Changes colors of ROIs
 # button group is exclusive (at least one color is always chosen)
-class ColorButton(QtGui.QPushButton):
+class ColorButton(QPushButton):
     def __init__(self, bid, Text, parent=None):
         super(ColorButton,self).__init__(parent)
         self.setText(Text)

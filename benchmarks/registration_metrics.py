@@ -25,6 +25,8 @@ def registration_metrics(data_path, tiff_list, ops, nPC=10):
         ops['tiff_list'] = tiff_list
 
     result_ops = suite2p.run_s2p(ops)
+    if not isinstance(result_ops, list) or not isinstance(result_ops, np.ndarray):
+        result_ops = [result_ops]
     metric_results = []
     for nplane, result_op in enumerate(result_ops):
         offsets = result_op['regDX']

@@ -4,14 +4,43 @@ from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
-from numpy.fft import ifftshift, fft2, ifft2
-from scipy.fftpack import next_fast_len
+from numpy.fft import ifftshift#, fft2, ifft2
+from scipy.fft import next_fast_len#, fft2, ifft2
 from scipy.ndimage import gaussian_filter1d
+import torch
 
+# there are two formats of fft
 try:
-    from mkl_fft import fft2, ifft2
-except ModuleNotFoundError:
-    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
+    # pytorch > 1.7
+    from torch.fft import fft as torch_fft 
+    from torch.fft import ifft as torch_ifft 
+except:
+    # pytorch <= 1.7
+    from torch import fft as torch_fft 
+    from torch import ifft as torch_ifft 
+
+def fft2(data, size=None):
+    """ compute fft2 over last two dimensions using pytorch
+    size (padding) is not used
+    """
+    data_torch = torch.from_numpy(data)
+    data2 = torch_fft(data_torch, dim=-1)
+    data2 = torch_fft(data2, dim=-2)
+    return data2.cpu().numpy()
+
+def ifft2(data, size=None):
+    """ compute ifft2 over last two dimensions using pytorch
+    size (padding) is not used
+    """
+    data_torch = torch.from_numpy(data)
+    data2 = torch_ifft(data_torch, dim=-1)
+    data2 = torch_ifft(data2, dim=-2)
+    return data2.cpu().numpy()
+
+#try:
+#    from mkl_fft import fft2, ifft2
+#except ModuleNotFoundError:
+#    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
@@ -202,7 +231,7 @@ def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     -------
     convolved_data: nImg x Ly x Lx
     """
-    return ifft2(apply_dotnorm(fft2(mov), img))
+    return ifft2(apply_dotnorm(fft2(mov), img)) #.astype(np.complex64)
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:

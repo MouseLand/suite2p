@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui
+from PyQt5.QtWidgets import QDialog, QLineEdit, QGridLayout, QMessageBox, QLabel, QPushButton, QWidget
 from scipy import stats
 
 from . import masks, io
@@ -21,13 +22,13 @@ def distance_matrix(parent, ilist):
     return idist
 
 def do_merge(parent):
-    dm = QtGui.QMessageBox.question(
+    dm = QMessageBox.question(
         parent,
         "Merge cells",
         "Do you want to merge selected cells?",
-        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+        QMessageBox.Yes | QMessageBox.No,
     )
-    if dm == QtGui.QMessageBox.Yes:
+    if dm == QMessageBox.Yes:
         merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
         parent.update_plot()
@@ -183,13 +184,13 @@ def merge_activity_masks(parent):
     masks.add_roi(parent, len(parent.stat)-1, i0)
     masks.redraw_masks(parent, ypix, xpix)
 
-class MergeWindow(QtGui.QDialog):
+class MergeWindow(QDialog):
     def __init__(self, parent=None):
         super(MergeWindow, self).__init__(parent)
         self.setGeometry(700,300,700,700)
         self.setWindowTitle('Choose merge options')
-        self.cwidget = QtGui.QWidget(self)
-        self.layout = QtGui.QGridLayout()
+        self.cwidget = QWidget(self)
+        self.layout = QGridLayout()
         self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
         self.cwidget.setLayout(self.layout)
@@ -202,30 +203,30 @@ class MergeWindow(QtGui.QDialog):
         mkeys = ['corr_thres', 'dist_thres']
         mlabels = ['correlation threshold', 'euclidean distance threshold']
         self.ops = {'corr_thres': 0.8, 'dist_thres': 100.0}
-        self.layout.addWidget(QtGui.QLabel('Press enter in a text box to update params'), 0, 0, 1,2)
-        self.layout.addWidget(QtGui.QLabel('(Correlations use "activity mode" and "bin" from main GUI)'), 1, 0, 1,2)
-        self.layout.addWidget(QtGui.QLabel('>>>>>>>>>>>> Parameters <<<<<<<<<<<'), 2, 0, 1,2)
-        self.doMerge = QtGui.QPushButton('merge selected ROIs', default=False, autoDefault=False)
+        self.layout.addWidget(QLabel('Press enter in a text box to update params'), 0, 0, 1,2)
+        self.layout.addWidget(QLabel('(Correlations use "activity mode" and "bin" from main GUI)'), 1, 0, 1,2)
+        self.layout.addWidget(QLabel('>>>>>>>>>>>> Parameters <<<<<<<<<<<'), 2, 0, 1,2)
+        self.doMerge = QPushButton('merge selected ROIs', default=False, autoDefault=False)
         self.doMerge.clicked.connect(lambda: self.do_merge(parent))
         self.doMerge.setEnabled(False)
         self.layout.addWidget(self.doMerge, 9,0,1,1)
 
-        self.suggestMerge = QtGui.QPushButton('next merge suggestion', default=False, autoDefault=False)
+        self.suggestMerge = QPushButton('next merge suggestion', default=False, autoDefault=False)
         self.suggestMerge.clicked.connect(lambda: self.suggest_merge(parent))
         self.suggestMerge.setEnabled(False)
         self.layout.addWidget(self.suggestMerge, 10,0,1,1)
 
-        self.nMerge = QtGui.QLabel('= X possible merges found with these parameters')
+        self.nMerge = QLabel('= X possible merges found with these parameters')
         self.layout.addWidget(self.nMerge, 7,0,1,2)
 
-        self.iMerge = QtGui.QLabel('suggested ROIs to merge: ')
+        self.iMerge = QLabel('suggested ROIs to merge: ')
         self.layout.addWidget(self.iMerge, 8,0,1,2)
 
         self.editlist = []
         self.keylist = []
         k=1
         for lkey,llabel in zip(mkeys, mlabels):
-            qlabel = QtGui.QLabel(llabel)
+            qlabel = QLabel(llabel)
             qlabel.setFont(QtGui.QFont("Times",weight=QtGui.QFont.Bold))
             self.layout.addWidget(qlabel, k*2+1,0,1,2)
             qedit = LineEdit(lkey,self)
@@ -335,7 +336,7 @@ class MergeWindow(QtGui.QDialog):
         parent.win.show()
         parent.show()
 
-class LineEdit(QtGui.QLineEdit):
+class LineEdit(QLineEdit):
     def __init__(self,key,parent=None):
         super(LineEdit,self).__init__(parent)
         self.key = key

@@ -11,6 +11,7 @@ def test_do_registration_do_roi_detect_settings_check_timing(test_ops):
         'roidetect': False,
         'do_registration': False,
         'spikedetect': False,
+        'batch_size': 100,
     })
     conv_only_ops = suite2p.run_s2p(ops=test_ops)  # conversion only
     assert list(conv_only_ops['timing'].keys()) == ['total_plane_runtime']

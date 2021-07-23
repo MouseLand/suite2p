@@ -4,6 +4,8 @@ import numpy as np
 
 from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_fft, temporal_smooth
 
+import torch
+
 
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -43,7 +45,7 @@ def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -
     return addmultiply(data, maskMul, maskOffset)
 
 
-def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = False) -> np.ndarray:
+def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     """
     Returns reference image fft'ed and complex conjugate and multiplied by gaussian filter in the fft domain,
     with standard deviation 'smooth_sigma' computes fft'ed reference image for phasecorr.
@@ -57,11 +59,10 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None, pad_fft: bool = F
     -------
     cfRefImg : 2D array, complex64
     """
-    cfRefImg = complex_fft2(img=refImg, pad_fft=pad_fft)
+    cfRefImg = complex_fft2(img=refImg)
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
     cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
     return cfRefImg.astype('complex64')
-
 
 def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int, float]:
     """ compute phase correlation between data and reference image
@@ -85,16 +86,17 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
         maximum of phase correlation for each frame
 
     """
-    
-    data = convolve(data, cfRefImg)
     min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
+    
+    data = convolve(data, cfRefImg)
     cc = np.real(
-        np.block(
-            [[data[:,  -lcorr:, -lcorr:], data[:,  -lcorr:, :lcorr+1]],
-             [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
+            np.block(
+                [[data[:,  -lcorr:, -lcorr:], data[:,  -lcorr:, :lcorr+1]],
+                [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
+            )
         )
-    )
+    
     cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc
 
     ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)

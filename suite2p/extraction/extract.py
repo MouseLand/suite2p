@@ -6,6 +6,7 @@ from numba import prange, njit, jit
 from numba.typed import List
 from scipy import stats, signal
 from .masks import create_masks
+from ..io import BinaryFile
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -33,8 +34,9 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         each element is neuropil pixels in (Ly*Lx) coordinates
         GOING TO BE DEPRECATED: size [ncells x npixels] where weights of each mask are elements
 
-    reg_file : string
-        path to registered binary file
+    reg_file : io.BinaryFile object
+        io.BinaryFile object that has iter_frames(batch_size=ops['batch_size']) method
+        
 
     Returns
     ----------------
@@ -58,36 +60,30 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     F    = np.zeros((ncells, nframes),np.float32)
     Fneu = np.zeros((ncells, nframes),np.float32)
 
-    reg_file = open(reg_file, 'rb')
     nimgbatch = int(nimgbatch)
-    block_size = Ly*Lx*nimgbatch*2
-    ix = 0
-    data = 1
-    neuropil_ipix = None
+    
+    cell_ipix = [cell_mask[0].astype(np.int64) for cell_mask in cell_masks]
+    cell_lam = [cell_mask[1].astype(np.float32) for cell_mask in cell_masks]
 
-    cell_ipix = List()
-    [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
-    cell_lam = List()
-    [cell_lam.append(cell_mask[1].astype(np.float32)) for cell_mask in cell_masks]
     if neuropil_masks is not None:
         if isinstance(neuropil_masks, np.ndarray) and neuropil_masks.shape[1] == Ly*Lx:
             neuropil_masks = [np.nonzero(neuropil_mask)[0] for neuropil_mask in neuropil_masks]
         else:
             neuropil_masks = [neuropil_mask.astype(np.int64) for neuropil_mask in neuropil_masks]
-        neuropil_ipix = List()
-        [neuropil_ipix.append(neuropil_mask) for neuropil_mask in neuropil_masks]
+        neuropil_ipix = neuropil_masks
         neuropil_npix = np.array([len(neuropil_ipixi) for neuropil_ipixi in neuropil_ipix]).astype(np.float32)
+    else:
+        neuropil_ipix = None
 
-    while data is not None:
-        buff = reg_file.read(block_size)
-        data = np.frombuffer(buff, dtype=np.int16, offset=0)
-        nimg = int(np.floor(data.size / (Ly*Lx)))
+    ix = 0
+    for k, (_, data) in enumerate(reg_file.iter_frames(batch_size=ops['batch_size'])):
+        nimg = data.shape[0]
         if nimg == 0:
             break
-        data = np.reshape(data, (-1, Ly, Lx))
         inds = ix+np.arange(0,nimg,1,int)
         data = np.reshape(data, (nimg,-1)).astype(np.float32)
         Fi = np.zeros((ncells, data.shape[0]), np.float32)
+        
         # extract traces and neuropil
         
         # (WITHOUT NUMBA)
@@ -127,9 +123,13 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     
     """
     F_chan2, Fneu_chan2 = [], []
-    F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, ops['reg_file'])
+    with BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
+                    read_filename=ops['reg_file']) as f:    
+        F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, f)
     if 'reg_file_chan2' in ops:
-        F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, ops['reg_file_chan2'])
+        with BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
+                        read_filename=ops['reg_file_chan2']) as f:    
+            F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, f)
     return F, Fneu, F_chan2, Fneu_chan2, ops
 
 def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):

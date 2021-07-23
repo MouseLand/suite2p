@@ -1,11 +1,12 @@
 import numpy as np
 from PyQt5 import QtGui, QtCore
+from PyQt5.QtWidgets import QPushButton, QButtonGroup, QLabel, QLineEdit
 
 
 def make_selection(parent):
     """ buttons to draw a square on view """
-    parent.topbtns = QtGui.QButtonGroup()
-    ql = QtGui.QLabel("select cells")
+    parent.topbtns = QButtonGroup()
+    ql = QLabel("select cells")
     ql.setStyleSheet("color: white;")
     ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.l0.addWidget(ql, 0, 2, 1, 2)
@@ -19,12 +20,12 @@ def make_selection(parent):
     parent.topbtns.setExclusive(True)
     parent.isROI = False
     parent.ROIplot = 0
-    ql = QtGui.QLabel("n=")
+    ql = QLabel("n=")
     ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
     ql.setStyleSheet("color: white;")
     ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.l0.addWidget(ql, 0, 10, 1, 1)
-    parent.topedit = QtGui.QLineEdit(parent)
+    parent.topedit = QLineEdit(parent)
     parent.topedit.setValidator(QtGui.QIntValidator(0, 500))
     parent.topedit.setText("40")
     parent.ntop = 40
@@ -37,15 +38,15 @@ def make_selection(parent):
 def make_cellnotcell(parent):
     """ buttons for cell / not cell views at top """
     # number of ROIs in each image
-    parent.lcell0 = QtGui.QLabel("")
+    parent.lcell0 = QLabel("")
     parent.lcell0.setStyleSheet("color: white;")
     parent.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
     parent.l0.addWidget(parent.lcell0, 0, 12, 1, 2)
-    parent.lcell1 = QtGui.QLabel("")
+    parent.lcell1 = QLabel("")
     parent.lcell1.setStyleSheet("color: white;")
     parent.l0.addWidget(parent.lcell1, 0, 20, 1, 2)
 
-    parent.sizebtns = QtGui.QButtonGroup(parent)
+    parent.sizebtns = QButtonGroup(parent)
     b = 0
     labels = [" cells", " both", " not cells"]
     for l in labels:
@@ -60,7 +61,7 @@ def make_cellnotcell(parent):
 
 def make_quadrants(parent):
     """ make quadrant buttons """
-    parent.quadbtns = QtGui.QButtonGroup(parent)
+    parent.quadbtns = QButtonGroup(parent)
     for b in range(9):
         btn = QuadButton(b, ' '+str(b+1), parent)
         parent.quadbtns.addButton(btn, b)
@@ -69,7 +70,7 @@ def make_quadrants(parent):
         b += 1
     parent.quadbtns.setExclusive(True)
 
-class QuadButton(QtGui.QPushButton):
+class QuadButton(QPushButton):
     """ custom QPushButton class for quadrant plotting
         requires buttons to put into a QButtonGroup (parent.quadbtns)
          allows only 1 button to pressed at a time
@@ -104,7 +105,7 @@ class QuadButton(QtGui.QPushButton):
 
 
 # size of view
-class SizeButton(QtGui.QPushButton):
+class SizeButton(QPushButton):
     """ buttons to make trace box bigger or smaller """
     def __init__(self, bid, Text, parent=None):
         super(SizeButton,self).__init__(parent)
@@ -155,7 +156,7 @@ class SizeButton(QtGui.QPushButton):
         parent.show()
 
 # 
-class TopButton(QtGui.QPushButton):
+class TopButton(QPushButton):
     """ selection of top neurons"""
     def __init__(self, bid, parent=None):
         super(TopButton,self).__init__(parent)

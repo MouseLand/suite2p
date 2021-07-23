@@ -1,5 +1,50 @@
 import setuptools
 
+install_deps = ['importlib-metadata',
+        'natsort',
+        'rastermap>0.1.0',
+        'tifffile',
+        'scanimage-tiff-reader>=1.4.1',
+        'torch>=1.7.1',
+        'paramiko',
+        'numpy>=1.16',
+        'numba>=0.43.1',
+        'matplotlib',
+        'scipy',
+        'h5py',
+        'sbxreader',
+        'scikit-learn',]
+
+gui_deps = [
+        "pyqt5",
+        "pyqt5-tools",
+        "pyqt5.sip",
+        'pyqtgraph',
+        'rastermap>0.1.0',
+      ]
+data_deps = [
+        "dvc==1.11.0",
+        "pydrive2",
+      ]
+nwb_deps = [
+        "pynwb",
+      ]
+test_deps = [
+      'pytest',
+      'pytest-qt==3.3.0',
+    ]
+
+all_deps = gui_deps + data_deps + nwb_deps
+
+try:
+    import torch
+    a = torch.ones(2, 3)
+    version = int(torch.__version__[2])
+    if version >= 6:
+        install_deps.remove('torch')
+except:
+    pass
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -17,24 +62,8 @@ setuptools.setup(
       'setuptools_scm',
     ],
     use_scm_version=True,
-    install_requires=['importlib-metadata',
-        'natsort',
-        'rastermap>0.1.0',
-        'tifffile',
-        'scanimage-tiff-reader>=1.4.1',
-        'pyqtgraph',
-        'paramiko',
-        'numpy>=1.16',
-        'numba>=0.43.1',
-        'matplotlib',
-        'scipy',
-        'h5py',
-        'sbxreader',
-        'scikit-learn',],  # see environment.yml for this info.
-    tests_require=[
-      'pytest',
-      'pytest-qt',
-    ],
+    install_requires=install_deps,
+    tests_require=test_deps,
     extras_require={
       "docs": [
         'sphinx>=3.0',
@@ -43,24 +72,10 @@ setuptools.setup(
         'sphinx-prompt',
         'sphinx-autodoc-typehints',
       ],
-      # Note: Available in pypi, but cleaner to install as pyqt from conda.
-      "gui": [
-        "pyqt5",
-        "pyqt5-tools",
-        "pyqt5.sip",
-      ],
-      # Note: Not currently available in pip: use conda to install.
-      "mkl": [
-        "mkl_fft>=1.0.10",
-        "mkl>=2019.3",
-      ],
-      "data": [
-        "dvc==1.11.0",
-        "pydrive2",
-      ],
-      "nwb": [
-        "pynwb",
-      ]
+      "gui": gui_deps,
+      "data": data_deps,
+      "nwb": nwb_deps,
+      "all": all_deps
     },
     include_package_data=True,
     classifiers=[

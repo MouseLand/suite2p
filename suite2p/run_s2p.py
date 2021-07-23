@@ -4,6 +4,7 @@ import time
 from natsort import natsorted
 from datetime import datetime
 from getpass import getpass
+import pathlib
 
 import numpy as np
 from scipy.io import savemat
@@ -294,13 +295,18 @@ def run_plane(ops, ops_path=None, stat=None):
 
         # save as matlab file
         if ops.get('save_mat'):
-            if isinstance(ops.get('date_proc'), datetime):
-                ops['date_proc'] = datetime.strftime(ops['date_proc'], "%Y-%m-%d %H:%M:%S.%f"),
+            ops_matlab = ops.copy()
+            if isinstance(ops_matlab.get('date_proc'), datetime):
+                ops_matlab['date_proc'] = datetime.strftime(ops_matlab['date_proc'], "%Y-%m-%d %H:%M:%S.%f"),
+            for k in ops_matlab.keys():
+                if isinstance(ops_matlab[k], pathlib.Path):
+                    ops_matlab[k] = os.fspath(ops_matlab[k].absolute())
+            ops_matlab['data_path'] = [os.fspath(p.absolute()) for p in ops_matlab['data_path']]
             savemat(
                 file_name=os.path.join(ops['save_path'], 'Fall.mat'),
                 mdict={
                     'stat': np.load(os.path.join(fpath, 'stat.npy'), allow_pickle=True),
-                    'ops': ops,
+                    'ops': ops_matlab,
                     'F': F,
                     'Fneu': Fneu,
                     'spks': spks,

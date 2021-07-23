@@ -62,17 +62,14 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
 
     nimgbatch = int(nimgbatch)
     
-    cell_ipix = List()
-    [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
-    cell_lam = List()
-    [cell_lam.append(cell_mask[1].astype(np.float32)) for cell_mask in cell_masks]
+    cell_ipix = [cell_mask[0].astype(np.int64) for cell_mask in cell_masks]
+    cell_lam = [cell_mask[1].astype(np.float32) for cell_mask in cell_masks]
     if neuropil_masks is not None:
         if isinstance(neuropil_masks, np.ndarray) and neuropil_masks.shape[1] == Ly*Lx:
             neuropil_masks = [np.nonzero(neuropil_mask)[0] for neuropil_mask in neuropil_masks]
         else:
             neuropil_masks = [neuropil_mask.astype(np.int64) for neuropil_mask in neuropil_masks]
-        neuropil_ipix = List()
-        [neuropil_ipix.append(neuropil_mask) for neuropil_mask in neuropil_masks]
+        neuropil_ipix = neuropil_masks
         neuropil_npix = np.array([len(neuropil_ipixi) for neuropil_ipixi in neuropil_ipix]).astype(np.float32)
 
     ix = 0

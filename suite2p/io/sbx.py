@@ -72,7 +72,7 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
     for ifile,sbxfname in enumerate(sbxlist):
         f = sbx_memmap(sbxfname)
         nplanes = f.shape[1]
-        nchannels = f.shape[2]
+        #nchannels = f.shape[2]
         nframes = f.shape[0]
         iblocks = np.arange(0,nframes,ops1[0]['batch_size'])
         if iblocks[-1] < nframes:

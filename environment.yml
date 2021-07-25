@@ -10,7 +10,7 @@ dependencies:
   - numpy
   - numba
   - matplotlib
-  - scipy
+  - scipy<1.6.3
   - scikit-learn
   - pytorch>=1.7.1
   - h5py=2.10.0

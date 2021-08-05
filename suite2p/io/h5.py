@@ -42,12 +42,14 @@ def h5py_to_binary(ops):
 
     for ih5,h5 in enumerate(h5list):
         with h5py.File(h5, 'r') as f:
-            # if h5py data is 4D instead of 3D, assume that
-            # data = nframes x nplanes x pixels x pixels
+            # if h5py data is 5D or 4D instead of 3D, assume that
+            # data = (nchan x) (nframes x) nplanes x pixels x pixels 
+            # 5D/4D data is flattened to process the same way as interleaved data
             for key in keys:
                 hdims = f[key].ndim
                 # keep track of the plane identity of the first frame (channel identity is assumed always 0)
-                nbatch = nplanes*nchannels*math.ceil(ops1[0]['batch_size']/(nplanes*nchannels))
+                ncp = nplanes*nchannels
+                nbatch = ncp * math.ceil(ops1[0]['batch_size'] / ncp)
                 nframes_all = f[key].shape[0] if hdims == 3 else f[key].shape[0] * f[key].shape[1]
                 nbatch = min(nbatch, nframes_all)
                 nfunc = ops['functional_chan'] - 1 if nchannels > 1 else 0
@@ -60,11 +62,15 @@ def h5py_to_binary(ops):
                             break
                         im = f[key][irange, :, :]
                     else:
-                        irange = np.arange(ik/nplanes, min(ik/nplanes+nbatch/nplanes, nframes_all/nplanes), 1)
+                        irange = np.arange(ik/ncp, 
+                                           min(ik/ncp + nbatch/ncp, nframes_all/ncp), 1)
                         if irange.size==0:
                             break
-                        im = f[key][irange,:,:,:]
-                        im = np.reshape(im, (im.shape[0]*nplanes,im.shape[2],im.shape[3]))
+                        im = f[key][irange,...]
+                        if im.ndim==5 and im.shape[0] == nchannels:
+                            im = im.transpose((1,0,2,3,4))
+                        # flatten to frames x pixels x pixels
+                        im = np.reshape(im, (-1, im.shape[-2], im.shape[-1]))
                     nframes = im.shape[0]
                     if type(im[0,0,0]) == np.uint16:
                         im = im / 2
@@ -75,11 +81,11 @@ def h5py_to_binary(ops):
                                 ops1[j]['meanImg_chan2'] = np.zeros((im.shape[1],im.shape[2]),np.float32)
                             ops1[j]['nframes'] = 0
                         i0 = nchannels * ((j)%nplanes)
-                        im2write = im[np.arange(int(i0)+nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                        im2write = im[np.arange(int(i0)+nfunc, nframes, ncp),:,:].astype(np.int16)
                         reg_file[j].write(bytearray(im2write))
                         ops1[j]['meanImg'] += im2write.astype(np.float32).sum(axis=0)
                         if nchannels>1:
-                            im2write = im[np.arange(int(i0)+1-nfunc, nframes, nplanes*nchannels),:,:].astype(np.int16)
+                            im2write = im[np.arange(int(i0)+1-nfunc, nframes, ncp),:,:].astype(np.int16)
                             reg_file_chan2[j].write(bytearray(im2write))
                             ops1[j]['meanImg_chan2'] += im2write.astype(np.float32).sum(axis=0)
                         ops1[j]['nframes'] += im2write.shape[0]

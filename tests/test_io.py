@@ -69,6 +69,8 @@ def replace_ops_save_path_with_local_path(request):
 
 def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     test_ops['h5py'] = Path(test_ops['data_path'][0]).joinpath('input.h5')
+    test_ops['nplanes'] = 3
+    test_ops['nchannels'] = 2
     test_ops['data_path'] = []
     op = io.h5py_to_binary(test_ops)
     output_data = io.BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data

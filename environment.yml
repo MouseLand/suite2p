@@ -1,6 +1,7 @@
 name: suite2p
 channels:
   - pytorch
+  - numba
 dependencies:
   - python>=3.8,<3.9
   - pip

@@ -6,7 +6,8 @@ Note: Marius and Carsen are currently at The Neuromatch Academy, and we won't do
 [![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
 [![Coverage Status](https://coveralls.io/repos/github/MouseLand/suite2p/badge.svg?branch=dev)](https://coveralls.io/github/MouseLand/suite2p?branch=dev)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/suite2p)](https://pypistats.org/packages/suite2p)
+[![Downloads](https://pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
+[![Downloads](https://pepy.tech/badge/suite2p/month)](https://pepy.tech/project/suite2p)
 [![Python version](https://img.shields.io/pypi/pyversions/suite2p)](https://pypistats.org/packages/suite2p)
 [![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors-anon/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/graphs/contributors)
@@ -59,6 +60,16 @@ To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), 
 pip install --upgrade suite2p
 ~~~~
 
+### Installing the latest github version of the code
+
+The simplest way is
+~~~
+pip install git+https://github.com/MouseLand/suite2p.git
+~~~
+
+If you want to download and edit the code, and use that version,
+1. Clone the repository with git and `cd suite2p` 
+2. Run `pip install -e .` in that folder
 
 **Common issues**
 
@@ -66,14 +77,14 @@ If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to insta
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
 
-## Installation of github version for developers
+## Installation for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install -e .[data]`
 5. Download the data with ``dvc pull -r gdrive-travis`` (read-only access). If you need to have read/write access to the files, run ``dvc pull`` and follow the authentication instructions in the output. **Note**: do *not* commit the json credentials file that comes out afterwards, git should ignore it.
-6. Run tests: `python setup.py test`
+6. Run tests: `python setup.py test` or `pytest tests\`
 
 
 ## Examples

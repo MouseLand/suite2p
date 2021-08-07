@@ -63,6 +63,7 @@ def test_2plane_2chan_with_batches(test_ops):
             'nchannels': 2,
             'reg_tif': True,
             'reg_tif_chan2': True,
+            'save_mat': True
         })
         nplanes = ops['nplanes']
         suite2p.run_s2p(ops=ops)

@@ -1,9 +1,38 @@
 import os
 from natsort import natsorted
 import numpy as np
+from datetime import datetime
 import scipy
 import pathlib
 
+def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
+    ops_matlab = ops.copy()
+    if ops_matlab.get('date_proc'):
+        try:
+            ops_matlab['date_proc'] = str(datetime.strftime(ops_matlab['date_proc'], "%Y-%m-%d %H:%M:%S.%f"))
+        except:
+            pass
+    for k in ops_matlab.keys():
+        if isinstance(ops_matlab[k], (pathlib.WindowsPath, pathlib.PosixPath)):
+            ops_matlab[k] = os.fspath(ops_matlab[k].absolute())
+        elif isinstance(ops_matlab[k], list) and len(ops_matlab[k]) > 0:
+            if isinstance(ops_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
+                ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
+                print(k, ops_matlab[k])
+
+        
+    scipy.io.savemat(
+        file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+        mdict={
+            'stat': stat,
+            'ops': ops_matlab,
+            'F': F,
+            'Fneu': Fneu,
+            'spks': spks,
+            'iscell': iscell,
+            'redcell': redcell
+        }
+    )
 
 def compute_dydx(ops1):
     ops = ops1[0].copy()
@@ -163,15 +192,9 @@ def combined(save_folder, save=True):
         np.save(os.path.join(fpath, 'stat.npy'), stat)
         
         # save as matlab file
-        if ('save_mat' in ops) and ops['save_mat']:
+        if ops.get('save_mat'):
             matpath = os.path.join(ops['save_path'],'Fall.mat')
-            scipy.io.savemat(matpath, {'stat': stat,
-                                        'ops': ops,
-                                        'F': F,
-                                        'Fneu': Fneu,
-                                        'spks': spks,
-                                        'iscell': iscell,
-                                        'redcell': redcell})
-
+            save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
+            
     return stat, ops, F, Fneu, spks, iscell[:,0], iscell[:,1], redcell[:,0], redcell[:,1], hasred
 

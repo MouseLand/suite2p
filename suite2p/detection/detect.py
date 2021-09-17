@@ -35,7 +35,11 @@ def detect(ops, classfile=None):
             x_range=ops['xrange'],
         )
     print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
-    
+    if ops.get('inverted_activity', False):
+        mov -= mov.min()
+        mov *= -1
+        mov -= mov.min()
+
     if ops.get('denoise', 1):
         mov = pca_denoise(mov, block_size=[ops['block_size'][0]//2, ops['block_size'][1]//2],
                             n_comps_frac = 0.5)

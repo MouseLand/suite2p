@@ -109,11 +109,11 @@ If you circle an ROI in the manual selection GUI on top of another ROI and ops['
 then that ROI will have no activity because it has no non-overlapping pixels. You can change this after processing with 
 
 ::
- 
+
    import numpy as np
    np.load('ops.npy', allow_pickle=True).item()
    np.save('ops_original.npy', ops)
    ops['allow_overlap'] = True
-   np.save('ops.npy', ops, allow_pickle=True)
+   np.save('ops.npy', ops)
 
 Thanks @marysethomas, See full issue here: `#651 <https://github.com/MouseLand/suite2p/issues/651>`_,

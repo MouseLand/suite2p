@@ -10,7 +10,7 @@ install_deps = ['importlib-metadata',
         'numpy>=1.16',
         'numba>=0.43.1',
         'matplotlib',
-        'scipy',
+        'scipy>=1.4.0',
         'h5py',
         'sbxreader',
         'scikit-learn',]

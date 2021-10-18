@@ -13,7 +13,7 @@ dependencies:
   - scikit-learn
   - h5py=2.10.0
   - pip:
-    - scipy
+    - scipy>=1.4.0
     - pyqt5
     - pyqt5.sip
     - pyqt5-tools

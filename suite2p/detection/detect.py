@@ -12,7 +12,9 @@ from ..classification import classify, user_classfile
 try:
     from . import anatomical
     CELLPOSE_INSTALLED = True
-except:
+except as e:
+    print('ERROR in cellpose import:')
+    print(e)
     CELLPOSE_INSTALLED = False
 
 
@@ -46,7 +48,7 @@ def detect(ops, classfile=None):
 
     t0 = time.time()
     if ops.get('anatomical_only', 0) and not CELLPOSE_INSTALLED:
-        print('~~~ tried anatomical but failed, install cellpose to use: ~~~')
+        print('~~~ tried to import cellpose to run anatomical but failed, install with: ~~~')
         print('$ pip install cellpose')
 
     if ops.get('anatomical_only', 0) > 0 and CELLPOSE_INSTALLED:

@@ -12,9 +12,10 @@ from ..classification import classify, user_classfile
 try:
     from . import anatomical
     CELLPOSE_INSTALLED = True
-except as e:
-    print('ERROR in cellpose import:')
+except Exception as e:
+    print('Warning: cellpose did not import')
     print(e)
+    print('cannot use anatomical mode, but otherwise suite2p will run normally')
     CELLPOSE_INSTALLED = False
 
 

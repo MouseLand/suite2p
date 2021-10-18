@@ -96,11 +96,10 @@ def make_masks_and_enable_buttons(parent):
     parent.xyrat = 1.0
     if (isinstance(parent.ops['diameter'], (list, np.ndarray)) and
         len(parent.ops['diameter'])>1 and
-        parent.ops['aspect']==1.0):
+        parent.ops.get('aspect', 1.0)):
         parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
     else:
-        if 'aspect' in parent.ops:
-            parent.xyrat = parent.ops['aspect']
+        parent.xyrat = parent.ops.get('aspect', 1.0)
 
     parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
     parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)

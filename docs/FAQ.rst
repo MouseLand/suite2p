@@ -101,3 +101,18 @@ Scanimage now can do z-correction ONLINE for you!
 
 .. image:: _static/scanimage.png
    :width: 600
+
+No signals in manually selected ROIs 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you circle an ROI in the manual selection GUI on top of another ROI and ops['allow_overlap'] is 0 or False,
+then that ROI will have no activity because it has no non-overlapping pixels. You can change this after processing with 
+
+:: 
+   import numpy as np
+   np.load('ops.npy', allow_pickle=True).item()
+   np.save('ops_original.npy', ops)
+   ops['allow_overlap'] = True
+   np.save('ops.npy', ops, allow_pickle=True)
+
+Thanks @marysethomas, See full issue here: `#651 <https://github.com/MouseLand/suite2p/issues/651>`_,

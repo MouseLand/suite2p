@@ -161,8 +161,7 @@ def compute_zpos(Zreg, ops):
         )
         cfRefImag = rigid.phasecorr_reference(
             refImg=Z,
-            smooth_sigma=ops['smooth_sigma'],
-            pad_fft=ops['pad_fft'],
+            smooth_sigma=ops['smooth_sigma']
         )
         cfRefImag = cfRefImag[np.newaxis, :, :]
         refAndMasks.append((maskMul, maskOffset, cfRefImag))

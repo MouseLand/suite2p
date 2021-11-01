@@ -7,6 +7,7 @@ from numba.typed import List
 from scipy import stats, signal
 from .masks import create_masks
 from ..io import BinaryFile
+from numba.typed import List
 
 def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     """ extracts activity from reg_file using masks in stat and neuropil_masks
@@ -87,14 +88,14 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         # extract traces and neuropil
         
         # (WITHOUT NUMBA)
-        # for n in range(ncells):
+        #for n in range(ncells):
         #    F[n,inds] = np.dot(data[:, cell_masks[n][0]], cell_masks[n][1])
-        # Fneu[:,inds] = np.dot(neuropil_masks , data.T)
+        #Fneu[:,inds] = np.dot(neuropil_masks , data.T)
 
         # WITH NUMBA
-        F[:,inds] = matmul_traces(Fi, data, cell_ipix, cell_lam)
+        F[:,inds] = matmul_traces(Fi, data, List(cell_ipix), List(cell_lam))
         if neuropil_ipix is not None:
-            Fneu[:,inds] = matmul_neuropil(Fi, data, neuropil_ipix, neuropil_npix)
+            Fneu[:,inds] = matmul_neuropil(Fi, data, List(neuropil_ipix), neuropil_npix)
 
         ix += nimg
     print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))

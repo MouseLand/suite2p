@@ -11,7 +11,7 @@ from scipy import stats
 from . import io
 from ..extraction import masks
 from ..detection.stats import roi_stats
-from ..extraction import extract_traces_from_masks
+from ..extraction import extract_traces_from_masks, preprocess
 from ..extraction.dcnv import oasis
 
 
@@ -70,7 +70,14 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         manual_roi_stats[n]['std'] = sd[n]
         manual_roi_stats[n]['med'] = [np.mean(manual_roi_stats[n]['ypix']), np.mean(manual_roi_stats[n]['xpix'])]
 
-    dF = F - ops['neucoeff'] * Fneu
+    dF = preprocess(
+                F=dF,
+                baseline=ops['baseline'],
+                win_baseline=ops['win_baseline'],
+                sig_baseline=ops['sig_baseline'],
+                fs=ops['fs'],
+                prctile_baseline=ops['prctile_baseline']
+            )
     spks = oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
 
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, manual_roi_stats

@@ -342,6 +342,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         raw_file_align = ops.get('raw_file') if (ops['nchannels'] < 2 or ops['functional_chan'] == ops['align_by_chan']) else ops.get('raw_file_chan2')
     else:
         raw_file_align = None
+        if ops['do_bidiphase'] and ops['bidiphase'] != 0:
+            ops['bidi_corrected'] = True
 
     ### ----- compute and use bidiphase shift -------------- ###
     if refImg is None or (ops['do_bidiphase'] and ops['bidiphase'] == 0):
@@ -474,9 +476,6 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
-
-    if not raw:
-        ops['bidi_corrected'] = True
 
     return ops
 

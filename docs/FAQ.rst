@@ -116,4 +116,4 @@ then that ROI will have no activity because it has no non-overlapping pixels. Yo
    ops['allow_overlap'] = True
    np.save('ops.npy', ops)
 
-Thanks @marysethomas, See full issue here: `#651 <https://github.com/MouseLand/suite2p/issues/651>`_,
+Thanks @marysethomas, see full issue here: `#651 <https://github.com/MouseLand/suite2p/issues/651>`_,

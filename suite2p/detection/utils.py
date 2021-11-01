@@ -176,8 +176,9 @@ def temporal_high_pass_filter(mov: np.ndarray, width: int) -> np.ndarray:
     filtered_mov: nImg x Ly x Lx
         The filtered frames
     """
+    
     return hp_gaussian_filter(mov, width) if width < 10 else hp_rolling_mean_filter(mov, width)  # gaussian is slower
-
+    
 
 def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray:
     """

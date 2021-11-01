@@ -305,7 +305,7 @@ def save_nwb(save_folder):
             excitation_lambda=600.,
             indicator='GCaMP',
             location='V1',
-            grid_spacing=([2,2,30] if multiplane else [2,2]),
+            grid_spacing=([2.0,2.0,30.0] if multiplane else [2.0,2.0]),
             grid_spacing_unit='microns'
         )
 

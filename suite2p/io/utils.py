@@ -75,10 +75,10 @@ def list_files(froot, look_one_level_down, exts):
         fs.extend(glob.glob(lpath))
     fs = natsorted(set(fs))
     if len(fs) > 0:
-        first_tiffs = np.zeros((len(fs),), np.bool)
+        first_tiffs = np.zeros((len(fs),), 'bool')
         first_tiffs[0] = True
     else:
-        first_tiffs = np.zeros(0, np.bool)
+        first_tiffs = np.zeros(0, 'bool')
     lfs = len(fs)
     if look_one_level_down:
         fdir = natsorted(glob.glob(os.path.join(froot, "*/")))
@@ -90,7 +90,7 @@ def list_files(froot, look_one_level_down, exts):
             fsnew = natsorted(set(fsnew))
             if len(fsnew) > 0:
                 fs.extend(fsnew)
-                first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), np.bool))
+                first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), 'bool'))
                 first_tiffs[lfs] = True
                 lfs = len(fs)
     return fs, first_tiffs
@@ -113,7 +113,7 @@ def get_h5_list(ops):
         print('Could not find any h5 files')
         raise Exception('no h5s')
     else:
-        ops['first_tiffs'] = np.array(first_tiffs).astype(np.bool)
+        ops['first_tiffs'] = np.array(first_tiffs).astype('bool')
         print('** Found %d h5 files - converting to binary **'%(len(fsall)))
         #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
@@ -131,7 +131,7 @@ def get_tif_list(ops):
         fsall = []
         for tif in ops['tiff_list']:
             fsall.append(os.path.join(froot[0], tif))
-        ops['first_tiffs'] = np.zeros((len(fsall),), dtype=np.bool)
+        ops['first_tiffs'] = np.zeros((len(fsall),), dtype='bool')
         ops['first_tiffs'][0] = True
         print('** Found %d tifs - converting to binary **'%(len(fsall)))
     else:
@@ -157,7 +157,7 @@ def get_tif_list(ops):
             print('Could not find any tiffs')
             raise Exception('no tiffs')
         else:
-            ops['first_tiffs'] = np.array(first_tiffs).astype(np.bool)
+            ops['first_tiffs'] = np.array(first_tiffs).astype('bool')
             print('** Found %d tifs - converting to binary **'%(len(fsall)))
     return fsall, ops
 

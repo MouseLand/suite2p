@@ -126,7 +126,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         else:
             iscell = classify(stat=stat, classfile=classfile)
         np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-        ic = (iscell[:,0]>ops['preclassify']).flatten().astype(np.bool)
+        ic = (iscell[:,0]>ops['preclassify']).flatten().astype('bool')
         stat = stat[ic]
         print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
             

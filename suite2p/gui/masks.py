@@ -224,7 +224,7 @@ def init_masks(parent):
     ncells = len(stat)
     Ly = parent.Ly
     Lx = parent.Lx
-    parent.rois['Sroi']   = np.zeros((2,Ly,Lx), np.bool)
+    parent.rois['Sroi']   = np.zeros((2,Ly,Lx), 'bool')
     LamAll = np.zeros((Ly,Lx), np.float32)
     # these have 3 layers
     parent.rois['Lam']    = np.zeros((2,3,Ly,Lx), np.float32)
@@ -242,7 +242,7 @@ def init_masks(parent):
             pass 
         
     # ignore merged cells
-    iignore = np.zeros(ncells, np.bool)
+    iignore = np.zeros(ncells, 'bool')
     parent.roi_text_labels = []
     for n in np.arange(ncells-1,-1,-1,int):
         ypix = stat[n]['ypix']

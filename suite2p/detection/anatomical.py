@@ -62,7 +62,7 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     nmasks = len(patches)
     patch_masks = patch_detect(patches, diam)
     ly = patches[0].shape[0] // 2
-    igood = np.zeros(nmasks, np.bool)
+    igood = np.zeros(nmasks, 'bool')
     for i, (patch_mask, stat, (yi,xi)) in enumerate(zip(patch_masks, stats, seeds)):
         mask = np.zeros((Lyc, Lxc), np.float32)
         ypix0, xpix0= stat['ypix'], stat['xpix']

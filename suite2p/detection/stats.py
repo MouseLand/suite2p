@@ -127,10 +127,10 @@ class ROI:
                     radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
             crop = dists < radius
             if crop.sum()==0:
-                crop = np.ones(self.ypix.size, np.bool)
+                crop = np.ones(self.ypix.size, 'bool')
             return crop
         else:
-            return np.ones(self.ypix.size, np.bool)
+            return np.ones(self.ypix.size, 'bool')
 
     @property
     def mean_r_squared(self) -> float:

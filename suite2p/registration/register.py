@@ -452,7 +452,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
     # compute valid region
     # ignore user-specified bad_frames.npy
-    ops['badframes'] = np.zeros((ops['nframes'],), np.bool)
+    ops['badframes'] = np.zeros((ops['nframes'],), 'bool')
     if 'data_path' in ops and len(ops['data_path']) > 0:
         badfrfile = path.abspath(path.join(ops['data_path'][0], 'bad_frames.npy'))
         if path.isfile(badfrfile):

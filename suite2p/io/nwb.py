@@ -214,7 +214,7 @@ def read_nwb(fpath):
                 for n in range(len(stat))]
         iscell = np.array(iscell)
         probcell = iscell[:,1]
-        iscell = iscell[:,0].astype(np.bool)
+        iscell = iscell[:,0].astype('bool')
         redcell = np.zeros_like(iscell)
         probredcell = np.zeros_like(probcell)
                 

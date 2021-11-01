@@ -272,24 +272,24 @@ def load_files(name):
         try:
             iscell = np.load(basename + "/iscell.npy")
             probcell = iscell[:, 1]
-            iscell = iscell[:, 0].astype(np.bool)
+            iscell = iscell[:, 0].astype('bool')
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
             print("no manual labels found (iscell.npy)")
             if goodfolder:
                 NN = Fcell.shape[0]
-                iscell = np.ones((NN,), np.bool)
+                iscell = np.ones((NN,), 'bool')
                 probcell = np.ones((NN,), np.float32)
         try:
             redcell = np.load(basename + "/redcell.npy")
             probredcell = redcell[:,1].copy()
-            redcell = redcell[:,0].astype(np.bool)
+            redcell = redcell[:,0].astype('bool')
             hasred = True
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
             print("no channel 2 labels found (redcell.npy)")
             hasred = False
             if goodfolder:
                 NN = Fcell.shape[0]
-                redcell = np.zeros((NN,), np.bool)
+                redcell = np.zeros((NN,), 'bool')
                 probredcell = np.zeros((NN,), np.float32)
     else:
         print("incorrect file, not a stat.npy")
@@ -321,12 +321,12 @@ def load_to_GUI(parent, basename, procs):
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks
-    parent.iscell = iscell.astype(np.bool)
+    parent.iscell = iscell.astype('bool')
     parent.probcell = probcell
-    parent.redcell = redcell.astype(np.bool)
+    parent.redcell = redcell.astype('bool')
     parent.probredcell = probredcell
     parent.hasred = hasred
-    parent.notmerged = np.ones_like(parent.iscell).astype(np.bool)
+    parent.notmerged = np.ones_like(parent.iscell).astype('bool')
     for n in range(len(parent.stat)):
         if parent.hasred:
             parent.stat[n]['chan2_prob'] = parent.probredcell[n]
@@ -441,7 +441,7 @@ def save_merge(parent):
                               parent.probcell[:,np.newaxis]), axis=1)
     np.save(os.path.join(parent.basename, 'iscell.npy'), iscell)
     
-    parent.notmerged = np.ones(parent.iscell.size, np.bool)
+    parent.notmerged = np.ones(parent.iscell.size, 'bool')
 
 def load_custom_mask(parent):
     name = QFileDialog.getOpenFileName(

@@ -106,7 +106,7 @@ def extend_anatomical(img_anat, masks_anat, mov=None, ops=None, reg_file=None):
         ymed, xmed = int(np.median(ypix)), int(np.median(xpix))
         inds = (slice(max(0, ymed-ly), min(ymed+ly, Lyc)), 
                 slice(max(0, xmed-ly), min(xmed+ly, Lxc)))
-        maskb = np.zeros((Lyc,Lxc), np.bool)
+        maskb = np.zeros((Lyc,Lxc), 'bool')
         maskb[ypix, xpix] = 1
         maskb = maskb[inds].astype(np.float32)
         maskb /= (maskb.sum())**0.5

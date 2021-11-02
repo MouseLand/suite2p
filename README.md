@@ -1,5 +1,3 @@
-Note: Marius and Carsen are currently at The Neuromatch Academy, and we won't do anything Suite2p-related until after the deep learning course!
-
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 [![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)
@@ -31,6 +29,8 @@ This code was written by Carsen Stringer and Marius Pachitariu.
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  
 The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
+
+You can now run suite2p in google colab, no need to locally install: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
 
 See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations.
 

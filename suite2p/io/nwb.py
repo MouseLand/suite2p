@@ -262,153 +262,164 @@ def read_nwb(fpath):
     return stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 
-def save_nwb(save_folder):
+def create_nwb_file(ops, multiplane):
+    ### INITIALIZE NWB FILE
+    nwbfile = NWBFile(
+        session_description='suite2p_proc',
+        identifier=str(ops['data_path'][0]),
+        session_start_time=(ops['date_proc'] if 'date_proc' in ops 
+                            else datetime.datetime.now())
+    )
+    print(nwbfile)
+
+    device = nwbfile.create_device(
+        name='Microscope', 
+        description='My two-photon microscope',
+        manufacturer='The best microscope manufacturer'
+    )
+    optical_channel = OpticalChannel(
+        name='OpticalChannel', 
+        description='an optical channel', 
+        emission_lambda=500.
+    )
+
+    imaging_plane = nwbfile.create_imaging_plane(
+        name='ImagingPlane',
+        optical_channel=optical_channel,
+        imaging_rate=ops['fs'],
+        description='standard',
+        device=device,
+        excitation_lambda=600.,
+        indicator='GCaMP',
+        location='V1',
+        grid_spacing=([2.0,2.0,30.0] if multiplane else [2.0,2.0]),
+        grid_spacing_unit='microns'
+    )
+
+    # link to external data
+    image_series = TwoPhotonSeries(
+        name='TwoPhotonSeries', 
+        dimension=[ops['Ly'], ops['Lx']],
+        external_file=(ops['filelist'] if 'filelist' in ops else ['']), 
+        imaging_plane=imaging_plane,
+        starting_frame=[0], 
+        format='external', 
+        starting_time=0.0, 
+        rate=ops['fs'] * ops['nplanes']
+    )
+    nwbfile.add_acquisition(image_series)
+    
+    return nwbfile, image_series
+   
+
+def save_nwb(save_folder, nwb_filename=None, nwb_series=None):
     """ convert folder with plane folders to NWB format """
 
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     ops1 = [np.load(os.path.join(f, 'ops.npy'), allow_pickle=True).item() for f in plane_folders]
 
-    if NWB and not ops1[0]['mesoscan']:
-        if len(ops1)>1:
-            multiplane = True
-        else:
-            multiplane = False
-
-        ops = ops1[0]
-
-        ### INITIALIZE NWB FILE
-        nwbfile = NWBFile(
-            session_description='suite2p_proc',
-            identifier=str(ops['data_path'][0]),
-            session_start_time=(ops['date_proc'] if 'date_proc' in ops 
-                                else datetime.datetime.now())
-        )
-        print(nwbfile)
-
-        device = nwbfile.create_device(
-            name='Microscope', 
-            description='My two-photon microscope',
-            manufacturer='The best microscope manufacturer'
-        )
-        optical_channel = OpticalChannel(
-            name='OpticalChannel', 
-            description='an optical channel', 
-            emission_lambda=500.
-        )
-
-        imaging_plane = nwbfile.create_imaging_plane(
-            name='ImagingPlane',
-            optical_channel=optical_channel,
-            imaging_rate=ops['fs'],
-            description='standard',
-            device=device,
-            excitation_lambda=600.,
-            indicator='GCaMP',
-            location='V1',
-            grid_spacing=([2.0,2.0,30.0] if multiplane else [2.0,2.0]),
-            grid_spacing_unit='microns'
-        )
-
-        # link to external data
-        image_series = TwoPhotonSeries(
-            name='TwoPhotonSeries', 
-            dimension=[ops['Ly'], ops['Lx']],
-            external_file=(ops['filelist'] if 'filelist' in ops else ['']), 
-            imaging_plane=imaging_plane,
-            starting_frame=[0], 
-            format='external', 
-            starting_time=0.0, 
-            rate=ops['fs'] * ops['nplanes']
-        )
-        nwbfile.add_acquisition(image_series)
-
-        # processing
-        img_seg = ImageSegmentation()
-        ps = img_seg.create_plane_segmentation(
-            name='PlaneSegmentation',
-            description='suite2p output',
-            imaging_plane=imaging_plane,
-            reference_images=image_series
-        )
-        ophys_module = nwbfile.create_processing_module(
-            name='ophys', 
-            description='optical physiology processed data'
-        )
-        ophys_module.add(img_seg)
-        
-        file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
-        traces = []
-        ncells_all = 0
-        Nfr = np.array([ops['nframes'] for ops in ops1]).max()
-        for iplane, ops in enumerate(ops1):
-            if iplane==0:
-                iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
-                for fstr in file_strs:
-                    traces.append(np.load(os.path.join(ops['save_path'], fstr)))
-            else:
-                iscell = np.append(iscell, np.load(os.path.join(ops['save_path'], 'iscell.npy')), axis=0)
-                for i,fstr in enumerate(file_strs):
-                    trace = np.load(os.path.join(ops['save_path'], fstr))
-                    if trace.shape[1] < Nfr:
-                        fcat    = np.zeros((trace.shape[0],Nfr-trace.shape[1]), 'float32')
-                        trace   = np.concatenate((trace, fcat), axis=1)
-                    traces[i] = np.append(traces[i], trace, axis=0) 
-            
-            stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
-            ncells = len(stat)
-            for n in range(ncells):
-                if multiplane:
-                    pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'], 
-                                        iplane*np.ones(stat[n]['npix']), 
-                                        stat[n]['lam']])
-                    ps.add_roi(voxel_mask=pixel_mask.T)
-                else:
-                    pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'], 
-                                        stat[n]['lam']])
-                    ps.add_roi(pixel_mask=pixel_mask.T)
-            ncells_all+=ncells
-
-        ps.add_column('iscell', 'two columns - iscell & probcell', iscell)
-            
-        rt_region = ps.create_roi_table_region(
-            region=list(np.arange(0, ncells_all)),
-            description='all ROIs'
-        )
-
-        # FLUORESCENCE (all are required)
-        file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
-        name_strs = ['Fluorescence', 'Neuropil', 'Deconvolved']
-
-        for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
-            roi_resp_series = RoiResponseSeries(
-                name=nstr,
-                data=traces[i],
-                rois=rt_region,
-                unit='lumens',
-                rate=ops['fs']
-            )
-            fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
-            ophys_module.add(fl)
-
-        # BACKGROUNDS
-        # (meanImg, Vcorr and max_proj are REQUIRED)
-        bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
-        nplanes = ops['nplanes']
-        for iplane in range(nplanes):
-            images = Images('Backgrounds_%d'%iplane)
-            for bstr in bg_strs:
-                if bstr in ops:
-                    if bstr=='Vcorr' or bstr=='max_proj':
-                        img = np.zeros((ops['Ly'], ops['Lx']), np.float32)
-                        img[ops['yrange'][0]:ops['yrange'][-1], 
-                            ops['xrange'][0]:ops['xrange'][-1]] = ops[bstr]
-                    else:
-                        img = ops[bstr]
-                    images.add_image(GrayscaleImage(name=bstr, data=img))
-                
-            ophys_module.add(images)
-
-        with NWBHDF5IO(os.path.join(save_folder, 'ophys.nwb'), 'w') as fio:
-            fio.write(nwbfile)
-    else:
+    if not NWB or ops1[0]['mesoscan']:
         print('pip install pynwb OR don"t use mesoscope recording')
+        return
+
+    multiplane = len(ops1) > 1
+    ops = ops1[0]
+
+    if nwb_filename is None:
+        assert nwb_series is None
+        fio = NWBHDF5IO(os.path.join(save_folder, 'ophys.nwb'), 'w')
+        nwbfile, image_series = create_nwb_file(ops, multiplane)
+    else:
+        assert nwb_series is not None
+        fio = NWBHDF5IO(nwb_filename, 'a')
+        nwbfile = fio.read()
+        image_series = nwbfile.acquisition[nwb_series]
+
+    # processing
+    img_seg = ImageSegmentation()
+    ps = img_seg.create_plane_segmentation(
+        name='PlaneSegmentation',
+        description='suite2p output',
+        imaging_plane=image_series.imaging_plane,
+        reference_images=image_series
+    )
+    ophys_module = nwbfile.create_processing_module(
+        name='ophys', 
+        description='optical physiology processed data'
+    )
+    ophys_module.add(img_seg)
+    
+    file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
+    traces = []
+    ncells_all = 0
+    Nfr = np.array([ops['nframes'] for ops in ops1]).max()
+    for iplane, ops in enumerate(ops1):
+        if iplane==0:
+            iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
+            for fstr in file_strs:
+                traces.append(np.load(os.path.join(ops['save_path'], fstr)))
+        else:
+            iscell = np.append(iscell, np.load(os.path.join(ops['save_path'], 'iscell.npy')), axis=0)
+            for i,fstr in enumerate(file_strs):
+                trace = np.load(os.path.join(ops['save_path'], fstr))
+                if trace.shape[1] < Nfr:
+                    fcat    = np.zeros((trace.shape[0],Nfr-trace.shape[1]), 'float32')
+                    trace   = np.concatenate((trace, fcat), axis=1)
+                traces[i] = np.append(traces[i], trace, axis=0) 
+        
+        stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
+        ncells = len(stat)
+        for n in range(ncells):
+            if multiplane:
+                pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'], 
+                                    iplane*np.ones(stat[n]['npix']), 
+                                    stat[n]['lam']])
+                ps.add_roi(voxel_mask=pixel_mask.T)
+            else:
+                pixel_mask = np.array([stat[n]['ypix'], stat[n]['xpix'], 
+                                    stat[n]['lam']])
+                ps.add_roi(pixel_mask=pixel_mask.T)
+        ncells_all+=ncells
+
+    ps.add_column('iscell', 'two columns - iscell & probcell', iscell)
+        
+    rt_region = ps.create_roi_table_region(
+        region=list(np.arange(0, ncells_all)),
+        description='all ROIs'
+    )
+
+    # FLUORESCENCE (all are required)
+    file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
+    name_strs = ['Fluorescence', 'Neuropil', 'Deconvolved']
+
+    for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
+        roi_resp_series = RoiResponseSeries(
+            name=nstr,
+            data=traces[i],
+            rois=rt_region,
+            unit='lumens',
+            rate=ops['fs']
+        )
+        fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
+        ophys_module.add(fl)
+
+    # BACKGROUNDS
+    # (meanImg, Vcorr and max_proj are REQUIRED)
+    bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
+    nplanes = ops['nplanes']
+    for iplane in range(nplanes):
+        images = Images('Backgrounds_%d'%iplane)
+        for bstr in bg_strs:
+            if bstr in ops:
+                if bstr=='Vcorr' or bstr=='max_proj':
+                    img = np.zeros((ops['Ly'], ops['Lx']), np.float32)
+                    img[ops['yrange'][0]:ops['yrange'][-1], 
+                        ops['xrange'][0]:ops['xrange'][-1]] = ops[bstr]
+                else:
+                    img = ops[bstr]
+                images.add_image(GrayscaleImage(name=bstr, data=img))
+            
+        ophys_module.add(images)
+
+    fio.write(nwbfile)
+    fio.close()

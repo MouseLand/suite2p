@@ -1,11 +1,51 @@
 """
 Class that tests common use cases for pipeline.
 """
-
+import shutil
 from suite2p import io
 from pathlib import Path
 import numpy as np
+import pynwb
 import suite2p, utils, json
+
+def test_readwrite_nwb(tmpdir):
+    """
+    Verify output into input NWB.
+    """
+    # Test NWB file is modified, so make a copy in the temp directory.
+    tmpfile = tmpdir / "readwrite.nwb"
+    shutil.copyfile("data/test_data/readwrite.nwb", tmpfile)    
+    ops = {
+        "save_NWB": True,
+        "nwb_file": str(tmpfile),
+        "nwb_series": "MySeries",
+        'save_path0': str(tmpdir),
+        "data_path": "Argh, this must be set!",
+    }
+
+    with pynwb.NWBHDF5IO(ops["nwb_file"], 'r') as fio:
+        nwbfile = fio.read()
+        assert nwbfile.devices["Microscope"]
+        assert nwbfile.imaging_planes["ImagingPlane"]
+        assert nwbfile.acquisition["MySeries"]
+        assert nwbfile.subject
+        assert nwbfile.subject.subject_id == "8675309"
+        # Verify no processing exists initially
+        assert "ophys" not in nwbfile.processing
+
+    suite2p.run_s2p(ops)
+    
+    with pynwb.NWBHDF5IO(ops["nwb_file"], 'r') as fio:
+        nwbfile = fio.read()
+        assert nwbfile.devices["Microscope"]
+        assert nwbfile.imaging_planes["ImagingPlane"]
+        assert nwbfile.acquisition["MySeries"]
+        assert nwbfile.subject
+        assert nwbfile.subject.subject_id == "8675309"
+        assert nwbfile.processing
+        assert nwbfile.processing["ophys"].data_interfaces["Deconvolved"]
+        assert nwbfile.processing["ophys"].data_interfaces["Fluorescence"]
+        assert nwbfile.processing["ophys"].data_interfaces["Neuropil"]
 
 
 def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):

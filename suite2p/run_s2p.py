@@ -459,7 +459,7 @@ def run_s2p(ops={}, db={}, server={}):
         # save to NWB
         if ops.get('save_NWB'):
             print('Saving in nwb format')
-            io.save_nwb(save_folder)
+            io.save_nwb(save_folder, ops.get('nwb_file'), ops.get('nwb_series'))
 
         print('TOTAL RUNTIME %0.2f sec' % (time.time()-t0))
         return op

@@ -8,6 +8,7 @@ from .stats import roi_stats
 from .denoise import pca_denoise
 from ..io.binary import BinaryFile
 from ..classification import classify, user_classfile
+from .. import default_ops
 
 try:
     from . import anatomical
@@ -18,15 +19,8 @@ except Exception as e:
     print('cannot use anatomical mode, but otherwise suite2p will run normally')
     CELLPOSE_INSTALLED = False
 
-
 def detect(ops, classfile=None):
     
-    if 'aspect' in ops:
-        dy, dx = int(ops['aspect'] * 10), 10
-    else:
-        d0 = ops['diameter']
-        dy, dx = (d0, d0) if isinstance(d0, int) else d0
-
     t0 = time.time()
     bin_size = int(max(1, ops['nframes'] // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
     print('Binning movie in chunks of length %2.2d' % bin_size)
@@ -38,6 +32,75 @@ def detect(ops, classfile=None):
             x_range=ops['xrange'],
         )
     print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+    
+    ops, stat = detection_wrapper(mov, ops['Ly'], ops['Lx'], ops=ops, classfile=classfile)
+
+    return ops, stat
+
+def bin_movie(f_reg, ops):
+    """ bin registered movie """
+    n_frames, Ly, Lx = f_reg.shape
+    yrange = ops.get('yrange', [0, Ly])
+    xrange = ops.get('xrange', [0, Lx])
+    bin_size = int(max(1, n_frames // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+    print('Binning movie in chunks of length %2.2d' % bin_size)
+    bad_frames = ops.get('badframes', None)
+    good_frames = ~bad_frames if bad_frames is not None else np.ones(n_frames, dtype=bool)
+    batch_size = min(good_frames.sum(), 500)
+    Lyc = yrange[1] - yrange[0]
+    Lxc = xrange[1] - xrange[0]
+    mov = np.zeros((n_frames//bin_size, Lyc, Lxc), np.float32)
+    ik = 0
+    
+    t0 = time.time()
+    for k in np.arange(0, n_frames, batch_size):
+        data = f_reg[k : min(k + batch_size, n_frames)]
+
+        # exclude bad_frames
+        good_indices = good_frames[k : min(k + batch_size, n_frames)]
+        if good_indices.mean() > 0.5:
+            data = data[good_indices]
+
+        # crop to valid region
+        data = data[:, slice(*yrange), slice(*xrange)]
+
+        # bin in time
+        if data.shape[0] > bin_size:
+            n_d = data.shape[0]
+            data = data[:(n_d // bin_size) * bin_size]
+            data = data.reshape(-1, bin_size, Lyc, Lxc).astype(np.float32).mean(axis=1)
+        n_bins = data.shape[0]
+        mov[ik : ik + n_bins] = data
+        ik += n_bins
+
+    print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+
+    return mov
+
+
+def detection_wrapper(mov, Ly, Lx, yrange=None, xrange=None, ops=default_ops(), classfile=None):
+    if yrange is None:
+        if 'yrange' not in ops:
+            ops['yrange'] = [0, Ly]
+    else:
+        ops['yrange'] = yrange
+    if xrange is None:
+        if 'xrange' not in ops:
+            ops['xrange'] = [0, Lx]
+    else:
+        ops['xrange'] = xrange
+
+    if mov.shape[1] != ops['yrange'][1] - ops['yrange'][0]:
+        raise ValueError('mov.shape[1] is not same size as yrange')
+    elif mov.shape[2] != ops['xrange'][1] - ops['xrange'][0]:
+        raise ValueError('mov.shape[2] is not same size as xrange')
+    
+    if 'aspect' in ops:
+        dy, dx = int(ops['aspect'] * 10), 10
+    else:
+        d0 = ops['diameter']
+        dy, dx = (d0, d0) if isinstance(d0, int) else d0
+
     if ops.get('inverted_activity', False):
         mov -= mov.min()
         mov *= -1
@@ -59,8 +122,8 @@ def detect(ops, classfile=None):
                     mov=mov,
                     dy=dy,
                     dx=dx,
-                    Ly=ops['Ly'],
-                    Lx=ops['Lx'],
+                    Ly=Ly,
+                    Lx=Ly,
                     diameter=ops['diameter'])
         
     else:            
@@ -69,8 +132,8 @@ def detect(ops, classfile=None):
             mov=mov,
             dy=dy,
             dx=dx,
-            Ly=ops['Ly'],
-            Lx=ops['Lx'],
+            Ly=Ly,
+            Lx=Lx,
             max_overlap=ops['max_overlap'],
             sparse_mode=ops['sparse_mode'],
             do_crop=ops['soma_crop'],

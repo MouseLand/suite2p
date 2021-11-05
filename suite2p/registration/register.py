@@ -441,15 +441,45 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None, yoff1
     return mean_img  
 
 
-def registration_wrapper(f_align_in, f_align_out=None, f_alt_in=None, f_alt_out=None, refImg=None, ops=default_ops()):
+def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, refImg=None, align_by_chan2=False, ops=default_ops()):
     """ main registration function
+
+    if f_raw is not None, f_raw is read and registered and saved to f_reg
+    if f_raw_chan2 is not None, f_raw_chan2 is read and registered and saved to f_reg_chan2
+
+    the registration shifts are computed on chan2 if ops['functional_chan'] != ops['align_by_chan']
+
 
     Parameters
     ----------
 
+    f_reg : np.ndarray or io.BinaryRWFile,
+        n_frames x Ly x Lx
+
     ops : dictionary or list of dicts
     
     """
+    f_alt_in, f_align_out, f_alt_out = None, None, None
+    if f_reg_chan2 is None or not align_by_chan2:
+        if f_raw is None:
+            f_align_in = f_reg
+            f_alt_in = f_reg_chan2
+        else:
+            f_align_in = f_raw
+            f_alt_in = f_raw_chan2
+            f_align_out = f_reg
+            f_alt_out = f_reg_chan2
+    else:
+        if f_raw is None:
+            f_align_in = f_reg_chan2 
+            f_alt_in = f_reg
+        else:
+            f_align_in = f_raw_chan2
+            f_alt_in = f_raw
+            f_align_out = f_reg_chan2
+            f_alt_out = f_reg
+
+
     n_frames, Ly, Lx = f_align_in.shape
     if f_alt_in is not None and f_alt_in.shape[0] == f_align_in.shape[0]:
         nchannels = 2
@@ -466,6 +496,17 @@ def registration_wrapper(f_align_in, f_align_out=None, f_alt_in=None, f_alt_out=
         mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, yoff, xoff, yoff1, xoff1, ops)
     else:
         mean_img_alt = None
+
+    if nchannels==1 or not align_by_chan2:
+        meanImg = mean_img
+        if nchannels==2:
+            meanImg_chan2 = mean_img_alt
+        else:
+            meanImg_chan2 = None
+    elif nchannels == 2:
+        meanImg_chan2 = mean_img
+        meanImg = mean_img_alt
+            
         
     # compute valid region
     # ignore user-specified bad_frames.npy
@@ -491,7 +532,7 @@ def registration_wrapper(f_align_in, f_align_out=None, f_alt_in=None, f_alt_out=
         Lx=Lx,
     )
 
-    return refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, mean_img_alt, badframes, yrange, xrange
+    return refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, meanImg_chan2, badframes, yrange, xrange
 
 def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     """ main registration function
@@ -529,7 +570,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
         raw_file_align = None
         if ops['do_bidiphase'] and ops['bidiphase'] != 0:
             ops['bidi_corrected'] = True
-            
+
     if ops['nchannels'] > 1:
         reg_file_alt = ops['reg_file_chan2'] if ops['functional_chan'] == ops['align_by_chan'] else ops['reg_file']
         raw_file_alt = ops.get('raw_file_chan2') if ops['functional_chan'] == ops['align_by_chan'] else ops.get('raw_file')
@@ -576,8 +617,55 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     return ops
 
 
+def save_registration_outputs_to_ops(registration_outputs, ops):
+
+    refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, meanImg_chan2, badframes, yrange, xrange = registration_outputs
+    # assign reference image and normalizers
+    ops['refImg'] = refImg 
+    ops['rmin'], ops['rmax'] = rmin, rmax
+    # assign rigid offsets to ops
+    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    # assign nonrigid offsets to ops
+    ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    # assign mean images
+    ops['meanImg'] = meanImg
+    if meanImg_chan2 is not None:
+        ops['meanImg_chan2'] = meanImg_chan2
+    # assign crop computation and badframes
+    ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
+    return ops
+            
+
 def enhanced_mean_image(ops):
     """ computes enhanced mean image and adds it to ops
+
+    Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
+    divides by this median-filtered image to return a high-pass filtered
+    image ops['meanImgE']
+
+    Parameters
+    ----------
+    ops : dictionary
+        uses 'meanImg', 'aspect', 'spatscale_pix', 'yrange' and 'xrange'
+
+    Returns
+    -------
+        ops : dictionary
+            'meanImgE' field added
+
+    """
+
+    I = ops['meanImg'].astype(np.float32)
+    mimg0 = compute_enhanced_mean_image(I, ops)
+    #mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
+    #mimg[ops['yrange'][0]:ops['yrange'][1],
+    #    ops['xrange'][0]:ops['xrange'][1]] = mimg0
+    ops['meanImgE'] = mimg0
+    print('added enhanced mean image')
+    return ops
+
+def compute_enhanced_mean_image(I, ops):
+    """ computes enhanced mean image
 
     Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
     divides by this median-filtered image to return a high-pass filtered
@@ -616,12 +704,6 @@ def enhanced_mean_image(ops):
     mimg99 = 6
     mimg0 = I
 
-    mimg0 = mimg0[ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
     mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
     mimg0 = np.maximum(0,np.minimum(1,mimg0))
-    mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
-    mimg[ops['yrange'][0]:ops['yrange'][1],
-        ops['xrange'][0]:ops['xrange'][1]] = mimg0
-    ops['meanImgE'] = mimg
-    print('added enhanced mean image')
-    return ops
+    return mimg0

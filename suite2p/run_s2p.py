@@ -21,130 +21,128 @@ from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
 
-def run_plane(ops, ops_path=None, stat=None):
-    """ run suite2p processing on a single binary file
+def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
+             run_registration=True, ops=default_ops(), stat=None):
+    """ run suite2p processing on array or BinaryRWFile 
+    
+    f_reg: required, registered or unregistered frames
+        n_frames x Ly x Lx
 
-    Parameters
-    -----------
-    ops : :obj:`dict` 
-        specify 'reg_file', 'nchannels', 'tau', 'fs'
+    f_raw: optional, unregistered frames that will not be overwritten during registration
+        n_frames x Ly x Lx
 
-    ops_path: str
-        absolute path to ops file (use if files were moved)
+    f_reg_chan2: optional, non-functional frames
+        n_frames x Ly x Lx
 
-    Returns
-    --------
-    ops : :obj:`dict` 
+    f_raw_chan2: optional, non-functional frames that will not be overwritten during registration
+        n_frames x Ly x Lx
+
+    run_registration: optional, default True
+        run registration
+
+    ops: optional, `dict` of settings
+
+    stat: optional, input predefined masks
+    
     """
+    
+    plane_times = {}
     t1 = time.time()
     
-    ops = {**default_ops(), **ops}
-    ops['date_proc'] = datetime.now()
-    plane_times = {}
-    
-    # for running on server or on moved files, specify ops_path
-    if ops_path is not None:
-        ops['save_path'] = os.path.split(ops_path)[0]
-        ops['ops_path'] = ops_path 
-        if len(ops['fast_disk'])==0 or ops['save_path']!=ops['fast_disk']:
-            if os.path.exists(os.path.join(ops['save_path'], 'data.bin')):
-                ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
-                if 'reg_file_chan2' in ops:
-                    ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
-                if 'raw_file' in ops:
-                    ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
-                if 'raw_file_chan2' in ops:
-                    ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
-
-    # check if registration should be done
-    if ops['do_registration']>0:
-        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration'] > 1:
-            print("NOTE: not registered / registration forced with ops['do_registration']>1")
-            try:
-                del ops['yoff'], ops['xoff'], ops['corrXY']  # delete previous offsets
-            except KeyError:
-                print('      (no previous offsets to delete)')
-            run_registration = True
-        else:
-            print("NOTE: not running registration, plane already registered")
-            print('binary path: %s'%ops['reg_file'])
-            run_registration = False
+    # Select file for classification
+    ops_classfile = ops.get('classifier_path')
+    builtin_classfile = classification.builtin_classfile
+    user_classfile = classification.user_classfile
+    if ops_classfile:
+        print(f'NOTE: applying classifier {str(ops_classfile)}')
+        classfile = ops_classfile
+    elif ops['use_builtin_classifier'] or not user_classfile.is_file():
+        print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
+        classfile = builtin_classfile
     else:
-        print("NOTE: not running registration, ops['do_registration']=0")
-        print('binary path: %s'%ops['reg_file'])
-        run_registration = False
-    
-    if ops['nframes'] < 50:
-        raise ValueError('the total number of frames should be at least 50.')
-    if ops['nframes'] < 200:
-        print('WARNING: number of frames is below 200, unpredictable behaviors may occur.')
+        print(f'NOTE: applying default {str(user_classfile)}')
+        classfile = user_classfile
+
+    nchannels = 2 if f_reg_chan2 is not None else 1
 
     if run_registration:
+        raw = f_raw is not None
+        # if already shifted by bidiphase, do not shift again
+        if not raw and ops['do_bidiphase'] and ops['bidiphase'] != 0:
+            ops['bidi_corrected'] = True
+        
         ######### REGISTRATION #########
         t11=time.time()
         print('----------- REGISTRATION')
         refImg = ops['refImg'] if 'refImg' in ops and ops.get('force_refImg', False) else None
-        ops = registration.register_binary(ops, refImg=refImg) # register binary
-        np.save(ops['ops_path'], ops)
+        
+        align_by_chan2 = ops['functional_chan'] != ops['align_by_chan']
+        registration_outputs = registration.register.registration_wrapper(f_reg, f_raw=f_raw, f_reg_chan2=f_reg_chan2, f_raw_chan2=f_raw_chan2, 
+                                                                            refImg=refImg, align_by_chan2=align_by_chan2, ops=ops)
+
+        ops = registration.register.save_registration_outputs_to_ops(registration_outputs, ops)
+        # add enhanced mean image
+        meanImgE = registration.register.compute_enhanced_mean_image(ops['meanImg'].astype(np.float32), ops)
+        ops['meanImgE'] = meanImgE
+
+        if ops.get('ops_path'):
+            np.save(ops['ops_path'], ops)
+
         plane_times['registration'] = time.time()-t11
         print('----------- Total %0.2f sec' % plane_times['registration'])
 
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
             print('(making mean image (excluding bad frames)')
-            with io.BinaryFile(Lx=ops['Lx'], Ly=ops['Ly'], read_filename=ops['reg_file']) as f:
-                refImg = f.sampled_mean()
-            ops = registration.register_binary(ops, refImg, raw=False)
-            np.save(ops['ops_path'], ops)
+            nsamps = min(n_frames, 1000)
+            inds = np.linspace(0, n_frames, 1+nsamps).astype(np.int64)[:-1]
+            if align_by_chan2:
+                refImg = f_reg_chan2[inds].astype(np.float32).mean(axis=0)
+            else:
+                refImg = f_reg[inds].astype(np.float32).mean(axis=0)
+            registration_outputs = registration.register.registration_wrapper(f_reg, f_raw=None, f_reg_chan2=f_reg_chan2, f_raw_chan2=None, 
+                                                                                refImg=refImg, align_by_chan2=align_by_chan2, ops=ops)
+            if ops.get('ops_path'):
+                np.save(ops['ops_path'], ops)
             plane_times['two_step_registration'] = time.time()-t11
             print('----------- Total %0.2f sec' % plane_times['two_step_registration'])
 
         # compute metrics for registration
-        if ops.get('do_regmetrics', True) and ops['nframes']>=1500:
+        n_frames, Ly, Lx = f_reg.shape
+        if ops.get('do_regmetrics', True) and n_frames>=1500:
             t0 = time.time()
-            ops = registration.get_pc_metrics(ops)
+            # n frames to pick from full movie
+            nsamp = min(2000 if n_frames < 5000 or Ly > 700 or Lx > 700 else 5000, n_frames)
+            inds = np.linspace(0, n_frames - 1, nsamp).astype('int')
+            mov = f_reg[inds]
+            mov = mov[:, ops['yrange'][0]:ops['yrange'][-1], ops['xrange'][0]:ops['xrange'][-1]]
+            ops = registration.get_pc_metrics(mov, ops)
             plane_times['registration_metrics'] = time.time()-t0
             print('Registration metrics, %0.2f sec.' % plane_times['registration_metrics'])
-            np.save(os.path.join(ops['save_path'], 'ops.npy'), ops)
+            if ops.get('ops_path'):
+                np.save(ops['ops_path'], ops)
     
     if ops.get('roidetect', True):
-
-        # Select file for classification
-        ops_classfile = ops.get('classifier_path')
-        builtin_classfile = classification.builtin_classfile
-        user_classfile = classification.user_classfile
-        if ops_classfile:
-            print(f'NOTE: applying classifier {str(ops_classfile)}')
-            classfile = ops_classfile
-        elif ops['use_builtin_classifier'] or not user_classfile.is_file():
-            print(f'NOTE: Applying builtin classifier at {str(builtin_classfile)}')
-            classfile = builtin_classfile
-        else:
-            print(f'NOTE: applying default {str(user_classfile)}')
-            classfile = user_classfile
-
+        n_frames, Ly, Lx = f_reg.shape
         ######## CELL DETECTION ##############
         t11=time.time()
         print('----------- ROI DETECTION')
         if stat is None:
-            ops, stat = detection.detect(ops=ops, classfile=classfile)
+            mov = detection.bin_movie(f_reg, ops)
+            ops, stat = detection.detection_wrapper(mov, Ly, Lx,
+                                                    ops=ops, 
+                                                    classfile=classfile)
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        ops, stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(ops, stat)
+        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(ops, stat)
         # save results
-        np.save(ops['ops_path'], ops)
-        fpath = ops['save_path']
-        np.save(os.path.join(fpath, 'stat.npy'), stat)
-        np.save(os.path.join(fpath,'F.npy'), F)
-        np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
-        # if second channel, save F_chan2 and Fneu_chan2
-        if 'meanImg_chan2' in ops:
-            np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
-            np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+        if ops.get('ops_path'):
+            np.save(ops['ops_path'], ops)
+
         plane_times['extraction'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['extraction'])
 
@@ -155,10 +153,8 @@ def run_plane(ops, ops_path=None, stat=None):
             iscell = classification.classify(stat=stat, classfile=classfile)
         else:
             iscell = np.zeros((0, 2))
-        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-        plane_times['classification'] = time.time()-t11
-        print('----------- Total %0.2f sec.' % plane_times['classification'])
-
+        
+        
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
         if ops.get('spikedetect', True):
@@ -179,18 +175,126 @@ def run_plane(ops, ops_path=None, stat=None):
         else:
             print("WARNING: skipping spike detection (ops['spikedetect']=False)")
             spks = np.zeros_like(F)
-        np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
 
+        if ops.get('save_path'):
+            fpath = ops['save_path']
+            np.save(os.path.join(fpath, 'stat.npy'), stat)
+            np.save(os.path.join(fpath,'F.npy'), F)
+            np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+            np.save(os.path.join(fpath, 'iscell.npy'), iscell)
+            np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
+            # if second channel, save F_chan2 and Fneu_chan2
+            if 'meanImg_chan2' in ops:
+                np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+                np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+        
         # save as matlab file
         if ops.get('save_mat'):
             stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
             iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
             redcell = np.load(os.path.join(ops['save_path'], 'redcell.npy')) if ops['nchannels']==2 else []
             io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
-            
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
+    ops['timing'] = plane_times.copy()
+    plane_runtime = time.time()-t1
+    ops['timing']['total_plane_runtime'] = plane_runtime
+    if ops.get('ops_path'):
+        np.save(ops['ops_path'], ops)
 
+    return ops #, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell
+    
+
+def run_plane(ops, ops_path=None, stat=None):
+    """ run suite2p processing on a single binary file
+
+    Parameters
+    -----------
+    ops : :obj:`dict` 
+        specify 'reg_file', 'nchannels', 'tau', 'fs'
+
+    ops_path: str
+        absolute path to ops file (use if files were moved)
+
+    stat: list of `dict`
+        ROIs
+
+    Returns
+    --------
+    ops : :obj:`dict` 
+    """
+    
+    ops = {**default_ops(), **ops}
+    ops['date_proc'] = datetime.now()
+    
+    # for running on server or on moved files, specify ops_path
+    if ops_path is not None:
+        ops['save_path'] = os.path.split(ops_path)[0]
+        ops['ops_path'] = ops_path 
+        if len(ops['fast_disk'])==0 or ops['save_path']!=ops['fast_disk']:
+            if os.path.exists(os.path.join(ops['save_path'], 'data.bin')):
+                ops['reg_file'] = os.path.join(ops['save_path'], 'data.bin')
+                if 'reg_file_chan2' in ops:
+                    ops['reg_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2.bin')    
+                if 'raw_file' in ops:
+                    ops['raw_file'] = os.path.join(ops['save_path'], 'data_raw.bin')
+                if 'raw_file_chan2' in ops:
+                    ops['raw_file_chan2'] = os.path.join(ops['save_path'], 'data_chan2_raw.bin')
+
+    # check that there are sufficient numbers of frames
+    if ops['nframes'] < 50:
+        raise ValueError('the total number of frames should be at least 50.')
+    if ops['nframes'] < 200:
+        print('WARNING: number of frames is below 200, unpredictable behaviors may occur.')
+
+    # check if registration should be done
+    if ops['do_registration']>0:
+        if 'refImg' not in ops or 'yoff' not in ops or ops['do_registration'] > 1:
+            print("NOTE: not registered / registration forced with ops['do_registration']>1")
+            try:
+                del ops['yoff'], ops['xoff'], ops['corrXY']  # delete previous offsets
+            except KeyError:
+                print('      (no previous offsets to delete)')
+            run_registration = True
+        else:
+            print("NOTE: not running registration, plane already registered")
+            print('binary path: %s'%ops['reg_file'])
+            run_registration = False
+    else:
+        print("NOTE: not running registration, ops['do_registration']=0")
+        print('binary path: %s'%ops['reg_file'])
+        run_registration = False
+
+    Ly, Lx = ops['Ly'], ops['Lx']
+    n_frames = ops['nframes']
+    
+    # get binary file paths
+    raw = ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
+    reg_file = ops['reg_file']
+    raw_file = ops.get('raw_file', 0) if raw else reg_file
+    if ops['nchannels'] > 1:
+        reg_file_chan2 = ops['reg_file_chan2']
+        raw_file_chan2 = ops.get('raw_file_chan2', 0) if raw else reg_file_chan2
+    else:
+        reg_file_chan2 = reg_file 
+        raw_file_chan2 = reg_file   
+        
+
+    with io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file if raw else reg_file) as f_raw, \
+         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_reg, \
+         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2 if raw else reg_file_chan2) as f_raw_chan2,\
+         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2) as f_reg_chan2:         
+        if not raw:
+            f_raw.close()
+            f_raw = None
+            f_raw_chan2.close()
+            f_raw_chan2 = None
+        if ops['nchannels'] == 1:
+            f_reg_chan2.close() 
+            f_reg_chan2 = None
+
+        ops = pipeline(f_reg, f_raw, f_reg_chan2, f_raw_chan2, run_registration, ops, stat=stat)
+        
     if ops.get('move_bin') and ops['save_path'] != ops['fast_disk']:
         print('moving binary files to save_path')
         shutil.move(ops['reg_file'], os.path.join(ops['save_path'], 'data.bin'))
@@ -209,10 +313,6 @@ def run_plane(ops, ops_path=None, stat=None):
             os.remove(ops['raw_file'])
             if ops['nchannels'] > 1:
                 os.remove(ops['raw_file_chan2'])
-    ops['timing'] = plane_times.copy()
-    plane_runtime = time.time()-t1
-    ops['timing']['total_plane_runtime'] = plane_runtime
-    np.save(ops['ops_path'], ops)
     return ops
 
 

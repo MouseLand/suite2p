@@ -34,7 +34,7 @@ test_deps = [
       'pytest-qt==3.3.0',
     ]
 
-all_deps = gui_deps + data_deps + nwb_deps
+all_deps = gui_deps + data_deps + nwb_deps + test_deps
 
 try:
     import torch
@@ -75,7 +75,8 @@ setuptools.setup(
       "gui": gui_deps,
       "data": data_deps,
       "nwb": nwb_deps,
-      "all": all_deps
+      "tests": test_deps,
+      "all": all_deps,
     },
     include_package_data=True,
     classifiers=[

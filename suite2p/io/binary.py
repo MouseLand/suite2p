@@ -22,7 +22,7 @@ class BinaryRWFile:
         self.Lx = Lx
         self.filename = filename
         if not os.path.exists(filename):
-            self.file = open(filename, mode='wb')
+            self.file = open(filename, mode='w+b')
         else:
             self.file = open(filename, mode='r+b')
         self._index = 0
@@ -100,7 +100,7 @@ class BinaryRWFile:
 
     def __setitem__(self, *items):
         frame_indices, data = items
-        frames = self.ix_write(data=data, indices=from_slice(frame_indices))
+        self.ix_write(data=data, indices=from_slice(frame_indices))
         
     def __getitem__(self, *items):
         frame_indices, *crop = items
@@ -166,7 +166,7 @@ class BinaryRWFile:
                     buff = f.read(self.nbytesread)
                     data = np.frombuffer(buff, dtype=np.int16, offset=0)
                     frame[:] = np.reshape(data, (self.Ly, self.Lx))
-                    self._index = ixx+1
+                    #self._index = ixx+1
         else:
             i0 = indices[0]
             batch_size = len(indices)
@@ -222,51 +222,6 @@ class BinaryRWFile:
             The frame(s) to write.  Should be the same width and height as the other frames in the file.
         """
         self.file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
-
-    def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None, y_range: Optional[Tuple[int, int]] = None,
-                  bad_frames: Optional[np.ndarray] = None, reject_threshold: float = 0.5) -> np.ndarray:
-        """
-        Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range).
-
-        Parameters
-        ----------
-        bin_size: int
-            The size of each bin
-        x_range: int, int
-            Crops the data to a minimum and maximum x range.
-        y_range: int, int
-            Crops the data to a minimum and maximum y range.
-        bad_frames: int array
-            The indices to *not* include.
-        reject_threshold: float
-
-        Returns
-        -------
-        frames: nImg x Ly x Lx
-            The frames
-        """
-
-        good_frames = ~bad_frames if bad_frames is not None else np.ones(self.n_frames, dtype=bool)
-
-        batch_size = min(np.sum(good_frames), 500)
-        batches = []
-        for indices, data in self.iter_frames(batch_size=batch_size):
-            if len(data) != batch_size:
-                break
-
-            if x_range is not None and y_range is not None:
-                data = data[:, slice(*y_range), slice(*x_range)]  # crop
-
-            good_indices = good_frames[indices]
-            if np.mean(good_indices) > reject_threshold:
-                data = data[good_indices]
-
-            if data.shape[0] > bin_size:
-                data = binned_mean(mov=data, bin_size=bin_size)
-                batches.extend(data)
-
-        mov = np.stack(batches)
-        return mov
 
 class BinaryFile:
 

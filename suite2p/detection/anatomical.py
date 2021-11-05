@@ -118,7 +118,7 @@ def masks_to_stats(masks, weights):
         })
     return stats
     
-def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int,
+def select_rois(ops: Dict[str, Any], mov: np.ndarray,
                 diameter=None):
     """ find ROIs in static frames
     
@@ -155,14 +155,19 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
                                 (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
     t0 = time.time()
     if diameter is not None:
-        if isinstance(ops['diameter'], (list, np.ndarray)) and len(ops['diameter'])>1:
-            rescale = ops['diameter'][1] / ops['diameter'][0]
+        if isinstance(diameter, (list, np.ndarray)) and len(ops['diameter'])>1:
+            rescale = diameter[1] / diameter[0]
             mproj = cv2.resize(mproj, (Lxc, int(Lyc*rescale)))
         else:
             rescale = 1.0
-            ops['diameter'] = [ops['diameter'], ops['diameter']]
-        print("!NOTE! ops['diameter'] set to %0.2f for cell detection with cellpose"%ops['diameter'][1])
-    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1],
+            diameter = [diameter, diameter]
+        if diameter[1] > 0:
+            print("!NOTE! diameter set to %0.2f for cell detection with cellpose"%diameter[1])
+        else:
+            print("!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
+    else:
+        print("!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
+    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=diameter[1],
                                                          flow_threshold=ops['flow_threshold'],
                                                          cellprob_threshold=ops['cellprob_threshold'])
     if rescale != 1.0:
@@ -170,16 +175,9 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         mproj = cv2.resize(mproj, (Lxc, Lyc))
     stats = masks_to_stats(masks, weights)
     print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
-    if 'yrange' in ops:
-        ymin, xmin = ops['yrange'][0], ops['xrange'][0]
-    else:
-        ymin, xmin = 0, 0
-    for stat in stats:
-        stat['ypix'] += int(ymin)
-        stat['xpix'] += int(xmin)
-    stats = roi_stats(stats, dy, dx, Ly, Lx)
-
+    
     new_ops = {
+            'diameter': median_diam,
             'max_proj': max_proj,
             'Vmax': 0,
             'ihop': 0,

@@ -31,21 +31,16 @@ def detect(ops, classfile=None):
             y_range=ops['yrange'],
             x_range=ops['xrange'],
         )
-    print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+        print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     
-    ops, stat = detection_wrapper(mov, ops['Ly'], ops['Lx'], ops=ops, classfile=classfile)
+        ops, stat = detection_wrapper(f, mov=mov, ops=ops, classfile=classfile)
 
     return ops, stat
 
-def bin_movie(f_reg, ops):
+def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
     """ bin registered movie """
-    n_frames, Ly, Lx = f_reg.shape
-    yrange = ops.get('yrange', [0, Ly])
-    xrange = ops.get('xrange', [0, Lx])
-    bin_size = int(max(1, n_frames // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
-    print('Binning movie in chunks of length %2.2d' % bin_size)
-    bad_frames = ops.get('badframes', None)
-    good_frames = ~bad_frames if bad_frames is not None else np.ones(n_frames, dtype=bool)
+    n_frames = f_reg.shape[0]
+    good_frames = ~badframes if badframes is not None else np.ones(n_frames, dtype=bool)
     batch_size = min(good_frames.sum(), 500)
     Lyc = yrange[1] - yrange[0]
     Lxc = xrange[1] - xrange[0]
@@ -56,13 +51,14 @@ def bin_movie(f_reg, ops):
     for k in np.arange(0, n_frames, batch_size):
         data = f_reg[k : min(k + batch_size, n_frames)]
 
-        # exclude bad_frames
+        # exclude badframes
         good_indices = good_frames[k : min(k + batch_size, n_frames)]
         if good_indices.mean() > 0.5:
             data = data[good_indices]
 
         # crop to valid region
-        data = data[:, slice(*yrange), slice(*xrange)]
+        if yrange is not None and xrange is not None:
+            data = data[:, slice(*yrange), slice(*xrange)]
 
         # bin in time
         if data.shape[0] > bin_size:
@@ -73,34 +69,29 @@ def bin_movie(f_reg, ops):
         mov[ik : ik + n_bins] = data
         ik += n_bins
 
-    print('Binned movie [%d,%d,%d] in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
+    print('Binned movie of size [%d,%d,%d] created in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
     return mov
 
 
-def detection_wrapper(mov, Ly, Lx, yrange=None, xrange=None, ops=default_ops(), classfile=None):
-    if yrange is None:
-        if 'yrange' not in ops:
-            ops['yrange'] = [0, Ly]
-    else:
-        ops['yrange'] = yrange
-    if xrange is None:
-        if 'xrange' not in ops:
-            ops['xrange'] = [0, Lx]
-    else:
-        ops['xrange'] = xrange
+def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, 
+                      ops=default_ops(), classfile=None):
 
-    if mov.shape[1] != ops['yrange'][1] - ops['yrange'][0]:
-        raise ValueError('mov.shape[1] is not same size as yrange')
-    elif mov.shape[2] != ops['xrange'][1] - ops['xrange'][0]:
-        raise ValueError('mov.shape[2] is not same size as xrange')
+    n_frames, Ly, Lx = f_reg.shape
+    yrange = ops.get('yrange', [0, Ly]) if yrange is None else yrange
+    xrange = ops.get('xrange', [0, Lx]) if xrange is None else xrange
     
-    if 'aspect' in ops:
-        dy, dx = int(ops['aspect'] * 10), 10
-    else:
-        d0 = ops['diameter']
-        dy, dx = (d0, d0) if isinstance(d0, int) else d0
-
+    if mov is None:
+        bin_size = int(max(1, n_frames // ops['nbinned'], np.round(ops['tau'] * ops['fs'])))
+        print('Binning movie in chunks of length %2.2d' % bin_size)
+        mov = bin_movie(f_reg, bin_size, yrange=yrange, 
+                        xrange=xrange, badframes=ops.get('badframes', None))
+    else:    
+        if mov.shape[1] != yrange[-1] - yrange[0]:
+            raise ValueError('mov.shape[1] is not same size as yrange')
+        elif mov.shape[2] != xrange[-1] - xrange[0]:
+            raise ValueError('mov.shape[2] is not same size as xrange')
+        
     if ops.get('inverted_activity', False):
         mov -= mov.min()
         mov *= -1
@@ -110,7 +101,6 @@ def detection_wrapper(mov, Ly, Lx, yrange=None, xrange=None, ops=default_ops(), 
         mov = pca_denoise(mov, block_size=[ops['block_size'][0]//2, ops['block_size'][1]//2],
                             n_comps_frac = 0.5)
 
-    t0 = time.time()
     if ops.get('anatomical_only', 0) and not CELLPOSE_INSTALLED:
         print('~~~ tried to import cellpose to run anatomical but failed, install with: ~~~')
         print('$ pip install cellpose')
@@ -120,25 +110,45 @@ def detection_wrapper(mov, Ly, Lx, yrange=None, xrange=None, ops=default_ops(), 
         stat = anatomical.select_rois(
                     ops=ops,
                     mov=mov,
-                    dy=dy,
-                    dx=dx,
-                    Ly=Ly,
-                    Lx=Ly,
-                    diameter=ops['diameter'])
-        
+                    diameter=ops.get('diameter', None))
     else:            
         stat = select_rois(
             ops=ops,
             mov=mov,
-            dy=dy,
-            dx=dx,
-            Ly=Ly,
-            Lx=Lx,
-            max_overlap=ops['max_overlap'],
             sparse_mode=ops['sparse_mode'],
-            do_crop=ops['soma_crop'],
             classfile=classfile,
         )
+
+    ymin = int(yrange[0])
+    xmin = int(xrange[0])
+    for s in stat:
+        s['ypix'] += ymin
+        s['xpix'] += xmin
+        s['med'][0] += ymin
+        s['med'][1] += xmin    
+
+    
+    if ops['preclassify'] > 0:
+        if classfile is None:
+            print(f'NOTE: Applying user classifier at {str(user_classfile)}')
+            classfile = user_classfile
+
+        stat =  roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
+                          diameter=ops.get('diameter', None), do_crop=ops.get('soma_crop', 1))
+        if len(stat) == 0:
+            iscell = np.zeros((0, 2))
+        else:
+            iscell = classify(stat=stat, classfile=classfile)
+        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
+        ic = (iscell[:,0]>ops['preclassify']).flatten().astype('bool')
+        stat = stat[ic]
+        print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
+    
+    stat = roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
+                     diameter=ops.get('diameter', None), 
+                     max_overlap=ops['max_overlap'], 
+                     do_crop=ops.get('soma_crop', 1))
+    print('After removing overlaps, %d ROIs remain' % (len(stat)))
 
     # if second channel, detect bright cells in second channel
     if 'meanImg_chan2' in ops:
@@ -149,8 +159,8 @@ def detection_wrapper(mov, Ly, Lx, yrange=None, xrange=None, ops=default_ops(), 
 
     return ops, stat
 
-def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int, Lx: int, 
-                max_overlap: float = True, sparse_mode: bool = True, do_crop: bool=True,
+def select_rois(ops: Dict[str, Any], mov: np.ndarray, 
+                sparse_mode: bool = True,
                 classfile: Path = None):
     
     t0 = time.time()
@@ -164,8 +174,6 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
             spatial_scale=ops['spatial_scale'],
             threshold_scaling=ops['threshold_scaling'],
             max_iterations=250 * ops['max_iterations'],
-            yrange=ops['yrange'],
-            xrange=ops['xrange'],
             percentile=ops.get('active_percentile', 0.0),
         )
         ops.update(new_ops)
@@ -177,25 +185,9 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
     
     if len(stat)==0:
         raise ValueError("no ROIs were found -- check registered binary and maybe change spatial scale")
-
-    if ops['preclassify'] > 0:
-        if classfile is None:
-            print(f'NOTE: Applying user classifier at {str(user_classfile)}')
-            classfile = user_classfile
-
-        stat =  roi_stats(stat, dy, dx, Ly, Lx, do_crop=do_crop)
-        if len(stat) == 0:
-            iscell = np.zeros((0, 2))
-        else:
-            iscell = classify(stat=stat, classfile=classfile)
-        np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-        ic = (iscell[:,0]>ops['preclassify']).flatten().astype('bool')
-        stat = stat[ic]
-        print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
-            
+        
     # add ROI stat to stat
-    stat = roi_stats(stat, dy, dx, Ly, Lx, max_overlap=max_overlap, do_crop=do_crop)
+    #stat = roi_stats(stat, dy, dx, Ly, Lx, max_overlap=max_overlap, do_crop=do_crop)
 
-    print('After removing overlaps, %d ROIs remain' % (len(stat)))
     return stat
 

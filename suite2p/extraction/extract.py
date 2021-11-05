@@ -135,7 +135,7 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
             F_chan2, Fneu_chan2 = extract_traces(cell_masks, neuropil_masks, batch_size=batch_size)
     return F, Fneu, F_chan2, Fneu_chan2
 
-def extraction_wrapper(stat, f_in, f_in_chan2=None, cell_masks=None, neuropil_masks=None, ops=default_ops()):
+def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None, neuropil_masks=None, ops=default_ops()):
     """ creates masks, computes fluorescence
 
     Parameters
@@ -143,10 +143,10 @@ def extraction_wrapper(stat, f_in, f_in_chan2=None, cell_masks=None, neuropil_ma
 
     stat : array of dicts
 
-    f_in : array of functional frames, np.ndarray or io.BinaryRWFile
+    f_reg : array of functional frames, np.ndarray or io.BinaryRWFile
         n_frames x Ly x Lx
 
-    f_in_chan2 : array of anatomical frames, np.ndarray or io.BinaryRWFile
+    f_reg_chan2 : array of anatomical frames, np.ndarray or io.BinaryRWFile
         n_frames x Ly x Lx
 
 
@@ -165,7 +165,7 @@ def extraction_wrapper(stat, f_in, f_in_chan2=None, cell_masks=None, neuropil_ma
     F_neu_chan2 : neuropil of anatomical channel
 
     """
-    n_frames, Ly, Lx = f_in.shape
+    n_frames, Ly, Lx = f_reg.shape
     batch_size=ops['batch_size']
     if cell_masks is None:
         t10 = time.time()
@@ -174,9 +174,9 @@ def extraction_wrapper(stat, f_in, f_in_chan2=None, cell_masks=None, neuropil_ma
             neuropil_masks = neuropil_masks0
         print('Masks created, %0.2f sec.' % (time.time() - t10))    
 
-    F, Fneu = extract_traces(f_in, cell_masks, neuropil_masks, batch_size=batch_size)
-    if f_in_chan2 is not None:
-        F_chan2, Fneu_chan2 = extract_traces(f_in_chan2, cell_masks, neuropil_masks, batch_size=batch_size)
+    F, Fneu = extract_traces(f_reg, cell_masks, neuropil_masks, batch_size=batch_size)
+    if f_reg_chan2 is not None:
+        F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, cell_masks, neuropil_masks, batch_size=batch_size)
     else:
         F_chan2, Fneu_chan2 = [], []
 
@@ -237,7 +237,7 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
             f_in_chan2 = None
         
         stat, F, Fneu, F_chan2, Fneu_chan2 = extraction_wrapper(stat, f_in, 
-                                                                f_in_chan2=f_in_chan2, 
+                                                                f_reg_chan2=f_in_chan2, 
                                                                 cell_masks=cell_masks,
                                                                 neuropil_masks=neuropil_masks,
                                                                 ops=ops)

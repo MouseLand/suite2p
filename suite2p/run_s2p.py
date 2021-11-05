@@ -63,8 +63,6 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         print(f'NOTE: applying default {str(user_classfile)}')
         classfile = user_classfile
 
-    nchannels = 2 if f_reg_chan2 is not None else 1
-
     if run_registration:
         raw = f_raw is not None
         # if already shifted by bidiphase, do not shift again
@@ -90,6 +88,7 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
         plane_times['registration'] = time.time()-t11
         print('----------- Total %0.2f sec' % plane_times['registration'])
+        n_frames, Ly, Lx = f_reg.shape
 
         if ops['two_step_registration'] and ops['keep_movie_raw']:
             print('----------- REGISTRATION STEP 2')
@@ -108,7 +107,6 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             print('----------- Total %0.2f sec' % plane_times['two_step_registration'])
 
         # compute metrics for registration
-        n_frames, Ly, Lx = f_reg.shape
         if ops.get('do_regmetrics', True) and n_frames>=1500:
             t0 = time.time()
             # n frames to pick from full movie
@@ -128,8 +126,7 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         t11=time.time()
         print('----------- ROI DETECTION')
         if stat is None:
-            mov = detection.bin_movie(f_reg, ops)
-            ops, stat = detection.detection_wrapper(mov, Ly, Lx,
+            ops, stat = detection.detection_wrapper(f_reg,
                                                     ops=ops, 
                                                     classfile=classfile)
         plane_times['detection'] = time.time()-t11
@@ -138,7 +135,7 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         ######## ROI EXTRACTION ##############
         t11=time.time()
         print('----------- EXTRACTION')
-        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(ops, stat)
+        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.extraction_wrapper(stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops)
         # save results
         if ops.get('ops_path'):
             np.save(ops['ops_path'], ops)
@@ -153,7 +150,7 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             iscell = classification.classify(stat=stat, classfile=classfile)
         else:
             iscell = np.zeros((0, 2))
-        
+        plane_times['classification'] = time.time()-t11
         
         ######### SPIKE DECONVOLUTION ###############
         fpath = ops['save_path']
@@ -266,10 +263,9 @@ def run_plane(ops, ops_path=None, stat=None):
         run_registration = False
 
     Ly, Lx = ops['Ly'], ops['Lx']
-    n_frames = ops['nframes']
     
     # get binary file paths
-    raw = ops.get('keep_movie_raw') and 'raw_file' in ops and path.isfile(ops['raw_file'])
+    raw = ops.get('keep_movie_raw') and 'raw_file' in ops and os.path.isfile(ops['raw_file'])
     reg_file = ops['reg_file']
     raw_file = ops.get('raw_file', 0) if raw else reg_file
     if ops['nchannels'] > 1:

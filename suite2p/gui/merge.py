@@ -5,6 +5,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QLineEdit, QGridLayout, QMessageBox, QLabel, QPushButton, QWidget
 from scipy import stats
 
+
 from . import masks, io
 from . import utils
 from ..detection.stats import roi_stats, median_pix
@@ -53,17 +54,7 @@ def merge_activity_masks(parent):
 
     probcell = []
     probredcell = []
-    merged_cells = []
-    remove_merged = []
-    for n in np.array(parent.imerge):
-        if len(parent.stat[n]['imerge']) > 0:
-            remove_merged.append(n)
-            for k in parent.stat[n]['imerge']:
-                merged_cells.append(k)
-        else:
-            merged_cells.append(n)
-    merged_cells = np.unique(np.array(merged_cells))
-
+    merged_cells = np.unique(np.array(parent.imerge))
     for n in merged_cells:
         ypix = np.append(ypix, parent.stat[n]["ypix"])
         xpix = np.append(xpix, parent.stat[n]["xpix"])
@@ -81,6 +72,7 @@ def merge_activity_masks(parent):
     probredcell = np.array(probredcell)
     pmean = probcell.mean()
     prmean = probredcell.mean()
+    iscell = np.array([parent.iscell[parent.ichosen]], dtype=bool)
 
     # remove overlaps
     ipix = np.concatenate((ypix[:,np.newaxis], xpix[:,np.newaxis]), axis=1)
@@ -89,10 +81,8 @@ def merge_activity_masks(parent):
     xpix = xpix[goodi]
     lam = lam[goodi]
 
-
     ### compute statistics of merges
     stat0 = {}
-    stat0['imerge'] = merged_cells
     if 'iplane' in parent.stat[merged_cells[0]]:
         stat0['iplane'] = parent.stat[merged_cells[0]]['iplane']
     stat0['ypix'] = ypix
@@ -107,11 +97,6 @@ def merge_activity_masks(parent):
         if isinstance(d0, int):
             d0 = [d0, d0]
     
-    # red prob
-    stat0['chan2_prob'] = -1
-    # inmerge
-    stat0["inmerge"] = -1
-
     ### compute activity of merged cells
     F = F.mean(axis=0)
     Fneu = Fneu.mean(axis=0)
@@ -119,10 +104,8 @@ def merge_activity_masks(parent):
         F_chan2 = F_chan2.mean(axis=0)
         Fneu_chan2 = Fneu_chan2.mean(axis=0)
     dF = F - parent.ops["neucoeff"]*Fneu
-    # activity stats
     stat0["skew"] = stats.skew(dF)
     stat0["std"] = dF.std()
-
     spks = oasis(
         F=dF[np.newaxis, :],
         batch_size=parent.ops['batch_size'],
@@ -131,36 +114,58 @@ def merge_activity_masks(parent):
     )
 
     ### remove previously merged cell from FOV (do not replace)
-    for k in remove_merged:
-        masks.remove_roi(parent, k, i0)
-        np.delete(parent.stat, k, 0)
-        np.delete(parent.Fcell, k, 0)
-        np.delete(parent.Fneu, k, 0)
-        np.delete(parent.F_chan2, k, 0)
-        np.delete(parent.Fneu_chan2, k, 0)
-        np.delete(parent.Spks, k, 0)
-        np.delete(parent.iscell, k, 0)
-        np.delete(parent.probcell, k, 0)
-        np.delete(parent.probredcell, k, 0)
-        np.delete(parent.redcell, k, 0)
-        np.delete(parent.notmerged, k, 0)
+    k = merged_cells
+    parent.stat = np.delete(parent.stat, k, 0)
+    parent.Fcell = np.delete(parent.Fcell, k, 0)
+    parent.Fneu = np.delete(parent.Fneu, k, 0)
+    parent.Spks = np.delete(parent.Spks, k, 0)
+    parent.iscell = np.delete(parent.iscell, k, 0)
+    parent.probcell = np.delete(parent.probcell, k, 0)
+    parent.probredcell = np.delete(parent.probredcell, k, 0)
+    parent.redcell = np.delete(parent.redcell, k, 0)
+    parent.notmerged = np.delete(parent.notmerged, k, 0)
+    if parent.hasred:
+        parent.F_chan2 = np.delete(parent.F_chan2, k, 0)
+        parent.Fneu_chan2 = np.delete(parent.Fneu_chan2, k, 0)
 
     # add cell to structs
-    parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
+    ix = min(merged_cells)
+    parent.stat = np.concatenate((parent.stat[:ix],
+                                  np.array([stat0]),
+                                  parent.stat[ix:]), axis=0)
     parent.stat = roi_stats(parent.stat, d0[0], d0[1], parent.Ly, parent.Lx)
-    parent.stat[-1]['lam'] = parent.stat[-1]['lam'] * merged_cells.size
-    parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis,:]), axis=0)
-    parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis,:]), axis=0)
+    parent.stat[ix]['lam'] = parent.stat[ix]['lam'] * merged_cells.size
+    parent.Fcell = np.concatenate((parent.Fcell[:ix],
+                                   F[np.newaxis,:],
+                                   parent.Fcell[ix:]), axis=0)
+    parent.Fneu = np.concatenate((parent.Fneu[:ix],
+                                  Fneu[np.newaxis,:],
+                                  parent.Fneu[ix:]), axis=0)
     if parent.hasred:
-        parent.F_chan2 = np.concatenate((parent.F_chan2, F_chan2[np.newaxis,:]), axis=0)
-        parent.Fneu_chan2 = np.concatenate((parent.Fneu_chan2, Fneu_chan2[np.newaxis,:]), axis=0)
-    parent.Spks = np.concatenate((parent.Spks, spks), axis=0)
-    iscell = np.array([parent.iscell[parent.ichosen]], dtype=bool)
-    parent.iscell = np.concatenate((parent.iscell, iscell), axis=0)
-    parent.probcell = np.append(parent.probcell, pmean)
-    parent.probredcell = np.append(parent.probredcell, -1)
-    parent.redcell = np.append(parent.redcell, False)
-    parent.notmerged = np.append(parent.notmerged, False)
+        parent.F_chan2 = np.concatenate((parent.F_chan2[:ix],
+                                         F_chan2[np.newaxis,:],
+                                         parent.F_chan2[ix:]), axis=0)
+        parent.Fneu_chan2 = np.concatenate((parent.Fneu_chan2[:ix],
+                                            Fneu_chan2[np.newaxis,:],
+                                            parent.Fneu_chan2[ix:]), axis=0)
+    parent.iscell = np.concatenate((parent.iscell[:ix],
+                                    iscell,
+                                    parent.iscell[ix:]), axis=0)
+    parent.Spks = np.concatenate((parent.Spks[:ix],
+                                  spks,
+                                  parent.Spks[ix:]), axis=0)
+    parent.probcell = np.concatenate((parent.probcell[:ix],
+                                     [pmean],
+                                     parent.probcell[ix:]))
+    parent.probredcell = np.concatenate((parent.probredcell[:ix],
+                                   [prmean],
+                                   parent.probredcell[ix:]))
+    parent.redcell = np.concatenate((parent.redcell[:ix],
+                               [False],
+                               parent.redcell[ix:]))
+    parent.notmerged = np.concatenate((parent.notmerged[:ix],
+                                 [False],
+                                 parent.notmerged[ix:]))
     
     ### for GUI drawing
     ycirc, xcirc = utils.circle(parent.stat[-1]["med"], parent.stat[-1]["radius"])
@@ -172,17 +177,17 @@ def merge_activity_masks(parent):
             )
     parent.stat[-1]["ycirc"] = ycirc[goodi]
     parent.stat[-1]["xcirc"] = xcirc[goodi]
-    
-    # * add colors *
-    masks.make_colors(parent)
-    # recompute binned F
-    parent.mode_change(parent.activityMode)
 
-    for n in merged_cells:
-        parent.stat[n]['inmerge'] = len(parent.stat)-1
-        masks.remove_roi(parent, n, i0)
+    print(f'N ROIs after merging: {len(parent.stat)}')
     masks.add_roi(parent, len(parent.stat)-1, i0)
+    masks.make_colors(parent)
+    masks.init_masks(parent)
+    parent.mode_change(parent.activityMode) # recompute binned F
     masks.redraw_masks(parent, ypix, xpix)
+
+    io.save_merge(parent)
+    parent.ichosen = ix
+    parent.imerge = [ix]
 
 class MergeWindow(QDialog):
     def __init__(self, parent=None):

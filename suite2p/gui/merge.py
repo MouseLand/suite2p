@@ -31,9 +31,7 @@ def do_merge(parent):
     )
     if dm == QMessageBox.Yes:
         merge_activity_masks(parent)
-        parent.merged.append(parent.imerge)
         parent.update_plot()
-        print(parent.merged)
         print('merged ROIs')
 
 def merge_activity_masks(parent):

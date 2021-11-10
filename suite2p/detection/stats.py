@@ -60,7 +60,8 @@ class ROI:
 
     @classmethod
     def from_stat_dict(cls, stat: Dict[str, Any]) -> ROI:
-        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'])
+        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'],
+                   med=stat['med'], do_crop=False)
 
     def to_array(self, Ly: int, Lx: int) -> np.ndarray:
         """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""

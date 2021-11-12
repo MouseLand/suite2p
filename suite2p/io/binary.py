@@ -109,7 +109,7 @@ class BinaryRWFile:
         elif isinstance(frame_indices, slice):
             frames = self.ix(indices=from_slice(frame_indices), is_slice=True)
         else:
-            frames = self.ix(indices=frame_indices)
+            frames = self.ix(indices=frame_indices, is_slice=False)
         return frames[(slice(None),) + crop] if crop else frames
 
     def sampled_mean(self) -> float:
@@ -633,6 +633,68 @@ class BinaryFileCombined:
         self._index += data.shape[0]
         
         return indices, data_all
+
+    def __getitem__(self, *items):
+        frame_indices, *crop = items
+        if isinstance(frame_indices, int):
+            frames = self.ix(indices=[frame_indices], is_slice=False)
+        elif isinstance(frame_indices, slice):
+            frames = self.ix(indices=from_slice(frame_indices), is_slice=True)
+        else:
+            frames = self.ix(indices=frame_indices)
+        return frames[(slice(None),) + crop] if crop else frames
+
+
+    def ix(self, indices: Sequence[int], is_slice=False):
+        """
+        Returns the frames at index values "indices".
+
+        Parameters
+        ----------
+        indices: int array
+            The frame indices to get
+
+        is_slice: bool, default False
+            if indices are slice, read slice with "read" function and return
+
+        Returns
+        -------
+        frames: len(indices) x Ly x Lx
+            The requested frames
+        """
+        for n, (nbytesr, read_file) in enumerate(zip(self.nbytesread, self.read_files)):
+            
+            if not is_slice:
+                frames = np.empty((len(indices), self.Ly[n], self.Lx[n]), np.int16)
+                # load and bin data
+                with temporary_pointer(read_file) as f:
+                    for frame, ixx in zip(frames, indices):
+                        if ixx!=self._index:
+                            f.seek(nbytesr * ixx)
+                        buff = f.read(nbytesr)
+                        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                        frame[:] = np.reshape(data, (self.Ly[n], self.Lx[n]))
+                        if n==len(self.Ly)-1:
+                            self._index = ixx+1
+            else:
+                i0 = indices[0]
+                batch_size = len(indices)
+                if self._index != i0:
+                    read_file.seek(nbytesr * i0)
+                buff = read_file.read(nbytesr * batch_size)
+                data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                frames = np.reshape(data, (-1, self.Ly[n], self.Lx[n]))
+                if n==len(self.Ly)-1:
+                    self._index = i0 + batch_size
+
+            if frames.size == 0:
+                return None
+            if n==0:
+                data_all = np.zeros((frames.shape[0], self.LY, self.LX), dtype=np.int16)
+            data_all[:, self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = frames
+
+            
+        return data_all
 
     def iter_frames(self, batch_size: int = 1, dtype=np.float32):
         """

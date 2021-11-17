@@ -6,7 +6,6 @@ import os
 
 from .utils import init_ops, find_files_open_binaries
 
-
 def h5py_to_binary(ops):
     """  finds h5 files and writes them to binaries
 

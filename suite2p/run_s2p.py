@@ -22,6 +22,7 @@ from functools import partial
 from pathlib import Path
 print = partial(print,flush=True)
 
+
 def default_ops():
     """ default options to run pipeline """
     return {
@@ -404,6 +405,7 @@ def run_s2p(ops={}, db={}, server={}):
             'mesoscan': io.mesoscan_to_binary,
             'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(ops.copy()),
             'bruker': io.ome_to_binary,
+            'bruker_raw': io.brukerRaw_to_binary
         }
         if ops['input_format'] in convert_funs:
             ops0 = convert_funs[ops['input_format']](ops.copy())

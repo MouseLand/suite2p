@@ -48,7 +48,7 @@ Registering the frames to the reference image
 
 Once the reference image is obtained, we align each frame to the
 reference image. The frames are registered in batches of size
-``ops['batch_size']`` (default is 200 frames per batch).
+``ops['batch_size']`` (default is 500 frames per batch).
 
 We first perform rigid registration (assuming that the whole image
 shifts by some (dy,dx)), and then optionally after that we perform

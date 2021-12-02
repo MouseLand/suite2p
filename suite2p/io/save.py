@@ -5,7 +5,7 @@ from datetime import datetime
 import scipy
 import pathlib
 
-def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
+def save_mat(ops, stat, F, Fneu, spks, iscell, redcell, F_chan2=None, Fneu_chan2=None):
     ops_matlab = ops.copy()
     if ops_matlab.get('date_proc'):
         try:
@@ -20,19 +20,34 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
                 ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
                 print(k, ops_matlab[k])
 
-        
-    scipy.io.savemat(
-        file_name=os.path.join(ops['save_path'], 'Fall.mat'),
-        mdict={
-            'stat': stat,
-            'ops': ops_matlab,
-            'F': F,
-            'Fneu': Fneu,
-            'spks': spks,
-            'iscell': iscell,
-            'redcell': redcell
-        }
-    )
+    if F_chan2 is not None:
+        scipy.io.savemat(
+            file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+            mdict={
+                'stat': stat,
+                'ops': ops_matlab,
+                'F': F,
+                'Fneu': Fneu,
+                'F_chan2': F_chan2,
+                'Fneu_chan2': Fneu_chan2,
+                'spks': spks,
+                'iscell': iscell,
+                'redcell': redcell
+            }
+        )
+    else:
+        scipy.io.savemat(
+            file_name=os.path.join(ops['save_path'], 'Fall.mat'),
+            mdict={
+                'stat': stat,
+                'ops': ops_matlab,
+                'F': F,
+                'Fneu': Fneu,
+                'spks': spks,
+                'iscell': iscell,
+                'redcell': redcell
+            }
+        )
 
 def compute_dydx(ops1):
     ops = ops1[0].copy()

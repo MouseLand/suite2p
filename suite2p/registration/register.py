@@ -280,6 +280,7 @@ def register_frames(refAndMasks, frames, ops=None):
             yblock=ops['yblock'],
             ymax1=ymax1,
             xmax1=xmax1,
+            bilinear=False
         )
     else:
         ymax1, xmax1, cmax1 = None, None, None 
@@ -295,7 +296,8 @@ def shift_frames(frames, yoff, xoff, yoff1, xoff1, ops=None):
 
     if ops['nonrigid']:
         frames = nonrigid.transform_data(frames, nblocks=ops['nblocks'], xblock=ops['xblock'], yblock=ops['yblock'],
-                                        ymax1=yoff1, xmax1=xoff1, bilinear=ops.get('bilinear_reg', True))
+                                        ymax1=yoff1, xmax1=xoff1,
+                                         bilinear=False)
     return frames
 
 def register_binary(ops: Dict[str, Any], refImg=None, raw=True):

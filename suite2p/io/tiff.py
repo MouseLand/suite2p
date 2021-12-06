@@ -68,10 +68,11 @@ def save_tiff(mov: np.ndarray, fname: str) -> None:
         The tiff filename to save to
 
     """
+    # mov[mov < 0] = 0
+    mov = np.floor(mov).astype(np.int16)
     with TiffWriter(fname) as tif:
         tif.save(
-            np.floor(mov).astype(np.int16),
-            photometric='minisblack',
+            mov,
             contiguous=True)
 
 
@@ -159,7 +160,7 @@ def tiff_to_binary(ops):
 
             # check if uint16
             if im.dtype.type == np.uint16:
-                im = (im // 2).astype(np.int16)
+                im = im.astype(np.int16)
             elif im.dtype.type == np.int32:
                 im = (im // 2).astype(np.int16)
             elif im.dtype.type != np.int16:

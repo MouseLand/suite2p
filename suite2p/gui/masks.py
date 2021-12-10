@@ -177,6 +177,22 @@ def flip_plot(parent):
             raise FileNotFoundError("Unable to find `iscell.npy` file")
 
     io.save_iscell(parent)
+    
+    
+def change_red(parent):
+    # for n in parent.imerge:
+    #     isred = int(parent.redcell[n])
+    chan2_masks(parent)
+    parent.update_plot()
+    # Check if `redcell.npy` file exists
+    if not Path(parent.basename).joinpath("redcell.npy").exists():
+        # Try the `plane0` folder in case of NWB file loaded
+        if Path(parent.basename).joinpath("plane0", "redcell.npy").exists():
+            parent.basename = str(Path(parent.basename).joinpath("plane0"))
+        else:
+            raise FileNotFoundError("Unable to find `redcell.npy` file")
+    io.save_redcell(parent)
+      
 
 def chan2_prob(parent):
     chan2prob = float(parent.chan2edit.text())

@@ -37,6 +37,7 @@ def brukerRaw_to_binary(ops):
     XMLfile = glob.glob(ops['data_path'][0]+"/*.xml")[0]
     if len(XMLfile) == 0:
         sys.exit("XML file not found. Process aborted.")
+
     ##parse XML file here, get parameters about pixel lines, etc, multisampling, numChannels, etc
     bruker_xml = parse_bruker_xml(XMLfile)
     nXpixels = int(bruker_xml['pixelsPerLine'])
@@ -47,12 +48,14 @@ def brukerRaw_to_binary(ops):
     ncycles = bruker_xml['ncycles']
     ops['ncycles'] = ncycles
     functional_chan = ops['functional_chan']
+    multisampling = int(bruker_xml['resonantSamplesPerPixel'])
 
     if functional_chan > nchannels: ##just in case someone puts in 2 for functional channel
         functional_chan = 1
 
     if nchannels != ops['nchannels']:
          print("Number of channels input into Suite2p does not match number of channels in the XML file. Proceeding with XML parameters.")
+         ops['nchannels'] = nchannels
 
     #start timer
     t0 = time.time()
@@ -69,16 +72,30 @@ def brukerRaw_to_binary(ops):
 
     #default behavior for cycles is just to jam them altogether
     total_frames_processed = 0
+    leftover_samples = np.empty(shape=(0,),dtype=np.uint16)
+    
     for cycle in range(len(fs)):
         fs_c = fs[cycle]
         nframes_processed = 0
         for i, f in enumerate(fs_c):
             ##for each raw file
-            bin = np.fromfile(f,'int16') - 2**13 #weird quirk when capturing with galvo-res scanner
-            bin[bin < 0 ] = 0
-            if bin.shape[0] % (nXpixels*nYpixels*nchannels) != 0: 
-                framesToTake = nframes_total[cycle] - nframes_processed
-                bin = bin[0:nXpixels*nYpixels*nchannels*framesToTake]
+            bin = np.fromfile(f,'uint16') - 2**13 #weird quirk when capturing with galvo-res scanner
+
+
+            complete_frames = np.floor(bin.shape[0]/(nXpixels*nYpixels*nchannels*multisampling)).astype(int)
+            #get_complete_frames
+            leftover_samples = bin[nXpixels*nYpixels*nchannels*multisampling*complete_frames:]
+            #store left_over_bits
+
+            # if bin.shape[0] % (nXpixels*nYpixels*nchannels*multisampling) != 0: 
+            #     framesToTake = nframes_total[cycle] - nframes_processed
+            #     bin = bin[0:nXpixels*nYpixels*nchannels*framesToTake]
+            
+            if multisampling > 1:
+                bin = bin.reshape(-1,multisampling)
+                addmask = np.sum(bin <= 2**13,1,dtype="uint16")
+                bin[bin > 2**13] = 0
+                bin = np.floor_divide(np.sum(bin,1,dtype="uint16"),addmask)
 
             iplanes = np.arange(0, nplanes)
             ops['meanImg'] = np.zeros((nXpixels,nYpixels) , np.float32)

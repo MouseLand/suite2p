@@ -48,7 +48,7 @@ def brukerRaw_to_binary(ops):
     ncycles = bruker_xml['ncycles']
     ops['ncycles'] = ncycles
     functional_chan = ops['functional_chan']
-    multisampling = int(bruker_xml['resonantSamplesPerPixel'])
+    samplesPerPixel= int(bruker_xml['samplesPerPixel'])
 
     if functional_chan > nchannels: ##just in case someone puts in 2 for functional channel
         functional_chan = 1
@@ -64,13 +64,14 @@ def brukerRaw_to_binary(ops):
     ops1 = utils.init_ops(ops)
     nplanes = ops1[0]['nplanes']
 
-    # open all binary files for writing and look for tiffs in all requested folders
+    # open all binary files for writing
     ops1, fs, reg_file, reg_file_chan2 = find_bruker_raw_files_open_binaries(ops1)
     ops = ops1[0]
 
-    nframes_processed = 0
+    
 
-    #default behavior for cycles is just to jam them altogether
+    #default behavior for cycles is just to jam them altogether, cycles also define the z-series time steps
+    nframes_processed = 0
     total_frames_processed = 0
     leftover_samples = np.empty(shape=(0,),dtype=np.uint16)
     
@@ -80,22 +81,14 @@ def brukerRaw_to_binary(ops):
         for i, f in enumerate(fs_c):
             ##for each raw file
             bin = np.fromfile(f,'uint16') - 2**13 #weird quirk when capturing with galvo-res scanner
+            bin = np.concatenate((leftover_samples,bin))
 
-
-            complete_frames = np.floor(bin.shape[0]/(nXpixels*nYpixels*nchannels*multisampling)).astype(int)
-            #get_complete_frames
-            leftover_samples = bin[nXpixels*nYpixels*nchannels*multisampling*complete_frames:]
-            #store left_over_bits
-
-            # if bin.shape[0] % (nXpixels*nYpixels*nchannels*multisampling) != 0: 
-            #     framesToTake = nframes_total[cycle] - nframes_processed
-            #     bin = bin[0:nXpixels*nYpixels*nchannels*framesToTake]
+            (completeFrames, bin, leftover_samples) = calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel)
             
-            if multisampling > 1:
-                bin = bin.reshape(-1,multisampling)
-                addmask = np.sum(bin <= 2**13,1,dtype="uint16")
+            if samplesPerPixel > 1:
+                bin = multisamplingAverage(bin,samplesPerPixel)
+            elif samplesPerPixel == 1:
                 bin[bin > 2**13] = 0
-                bin = np.floor_divide(np.sum(bin,1,dtype="uint16"),addmask)
 
             iplanes = np.arange(0, nplanes)
             ops['meanImg'] = np.zeros((nXpixels,nYpixels) , np.float32)
@@ -125,6 +118,8 @@ def brukerRaw_to_binary(ops):
 
     ops['nframes'] = np.sum(bruker_xml['nframes'],axis=None)
 
+    
+    
     # write ops files
     do_registration = ops['do_registration']
     for ops in ops1:
@@ -142,6 +137,26 @@ def brukerRaw_to_binary(ops):
         if nchannels>1:
             reg_file_chan2[j].close()
     return ops1[0]
+
+def multisamplingAverage(bin, samplesPerPixel):
+    bin = bin.reshape(-1,samplesPerPixel)
+    addmask = np.sum(bin <= 2**13,1,dtype="uint16")
+    bin[bin > 2**13] = 0
+    bin = np.floor_divide(np.sum(bin,1,dtype="uint16"),addmask)
+
+    return bin
+
+def calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel):
+    #calculate the number of complete frames from the samples read in
+    complete_frames = np.floor(bin.shape[0]/(nXpixels*nYpixels*nchannels*samplesPerPixel)).astype(int)
+
+    #get samples for complete frames
+    samples = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames]
+
+    #samples leftover in buffer for next frame
+    leftover_samples = bin[nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames:]
+
+    return (complete_frames, samples, leftover_samples)
 
 def parse_bruker_xml(xmlfile):
     tree = ET.parse(xmlfile)

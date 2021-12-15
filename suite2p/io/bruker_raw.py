@@ -13,7 +13,7 @@ import numpy as np
 
 from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter, imsave
-
+from pathlib import Path
 from . import utils
 
 def brukerRaw_to_binary(ops):
@@ -43,12 +43,15 @@ def brukerRaw_to_binary(ops):
     nXpixels = int(bruker_xml['pixelsPerLine'])
     nYpixels = int(bruker_xml['linesPerFrame'])
     nframes_total = bruker_xml['nframes']
-    ops['nframes'] = bruker_xml['nframes']
+    ops['nframes'] = np.sum(nframes_total)
     nchannels = bruker_xml['nchannels']
     ncycles = bruker_xml['ncycles']
     ops['ncycles'] = ncycles
     functional_chan = ops['functional_chan']
     samplesPerPixel= int(bruker_xml['samplesPerPixel'])
+    nplanes = bruker_xml['nplanes']
+    ops['meanImg'] = np.zeros((nXpixels,nYpixels), np.float32)
+    ops['meanImg_chan2'] = np.zeros((nXpixels,nYpixels), np.float32)
 
     if functional_chan > nchannels: ##just in case someone puts in 2 for functional channel
         functional_chan = 1
@@ -57,69 +60,64 @@ def brukerRaw_to_binary(ops):
          print("Number of channels input into Suite2p does not match number of channels in the XML file. Proceeding with XML parameters.")
          ops['nchannels'] = nchannels
 
+    if nplanes != ops['nplanes']:
+        print("Number of planes input into Suite2p does not match number of channels in the XML file. Proceeding with XML parameters.")
+        ops['nplanes'] = nplanes
+
     #start timer
     t0 = time.time()
 
     # copy ops to list where each element is ops for each plane
     ops1 = utils.init_ops(ops)
-    nplanes = ops1[0]['nplanes']
 
     # open all binary files for writing
     ops1, fs, reg_file, reg_file_chan2 = find_bruker_raw_files_open_binaries(ops1)
     ops = ops1[0]
-
-    
 
     #default behavior for cycles is just to jam them altogether, cycles also define the z-series time steps
     nframes_processed = 0
     total_frames_processed = 0
     leftover_samples = np.empty(shape=(0,),dtype=np.uint16)
     
-    for cycle in range(len(fs)):
-        fs_c = fs[cycle]
-        nframes_processed = 0
-        for i, f in enumerate(fs_c):
-            ##for each raw file
-            bin = np.fromfile(f,'uint16') - 2**13 #weird quirk when capturing with galvo-res scanner
-            bin = np.concatenate((leftover_samples,bin))
+    for i, f in enumerate(fs):
+        ##for each raw file
+        bin = np.fromfile(f,'uint16') - 2**13 #weird quirk when capturing with galvo-res scanner
+        bin = np.concatenate((leftover_samples,bin))
 
-            (completeFrames, bin, leftover_samples) = calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel)
-            
-            if samplesPerPixel > 1:
-                bin = multisamplingAverage(bin,samplesPerPixel)
-            elif samplesPerPixel == 1:
-                bin[bin > 2**13] = 0
+        (completeFrames, bin, leftover_samples) = calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel, nplanes)
+        if (completeFrames * nplanes + total_frames_processed) >  ops['nframes']:
+            numToTake = ops['nframes'] - total_frames_processed
+            bin = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*numToTake*nplanes]
 
-            iplanes = np.arange(0, nplanes)
-            ops['meanImg'] = np.zeros((nXpixels,nYpixels) , np.float32)
-            ops['meanImg_chan2'] = np.zeros((nXpixels,nYpixels), np.float32)
-            
-            for chan in range(nchannels):
-                #bin = bin.reshape(512,-1)
-                bin_temp = bin[chan::nchannels]
-                bin_temp = bin_temp.reshape(-1,nXpixels,nYpixels)
-                bin_temp[:,1::2,:] = np.flip(bin_temp[:,1::2,:],2)
-                if ops['keep_movie_raw'] == 1:
+        if samplesPerPixel > 1:
+            bin = multisamplingAverage(bin,samplesPerPixel)
+        elif samplesPerPixel == 1:
+            bin[bin > 2**13] = 0
+
+        for chan in range(nchannels):
+            #grab appropriate samples and flip every other line
+            bin_temp = bin[chan::nchannels]
+            bin_temp = bin_temp.reshape(-1,nXpixels,nYpixels)
+            bin_temp[:,1::2,:] = np.flip(bin_temp[:,1::2,:],2)
+
+            if ops['keep_movie_raw'] == 1:
                     savestr = "/Ch{}_{}.tiff".format(chan,i)
                     imsave(ops['data_path'][0]+savestr,bin_temp)
 
-                ix = iplanes[0]
-                meanImg = np.sum(bin_temp,0)
+            for plane in np.arange(0, nplanes):
+                bin_temp_plane = bin_temp[0::nplanes,:,:]
+                meanImg = np.sum(bin_temp_plane,0)
                 if (chan+1) == functional_chan: #s2p thinks it's yummy when first channel is used for functional
-                    reg_file[ix].write(bytearray(bin_temp))
-                    nframes_processed = nframes_processed + bin_temp.shape[0]
-                    total_frames_processed = total_frames_processed + bin_temp.shape[0]
+                    reg_file[plane].write(bytearray(bin_temp_plane))
+                    total_frames_processed = total_frames_processed + bin_temp_plane.shape[0]
                     ops['meanImg'] += meanImg
                 else: #could probably be upgraded to include more channels, but fine for now
-                    reg_file_chan2[ix].write(bytearray(bin_temp))
+                    reg_file_chan2[plane].write(bytearray(bin_temp))
                     ops['meanImg_chan2'] += meanImg
 
-            print('%d frames of binary, time %0.2f sec.'%(total_frames_processed,time.time()-t0))
+        print('%d frames of binary, time %0.2f sec.'%(total_frames_processed,time.time()-t0))
 
-    ops['nframes'] = np.sum(bruker_xml['nframes'],axis=None)
 
-    
-    
     # write ops files
     do_registration = ops['do_registration']
     for ops in ops1:
@@ -146,19 +144,20 @@ def multisamplingAverage(bin, samplesPerPixel):
 
     return bin
 
-def calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel):
+def calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel, nplanes):
     #calculate the number of complete frames from the samples read in
-    complete_frames = np.floor(bin.shape[0]/(nXpixels*nYpixels*nchannels*samplesPerPixel)).astype(int)
+    complete_frames = np.floor(bin.shape[0]/(nXpixels*nYpixels*nchannels*samplesPerPixel*nplanes)).astype(int)
 
     #get samples for complete frames
-    samples = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames]
+    samples = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames*nplanes]
 
     #samples leftover in buffer for next frame
-    leftover_samples = bin[nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames:]
+    leftover_samples = bin[nXpixels*nYpixels*nchannels*samplesPerPixel*complete_frames*nplanes:]
 
     return (complete_frames, samples, leftover_samples)
 
 def parse_bruker_xml(xmlfile):
+    #wondering weather or not to pull just the relevant information out
     tree = ET.parse(xmlfile)
     root = tree.getroot()
 
@@ -168,10 +167,23 @@ def parse_bruker_xml(xmlfile):
             b_xml[thing.attrib['key']] = thing.attrib['value']
         except:
             pass
+
+    for thing in root.findall("Sequence"):
+        try:
+            print(thing.attrib['key']) 
+            print(thing.attrib['value'])
+        except:
+            pass
     
-    ncycles = len(root) - 2
-    b_xml['ncycles'] = ncycles #clycles are 
-    b_xml['nframes'] = [len(root[i+2].findall('Frame')) for i in range(ncycles)] #not very pythonic, but just counts frames per cycle
+    #if this is a time series with z-stack
+    if root.findall("Sequence")[0].attrib['type'] == 'TSeries ZSeries Element':
+        b_xml['bidirectional'] = root.findall("Sequence")[0].attrib['bidirectionalZ']
+        b_xml['nplanes'] = len(root.findall("Sequence")[0]) - 1
+    elif root.findall("Sequence")[0].attrib['type'] == 'TSeries Timed Element':
+        b_xml['nplanes'] = 1
+    
+    b_xml['ncycles'] = len(root) - 2
+    b_xml['nframes'] = [len(root[i+2].findall('Frame')) for i in range(b_xml['ncycles'])] #not very pythonic, but just counts frames per cycle
     b_xml['nchannels'] = len(root[2].findall('Frame')[0].findall('File')) 
     return b_xml
 
@@ -201,10 +213,8 @@ def find_bruker_raw_files_open_binaries(ops1):
             reg_file.append(open(ops['reg_file'], 'wb'))
             if nchannels>1:
                 reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
-    
-    fs = []
-    for i in range(ops1[0]['ncycles']):
-        fs.append(glob.glob(ops['data_path'][0]+"/*"+str(i+1)+"_RAWDATA*"))
+
+    fs = list(Path(ops['data_path'][0]).glob("*RAWDATA*"))
 
     for ops in ops1:
         ops['filelist'] = fs

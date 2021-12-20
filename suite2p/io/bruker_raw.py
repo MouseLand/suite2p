@@ -50,8 +50,7 @@ def brukerRaw_to_binary(ops):
     functional_chan = ops['functional_chan']
     samplesPerPixel= int(bruker_xml['samplesPerPixel'])
     nplanes = bruker_xml['nplanes']
-    ops['meanImg'] = np.zeros((nXpixels,nYpixels), np.float32)
-    ops['meanImg_chan2'] = np.zeros((nXpixels,nYpixels), np.float32)
+   
 
     if functional_chan > nchannels: ##just in case someone puts in 2 for functional channel
         functional_chan = 1
@@ -63,6 +62,11 @@ def brukerRaw_to_binary(ops):
     if nplanes != ops['nplanes']:
         print("Number of planes input into Suite2p does not match number of channels in the XML file. Proceeding with XML parameters.")
         ops['nplanes'] = nplanes
+
+    ops['meanImg'] = np.zeros((nXpixels,nYpixels), np.float32)
+
+    if nchannels > 1: #not robust against more than 2 channels, will fail
+        ops['meanImg_chan2'] = np.zeros((nXpixels,nYpixels), np.float32)
 
     #start timer
     t0 = time.time()
@@ -126,7 +130,7 @@ def brukerRaw_to_binary(ops):
             ops['yrange'] = np.array([0,ops['Ly']])
             ops['xrange'] = np.array([0,ops['Lx']])
         ops['meanImg'] /= ops['nframes']
-        if nchannels>1:
+        if nchannels > 1:
             ops['meanImg_chan2'] /= ops['nframes']
         np.save(ops['ops_path'], ops)
     # close all binary files and write ops files

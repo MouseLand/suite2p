@@ -44,8 +44,8 @@ def convertSingleSampling():
   ops = default_ops()
   ops['input_format'] = "bruker_raw"
   ops['nchannels'] = 1
-  ops['do_registration'] = 0
-  ops['roidetect'] = 0
+  ops['do_registration'] = 1
+  ops['roidetect'] = 1
   ops['functional_chan'] = 2
   ops['fs'] = 15
   ops['block_size'] = [256, 256]

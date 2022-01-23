@@ -69,6 +69,12 @@ class ROI:
         arr[self.ypix, self.xpix] = 1
         return arr
 
+    def to_array_with_lam(self, Ly: int, Lx: int) -> np.ndarray:
+        """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""
+        arr = np.zeros((Ly, Lx), dtype=float)
+        arr[self.ypix, self.xpix] = self.lam
+        return arr
+
     @classmethod
     def stats_dicts_to_3d_array(cls, stats: Sequence[Dict[str, Any]], Ly: int, Lx: int, label_id: bool = False):
         """
@@ -87,6 +93,24 @@ class ROI:
             array = cls.from_stat_dict(stat=stat).to_array(Ly=Ly, Lx=Lx)
             if label_id:
                 array *= i + 1
+            arrays.append(array)
+        return np.stack(arrays)
+
+    @classmethod
+    def stats_dicts_to_3d_array_(cls, stats: Sequence[Dict[str, Any]], Ly: int, Lx: int):
+        """
+        Outputs a (roi x Ly x Lx) float array from a sequence of stat dicts.
+        Convenience function that repeatedly calls ROI.from_stat_dict() and ROI.to_array() for all rois.
+
+        Parameters
+        ----------
+        stats : List of dictionary 'ypix', 'xpix', 'lam'
+        Ly : y size of frame
+        Lx : x size of frame
+        """
+        arrays = []
+        for i, stat in enumerate(stats):
+            array = cls.from_stat_dict(stat=stat).to_array_with_lam(Ly=Ly, Lx=Lx)
             arrays.append(array)
         return np.stack(arrays)
 

@@ -219,6 +219,7 @@ def find_bruker_raw_files_open_binaries(ops1):
                 reg_file_chan2.append(open(ops['reg_file_chan2'], 'wb'))
 
     fs = list(Path(ops['data_path'][0]).glob("*RAWDATA*"))
+    fs = [str(file) for file in fs] 
 
     for ops in ops1:
         ops['filelist'] = fs

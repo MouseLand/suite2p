@@ -182,7 +182,6 @@ def get_nd2_list(ops):
     else:
         ops['first_tiffs'] = np.array(first_tiffs).astype('bool')
         print('** Found %d nd2 files - converting to binary **'%(len(fsall)))
-        #print('Found %d tifs'%(len(fsall)))
     return fsall, ops
 
 

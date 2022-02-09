@@ -241,7 +241,7 @@ def find_files_open_binaries(ops1, ish5=False):
         print('Scanbox files:')
         print('\n'.join(fs))
     elif input_format == 'nd2':
-        # find nds2
+        # find nd2s
         fs, ops2 = get_nd2_list(ops1[0])
         print('Nikon files:')
         print('\n'.join(fs))

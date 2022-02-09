@@ -94,6 +94,7 @@ def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
         print('NOTE: ScanImageTiffReader not working for this tiff type, using tifffile')
         return True
 
+
 def tiff_to_binary(ops):
     """  finds tiff files and writes them to binaries
 
@@ -214,6 +215,7 @@ def tiff_to_binary(ops):
         if nchannels>1:
             reg_file_chan2[j].close()
     return ops1[0]
+
 
 def mesoscan_to_binary(ops):
     """ finds mesoscope tiff files and writes them to binaries

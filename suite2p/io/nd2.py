@@ -21,7 +21,7 @@ def nd2_to_binary(ops):
         ops : dictionary of first plane
             ops['reg_file'] or ops['raw_file'] is created binary
             assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
-            'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'    
+            'nframes', 'meanImg', 'meanImg_chan2'
     """
 
     t0 = time.time()
@@ -32,7 +32,7 @@ def nd2_to_binary(ops):
     # look for nd2s in all requested folders
     ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
-    
+
     # loop over all nd2 files
     iall = 0
     ik = 0
@@ -48,13 +48,12 @@ def nd2_to_binary(ops):
             im = np.expand_dims(im, -3)
         if 'Z' not in nd2_file.sizes:
             im = np.expand_dims(im, 1)
-        
 
         nplanes = nd2_file.sizes['Z'] if 'Z' in nd2_file.sizes else 1
         nchannels = nd2_file.sizes['C'] if 'C' in nd2_file.sizes else 1
         nframes = nd2_file.sizes['T'] if 'T' in nd2_file.sizes else 1
-        
-        iblocks = np.arange(0, nframes,ops1[0]['batch_size'])
+
+        iblocks = np.arange(0, nframes, ops1[0]['batch_size'])
         if iblocks[-1] < nframes:
             iblocks = np.append(iblocks, nframes)
 
@@ -69,12 +68,10 @@ def nd2_to_binary(ops):
             im = (im // 2).astype(np.int16)
         elif im.dtype.type != np.int16:
             im = im.astype(np.int16)
-            
+
         # loop over all frames
         for ichunk, onset in enumerate(iblocks[:-1]):
             offset = iblocks[ichunk+1]
-            #im = np.array(im[onset:offset,:,:,:,:]) // 2
-            #im = im.astype(np.int16)
             im2mean = im.mean(axis = 0).astype(np.float32) / len(iblocks)
             for ichan in range(nchannels):
                 im2write = im[:,:,ichan,:,:]

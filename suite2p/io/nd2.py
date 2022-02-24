@@ -72,15 +72,17 @@ def nd2_to_binary(ops):
         # loop over all frames
         for ichunk, onset in enumerate(iblocks[:-1]):
             offset = iblocks[ichunk+1]
-            im2mean = im.mean(axis = 0).astype(np.float32) / len(iblocks)
+            im_p = np.array(im[onset:offset,:,:,:,:])
+            im2mean = im_p.mean(axis = 0).astype(np.float32) / len(iblocks)  ### DEBUG This is so wrong.
             for ichan in range(nchannels):
-                im2write = im[:,:,ichan,:,:]
+                nframes = im_p.shape[0]
+                im2write = im_p[:,:,ichan,:,:]
                 for j in range(0, nplanes):
                     if iall == 0:
-                        ops1[j]['meanImg'] = np.zeros((im.shape[3],im.shape[4]),np.float32)
+                        ops1[j]['meanImg'] = np.zeros((im_p.shape[3],im_p.shape[4]),np.float32)
                         if nchannels>1:
-                            ops1[j]['meanImg_chan2'] = np.zeros((im.shape[3],im.shape[4]),np.float32)
-                        ops1[j]['nframes'] = 0
+                            ops1[j]['meanImg_chan2'] = np.zeros((im_p.shape[3],im_p.shape[4]),np.float32)
+                        ops1[j]['nframes'] = 0  ### DEBUG: WHY?
                     if ichan == nfunc:
                         ops1[j]['meanImg'] += np.squeeze(im2mean[j,ichan,:,:])
                         reg_file[j].write(bytearray(im2write[:,j,:,:].astype('int16')))

@@ -35,6 +35,7 @@ def default_ops():
         'mesoscan': False,  # for reading in scanimage mesoscope files
         'bruker': False,  # whether or not single page BRUKER tiffs!
         'bruker_bidirectional': False, # bidirectional multiplane in bruker: 0, 1, 2, 2, 1, 0 (True) vs 0, 1, 2, 0, 1, 2 (False)
+        'nd2': False, # for reading Nikon nd2 files
         'h5py': [],  # take h5py as input (deactivates data_path)
         'h5py_key': 'data',  #key in h5py where data array is stored
         'nwb_file': '', # take nwb file as input (deactivates data_path)
@@ -390,6 +391,8 @@ def run_s2p(ops={}, db={}, server={}):
             ops['input_format'] = 'nwb'
         elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
+        elif ops.get('nd2'):
+            ops['input_format'] = 'nd2'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
         elif not 'input_format' in ops:
@@ -401,6 +404,7 @@ def run_s2p(ops={}, db={}, server={}):
             'h5': io.h5py_to_binary,
             'nwb': io.nwb_to_binary,
             'sbx': io.sbx_to_binary,
+            'nd2': io.nd2_to_binary,
             'mesoscan': io.mesoscan_to_binary,
             'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(ops.copy()),
             'bruker': io.ome_to_binary,

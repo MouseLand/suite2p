@@ -27,4 +27,4 @@ dependencies:
     - paramiko
     - pynwb
     - sbxreader
-    - ipykernel
+    - suite2p

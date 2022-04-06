@@ -398,6 +398,17 @@ class MainWindow(QMainWindow):
                 elif event.key() == QtCore.Qt.Key_Up:
                     masks.flip_plot(self)
                     self.ROI_remove()
+                    
+                elif event.key() == QtCore.Qt.Key_C:
+                    if self.hasred:
+                        self.redcell[self.ichosen] = ~self.redcell[self.ichosen]
+                        self.imerge = [self.ichosen]
+                        masks.change_red(self)
+                        print('switched red')
+                        
+                   #  self.update_plot()
+                    ## NOTE: do we want to have C be a toggle key? 
+                    
 
 
     def update_plot(self):

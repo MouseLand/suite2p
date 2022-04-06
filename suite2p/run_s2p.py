@@ -301,7 +301,11 @@ def run_plane(ops, ops_path=None, stat=None):
             stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
             iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
             redcell = np.load(os.path.join(ops['save_path'], 'redcell.npy')) if ops['nchannels']==2 else []
-            io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
+            # if second channel, save F_chan2 and Fneu_chan2
+            if 'meanImg_chan2' in ops:
+                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell, F_chan2, Fneu_chan2)
+            else:
+                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
             
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")

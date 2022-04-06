@@ -89,7 +89,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 
 ## Examples
 
-An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265NHRWYXUz7CRhbJHtd6B-zJs8f). It's a single-plane, single-channel recording.
+An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1amlyX015SG12VU0?resourcekey=0-v-pxg8FwtFV7lqynlsuc9Q&usp=sharing). It's a single-plane, single-channel recording.
 
 ## Getting started
 

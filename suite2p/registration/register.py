@@ -162,32 +162,38 @@ def compute_reference(frames, ops=default_ops()):
 
 def compute_reference_masks(refImg, ops=default_ops()):
     ### ------------- compute registration masks ----------------- ###
-
-    maskMul, maskOffset = rigid.compute_masks(
-        refImg=refImg,
-        maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
-    )
-    cfRefImg = rigid.phasecorr_reference(
-        refImg=refImg,
-        smooth_sigma=ops['smooth_sigma'],
-    )
-    Ly, Lx = refImg.shape
-    if ops.get('nonrigid'):
-        blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=ops['block_size'])
-
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
-            refImg0=refImg,
-            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'], # slope of taper mask at the edges
-            smooth_sigma=ops['smooth_sigma'],
-            yblock=blocks[0],
-            xblock=blocks[1],
-        )
+    if isinstance(refImg, list):
+        refAndMasks_all = []
+        for rimg in refImg:
+            refAndMasks = compute_reference_masks(rimg)
+            refAndMasks_all.append(refAndMasks)
+        return refAndMasks_all
     else:
-        maskMulNR, maskOffsetNR, cfRefImgNR, blocks = [], [], [], []
+        maskMul, maskOffset = rigid.compute_masks(
+            refImg=refImg,
+            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'],
+        )
+        cfRefImg = rigid.phasecorr_reference(
+            refImg=refImg,
+            smooth_sigma=ops['smooth_sigma'],
+        )
+        Ly, Lx = refImg.shape
+        if ops.get('nonrigid'):
+            blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=ops['block_size'])
 
-    return maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks
+            maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
+                refImg0=refImg,
+                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 * ops['smooth_sigma'], # slope of taper mask at the edges
+                smooth_sigma=ops['smooth_sigma'],
+                yblock=blocks[0],
+                xblock=blocks[1],
+            )
+        else:
+            maskMulNR, maskOffsetNR, cfRefImgNR, blocks = [], [], [], []
 
-def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0, ops=default_ops()):
+        return maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks
+
+def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0, ops=default_ops(), nZ=1):
     """ register frames to reference image 
     
     Parameters
@@ -211,77 +217,101 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
 
 
     """
-    if len(refAndMasks)==7 or not isinstance(refAndMasks, np.ndarray):
-        maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = refAndMasks 
-    else:
-        refImg = refAndMasks
-        if ops.get('norm_frames', False) and 'rmin' not in ops:
-            rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
-            refImg = np.clip(refImg, rmin, rmax)
-        maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = compute_reference_masks(refImg, ops)
-     
-    if bidiphase != 0:
-        bidiphase.shift(frames, bidiphase)
 
-    fsmooth = frames.copy().astype(np.float32)
-    if ops['smooth_sigma_time'] > 0:
-        fsmooth = utils.temporal_smooth(data=fsmooth, sigma=ops['smooth_sigma_time'])
-
-    # preprocessing for 1P recordings
-    if ops['1Preg']:
-        if ops['pre_smooth']:
-            fsmooth = utils.spatial_smooth(fsmooth, int(ops['pre_smooth']))
-        fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
-
-    # rigid registration
-    if rmin > -np.inf:
-        fsmooth = np.clip(fsmooth, rmin, rmax)
-    ymax, xmax, cmax = rigid.phasecorr(
-        data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
-        cfRefImg=cfRefImg,
-        maxregshift=ops['maxregshift'],
-        smooth_sigma_time=ops['smooth_sigma_time'],
-    )
-    
-    for frame, dy, dx in zip(frames, ymax, xmax):
-        frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
-
-    # non-rigid registration
-    if ops['nonrigid']:
-        # need to also shift smoothed data (if smoothing used)
-        if ops['smooth_sigma_time'] or ops['1Preg']:
-            for fsm, dy, dx in zip(fsmooth, ymax, xmax):
-                fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
+    if nZ > 1:
+        cmax_best = -np.inf * np.ones(len(frames), 'float32')
+        zpos_best = np.zeros(len(frames), 'int')
+        for z in range(nZ):
+            outputs = register_frames(refAndMasks[z], frames.copy(), rmin=rmin[z], rmax=rmax[z], 
+                                        bidiphase=bidiphase, ops=ops, nZ=1)
+            cmax = outputs[3]
+            if z==0:
+                outputs_best = list(outputs[:-1]).copy() 
+            ibest = cmax_best < cmax
+            zpos_best[ibest] = z
+            cmax_best[ibest] = cmax[ibest]
+            for i, (output_best, output) in enumerate(zip(outputs_best, outputs[:-1])):
+                output_best[ibest] = output[ibest]
+        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
+        return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, zpos_best
+    else:    
+        if len(refAndMasks)==7 or not isinstance(refAndMasks, np.ndarray):
+            maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = refAndMasks 
         else:
-            fsmooth = frames.copy()
+            refImg = refAndMasks
+            if ops.get('norm_frames', False) and 'rmin' not in ops:
+                rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+                refImg = np.clip(refImg, rmin, rmax)
+            maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = compute_reference_masks(refImg, ops)
+        
+        if bidiphase != 0:
+            bidiphase.shift(frames, bidiphase)
 
+        
+        # if smoothing or filtering or clipping to compute registration shifts, make a copy of the frames
+        dtype = 'float32' if ops['smooth_sigma_time'] > 0 or ops['1Preg'] else frames.dtype
+        fsmooth = frames.copy().astype(dtype) if ops['smooth_sigma_time'] > 0 or ops['1Preg'] or rmin > -np.inf else frames
+        
         if rmin > -np.inf:
-            fsmooth = np.clip(fsmooth, rmin, rmax)
-            
-        ymax1, xmax1, cmax1 = nonrigid.phasecorr(
-            data=fsmooth,
-            maskMul=maskMulNR.squeeze(),
-            maskOffset=maskOffsetNR.squeeze(),
-            cfRefImg=cfRefImgNR.squeeze(),
-            snr_thresh=ops['snr_thresh'],
-            NRsm=blocks[-1],
-            xblock=blocks[1],
-            yblock=blocks[0],
-            maxregshiftNR=ops['maxregshiftNR'],
-        )
+            np.clip(frames, rmin, rmax, out=fsmooth)
 
-        frames = nonrigid.transform_data(
-            data=frames,
-            yblock=blocks[0],
-            xblock=blocks[1],
-            nblocks=blocks[2],
-            ymax1=ymax1,
-            xmax1=xmax1,
+        if ops['smooth_sigma_time']:
+            fsmooth = utils.temporal_smooth(data=fsmooth, sigma=ops['smooth_sigma_time'])
+        else:
+            fsmooth = frames
+
+        # preprocessing for 1P recordings
+        if ops['1Preg']:
+            if ops['pre_smooth']:
+                fsmooth = utils.spatial_smooth(fsmooth, int(ops['pre_smooth']))
+            fsmooth = utils.spatial_high_pass(fsmooth, int(ops['spatial_hp_reg']))
+
+        # rigid registration
+        ymax, xmax, cmax = rigid.phasecorr(
+            data=rigid.apply_masks(data=fsmooth, maskMul=maskMul, maskOffset=maskOffset),
+            cfRefImg=cfRefImg,
+            maxregshift=ops['maxregshift'],
+            smooth_sigma_time=ops['smooth_sigma_time'],
         )
-    else:
-        ymax1, xmax1, cmax1 = None, None, None 
-    
-    return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1
+        
+        for frame, dy, dx in zip(frames, ymax, xmax):
+            frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
+
+        # non-rigid registration
+        if ops['nonrigid']:
+            # need to also shift smoothed/filtered data
+            if ops['smooth_sigma_time'] or ops['1Preg']:
+                for fsm, dy, dx in zip(fsmooth, ymax, xmax):
+                    fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
+            else:
+                if rmin > -np.inf:
+                    fsmooth = frames.copy().astype(dtype)
+                    np.clip(frames, rmin, rmax, out=fsmooth)
+                    
+            ymax1, xmax1, cmax1 = nonrigid.phasecorr(
+                data=fsmooth,
+                maskMul=maskMulNR.squeeze(),
+                maskOffset=maskOffsetNR.squeeze(),
+                cfRefImg=cfRefImgNR.squeeze(),
+                snr_thresh=ops['snr_thresh'],
+                NRsm=blocks[-1],
+                xblock=blocks[1],
+                yblock=blocks[0],
+                maxregshiftNR=ops['maxregshiftNR'],
+            )
+
+            frames = nonrigid.transform_data(
+                data=frames,
+                yblock=blocks[0],
+                xblock=blocks[1],
+                nblocks=blocks[2],
+                ymax1=ymax1,
+                xmax1=xmax1,
+            )
+        else:
+            ymax1, xmax1, cmax1 = None, None, None 
+        
+        return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, np.zeros_like(ymax)
 
 def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None, ops=default_ops()):
     if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
@@ -295,6 +325,21 @@ def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None, ops=default_ops(
                                          ymax1=yoff1, xmax1=xoff1, bilinear=ops.get('bilinear_reg', True))
     return frames
 
+def normalize_reference_image(refImg):
+    if isinstance(refImg, list):
+        rmins = []
+        rmaxs = []
+        for rimg in refImg:
+            rmin, rmax = np.int16(np.percentile(rimg,1)), np.int16(np.percentile(rimg,99))
+            rimg[:] = np.clip(rimg, rmin, rmax)
+            rmins.append(rmin)
+            rmaxs.append(rmax)
+        return refImg, rmins, rmaxs
+    else:
+        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
+        refImg = np.clip(refImg, rmin, rmax)
+        return refImg, rmin, rmax
+
 def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=None, ops=default_ops()):
     """ compute reference frame, if refImg is None, and align frames in f_align_in to reference 
     
@@ -303,9 +348,9 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     f_align_in, f_align_out can be a BinaryRWFile or any type of array that can be slice-indexed
     
     """
+    
     n_frames, Ly, Lx = f_align_in.shape
     batch_size = ops['batch_size']
-
     ### ----- compute reference image and bidiphase shift -------------- ###
     if refImg is None:
         # grab frames
@@ -325,15 +370,23 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
             t0 = time.time()
             refImg = compute_reference(frames, ops=ops)
             print('Reference frame, %0.2f sec.'%(time.time()-t0))
-
+    
+    if isinstance(refImg, list):
+        nZ = len(refImg)
+        print(f'List of reference frames len = {nZ}')
+    else:
+        nZ = 1
 
     # normalize reference image
     refImg_orig = refImg.copy()
     if ops.get('norm_frames', False):
-        rmin, rmax = np.int16(np.percentile(refImg,1)), np.int16(np.percentile(refImg,99))
-        refImg = np.clip(refImg, rmin, rmax)
+        refImg, rmin, rmax = normalize_reference_image(refImg)
     else:
-        rmin, rmax = -np.inf, np.inf
+        if nZ==1:
+            rmin, rmax = -np.inf, np.inf
+        else:
+            rmin = -np.inf * np.ones(nZ)
+            rmax = np.inf * np.ones(nZ)
 
     if ops['bidiphase'] and not ops['bidi_corrected']:
         bidiphase = int(ops['bidiphase'])
@@ -345,7 +398,7 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     ### ------------- register frames to reference image ------------ ###
 
     mean_img = np.zeros((Ly, Lx), 'float32')
-    rigid_offsets, nonrigid_offsets = [], []
+    rigid_offsets, nonrigid_offsets, zpos = [], [], []
 
     if ops['frames_include'] != -1:
         n_frames = min(n_frames, ops['frames_include'])
@@ -353,11 +406,13 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     t0 = time.time()
     for k in np.arange(0, n_frames, batch_size):
         frames = f_align_in[k : min(k + batch_size, n_frames)]
-        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = register_frames(refAndMasks, frames, 
-                                                                        rmin=rmin, rmax=rmax, 
-                                                                        bidiphase=bidiphase, 
-                                                                        ops=ops)
+        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, zpos0 = register_frames(refAndMasks, frames, 
+                                                                                rmin=rmin, rmax=rmax, 
+                                                                                bidiphase=bidiphase, 
+                                                                                ops=ops,
+                                                                                nZ=nZ)
         rigid_offsets.append([ymax, xmax, cmax])
+        zpos.extend(list(zpos0))
         if ops['nonrigid']:
             nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
@@ -384,7 +439,7 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     if ops['nonrigid']:
         nonrigid_offsets = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
     
-    return refImg_orig, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets
+    return refImg_orig, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zpos
 
 def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None, yoff1=None, xoff1=None, ops=default_ops()):
     """ shift frames for alternate channel in f_alt_in and write to f_alt_out if not None (else write to f_alt_in) """
@@ -488,7 +543,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
         nchannels = 1
 
     outputs = compute_reference_and_register_frames(f_align_in, f_align_out=f_align_out, refImg=refImg, ops=ops)
-    refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets = outputs
+    refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zpos = outputs
     yoff, xoff, corrXY = rigid_offsets
     yoff1, xoff1, corrXY1 = nonrigid_offsets
 
@@ -532,7 +587,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
         Lx=Lx,
     )
 
-    return refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, meanImg_chan2, badframes, yrange, xrange
+    return refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, zpos, meanImg_chan2, badframes, yrange, xrange
 
 def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     """ main registration function
@@ -594,23 +649,25 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
         outputs = registration_wrapper(f_align_in, f_align_out, f_alt_in, f_alt_out, refImg, ops=ops)
         
-    refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, mean_img_alt, badframes, yrange, xrange = outputs
+    # refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zpos, mean_img_alt, badframes, yrange, xrange = outputs
 
-    # assign reference image and normalizers
-    ops['refImg'] = refImg 
-    ops['rmin'], ops['rmax'] = rmin, rmax
-    # assign rigid offsets to ops
-    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
-    # assign nonrigid offsets to ops
-    ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
-    # assign mean images
-    if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan']:
-        ops['meanImg'] = mean_img 
-    elif ops['nchannels'] == 2:
-        ops['meanImg_chan2'] = mean_img_alt
-    # assign crop computation and badframes
-    ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
+    # # assign reference image and normalizers
+    # ops['refImg'] = refImg 
+    # ops['rmin'], ops['rmax'] = rmin, rmax
+    # # assign rigid offsets to ops
+    # ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    # # assign nonrigid offsets to ops
+    # ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    # # assign mean images
+    # if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan']:
+    #     ops['meanImg'] = mean_img 
+    # elif ops['nchannels'] == 2:
+    #     ops['meanImg_chan2'] = mean_img_alt
+    # # assign crop computation and badframes
+    # ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
     
+    ops = save_registration_outputs_to_ops(outputs, ops)
+
     # add enhanced mean image
     ops = enhanced_mean_image(ops)
 
@@ -619,7 +676,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
 
 def save_registration_outputs_to_ops(registration_outputs, ops):
 
-    refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, meanImg_chan2, badframes, yrange, xrange = registration_outputs
+    refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, zpos, meanImg_chan2, badframes, yrange, xrange = registration_outputs
     # assign reference image and normalizers
     ops['refImg'] = refImg 
     ops['rmin'], ops['rmax'] = rmin, rmax
@@ -633,6 +690,7 @@ def save_registration_outputs_to_ops(registration_outputs, ops):
         ops['meanImg_chan2'] = meanImg_chan2
     # assign crop computation and badframes
     ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
+    ops['zpos_registration'] = zpos
     return ops
             
 

@@ -13,11 +13,15 @@ import torch
 try:
     # pytorch > 1.7
     from torch.fft import fft as torch_fft 
-    from torch.fft import ifft as torch_ifft 
+    from torch.fft import fft2 as torch_fft2
+    from torch.fft import ifft as torch_ifft
+    from torch.fft import ifft2 as torch_ifft2 
+    from torch.fft import fftshift
 except:
     # pytorch <= 1.7
-    from torch import fft as torch_fft 
-    from torch import ifft as torch_ifft 
+    raise ImportError('pytorch version > 1.7 required')
+
+eps = torch.complex(torch.tensor(1e-5), torch.tensor(0.0))
 
 def fft2(data, size=None):
     """ compute fft2 over last two dimensions using pytorch
@@ -43,9 +47,43 @@ def ifft2(data, size=None):
 #    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
 
 
+def convolve(mov: np.ndarray, img: np.ndarray, lcorr: int = None) -> np.ndarray:
+    """
+    Returns the 3D array 'mov' convolved by a 2D array 'img'.
+
+    Parameters
+    ----------
+    mov: nImg x Ly x Lx
+        The frames to process
+    img: 2D array
+        The convolution kernel
+    lcorr: int (optional)
+        amount to crop cross-correlation
+
+    Returns
+    -------
+    convolved_data: nImg x Ly x Lx
+    """
+    mov_fft = torch.from_numpy(mov)
+    mov_fft = torch_fft2(mov_fft, dim=(-2,-1))
+    mov_fft /= (eps + torch.abs(mov_fft))
+    mov_fft *= torch.from_numpy(img)
+    mov_fft = torch.real(torch_ifft2(mov_fft, dim=(-2,-1)))
+    #if lcorr is not None:
+    #    Ly, Lx = mov.shape[1:]
+    #    mov_fft = fftshift(mov_fft)
+    #    mov_fft = mov_fft[:, Ly//2 - lcorr : Ly//2 + lcorr + 1, Lx//2 - lcorr : Lx//2 + lcorr + 1]
+    return mov_fft.numpy()
+
+
 @vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
 def apply_dotnorm(Y, cfRefImg):
     return Y / (np.complex64(1e-5) + np.abs(Y)) * cfRefImg
+
+
+#@vectorize(['float32(int16, float32, float32)', 'float32(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
+#def addmultiply(x, mul, add):
+#    return np.float32(x) * mul + add
 
 
 @vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
@@ -216,7 +254,7 @@ def spatial_high_pass(data, N):
     return data_filtered.squeeze()
 
 
-def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
+def convolve2(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     """
     Returns the 3D array 'mov' convolved by a 2D array 'img'.
 

@@ -1,7 +1,5 @@
 import numpy as np
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QPushButton, QSlider, QButtonGroup, QLabel, QStyle, QStyleOptionSlider, QApplication
-from PyQt5.QtGui import QPainter
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 from .. import extraction
 
@@ -19,8 +17,8 @@ def make_buttons(parent):
         "U: mean img chan2",
     ]
     b = 0
-    parent.viewbtns = QButtonGroup(parent)
-    vlabel = QLabel(parent)
+    parent.viewbtns = QtGui.QButtonGroup(parent)
+    vlabel = QtGui.QLabel(parent)
     vlabel.setText("<font color='white'>Background</font>")
     vlabel.setFont(parent.boldfont)
     vlabel.resize(vlabel.minimumSizeHint())
@@ -32,7 +30,7 @@ def make_buttons(parent):
             parent.l0.addWidget(btn, b + 2, 0, 1, 1)
         else:
             parent.l0.addWidget(btn, b + 2, 0, 1, 1)
-            label = QLabel("sat: ")
+            label = QtGui.QLabel("sat: ")
             label.setStyleSheet("color: white;")
             parent.l0.addWidget(label, b+2,1,1,1)
         btn.setEnabled(False)
@@ -43,7 +41,7 @@ def make_buttons(parent):
     slider.setMaximum(255)
     slider.setLow(0)
     slider.setHigh(255)
-    slider.setTickPosition(QSlider.TicksBelow)
+    slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
     parent.l0.addWidget(slider, 3,1,len(parent.view_names)-2,1)
 
     b+=2
@@ -78,17 +76,14 @@ def init_views(parent):
             mimg     = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0,np.minimum(1,mimg))
         elif k==3:
-            if 'Vcorr' in parent.ops:
-                vcorr = parent.ops['Vcorr']
-                mimg1 = np.percentile(vcorr,1)
-                mimg99 = np.percentile(vcorr,99)
-                vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
-                mimg = mimg1 * np.ones((parent.Ly, parent.Lx),np.float32)
-                mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                    parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
-                mimg = np.maximum(0,np.minimum(1,mimg))
-            else:
-                mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
+            vcorr = parent.ops['Vcorr']
+            mimg1 = np.percentile(vcorr,1)
+            mimg99 = np.percentile(vcorr,99)
+            vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
+            mimg = mimg1 * np.ones((parent.Ly, parent.Lx),np.float32)
+            mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
+                parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
+            mimg = np.maximum(0,np.minimum(1,mimg))
         elif k==4:
             if 'max_proj' in parent.ops:
                 mproj = parent.ops['max_proj']
@@ -133,7 +128,7 @@ def plot_views(parent):
     parent.view1.show()
     parent.view2.show()
 
-class ViewButton(QPushButton):
+class ViewButton(QtWidgets.QPushButton):
     """ custom QPushButton class for quadrant plotting
         requires buttons to put into a QButtonGroup (parent.viewbtns)
          allows only 1 button to pressed at a time
@@ -156,7 +151,7 @@ class ViewButton(QPushButton):
         parent.update_plot()
 
 
-class RangeSlider(QSlider):
+class RangeSlider(QtWidgets.QSlider):
     """ A slider for ranges.
 
         This class provides a dual-slider for ranges, where there is a defined
@@ -175,12 +170,12 @@ class RangeSlider(QSlider):
         self._low = self.minimum()
         self._high = self.maximum()
 
-        self.pressed_control = QStyle.SC_None
-        self.hover_control = QStyle.SC_None
+        self.pressed_control = QtGui.QStyle.SC_None
+        self.hover_control = QtGui.QStyle.SC_None
         self.click_offset = 0
 
         self.setOrientation(QtCore.Qt.Vertical)
-        self.setTickPosition(QSlider.TicksRight)
+        self.setTickPosition(QtWidgets.QSlider.TicksRight)
         self.setStyleSheet(\
                 "QSlider::handle:horizontal {\
                 background-color: white;\
@@ -193,7 +188,7 @@ class RangeSlider(QSlider):
                 }")
 
 
-        #self.opt = QStyleOptionSlider()
+        #self.opt = QtGui.QStyleOptionSlider()
         #self.opt.orientation=QtCore.Qt.Vertical
         #self.initStyleOption(self.opt)
         # 0 for the low, 1 for the high, -1 for both
@@ -222,38 +217,38 @@ class RangeSlider(QSlider):
 
     def paintEvent(self, event):
         # based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp
-        painter = QPainter(self)
-        style = QApplication.style()
+        painter = QtGui.QPainter(self)
+        style = QtGui.QApplication.style()
 
         for i, value in enumerate([self._low, self._high]):
-            opt = QStyleOptionSlider()
+            opt = QtGui.QStyleOptionSlider()
             self.initStyleOption(opt)
 
             # Only draw the groove for the first slider so it doesn't get drawn
             # on top of the existing ones every time
             if i == 0:
-                opt.subControls = QStyle.SC_SliderHandle#QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
+                opt.subControls = QtGui.QStyle.SC_SliderHandle#QtGui.QStyle.SC_SliderGroove | QtGui.QStyle.SC_SliderHandle
             else:
-                opt.subControls = QStyle.SC_SliderHandle
+                opt.subControls = QtGui.QStyle.SC_SliderHandle
 
             if self.tickPosition() != self.NoTicks:
-                opt.subControls |= QStyle.SC_SliderTickmarks
+                opt.subControls |= QtGui.QStyle.SC_SliderTickmarks
 
             if self.pressed_control:
                 opt.activeSubControls = self.pressed_control
-                opt.state |= QStyle.State_Sunken
+                opt.state |= QtGui.QStyle.State_Sunken
             else:
                 opt.activeSubControls = self.hover_control
 
             opt.sliderPosition = value
             opt.sliderValue = value
-            style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
+            style.drawComplexControl(QtGui.QStyle.CC_Slider, opt, painter, self)
 
 
     def mousePressEvent(self, event):
         event.accept()
 
-        style = QApplication.style()
+        style = QtGui.QApplication.style()
         button = event.button()
         # In a normal slider control, when the user clicks on a point in the
         # slider's total range, but not on the slider part of the control the
@@ -261,7 +256,7 @@ class RangeSlider(QSlider):
         # For this control, clicks which are not direct hits will slide both
         # slider parts
         if button:
-            opt = QStyleOptionSlider()
+            opt = QtGui.QStyleOptionSlider()
             self.initStyleOption(opt)
 
             self.active_slider = -1
@@ -280,7 +275,7 @@ class RangeSlider(QSlider):
                     break
 
             if self.active_slider < 0:
-                self.pressed_control = QStyle.SC_SliderHandle
+                self.pressed_control = QtGui.QStyle.SC_SliderHandle
                 self.click_offset = self.__pixelPosToRangeValue(self.__pick(event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
@@ -288,13 +283,13 @@ class RangeSlider(QSlider):
             event.ignore()
 
     def mouseMoveEvent(self, event):
-        if self.pressed_control != QStyle.SC_SliderHandle:
+        if self.pressed_control != QtGui.QStyle.SC_SliderHandle:
             event.ignore()
             return
 
         event.accept()
         new_pos = self.__pixelPosToRangeValue(self.__pick(event.pos()))
-        opt = QStyleOptionSlider()
+        opt = QtGui.QStyleOptionSlider()
         self.initStyleOption(opt)
 
         if self.active_slider < 0:
@@ -332,9 +327,9 @@ class RangeSlider(QSlider):
 
 
     def __pixelPosToRangeValue(self, pos):
-        opt = QStyleOptionSlider()
+        opt = QtGui.QStyleOptionSlider()
         self.initStyleOption(opt)
-        style = QApplication.style()
+        style = QtGui.QApplication.style()
 
         gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
         sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)

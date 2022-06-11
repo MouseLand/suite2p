@@ -31,7 +31,7 @@ def replace_ops_save_path_with_local_path(request):
     """
 
     # Get the `data_folder` variable from the running test name
-    data_folder = re.search(r"\[(.*)\]", request.node.name).group(1)
+    data_folder = re.search(r"\[(.*?)(-.*?)?\]", request.node.name).group(1)
     save_folder = Path("data").joinpath("test_inputs", data_folder, "suite2p")
 
     save_path = {}
@@ -48,17 +48,27 @@ def replace_ops_save_path_with_local_path(request):
         ops1.item(0)["save_path"] = str(plane_dir.absolute())
         np.save(plane_dir.joinpath("ops.npy"), ops1)
 
-        # Concatenate iscell arrays from the NumPy files
-        if plane_idx == 0:
-            iscell_npy = np.load(plane_dir.joinpath("iscell.npy"), allow_pickle=True)
-        else:
-            iscell_npy = np.append(
-                iscell_npy,
-                np.load(plane_dir.joinpath("iscell.npy"), allow_pickle=True),
-                axis=0,
-            )
+    def concat_npy(name: str) -> np.ndarray:
+        """Concatenate arrays from NUmPy files."""
+        for plane_idx, plane_dir in enumerate(plane_folders):
+            if plane_idx == 0:
+                array_npy = np.load(
+                    plane_dir.joinpath(f"{name}.npy"), allow_pickle=True
+                )
+            else:
+                array_npy = np.append(
+                    array_npy,
+                    np.load(plane_dir.joinpath(f"{name}.npy"), allow_pickle=True),
+                    axis=0,
+                )
+        return array_npy
 
-    yield save_folder, iscell_npy
+    iscell_npy = concat_npy("iscell")
+    F_npy = concat_npy("F")
+    Fneu_npy = concat_npy("Fneu")
+    spks_npy = concat_npy("spks")
+
+    yield save_folder, iscell_npy, F_npy, Fneu_npy, spks_npy
 
     # Teardown the fixture
     for plane_dir in plane_folders:
@@ -115,28 +125,67 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
         ("2plane2chan1500"),
     ],
 )
-def temp_test_save_nwb(replace_ops_save_path_with_local_path, data_folder):
-    save_folder, iscell_npy = replace_ops_save_path_with_local_path
+def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
 
+    # Get expected data already saved as NumPy files
+    (
+        save_folder,
+        expected_iscell,
+        expected_F,
+        expected_Fneu,
+        expected_spks,
+    ) = replace_ops_save_path_with_local_path
+
+    # Save as NWB file
     save_nwb(save_folder)
 
-    with NWBHDF5IO(str(save_folder.joinpath("ophys.nwb")), "r") as io:
+    # Check (some of) the structure of the NWB file saved
+    nwb_path = save_folder.joinpath("ophys.nwb")
+    with NWBHDF5IO(str(nwb_path), "r") as io:
         read_nwbfile = io.read()
         assert read_nwbfile.processing
-        assert read_nwbfile.processing["ophys"].data_interfaces["Deconvolved"]
-        assert read_nwbfile.processing["ophys"].data_interfaces["Fluorescence"]
-        assert read_nwbfile.processing["ophys"].data_interfaces["Neuropil"]
+        ophys = read_nwbfile.processing["ophys"]
+        assert ophys.data_interfaces["Deconvolved"]
+        Fluorescence = ophys.data_interfaces["Fluorescence"]
+        assert Fluorescence
+        if "2plane" in data_folder:
+            assert Fluorescence["plane0"]
+            assert Fluorescence["plane1"]
+        assert ophys.data_interfaces["Neuropil"]
+        if "2chan" in data_folder:
+            Fluorescence_chan2 = ophys.data_interfaces["Fluorescence_chan2"]
+            assert Fluorescence_chan2
+            assert ophys.data_interfaces["Neuropil_chan2"]
         iscell_nwb = (
-            read_nwbfile.processing["ophys"]
-            .data_interfaces["ImageSegmentation"]
+            ophys.data_interfaces["ImageSegmentation"]
             .plane_segmentations["PlaneSegmentation"]
             .columns[2]
             .data[:]
         )
-        np.testing.assert_array_equal(iscell_nwb, iscell_npy)
+        np.testing.assert_array_equal(iscell_nwb, expected_iscell)
+
+    # Extract Suite2p info from NWB file
+    stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell = read_nwb(
+        nwb_path
+    )
+
+    # Check we get the same data back as the original data
+    # after saving to NWB + reading
+    np.testing.assert_array_equal(F, expected_F)
+    np.testing.assert_array_equal(Fneu, expected_Fneu)
+    np.testing.assert_array_equal(spks, expected_spks)
+    np.testing.assert_array_equal(
+        np.transpose(np.array([iscell, probcell])), expected_iscell
+    )
+    # TODO: assert round trip for `stat` and `ops`
+    # Probably need to recreate the data files as some fields are missing in the dict
+    # expected_stat = np.load(save_folder.joinpath("plane0", "stat.npy"), allow_pickle=True)
+    # expected_ops = np.load(save_folder.joinpath("plane0", "ops.npy"), allow_pickle=True)
+    # np.testing.assert_equal(stat, expected_stat)
+    # np.testing.assert_equal(ops, expected_ops)
 
     # Remove NWB file
-    save_folder.joinpath("ophys.nwb").unlink()
+    nwb_path.unlink()
 
 
 @pytest.mark.parametrize(

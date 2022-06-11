@@ -10,16 +10,18 @@ from natsort import natsorted
 from pynwb import NWBHDF5IO
 
 from suite2p import io
-from suite2p.io.nwb import save_nwb
+from suite2p.io.nwb import read_nwb, save_nwb
 from suite2p.io.utils import get_suite2p_path
 
 
 @pytest.fixture()
 def binfile1500(test_ops):
-    test_ops['tiff_list'] = ['input_1500.tif']
+    test_ops["tiff_list"] = ["input_1500.tif"]
     op = io.tiff_to_binary(test_ops)
-    bin_filename = str(Path(op['save_path0']).joinpath('suite2p/plane0/data.bin'))
-    with io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], read_filename=bin_filename) as bin_file:
+    bin_filename = str(Path(op["save_path0"]).joinpath("suite2p/plane0/data.bin"))
+    with io.BinaryFile(
+        Ly=op["Ly"], Lx=op["Lx"], read_filename=bin_filename
+    ) as bin_file:
         yield bin_file
 
 
@@ -77,14 +79,20 @@ def replace_ops_save_path_with_local_path(request):
         ops1.item(0)["save_path"] = save_path[plane_dir]
         np.save(plane_dir.joinpath("ops.npy"), ops1)
 
+
 def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
-    test_ops['h5py'] = Path(test_ops['data_path'][0]).joinpath('input.h5')
-    test_ops['nplanes'] = 3
-    test_ops['nchannels'] = 2
-    test_ops['data_path'] = []
+    test_ops["h5py"] = Path(test_ops["data_path"][0]).joinpath("input.h5")
+    test_ops["nplanes"] = 3
+    test_ops["nchannels"] = 2
+    test_ops["data_path"] = []
     op = io.h5py_to_binary(test_ops)
-    output_data = io.BinaryFile(read_filename=Path(op['save_path0'], 'suite2p/plane0/data.bin'), Ly=op['Ly'], Lx=op['Lx']).data
+    output_data = io.BinaryFile(
+        read_filename=Path(op["save_path0"], "suite2p/plane0/data.bin"),
+        Ly=op["Ly"],
+        Lx=op["Lx"],
+    ).data
     assert np.all(output_data >= 0)
+
 
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
     mov = binfile1500.bin_movie(bin_size=1)
@@ -98,7 +106,9 @@ def test_that_bin_movie_with_badframes_results_in_a_smaller_array(binfile1500):
     mov = binfile1500.bin_movie(bin_size=1, bad_frames=bad_frames, reject_threshold=0)
 
     assert len(mov) < binfile1500.n_frames, "bin_movie didn't produce a smaller array."
-    assert len(mov) == len(bad_frames) - sum(bad_frames), "bin_movie didn't produce the right size array."
+    assert len(mov) == len(bad_frames) - sum(
+        bad_frames
+    ), "bin_movie didn't produce the right size array."
 
 
 def test_that_binaryfile_data_is_repeatable(binfile1500):

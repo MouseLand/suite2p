@@ -1,36 +1,38 @@
 import datetime
-import os
-from natsort import natsorted 
-
-import numpy as np
-import time
-import scipy
 import gc
+import os
+import time
 from pathlib import Path
 
+import numpy as np
+import scipy
+from natsort import natsorted
+
+from .. import run_s2p
 from ..detection.stats import roi_stats
 from . import utils
 from .. import run_s2p, default_ops
 
 try:
-    from pynwb import NWBFile
+    from pynwb import NWBHDF5IO, NWBFile
     from pynwb.base import Images
     from pynwb.image import GrayscaleImage
-    from pynwb.device import Device
-    from pynwb.ophys import OpticalChannel
-    from pynwb.ophys import TwoPhotonSeries
-    from pynwb.ophys import ImageSegmentation
-    from pynwb.ophys import RoiResponseSeries
-    from pynwb.ophys import Fluorescence
-    from pynwb import NWBHDF5IO
+    from pynwb.ophys import (
+        Fluorescence,
+        ImageSegmentation,
+        OpticalChannel,
+        RoiResponseSeries,
+        TwoPhotonSeries,
+    )
+
     NWB = True
 except ModuleNotFoundError:
     NWB = False
 
 
 def nwb_to_binary(ops):
-    """ convert nwb file to binary (experimental)
-    
+    """convert nwb file to binary (experimental)
+
     converts single plane single channel nwb file to binary for suite2p processing
 
     Parameters
@@ -49,61 +51,62 @@ def nwb_to_binary(ops):
             'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'
 
     """
-    
+
     # force 1 plane 1 chan for now
-    ops['nplanes'] = 1
-    ops['nchannels'] = 1
+    ops["nplanes"] = 1
+    ops["nchannels"] = 1
 
     # initialize ops with reg_file and raw_file paths, etc
     ops = utils.init_ops(ops)[0]
 
-    t0=time.time()
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    
-    batch_size = ops['batch_size']
-    batch_size = int(nplanes*nchannels*np.ceil(batch_size/(nplanes*nchannels)))
+    t0 = time.time()
+    nplanes = ops["nplanes"]
+    nchannels = ops["nchannels"]
+
+    batch_size = ops["batch_size"]
+    batch_size = int(nplanes * nchannels * np.ceil(batch_size / (nplanes * nchannels)))
 
     # open reg_file (and when available reg_file_chan2)
-    if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-        reg_file = open(ops['raw_file'], 'wb')
-        if nchannels>1:
-            reg_file_chan2 = open(ops['raw_file_chan2'], 'wb')
+    if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
+        reg_file = open(ops["raw_file"], "wb")
+        if nchannels > 1:
+            reg_file_chan2 = open(ops["raw_file_chan2"], "wb")
     else:
-        reg_file = open(ops['reg_file'], 'wb')
-        if nchannels>1:
-            reg_file_chan2 = open(ops['reg_file_chan2'], 'wb')
+        reg_file = open(ops["reg_file"], "wb")
+        if nchannels > 1:
+            reg_file_chan2 = open(ops["reg_file_chan2"], "wb")
 
     nwb_driver = None
-    if ops.get('nwb_driver') and isinstance(nwb_driver, str):
-        nwb_driver = ops['nwb_driver']
+    if ops.get("nwb_driver") and isinstance(nwb_driver, str):
+        nwb_driver = ops["nwb_driver"]
 
-        
-    with NWBHDF5IO(ops['nwb_file'], 'r', driver=nwb_driver) as fio:
+    with NWBHDF5IO(ops["nwb_file"], "r", driver=nwb_driver) as fio:
         nwbfile = fio.read()
 
         # get TwoPhotonSeries
-        if not ops.get('nwb_series'):
+        if not ops.get("nwb_series"):
             TwoPhotonSeries_names = []
             for v in nwbfile.acquisition.values():
                 if isinstance(v, TwoPhotonSeries):
                     TwoPhotonSeries_names.append(v.name)
-            if len(TwoPhotonSeries_names)==0:
-                raise ValueError('no TwoPhotonSeries in NWB file')
-            elif len(TwoPhotonSeries_names)>1:
-                raise Warning('more than one TwoPhotonSeries in NWB file, choosing first one')
-            ops['nwb_series'] = TwoPhotonSeries_names[0]
-    
-        series = nwbfile.acquisition[ops['nwb_series']]
-        series_shape = nwbfile.acquisition[ops['nwb_series']].data.shape
-        ops['nframes'] = series_shape[0]
-        ops['frames_per_file'] = np.array([ops['nframes']])
-        ops['frames_per_folder'] = np.array([ops['nframes']])
-        ops['meanImg'] = np.zeros((series_shape[1], series_shape[2]), np.float32)
-        for ik in np.arange(0, ops['nframes'], batch_size):
-            ikend = min(ik+batch_size, ops['nframes'])
-            im = series.data[ik : ikend]
-            
+            if len(TwoPhotonSeries_names) == 0:
+                raise ValueError("no TwoPhotonSeries in NWB file")
+            elif len(TwoPhotonSeries_names) > 1:
+                raise Warning(
+                    "more than one TwoPhotonSeries in NWB file, choosing first one"
+                )
+            ops["nwb_series"] = TwoPhotonSeries_names[0]
+
+        series = nwbfile.acquisition[ops["nwb_series"]]
+        series_shape = nwbfile.acquisition[ops["nwb_series"]].data.shape
+        ops["nframes"] = series_shape[0]
+        ops["frames_per_file"] = np.array([ops["nframes"]])
+        ops["frames_per_folder"] = np.array([ops["nframes"]])
+        ops["meanImg"] = np.zeros((series_shape[1], series_shape[2]), np.float32)
+        for ik in np.arange(0, ops["nframes"], batch_size):
+            ikend = min(ik + batch_size, ops["nframes"])
+            im = series.data[ik:ikend]
+
             # check if uint16
             if im.dtype.type == np.uint16:
                 im = (im // 2).astype(np.int16)
@@ -113,49 +116,58 @@ def nwb_to_binary(ops):
                 im = im.astype(np.int16)
 
             reg_file.write(bytearray(im))
-            ops['meanImg'] += im.astype(np.float32).sum(axis=0)
+            ops["meanImg"] += im.astype(np.float32).sum(axis=0)
 
-            if ikend%(batch_size*4)==0:
-                print('%d frames of binary, time %0.2f sec.'%(ikend,time.time()-t0))
+            if ikend % (batch_size * 4) == 0:
+                print(
+                    "%d frames of binary, time %0.2f sec." % (ikend, time.time() - t0)
+                )
         gc.collect()
 
     # write ops files
-    do_registration = ops['do_registration']
-    ops['Ly'],ops['Lx'] = ops['meanImg'].shape
-    ops['yrange'] = np.array([0,ops['Ly']])
-    ops['xrange'] = np.array([0,ops['Lx']])
-    ops['meanImg'] /= ops['nframes']
-    if nchannels>1:
-        ops['meanImg_chan2'] /= ops['nframes']
+    ops["Ly"], ops["Lx"] = ops["meanImg"].shape
+    ops["yrange"] = np.array([0, ops["Ly"]])
+    ops["xrange"] = np.array([0, ops["Lx"]])
+    ops["meanImg"] /= ops["nframes"]
+    if nchannels > 1:
+        ops["meanImg_chan2"] /= ops["nframes"]
     # close all binary files and write ops files
-    np.save(ops['ops_path'], ops)
+    np.save(ops["ops_path"], ops)
     reg_file.close()
-    if nchannels>1:
+    if nchannels > 1:
         reg_file_chan2.close()
 
     return ops
 
 
 def read_nwb(fpath):
-    """ read NWB file for use in the GUI """
-    with NWBHDF5IO(fpath, 'r') as fio:
+    """read NWB file for use in the GUI"""
+    with NWBHDF5IO(fpath, "r") as fio:
         nwbfile = fio.read()
-        
+
         # ROIs
         try:
-            rois = nwbfile.processing['ophys']['ImageSegmentation']['PlaneSegmentation']['pixel_mask']
+            rois = nwbfile.processing["ophys"]["ImageSegmentation"][
+                "PlaneSegmentation"
+            ]["pixel_mask"]
             multiplane = False
-        except:
-            rois = nwbfile.processing['ophys']['ImageSegmentation']['PlaneSegmentation']['voxel_mask']
+        except Exception:
+            rois = nwbfile.processing["ophys"]["ImageSegmentation"][
+                "PlaneSegmentation"
+            ]["voxel_mask"]
             multiplane = True
         stat = []
         for n in range(len(rois)):
             if isinstance(rois[0], np.ndarray):
                 stat.append(
                     {
-                        "ypix": np.array([rois[n][i][0].astype("int") for i in range(len(rois[n]))]),
-                        "xpix": np.array([rois[n][i][1].astype("int") for i in range(len(rois[n]))]),
-                        "lam": np.array([rois[n][i][-1] for i in range(len(rois[n]))])
+                        "ypix": np.array(
+                            [rois[n][i][0].astype("int") for i in range(len(rois[n]))]
+                        ),
+                        "xpix": np.array(
+                            [rois[n][i][1].astype("int") for i in range(len(rois[n]))]
+                        ),
+                        "lam": np.array([rois[n][i][-1] for i in range(len(rois[n]))]),
                     }
                 )
             else:
@@ -163,15 +175,17 @@ def read_nwb(fpath):
                     {
                         "ypix": rois[n]["x"].astype("int"),
                         "xpix": rois[n]["y"].astype("int"),
-                        "lam": rois[n]["weight"]
+                        "lam": rois[n]["weight"],
                     }
                 )
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0][-2])
         ops = default_ops()
-        
+
         if multiplane:
-            nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
+            nplanes = (
+                np.max(np.array([stat[n]["iplane"] for n in range(len(stat))])) + 1
+            )
         else:
             nplanes = 1
         stat = np.array(stat)

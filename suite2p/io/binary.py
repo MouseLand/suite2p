@@ -409,7 +409,7 @@ class BinaryFile:
             i0 = indices[0]
             batch_size = len(indices)
             if self._index != i0:
-                f.seek(self.nbytesread * i0)
+                self.read_file.seek(self.nbytesread * i0)
             _, frames = self.read(batch_size=batch_size, dtype=np.int16)
             self._index = i0 + batch_size
         

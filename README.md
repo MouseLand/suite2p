@@ -82,9 +82,8 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create -f environment.yml`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install -e .[data]`
-5. Download the data with ``dvc pull -r gdrive-travis`` (read-only access). If you need to have read/write access to the files, run ``dvc pull`` and follow the authentication instructions in the output. **Note**: do *not* commit the json credentials file that comes out afterwards, git should ignore it.
-6. Run tests: `python setup.py test` or `pytest tests\`
+4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install -e .[test]`
+5. Run tests: `python setup.py test` or `pytest tests\`, this will automatically download the test data into your `suite2p` folder in `data/test_data` (this download is 1.6GB and can be downloaded also from this [link](https://www.suite2p.org/static/test_data/test_data.zip)).
 
 
 ## Examples

@@ -91,9 +91,10 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
     
     #cc = convolve(data, cfRefImg, lcorr)
     data = convolve(data, cfRefImg)
-    cc = np.block(
+    cc = np.real(np.block(
                 [[data[:,  -lcorr:, -lcorr:], data[:,  -lcorr:, :lcorr+1]],
                 [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
+            )
             )
         
     cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc

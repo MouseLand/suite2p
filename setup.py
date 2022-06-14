@@ -32,7 +32,7 @@ test_deps = [
       'pytest-qt==3.3.0',
     ]
 
-all_deps = gui_deps + data_deps + nwb_deps + test_deps
+all_deps = gui_deps + nwb_deps + test_deps
 
 try:
     import torch

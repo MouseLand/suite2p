@@ -29,6 +29,7 @@ nwb_deps = [
       ]
 test_deps = [
       'pytest',
+      'tqdm',
       'pytest-qt==3.3.0',
     ]
 

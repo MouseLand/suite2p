@@ -23,7 +23,11 @@ def data_dir():
 
 @pytest.fixture()
 def test_ops(tmpdir, data_dir):
-    """Initializes ops to be used for test. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
+    """Initializes ops to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
+    return initialize_ops(tmpdir, data_dir)
+
+def initialize_ops(tmpdir, data_dir):
+    """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accomodate creation of ops for both pytest and non-pytest settings."""
     ops = suite2p.default_ops()
     ops.update(
         {

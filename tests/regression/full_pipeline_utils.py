@@ -38,9 +38,10 @@ def initialize_ops_test2plane_2chan_with_batches(ops):
 	return ops 
 
 def initialize_ops_test_mesoscan_2plane_2z(ops):
-	with open('data/test_data/mesoscan/ops.json') as f:
+	mesoscan_dir = Path(ops['data_path'][0]).joinpath('mesoscan')
+	with open(mesoscan_dir.joinpath('ops.json')) as f:
 		meso_ops = json.load(f)
-	ops['data_path'] = [Path(ops['data_path'][0]).joinpath('mesoscan')]
+	ops['data_path'] = [mesoscan_dir]
 	for key in meso_ops.keys():
 		if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
 			ops[key] = meso_ops[key]

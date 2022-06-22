@@ -2,7 +2,7 @@ import os
 import suite2p 
 import shutil
 from conftest import initialize_ops #Guarantees that tests and this script use the same ops
-from tests.regression.full_pipeline_utils import *
+from tests.regression.utils import FullPipelineTestUtils
 test_data_dir = 'test_data'
 # Assumes the input file has already been downloaded
 test_input_dir_path = '/home/stringlab/Desktop/suite2p/data/test_data/'
@@ -42,6 +42,13 @@ def generate_2p2zmesoscan_expected_data(ops):
 	suite2p.run_s2p(ops=test_ops)
 	rename_output_dir('mesoscan')
 
+def generate_full_pipeline_test_data(full_ops):
+	# Expected Data for test_full_pipeline.py
+	generate_1p1c1500_expected_data(ops)
+	# generate_1p2c_expected_data(ops)
+	generate_2p2c1500_expected_data(ops)
+	generate_2p2zmesoscan_expected_data(ops)
+
 def rename_output_dir(new_dir_name):
 	curr_dir_path = os.path.abspath(os.getcwd())
 	if os.path.exists(os.path.join(test_output_dir_path, new_dir_name)):
@@ -53,12 +60,9 @@ def main():
 	if not os.path.exists(test_data_dir):
 		os.makedirs(test_data_dir)
 		print('Created test directory at ' + os.path.abspath(test_data_dir))
-	ops = initialize_ops(test_data_dir, test_input_dir_path)
-	# Expected Data for test_full_pipeline.py
-	generate_1p1c1500_expected_data(ops)
-	# generate_1p2c_expected_data(ops)
-	generate_2p2c1500_expected_data(ops)
-	generate_2p2zmesoscan_expected_data(ops)
+	full_ops = initialize_ops(test_data_dir, test_input_dir_path)
+	generate_full_pipeline_test_data(full_ops)
+
 	return 
 
 if __name__ == '__main__':

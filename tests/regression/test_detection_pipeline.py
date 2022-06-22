@@ -6,46 +6,6 @@ import numpy as np
 import utils
 from suite2p import detection
 from suite2p.extraction import masks
-from suite2p.io import BinaryFile
-
-
-def prepare_for_detection(op, input_file_name_list, dimensions):
-    """
-    Prepares for detection by filling out necessary ops parameters. Removes dependence on
-    other modules. Creates pre_registered binary file.
-    """
-    # Set appropriate ops parameters
-    op.update({
-        'Lx': dimensions[0],
-        'Ly': dimensions[1],
-        'nframes': 500 // op['nplanes'] // op['nchannels'],
-        'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
-        'xrange': [2, 402],
-        'yrange': [2, 358],
-    })
-    ops = []
-    for plane in range(op['nplanes']):
-        curr_op = op.copy()
-        plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
-        plane_dir.mkdir(exist_ok=True, parents=True)
-        bin_path = str(plane_dir.joinpath('data.bin'))
-        BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
-        curr_op['meanImg'] = np.reshape(
-            np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
-        ).mean(axis=0)
-        curr_op['reg_file'] = bin_path
-        if plane == 1: # Second plane result has different crop.
-            curr_op['xrange'] = [1, 403]
-            curr_op['yrange'] = [1, 359]
-        if curr_op['nchannels'] == 2:
-            bin2_path = str(plane_dir.joinpath('data_chan2.bin'))
-            BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
-            curr_op['reg_file_chan2'] = bin2_path
-        curr_op['save_path'] = plane_dir
-        curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-        ops.append(curr_op)
-    return ops
-
 
 def detect_wrapper(ops):
     """
@@ -56,7 +16,7 @@ def detect_wrapper(ops):
         op = ops[i]
         op, stat = detection.detect(ops=op)
         output_check = np.load(
-            op['data_path'][0].joinpath(f"detection/detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
+            op['data_path'][0].joinpath(f"detection/expected_detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
         #assert np.array_equal(output_check['cell_pix'], cell_pix)
@@ -72,7 +32,7 @@ def detect_wrapper(ops):
 
 
 def test_detection_output_1plane1chan(test_ops):
-    ops = prepare_for_detection(
+    ops = utils.DetectionTestUtils.prepare(
         test_ops,
         [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
@@ -86,7 +46,7 @@ def test_detection_output_2plane2chan(test_ops):
         'nplanes': 2,
     })
     detection_dir = test_ops['data_path'][0].joinpath('detection')
-    ops = prepare_for_detection(
+    ops = utils.DetectionTestUtils.prepare(
         test_ops,
         [
             [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],

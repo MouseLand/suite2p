@@ -23,15 +23,15 @@ def detect_wrapper(ops):
         cell_masks = masks.create_masks(stat, op['Ly'], op['Lx'], ops=op)[0]
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
         #assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
-        for s in stat:
-            s['lam'] /= s['lam'].sum()
         for gt_dict, output_dict in zip(stat, output_check['stat']):
             for k in gt_dict.keys():
                 if k=='ypix' or k=='xpix' or k=='lam':
                     assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
 
-
 def test_detection_output_1plane1chan(test_ops):
+    test_ops.update({
+        'tiff_list': ['input.tif'],
+    })
     ops = utils.DetectionTestUtils.prepare(
         test_ops,
         [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],

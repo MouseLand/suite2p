@@ -82,25 +82,37 @@ class GenerateDetectionTestData:
 
 	def generate_detection_2plane2chan_test_data(ops):
 		ops.update({
+			'tiff_list': ['input.tif'],
+		})
+		ops.update({
 			'nchannels': 2,
 			'nplanes': 2,
 		})
-		detection_dir = test_ops['data_path'][0].joinpath('detection')
-		ops = utils.DetectionTestUtils.prepare(
-			test_ops,
+		detection_dir = Path(ops['data_path'][0]).joinpath('detection')
+		two_plane_ops = DetectionTestUtils.prepare(
+			ops,
 			[
 				[detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
 				[detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
 			]
 			, (404, 360),
 		)
-		ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
-		ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
-		detect_wrapper(ops)
-		nplanes = test_ops['nplanes']
-
+		two_plane_ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
+		two_plane_ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
+		for i in range(len(two_plane_ops)):
+			op = two_plane_ops[i]
+			op, stat = suite2p.detection.detect(ops=op)
+			cell_masks = masks.create_masks(stat, op['Ly'], op['Lx'], ops=op)[0]
+			output_dict = {
+				'stat': stat,
+				'cell_masks': cell_masks
+			}
+			np.save('expected_detect_output_%ip%ic%i.npy' % (ops['nchannels'], ops['nplanes'], i), output_dict)
+	
 	def generate_all_data(ops):
-		 GenerateDetectionTestData.generate_detection_1plane1chan_test_data(ops)
+		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(ops)
+		GenerateDetectionTestData.generate_detection_2plane2chan_test_data(ops)
+		rename_output_dir('')
 
 def rename_output_dir(new_dir_name):
 	curr_dir_path = os.path.abspath(os.getcwd())

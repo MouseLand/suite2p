@@ -5,7 +5,6 @@ Class that tests common use cases for pipeline.
 from suite2p import io
 from pathlib import Path
 import numpy as np
-import full_pipeline_utils as fp_utils
 import suite2p, utils, json
 
 
@@ -14,7 +13,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
 	Tests for case with 1 plane and 1 channel with multiple batches. Results are saved to nwb format
 	then checked to see if it contains the necessary parts for use with GUI.
 	"""
-	test_ops = fp_utils.initialize_ops_test1plane_1chan_with_batches(test_ops)
+	test_ops = utils.FullPipelineTestUtils.initialize_ops_test1plane_1chan_with_batches(test_ops)
 	suite2p.run_s2p(ops=test_ops)
 	nplanes = test_ops['nplanes']
 	outputs_to_check = ['F', 'stat']
@@ -48,7 +47,7 @@ def test_2plane_2chan_with_batches(test_ops):
 	Tests for case with 2 planes and 2 channels with multiple batches.  Runs twice to check for consistency.
 	"""
 	for _ in range(2):
-		ops = fp_utils.initialize_ops_test2plane_2chan_with_batches(test_ops)
+		ops = utils.FullPipelineTestUtils.initialize_ops_test2plane_2chan_with_batches(test_ops)
 		nplanes = ops['nplanes']
 		suite2p.run_s2p(ops=ops)
 
@@ -88,7 +87,7 @@ def test_mesoscan_2plane_2z(test_ops):
 	"""
 	Tests for case with 2 planes and 2 ROIs for a mesoscan.
 	"""
-	test_ops = fp_utils.initialize_ops_test_mesoscan_2plane_2z(test_ops)
+	test_ops = utils.FullPipelineTestUtils.initialize_ops_test_mesoscan_2plane_2z(test_ops)
 	suite2p.run_s2p(ops=test_ops)
 
 	nplanes = test_ops['nplanes'] * test_ops['nrois']

@@ -9,12 +9,13 @@ test_input_dir_path = '/home/stringlab/Desktop/suite2p/data/test_data/'
 # Output directory where suite2p results are kept
 test_output_dir_path = '/home/stringlab/Desktop/suite2p/scripts/test_data'
 
+# Full Pipeline Tests
 def generate_1p1c1500_expected_data(ops):
 	"""
 	Generates expected output for test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format
 	for test_full_pipeline.py
 	"""
-	test_ops = initialize_ops_test1plane_1chan_with_batches(ops.copy())
+	test_ops = FullPipelineTestUtils.initialize_ops_test1plane_1chan_with_batches(ops.copy())
 	suite2p.run_s2p(ops=test_ops)
 	rename_output_dir('1plane1chan1500')
 
@@ -22,7 +23,7 @@ def generate_1p1c1500_expected_data(ops):
 # 	"""
 # 	Generates expected output for test_1plane_2chan_sourcery of test_full_pipeline.py.
 # 	"""
-# 	test_ops = initialize_ops_test_1plane_2chan_sourcery(ops.copy())
+# 	test_ops = FullPipelineTestUtils.initialize_ops_test_1plane_2chan_sourcery(ops.copy())
 # 	suite2p.run_s2p(ops=test_ops)
 # 	rename_output_dir('1plane2chan')
 
@@ -30,24 +31,30 @@ def generate_2p2c1500_expected_data(ops):
 	"""
 	Generates expected output for test_2plane_2chan_with_batches of test_full_pipeline.py.
 	"""
-	test_ops = initialize_ops_test2plane_2chan_with_batches(ops.copy())
+	test_ops = FullPipelineTestUtils.initialize_ops_test2plane_2chan_with_batches(ops.copy())
 	suite2p.run_s2p(ops=test_ops)
 	rename_output_dir('2plane2chan1500')
 
 def generate_2p2zmesoscan_expected_data(ops):
 	"""
-	Generate expected output for test_mesoscan_2plane_2z of test_full_pipeline.py.
+	Generates expected output for test_mesoscan_2plane_2z of test_full_pipeline.py.
 	"""
-	test_ops = initialize_ops_test_mesoscan_2plane_2z(ops.copy())
+	test_ops = FullPipelineTestUtils.initialize_ops_test_mesoscan_2plane_2z(ops.copy())
 	suite2p.run_s2p(ops=test_ops)
 	rename_output_dir('mesoscan')
 
 def generate_full_pipeline_test_data(full_ops):
 	# Expected Data for test_full_pipeline.py
-	generate_1p1c1500_expected_data(ops)
+	generate_1p1c1500_expected_data(full_ops)
 	# generate_1p2c_expected_data(ops)
-	generate_2p2c1500_expected_data(ops)
-	generate_2p2zmesoscan_expected_data(ops)
+	generate_2p2c1500_expected_data(full_ops)
+	generate_2p2zmesoscan_expected_data(full_ops)
+
+# Detection Tests
+def generate_detection_1plane1chan_test_data(ops):
+	"""
+	Generates expected output for test_detection_output_1plane1chan of test_detection_pipeline.py.
+	"""
 
 def rename_output_dir(new_dir_name):
 	curr_dir_path = os.path.abspath(os.getcwd())

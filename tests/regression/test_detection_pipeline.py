@@ -14,15 +14,16 @@ def detect_wrapper(ops):
     """
     for i in range(len(ops)):
         op = ops[i]
+        op['neuropil_extract'] = True
         op, stat = detection.detect(ops=op)
         output_check = np.load(
             op['data_path'][0].joinpath(f"detection/expected_detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
         #assert np.array_equal(output_check['cell_pix'], cell_pix)
-        cell_masks = masks.create_masks(stat, op['Ly'], op['Lx'], ops=op)[0]
+        cell_masks, neuropil_masks = masks.create_masks(stat, op['Ly'], op['Lx'], ops=op)
         assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, output_check['cell_masks']))
-        #assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
+        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, output_check['neuropil_masks']))
         for gt_dict, output_dict in zip(stat, output_check['stat']):
             for k in gt_dict.keys():
                 if k=='ypix' or k=='xpix' or k=='lam':

@@ -54,7 +54,7 @@ def extract_wrapper(ops):
         extract_input = np.load(
             curr_op['data_path'][0].joinpath(
                 'detection',
-                'detect_output_{0}p{1}c{2}.npy'.format(curr_op['nplanes'], curr_op['nchannels'], plane)),
+                'expected_detect_output_{0}p{1}c{2}.npy'.format(curr_op['nplanes'], curr_op['nchannels'], plane)),
             allow_pickle=True
         )[()]
         #extraction.create_masks_and_extract(curr_op, extract_input['stat'])
@@ -94,12 +94,12 @@ def run_preprocess(f: np.ndarray, test_ops):
             fs=test_ops['fs'],
             prctile_baseline=test_ops['prctile_baseline']
         )
-        test_f = np.load('data/test_data/detection/{}_f.npy'.format(bv))
+        test_f = np.load('data/test_data/extraction/{}_f.npy'.format(bv))
         yield np.allclose(pre_f, test_f, rtol=1e-4, atol=5e-2)
 
 
 def test_pre_process_baseline(test_ops):
-    f = np.load(Path('data/test_data/1plane1chan/suite2p/plane0/F.npy'))
+    f = np.load(Path('data/test_data/1plane1chan1500/suite2p/plane0/F.npy'))
     assert all(run_preprocess(f, test_ops))
 
 

@@ -5,7 +5,7 @@ import numpy as np
 
 from pathlib import Path
 from conftest import initialize_ops #Guarantees that tests and this script use the same ops
-from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils
+from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks
 
 current_dir = Path(os.getcwd())
@@ -155,9 +155,56 @@ class GenerateExtractionTestData:
 			)
 			np.save(str(test_data_dir_path.joinpath('extraction/{}_f.npy'.format(bv))), pre_f)
 
+	def generate_extraction_output_1plane1chan(ops):
+		ops.update({
+			'tiff_list': ['input.tif'],
+		})
+		ops = ExtractionTestUtils.prepare(
+			ops,
+			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
+			(404, 360)
+		)
+		op = ops[0]
+		extract_input = np.load(
+			str(test_data_dir_path.joinpath('detection/expected_detect_output_1p1c0.npy')),
+			allow_pickle=True
+		)[()]
+		extract_helper(op, extract_input, 0)
+		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '1plane1chan'))
+		shutil.move(os.path.join(test_data_dir_path, '1plane1chan'), os.path.join(test_data_dir_path, 'extraction'))
+
 	def generate_all_data(ops):
 		make_new_dir(test_data_dir_path.joinpath('extraction'))
 		GenerateExtractionTestData.generate_preprocess_baseline_test_data(ops)
+		GenerateExtractionTestData.generate_extraction_output_1plane1chan(ops)
+
+def extract_helper(ops, extract_input, plane):
+	plane_dir = Path(ops['save_path0']).joinpath(f'suite2p/plane{plane}')
+	plane_dir.mkdir(exist_ok=True, parents=True)
+	stat, F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.create_masks_and_extract(
+		ops,
+		extract_input['stat'],
+		extract_input['cell_masks'],
+		extract_input['neuropil_masks']
+	)
+	dF = F - ops['neucoeff'] * Fneu
+	dF = suite2p.extraction.preprocess(
+		F=dF,
+		baseline=ops['baseline'],
+		win_baseline=ops['win_baseline'],
+		sig_baseline=ops['sig_baseline'],
+		fs=ops['fs'],
+		prctile_baseline=ops['prctile_baseline']
+	)
+	spks = suite2p.extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
+	np.save(plane_dir.joinpath('ops.npy'), ops)
+	np.save(plane_dir.joinpath('stat.npy'), stat)
+	np.save(plane_dir.joinpath('F.npy'), F)
+	np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
+	np.save(plane_dir.joinpath('F_chan2.npy'), F_chan2)
+	np.save(plane_dir.joinpath('Fneu_chan2.npy'), Fneu_chan2)
+	np.save(plane_dir.joinpath('spks.npy'), spks)
+
 def rename_output_dir(new_dir_name):
 	curr_dir_path = os.path.abspath(os.getcwd())
 	new_dir_path = os.path.join(test_data_dir_path, new_dir_name)
@@ -177,9 +224,9 @@ def main():
 	full_ops = initialize_ops(test_data_dir_path, test_input_dir_path)
 	#GenerateFullPipelineTestData.generate_all_data(full_ops)
 	det_ops = initialize_ops(test_data_dir_path, test_input_dir_path)
-	GenerateDetectionTestData.generate_all_data(det_ops)
+	#GenerateDetectionTestData.generate_all_data(det_ops)
 	#GenerateClassificationTestData.generate_all_data(full_ops)
-	#GenerateExtractionTestData.generate_all_data(full_ops)
+	GenerateExtractionTestData.generate_all_data(full_ops)
 	return 
 
 if __name__ == '__main__':

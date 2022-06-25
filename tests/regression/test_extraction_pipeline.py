@@ -8,44 +8,6 @@ from suite2p.io import BinaryFile
 from pathlib import Path
 import utils
 
-
-def prepare_for_extraction(op, input_file_name_list, dimensions):
-    """
-    Prepares for extraction by filling out necessary ops parameters. Removes dependence on
-    other modules. Creates pre_registered binary file.
-    """
-    op.update({
-        'Lx': dimensions[0],
-        'Ly': dimensions[1],
-        'nframes': 500 // op['nplanes'] // op['nchannels'],
-        'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
-        'xrange': [2, 402],
-        'yrange': [2, 358],
-    })
-
-    ops = []
-    for plane in range(op['nplanes']):
-        curr_op = op.copy()
-        plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
-        plane_dir.mkdir(exist_ok=True, parents=True)
-        bin_path = str(plane_dir.joinpath('data.bin'))
-        BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
-        curr_op['meanImg'] = np.reshape(
-            np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
-        ).mean(axis=0)
-        curr_op['reg_file'] = bin_path
-        if plane == 1: # Second plane result has different crop.
-            curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]
-        if curr_op['nchannels'] == 2:
-            bin2_path = str(plane_dir.joinpath('data_chan2.bin'))
-            BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
-            curr_op['reg_file_chan2'] = bin2_path
-        curr_op['save_path'] = plane_dir
-        curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-        ops.append(curr_op)
-    return ops
-
-
 def extract_wrapper(ops):
     for plane in range(ops[0]['nplanes']):
         curr_op = ops[plane]
@@ -104,19 +66,23 @@ def test_pre_process_baseline(test_ops):
 
 
 def test_extraction_output_1plane1chan(test_ops):
-    ops = prepare_for_extraction(
+    test_ops.update({
+        'tiff_list': ['input.tif'],
+    })
+    ops = utils.ExtractionTestUtils.prepare(
         test_ops,
         [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)
-    nplanes = test_ops['nplanes']
+    ops = ops[0]
+    nplanes = ops['nplanes']
     outputs_to_check = ['F', 'Fneu', 'stat', 'spks']
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
-            utils.get_list_of_data(outputs_to_check, Path(test_ops['data_path'][0]).joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
-            utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
+            utils.get_list_of_data(outputs_to_check, Path(ops['data_path'][0]).joinpath(f"extraction/1plane1chan/plane0")),
+            utils.get_list_of_data(outputs_to_check, Path(ops['save_path0']).joinpath(f"suite2p/plane0")),
         ))
 
 
@@ -127,7 +93,7 @@ def test_extraction_output_2plane2chan(test_ops):
     })
 
     detection_dir = test_ops['data_path'][0].joinpath('detection')
-    ops = prepare_for_extraction(
+    ops = utils.ExtractionTestUtils.prepare(
         test_ops,
         [
             [detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],

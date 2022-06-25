@@ -23,9 +23,6 @@ def get_list_of_data(outputs_to_check, output_dir) -> Iterator[np.ndarray]:
 def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> Iterator[bool]:
     for output, data1, data2 in zip(output_name_list, data_list_one, data_list_two):
         if output == 'stat':  # where the elements of npy arrays are dictionaries (e.g: stat.npy)
-            if data2[0]['lam'].sum() > 1.0:
-                for d in data2:
-                    d['lam'] /= d['lam'].sum()
             for gt_dict, output_dict in zip(data1, data2):
                 for k in gt_dict.keys():
                     if k=='ypix' or k=='xpix' or k=='lam':
@@ -114,6 +111,43 @@ class DetectionTestUtils:
             if plane == 1: # Second plane result has different crop.
                 curr_op['xrange'] = [1, 403]
                 curr_op['yrange'] = [1, 359]
+            if curr_op['nchannels'] == 2:
+                bin2_path = str(plane_dir.joinpath('data_chan2.bin'))
+                BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
+                curr_op['reg_file_chan2'] = bin2_path
+            curr_op['save_path'] = plane_dir
+            curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
+            ops.append(curr_op)
+        return ops
+
+class ExtractionTestUtils:
+    def prepare(op, input_file_name_list, dimensions):
+        """
+        Prepares for extraction by filling out necessary ops parameters. Removes dependence on
+        other modules. Creates pre_registered binary file.
+        """
+        op.update({
+            'Lx': dimensions[0],
+            'Ly': dimensions[1],
+            'nframes': 500 // op['nplanes'] // op['nchannels'],
+            'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
+            'xrange': [2, 402],
+            'yrange': [2, 358],
+        })
+
+        ops = []
+        for plane in range(op['nplanes']):
+            curr_op = op.copy()
+            plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
+            plane_dir.mkdir(exist_ok=True, parents=True)
+            bin_path = str(plane_dir.joinpath('data.bin'))
+            BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][0]), bin_path)
+            curr_op['meanImg'] = np.reshape(
+                np.load(str(input_file_name_list[plane][0])), (-1, op['Ly'], op['Lx'])
+            ).mean(axis=0)
+            curr_op['reg_file'] = bin_path
+            if plane == 1: # Second plane result has different crop.
+                curr_op['xrange'], curr_op['yrange'] = [[1, 403], [1, 359]]
             if curr_op['nchannels'] == 2:
                 bin2_path = str(plane_dir.joinpath('data_chan2.bin'))
                 BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)

@@ -173,13 +173,47 @@ class GenerateExtractionTestData:
 		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '1plane1chan'))
 		shutil.move(os.path.join(test_data_dir_path, '1plane1chan'), os.path.join(test_data_dir_path, 'extraction'))
 
+	def generate_extraction_output_2plane2chan(ops):
+		ops.update({
+			'nchannels': 2,
+			'nplanes': 2,
+			'tiff_list': ['input.tif'],
+		})
+		ops = ExtractionTestUtils.prepare(
+			ops,
+			[
+				[Path(ops['data_path'][0]).joinpath('detection/pre_registered01.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection/pre_registered02.npy')],
+				[Path(ops['data_path'][0]).joinpath('detection/pre_registered11.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection/pre_registered12.npy')]
+			]
+			, (404, 360),
+		)
+		ops[0]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection/meanImg_chan2p0.npy'))
+		ops[1]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection/meanImg_chan2p1.npy'))
+		# 2 separate inputs for each plane
+		extract_inputs = [
+			np.load(
+				str(test_data_dir_path.joinpath('detection/expected_detect_output_2p2c0.npy')),allow_pickle=True
+			)[()],
+			np.load(
+				str(test_data_dir_path.joinpath('detection/expected_detect_output_2p2c1.npy')),allow_pickle=True
+			)[()],
+		] 
+		for i in range(len(ops)):
+			extract_helper(ops[i], extract_inputs[i], i)
+		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '2plane2chan'))
+		shutil.move(os.path.join(test_data_dir_path, '2plane2chan'), os.path.join(test_data_dir_path, 'extraction'))
+
 	def generate_all_data(ops):
 		make_new_dir(test_data_dir_path.joinpath('extraction'))
 		GenerateExtractionTestData.generate_preprocess_baseline_test_data(ops)
 		GenerateExtractionTestData.generate_extraction_output_1plane1chan(ops)
+		GenerateExtractionTestData.generate_extraction_output_2plane2chan(ops)
 
 def extract_helper(ops, extract_input, plane):
 	plane_dir = Path(ops['save_path0']).joinpath(f'suite2p/plane{plane}')
+	print(plane_dir)
 	plane_dir.mkdir(exist_ok=True, parents=True)
 	stat, F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.create_masks_and_extract(
 		ops,
@@ -222,10 +256,10 @@ def main():
 	#Create test_data directory if necessary
 	make_new_dir(test_data_dir_path)
 	full_ops = initialize_ops(test_data_dir_path, test_input_dir_path)
-	#GenerateFullPipelineTestData.generate_all_data(full_ops)
+	GenerateFullPipelineTestData.generate_all_data(full_ops)
 	det_ops = initialize_ops(test_data_dir_path, test_input_dir_path)
-	#GenerateDetectionTestData.generate_all_data(det_ops)
-	#GenerateClassificationTestData.generate_all_data(full_ops)
+	GenerateDetectionTestData.generate_all_data(det_ops)
+	GenerateClassificationTestData.generate_all_data(full_ops)
 	GenerateExtractionTestData.generate_all_data(full_ops)
 	return 
 

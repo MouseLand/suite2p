@@ -54,10 +54,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel setuptools tox tox-gh-actions
           pip install dvc==1.11.0 pydrive2
-      - name: Get test data
-        run: |
-          dvc pull -r gdrive-travis
-      # this runs the platform-specific tests declared in tox.ini
       - name: Test with tox
         run: tox
         env:

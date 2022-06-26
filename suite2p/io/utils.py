@@ -265,22 +265,22 @@ def init_ops(ops):
             ops['save_path'] = os.path.join(ops['save_path0'], ops['save_folder'], 'plane%d'%j)
         else:
             ops['save_path'] = os.path.join(ops['save_path0'], 'suite2p', 'plane%d'%j)
-
+        
         if ('fast_disk' not in ops) or len(ops['fast_disk'])==0:
-            ops['fast_disk'] = ops['save_path0']
-        ops['fast_disk'] = os.path.join(fast_disk, 'suite2p', 'plane%d'%j)
+            ops['fast_disk'] = ops['save_path0'].copy()
+        fast_disk = os.path.join(ops['fast_disk'], 'suite2p', 'plane%d'%j)
         ops['ops_path'] = os.path.join(ops['save_path'],'ops.npy')
-        ops['reg_file'] = os.path.join(ops['fast_disk'], 'data.bin')
+        ops['reg_file'] = os.path.join(fast_disk, 'data.bin')
         if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-            ops['raw_file'] = os.path.join(ops['fast_disk'], 'data_raw.bin')
+            ops['raw_file'] = os.path.join(fast_disk, 'data_raw.bin')
         if 'lines' in ops:
             ops['lines'] = lines[j]
         if 'iplane' in ops:
             ops['iplane'] = iplane[j]
         if nchannels>1:
-            ops['reg_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2.bin')
+            ops['reg_file_chan2'] = os.path.join(fast_disk, 'data_chan2.bin')
             if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
-                ops['raw_file_chan2'] = os.path.join(ops['fast_disk'], 'data_chan2_raw.bin')
+                ops['raw_file_chan2'] = os.path.join(fast_disk, 'data_chan2_raw.bin')
         if 'dy' in ops and ops['dy']!='':
             ops['dy'] = dy[j]
             ops['dx'] = dx[j]

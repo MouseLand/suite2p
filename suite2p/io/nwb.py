@@ -9,7 +9,7 @@ import gc
 
 from ..detection.stats import roi_stats
 from . import utils
-from .. import run_s2p
+from .. import run_s2p, default_ops
 
 try:
     from pynwb import NWBFile
@@ -167,13 +167,7 @@ def read_nwb(fpath):
                 )
             if multiplane:
                 stat[-1]['iplane'] = int(rois[n][0][-2])
-        ops = run_s2p.default_ops()
-        if 'aspect' in ops:
-            d0 = np.array([int(ops['aspect'] * 10), 10])
-        else:
-            d0 = ops['diameter']
-            if isinstance(d0, int):
-                d0 = [d0, d0]
+        ops = default_ops()
         
         if multiplane:
             nplanes = np.max(np.array([stat[n]['iplane'] for n in range(len(stat))]))+1
@@ -184,7 +178,7 @@ def read_nwb(fpath):
         # ops with backgrounds
         ops1 = []
         for iplane in range(nplanes):
-            ops = run_s2p.default_ops()
+            ops = default_ops()
             bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
             ops['nchannels'] = 1
             for bstr in bg_strs:
@@ -199,7 +193,7 @@ def read_nwb(fpath):
             ops['fs'] = nwbfile.acquisition['TwoPhotonSeries'].rate
             ops1.append(ops.copy())
 
-        stat = roi_stats(stat, *d0, ops['Ly'], ops['Lx'])
+        stat = roi_stats(stat, ops['Ly'], ops['Lx'], ops['aspect'], ops['diameter'])
     
         # fluorescence
         F = np.array(nwbfile.processing['ophys']['Fluorescence']['Fluorescence'].data)

@@ -9,43 +9,91 @@ from scipy.fft import next_fast_len#, fft2, ifft2
 from scipy.ndimage import gaussian_filter1d
 import torch
 
-# there are two formats of fft
+
 try:
-    # pytorch > 1.7
-    from torch.fft import fft as torch_fft 
-    from torch.fft import ifft as torch_ifft 
+    # use mkl_fft if installed
+    from mkl_fft import fft2, ifft2
+
+    def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
+        """
+        Returns the 3D array 'mov' convolved by a 2D array 'img'.
+
+        Parameters
+        ----------
+        mov: nImg x Ly x Lx
+            The frames to process
+        img: 2D array
+            The convolution kernel
+
+        Returns
+        -------
+        convolved_data: nImg x Ly x Lx
+        """
+        return ifft2(apply_dotnorm(fft2(mov), img)) #.astype(np.complex64)
 except:
-    # pytorch <= 1.7
-    from torch import fft as torch_fft 
-    from torch import ifft as torch_ifft 
+    try:
+        # pytorch > 1.7
+        from torch.fft import fft as torch_fft 
+        from torch.fft import fft2 as torch_fft2
+        from torch.fft import ifft as torch_ifft
+        from torch.fft import ifft2 as torch_ifft2
+    except:
+        # pytorch <= 1.7
+        raise ImportError('pytorch version > 1.7 required')
 
-def fft2(data, size=None):
-    """ compute fft2 over last two dimensions using pytorch
-    size (padding) is not used
-    """
-    data_torch = torch.from_numpy(data)
-    data2 = torch_fft(data_torch, dim=-1)
-    data2 = torch_fft(data2, dim=-2)
-    return data2.cpu().numpy()
+    eps = torch.complex(torch.tensor(1e-5), torch.tensor(0.0))
 
-def ifft2(data, size=None):
-    """ compute ifft2 over last two dimensions using pytorch
-    size (padding) is not used
-    """
-    data_torch = torch.from_numpy(data)
-    data2 = torch_ifft(data_torch, dim=-1)
-    data2 = torch_ifft(data2, dim=-2)
-    return data2.cpu().numpy()
+    def fft2(data, size=None):
+        """ compute fft2 over last two dimensions using pytorch
+        size (padding) is not used
+        """
+        data_torch = torch.from_numpy(data)
+        data_torch = torch_fft(data_torch, dim=-1)
+        data_torch = torch_fft(data_torch, dim=-2)
+        return data_torch.cpu().numpy()
 
-#try:
-#    from mkl_fft import fft2, ifft2
-#except ModuleNotFoundError:
-#    warnings.warn("mkl_fft not installed.  Install it with conda: conda install mkl_fft", ImportWarning)
+    def ifft2(data, size=None):
+        """ compute ifft2 over last two dimensions using pytorch
+        size (padding) is not used
+        """
+        data_torch = torch.from_numpy(data)
+        data_torch = torch_ifft(data_torch, dim=-1)
+        data_torch = torch_ifft(data_torch, dim=-2)
+        return data_torch.cpu().numpy()
 
+    def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
+        """
+        Returns the 3D array 'mov' convolved by a 2D array 'img'.
+
+        Parameters
+        ----------
+        mov: nImg x Ly x Lx
+            The frames to process
+        img: 2D array
+            The convolution kernel
+        lcorr: int (optional)
+            amount to crop cross-correlation
+
+        Returns
+        -------
+        convolved_data: nImg x Ly x Lx
+        """
+        mov_fft = torch.from_numpy(mov)
+        mov_fft = torch_fft2(mov_fft, dim=(-2,-1))
+        #mov_fft = torch_fft(torch_fft(mov_fft, dim=-1), dim=-2)
+        mov_fft /= (eps + torch.abs(mov_fft))
+        mov_fft *= torch.from_numpy(img)
+        mov_fft = torch.real(torch_ifft2(mov_fft, dim=(-2,-1)))
+        return mov_fft.numpy()
 
 @vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
 def apply_dotnorm(Y, cfRefImg):
     return Y / (np.complex64(1e-5) + np.abs(Y)) * cfRefImg
+
+
+#@vectorize(['float32(int16, float32, float32)', 'float32(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
+#def addmultiply(x, mul, add):
+#    return np.float32(x) * mul + add
 
 
 @vectorize(['complex64(int16, float32, float32)', 'complex64(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
@@ -216,22 +264,6 @@ def spatial_high_pass(data, N):
     return data_filtered.squeeze()
 
 
-def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
-    """
-    Returns the 3D array 'mov' convolved by a 2D array 'img'.
-
-    Parameters
-    ----------
-    mov: nImg x Ly x Lx
-        The frames to process
-    img: 2D array
-        The convolution kernel
-
-    Returns
-    -------
-    convolved_data: nImg x Ly x Lx
-    """
-    return ifft2(apply_dotnorm(fft2(mov), img)) #.astype(np.complex64)
 
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:

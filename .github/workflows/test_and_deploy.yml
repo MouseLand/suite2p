@@ -43,7 +43,7 @@ jobs:
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://www.github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
       # note: if you need dependencies from conda, considering using
       # setup-miniconda: https://github.com/conda-incubator/setup-miniconda
@@ -54,10 +54,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel setuptools tox tox-gh-actions
           pip install dvc==1.11.0 pydrive2
-      - name: Get test data
-        run: |
-          dvc pull -r gdrive-travis
-      # this runs the platform-specific tests declared in tox.ini
       - name: Test with tox
         run: tox
         env:

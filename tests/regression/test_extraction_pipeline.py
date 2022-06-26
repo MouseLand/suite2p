@@ -71,7 +71,7 @@ def test_extraction_output_1plane1chan(test_ops):
     })
     ops = utils.ExtractionTestUtils.prepare(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection_input/pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)
@@ -92,7 +92,7 @@ def test_extraction_output_2plane2chan(test_ops):
         'nplanes': 2,
         'tiff_list': ['input.tif'],
     })
-    detection_dir = test_ops['data_path'][0].joinpath('detection')
+    detection_dir = test_ops['data_path'][0].joinpath('detection_input')
     ops = utils.ExtractionTestUtils.prepare(
         test_ops,
         [

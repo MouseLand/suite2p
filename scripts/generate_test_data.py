@@ -8,6 +8,12 @@ from conftest import initialize_ops #Guarantees that tests and this script use t
 from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks
 
+"""
+IMPORTANT: When running this script, make sure to use it in the scripts directory 
+(e.g., suite2p/scripts). The generated test data will be placed in the directory 
+suite2p/scripts/test_data. 
+"""
+
 current_dir = Path(os.getcwd())
 # Assumes the input file has already been downloaded
 test_input_dir_path = current_dir.parent.joinpath('data').joinpath('test_data')
@@ -68,7 +74,7 @@ class GenerateDetectionTestData:
 		})
 		ops = DetectionTestUtils.prepare(
 			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
+			[[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered.npy')]],
 			(404, 360)
 		)
 		ops, stat = suite2p.detection.detect(ops[0])
@@ -94,7 +100,7 @@ class GenerateDetectionTestData:
 			'nchannels': 2,
 			'nplanes': 2,
 		})
-		detection_dir = Path(ops['data_path'][0]).joinpath('detection')
+		detection_dir = Path(ops['data_path'][0]).joinpath('detection_input')
 		two_plane_ops = DetectionTestUtils.prepare(
 			ops,
 			[
@@ -130,7 +136,7 @@ class GenerateDetectionTestData:
 class GenerateClassificationTestData:
 	# Classification Tests
 	def generate_classification_test_data(ops):
-		stat = np.load(test_input_dir_path.joinpath('classification/pre_stat.npy'), allow_pickle=True)
+		stat = np.load(test_input_dir_path.joinpath('classification_input/pre_stat.npy'), allow_pickle=True)
 		iscell = suite2p.classification.classify(stat, classfile=suite2p.classification.builtin_classfile)
 		np.save(str(test_data_dir_path.joinpath('classification').joinpath('expected_classify_output_1p1c0.npy')), iscell)
 
@@ -161,7 +167,7 @@ class GenerateExtractionTestData:
 		})
 		ops = ExtractionTestUtils.prepare(
 			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
+			[[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered.npy')]],
 			(404, 360)
 		)
 		op = ops[0]
@@ -182,16 +188,16 @@ class GenerateExtractionTestData:
 		ops = ExtractionTestUtils.prepare(
 			ops,
 			[
-				[Path(ops['data_path'][0]).joinpath('detection/pre_registered01.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection/pre_registered02.npy')],
-				[Path(ops['data_path'][0]).joinpath('detection/pre_registered11.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection/pre_registered12.npy')]
+				[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered01.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection_input/pre_registered02.npy')],
+				[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered11.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection_input/pre_registered12.npy')]
 			]
 			, (404, 360),
 		)
-		ops[0]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection/meanImg_chan2p0.npy'))
-		ops[1]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection/meanImg_chan2p1.npy'))
-		# 2 separate inputs for each plane
+		ops[0]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection_input/meanImg_chan2p0.npy'))
+		ops[1]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection_input/meanImg_chan2p1.npy'))
+		# 2 separate inputs for each plane (but use outputs of detection generate function)
 		extract_inputs = [
 			np.load(
 				str(test_data_dir_path.joinpath('detection/expected_detect_output_2p2c0.npy')),allow_pickle=True

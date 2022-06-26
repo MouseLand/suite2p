@@ -95,6 +95,6 @@ def test_mesoscan_2plane_2z(test_ops):
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f'suite2p/plane{i}')),
+			utils.get_list_of_data(outputs_to_check, Path('data/test_data/mesoscan').joinpath(f'suite2p/plane{i}')),
 			utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))

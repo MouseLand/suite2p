@@ -237,17 +237,20 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
                 output_best[ibest] = output[ibest]
         if run_nonrigid:
             ops['nonrigid'] = True
+            nfr = frames.shape[0]
             for i,z in enumerate(zpos_best):
                 outputs = register_frames(refAndMasks[z], frames[[i]], rmin=rmin[z], rmax=rmax[z],
                                             bidiphase=bidiphase, ops=ops, nZ=1)
-                k=0
-                for output_best, output in zip(outputs_best, outputs[1:7]):
-                    #if i==0:
-                    #    output_
-                    output_best[i] = output[0]
-                    k+=1
-        
-        ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best[1:7]
+                
+                if i==0:
+                    outputs_best = []
+                    for output in outputs[:-1]:
+                        outputs_best.append(np.zeros((nfr, *output.shape[1:]), dtype=output.dtype))
+                        outputs_best[-1][0] = output[0]
+                else:
+                    for output, output_best in zip(outputs[:-1], outputs_best):
+                        output_best[i] = output[0]
+        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
         return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, (zpos_best, cmax_all)
     else:    
         if len(refAndMasks)==7 or not isinstance(refAndMasks, np.ndarray):

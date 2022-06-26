@@ -1,11 +1,12 @@
 import numpy as np
 from typing import Any, Dict
 from scipy.ndimage import find_objects
-from cellpose.models import Cellpose
+from cellpose.models import CellposeModel, Cellpose
 from cellpose import transforms, dynamics
 from cellpose.utils import fill_holes_and_remove_small_masks
 import time
 import cv2
+import os
 
 from . import utils
 from .stats import roi_stats
@@ -90,8 +91,11 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
             stat['anatomical'] = False
     return stats   
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5):
-    model = Cellpose()
+def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5, pretrained_model=None):
+    if not os.path.exists(pretrained_model):
+        model = CellposeModel(model_type=pretrained_model)
+    else:
+        model = CellposeModel(pretrained_model=pretrained_model)
     masks = model.eval(mproj, net_avg=True, channels=[0,0], diameter=diameter, 
                         cellprob_threshold=cellprob_threshold, flow_threshold=flow_threshold)[0]
     shape = masks.shape
@@ -110,12 +114,19 @@ def masks_to_stats(masks, weights):
         ypix0, xpix0 = np.nonzero(masks[sr, sc]==(i+1))
         ypix0 = ypix0.astype(int) + sr.start
         xpix0 = xpix0.astype(int) + sc.start
+        ymed = np.median(ypix0)
+        xmed = np.median(xpix0)
+        imin = np.argmin((xpix0-xmed)**2 + (ypix0-ymed)**2)
+        xmed = xpix0[imin]
+        ymed = ypix0[imin]
         stats.append({
             'ypix': ypix0,
             'xpix': xpix0,
             'lam': weights[ypix0, xpix0],
+            'med': [ymed, xmed],
             'footprint': 1
         })
+    stats = np.array(stats)
     return stats
     
 def select_rois(ops: Dict[str, Any], mov: np.ndarray,
@@ -169,7 +180,8 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray,
         print("!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
     masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=diameter[1],
                                                          flow_threshold=ops['flow_threshold'],
-                                                         cellprob_threshold=ops['cellprob_threshold'])
+                                                         cellprob_threshold=ops['cellprob_threshold'],
+                                                         pretrained_model=ops['pretrained_model'])
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
         mproj = cv2.resize(mproj, (Lxc, Lyc))

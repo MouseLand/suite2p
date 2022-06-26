@@ -208,7 +208,7 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=No
             s['med'] = median_pix(s['ypix'], s['xpix'])
 
     # approx size of masks for ROI aspect ratio estimation
-    d0 = 10 if diameter is None or (isinstance(diameter, int) and diameter==0) else diameter
+    d0 = 10 if diameter is None or (isinstance(diameter, int) and diameter==0) else int(diameter)
     if aspect is not None:
         diameter = d0 if isinstance(d0, int) else d0[0]
         dy, dx = int(aspect * diameter), diameter

@@ -321,16 +321,18 @@ def save_nwb(save_folder):
             multiplane = False
 
         ops = ops1[0]
+        if "date_proc" in ops:
+            session_start_time = ops["date_proc"]
+            if not session_start_time.tzinfo:
+                session_start_time = session_start_time.astimezone()
+        else:
+            session_start_time = datetime.datetime.now().astimezone()
 
         # INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description="suite2p_proc",
             identifier=str(ops["data_path"][0]),
-            session_start_time=(
-                ops["date_proc"]
-                if "date_proc" in ops
-                else datetime.datetime.now().astimezone()
-            ),
+            session_start_time=session_start_time,
         )
         print(nwbfile)
 

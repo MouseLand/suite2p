@@ -222,7 +222,7 @@ def run_plane(ops, ops_path=None, stat=None):
     """
     
     ops = {**default_ops(), **ops}
-    ops['date_proc'] = datetime.now()
+    ops['date_proc'] = datetime.now().astimezone()
     
     # for running on server or on moved files, specify ops_path
     if ops_path is not None:

@@ -11,7 +11,8 @@ from suite2p.extraction import masks
 """
 IMPORTANT: When running this script, make sure to use it in the scripts directory 
 (e.g., suite2p/scripts). The generated test data will be placed in the directory 
-suite2p/scripts/test_data. 
+suite2p/scripts/test_data. Take the directories in this folder and replace the directories 
+with the same name in suite2p/data/test_data (e.g.,replace suite2p/data/test_data/1plane1chan1500 with suite2p/scripts/test_data/1plane1chan1500). 
 """
 
 current_dir = Path(os.getcwd())

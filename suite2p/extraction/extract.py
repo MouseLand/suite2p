@@ -136,7 +136,9 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     return F, Fneu, F_chan2, Fneu_chan2
 
 def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None, neuropil_masks=None, ops=default_ops()):
-    """ creates masks, computes fluorescence
+    """ 
+    Main extraction function
+    creates masks, computes fluorescence
 
     Parameters
     ----------------

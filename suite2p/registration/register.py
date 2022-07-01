@@ -521,13 +521,54 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
 
 
     Parameters
-    ----------
+    ----------------
 
-    f_reg : np.ndarray or io.BinaryRWFile,
+    f_reg : array of registered functional frames, np.ndarray or io.BinaryRWFile
         n_frames x Ly x Lx
 
+    f_raw : array of raw functional frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    f_reg_chan2 : array of registered anatomical frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    f_raw_chan2 : array of raw anatomical frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
+
+    align_by_chan2: boolean
+        whether you'd like to align by non-functional channel
+
     ops : dictionary or list of dicts
-    
+        dictionary containing input arguments for suite2p pipeline
+
+    Returns
+    ----------------
+
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image (if not registered)
+
+    rmin : 
+
+    rmax : 
+
+    meanImg : 
+
+    rigid_offsets : 
+
+    nonrigid_offsets : 
+
+    zest : 
+
+    meanImg_chan2badframes :  
+
+    yrange : 
+
+    xrange :
+
+
     """
     f_alt_in, f_align_out, f_alt_out = None, None, None
     if f_reg_chan2 is None or not align_by_chan2:

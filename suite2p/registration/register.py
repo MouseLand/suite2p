@@ -550,24 +550,34 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
     refImg : 2D array, int16
         size [Ly x Lx], initial reference image (if not registered)
 
-    rmin : 
+    rmin : int
+        clip frames at rmin
 
-    rmax : 
+    rmax : int
+        clip frames at rmax
 
-    meanImg : 
+    meanImg : np.ndarray, 
+        size [Ly x Lx], Computed Mean Image for functional channel
 
-    rigid_offsets : 
+    rigid_offsets : Tuple of length 3, 
+        Rigid shifts computed between each frame and reference image. Shifts for each frame in x,y, and z directions
 
-    nonrigid_offsets : 
+    nonrigid_offsets : Tuple of length 3
+        Non-rigid shifts computed between each frame and reference image.
 
-    zest : 
+    zest : Tuple of length 2
+        
+    meanImg_chan2: np.ndarray, 
+        size [Ly x Lx], Computed Mean Image for non-functional channel
 
-    meanImg_chan2badframes :  
+    badframes : np.ndarray,   
+        size [n_frames, ] Boolean array of frames that have large outlier shifts that may make registration problematic.
 
-    yrange : 
+    yrange : list of length 2
+        Valid ranges for registration along y-axis of frames
 
-    xrange :
-
+    xrange : list of length 2
+        Valid ranges for registration along x-axis of frames
 
     """
     f_alt_in, f_align_out, f_alt_out = None, None, None

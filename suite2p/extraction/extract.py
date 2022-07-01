@@ -6,10 +6,11 @@ from numba import prange, njit, jit, int64, float32
 from numba.typed import List
 from scipy import stats, signal
 from .masks import create_masks
-from ..io import BinaryFile
+from ..io import BinaryRWFile
+from .. import default_ops
 
-def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
-    """ extracts activity from reg_file using masks in stat and neuropil_masks
+def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500):
+    """ extracts activity from f_in using masks in stat and neuropil_masks
     
     computes fluorescence F as sum of pixels weighted by 'lam'
     computes neuropil fluorescence Fneu as sum of pixels in neuropil_masks
@@ -22,8 +23,8 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     Parameters
     ----------------
 
-    ops : dictionary
-        'Ly', 'Lx', 'nframes', 'batch_size'
+    f_in : np.ndarray or io.BinaryRWFile object
+        size n_frames, Ly, Lx
 
         
     cell_masks : list
@@ -34,10 +35,9 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         each element is neuropil pixels in (Ly*Lx) coordinates
         GOING TO BE DEPRECATED: size [ncells x npixels] where weights of each mask are elements
 
-    reg_file : io.BinaryFile object
-        io.BinaryFile object that has iter_frames(batch_size=ops['batch_size']) method
-        
-
+    batch_size : int
+        function will run with at most batch size of 1000
+    
     Returns
     ----------------
 
@@ -50,17 +50,15 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
     ops : dictionaray
 
     """
+    n_frames, Ly, Lx = f_in.shape
     t0=time.time()
-    nimgbatch = min(ops['batch_size'], 1000)
-    nframes = int(ops['nframes'])
-    Ly = ops['Ly']
-    Lx = ops['Lx']
+    batch_size = min(batch_size, 1000)
     ncells = len(cell_masks)
     
-    F    = np.zeros((ncells, nframes),np.float32)
-    Fneu = np.zeros((ncells, nframes),np.float32)
+    F    = np.zeros((ncells, n_frames),np.float32)
+    Fneu = np.zeros((ncells, n_frames),np.float32)
 
-    nimgbatch = int(nimgbatch)
+    batch_size = int(batch_size)
     
     cell_ipix, cell_lam = List(), List()
     [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
@@ -80,7 +78,8 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
         neuropil_ipix = None
 
     ix = 0
-    for k, (_, data) in enumerate(reg_file.iter_frames(batch_size=ops['batch_size'])):
+    for k in np.arange(0, n_frames, batch_size):
+        data = f_in[k : min(k + batch_size, n_frames)].astype('float32')
         nimg = data.shape[0]
         if nimg == 0:
             break
@@ -101,9 +100,8 @@ def extract_traces(ops, cell_masks, neuropil_masks, reg_file):
             Fneu[:,inds] = matmul_neuropil(Fi, data, neuropil_ipix, neuropil_npix)
 
         ix += nimg
-    print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, ops['nframes'], time.time()-t0))
-    reg_file.close()
-    return F, Fneu, ops
+    print('Extracted fluorescence from %d ROIs in %d frames, %0.2f sec.'%(ncells, n_frames, time.time()-t0))
+    return F, Fneu
 
 @njit(parallel=True)
 def matmul_traces(Fi, data, cell_ipix, cell_lam):
@@ -126,15 +124,75 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     also used in drawroi.py
     
     """
+    batch_size=ops['batch_size']
     F_chan2, Fneu_chan2 = [], []
-    with BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
-                    read_filename=ops['reg_file']) as f:    
-        F, Fneu, ops = extract_traces(ops, cell_masks, neuropil_masks, f)
+    with BinaryRWFile(Ly=ops['Ly'], Lx=ops['Lx'],
+                      filename=ops['reg_file']) as f:    
+        F, Fneu = extract_traces(f, cell_masks, neuropil_masks, batch_size=batch_size)
     if 'reg_file_chan2' in ops:
-        with BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'],
-                        read_filename=ops['reg_file_chan2']) as f:    
-            F_chan2, Fneu_chan2, _ = extract_traces(ops.copy(), cell_masks, neuropil_masks, f)
-    return F, Fneu, F_chan2, Fneu_chan2, ops
+        with BinaryRWFile(Ly=ops['Ly'], Lx=ops['Lx'],
+                          filename=ops['reg_file_chan2']) as f:    
+            F_chan2, Fneu_chan2 = extract_traces(cell_masks, neuropil_masks, batch_size=batch_size)
+    return F, Fneu, F_chan2, Fneu_chan2
+
+def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None, neuropil_masks=None, ops=default_ops()):
+    """ creates masks, computes fluorescence
+
+    Parameters
+    ----------------
+
+    stat : array of dicts
+
+    f_reg : array of functional frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    f_reg_chan2 : array of anatomical frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+
+    Returns
+    ----------------
+
+    stat : list of dictionaries
+        adds keys 'skew' and 'std'
+
+    F : fluorescence of functional channel
+
+    F_neu : neuropil of functional channel
+
+    F_chan2 : fluorescence of anatomical channel
+
+    F_neu_chan2 : neuropil of anatomical channel
+
+    """
+    n_frames, Ly, Lx = f_reg.shape
+    batch_size=ops['batch_size']
+    if cell_masks is None:
+        t10 = time.time()
+        cell_masks, neuropil_masks0 = create_masks(stat, Ly, Lx, ops)
+        if neuropil_masks is None:
+            neuropil_masks = neuropil_masks0
+        print('Masks created, %0.2f sec.' % (time.time() - t10))    
+
+    F, Fneu = extract_traces(f_reg, cell_masks, neuropil_masks, batch_size=batch_size)
+    if f_reg_chan2 is not None:
+        F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, cell_masks, neuropil_masks, batch_size=batch_size)
+    else:
+        F_chan2, Fneu_chan2 = [], []
+
+    # subtract neuropil
+    dF = F - ops['neucoeff'] * Fneu
+
+    # compute activity statistics for classifier
+    sk = stats.skew(dF, axis=1)
+    sd = np.std(dF, axis=1)
+    for k in range(F.shape[0]):
+        stat[k]['skew'] = sk[k]
+        stat[k]['std'] = sd[k]
+        if not neuropil_masks is None:
+            stat[k]['neuropil_mask'] = neuropil_masks[k]
+    
+    return stat, F, Fneu, F_chan2, Fneu_chan2
 
 def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     """ creates masks, computes fluorescence, and saves stat, F, and Fneu to .npy
@@ -152,10 +210,16 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     Returns
     ----------------
 
-    ops : dictionary
-
     stat : list of dictionaries
         adds keys 'skew' and 'std'
+
+    F : fluorescence of functional channel
+
+    F_neu : neuropil of functional channel
+
+    F_chan2 : fluorescence of anatomical channel
+
+    F_neu_chan2 : neuropil of anatomical channel
 
     """
 
@@ -163,29 +227,23 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
         raise ValueError("stat array should not be of length 0 (no ROIs were found)")
 
     # create cell and neuropil masks
-    if cell_masks is None:
-        t10 = time.time()
-        cell_masks, neuropil_masks0 = create_masks(ops, stat)
-        if neuropil_masks is None:
-            neuropil_masks = neuropil_masks0
-        print('Masks created, %0.2f sec.' % (time.time() - t10))    
-
-    F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, cell_masks, neuropil_masks)
+    Ly, Lx = ops['Ly'], ops['Lx']
+    reg_file = ops['reg_file']
+    reg_file_alt = ops.get('reg_file_chan2', ops['reg_file'])
+    with BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_in,\
+         BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_alt) as f_in_chan2:         
+        if ops['nchannels'] == 1:
+            f_in_chan2.close() 
+            f_in_chan2 = None
+        
+        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction_wrapper(stat, f_in, 
+                                                                f_reg_chan2=f_in_chan2, 
+                                                                cell_masks=cell_masks,
+                                                                neuropil_masks=neuropil_masks,
+                                                                ops=ops)
     
-    # subtract neuropil
-    dF = F - ops['neucoeff'] * Fneu
-
-    # compute activity statistics for classifier
-    sk = stats.skew(dF, axis=1)
-    sd = np.std(dF, axis=1)
-    for k in range(F.shape[0]):
-        stat[k]['skew'] = sk[k]
-        stat[k]['std'] = sd[k]
-        if not neuropil_masks is None:
-            stat[k]['neuropil_mask'] = neuropil_masks[k]
+    return stat, F, Fneu, F_chan2, Fneu_chan2
     
-    return ops, stat, F, Fneu, F_chan2, Fneu_chan2
-
 
 def enhanced_mean_image(ops):
     """ computes enhanced mean image and adds it to ops

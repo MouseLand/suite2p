@@ -453,11 +453,14 @@ def load_custom_mask(parent):
         mask = np.load(name)
         mask = mask.flatten()
         if mask.size == parent.Fcell.shape[0]:
-            parent.cloaded = True
+            b = len(parent.color_names)-1
+            parent.colorbtns.button(b).setEnabled(True)
+            parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
+            cloaded = True
     except (ValueError, KeyError, OSError,
             RuntimeError, TypeError, NameError):
         print("ERROR: this is not a 1D array with length of data")
-    if parent.cloaded:
+    if cloaded:
         parent.custom_mask = mask
         masks.custom_masks(parent)
         M = masks.draw_masks(parent)

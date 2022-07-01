@@ -13,7 +13,8 @@ install_deps = ['importlib-metadata',
         'scipy>=1.4.0',
         'h5py',
         'sbxreader',
-        'scikit-learn',]
+        'scikit-learn',
+        'cellpose']
 
 gui_deps = [
         "pyqt5",
@@ -22,26 +23,24 @@ gui_deps = [
         'pyqtgraph',
         'rastermap>0.1.0',
       ]
-data_deps = [
-        "dvc==1.11.0",
-        "pydrive2",
-      ]
+
 nwb_deps = [
         "pynwb",
       ]
 test_deps = [
       'pytest',
+      'tqdm',
       'pytest-qt==3.3.0',
     ]
 
-all_deps = gui_deps + data_deps + nwb_deps
+all_deps = gui_deps + nwb_deps + test_deps
 
 try:
     import torch
     a = torch.ones(2, 3)
     version = int(torch.__version__[2])
     if version >= 6:
-        install_deps.remove('torch')
+        install_deps.remove('torch>=1.7.1')
 except:
     pass
 
@@ -73,9 +72,9 @@ setuptools.setup(
         'sphinx-autodoc-typehints',
       ],
       "gui": gui_deps,
-      "data": data_deps,
       "nwb": nwb_deps,
-      "all": all_deps
+      "tests": test_deps,
+      "all": all_deps,
     },
     include_package_data=True,
     classifiers=[

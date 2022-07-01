@@ -58,7 +58,7 @@ def extract_wrapper(ops):
             allow_pickle=True
         )[()]
         #extraction.create_masks_and_extract(curr_op, extract_input['stat'])
-        op, stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(
+        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.create_masks_and_extract(
             curr_op,
             extract_input['stat'],
             extract_input['cell_masks'],
@@ -74,7 +74,7 @@ def extract_wrapper(ops):
             prctile_baseline=curr_op['prctile_baseline']
         )
         spks = extraction.oasis(F=dF, batch_size=curr_op['batch_size'], tau=curr_op['tau'], fs=curr_op['fs'])
-        np.save(plane_dir.joinpath('ops.npy'), op)
+        np.save(plane_dir.joinpath('ops.npy'), curr_op)
         np.save(plane_dir.joinpath('stat.npy'), stat)
         np.save(plane_dir.joinpath('F.npy'), F)
         np.save(plane_dir.joinpath('Fneu.npy'), Fneu)

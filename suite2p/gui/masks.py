@@ -366,11 +366,11 @@ def custom_masks(parent):
     c = 9
     n = np.array(parent.imerge)
     istat = parent.custom_mask
-    istat1 = istat.min()
-    istat99 = istat.max()
+    istat1 = np.percentile(istat, 1)
+    istat99 = np.percentile(istat, 99)
     cl = [istat1, (istat99-istat1)/2 + istat1, istat99]
-    istat = istat - istat1
-    istat = istat / (istat99-istat1)
+    istat -= istat1
+    istat /= istat99-istat1
     istat = np.maximum(0, np.minimum(1, istat))
 
     parent.colors['colorbar'][c] = cl

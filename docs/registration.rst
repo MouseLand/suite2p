@@ -6,7 +6,9 @@ or using the second channel. Say your first channel shows GCaMP and your
 second channel shows td-Tomato, you might want to use the second channel
 for registration if it has higher SNR. If so, set
 ``ops['align_by_chan']=2``. Otherwise, leave ``ops['align_by_chan']=1``
-(default).
+(default). 
+
+Your registered output for the first channel of the recording will be saved as ``data.bin`` in the suite2p output folder. If you run the pipeline using more than 2 channels(``ops['nchannels'] = 2``), you will also see a registered output for the second channel's data saved as ``data_chan2.bin``. 
 
 Finding a target reference image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

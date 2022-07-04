@@ -10,15 +10,6 @@ from ..io.binary import BinaryFile
 from ..classification import classify, user_classfile
 from .. import default_ops
 
-try:
-	from . import anatomical
-	CELLPOSE_INSTALLED = True
-except Exception as e:
-	print('Warning: cellpose did not import')
-	print(e)
-	print('cannot use anatomical mode, but otherwise suite2p will run normally')
-	CELLPOSE_INSTALLED = False
-
 def detect(ops, classfile=None):
 	
 	t0 = time.time()
@@ -135,16 +126,24 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 		mov = pca_denoise(mov, block_size=[ops['block_size'][0]//2, ops['block_size'][1]//2],
 							n_comps_frac = 0.5)
 
-	if ops.get('anatomical_only', 0) and not CELLPOSE_INSTALLED:
-		print('~~~ tried to import cellpose to run anatomical but failed, install with: ~~~')
-		print('$ pip install cellpose')
-
-	if ops.get('anatomical_only', 0) > 0 and CELLPOSE_INSTALLED:
-		print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img', 'enhanced_mean_img'][int(ops['anatomical_only'])-1])
-		stat = anatomical.select_rois(
-					ops=ops,
-					mov=mov,
-					diameter=ops.get('diameter', None))
+	if ops.get('anatomical_only', 0):
+		try:
+			from . import anatomical
+			CELLPOSE_INSTALLED = True
+		except Exception as e:
+			print('Warning: cellpose did not import')
+			print(e)
+			print('cannot use anatomical mode, but otherwise suite2p will run normally')
+			CELLPOSE_INSTALLED = False
+		if not CELLPOSE_INSTALLED:
+			print('~~~ tried to import cellpose to run anatomical but failed, install with: ~~~')
+			print('$ pip install cellpose')
+		else:
+			print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img', 'enhanced_mean_img'][int(ops['anatomical_only'])-1])
+			stat = anatomical.select_rois(
+						ops=ops,
+						mov=mov,
+						diameter=ops.get('diameter', None))
 	else:            
 		stat = select_rois(
 			ops=ops,

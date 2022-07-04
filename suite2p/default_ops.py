@@ -78,14 +78,10 @@ def default_ops():
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
-        # cell detection settings
+        # cell detection settings with suite2p
         'roidetect': True,  # whether or not to run ROI extraction
         'spikedetect': True,  # whether or not to run spike deconvolution
-        'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
-        'cellprob_threshold': 0.0, # cellprob_threshold for cellpose (if anatomical_only > 1)
-        'flow_threshold': 1.5, # flow_threshold for cellpose (if anatomical_only > 1)
         'sparse_mode': True,  # whether or not to run sparse_mode
-        'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
         'spatial_scale': 0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
         'connected': True,  # whether or not to keep ROIs fully connected (set to 0 for dendrites)
         'nbinned': 5000,  # max number of binned frames for cell detection
@@ -94,6 +90,13 @@ def default_ops():
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
         'denoise': False, # denoise binned movie for cell detection in sparse_mode
+
+        # cell detection settings with cellpose
+        'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
+        'cellprob_threshold': 0.0, # cellprob_threshold for cellpose (if anatomical_only > 1)
+        'flow_threshold': 1.5, # flow_threshold for cellpose (if anatomical_only > 1)
+        'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
+        'pretrained_model': 'cyto', # path to pretrained model or model type string in Cellpose
 
         # classification parameters
         'soma_crop': True, # crop dendrites for cell classification stats like compactness

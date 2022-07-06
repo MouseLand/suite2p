@@ -116,13 +116,13 @@ def brukerRaw_to_binary(ops):
                     if (chan+1) == functional_chan: #s2p thinks it's yummy when first channel is used for functional
                         reg_file[plane].write(bytearray(bin_temp_plane))
                         batch_frames_processed = batch_frames_processed + bin_temp_plane.shape[0]
-                        total_frames_processed = total_frames_processed + batch_frames_processed
+                        total_frames_processed = total_frames_processed + bin_temp_plane.shape[0]
                         ops1[plane]['meanImg'] += meanImg
                     else: #could probably be upgraded to include more channels, but fine for now
                         reg_file_chan2[plane].write(bytearray(bin_temp))
                         ops1[plane]['meanImg_chan2'] += meanImg
 
-            print('%d frames of current batch, %d frames total, time %0.2f sec.'%(batch_frames_processed, total_frames_processed, time.time()-t0))
+            print('%d frames of binary, time %0.2f sec.'%(total_frames_processed, time.time()-t0))
 
     
     for plane in np.arange(0, nplanes):

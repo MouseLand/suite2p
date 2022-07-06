@@ -1,0 +1,25 @@
+
+ >>>>> started run at 05/07/2022 13:34:34{'data_path': ['C:/Users/Travis/Documents/Repos/Suite2p/benchmarks'], 'subfolders': [], 'save_path0': 'C:/Users/Travis/Documents/Repos/Suite2p/benchmarks', 'fast_disk': 'C:/Users/Travis/Documents/Repos/Suite2p/benchmarks', 'input_format': 'haus'}
+haus
+Could not find any tiffs
+>>>ERROR<<<
+Traceback (most recent call last):
+  File "C:\Users\Travis\Miniconda3\envs\s2p\lib\runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "C:\Users\Travis\Miniconda3\envs\s2p\lib\runpy.py", line 87, in _run_code
+>>>ERROR<<<
+    exec(code, run_globals)
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\__main__.py", line 78, in <module>
+    main()
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\__main__.py", line 71, in main
+    run_s2p(ops, db)
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\run_s2p.py", line 394, in run_s2p
+    ops0 = io.tiff_to_binary(ops.copy())
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\io\tiff.py", line 122, in tiff_to_binary
+>>>ERROR<<<
+    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\io\utils.py", line 221, in find_files_open_binaries
+    fs, ops2 = get_tif_list(ops1[0])
+  File "C:\Users\Travis\Documents\Repos\Suite2p\suite2p\io\utils.py", line 158, in get_tif_list
+    raise Exception('no tiffs')
+Exception: no tiffs

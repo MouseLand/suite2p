@@ -453,7 +453,9 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     rigid_offsets = utils.combine_offsets_across_batches(rigid_offsets, rigid=True)
     if ops['nonrigid']:
         nonrigid_offsets = utils.combine_offsets_across_batches(nonrigid_offsets, rigid=False)
-    
+    else:
+        nonrigid_offsets = [None] * 3
+
     return refImg_orig, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, (zpos, cmax_all)
 
 def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None, yoff1=None, xoff1=None, ops=default_ops()):

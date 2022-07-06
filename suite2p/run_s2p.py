@@ -376,7 +376,6 @@ def run_s2p(ops={}, db={}, server={}):
         elif not 'input_format' in ops:
             ops['input_format'] = 'tif'
 
-
         # copy file format to a binary file
         convert_funs = {
             'h5': io.h5py_to_binary,

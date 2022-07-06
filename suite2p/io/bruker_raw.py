@@ -36,7 +36,7 @@ def brukerRaw_to_binary(ops):
 
     #start timer
     t0 = time.time()
-    nframes_total = np.zeros(shape=len(ops['data_path']),dtype=np.int16)
+    nframes_total = np.zeros(shape=len(ops['data_path']),dtype=np.uint32)
     total_frames_processed = 0
 
     for folder_num in range(len(ops['data_path'])):
@@ -90,7 +90,7 @@ def brukerRaw_to_binary(ops):
             bin = np.fromfile(f,'uint16') - 2**13 #weird quirk when capturing with galvo-res scanner
             bin = np.concatenate((leftover_samples,bin))
 
-            (completeFrames, bin, leftover_samples) = calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel, nplanes)
+            (completeFrames, bin, leftover_samples) = calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel,nplanes)
             if (completeFrames * nplanes + batch_frames_processed) >  nframes_total[folder_num]:
                 numToTake = nframes_total[folder_num] - batch_frames_processed
                 bin = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*numToTake*nplanes]

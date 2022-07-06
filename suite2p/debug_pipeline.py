@@ -1,9 +1,9 @@
 from pickle import FALSE
+from turtle import end_fill
 from suite2p import run_s2p, default_ops
 from pathlib import Path
 import numpy as np
 from ScanImageTiffReader import ScanImageTiffReader
-
 
 def tiffMultiFolder():
     ops = default_ops()
@@ -54,32 +54,6 @@ def brawMultiFolder():
     db['input_format'] = "bruker_raw"
     opsEnd = run_s2p(ops=ops, db=db)
 
-def brawMultiFolderHiJee():
-    ops = default_ops()
-    ops['input_format'] = "bruker_raw"
-    ops['nchannels'] = 1
-    ops['do_registration'] = 0
-    ops['roidetect'] = 0
-    ops['functional_chan'] = 2
-    ops['fs'] = 15
-    ops['nonrigid'] = 0
-    ops['block_size'] = [256, 256]
-    ops['align_by_chan'] = 1
-    ops['keep_movie_raw'] = 0
-
-    db = {
-    'h5py': [], # a single h5 file path
-    'h5py_key': 'data',
-    'look_one_level_down': False, # whether to look in ALL subfolders when searching for tiffs
-    'data_path' : ['Z:/HiJee/Stim_Travis/220601_m211201mNbl6_FRA2_156um-000', 'Z:/HiJee/Stim_Travis/220601_m211201mNbl6_FRA2_stim_156um-001', 'Z:/HiJee/Stim_Travis/220601_m211201mNbl6_FRA2_post_156um-002'],
-    #'data_path': ['C:/Users/Travis/Dropbox (Kanoldlab)/PC/Desktop/Jade_GCaMP8_virus_no_multi-006_raw'], # a list of folders with tiffs 
-                                            # (or folder of folders with tiffs if look_one_level_down is True, or subfolders is not empty)                            
-    'subfolders': [], # choose subfolders of 'data_path' to look in (optional)
-    }
-    db['input_format'] = "bruker_raw"
-    opsEnd = run_s2p(ops=ops, db=db)
-
-
 def convertMultiSampling():
     ms_path = Path("Z:\\tbabola\\Experiments\\2021\\211207\\1x_quickmap_400um_5x_repeats_1_5xzoom_multisampling-036")
     (ms_path / "suite2p/plane0/data.bin").unlink(missing_ok=True)
@@ -89,7 +63,7 @@ def convertMultiSampling():
     ops = default_ops()
     ops['input_format'] = "bruker_raw"
     ops['nchannels'] = 1
-    ops['do_registration'] = 1
+    ops['do_registration'] = 0
     ops['nonrigid'] = 0
     ops['roidetect'] = 0
     ops['functional_chan'] = 2
@@ -225,9 +199,8 @@ def loadBinary2planesToStack(dir, framesToRead):
   stack2 = np.fromfile(binplane2_file,'uint16', count=ops["Lx"]*ops["Ly"]*framesToRead)
   return (stack.reshape(-1,ops["Lx"],ops["Ly"]), stack2.reshape(-1,ops["Lx"],ops["Ly"]))
 
-
 def stackTests():
-    #convertMultiSampling()
+    # convertMultiSampling()
     # raw_dir = Path("Z:\\tbabola\\Experiments\\2021\\211207\\1x_quickmap_400um_5x_repeats_1_5xzoom_multisampling-036\\suite2p\\plane0")
     # raw_stack = loadBinaryToStack(raw_dir)
 
@@ -251,12 +224,11 @@ def stackTests():
     # print("Raw and raw stack are equal for plane1 sampling: {}".format(np.array_equal(plane1_tiff, plane1_raw)))
 
     #tiffMultiFolder()
-    #brawMultiFolder()
-    brawMultiFolderHiJee()
-
+    brawMultiFolder()
 
 if __name__ == "__main__":
     stackTests()
+
 
     
 

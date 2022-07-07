@@ -61,6 +61,8 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
 
       - name: Coverage
+        # Only run coverage once
+        if: runner.os == 'Linux'
         uses: codecov/codecov-action@v1
 
   deploy:

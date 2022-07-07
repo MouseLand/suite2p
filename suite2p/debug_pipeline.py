@@ -33,14 +33,15 @@ def brawMultiFolder():
     ops = default_ops()
     ops['input_format'] = "bruker_raw"
     ops['nchannels'] = 1
-    ops['do_registration'] = 1
-    ops['roidetect'] = 0
+    ops['do_registration'] = 0
+    ops['roidetect'] = 1
     ops['functional_chan'] = 2
     ops['fs'] = 15
     ops['nonrigid'] = 0
     ops['block_size'] = [256, 256]
     ops['align_by_chan'] = 1
     ops['keep_movie_raw'] = 0
+    ops['save_mat'] = 1
 
     db = {
     'h5py': [], # a single h5 file path

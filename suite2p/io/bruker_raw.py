@@ -55,6 +55,8 @@ def brukerRaw_to_binary(ops):
         functional_chan = ops['functional_chan']
         samplesPerPixel= int(bruker_xml['samplesPerPixel'])
         nplanes = bruker_xml['nplanes']
+        
+
         if nplanes > 1: #when taking multiple planes with bruker, total number of frames collected goes to ncyles
             nframes_total[folder_num] = int(bruker_xml['ncycles'])
 
@@ -77,7 +79,7 @@ def brukerRaw_to_binary(ops):
         # copy ops to list where each element is ops for each plane
         if folder_num == 0:
             ops1 = utils.init_ops(ops)
-            reg_file, reg_file_chan2 = bruker_raw_open_binaries(ops1)
+            reg_file, reg_file_chan2 = bruker_raw_open_binaries(ops1, numFolders = len(ops['data_path']))
 
         ops1, fs = find_bruker_raw_files(ops, ops1, folder_num)
 
@@ -118,6 +120,7 @@ def brukerRaw_to_binary(ops):
                         batch_frames_processed = batch_frames_processed + bin_temp_plane.shape[0]
                         total_frames_processed = total_frames_processed + bin_temp_plane.shape[0]
                         ops1[plane]['meanImg'] += meanImg
+                        
                     else: #could probably be upgraded to include more channels, but fine for now
                         reg_file_chan2[plane].write(bytearray(bin_temp))
                         ops1[plane]['meanImg_chan2'] += meanImg
@@ -127,6 +130,7 @@ def brukerRaw_to_binary(ops):
     
     for plane in np.arange(0, nplanes):
         ops1[plane]['nframes'] = np.sum(nframes_total)
+        ops1[plane]['frames_per_folder'] = nframes_total
 
     # write ops files
     do_registration = ops['do_registration']
@@ -197,7 +201,7 @@ def parse_bruker_xml(xmlfile):
     b_xml['nchannels'] = len(root[2].findall('Frame')[0].findall('File')) 
     return b_xml
 
-def bruker_raw_open_binaries(ops1):
+def bruker_raw_open_binaries(ops1, numFolders):
     """ opens binaries for writing
         Parameters
         ----------
@@ -214,6 +218,7 @@ def bruker_raw_open_binaries(ops1):
 
     for ops in ops1:
         nchannels = ops['nchannels']
+        ops['frames_per_folder'] = np.zeros(shape=numFolders, dtype=np.uint32)
         if 'keep_movie_raw' in ops and ops['keep_movie_raw']:
             reg_file.append(open(ops['raw_file'], 'wb'))
             if nchannels>1:
@@ -225,7 +230,7 @@ def bruker_raw_open_binaries(ops1):
 
     return reg_file, reg_file_chan2
 
-def find_bruker_raw_files(ops_m, ops1,folder_num):
+def find_bruker_raw_files(ops_m, ops1, folder_num):
     """  finds bruker raw files
         Parameters
         ----------

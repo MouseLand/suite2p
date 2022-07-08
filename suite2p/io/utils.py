@@ -284,8 +284,8 @@ def init_ops(ops):
         if 'dy' in ops and ops['dy']!='':
             ops['dy'] = dy[j]
             ops['dx'] = dx[j]
-        if not os.path.isdir(ops['fast_disk']):
-            os.makedirs(ops['fast_disk'])
+        if not os.path.isdir(fast_disk):
+            os.makedirs(fast_disk)
         if not os.path.isdir(ops['save_path']):
             os.makedirs(ops['save_path'])
         ops1.append(ops.copy())

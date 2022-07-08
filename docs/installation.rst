@@ -55,6 +55,26 @@ less well tested on Mac OS. Please post an issue if you have
 installation problems. The registration step runs faster on Ubuntu than
 Windows, so if you have a choice we recommend using the Ubuntu OS.
 
+***Installation issues on an ARM processor:***
+If you are having issues installing ``suite2p`` on MacOS running on an **ARM processor CPU**, the following steps have been found to work:
+
+First, use a Rossetta version of the MacOS Terminal application. For e.g. see steps here: https://dev.to/courier/tips-and-tricks-to-setup-your-apple-m1-for-development-547g
+
+Open the Terminal command prompt from this Rossetta version Terminal application, and follow the following steps:
+
+::
+
+   /usr/bin/python3 -m venv suite2p
+
+   source suite2p/bin/activate
+
+   pip install --upgrade pip
+
+   pip install PyQT5
+
+   pip install suite2p
+
+
 Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -77,7 +97,7 @@ Dependencies
 .. _numpy: http://www.numpy.org/
 .. _scipy: https://www.scipy.org/
 .. _h5py: https://www.h5py.org/
-.. _tifffile: https://pypi.org/project/tifffile/ 
+.. _tifffile: https://pypi.org/project/tifffile/
 .. _scikit-learn: http://scikit-learn.org/stable/
 .. _scanimage-tiff-reader: http://scanimage.gitlab.io/ScanImageTiffReaderDocs/
 .. _natsort: https://natsort.readthedocs.io/en/master/

@@ -42,6 +42,7 @@ Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?
 
 ## Installation
 
+### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.8`.
@@ -59,6 +60,13 @@ To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), 
 ~~~~
 pip install --upgrade suite2p
 ~~~~
+
+### Installation for Macs with Apple Silicon chips (e.g., M1)
+1. Set up a Rosetta terminal following step 1 in this [link](https://dev.to/courier/tips-and-tricks-to-setup-your-apple-m1-for-development-547g). 
+2. Open up the newly created Rosetta terminal and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
+3. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
+4. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
+
 
 ### Installing the latest github version of the code
 

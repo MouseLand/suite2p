@@ -14,7 +14,8 @@ def extract_wrapper(ops):
         plane_dir = Path(curr_op['save_path0']).joinpath(f'suite2p/plane{plane}')
         plane_dir.mkdir(exist_ok=True, parents=True)
         extract_input = np.load(
-            curr_op['data_path'][0].joinpath(
+            curr_op['data_path'][0].parent.joinpath(
+                'test_outputs',
                 'detection',
                 'expected_detect_output_{0}p{1}c{2}.npy'.format(curr_op['nplanes'], curr_op['nchannels'], plane)),
             allow_pickle=True
@@ -56,12 +57,12 @@ def run_preprocess(f: np.ndarray, test_ops):
             fs=test_ops['fs'],
             prctile_baseline=test_ops['prctile_baseline']
         )
-        test_f = np.load('data/test_data/extraction/{}_f.npy'.format(bv))
+        test_f = np.load(test_ops['data_path'][0].parent.joinpath('test_outputs/extraction/{}_f.npy'.format(bv)))
         yield np.allclose(pre_f, test_f, rtol=1e-4, atol=5e-2)
 
 
 def test_pre_process_baseline(test_ops):
-    f = np.load(Path('data/test_data/1plane1chan1500/suite2p/plane0/F.npy'))
+    f = np.load(test_ops['data_path'][0].parent.joinpath('test_outputs/1plane1chan1500/suite2p/plane0/F.npy'))
     assert all(run_preprocess(f, test_ops))
 
 
@@ -71,7 +72,7 @@ def test_extraction_output_1plane1chan(test_ops):
     })
     ops = utils.ExtractionTestUtils.prepare(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection_input/pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     extract_wrapper(ops)
@@ -81,7 +82,7 @@ def test_extraction_output_1plane1chan(test_ops):
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
-            utils.get_list_of_data(outputs_to_check, Path(ops['data_path'][0]).joinpath(f"extraction/1plane1chan/plane0")),
+            utils.get_list_of_data(outputs_to_check, Path(ops['data_path'][0]).parent.joinpath(f"test_outputs/extraction/1plane1chan/plane0")),
             utils.get_list_of_data(outputs_to_check, Path(ops['save_path0']).joinpath(f"suite2p/plane0")),
         ))
 
@@ -92,7 +93,7 @@ def test_extraction_output_2plane2chan(test_ops):
         'nplanes': 2,
         'tiff_list': ['input.tif'],
     })
-    detection_dir = test_ops['data_path'][0].joinpath('detection_input')
+    detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = utils.ExtractionTestUtils.prepare(
         test_ops,
         [
@@ -108,6 +109,6 @@ def test_extraction_output_2plane2chan(test_ops):
     for i in range(len(ops)):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
-            utils.get_list_of_data(outputs_to_check, Path(ops[i]['data_path'][0].joinpath(f"extraction/2plane2chan/plane{i}"))),
+            utils.get_list_of_data(outputs_to_check, Path(ops[i]['data_path'][0].parent.joinpath(f"test_outputs/extraction/2plane2chan/plane{i}"))),
             utils.get_list_of_data(outputs_to_check, Path(ops[i]['save_path0']).joinpath(f"suite2p/plane{i}")),
         ))

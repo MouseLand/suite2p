@@ -72,7 +72,7 @@ class FullPipelineTestUtils:
         return ops 
 
     def initialize_ops_test_mesoscan_2plane_2z(ops):
-        mesoscan_dir = Path(ops['data_path'][0]).joinpath('mesoscan_input')
+        mesoscan_dir = Path(ops['data_path'][0]).joinpath('mesoscan')
         with open(mesoscan_dir.joinpath('ops.json')) as f:
             meso_ops = json.load(f)
         ops['data_path'] = [mesoscan_dir]

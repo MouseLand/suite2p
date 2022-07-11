@@ -20,7 +20,7 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_ops):
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan1500/suite2p/plane{i}")),
+			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{test_ops['nchannels']}chan1500/suite2p/plane{i}")),
 			utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))
 	# Read Nwb data and make sure it's identical to output data
@@ -57,7 +57,7 @@ def test_2plane_2chan_with_batches(test_ops):
 		for i in range(nplanes):
 			assert all(utils.compare_list_of_outputs(
 				outputs_to_check,
-				utils.get_list_of_data(outputs_to_check, ops['data_path'][0].joinpath(f"{nplanes}plane{ops['nchannels']}chan1500/suite2p/plane{i}")),
+				utils.get_list_of_data(outputs_to_check, ops['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{ops['nchannels']}chan1500/suite2p/plane{i}")),
 				utils.get_list_of_data(outputs_to_check, Path(ops['save_path0']).joinpath(f"suite2p/plane{i}")),
 			))
 
@@ -78,7 +78,7 @@ def temp_test_1plane_2chan_sourcery(test_ops):
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f"{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
+			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{test_ops['nchannels']}chan/suite2p/plane{i}")),
 			utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))
 
@@ -95,6 +95,7 @@ def test_mesoscan_2plane_2z(test_ops):
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, Path('data/test_data/mesoscan').joinpath(f'suite2p/plane{i}')),
+			# Need additional parent for since test_ops['data_path'][0] is data/test_inputs/mesoscan
+			utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].parent.parent.joinpath(f'test_outputs/mesoscan/suite2p/plane{i}')),
 			utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))

@@ -10,15 +10,20 @@ from urllib.request import urlopen
 
 @pytest.fixture()
 def data_dir():
+    """
+    Initializes data input directory for tests. Downloads test_inputs and test_outputs if not present.
+    """
     data_path = Path('data/')
     data_path.mkdir(exist_ok=True)
-    cached_file = data_path.joinpath('test_data.zip')
-    if not os.path.exists(cached_file):
-        url = 'https://www.suite2p.org/static/test_data/test_data.zip'
-        download_url_to_file(url, cached_file)        
-        with zipfile.ZipFile(cached_file,"r") as zip_ref:
-            zip_ref.extractall(data_path)
-    return data_path.joinpath('test_data/')
+    cached_inputs = data_path.joinpath('test_inputs.zip')
+    cached_inputs_url = 'https://www.suite2p.org/static/test_data/test_inputs.zip'
+    cached_outputs = data_path.joinpath('test_outputs.zip')
+    cached_outputs_url = 'https://www.suite2p.org/static/test_data/test_outputs.zip'
+    if not os.path.exists(cached_inputs):
+        extract_zip(cached_inputs, cached_inputs_url, data_path)
+    if not os.path.exists(cached_outputs):
+        extract_zip(cached_outputs, cached_outputs_url, data_path)
+    return data_path
 
 
 @pytest.fixture()
@@ -32,7 +37,7 @@ def initialize_ops(tmpdir, data_dir):
     ops.update(
         {
             'use_builtin_classifier': True,
-            'data_path': [data_dir],
+            'data_path': [Path(data_dir).joinpath('test_inputs')],
             'save_path0': str(tmpdir),
             'norm_frames': False,
             'denoise': False,
@@ -40,6 +45,11 @@ def initialize_ops(tmpdir, data_dir):
         }
     )
     return ops
+
+def extract_zip(cached_file, url, data_path):
+    download_url_to_file(url, cached_file)        
+    with zipfile.ZipFile(cached_file,"r") as zip_ref:
+        zip_ref.extractall(data_path)
 
 def download_url_to_file(url, dst, progress=True):
     r"""Download object at the given URL to a local path.

@@ -17,7 +17,7 @@ def detect_wrapper(ops):
         op['neuropil_extract'] = True
         op, stat = detection.detect(ops=op)
         output_check = np.load(
-            op['data_path'][0].joinpath(f"detection/expected_detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
+            op['data_path'][0].parent.joinpath(f"test_outputs/detection/expected_detect_output_{ op['nplanes'] }p{ op['nchannels'] }c{ i }.npy"),
             allow_pickle=True
         )[()]
         #assert np.array_equal(output_check['cell_pix'], cell_pix)
@@ -35,7 +35,7 @@ def test_detection_output_1plane1chan(test_ops):
     })
     ops = utils.DetectionTestUtils.prepare(
         test_ops,
-        [[test_ops['data_path'][0].joinpath('detection_input/pre_registered.npy')]],
+        [[test_ops['data_path'][0].joinpath('detection/pre_registered.npy')]],
         (404, 360)
     )
     detect_wrapper(ops)
@@ -46,7 +46,7 @@ def test_detection_output_2plane2chan(test_ops):
         'nchannels': 2,
         'nplanes': 2,
     })
-    detection_dir = test_ops['data_path'][0].joinpath('detection_input')
+    detection_dir = test_ops['data_path'][0].joinpath('detection')
     ops = utils.DetectionTestUtils.prepare(
         test_ops,
         [
@@ -65,6 +65,6 @@ def test_detection_output_2plane2chan(test_ops):
     for i in range(nplanes):
         assert all(utils.compare_list_of_outputs(
             outputs_to_check,
-            utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].joinpath(f"detection/suite2p/plane{i}")),
+            utils.get_list_of_data(outputs_to_check, test_ops['data_path'][0].parent.joinpath(f"test_outputs/detection/suite2p/plane{i}")),
             utils.get_list_of_data(outputs_to_check, Path(test_ops['save_path0']).joinpath(f"suite2p/plane{i}")),
         ))

@@ -32,7 +32,7 @@ def replace_ops_save_path_with_local_path(request):
 
     # Get the `data_folder` variable from the running test name
     data_folder = re.search(r"\[(.*)\]", request.node.name).group(1)
-    save_folder = Path("data").joinpath("test_data", data_folder, "suite2p")
+    save_folder = Path("data").joinpath("test_inputs", data_folder, "suite2p")
 
     save_path = {}
     plane_folders = [

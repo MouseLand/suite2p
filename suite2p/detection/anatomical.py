@@ -90,9 +90,10 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
             stat['anatomical'] = False
     return stats   
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5):
-    model = Cellpose()
-    masks = model.eval(mproj, net_avg=True, channels=[0,0], diameter=diameter, 
+def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5, model_type='cyto'):
+    model = Cellpose(model_type=model_type)
+    print(model_type)
+    masks = model.eval(mproj, net_avg=False, diameter=diameter,
                         cellprob_threshold=cellprob_threshold, flow_threshold=flow_threshold)[0]
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
@@ -164,7 +165,8 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, dy: int, dx: int, Ly: int,
         print("!NOTE! ops['diameter'] set to %0.2f for cell detection with cellpose"%ops['diameter'][1])
     masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=ops['diameter'][1],
                                                          flow_threshold=ops['flow_threshold'],
-                                                         cellprob_threshold=ops['cellprob_threshold'])
+                                                         cellprob_threshold=ops['cellprob_threshold'],
+                                                         model_type=ops['model_type'])
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
         mproj = cv2.resize(mproj, (Lxc, Lyc))

@@ -253,7 +253,7 @@ def estimate_spatial_scale(I: np.ndarray) -> int:
     imap = np.argmax(I, axis=0).flatten()
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
-    im, _ = mode(imap[ipk][isort[:50]])
+    im, _ = mode(imap[ipk][isort[:50]], keepdims=True)
     return im
 
 def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMode]:

@@ -70,7 +70,7 @@ def save_tiff(mov: np.ndarray, fname: str) -> None:
     """
     with TiffWriter(fname) as tif:
         for frame in np.floor(mov).astype(np.int16):
-            tif.save(frame)
+            tif.write(frame)
 
 
 def open_tiff(file: str, sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:

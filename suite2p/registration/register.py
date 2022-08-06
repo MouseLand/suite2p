@@ -7,7 +7,8 @@ import numpy as np
 from scipy.signal import medfilt, medfilt2d
 
 from .. import io, default_ops
-from . import bidiphase, utils, rigid, nonrigid
+from . import bidiphase as bidi
+from . import utils, rigid, nonrigid
 
 def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregshift, Ly: int, Lx:int):
     """ determines how much to crop FOV based on motion
@@ -263,7 +264,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
             maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = compute_reference_masks(refImg, ops)
         
         if bidiphase != 0:
-            bidiphase.shift(frames, bidiphase)
+            bidi.shift(frames, bidiphase)
 
         
         # if smoothing or filtering or clipping to compute registration shifts, make a copy of the frames
@@ -327,7 +328,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
 
 def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None, ops=default_ops()):
     if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-        bidiphase.shift(frames, int(ops['bidiphase']))
+        bidi.shift(frames, int(ops['bidiphase']))
     
     for frame, dy, dx in zip(frames, yoff, xoff):
         frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
@@ -370,12 +371,12 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
         frames = f_align_in[np.linspace(0, n_frames, 1 + np.minimum(ops['nimg_init'], n_frames), dtype=int)[:-1]]    
         # compute bidiphase shift
         if ops['do_bidiphase'] and ops['bidiphase'] == 0 and not ops['bidi_corrected']:
-            bidiphase = bidiphase.compute(frames)
+            bidiphase = bidi.compute(frames)
             print('NOTE: estimated bidiphase offset from data: %d pixels' % bidiphase)
             ops['bidiphase'] = bidiphase
             # shift frames
             if bidiphase != 0:
-                bidiphase.shift(frames, int(ops['bidiphase']))
+                bidi.shift(frames, int(ops['bidiphase']))
         else:
             bidiphase = 0
 

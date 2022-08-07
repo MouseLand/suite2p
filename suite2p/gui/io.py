@@ -18,10 +18,8 @@ def make_masks_and_enable_buttons(parent):
     parent.ops_plot['view'] = 0
     parent.colors['cols'] = 0
     parent.colors['istat'] = 0
-    try:
+    if parent.checkBoxN.isChecked():
         parent.roi_text(False)
-    except:
-        0
     parent.roi_text_labels=[]
     parent.roitext = False 
     parent.checkBoxN.setChecked(False)
@@ -66,12 +64,11 @@ def make_masks_and_enable_buttons(parent):
         parent.stat[n]["inmerge"] = 0
     # enable buttons
     enable_views_and_classifier(parent)
-
     # make views
     views.init_views(parent)
     # make color arrays for various views
     masks.make_colors(parent)
-
+    
     if parent.iscell.sum() > 0:
         ich = np.nonzero(parent.iscell)[0][0]
     else:
@@ -86,9 +83,9 @@ def make_masks_and_enable_buttons(parent):
     masks.plot_colorbar(parent)
     tic = time.time()
     masks.init_masks(parent)
-    print(time.time() - tic)
     M = masks.draw_masks(parent)
     masks.plot_masks(parent, M)
+    print(f'time to draw and plot masks: {time.time() - tic : .4f} sec')
     parent.lcell1.setText("%d" % (ncells - parent.iscell.sum()))
     parent.lcell0.setText("%d" % (parent.iscell.sum()))
     graphics.init_range(parent)

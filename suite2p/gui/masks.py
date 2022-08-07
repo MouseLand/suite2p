@@ -114,7 +114,7 @@ def make_colors(parent):
     if 'meanImg_chan2' in parent.ops:
         allcols = allcols / 1.4
         allcols = allcols + 0.1
-        print(parent.redcell.sum())
+        print(f'number of red cells: {parent.redcell.sum()}')
         parent.randcols = allcols.copy()
         allcols[parent.redcell] = 0
     else:
@@ -250,7 +250,7 @@ def init_masks(parent):
             if 'imerge' in stat[n]:
                 for k in stat[n]['imerge']:
                     iignore[k] = True
-                    print(k)
+                    print(f'ROI {k} in merged ROI')
             xpix = stat[n]['xpix']
             lam = stat[n]['lam']
             lam = lam / lam.sum()

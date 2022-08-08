@@ -124,6 +124,12 @@ class GenerateDetectionTestData:
 				'neuropil_masks': neuropil_masks
 			}
 			np.save('expected_detect_output_%ip%ic%i.npy' % (ops['nchannels'], ops['nplanes'], i), output_dict)
+		# Get rid of registered binary files that were created for detection module in 
+		# DetectionTestUtils.prepare
+		remove_binary_file(test_data_dir_path, 0, '')
+		remove_binary_file(test_data_dir_path, 0, '_chan2')
+		remove_binary_file(test_data_dir_path, 1, '')
+		remove_binary_file(test_data_dir_path, 1, '_chan2')
 	
 	def generate_all_data(ops):
 		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(ops)
@@ -177,6 +183,7 @@ class GenerateExtractionTestData:
 			allow_pickle=True
 		)[()]
 		extract_helper(op, extract_input, 0)
+		remove_binary_file(test_data_dir_path, 0, '')
 		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '1plane1chan'))
 		shutil.move(os.path.join(test_data_dir_path, '1plane1chan'), os.path.join(test_data_dir_path, 'extraction'))
 
@@ -210,6 +217,9 @@ class GenerateExtractionTestData:
 		] 
 		for i in range(len(ops)):
 			extract_helper(ops[i], extract_inputs[i], i)
+			# Assumes second channel binary file is present
+			remove_binary_file(test_data_dir_path, i, '')
+			remove_binary_file(test_data_dir_path, i, '_chan2')
 		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '2plane2chan'))
 		shutil.move(os.path.join(test_data_dir_path, '2plane2chan'), os.path.join(test_data_dir_path, 'extraction'))
 
@@ -259,6 +269,9 @@ def make_new_dir(new_dir_name):
 	if not os.path.exists(new_dir_name):
 		os.makedirs(new_dir_name)
 		print('Created test directory at ' + str(new_dir_name))
+
+def remove_binary_file(dir_path, plane_num, bin_file_suffix):
+	os.remove(os.path.join(dir_path, 'suite2p/plane{}/data{}.bin'.format(plane_num, bin_file_suffix)))
 
 def main():
 	#Create test_data directory if necessary

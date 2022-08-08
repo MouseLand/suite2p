@@ -4,7 +4,7 @@ import shutil
 import numpy as np 
 
 from pathlib import Path
-from conftest import initialize_ops #Guarantees that tests and this script use the same ops
+from conftest import initialize_ops, download_cached_inputs #Guarantees that tests and this script use the same ops
 from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks
 
@@ -274,6 +274,9 @@ def remove_binary_file(dir_path, plane_num, bin_file_suffix):
 	os.remove(os.path.join(dir_path, 'suite2p/plane{}/data{}.bin'.format(plane_num, bin_file_suffix)))
 
 def main():
+	# Check if test_input data directory is present. Download if not.
+	test_input_dir_path.mkdir(exist_ok=True)
+	download_cached_inputs(test_input_dir_path)
 	#Create test_data directory if necessary
 	make_new_dir(test_data_dir_path)
 	full_ops = initialize_ops(test_data_dir_path, test_input_dir_path)

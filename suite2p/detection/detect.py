@@ -139,7 +139,7 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 			print('~~~ tried to import cellpose to run anatomical but failed, install with: ~~~')
 			print('$ pip install cellpose')
 		else:
-			print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img', 'enhanced_mean_img'][int(ops['anatomical_only'])-1])
+			print('>>>> CELLPOSE finding masks in ' + ['max_proj / mean_img', 'mean_img', 'enhanced_mean_img', 'max_proj'][int(ops['anatomical_only'])-1])
 			stat = anatomical.select_rois(
 						ops=ops,
 						mov=mov,

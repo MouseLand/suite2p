@@ -74,7 +74,6 @@ def default_ops():
         '1Preg': False,  # whether to perform high-pass filtering and tapering
         'spatial_hp': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
-        'spatial_hp_detect': 25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
@@ -89,14 +88,16 @@ def default_ops():
         'threshold_scaling': 1.0,  # adjust the automatically determined threshold by this scalar multiplier
         'max_overlap': 0.75,  # cells with more overlap than this get removed during triage, before refinement
         'high_pass': 100,  # running mean subtraction with window of size 'high_pass' (use low values for 1P)
+        'spatial_hp_detect': 25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         'denoise': False, # denoise binned movie for cell detection in sparse_mode
 
-        # cell detection settings with cellpose
-        'anatomical_only': 0, # use cellpose masks from mean image (no functional segmentation)
-        'cellprob_threshold': 0.0, # cellprob_threshold for cellpose (if anatomical_only > 1)
-        'flow_threshold': 1.5, # flow_threshold for cellpose (if anatomical_only > 1)
-        'diameter': 0,  # if anatomical_only, use diameter for cellpose, if 0 estimate diameter
-        'pretrained_model': 'cyto', # path to pretrained model or model type string in Cellpose
+        # cell detection settings with cellpose (used if anatomical_only > 0)
+        'anatomical_only': 0, # run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj
+        'diameter': 0,  # use diameter for cellpose, if 0 estimate diameter
+        'cellprob_threshold': 0.0, # cellprob_threshold for cellpose
+        'flow_threshold': 1.5, # flow_threshold for cellpose
+        'spatial_hp_cp': 0, # high-pass image spatially by a multiple of the diameter
+        'pretrained_model': 'cyto', # path to pretrained model or model type string in Cellpose (can be user model)
 
         # classification parameters
         'soma_crop': True, # crop dendrites for cell classification stats like compactness

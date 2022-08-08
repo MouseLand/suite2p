@@ -230,17 +230,9 @@ def init_masks(parent):
     parent.rois['Lam']    = np.zeros((2,3,Ly,Lx), np.float32)
     parent.rois['iROI']   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
-    for n in range(len(parent.roi_text_labels)):
+    if parent.checkBoxN.isChecked():
         parent.checkBoxN.setChecked(False)
-        try:
-            parent.p1.removeItem(parent.roi_text_labels[n])
-        except:
-            pass 
-        try:
-            parent.p2.removeItem(parent.roi_text_labels[n])
-        except:
-            pass 
-        
+            
     # ignore merged cells
     iignore = np.zeros(ncells, 'bool')
     parent.roi_text_labels = []
@@ -536,14 +528,13 @@ def flip_roi(parent):
     n = parent.ichosen
     i = int(1-parent.iscell[n])
     i0 = 1-i
-    if parent.roitext:
-        if i0==1:
+    if parent.checkBoxN.isChecked():
+        if i0==0:
             parent.p1.removeItem(parent.roi_text_labels[n])
             parent.p2.addItem(parent.roi_text_labels[n])
         else:
             parent.p2.removeItem(parent.roi_text_labels[n])
             parent.p1.addItem(parent.roi_text_labels[n])
-        
     
     # remove ROI
     remove_roi(parent, n, i0)

@@ -154,11 +154,12 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 
 	ymin = int(yrange[0])
 	xmin = int(xrange[0])
-	for s in stat:
-		s['ypix'] += ymin
-		s['xpix'] += xmin
-		s['med'][0] += ymin
-		s['med'][1] += xmin    
+	if len(stat) > 0:
+		for s in stat:
+			s['ypix'] += ymin
+			s['xpix'] += xmin
+			s['med'][0] += ymin
+			s['med'][1] += xmin    
 
 	
 	if ops['preclassify'] > 0:

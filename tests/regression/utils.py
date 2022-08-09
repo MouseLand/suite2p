@@ -46,7 +46,8 @@ class FullPipelineTestUtils:
             'do_regmetrics': True,
             'save_NWB': True,
             'save_mat': True,
-            'keep_movie_raw': True
+            'keep_movie_raw': True,
+            'delete_bin': True,
         })
         return ops
 
@@ -67,7 +68,8 @@ class FullPipelineTestUtils:
             'nchannels': 2,
             'reg_tif': True,
             'reg_tif_chan2': True,
-            'save_mat': True
+            'save_mat': True,
+            'delete_bin': True,
         })
         return ops 
 
@@ -79,7 +81,7 @@ class FullPipelineTestUtils:
         for key in meso_ops.keys():
             if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
                 ops[key] = meso_ops[key]
-        ops['delete_bin'] = False
+        ops['delete_bin'] = True
         return ops
 
 class DetectionTestUtils:

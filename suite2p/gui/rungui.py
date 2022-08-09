@@ -406,7 +406,7 @@ class RunWindow(QDialog):
         print('Running suite2p!')
         print('starting process')
         print(self.db)
-        self.process.start('python -u -W ignore -m suite2p --ops %s --db %s'%(ops_file, db_file))
+        self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"'%(ops_file, db_file))
 
     def stop(self):
         self.finish = False

@@ -4,7 +4,7 @@ import shutil
 import numpy as np 
 
 from pathlib import Path
-from conftest import initialize_ops #Guarantees that tests and this script use the same ops
+from conftest import initialize_ops, download_cached_inputs #Guarantees that tests and this script use the same ops
 from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks
 
@@ -17,7 +17,7 @@ with the same name in suite2p/data/test_data (e.g.,replace suite2p/data/test_dat
 
 current_dir = Path(os.getcwd())
 # Assumes the input file has already been downloaded
-test_input_dir_path = current_dir.parent.joinpath('data').joinpath('test_data')
+test_input_dir_path = current_dir.parent.joinpath('data')
 # Output directory where suite2p results are kept
 test_data_dir_path =  current_dir.joinpath('test_data')
 
@@ -75,7 +75,7 @@ class GenerateDetectionTestData:
 		})
 		ops = DetectionTestUtils.prepare(
 			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered.npy')]],
+			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
 			(404, 360)
 		)
 		ops, stat = suite2p.detection.detect(ops[0])
@@ -101,7 +101,7 @@ class GenerateDetectionTestData:
 			'nchannels': 2,
 			'nplanes': 2,
 		})
-		detection_dir = Path(ops['data_path'][0]).joinpath('detection_input')
+		detection_dir = Path(ops['data_path'][0]).joinpath('detection')
 		two_plane_ops = DetectionTestUtils.prepare(
 			ops,
 			[
@@ -124,6 +124,12 @@ class GenerateDetectionTestData:
 				'neuropil_masks': neuropil_masks
 			}
 			np.save('expected_detect_output_%ip%ic%i.npy' % (ops['nchannels'], ops['nplanes'], i), output_dict)
+		# Get rid of registered binary files that were created for detection module in 
+		# DetectionTestUtils.prepare
+		remove_binary_file(test_data_dir_path, 0, '')
+		remove_binary_file(test_data_dir_path, 0, '_chan2')
+		remove_binary_file(test_data_dir_path, 1, '')
+		remove_binary_file(test_data_dir_path, 1, '_chan2')
 	
 	def generate_all_data(ops):
 		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(ops)
@@ -137,7 +143,7 @@ class GenerateDetectionTestData:
 class GenerateClassificationTestData:
 	# Classification Tests
 	def generate_classification_test_data(ops):
-		stat = np.load(test_input_dir_path.joinpath('classification_input/pre_stat.npy'), allow_pickle=True)
+		stat = np.load(test_input_dir_path.joinpath('test_inputs/classification/pre_stat.npy'), allow_pickle=True)
 		iscell = suite2p.classification.classify(stat, classfile=suite2p.classification.builtin_classfile)
 		np.save(str(test_data_dir_path.joinpath('classification').joinpath('expected_classify_output_1p1c0.npy')), iscell)
 
@@ -168,7 +174,7 @@ class GenerateExtractionTestData:
 		})
 		ops = ExtractionTestUtils.prepare(
 			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered.npy')]],
+			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
 			(404, 360)
 		)
 		op = ops[0]
@@ -177,6 +183,7 @@ class GenerateExtractionTestData:
 			allow_pickle=True
 		)[()]
 		extract_helper(op, extract_input, 0)
+		remove_binary_file(test_data_dir_path, 0, '')
 		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '1plane1chan'))
 		shutil.move(os.path.join(test_data_dir_path, '1plane1chan'), os.path.join(test_data_dir_path, 'extraction'))
 
@@ -186,18 +193,19 @@ class GenerateExtractionTestData:
 			'nplanes': 2,
 			'tiff_list': ['input.tif'],
 		})
+		# Create multiple ops for multiple plane extraction
 		ops = ExtractionTestUtils.prepare(
 			ops,
 			[
-				[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered01.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection_input/pre_registered02.npy')],
-				[Path(ops['data_path'][0]).joinpath('detection_input/pre_registered11.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection_input/pre_registered12.npy')]
+				[Path(ops['data_path'][0]).joinpath('detection/pre_registered01.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection/pre_registered02.npy')],
+				[Path(ops['data_path'][0]).joinpath('detection/pre_registered11.npy'), 
+				Path(ops['data_path'][0]).joinpath('detection/pre_registered12.npy')]
 			]
 			, (404, 360),
 		)
-		ops[0]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection_input/meanImg_chan2p0.npy'))
-		ops[1]['meanImg_chan2'] = np.load(test_input_dir_path.joinpath('detection_input/meanImg_chan2p1.npy'))
+		ops[0]['meanImg_chan2'] = np.load(Path(ops[0]['data_path'][0]).joinpath('detection/meanImg_chan2p0.npy'))
+		ops[1]['meanImg_chan2'] = np.load(Path(ops[1]['data_path'][0]).joinpath('detection/meanImg_chan2p1.npy'))
 		# 2 separate inputs for each plane (but use outputs of detection generate function)
 		extract_inputs = [
 			np.load(
@@ -209,6 +217,9 @@ class GenerateExtractionTestData:
 		] 
 		for i in range(len(ops)):
 			extract_helper(ops[i], extract_inputs[i], i)
+			# Assumes second channel binary file is present
+			remove_binary_file(test_data_dir_path, i, '')
+			remove_binary_file(test_data_dir_path, i, '_chan2')
 		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '2plane2chan'))
 		shutil.move(os.path.join(test_data_dir_path, '2plane2chan'), os.path.join(test_data_dir_path, 'extraction'))
 
@@ -259,7 +270,13 @@ def make_new_dir(new_dir_name):
 		os.makedirs(new_dir_name)
 		print('Created test directory at ' + str(new_dir_name))
 
+def remove_binary_file(dir_path, plane_num, bin_file_suffix):
+	os.remove(os.path.join(dir_path, 'suite2p/plane{}/data{}.bin'.format(plane_num, bin_file_suffix)))
+
 def main():
+	# Check if test_input data directory is present. Download if not.
+	test_input_dir_path.mkdir(exist_ok=True)
+	download_cached_inputs(test_input_dir_path)
 	#Create test_data directory if necessary
 	make_new_dir(test_data_dir_path)
 	full_ops = initialize_ops(test_data_dir_path, test_input_dir_path)

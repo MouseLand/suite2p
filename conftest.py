@@ -7,6 +7,7 @@ import shutil
 from tqdm import tqdm
 from pathlib import Path
 from urllib.request import urlopen
+from tenacity import retry
 
 @pytest.fixture()
 def data_dir():
@@ -55,6 +56,7 @@ def extract_zip(cached_file, url, data_path):
     with zipfile.ZipFile(cached_file,"r") as zip_ref:
         zip_ref.extractall(data_path)
 
+@retry
 def download_url_to_file(url, dst, progress=True):
     r"""Download object at the given URL to a local path.
             Thanks to torch, slightly modified

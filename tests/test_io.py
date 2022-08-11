@@ -34,7 +34,7 @@ def replace_ops_save_path_with_local_path(request):
 
     # Get the `data_folder` variable from the running test name
     data_folder = re.search(r"\[(.*?)(-.*?)?\]", request.node.name).group(1)
-    save_folder = Path("data").joinpath("test_inputs", data_folder, "suite2p")
+    save_folder = Path("data").joinpath("test_outputs", data_folder, "suite2p")
 
     save_path = {}
     plane_folders = [
@@ -124,15 +124,9 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
 @pytest.mark.parametrize(
     "data_folder",
     [
-        ("1plane1chan"),
         ("1plane1chan1500"),
-        # ("1plane2chan"),
-        # ("1plane2chan-scanimage"),
-        # TODO: Make the test work with the commented folders above
-        # `np.load("ops.npy")` with `allow_pickle=True` currently fails with:
-        # NotImplementedError: cannot instantiate 'WindowsPath' on your system
-        ("2plane2chan"),
         ("2plane2chan1500"),
+        ("bruker"),
     ],
 )
 def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
@@ -151,6 +145,7 @@ def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
 
     # Check (some of) the structure of the NWB file saved
     nwb_path = save_folder.joinpath("ophys.nwb")
+    assert nwb_path.exists()
     with NWBHDF5IO(str(nwb_path), "r") as io:
         read_nwbfile = io.read()
         assert read_nwbfile.processing

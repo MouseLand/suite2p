@@ -31,24 +31,32 @@ environment:
 
 **Common issues**
 
-If when running ``suite2p``, you receive the error:
-``No module named PyQt5.sip``, then try uninstalling and reinstalling
-pyqt5
+- If when running ``suite2p``, you receive the error:
+  ``No module named PyQt5.sip``, then try uninstalling and reinstalling pyqt5
+  
+   ::
 
-::
+      pip uninstall pyqt5 pyqt5-tools
+      pip install suite2p
 
-   pip uninstall pyqt5 pyqt5-tools
-   pip install suite2p
+- If when running ``suite2p``, you receive an error associated
+  with **matplotlib**, try upgrading it:
 
-If when running ``suite2p``, you receive an error associated
-with **matplotlib**, try upgrading it:
+   ::
 
-::
+      pip install matplotlib --upgrade
 
-   pip install matplotlib --upgrade
+- If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
 
-If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able
-to install suite2p. More recent versions of Mac OS are fine.
+- If you are using Ubuntu 22.04 and run into the following issue:
+
+  ::
+  
+     qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in even though it was found. 
+     This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application
+     may fix this problem.
+  
+  Follow this `link`_ to install Qt5 and the issue above should be fixed.
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and
 less well tested on Mac OS. Please post an issue if you have
@@ -84,3 +92,4 @@ Dependencies
 .. _matplotlib: https://matplotlib.org/
 .. _Anaconda: https://www.anaconda.com/download/
 .. _here: https://pypi.org/project/suite2p/
+.. _link: https://askubuntu.com/questions/1406379/qt5-install-problem-ubuntustudio-22-04/1406503#1406503

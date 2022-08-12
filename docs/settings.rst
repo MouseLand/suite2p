@@ -84,7 +84,7 @@ Registration
 - **nimg_init**: (*int, default: 200*) how many frames to use to
   compute reference image for registration
 
-- **batch_size**: (*int, default: 200*) how many frames to register
+- **batch_size**: (*int, default: 500*) how many frames to register
   simultaneously in each batch. This depends on memory constraints - it
   will be faster to run if the batch is larger, but it will require
   more RAM.

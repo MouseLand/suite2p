@@ -1,33 +1,7 @@
 Installation
 ----------------
 
-Install an `Anaconda`_ distribution of Python -- Choose **Python 3.x**
-and your operating system. Note you might need to use an anaconda prompt
-if you did not add anaconda to the path.
-
-1. Download the suite2p repository from GitHub using Git:  ``git clone https://github.com/MouseLand/suite2p``
-2. Open an anaconda prompt / command prompt with ``conda`` for **python
-   3** in the path
-3. Change the current directory to the suite2p folder: ``cd suite2p``
-4. Run ``conda env create -f environment.yml``
-5. To activate this new environment, run ``conda activate suite2p``. Afterwards, You should see ``(suite2p)`` on the left side of the terminal line.
-6. Install suite2p into this environment: ``pip install suite2p``
-7. Now run ``suite2p`` and you're all set.
-
-If you have an older ``suite2p`` environment you can remove it with
-``conda env remove -n suite2p`` before creating a new one.
-
-Note you will always have to run **conda activate suite2p** before you
-run suite2p. Conda ensures mkl_fft and numba run correctly and quickly
-on your machine. If you want to run jupyter notebooks in this
-environment, then also ``conda install jupyter``.
-
-To upgrade suite2p (package `here`_), run the following in the
-environment:
-
-::
-
-   pip install suite2p --upgrade
+Please refer to the suite2p `README`_ for the latest up-to-date installation instructions.
 
 **Common issues**
 
@@ -93,3 +67,4 @@ Dependencies
 .. _Anaconda: https://www.anaconda.com/download/
 .. _here: https://pypi.org/project/suite2p/
 .. _link: https://askubuntu.com/questions/1406379/qt5-install-problem-ubuntustudio-22-04/1406503#1406503
+.. _README: https://github.com/MouseLand/suite2p#readme

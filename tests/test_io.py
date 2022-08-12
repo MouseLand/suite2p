@@ -2,7 +2,7 @@
 Tests for the Suite2p IO module
 """
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 import os
 
 import numpy as np
@@ -36,7 +36,7 @@ def replace_ops_save_path_with_local_path(request):
     # Get the `data_folder` variable from the running test name
     data_folder = re.search(r"\[(.*?)(-.*?)?\]", request.node.name).group(1)
     save_folder = Path("data").joinpath("test_outputs", data_folder, "suite2p")
-    print(f"\nsave_folder: {save_folder}")
+    print(f"\nsave_folder: {save_folder}, {type(save_folder)}")
 
     save_path = {}
     plane_folders = [
@@ -44,14 +44,14 @@ def replace_ops_save_path_with_local_path(request):
         for dir in natsorted(save_folder.iterdir())
         if dir.is_dir() and "plane" in dir.name
     ]
-    print(f"\nplane_folders: {plane_folders}")
+    print(f"\nplane_folders: {plane_folders}, {type(plane_folders)}")
     for plane_idx, plane_dir in enumerate(plane_folders):
-        print(f"\nplane_dir: {plane_dir}")
+        print(f"\nplane_dir: {plane_dir}, {type(plane_dir)}")
 
         # Temporarily change the `save_folder` variable in the NumPy file
-        ops1 = np.load(str(plane_dir) + os.sep + "ops.npy", allow_pickle=True)
+        ops1 = np.load(PurePath(plane_dir).joinpath("ops.npy"), allow_pickle=True)
         save_path[plane_dir] = ops1.item(0)["save_path"]
-        print(f"\nsave_path: {save_path[plane_dir]}")
+        print(f"\nsave_path: {save_path[plane_dir]}, {type(save_path[plane_dir])}")
         ops1.item(0)["save_path"] = str(plane_dir.absolute())
         np.save(plane_dir.joinpath("ops.npy"), ops1)
 

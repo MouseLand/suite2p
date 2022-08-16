@@ -29,6 +29,7 @@ nwb_deps = [
       ]
 test_deps = [
       'pytest',
+      'tenacity',
       'tqdm',
       'pytest-qt==3.3.0',
     ]

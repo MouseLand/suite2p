@@ -73,14 +73,14 @@ def cellpose_overlap(stats, mimg2):
     from . import anatomical 
     masks = anatomical.roi_detect(mimg2)[0]
     Ly, Lx = masks.shape
-    redstats = np.zeros(len(stats), np.float32)
+    redstats = np.zeros((len(stats),2), np.float32) #changed the size of preallocated space
     for i in range(len(stats)):
         smask = np.zeros((Ly, Lx), np.uint16)
         ypix0, xpix0= stats[i]['ypix'], stats[i]['xpix']
         smask[ypix0, xpix0] = 1
         ious = utils.mask_ious(masks, smask)[0]
         iou = ious.max()
-        redstats[i] = np.array([iou>0.5, iou])
+        redstats[i,] = np.array([iou>0.5, iou]) #this had the wrong dimension
     return redstats
 
 def detect(ops, stats):

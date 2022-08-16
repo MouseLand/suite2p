@@ -433,9 +433,12 @@ class RunWindow(QDialog):
         if self.finish and not self.error:
             self.cleanButton.setEnabled(True)
             if len(self.opslist)==1:
-                cursor.insertText('Opening in GUI (can close this window)\n')
                 self.parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
-                io.load_proc(self.parent)
+                if os.path.exists(self.parent.fname):
+                    cursor.insertText('Opening in GUI (can close this window)\n')
+                    io.load_proc(self.parent)
+                else:
+                    cursor.insertText('not opening plane in GUI (no ROIs)\n')
             else:
                 cursor.insertText('BATCH MODE: %d more recordings remaining \n'%(len(self.opslist)-self.f-1))
                 self.f += 1

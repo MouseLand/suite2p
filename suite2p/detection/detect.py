@@ -160,29 +160,28 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 			s['xpix'] += xmin
 			s['med'][0] += ymin
 			s['med'][1] += xmin    
+		
+		if ops['preclassify'] > 0:
+			if classfile is None:
+				print(f'NOTE: Applying user classifier at {str(user_classfile)}')
+				classfile = user_classfile
 
-	
-	if ops['preclassify'] > 0:
-		if classfile is None:
-			print(f'NOTE: Applying user classifier at {str(user_classfile)}')
-			classfile = user_classfile
-
-		stat =  roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
-						  diameter=ops.get('diameter', None), do_crop=ops.get('soma_crop', 1))
-		if len(stat) == 0:
-			iscell = np.zeros((0, 2))
-		else:
-			iscell = classify(stat=stat, classfile=classfile)
-		np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-		ic = (iscell[:,0]>ops['preclassify']).flatten().astype('bool')
-		stat = stat[ic]
-		print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
-	
-	stat = roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
-					 diameter=ops.get('diameter', None), 
-					 max_overlap=ops['max_overlap'], 
-					 do_crop=ops.get('soma_crop', 1))
-	print('After removing overlaps, %d ROIs remain' % (len(stat)))
+			stat =  roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
+							diameter=ops.get('diameter', None), do_crop=ops.get('soma_crop', 1))
+			if len(stat) == 0:
+				iscell = np.zeros((0, 2))
+			else:
+				iscell = classify(stat=stat, classfile=classfile)
+			np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
+			ic = (iscell[:,0]>ops['preclassify']).flatten().astype('bool')
+			stat = stat[ic]
+			print('Preclassify threshold %0.2f, %d ROIs removed' % (ops['preclassify'], (~ic).sum()))
+		
+		stat = roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None), 
+						diameter=ops.get('diameter', None), 
+						max_overlap=ops['max_overlap'], 
+						do_crop=ops.get('soma_crop', 1))
+		print('After removing overlaps, %d ROIs remain' % (len(stat)))
 
 	# if second channel, detect bright cells in second channel
 	if 'meanImg_chan2' in ops:

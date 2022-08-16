@@ -132,65 +132,69 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         plane_times['detection'] = time.time()-t11
         print('----------- Total %0.2f sec.' % plane_times['detection'])
 
-        ######## ROI EXTRACTION ##############
-        t11=time.time()
-        print('----------- EXTRACTION')
-        stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.extraction_wrapper(stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops)
-        # save results
-        if ops.get('ops_path'):
-            np.save(ops['ops_path'], ops)
-
-        plane_times['extraction'] = time.time()-t11
-        print('----------- Total %0.2f sec.' % plane_times['extraction'])
-
-        ######## ROI CLASSIFICATION ##############
-        t11=time.time()
-        print('----------- CLASSIFICATION')
-        if len(stat):
-            iscell = classification.classify(stat=stat, classfile=classfile)
-        else:
-            iscell = np.zeros((0, 2))
-        plane_times['classification'] = time.time()-t11
         
-        ######### SPIKE DECONVOLUTION ###############
-        fpath = ops['save_path']
-        if ops.get('spikedetect', True):
+        if len(stat) > 0:
+            ######## ROI EXTRACTION ##############
             t11=time.time()
-            print('----------- SPIKE DECONVOLUTION')
-            dF = F.copy() - ops['neucoeff']*Fneu
-            dF = extraction.preprocess(
-                F=dF,
-                baseline=ops['baseline'],
-                win_baseline=ops['win_baseline'],
-                sig_baseline=ops['sig_baseline'],
-                fs=ops['fs'],
-                prctile_baseline=ops['prctile_baseline']
-            )
-            spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
-            plane_times['deconvolution'] = time.time()-t11
-            print('----------- Total %0.2f sec.' % plane_times['deconvolution'])
-        else:
-            print("WARNING: skipping spike detection (ops['spikedetect']=False)")
-            spks = np.zeros_like(F)
+            print('----------- EXTRACTION')
+            stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.extraction_wrapper(stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops)
+            # save results
+            if ops.get('ops_path'):
+                np.save(ops['ops_path'], ops)
 
-        if ops.get('save_path'):
+            plane_times['extraction'] = time.time()-t11
+            print('----------- Total %0.2f sec.' % plane_times['extraction'])
+
+            ######## ROI CLASSIFICATION ##############
+            t11=time.time()
+            print('----------- CLASSIFICATION')
+            if len(stat):
+                iscell = classification.classify(stat=stat, classfile=classfile)
+            else:
+                iscell = np.zeros((0, 2))
+            plane_times['classification'] = time.time()-t11
+            
+            ######### SPIKE DECONVOLUTION ###############
             fpath = ops['save_path']
-            np.save(os.path.join(fpath, 'stat.npy'), stat)
-            np.save(os.path.join(fpath,'F.npy'), F)
-            np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
-            np.save(os.path.join(fpath, 'iscell.npy'), iscell)
-            np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
-            # if second channel, save F_chan2 and Fneu_chan2
-            if 'meanImg_chan2' in ops:
-                np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
-                np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
-        
-        # save as matlab file
-        if ops.get('save_mat'):
-            stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
-            iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
-            redcell = np.load(os.path.join(ops['save_path'], 'redcell.npy')) if ops['nchannels']==2 else []
-            io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
+            if ops.get('spikedetect', True):
+                t11=time.time()
+                print('----------- SPIKE DECONVOLUTION')
+                dF = F.copy() - ops['neucoeff']*Fneu
+                dF = extraction.preprocess(
+                    F=dF,
+                    baseline=ops['baseline'],
+                    win_baseline=ops['win_baseline'],
+                    sig_baseline=ops['sig_baseline'],
+                    fs=ops['fs'],
+                    prctile_baseline=ops['prctile_baseline']
+                )
+                spks = extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
+                plane_times['deconvolution'] = time.time()-t11
+                print('----------- Total %0.2f sec.' % plane_times['deconvolution'])
+            else:
+                print("WARNING: skipping spike detection (ops['spikedetect']=False)")
+                spks = np.zeros_like(F)
+
+            if ops.get('save_path'):
+                fpath = ops['save_path']
+                np.save(os.path.join(fpath, 'stat.npy'), stat)
+                np.save(os.path.join(fpath,'F.npy'), F)
+                np.save(os.path.join(fpath,'Fneu.npy'), Fneu)
+                np.save(os.path.join(fpath, 'iscell.npy'), iscell)
+                np.save(os.path.join(ops['save_path'], 'spks.npy'), spks)
+                # if second channel, save F_chan2 and Fneu_chan2
+                if 'meanImg_chan2' in ops:
+                    np.save(os.path.join(fpath, 'F_chan2.npy'), F_chan2)
+                    np.save(os.path.join(fpath, 'Fneu_chan2.npy'), Fneu_chan2)
+            
+            # save as matlab file
+            if ops.get('save_mat'):
+                stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
+                iscell = np.load(os.path.join(ops['save_path'], 'iscell.npy'))
+                redcell = np.load(os.path.join(ops['save_path'], 'redcell.npy')) if ops['nchannels']==2 else []
+                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
+        else:
+            print('no ROIs found, only ops.npy file saved')
     else:
         print("WARNING: skipping cell detection (ops['roidetect']=False)")
     ops['timing'] = plane_times.copy()
@@ -363,6 +367,13 @@ def run_s2p(ops={}, db={}, server={}):
     
     if files_found_flag:
         print(f'FOUND BINARIES AND OPS IN {ops_paths}')
+        print('removing previous detection and extraction files, if present')
+        files_to_remove = ['stat.npy', 'F.npy', 'Fneu.npy', 'F_chan2.npy', 'Fneu_chan2.npy', 'iscell.npy', 'redcell.npy']
+        for p in ops_paths:
+            plane_folder = os.path.split(p)[0]
+            for f in files_to_remove:
+                if os.path.exists(os.path.join(plane_folder, f)):
+                    os.remove(os.path.join(plane_folder, f))
     # if not set up files and copy tiffs/h5py to binary
     else:
         if len(ops['h5py']):

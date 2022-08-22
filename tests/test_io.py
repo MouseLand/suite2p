@@ -1,6 +1,8 @@
 """
 Tests for the Suite2p IO module
 """
+import pathlib
+import platform
 import re
 from pathlib import Path
 
@@ -8,7 +10,6 @@ import numpy as np
 import pytest
 from natsort import natsorted
 from pynwb import NWBHDF5IO
-
 from suite2p import io
 from suite2p.io.nwb import read_nwb, save_nwb
 from suite2p.io.utils import get_suite2p_path
@@ -32,7 +33,12 @@ def replace_ops_save_path_with_local_path(request):
     by its local path version
     """
 
-    # Get the `data_folder` variable from the running test name
+    # Workaround to load pickled NPY files on Windows containing
+    # `PosixPath` objects
+    if platform.system() == 'Windows':
+        pathlib.PosixPath = pathlib.WindowsPath
+
+    # Get the `data_folder` variable from the running test name    
     data_folder = re.search(r"\[(.*?)(-.*?)?\]", request.node.name).group(1)
     save_folder = Path("data").joinpath("test_outputs", data_folder, "suite2p")
 

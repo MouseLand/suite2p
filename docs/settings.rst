@@ -1,8 +1,7 @@
 Settings (ops.npy)
 ------------------
 
-Here is a summary of all the parameters that the pipeline takes, and its
-default value.
+Suite2p can be run with different configurations using the ``ops`` dictionary. The ``ops`` dictionary will describe the settings used for a particular run of the pipeline. Here is a summary of all the parameters that the pipeline takes and their default values. 
 
 Main settings
 ~~~~~~~~~~~~~
@@ -27,6 +26,8 @@ These are the essential settings that are dataset-specific.
    -  1.0 for GCaMP6m
    -  1.25-1.5 for GCaMP6s
 
+-  **force_sktiff**: (*boolean, default: False*) specifies whether or not to use scikit-image for reading in tiffs
+
 -  **fs**: (*float, default: 10.0*) Sampling rate (per plane). For
    instance, if you have a 10 plane recording acquired at 30Hz, then the
    sampling rate per plane is 3Hz, so set ops['fs'] = 3.
@@ -42,7 +43,49 @@ These are the essential settings that are dataset-specific.
    line scanning (set by user). If set to any value besides 0, then this
    offset is used and applied to all frames in the recording.
 
+- **bidi_corrected**: (*bool, default: False*) Specifies whether to do bidi correction. 
+
 - **frames_include**: (*int, default: -1*) if greater than zero, only *frames_include* frames are processed. useful for testing parameters on a subset of data.
+
+- **multiplane_parallel**: (*boolean, default: False*) specifies whether or not to run pipeline on server 
+
+- **ignore_flyback**: (*list[ints], default: empty list*) specifies which planes will be ignored as flyback planes by the pipeline. 
+
+File input/output settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Suite2p can accomodate many different file formats. Refer to this
+:ref:`page <inputs-diff-file-types>` for a detailed list of formats suite2p can work with. 
+
+- **fast_disk**: (*list[str], default: empty list*) specifies location where temporary binary file will be stored. Defaults to ``save_path0`` if no directory is provided by user. 
+
+- **delete_bin** (*bool, default:False*) specifies whether to delete binary file created during registration stage. 
+
+- **mesoscan** (*bool, default: False*) specifies whether file being read in is a scanimage mesoscope recording
+
+- **bruker** (*bool, default: False*) specifies whether provided tif files are single page BRUKER tiffs
+
+- **bruker_bidirectional** (*bool, default: False*) specifies whether BRUKER files are bidirectional multiplane recordings. The ``True`` setting corresponds to the following plane order (first plane is indexed as zero): [0,1,2,2,1,0]. ``False`` corresponds to [0,1,2,0,1,2]. 
+
+- **h5py** (*list[str], default: empty list*) specifies path to h5py file that will be used as inputs. Keep in mind the pathname provided here overwrites the pathname specified in ``ops[data_path]``. 
+
+- **h5py_key** (*str, default: 'data'*) key used to access data array in h5py file. Only use this when the ``h5py`` setting is set to ``True``. 
+
+- **nwb_file** (*str, default: ''*) specifies path to NWB file you use to use as input
+
+- **nwb_driver** (*str, default: ''*) location of driver for NWB file. Leave this empty if the pathname refers to a local file.
+
+- **nwb_series** (*str, default: ''*) Name of TwoPhotonSeries values you wish to retrieve from your NWB file. 
+
+- **save_path0** (*list[str], default: empty list*) List containing pathname of where you'd like to save your pipeline results. If list is empty, the first element of ``ops['data_path']`` is used. 
+
+- **save_folder** (*list[str], default: empty list*) List containing directory name you'd like results to be saved under. Defaults to ``"suite2p"``. 
+
+- **look_one_level_down**: (*bool, default: False*) specifies whether to look in all subfolders when searching for tiffs. Make sure to specify subfolders in the ``subfolders`` parameter below. 
+
+- **subfolders** (*list[str], default: empty list*) Specifies subfolders you'd like to look through. Make sure to have the above parameter ``ops[look_one_level_down] = True`` when using this parameter.
+
+- **move_bin** (*bool, default: False*) If True and ``ops['fast_disk']`` is different from ``ops[save_disk]``, the created binary file is moved to ``ops['save_disk']``. 
 
 Output settings
 ~~~~~~~~~~~~~~~
@@ -69,8 +112,11 @@ Output settings
    a timing dictionary for each plane. Timing dictionary will contain keys
    corresponding to stages and values corresponding to the duration of that stage.
 
-Registration
-~~~~~~~~~~~~
+
+Registration settings
+~~~~~~~~~~~~~~~~~~~~~
+
+These settings are specific to the registration module of suite2p.
 
 - **do_registration**: (*bool, default: True*) whether or not to run
   registration
@@ -119,13 +165,23 @@ Registration
 - **reg_tif_chan2**: (*bool, default: False*) whether or not to write
   the registered binary of the non-functional channel to tiff files
 
+- **subpixel**: (*int, default:10*) Precision of Subpixel Registration (1/subpixel steps)
+
+- **th_badframes**: (*float, default: 1.0*) Involved with setting threshold for excluding frames for cropping. Set this smaller to exclude more frames. 
+
+- **norm_frames**: (*bool, default: True*) Normalize frames when detecting shifts
+
+- **force_refImg**: (*bool, default: False*) Specifies whether to use refImg stored in ``ops``. Make sure that ``ops['refImg']`` has a valid file pathname. 
+
+- **pad_fft**: (*bool, default: False*) Specifies whether to pad image or not during FFT portion of registration. 
+
 **1P registration settings**
 
 - **1Preg**: (*bool, default: False*) whether to perform high-pass
   spatial filtering and tapering (parameters set below), which help
   with 1P registration
 
-- **spatial_hp**: (*int, default: 42*) window in pixels for spatial
+- **spatial_hp_reg**: (*int, default: 42*) window in pixels for spatial
   high-pass filtering before registration
 
 - **pre_smooth**: (*float, default: 0*) if > 0, defines stddev of
@@ -250,3 +306,9 @@ Channel 2 settings
 
 - **chan2_thres**: threshold for calling an ROI "detected" on a second
   channel
+
+
+Miscellaneous settings
+~~~~~~~~~~~~~~~~~~~~~~
+
+- **suite2p_version**: specifies version of suite2p pipeline that was run with these settings. Changing this parameter will NOT change the version of suite2p used. 

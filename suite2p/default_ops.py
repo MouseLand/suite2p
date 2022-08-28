@@ -4,7 +4,7 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        'suite2p_version': version,
+        'suite2p_version': version, #current version of suite2p used for pipeline
 
         # file input/output settings
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
@@ -19,8 +19,8 @@ def default_ops():
         'nwb_driver': '', # driver for nwb file (nothing if file is local)
         'nwb_series': '', # TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file
         'save_path0': [],  # stores results, defaults to first item in data_path
-        'save_folder': [],
-        'subfolders': [],
+        'save_folder': [], # directory you'd like suite2p results to be saved to
+        'subfolders': [], # subfolders you'd like to search through when look_one_level_down is set to True
         'move_bin': False,  # if 1, and fast_disk is different than save_disk, binary file is moved to save_disk
 
         # main settings
@@ -42,14 +42,14 @@ def default_ops():
         'aspect': 1.0,  # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
 
         # bidirectional phase offset
-        'do_bidiphase': False,
-        'bidiphase': 0,
-        'bidi_corrected': False,
+        'do_bidiphase': False, #whether or not to compute bidirectional phase offset (applies to 2P recordings only)
+        'bidiphase': 0, # Bidirectional Phase offset from line scanning (set by user). Applied to all frames in recording.
+        'bidi_corrected': False, # Whether to do bidirectional correction during registration
 
         # registration settings
-        'do_registration': 1,  # whether to register data (2 forces re-registration)
-        'two_step_registration': False,
-        'keep_movie_raw': False,
+        'do_registration': True,  # whether to register data (2 forces re-registration)
+        'two_step_registration': False, # whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True. 
+        'keep_movie_raw': False, # whether to keep binary file of non-registered frames. 
         'nimg_init': 300,  # subsampled frames for finding reference image
         'batch_size': 500,  # number of frames per batch
         'maxregshift': 0.1,  # max allowed registration shift, as a fraction of frame max(width and height)
@@ -62,7 +62,7 @@ def default_ops():
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'norm_frames': True, # normalize frames when detecting shifts
         'force_refImg': False, # if True, use refImg stored in ops if available
-        'pad_fft': False,
+        'pad_fft': False, # if True, pads image during FFT part of registration
         
         # non rigid registration settings
         'nonrigid': True,  # whether to use nonrigid registration
@@ -72,7 +72,6 @@ def default_ops():
 
         # 1P settings
         '1Preg': False,  # whether to perform high-pass filtering and tapering
-        'spatial_hp': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])

@@ -175,7 +175,7 @@ Elements of these ``BinaryRWFile`` instances can be accessed similar to how one 
    f_input.shape # returns shape of your input (num_frames, Ly, Lx)
    f_input[0] # returns the first frame with shape (Ly, Lx)
 
-Also, ``BinaryRWFile`` instances can be directly passed to the several wrapper functions ``suite2p`` offers (e.g., ``suite2p.detection_wrapper``, ``suite2p.extraction_wrapper``, etc.). If you'd like to run only specific modules, you will have to use the ``BinaryRWFile`` class. For example, this is how you can run the detection module on an input file that has already been registered. 
+Also, ``BinaryRWFile`` instances can be directly passed to the several wrapper functions ``suite2p`` offers (e.g., ``suite2p.detection_wrapper``, ``suite2p.extraction_wrapper``, etc.). These wrapper functions can  also directly work with Numpy arrays so feel free to pass them as inputs. If you'd like to run only specific modules, you will have to use the ``BinaryRWFile`` class. For example, this is how you can run the detection module on an input file that has already been registered. 
 
 ::
 

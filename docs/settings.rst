@@ -90,10 +90,12 @@ Suite2p can accomodate many different file formats. Refer to this
 Output settings
 ~~~~~~~~~~~~~~~
 
--  **preclassify**: (*float, default: 0.3*) (**new**) apply classifier
+-  **preclassify**: (*float, default: 0.0*) (**new**) apply classifier
    before signal extraction with probability threshold of "preclassify".
    If this is set to 0.0, then all detected ROIs are kept and signals
    are computed.
+
+- **save_nwb**: (*bool, default: False*) whether to save output as NWB file 
 
 -  **save_mat**: (*bool, default: False*) whether to save the results in
    matlab format in file "Fall.mat". NOTE the cells you click in the GUI
@@ -127,7 +129,7 @@ These settings are specific to the registration module of suite2p.
   expression, you may want to use this channel for alignment rather
   than the functional channel.
 
-- **nimg_init**: (*int, default: 200*) how many frames to use to
+- **nimg_init**: (*int, default: 300*) how many frames to use to
   compute reference image for registration
 
 - **batch_size**: (*int, default: 500*) how many frames to register
@@ -220,7 +222,7 @@ ROI detection settings
 - **roidetect**: (*bool, default: True*) whether or not to run ROI
   detect and extraction
 
-- **sparse_mode**: (*bool, default: False*) whether or not to use sparse_mode cell detection
+- **sparse_mode**: (*bool, default: True*) whether or not to use sparse_mode cell detection
 
 - **spatial_scale**: (*int, default: 0*), what the optimal scale of the
   recording is in pixels. if set to 0, then the algorithm determines it
@@ -230,7 +232,7 @@ ROI detection settings
 - **connected**: (*bool, default: True*) whether or not to require ROIs
   to be fully connected (set to *0* for dendrites/boutons)
 
-- **threshold_scaling**: (*float, default: 5.0*) this controls the
+- **threshold_scaling**: (*float, default: 1.0*) this controls the
   threshold at which to detect ROIs (how much the ROIs have to stand
   out from the noise to be detected). if you set this higher, then
   fewer ROIs will be detected, and if you set it lower, more ROIs will

@@ -35,7 +35,7 @@ def default_ops():
         'ignore_flyback': [],
 
         # output settings
-        'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
+        'preclassify': 0.0,  # apply classifier before signal extraction with probability 0.3
         'save_mat': False,  # whether to save output as matlab files
         'save_NWB': False,  # whether to save output as NWB file
         'combined': True,  # combine multiple planes into a single result /single canvas for GUI
@@ -118,5 +118,5 @@ def default_ops():
         'win_baseline': 60.,  # window for maximin
         'sig_baseline': 10.,  # smoothing constant for gaussian filter
         'prctile_baseline': 8.,  # optional (whether to use a percentile baseline)
-        'neucoeff': .7,  # neuropil coefficient
+        'neucoeff': 0.7,  # neuropil coefficient
     }

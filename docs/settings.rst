@@ -175,7 +175,8 @@ These settings are specific to the registration module of suite2p.
 
 - **pad_fft**: (*bool, default: False*) Specifies whether to pad image or not during FFT portion of registration. 
 
-**1P registration settings**
+1P registration settings
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **1Preg**: (*bool, default: False*) whether to perform high-pass
   spatial filtering and tapering (parameters set below), which help
@@ -192,7 +193,8 @@ These settings are specific to the registration module of suite2p.
   on edges - they are set to zero (important for vignetted windows, for
   FFT padding do not set BELOW 3*ops['smooth_sigma'])
 
-**Non-rigid registration**
+Non-rigid registration
+^^^^^^^^^^^^^^^^^^^^^^
 
 - **nonrigid**: (*bool, default: True*) whether or not to perform
   non-rigid registration, which splits the field of view into blocks
@@ -234,6 +236,8 @@ ROI detection
   fewer ROIs will be detected, and if you set it lower, more ROIs will
   be detected.
 
+- **spatial_hp_detect**: (*int, default: 25*) window for spatial high-pass filtering for neuropil subtracation before ROI detection takes place.
+
 - **max_overlap**: (*float, default: 0.75*) we allow overlapping ROIs
   during cell detection. After detection, ROIs with more than
   ops['max_overlap'] fraction of their pixels overlapping with other
@@ -256,6 +260,29 @@ ROI detection
 - **nbinned**: (*int, default: 5000*) maximum number of binned frames
   to use for ROI detection.
 
+- **denoise**: (*bool, default: False*) Whether or not binned movie should be denoised before cell detection in sparse_mode. If True, make sure to set ``ops['sparse_mode']`` is also set to True. 
+
+Cellpose Detection Settings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These settings are only used if ``ops['anatomical_only']`` is set to an integer greater than 0. 
+
+- **anatomical_only**: (*int, default: 0*) If greater than 0, specifies what to use `Cellpose <https://cellpose.readthedocs.io/>`_ on.
+
+    - 1: Will find masks on max projection image divided by mean image.
+    - 2: Will find masks on mean image
+    - 3: Will find masks on enhanced mean image
+    - 4: Will find masks on maximum projection image 
+
+- **diameter**: (*int, default: 0*) Diameter that will be used for cellpose. If set to zero, diameter is estimated. 
+
+- **cellprob_threshold**: (*float, default: 0.0*) specifies ``cellprob_threshold`` to be used for cellpose. 
+
+- **flow_threshold**: (*float, default: 1.5*) specifies flow threshold that will be used for cellpose.
+
+- **spatial_hp_cp**: (*int, default: 0*) Window for spatial high-pass filtering of image to be used for cellpose. 
+
+- **pretrained_model**: (*str, default: 'cyto'*) Path to pretrained model or string for model type (can be user's model ).
+
 Signal extraction
 ~~~~~~~~~~~~~~~~~
 
@@ -276,6 +303,8 @@ Spike deconvolution
 We neuropil-correct the trace Fout = F - ops['neucoeff'] \* Fneu, and
 then baseline-correct these traces with an ops['baseline'] filter, and
 then detect spikes.
+
+- **spikedetect**: (*bool, default: True*) Whether or not to run spike_deconvolution
 
 - **neucoeff**: (*float, default: 0.7*) neuropil coefficient for all ROIs.
 

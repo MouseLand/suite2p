@@ -81,6 +81,7 @@ def download_url_to_file(url, dst, progress=True):
     dst = os.path.expanduser(dst)
     dst_dir = os.path.dirname(dst)
     f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
+    print(f"\nDownloading: {url}")
     try:
         with tqdm(total=file_size, disable=not progress,
                   unit='B', unit_scale=True, unit_divisor=1024) as pbar:

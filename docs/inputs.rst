@@ -59,6 +59,8 @@ this array into a numpy array called ``bad_frames.npy``:
 Put this file into the first folder in your ops['data_path'] (the first
 folder you choose in the GUI).
 
+.. _inputs-diff-file-types:
+
 Different file types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

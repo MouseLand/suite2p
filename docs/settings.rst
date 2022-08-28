@@ -175,8 +175,8 @@ These settings are specific to the registration module of suite2p.
 
 - **pad_fft**: (*bool, default: False*) Specifies whether to pad image or not during FFT portion of registration. 
 
-1P registration settings
-^^^^^^^^^^^^^^^^^^^^^^^^
+1P registration
+^^^^^^^^^^^^^^^
 
 - **1Preg**: (*bool, default: False*) whether to perform high-pass
   spatial filtering and tapering (parameters set below), which help
@@ -214,8 +214,8 @@ Non-rigid registration
 - **maxregshiftNR**: (*float, default: 5.0*) maximum shift in pixels of
   a block relative to the rigid shift
 
-ROI detection
-~~~~~~~~~~~~~
+ROI detection settings 
+~~~~~~~~~~~~~~~~~~~~~~
 
 - **roidetect**: (*bool, default: True*) whether or not to run ROI
   detect and extraction
@@ -262,8 +262,8 @@ ROI detection
 
 - **denoise**: (*bool, default: False*) Whether or not binned movie should be denoised before cell detection in sparse_mode. If True, make sure to set ``ops['sparse_mode']`` is also set to True. 
 
-Cellpose Detection Settings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Cellpose Detection 
+^^^^^^^^^^^^^^^^^^
 These settings are only used if ``ops['anatomical_only']`` is set to an integer greater than 0. 
 
 - **anatomical_only**: (*int, default: 0*) If greater than 0, specifies what to use `Cellpose <https://cellpose.readthedocs.io/>`_ on.
@@ -275,7 +275,7 @@ These settings are only used if ``ops['anatomical_only']`` is set to an integer 
 
 - **diameter**: (*int, default: 0*) Diameter that will be used for cellpose. If set to zero, diameter is estimated. 
 
-- **cellprob_threshold**: (*float, default: 0.0*) specifies ``cellprob_threshold`` to be used for cellpose. 
+- **cellprob_threshold**: (*float, default: 0.0*) specifies threshold for cell detection that will be used by cellpose. 
 
 - **flow_threshold**: (*float, default: 1.5*) specifies flow threshold that will be used for cellpose.
 
@@ -283,8 +283,10 @@ These settings are only used if ``ops['anatomical_only']`` is set to an integer 
 
 - **pretrained_model**: (*str, default: 'cyto'*) Path to pretrained model or string for model type (can be user's model ).
 
-Signal extraction
-~~~~~~~~~~~~~~~~~
+Signal extraction settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **neuropil_extract**: (*bool, default: True*) Whether or not to extract signal from neuropil. If False, Fneu is set to zero. 
 
 - **allow_overlap**: (*bool, default: False*) whether or not to extract
   signals from pixels which belong to two ROIs. By default, any pixels
@@ -297,11 +299,13 @@ Signal extraction
 - **inner_neuropil_radius**: (*int, default: 2*) number of pixels to
   keep between ROI and neuropil donut
 
-Spike deconvolution
-~~~~~~~~~~~~~~~~~~~
+- **lam_percentile**: (*int, default: 50*)Percentile of Lambda within area to ignore when excluding cell pixels for neuropil extraction
 
-We neuropil-correct the trace Fout = F - ops['neucoeff'] \* Fneu, and
-then baseline-correct these traces with an ops['baseline'] filter, and
+Spike deconvolution settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We neuropil-correct the trace ``Fout = F - ops['neucoeff'] * Fneu``, and
+then baseline-correct these traces with an ``ops['baseline']`` filter, and
 then detect spikes.
 
 - **spikedetect**: (*bool, default: True*) Whether or not to run spike_deconvolution
@@ -311,13 +315,13 @@ then detect spikes.
 - **baseline**: (*string, default 'maximin'*) how to compute the
   baseline of each trace. This baseline is then subtracted from each
   cell. *'maximin'* computes a moving baseline by filtering the data
-  with a Gaussian of width ops['sig_baseline'] \* ops['fs'], and then
-  minimum filtering with a window of ops['win_baseline'] \* ops['fs'],
+  with a Gaussian of width ``ops['sig_baseline'] * ops['fs']``, and then
+  minimum filtering with a window of ``ops['win_baseline'] * ops['fs']``,
   and then maximum filtering with the same window. *'constant'*
   computes a constant baseline by filtering with a Gaussian of width
-  ops['sig_baseline'] \* ops['fs'] and then taking the minimum value of
+  ``ops['sig_baseline'] * ops['fs']`` and then taking the minimum value of
   this filtered trace. *'constant_percentile'* computes a constant
-  baseline by taking the ops['prctile_baseline'] percentile of the
+  baseline by taking the ``ops['prctile_baseline']`` percentile of the
   trace.
 
 - **win_baseline**: (*float, default: 60.0*) window for maximin filter
@@ -325,13 +329,22 @@ then detect spikes.
 
 - **sig_baseline**: (*float, default: 10.0*) Gaussian filter width in
   seconds, used before maximin filtering or taking the minimum value of
-  the trace, ops['baseline'] = 'maximin' or 'constant'.
+  the trace, ``ops['baseline'] = 'maximin'`` or ``'constant'``.
 
 - **prctile_baseline**: (*float, optional, default: 8*) percentile of
-  trace to use as baseline if ops['baseline'] = 'constant_percentile'.
+  trace to use as baseline if ``ops['baseline'] = 'constant_percentile'``.
 
-Channel 2 settings
-~~~~~~~~~~~~~~~~~~
+Classification settings
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- **soma_crop**: (*bool, default: True*) Specifies whether to crop dendrites for cell classification stats (e.g., compactness)
+
+- **use_builtin_classifier**: (*bool, default: False*) Specifies whether or not to use built-in classifier for cell detection. This will override classifier specified in ``ops['classifier_path']`` if set to True. 
+
+- **classifier_path**: (*str, default: ''*) Path to classifier file you want to use for cell classification
+
+Channel 2 specific settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **chan2_thres**: threshold for calling an ROI "detected" on a second
   channel

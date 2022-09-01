@@ -611,8 +611,12 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
 
     outputs = compute_reference_and_register_frames(f_align_in, f_align_out=f_align_out, refImg=refImg, ops=ops)
     refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zest = outputs
-    yoff, xoff, corrXY = rigid_offsets
-    yoff1, xoff1, corrXY1 = nonrigid_offsets
+    if len(rigid_offsets) > 1:
+            yoff, xoff, corrXY = rigid_offsets
+    if ops['nonrigid']:
+            yoff1, xoff1, corrXY1 = nonrigid_offsets
+    else:
+        yoff1, xoff1, corryXY1 = None, None, None
 
     if nchannels > 1:
         mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, yoff, xoff, yoff1, xoff1, ops)
@@ -748,9 +752,11 @@ def save_registration_outputs_to_ops(registration_outputs, ops):
     ops['refImg'] = refImg 
     ops['rmin'], ops['rmax'] = rmin, rmax
     # assign rigid offsets to ops
-    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    if len(rigid_offsets>1):
+        ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     # assign nonrigid offsets to ops
-    ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    if len(nonrigid_offsets>1):
+        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
     # assign mean images
     ops['meanImg'] = meanImg
     if meanImg_chan2 is not None:

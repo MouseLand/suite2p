@@ -386,6 +386,14 @@ def load_behavior(parent):
     else:
         print("ERROR: this is not a 1D array with length of data")
 
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
+
 def save_redcell(parent):
     np.save(os.path.join(parent.basename, 'redcell.npy'),
             np.concatenate((np.expand_dims(parent.redcell[parent.notmerged],axis=1),

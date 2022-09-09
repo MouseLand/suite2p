@@ -4,7 +4,7 @@ def default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
-        'suite2p_version': version,
+        'suite2p_version': version, #current version of suite2p used for pipeline
 
         # file input/output settings
         'look_one_level_down': False,  # whether to look in all subfolders when searching for tiffs
@@ -19,8 +19,8 @@ def default_ops():
         'nwb_driver': '', # driver for nwb file (nothing if file is local)
         'nwb_series': '', # TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file
         'save_path0': [],  # stores results, defaults to first item in data_path
-        'save_folder': [],
-        'subfolders': [],
+        'save_folder': [], # directory you'd like suite2p results to be saved to
+        'subfolders': [], # subfolders you'd like to search through when look_one_level_down is set to True
         'move_bin': False,  # if 1, and fast_disk is different than save_disk, binary file is moved to save_disk
 
         # main settings
@@ -35,21 +35,21 @@ def default_ops():
         'ignore_flyback': [],
 
         # output settings
-        'preclassify': 0.,  # apply classifier before signal extraction with probability 0.3
+        'preclassify': 0.0,  # apply classifier before signal extraction with probability 0.3
         'save_mat': False,  # whether to save output as matlab files
         'save_NWB': False,  # whether to save output as NWB file
         'combined': True,  # combine multiple planes into a single result /single canvas for GUI
         'aspect': 1.0,  # um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)
 
         # bidirectional phase offset
-        'do_bidiphase': False,
-        'bidiphase': 0,
-        'bidi_corrected': False,
+        'do_bidiphase': False, #whether or not to compute bidirectional phase offset (applies to 2P recordings only)
+        'bidiphase': 0, # Bidirectional Phase offset from line scanning (set by user). Applied to all frames in recording.
+        'bidi_corrected': False, # Whether to do bidirectional correction during registration
 
         # registration settings
-        'do_registration': 1,  # whether to register data (2 forces re-registration)
-        'two_step_registration': False,
-        'keep_movie_raw': False,
+        'do_registration': True,  # whether to register data (2 forces re-registration)
+        'two_step_registration': False, # whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True. 
+        'keep_movie_raw': False, # whether to keep binary file of non-registered frames. 
         'nimg_init': 300,  # subsampled frames for finding reference image
         'batch_size': 500,  # number of frames per batch
         'maxregshift': 0.1,  # max allowed registration shift, as a fraction of frame max(width and height)
@@ -62,7 +62,7 @@ def default_ops():
         'th_badframes': 1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
         'norm_frames': True, # normalize frames when detecting shifts
         'force_refImg': False, # if True, use refImg stored in ops if available
-        'pad_fft': False,
+        'pad_fft': False, # if True, pads image during FFT part of registration
         
         # non rigid registration settings
         'nonrigid': True,  # whether to use nonrigid registration
@@ -72,7 +72,6 @@ def default_ops():
 
         # 1P settings
         '1Preg': False,  # whether to perform high-pass filtering and tapering
-        'spatial_hp': 42,  # window for spatial high-pass filtering before registration
         'spatial_hp_reg': 42,  # window for spatial high-pass filtering before registration
         'pre_smooth': 0,  # whether to smooth before high-pass filtering before registration
         'spatial_taper': 40,  # how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*ops['smooth_sigma'])
@@ -109,7 +108,7 @@ def default_ops():
         'allow_overlap': False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
         'use_builtin_classifier': False,  # whether or not to use built-in classifier for cell detection (overrides
                                          # classifier specified in classifier_path if set to True)
-        'classifier_path': 0, # path to classifier
+        'classifier_path': '', # path to classifier
         
         # channel 2 detection settings (stat[n]['chan2'], stat[n]['not_chan2'])
         'chan2_thres': 0.65,  # minimum for detection of brightness on channel 2
@@ -119,5 +118,5 @@ def default_ops():
         'win_baseline': 60.,  # window for maximin
         'sig_baseline': 10.,  # smoothing constant for gaussian filter
         'prctile_baseline': 8.,  # optional (whether to use a percentile baseline)
-        'neucoeff': .7,  # neuropil coefficient
+        'neucoeff': 0.7,  # neuropil coefficient
     }

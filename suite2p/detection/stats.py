@@ -224,9 +224,9 @@ def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
     stat : dictionary
         adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
     """
-    if 'med' not in stat[0]:
-        for s in stat:
-            s['med'] = median_pix(s['ypix'], s['xpix'])
+
+    for s in stat:
+        s['med'] = median_pix(s['ypix'], s['xpix'])
     
     rois = [ROI(ypix=s['ypix'], xpix=s['xpix'], 
                 lam=s['lam'], med=s['med'], do_crop=do_crop) for s in stat]

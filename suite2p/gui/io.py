@@ -175,7 +175,8 @@ def load_dialog(parent):
     options = QFileDialog.Options()
     options |= QFileDialog.DontUseNativeDialog
     name = QFileDialog.getOpenFileName(
-        parent, "Open stat.npy", filter="stat.npy",
+        parent, "Open stat.npy",
+        # filter="stat.npy",
         options=options
     )
     parent.fname = name[0]

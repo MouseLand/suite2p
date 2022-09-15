@@ -443,6 +443,10 @@ def run_s2p(ops={}, db={}, server={}):
                 if key not in ['data_path', 'save_path0', 'fast_disk', 'save_folder', 'subfolders']:
                     if key in ops:
                         op[key] = ops[key]
+
+            # PW revision
+            for key in ops.keys():
+                op[key] = ops[key]
             
             print('>>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<'%ipl)
             op = run_plane(op, ops_path=ops_path)

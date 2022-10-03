@@ -210,7 +210,7 @@ class TopButton(QPushButton):
         if draw:
             if parent.ops_plot['color'] != 0:
                 c = parent.ops_plot['color']
-                istat = parent.colors['istat'][c]
+                istat = parent.colorsPerPlane['istat'][c]
                 if wplot == 0:
                     icell = np.array(parent.iscell.nonzero()).flatten()
                     istat = istat[parent.iscell]

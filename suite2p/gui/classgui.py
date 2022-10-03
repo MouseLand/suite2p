@@ -312,11 +312,11 @@ class ListChooser(QDialog):
 def class_masks(parent):
     c = 6
     istat = parent.probcell
-    parent.colors['colorbar'][c] = [istat.min(), (istat.max()-istat.min())/2, istat.max()]
+    parent.colorsPerPlane['colorbar'][c] = [istat.min(), (istat.max() - istat.min()) / 2, istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
     col = masks.istat_transform(istat, parent.ops_plot['colormap'])
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
+    parent.colorsPerPlane['cols'][c] = col
+    parent.colorsPerPlane['istat'][c] = istat.flatten()
 
     masks.rgb_masks(parent, col, c)

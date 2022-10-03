@@ -52,7 +52,7 @@ def plot_trace(parent):
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
-            rgb = parent.colors['cols'][0][n,:]
+            rgb = parent.colorsPerPlane['cols'][0][n, :]
             parent.p3.plot(parent.trange,f+k*kspace,pen=rgb)
             ttick.append((k*kspace+f.mean(), str(n)))
             k-=1

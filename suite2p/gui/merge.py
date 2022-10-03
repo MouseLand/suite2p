@@ -316,7 +316,7 @@ class MergeWindow(QDialog):
             cell0 = parent.imerge[0]
             sstring = ''
             for i in parent.imerge[1:]:
-                rgb = parent.colors['cols'][0,i]
+                rgb = parent.colorsPerPlane['cols'][0, i]
                 pen = pg.mkPen(rgb, width=3)
                 scatter=pg.ScatterPlotItem(parent.Fbin[cell0], parent.Fbin[i], pen=pen)
                 self.p0.addItem(scatter)

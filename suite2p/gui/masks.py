@@ -91,10 +91,10 @@ def cmap_change(parent):
     parent.ops_plot['colormap'] = parent.CmapChooser.itemText(index)
     if parent.loaded:
         print('colormap changed to %s, loading...'%parent.ops_plot['colormap'])
-        istat = parent.colors['istat']
+        istat = parent.colorsPerPlane['istat']
         for c in range(1, istat.shape[0]):
-            parent.colors['cols'][c] = istat_transform(istat[c], parent.ops_plot['colormap'])
-            rgb_masks(parent, parent.colors['cols'][c], c)
+            parent.colorsPerPlane['cols'][c] = istat_transform(istat[c], parent.ops_plot['colormap'])
+            rgb_masks(parent, parent.colorsPerPlane['cols'][c], c)
         parent.colormat = draw_colorbar(parent.ops_plot['colormap'])
         parent.update_plot()
 
@@ -105,10 +105,10 @@ def hsv2rgb(cols):
     return cols
 
 def make_colors(parent):
-    parent.colors['colorbar'] = []
+    parent.colorsPerPlane['colorbar'] = []
     ncells = len(parent.stat)
-    parent.colors['cols'] = np.zeros((len(parent.color_names), ncells, 3), np.uint8)
-    parent.colors['istat'] = np.zeros((len(parent.color_names), ncells), np.float32)
+    parent.colorsPerPlane['cols'] = np.zeros((len(parent.color_names), ncells, 3), np.uint8)
+    parent.colorsPerPlane['istat'] = np.zeros((len(parent.color_names), ncells), np.float32)
     np.random.seed(seed=0)
     allcols = np.random.random((ncells,))
     if 'meanImg_chan2' in parent.ops:
@@ -119,8 +119,8 @@ def make_colors(parent):
         allcols[parent.redcell] = 0
     else:
         parent.randcols = allcols
-    parent.colors['istat'][0] = parent.randcols
-    parent.colors['cols'][0] = hsv2rgb(allcols)
+    parent.colorsPerPlane['istat'][0] = parent.randcols
+    parent.colorsPerPlane['cols'][0] = hsv2rgb(allcols)
 
     b=0
     for names in parent.color_names[:-3]:
@@ -132,24 +132,24 @@ def make_colors(parent):
                         istat[n] = parent.stat[n][names]
                 istat1 = np.percentile(istat,2)
                 istat99 = np.percentile(istat,98)
-                parent.colors['colorbar'].append([istat1,
-                                    (istat99-istat1)/2 + istat1,
-                                    istat99])
+                parent.colorsPerPlane['colorbar'].append([istat1,
+                                                          (istat99-istat1) / 2 + istat1,
+                                                          istat99])
                 istat = istat - istat1
                 istat = istat / (istat99-istat1)
                 istat = np.maximum(0, np.minimum(1, istat))
             else:
                 istat = np.expand_dims(parent.probcell, axis=1)
-                parent.parent.colors['colorbar'].append([0.0, .5, 1.0])
+                parent.parent.colorsPerPlane['colorbar'].append([0.0, .5, 1.0])
             col = istat_transform(istat, parent.ops_plot['colormap'])
-            parent.colors['cols'][b] = col
-            parent.colors['istat'][b] = istat.flatten()
+            parent.colorsPerPlane['cols'][b] = col
+            parent.colorsPerPlane['istat'][b] = istat.flatten()
         else:
-            parent.colors['colorbar'].append([0,0.5,1])
+            parent.colorsPerPlane['colorbar'].append([0, 0.5, 1])
         b+=1
-    parent.colors['colorbar'].append([0,0.5,1])
-    parent.colors['colorbar'].append([0,0.5,1])
-    parent.colors['colorbar'].append([0,0.5,1])
+    parent.colorsPerPlane['colorbar'].append([0, 0.5, 1])
+    parent.colorsPerPlane['colorbar'].append([0, 0.5, 1])
+    parent.colorsPerPlane['colorbar'].append([0, 0.5, 1])
 
     #parent.ops_plot[4] = corrcols
     #parent.cc = cc
@@ -220,7 +220,7 @@ def init_masks(parent):
     """
     stat = parent.stat
     iscell = parent.iscell
-    cols = parent.colors['cols']
+    cols = parent.colorsPerPlane['cols']
     ncells = len(stat)
     Ly = parent.Ly
     Lx = parent.Lx
@@ -280,7 +280,7 @@ def init_masks(parent):
 
     parent.rois['LamMean'] = LamAll[LamAll>1e-10].mean()
     parent.rois['LamNorm'] = np.maximum(0, np.minimum(1, 0.75*parent.rois['Lam'][:,0]/parent.rois['LamMean']))
-    parent.colors['RGB'] = np.zeros((2,cols.shape[0],Ly,Lx,4), np.uint8)
+    parent.colorsPerPlane['RGB'] = np.zeros((2, cols.shape[0], Ly, Lx, 4), np.uint8)
 
     for c in range(0, cols.shape[0]):
         rgb_masks(parent, cols[c], c)
@@ -292,7 +292,7 @@ def rgb_masks(parent, col, c):
         #H = np.expand_dims(H,axis=2)
         #hsv = np.concatenate((H,S,S),axis=2)
         #rgb = (hsv_to_rgb(hsv)*255).astype(np.uint8)
-        parent.colors['RGB'][i,c,:,:,:3] = H
+        parent.colorsPerPlane['RGB'][i, c, :, :, :3] = H
 
 def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     '''
@@ -318,10 +318,10 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
     wplot   = int(1-parent.iscell[parent.ichosen])
     # reset transparency
     for i in range(2):
-        parent.colors['RGB'][i,color,:,:,3] = (opacity[view==0] *
-                                               parent.rois['Sroi'][i] *
-                                               parent.rois['LamNorm'][i]).astype(np.uint8)
-    M = [np.array(parent.colors['RGB'][0,color]), np.array(parent.colors['RGB'][1,color])]
+        parent.colorsPerPlane['RGB'][i, color, :, :, 3] = (opacity[view == 0] *
+                                                           parent.rois['Sroi'][i] *
+                                                           parent.rois['LamNorm'][i]).astype(np.uint8)
+    M = [np.array(parent.colorsPerPlane['RGB'][0, color]), np.array(parent.colorsPerPlane['RGB'][1, color])]
 
     if view==0:
         for n in parent.imerge:
@@ -337,7 +337,7 @@ def draw_masks(parent): #ops, stat, ops_plot, iscell, ichosen):
             ypix = parent.stat[n]['ypix'].flatten()
             xpix = parent.stat[n]['xpix'].flatten()
             M[wplot][ypix,xpix,3] = 0
-            col = parent.colors['cols'][color,n]
+            col = parent.colorsPerPlane['cols'][color, n]
             sat = 1
             M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
 
@@ -359,8 +359,8 @@ def chan2_masks(parent):
     col = parent.randcols.copy()
     col[parent.redcell] = 0
     col = col.flatten()
-    parent.colors['cols'][c] = hsv2rgb(col)
-    rgb_masks(parent, parent.colors['cols'][c], c)
+    parent.colorsPerPlane['cols'][c] = hsv2rgb(col)
+    rgb_masks(parent, parent.colorsPerPlane['cols'][c], c)
 
 def custom_masks(parent):
     c = 9
@@ -373,12 +373,12 @@ def custom_masks(parent):
     istat = istat / (istat99-istat1)
     istat = np.maximum(0, np.minimum(1, istat))
 
-    parent.colors['colorbar'][c] = cl
+    parent.colorsPerPlane['colorbar'][c] = cl
     istat = istat / istat.max()
     col = istat_transform(istat, parent.ops_plot['colormap'])
 
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
+    parent.colorsPerPlane['cols'][c] = col
+    parent.colorsPerPlane['istat'][c] = istat.flatten()
 
     rgb_masks(parent, col, c)
 
@@ -387,13 +387,13 @@ def rastermap_masks(parent):
     n = np.array(parent.imerge)
     istat = parent.isort
     # no 1D variable loaded -- leave blank
-    parent.colors['colorbar'][c] = ([0, istat.max()/2, istat.max()])
+    parent.colorsPerPlane['colorbar'][c] = ([0, istat.max() / 2, istat.max()])
 
     istat = istat / istat.max()
     col = istat_transform(istat, parent.ops_plot['colormap'])
     col[parent.isort==-1] = 0
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
+    parent.colorsPerPlane['cols'][c] = col
+    parent.colorsPerPlane['istat'][c] = istat.flatten()
 
     rgb_masks(parent, col, c)
 
@@ -413,11 +413,11 @@ def beh_masks(parent):
     istat = istat - istat.min()
     istat = istat / istat.max()
     col = istat_transform(istat, parent.ops_plot['colormap'])
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
-    parent.colors['colorbar'][c] = [istat_min,
-                          (istat_max-istat_min)/2 + istat_min,
-                          istat_max]
+    parent.colorsPerPlane['cols'][c] = col
+    parent.colorsPerPlane['istat'][c] = istat.flatten()
+    parent.colorsPerPlane['colorbar'][c] = [istat_min,
+                                            (istat_max-istat_min) / 2 + istat_min,
+                                            istat_max]
     rgb_masks(parent, col, c)
 
 def corr_masks(parent):
@@ -428,14 +428,14 @@ def corr_masks(parent):
     cc = np.dot(parent.Fbin, sn.T) / parent.Fbin.shape[-1] / (parent.Fstd * snstd)
     cc[n] = cc.mean()
     istat = cc
-    parent.colors['colorbar'][c] = [istat.min(),
-                         (istat.max()-istat.min())/2 + istat.min(),
-                         istat.max()]
+    parent.colorsPerPlane['colorbar'][c] = [istat.min(),
+                                            (istat.max()-istat.min()) / 2 + istat.min(),
+                                            istat.max()]
     istat = istat - istat.min()
     istat = istat / istat.max()
     col = istat_transform(istat, parent.ops_plot['colormap'])
-    parent.colors['cols'][c] = col
-    parent.colors['istat'][c] = istat.flatten()
+    parent.colorsPerPlane['cols'][c] = col
+    parent.colorsPerPlane['istat'][c] = istat.flatten()
 
     rgb_masks(parent, col, c)
 
@@ -459,7 +459,7 @@ def plot_colorbar(parent):
     else:
         parent.colorbar.setImage(parent.colormat)
     for k in range(3):
-        parent.clabel[k].setText('%1.2f'%parent.colors['colorbar'][bid][k])
+        parent.clabel[k].setText('%1.2f' % parent.colorsPerPlane['colorbar'][bid][k])
 
 def plot_masks(parent, M):
     #M = parent.RGB[:,:,np.newaxis], parent.Alpha[]
@@ -520,11 +520,11 @@ def redraw_masks(parent, ypix, xpix):
     """
     redraw masks after roi added/removed
     """
-    for c in range(parent.colors['cols'].shape[0]):
+    for c in range(parent.colorsPerPlane['cols'].shape[0]):
         for i in range(2):
-            col = parent.colors['cols'][c]
+            col = parent.colorsPerPlane['cols'][c]
             rgb = col[parent.rois['iROI'][i,0,ypix,xpix],:]
-            parent.colors['RGB'][i,c,ypix,xpix,:3] = rgb
+            parent.colorsPerPlane['RGB'][i, c, ypix, xpix, :3] = rgb
 
 def flip_roi(parent):
     """

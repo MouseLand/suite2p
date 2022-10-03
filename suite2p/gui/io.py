@@ -16,8 +16,8 @@ def make_masks_and_enable_buttons(parent):
     parent.checkBox.setChecked(True)
     parent.ops_plot['color'] = 0
     parent.ops_plot['view'] = 0
-    parent.colors['cols'] = 0
-    parent.colors['istat'] = 0
+    parent.colorsPerPlane['cols'] = 0
+    parent.colorsPerPlane['istat'] = 0
     try:
         parent.roi_text(False)
     except:
@@ -462,7 +462,7 @@ def load_custom_mask(parent):
         parent.custom_mask = mask
         masks.custom_masks(parent)
         M = masks.draw_masks(parent)
-        b = len(parent.colors)+1
+        b = len(parent.colorsPerPlane) + 1
         parent.colorbtns.button(b).setEnabled(True)
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         parent.colorbtns.button(b).setChecked(True)

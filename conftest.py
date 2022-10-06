@@ -7,18 +7,21 @@ import shutil
 from tqdm import tqdm
 from pathlib import Path
 from urllib.request import urlopen
+from tenacity import retry
 
 @pytest.fixture()
 def data_dir():
+    """
+    Initializes data input directory for tests. Downloads test_inputs and test_outputs if not present.
+    """
     data_path = Path('data/')
     data_path.mkdir(exist_ok=True)
-    cached_file = data_path.joinpath('test_data.zip')
-    if not os.path.exists(cached_file):
-        url = 'https://www.suite2p.org/static/test_data/test_data.zip'
-        download_url_to_file(url, cached_file)        
-        with zipfile.ZipFile(cached_file,"r") as zip_ref:
-            zip_ref.extractall(data_path)
-    return data_path.joinpath('test_data/')
+    download_cached_inputs(data_path)
+    cached_outputs = data_path.joinpath('test_outputs')
+    cached_outputs_url = 'https://www.suite2p.org/static/test_data/test_outputs.zip'
+    if not os.path.exists(cached_outputs):
+        extract_zip(data_path.joinpath('test_outputs.zip'), cached_outputs_url, data_path)
+    return data_path
 
 
 @pytest.fixture()
@@ -26,13 +29,20 @@ def test_ops(tmpdir, data_dir):
     """Initializes ops to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
     return initialize_ops(tmpdir, data_dir)
 
+def download_cached_inputs(data_path):
+    """ Downloads test_input data if not present on machine. This function was created so it can also be used by scripts/generate_test_data.py."""
+    cached_inputs = data_path.joinpath('test_inputs')
+    cached_inputs_url = 'https://www.suite2p.org/static/test_data/test_inputs.zip'
+    if not os.path.exists(cached_inputs):
+        extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
+
 def initialize_ops(tmpdir, data_dir):
     """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accomodate creation of ops for both pytest and non-pytest settings."""
     ops = suite2p.default_ops()
     ops.update(
         {
             'use_builtin_classifier': True,
-            'data_path': [data_dir],
+            'data_path': [Path(data_dir).joinpath('test_inputs')],
             'save_path0': str(tmpdir),
             'norm_frames': False,
             'denoise': False,
@@ -41,6 +51,12 @@ def initialize_ops(tmpdir, data_dir):
     )
     return ops
 
+def extract_zip(cached_file, url, data_path):
+    download_url_to_file(url, cached_file)        
+    with zipfile.ZipFile(cached_file,"r") as zip_ref:
+        zip_ref.extractall(data_path)
+
+@retry
 def download_url_to_file(url, dst, progress=True):
     r"""Download object at the given URL to a local path.
             Thanks to torch, slightly modified
@@ -65,6 +81,7 @@ def download_url_to_file(url, dst, progress=True):
     dst = os.path.expanduser(dst)
     dst_dir = os.path.dirname(dst)
     f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
+    print(f"\nDownloading: {url}")
     try:
         with tqdm(total=file_size, disable=not progress,
                   unit='B', unit_scale=True, unit_divisor=1024) as pbar:

@@ -42,6 +42,7 @@ Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?
 
 ## Installation
 
+### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.8`.
@@ -59,6 +60,13 @@ To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), 
 ~~~~
 pip install --upgrade suite2p
 ~~~~
+
+### Installation for Macs with Apple Silicon chips (e.g., M1)
+1. Set up a Rosetta terminal following step 1 in this [link](https://dev.to/courier/tips-and-tricks-to-setup-your-apple-m1-for-development-547g). 
+2. Open up the newly created Rosetta terminal and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
+3. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
+4. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
+
 
 ### Installing the latest github version of the code
 
@@ -83,7 +91,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 2. Run `conda env create --name suite2p`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .`
-5. Run tests: `python setup.py test` or `pytest tests\`, this will automatically download the test data into your `suite2p` folder in `data/test_data` (this download is 1.6GB and can be downloaded also from this [link](https://www.suite2p.org/static/test_data/test_data.zip)).
+5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).
 
 ## Examples
 

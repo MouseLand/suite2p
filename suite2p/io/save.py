@@ -19,7 +19,8 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
             if isinstance(ops_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
                 ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
                 print(k, ops_matlab[k])
-
+                
+    stat = np.array(stat, dtype=object)
         
     scipy.io.savemat(
         file_name=os.path.join(ops['save_path'], 'Fall.mat'),

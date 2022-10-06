@@ -70,7 +70,7 @@ def save_tiff(mov: np.ndarray, fname: str) -> None:
     """
     with TiffWriter(fname) as tif:
         for frame in np.floor(mov).astype(np.int16):
-            tif.save(frame)
+            tif.write(frame)
 
 
 def open_tiff(file: str, sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
@@ -145,7 +145,7 @@ def tiff_to_binary(ops):
             nfr = min(Ltif - ix, batch_size)
             # tiff reading
             if use_sktiff:
-                im = imread(file, pages=range(ix, ix + nfr))
+                im = imread(file, key=range(ix, ix + nfr))
             elif Ltif == 1:
                 im = tif.data()
             else:
@@ -302,7 +302,7 @@ def mesoscan_to_binary(ops):
                 break
             nfr = min(Ltif - ix, batch_size)
             if use_sktiff:
-                im = imread(file, pages = range(ix, ix + nfr))
+                im = imread(file, key = range(ix, ix + nfr))
             else:
                 if Ltif==1:
                     im = tif.data()

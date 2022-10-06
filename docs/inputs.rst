@@ -59,6 +59,8 @@ this array into a numpy array called ``bad_frames.npy``:
 Put this file into the first folder in your ops['data_path'] (the first
 folder you choose in the GUI).
 
+.. _inputs-diff-file-types:
+
 Different file types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -146,6 +148,39 @@ Scanbox binary files (*.sbx) work out of the box if you set ``ops['input_format'
 When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set ``ops['sbx_ndeadcols']``. Set this option to ``-1`` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
 Joao Couto (@jcouto) wrote the binary sbx parser.
 
+BinaryRWFile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``BinaryRWFile`` is a special class in suite2p that is used to read/write imaging data and acts like a Numpy Array. Inputs of any format listed above will be converted into a ``BinaryRWFile`` before being passed in through the suite2p pipeline. An input file can easily be changed to a ``BinaryRWFile`` in the following way: 
+
+::
+
+   import suite2p
+
+   fname = "gt1.tif" # Let's say input is of shape (4200, 325, 556)
+   Lx, Ly = 556, 326 # Lx and Ly are the x and y dimensions of the imaging input
+   # Read in our input tif and convert it to a BinaryRWFile
+   f_input = suite2p.io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=fname)
+
+``BinaryRWFile`` can work with any of the input formats above. For instance, if you'd like to convert an input binary file, you can do the following:
+
+::
+
+   # Read in an input binary file and convert it to a BinaryRWFile
+   f_input2 = suite2p.io.BinaryRWFile(Ly=Ly, Lx=Lx, filename='gt1.bin')
+
+Elements of these ``BinaryRWFile`` instances can be accessed similar to how one would access a Numpy Array.
+:: 
+
+   f_input.shape # returns shape of your input (num_frames, Ly, Lx)
+   f_input[0] # returns the first frame with shape (Ly, Lx)
+
+Also, ``BinaryRWFile`` instances can be directly passed to the several wrapper functions ``suite2p`` offers (e.g., ``suite2p.detection_wrapper``, ``suite2p.extraction_wrapper``, etc.). These wrapper functions can  also directly work with Numpy arrays so feel free to pass them as inputs. If you'd like to run only specific modules, you will have to use the ``BinaryRWFile`` class. For example, this is how you can run the detection module on an input file that has already been registered. 
+
+::
+
+   f_reg = suite2p.io.BinaryRWFile(Ly=Ly, Lx=Lx, filename='registered_input.tif')
+   ops, stat = suite2p.detection_wrapper(f_reg=f_reg, ops=ops)
 
 .. _repository: https://github.com/dgreenberg/read_patterned_tifdata
 .. _haussmeister: https://github.com/neurodroid/haussmeister

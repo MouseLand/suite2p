@@ -1,9 +1,10 @@
 import numpy as np
 from typing import Any, Dict
-from scipy.ndimage import find_objects
+from scipy.ndimage import find_objects, gaussian_filter
 from cellpose.models import CellposeModel, Cellpose
 from cellpose import transforms, dynamics
 from cellpose.utils import fill_holes_and_remove_small_masks
+from cellpose.transforms import normalize99
 import time
 import cv2
 import os
@@ -150,25 +151,29 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray,
     max_proj = mov.max(axis=0)
     #max_proj = np.percentile(mov, 90, axis=0) #.mean(axis=0)
     if ops['anatomical_only'] == 1:
-        mproj = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
+        img = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
         weights = max_proj
     elif ops['anatomical_only']==2:
-        mproj = mean_img
+        img = mean_img
         weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
                                 (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
-    else:
+    elif ops['anatomical_only']==3:
         if 'meanImgE' in ops:
-            mproj = ops['meanImgE'][ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
+            img = ops['meanImgE'][ops['yrange'][0]:ops['yrange'][1], ops['xrange'][0]:ops['xrange'][1]]
         else:
-            mproj = mean_img
+            img = mean_img
             print('no enhanced mean image, using mean image instead')
         weights = 0.1 + np.clip((mean_img - np.percentile(mean_img,1)) / 
                                 (np.percentile(mean_img,99) - np.percentile(mean_img,1)), 0, 1)
+    else:
+        img = max_proj.copy()
+        weights = max_proj
+
     t0 = time.time()
     if diameter is not None:
         if isinstance(diameter, (list, np.ndarray)) and len(ops['diameter'])>1:
             rescale = diameter[1] / diameter[0]
-            mproj = cv2.resize(mproj, (Lxc, int(Lyc*rescale)))
+            img = cv2.resize(img, (Lxc, int(Lyc*rescale)))
         else:
             rescale = 1.0
             diameter = [diameter, diameter]
@@ -178,13 +183,18 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray,
             print("!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
     else:
         print("!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
-    masks, centers, median_diam, mask_diams = roi_detect(mproj, diameter=diameter[1],
+
+    if ops.get('spatial_hp_cp', 0):
+        img = np.clip(normalize99(img), 0, 1)
+        img -= gaussian_filter(img, diameter[1]*ops['spatial_hp_cp'])
+
+    masks, centers, median_diam, mask_diams = roi_detect(img, diameter=diameter[1],
                                                          flow_threshold=ops['flow_threshold'],
                                                          cellprob_threshold=ops['cellprob_threshold'],
                                                          pretrained_model=ops['pretrained_model'])
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
-        mproj = cv2.resize(mproj, (Lxc, Lyc))
+        img = cv2.resize(img, (Lxc, Lyc))
     stats = masks_to_stats(masks, weights)
     print('Detected %d ROIs, %0.2f sec' % (len(stats), time.time() - t0))
     
@@ -194,7 +204,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray,
             'Vmax': 0,
             'ihop': 0,
             'Vsplit': 0,
-            'Vcorr': mproj,
+            'Vcorr': img,
             'Vmap': 0,
             'spatscale_pix': 0
         }

@@ -5,12 +5,12 @@ install_deps = ['importlib-metadata',
         'rastermap>0.1.0',
         'tifffile',
         'scanimage-tiff-reader>=1.4.1',
-        'torch>=1.7.1',
+        'torch==1.11.0',
         'paramiko',
         'numpy>=1.16',
         'numba>=0.43.1',
         'matplotlib',
-        'scipy>=1.4.0',
+        'scipy>=1.9.0',
         'h5py',
         'sbxreader',
         'scikit-learn',
@@ -29,6 +29,7 @@ nwb_deps = [
       ]
 test_deps = [
       'pytest',
+      'tenacity',
       'tqdm',
       'pytest-qt==3.3.0',
     ]

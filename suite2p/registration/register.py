@@ -7,7 +7,8 @@ import numpy as np
 from scipy.signal import medfilt, medfilt2d
 
 from .. import io, default_ops
-from . import bidiphase, utils, rigid, nonrigid
+from . import bidiphase as bidi
+from . import utils, rigid, nonrigid
 
 def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregshift, Ly: int, Lx:int):
     """ determines how much to crop FOV based on motion
@@ -263,7 +264,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
             maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = compute_reference_masks(refImg, ops)
         
         if bidiphase != 0:
-            bidiphase.shift(frames, bidiphase)
+            bidi.shift(frames, bidiphase)
 
         
         # if smoothing or filtering or clipping to compute registration shifts, make a copy of the frames
@@ -327,7 +328,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
 
 def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None, ops=default_ops()):
     if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-        bidiphase.shift(frames, int(ops['bidiphase']))
+        bidi.shift(frames, int(ops['bidiphase']))
     
     for frame, dy, dx in zip(frames, yoff, xoff):
         frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
@@ -370,12 +371,12 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
         frames = f_align_in[np.linspace(0, n_frames, 1 + np.minimum(ops['nimg_init'], n_frames), dtype=int)[:-1]]    
         # compute bidiphase shift
         if ops['do_bidiphase'] and ops['bidiphase'] == 0 and not ops['bidi_corrected']:
-            bidiphase = bidiphase.compute(frames)
+            bidiphase = bidi.compute(frames)
             print('NOTE: estimated bidiphase offset from data: %d pixels' % bidiphase)
             ops['bidiphase'] = bidiphase
             # shift frames
             if bidiphase != 0:
-                bidiphase.shift(frames, int(ops['bidiphase']))
+                bidi.shift(frames, int(ops['bidiphase']))
         else:
             bidiphase = 0
 
@@ -523,13 +524,64 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
 
 
     Parameters
-    ----------
+    ----------------
 
-    f_reg : np.ndarray or io.BinaryRWFile,
+    f_reg : array of registered functional frames, np.ndarray or io.BinaryRWFile
         n_frames x Ly x Lx
 
+    f_raw : array of raw functional frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    f_reg_chan2 : array of registered anatomical frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    f_raw_chan2 : array of raw anatomical frames, np.ndarray or io.BinaryRWFile
+        n_frames x Ly x Lx
+
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image
+
+    align_by_chan2: boolean
+        whether you'd like to align by non-functional channel
+
     ops : dictionary or list of dicts
-    
+        dictionary containing input arguments for suite2p pipeline
+
+    Returns
+    ----------------
+
+    refImg : 2D array, int16
+        size [Ly x Lx], initial reference image (if not registered)
+
+    rmin : int
+        clip frames at rmin
+
+    rmax : int
+        clip frames at rmax
+
+    meanImg : np.ndarray, 
+        size [Ly x Lx], Computed Mean Image for functional channel
+
+    rigid_offsets : Tuple of length 3, 
+        Rigid shifts computed between each frame and reference image. Shifts for each frame in x,y, and z directions
+
+    nonrigid_offsets : Tuple of length 3
+        Non-rigid shifts computed between each frame and reference image.
+
+    zest : Tuple of length 2
+        
+    meanImg_chan2: np.ndarray, 
+        size [Ly x Lx], Computed Mean Image for non-functional channel
+
+    badframes : np.ndarray,   
+        size [n_frames, ] Boolean array of frames that have large outlier shifts that may make registration problematic.
+
+    yrange : list of length 2
+        Valid ranges for registration along y-axis of frames
+
+    xrange : list of length 2
+        Valid ranges for registration along x-axis of frames
+
     """
     f_alt_in, f_align_out, f_alt_out = None, None, None
     if f_reg_chan2 is None or not align_by_chan2:
@@ -562,7 +614,12 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
     outputs = compute_reference_and_register_frames(f_align_in, f_align_out=f_align_out, refImg=refImg, ops=ops)
     refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zest = outputs
     yoff, xoff, corrXY = rigid_offsets
-    yoff1, xoff1, corrXY1 = nonrigid_offsets
+
+            
+    if ops['nonrigid']:
+            yoff1, xoff1, corrXY1 = nonrigid_offsets
+    else:
+        yoff1, xoff1, corryXY1 = None, None, None
 
     if nchannels > 1:
         mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, yoff, xoff, yoff1, xoff1, ops)
@@ -700,7 +757,8 @@ def save_registration_outputs_to_ops(registration_outputs, ops):
     # assign rigid offsets to ops
     ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
     # assign nonrigid offsets to ops
-    ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    if ops['nonrigid']:
+        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
     # assign mean images
     ops['meanImg'] = meanImg
     if meanImg_chan2 is not None:

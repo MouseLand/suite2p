@@ -481,7 +481,7 @@ class RunWindow(QDialog):
     def save_text(self):
         for k in range(len(self.editlist)):
             key = self.keylist[k]
-            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys, key)
 
     def load_ops(self, name=None):
         print('loading ops')

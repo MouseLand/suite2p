@@ -374,15 +374,15 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             tproj = mov[:, ypix0*Lxc+ xpix0] @ lam0
             active_frames = np.nonzero(tproj>threshold)[0]
             if len(active_frames)<1:
-                if tj < nmasks:
-                    continue
-                else:
-                    break
-        if len(active_frames)<1:
-            if tj < nmasks:
-                continue
-            else:
+                # if tj < nmasks:
+                #     continue
+                # else:
                 break
+        if len(active_frames)<1:
+            # if tj < nmasks:
+            #     continue
+            # else:
+            break
 
         # check if ROI should be split
         v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, threshold)

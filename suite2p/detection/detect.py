@@ -35,9 +35,10 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
 	batch_size = min(good_frames.sum(), 500)
 	Lyc = yrange[1] - yrange[0]
 	Lxc = xrange[1] - xrange[0]
-	mov = np.zeros((n_frames//bin_size, Lyc, Lxc), np.float32)
+	# Need to adjust binned movie size after calculating bad frames
+	num_good_frames = good_frames.sum()
+	mov = np.zeros((num_good_frames//bin_size, Lyc, Lxc), np.float32)
 	ik = 0
-	
 	t0 = time.time()
 	for k in np.arange(0, n_frames, batch_size):
 		data = f_reg[k : min(k + batch_size, n_frames)]
@@ -61,7 +62,6 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
 		ik += n_bins
 
 	print('Binned movie of size [%d,%d,%d] created in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
-
 	return mov
 
 

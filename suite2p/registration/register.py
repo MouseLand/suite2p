@@ -636,16 +636,17 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None, 
             
         
     # compute valid region
-    # ignore user-specified bad_frames.npy
     badframes = np.zeros(n_frames, 'bool')
     if 'data_path' in ops and len(ops['data_path']) > 0:
         badfrfile = path.abspath(path.join(ops['data_path'][0], 'bad_frames.npy'))
+        # Check if badframes file exists
         if path.isfile(badfrfile):
             print('bad frames file path: %s'%badfrfile)
-            badframes = np.load(badfrfile)
-            badframes = badframes.flatten().astype(int)
-            badframes = True
-            print('number of badframes: %d'%ops['badframes'].sum())
+            bf_indices = np.load(badfrfile)
+            bf_indices = bf_indices.flatten().astype(int)
+            # Set indices of badframes to true
+            badframes[bf_indices] = True
+            print('number of badframes: %d'%badframes.sum())
 
     # return frames which fall outside range
     badframes, yrange, xrange = compute_crop(

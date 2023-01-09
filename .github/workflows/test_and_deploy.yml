@@ -61,18 +61,18 @@ jobs:
       - name: Test with tox
         run: tox
         env:
-          PLATFORM: ${{ matrix.platform }}
-      # For debugging purposes, allows one to ssh into host machine. 
+          PLATFORM: ${{ matrix.platform }}    
+      # ONLY UNCOMMENT SECTION BELOW FOR DEBUGGING PURPOSES: allows one to ssh into host machine. 
       # Follow instructions in  https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account 
       # to add your ssh keys.
-      - name: Job failed. Activating debugging mode via up-term.
-        if: ${{ failure() }}
-        uses: lhotari/action-upterm@v1
-        with:
+#      - name: Job failed. Activating debugging mode via up-term.
+#        if: ${{ failure() }}
+#        uses: lhotari/action-upterm@v1
+#        with:
 #           ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-            limit-access-to-actor: true
+#            limit-access-to-actor: true
 #           ## limits ssh access and adds the ssh public keys of the listed GitHub users
-            limit-access-to-users: chriski777, carsen-stringera
+#            limit-access-to-users: chriski777, carsen-stringera
             
       - name: Coverage
         # Only run coverage once

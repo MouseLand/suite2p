@@ -179,6 +179,7 @@ def compute_reference_masks(refImg, ops=default_ops()):
             smooth_sigma=ops['smooth_sigma'],
         )
         Ly, Lx = refImg.shape
+        blocks = []
         if ops.get('nonrigid'):
             blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=ops['block_size'])
 
@@ -190,7 +191,7 @@ def compute_reference_masks(refImg, ops=default_ops()):
                 xblock=blocks[1],
             )
         else:
-            maskMulNR, maskOffsetNR, cfRefImgNR, blocks = [], [], [], []
+            maskMulNR, maskOffsetNR, cfRefImgNR = [], [], [] 
 
         return maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks
 
@@ -464,7 +465,8 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None, yoff1
         raise ValueError('no rigid registration offsets provided')
     elif yoff.shape[0] != n_frames or xoff.shape[0] != n_frames:
         raise ValueError('rigid registration offsets are not the same size as input frames')
-
+    # Overwrite blocks if nonrigid registration is activated   
+    blocks = None
     if ops.get('nonrigid'):
         if yoff1 is None or xoff1 is None:
             raise ValueError('nonrigid registration is activated but no nonrigid shifts provided')

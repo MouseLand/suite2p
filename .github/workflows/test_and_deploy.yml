@@ -57,15 +57,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel setuptools tox tox-gh-actions
           pip install pydrive2 py # Added py due to pytest tox issues requiring py module.
-      # For debugging purposes, allows one to ssh into host machine. 
-      # Follow instructions in  https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account 
-      # to add your ssh keys.
 
       - name: Test with tox
         run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
-      - name: Job failed. Activating debugging mode via up-term
+      # For debugging purposes, allows one to ssh into host machine. 
+      # Follow instructions in  https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account 
+      # to add your ssh keys.
+      - name: Job failed. Activating debugging mode via up-term.
         if: ${{ failure() }}
         uses: lhotari/action-upterm@v1
         with:

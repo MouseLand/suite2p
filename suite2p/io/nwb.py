@@ -359,14 +359,14 @@ def save_nwb(save_folder):
             grid_spacing=([2.0, 2.0, 30.0] if multiplane else [2.0, 2.0]),
             grid_spacing_unit="microns",
         )
-
         # link to external data
+        external_data = ops["filelist"] if "filelist" in ops else [""]
         image_series = TwoPhotonSeries(
             name="TwoPhotonSeries",
             dimension=[ops["Ly"], ops["Lx"]],
-            external_file=(ops["filelist"] if "filelist" in ops else [""]),
+            external_file=external_data,
             imaging_plane=imaging_plane,
-            starting_frame=[0],
+            starting_frame=[0 for i in range(len(external_data))],
             format="external",
             starting_time=0.0,
             rate=ops["fs"] * ops["nplanes"],

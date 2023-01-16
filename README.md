@@ -62,10 +62,11 @@ pip install --upgrade suite2p
 ~~~~
 
 ### Installation for Macs with Apple Silicon chips (e.g., M1)
-1. Set up a Rosetta terminal following step 1 in this [link](https://dev.to/courier/tips-and-tricks-to-setup-your-apple-m1-for-development-547g). 
-2. Open up the newly created Rosetta terminal and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
-3. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
-4. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
+1. Download an iTerm2 terminal from this [link](https://iterm2.com/). Install it into your /Applications folder. If you already have downloaded iTerm, duplicate it and give it whatever name you'd like (e.g., "iterm2Rosetta"). 
+2. Navigate to the iTerm app you will use, right click it, and then select "Get Info". Check "Open using Rosetta". 
+3. Open up this iTerm app and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
+4. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
+5. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
 
 
 ### Installing the latest github version of the code

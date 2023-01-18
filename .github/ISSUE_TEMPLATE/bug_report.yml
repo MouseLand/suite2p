@@ -22,7 +22,8 @@ body:
     description: >
       A short code example that reproduces the problem/missing feature. It
       should be self-contained, i.e., can be copy-pasted into the Python
-      interpreter or run as-is via `python myproblem.py`.
+      interpreter or run as-is via `python myproblem.py`. Please include as much 
+      detail you can about the ops.npy that was used.
     placeholder: |
       import suite2p
       << your code here >>

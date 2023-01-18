@@ -7,7 +7,7 @@ body:
   attributes: 
     label: "Feature you'd like to see:"
     description: >
-	Provide a clear and concise description of what problem you'd like this feature to address. 
+        Provide a clear and concise description of what problem you'd like this feature to address. 
         Then, provide a clear description of the solution you'd like to see.
   validations:
     required: true
@@ -16,7 +16,7 @@ body:
   attributes:
     label: "Attempted alternative approaches:"
     description: >
-	Provide a description of alternative approaches you've tried. 
+       Provide a description of alternative approaches you've tried. 
   validations:
     required: true
 

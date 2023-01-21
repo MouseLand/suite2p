@@ -9,8 +9,8 @@ body:
     description: >
       Please make sure to leave a reference to the document/code you're
       referring to. Please report where in https://suite2p.readthedocs.io/ you see this issue. 
-    validations:
-      required: true
+  validations:
+    required: true
 
 - type: textarea
   attributes:

@@ -114,7 +114,7 @@ def make_colors(parent):
     if 'meanImg_chan2' in parent.ops:
         allcols = allcols / 1.4
         allcols = allcols + 0.1
-        print(parent.redcell.sum())
+        print(f'number of red cells: {parent.redcell.sum()}')
         parent.randcols = allcols.copy()
         allcols[parent.redcell] = 0
     else:
@@ -230,17 +230,9 @@ def init_masks(parent):
     parent.rois['Lam']    = np.zeros((2,3,Ly,Lx), np.float32)
     parent.rois['iROI']   = -1 * np.ones((2,3,Ly,Lx), np.int32)
 
-    for n in range(len(parent.roi_text_labels)):
+    if parent.checkBoxN.isChecked():
         parent.checkBoxN.setChecked(False)
-        try:
-            parent.p1.removeItem(parent.roi_text_labels[n])
-        except:
-            pass 
-        try:
-            parent.p2.removeItem(parent.roi_text_labels[n])
-        except:
-            pass 
-        
+            
     # ignore merged cells
     iignore = np.zeros(ncells, 'bool')
     parent.roi_text_labels = []
@@ -250,7 +242,7 @@ def init_masks(parent):
             if 'imerge' in stat[n]:
                 for k in stat[n]['imerge']:
                     iignore[k] = True
-                    print(k)
+                    print(f'ROI {k} in merged ROI')
             xpix = stat[n]['xpix']
             lam = stat[n]['lam']
             lam = lam / lam.sum()
@@ -366,11 +358,11 @@ def custom_masks(parent):
     c = 9
     n = np.array(parent.imerge)
     istat = parent.custom_mask
-    istat1 = istat.min()
-    istat99 = istat.max()
+    istat1 = np.percentile(istat, 1)
+    istat99 = np.percentile(istat, 99)
     cl = [istat1, (istat99-istat1)/2 + istat1, istat99]
-    istat = istat - istat1
-    istat = istat / (istat99-istat1)
+    istat -= istat1
+    istat /= istat99-istat1
     istat = np.maximum(0, np.minimum(1, istat))
 
     parent.colors['colorbar'][c] = cl
@@ -536,14 +528,13 @@ def flip_roi(parent):
     n = parent.ichosen
     i = int(1-parent.iscell[n])
     i0 = 1-i
-    if parent.roitext:
-        if i0==1:
+    if parent.checkBoxN.isChecked():
+        if i0==0:
             parent.p1.removeItem(parent.roi_text_labels[n])
             parent.p2.addItem(parent.roi_text_labels[n])
         else:
             parent.p2.removeItem(parent.roi_text_labels[n])
             parent.p1.addItem(parent.roi_text_labels[n])
-        
     
     # remove ROI
     remove_roi(parent, n, i0)

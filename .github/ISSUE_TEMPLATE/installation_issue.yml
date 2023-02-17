@@ -1,0 +1,22 @@
+name: Installation issue
+description: Report an issue with installation for suite2p.
+title: "<Please write a comprehensive title.>"
+
+body:
+    
+- type: textarea
+  attributes: 
+    label: "Describe the issue:"
+    description: >
+      Let us know what issues you are having with installation.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Provide environment info:"
+    description: >
+      Please run `conda info` in your suite2p environment in your terminal/anaconda prompt to let us know the versions of your packages.
+  validations:
+    required: true
+  

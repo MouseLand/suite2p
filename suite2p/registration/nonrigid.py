@@ -86,12 +86,12 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
     dims = (nb, Ly, Lx)
     cfRef_dims = dims
     gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
-    cfRefImg1 = np.empty(cfRef_dims, 'complex64')
+    cfRefImg1 = np.zeros(cfRef_dims, 'complex64')
 
     maskMul = spatial_taper(maskSlope, *refImg0.shape)
-    maskMul1 = np.empty(dims, 'float32')
+    maskMul1 = np.zeros(dims, 'float32')
     maskMul1[:] = spatial_taper(2 * smooth_sigma, Ly, Lx)
-    maskOffset1 = np.empty(dims, 'float32')
+    maskOffset1 = np.zeros(dims, 'float32')
     for yind, xind, maskMul1_n, maskOffset1_n, cfRefImg1_n in zip(yblock, xblock, maskMul1, maskOffset1, cfRefImg1):
         ix = np.ix_(np.arange(yind[0], yind[-1]).astype('int'), np.arange(xind[0], xind[-1]).astype('int'))
         refImg = refImg0[ix]
@@ -174,12 +174,15 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm,
     nb = len(yblock)
 
     # shifts and corrmax
-    Y = np.zeros((nimg, nb, ly, lx), 'int16')
+    Y = np.zeros((nimg, nb, ly, lx), 'float32')
     for n in range(nb):
         yind, xind = yblock[n], xblock[n]
         Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
-    Y = convolve(mov=Y, img=cfRefImg)
+    batch = min(64, Y.shape[1]) #16
+    for n in np.arange(0, nb, batch):
+        nend = min(Y.shape[1], n+batch)
+        Y[:,n:nend] = convolve(mov=Y[:,n:nend], img=cfRefImg[n:nend])
 
     # calculate ccsm
     lhalf = lcorr + lpad
@@ -213,12 +216,13 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm,
     xmax1 = np.empty((nimg, nb), np.float32)
     ymax = np.empty((nb,), np.int32)
     xmax = np.empty((nb,), np.int32)
+    
     for t in range(nimg):
         ccmat = np.empty((nb, 2*lpad+1, 2*lpad+1), np.float32)
         for n in range(nb):
             ix = np.argmax(ccsm[n, t][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
-            ccmat[n] = ccsm[n, t][ym:ym + 2 * lpad + 1, xm:xm + 2 * lpad + 1]
+            ccmat[n] = ccsm[n, t][ ym:ym + 2 * lpad + 1, xm:xm + 2 * lpad + 1]
             ymax[n], xmax[n] = ym - lcorr, xm - lcorr
         ccb = ccmat.reshape(nb, -1) @ Kmat
         cmax1[t] = np.amax(ccb, axis=1)

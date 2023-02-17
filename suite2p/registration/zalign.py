@@ -63,7 +63,7 @@ def register_stack(Z, ops):
         if data.size==0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax, yxnr = phasecorr(data, refAndMasks, ops) # not here
+        dwrite, ymax, xmax, cmax, yxnr = rigid.phasecorr(data, refAndMasks, ops) # not here
         dwrite = dwrite.astype('int16') # need to hold on to this
         meanImg += dwrite.sum(axis=0)
         yoff = np.hstack((yoff, ymax))

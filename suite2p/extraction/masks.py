@@ -4,14 +4,14 @@ import numpy as np
 from scipy.ndimage import percentile_filter
 
 from ..detection.sparsedetect import extendROI
+from .. import default_ops
 
-
-def create_masks(ops: Dict[str, Any], stats: List[Dict[str, Any]]):
+def create_masks(stats: List[Dict[str, Any]], Ly, Lx, ops=default_ops()):
     """ create cell and neuropil masks """
 
-    cell_pix = create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'], 
+    cell_pix = create_cell_pix(stats, Ly=Ly, Lx=Lx, 
                                lam_percentile=ops.get('lam_percentile', 50.0))
-    cell_masks = [create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stats]
+    cell_masks = [create_cell_mask(stat, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap']) for stat in stats]
     if ops.get('neuropil_extract', True):
         neuropil_masks = create_neuropil_masks(
             ypixs=[stat['ypix'] for stat in stats],

@@ -42,12 +42,13 @@ Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?
 
 ## Installation
 
-Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.x** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
-
-1. Download the [`environment.yml`](https://github.com/MouseLand/suite2p/blob/main/environment.yml) file from the repository. You can do this by cloning the repository, or copy-pasting the text from the file into a text document on your local computer.
+### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
+1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
-3. Change directories to where the `environment.yml` is and run `conda env create -f environment.yml`
-4. Activate the environment with `conda activate suite2p`
+3. Create a new environment with `conda create --name suite2p python=3.8`.
+4. To activate this new environment, run `conda activate suite2p`
+5. To install the minimal version of suite2p, run `python -m pip install suite2p`.  
+6. To install the GUI and NWB dependencies, run `python -m pip install suite2p[all]`. If you're on a zsh server, you may need to use `' '` around the suite2p[all] call: `python -m pip install 'suite2p[all]'`.
 6. Now run `python -m suite2p` and you're all set.
 7. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
@@ -59,6 +60,14 @@ To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), 
 ~~~~
 pip install --upgrade suite2p
 ~~~~
+
+### Installation for Macs with Apple Silicon chips (e.g., M1)
+1. Download an iTerm2 terminal from this [link](https://iterm2.com/). Install it into your /Applications folder. If you already have downloaded iTerm, duplicate it and give it whatever name you'd like (e.g., "iterm2Rosetta"). 
+2. Navigate to the iTerm app you will use, right click it, and then select "Get Info". Check "Open using Rosetta". 
+3. Open up this iTerm app and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
+4. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
+5. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
+
 
 ### Installing the latest github version of the code
 
@@ -80,16 +89,14 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 ## Installation for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
-2. Run `conda env create -f environment.yml`
+2. Run `conda env create --name suite2p`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. Install the local version of suite2p into this environment in develop mode, with everything to get test data: `pip install -e .[data]`
-5. Download the data with ``dvc pull -r gdrive-travis`` (read-only access). If you need to have read/write access to the files, run ``dvc pull`` and follow the authentication instructions in the output. **Note**: do *not* commit the json credentials file that comes out afterwards, git should ignore it.
-6. Run tests: `python setup.py test` or `pytest tests\`
-
+4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .`
+5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).
 
 ## Examples
 
-An example dataset is provided [here](https://drive.google.com/open?id=1PCJy265NHRWYXUz7CRhbJHtd6B-zJs8f). It's a single-plane, single-channel recording.
+An example dataset is provided [here](https://drive.google.com/drive/folders/0B649boZqpYG1amlyX015SG12VU0?resourcekey=0-v-pxg8FwtFV7lqynlsuc9Q&usp=sharing). It's a single-plane, single-channel recording.
 
 ## Getting started
 

@@ -93,6 +93,8 @@ def nd2_to_binary(ops):
                     ops1[j]['nframes'] += im2write.shape[0]
             ik += nframes
             iall += nframes
+        
+        nd2_file.close()
 
     # write ops files
     do_registration = ops1[0]['do_registration']

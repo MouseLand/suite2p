@@ -1,6 +1,6 @@
 import numpy as np
 from numba import njit, prange
-from scipy.ndimage import filters
+from scipy.ndimage import maximum_filter1d, minimum_filter1d, gaussian_filter
 
 
 @njit(['float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'], cache=True)
@@ -117,11 +117,11 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
     """
     win = int(win_baseline*fs)
     if baseline == 'maximin':
-        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
-        Flow = filters.minimum_filter1d(Flow,    win)
-        Flow = filters.maximum_filter1d(Flow,    win)
+        Flow = gaussian_filter(F,    [0., sig_baseline])
+        Flow = minimum_filter1d(Flow,    win)
+        Flow = maximum_filter1d(Flow,    win)
     elif baseline == 'constant':
-        Flow = filters.gaussian_filter(F,    [0., sig_baseline])
+        Flow = gaussian_filter(F,    [0., sig_baseline])
         Flow = np.amin(Flow)
     elif baseline == 'constant_prctile':
         Flow = np.percentile(F, prctile_baseline, axis=1)

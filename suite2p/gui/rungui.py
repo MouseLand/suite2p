@@ -2,8 +2,11 @@ import glob, json, os, shutil, pathlib
 from datetime import datetime
 
 import numpy as np
+
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
+
+from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
 from . import io
 from .. import default_ops
@@ -81,19 +84,21 @@ class RunWindow(QDialog):
     def create_buttons(self):
         self.intkeys = ['nplanes', 'nchannels', 'functional_chan', 'align_by_chan', 'nimg_init',
                    'batch_size', 'max_iterations', 'nbinned','inner_neuropil_radius',
-                   'min_neuropil_pixels', 'spatial_scale', 'do_registration']
+                   'min_neuropil_pixels', 'spatial_scale', 'do_registration', 'anatomical_only']
         self.boolkeys = ['delete_bin', 'move_bin','do_bidiphase', 'reg_tif', 'reg_tif_chan2',
                      'save_mat', 'save_NWB' 'combined', '1Preg', 'nonrigid', 
                     'connected', 'roidetect', 'neuropil_extract', 
                     'spikedetect', 'keep_movie_raw', 'allow_overlap', 'sparse_mode']
+        self.stringkeys = ['pretrained_model']
         tifkeys = ['nplanes','nchannels','functional_chan','tau','fs','do_bidiphase','bidiphase', 'multiplane_parallel', 'ignore_flyback']
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect', 'denoise', 'anatomical_only', 'diameter', 'spatial_scale', 'threshold_scaling', 'max_overlap','max_iterations','high_pass']
+        cellkeys = ['roidetect', 'denoise', 'spatial_scale', 'threshold_scaling', 'max_overlap','max_iterations','high_pass','spatial_hp_detect']
+        anatkeys = ['anatomical_only', 'diameter', 'cellprob_threshold', 'flow_threshold', 'pretrained_model', 'spatial_hp_cp']
         neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['soma_crop','spikedetect','win_baseline','sig_baseline','neucoeff']]
-        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, neudeconvkeys]
-        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'ROI detection',['Extraction/Neuropil','Classification/Deconvolution']]
+        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, anatkeys, neudeconvkeys]
+        labels = ['Main settings','Output settings','Registration',['Nonrigid','1P'],'Functional detect', 'Anat detect', ['Extraction/Neuropil','Classify/Deconv']]
         tooltips = ['each tiff has this many planes in sequence',
                     'each tiff has this many channels per plane',
                     'this channel is used to extract functional ROIs (1-based)',
@@ -130,15 +135,20 @@ class RunWindow(QDialog):
                     'window for spatial high-pass filtering before registration',
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
-                    'if 1, run cell (ROI) detection',
+                    'if 1, run cell (ROI) detection (either functional or anatomical if anatomical_only > 0)',
                     'if 1, run PCA denoising on binned movie to improve cell detection',
-                    'run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; or 3: mean_img enhanced',
-                    'if anatomical_only>0, input average diameter of ROIs in recording (can give a list e.g. 6,9)',
-                    'if anatomical_only=0, choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
+                    'choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',
                     'ROIs with greater than this overlap as a fraction of total pixels will be discarded',
                     'maximum number of iterations for ROI detection',
-                    'running mean subtraction with window of size "high_pass" (use low values for 1P)',
+                    'temporal running mean subtraction with window of size "high_pass" (use low values for 1P)',
+                    'spatial high-pass filter size (used to remove spatially-correlated neuropil)',
+                    'run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj',
+                    'input average diameter of ROIs in recording (can give a list e.g. 6,9 if aspect not equal), if set to 0 auto-determination run by Cellpose',
+                    'cellprob_threshold for cellpose',
+                    'flow_threshold for cellpose (throws out masks, if getting too few masks, set to 0)',
+                    'model type string from Cellpose (can be a built-in model or a user model that is added to the Cellpose GUI)',
+                    'high-pass image spatially by a multiple of the diameter (if field is non-uniform, a value of ~2 is recommended',
                     'whether or not to extract neuropil; if 0, Fneu is set to 0',
                     'allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)',
                     'number of pixels between ROI and neuropil donut',
@@ -147,7 +157,8 @@ class RunWindow(QDialog):
                     'if 1, run spike detection (deconvolution)',
                     'window for maximin',
                     'smoothing constant for gaussian filter',
-                    'neuropil coefficient']
+                    'neuropil coefficient',
+                    ]
 
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel = QLabel('File paths')
@@ -263,7 +274,7 @@ class RunWindow(QDialog):
         self.layout.addWidget(self.binlabel,19,0,1,cw)
         self.runButton = QPushButton('RUN SUITE2P')
         self.runButton.clicked.connect(self.run_S2P)
-        n0 = 21
+        n0 = 22
         self.layout.addWidget(self.runButton,n0,0,1,1)
         self.runButton.setEnabled(False)
         self.textEdit = QTextEdit()
@@ -289,7 +300,7 @@ class RunWindow(QDialog):
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QLabel('')
         self.layout.addWidget(self.cleanLabel,n0,4,1,12)
-        n0+=1
+        #n0+=1
         self.listOps = QPushButton('save settings and\n add more (batch)')
         self.listOps.clicked.connect(self.add_batch)
         self.layout.addWidget(self.listOps,n0,12,1,2)
@@ -357,7 +368,7 @@ class RunWindow(QDialog):
 
     def compile_ops_db(self):
         for k,key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys)
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys, self.stringkeys)
         self.db = {}
         self.db['data_path'] = self.data_path
         self.db['subfolders'] = []
@@ -381,6 +392,10 @@ class RunWindow(QDialog):
     def run_S2P(self):
         if len(self.opslist)==0:
             self.add_ops()
+        # pre-download model
+        pretrained_model_string = self.ops.get('pretrained_model', 'cyto')
+        pretrained_model_string = pretrained_model_string if pretrained_model_string is not None else 'cyto'
+        pretrained_model_path = model_path(pretrained_model_string, 0, True)
         self.finish = True
         self.error = False
         ops_file = os.path.join(self.ops_path, 'ops.npy')
@@ -391,7 +406,7 @@ class RunWindow(QDialog):
         print('Running suite2p!')
         print('starting process')
         print(self.db)
-        self.process.start('python -u -W ignore -m suite2p --ops %s --db %s'%(ops_file, db_file))
+        self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"'%(ops_file, db_file))
 
     def stop(self):
         self.finish = False
@@ -418,9 +433,12 @@ class RunWindow(QDialog):
         if self.finish and not self.error:
             self.cleanButton.setEnabled(True)
             if len(self.opslist)==1:
-                cursor.insertText('Opening in GUI (can close this window)\n')
                 self.parent.fname = os.path.join(self.db['save_path0'], 'suite2p', 'plane0','stat.npy')
-                io.load_proc(self.parent)
+                if os.path.exists(self.parent.fname):
+                    cursor.insertText('Opening in GUI (can close this window)\n')
+                    io.load_proc(self.parent)
+                else:
+                    cursor.insertText('not opening plane in GUI (no ROIs)\n')
             else:
                 cursor.insertText('BATCH MODE: %d more recordings remaining \n'%(len(self.opslist)-self.f-1))
                 self.f += 1
@@ -606,7 +624,7 @@ class LineEdit(QLineEdit):
         self.key = key
         #self.textEdited.connect(lambda: self.edit_changed(parent.ops, k))
 
-    def get_text(self,intkeys,boolkeys):
+    def get_text(self,intkeys,boolkeys,stringkeys):
         key = self.key
         if key=='diameter' or key=='block_size':
             diams = self.text().replace(' ','').split(',')
@@ -625,6 +643,8 @@ class LineEdit(QLineEdit):
                 okey = int(float(self.text()))
             elif key in boolkeys:
                 okey = bool(int(self.text()))
+            elif key in stringkeys:
+                okey = self.text()
             else:
                 okey = float(self.text())
         return okey

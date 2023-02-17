@@ -18,10 +18,8 @@ def make_masks_and_enable_buttons(parent):
     parent.ops_plot['view'] = 0
     parent.colors['cols'] = 0
     parent.colors['istat'] = 0
-    try:
+    if parent.checkBoxN.isChecked():
         parent.roi_text(False)
-    except:
-        0
     parent.roi_text_labels=[]
     parent.roitext = False 
     parent.checkBoxN.setChecked(False)
@@ -66,12 +64,11 @@ def make_masks_and_enable_buttons(parent):
         parent.stat[n]["inmerge"] = 0
     # enable buttons
     enable_views_and_classifier(parent)
-
     # make views
     views.init_views(parent)
     # make color arrays for various views
     masks.make_colors(parent)
-
+    
     if parent.iscell.sum() > 0:
         ich = np.nonzero(parent.iscell)[0][0]
     else:
@@ -86,9 +83,9 @@ def make_masks_and_enable_buttons(parent):
     masks.plot_colorbar(parent)
     tic = time.time()
     masks.init_masks(parent)
-    print(time.time() - tic)
     M = masks.draw_masks(parent)
     masks.plot_masks(parent, M)
+    print(f'time to draw and plot masks: {time.time() - tic : .4f} sec')
     parent.lcell1.setText("%d" % (ncells - parent.iscell.sum()))
     parent.lcell0.setText("%d" % (parent.iscell.sum()))
     graphics.init_range(parent)
@@ -389,6 +386,14 @@ def load_behavior(parent):
     else:
         print("ERROR: this is not a 1D array with length of data")
 
+def resample_frames(y, x, xt):
+    ''' resample y (defined at x) at times xt '''
+    ts = x.size / xt.size
+    y = gaussian_filter1d(y, np.ceil(ts/2), axis=0)
+    f = interp1d(x,y,fill_value="extrapolate")
+    yt = f(xt)
+    return yt
+
 def save_redcell(parent):
     np.save(os.path.join(parent.basename, 'redcell.npy'),
             np.concatenate((np.expand_dims(parent.redcell[parent.notmerged],axis=1),
@@ -453,11 +458,14 @@ def load_custom_mask(parent):
         mask = np.load(name)
         mask = mask.flatten()
         if mask.size == parent.Fcell.shape[0]:
-            parent.cloaded = True
+            b = len(parent.color_names)-1
+            parent.colorbtns.button(b).setEnabled(True)
+            parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
+            cloaded = True
     except (ValueError, KeyError, OSError,
             RuntimeError, TypeError, NameError):
         print("ERROR: this is not a 1D array with length of data")
-    if parent.cloaded:
+    if cloaded:
         parent.custom_mask = mask
         masks.custom_masks(parent)
         M = masks.draw_masks(parent)

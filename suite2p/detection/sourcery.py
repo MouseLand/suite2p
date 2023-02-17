@@ -270,8 +270,6 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         stat['mrs'] = np.mean(rs)
         stat['mrs0'] = np.mean(rsort[:ypix.size])
         stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
-        stat['ypix'] += ops['yrange'][0]
-        stat['xpix'] += ops['xrange'][0]
         stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
         stat['npix'] = xpix.size
         if 'radius' not in stat:

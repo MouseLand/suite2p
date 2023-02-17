@@ -253,7 +253,7 @@ def estimate_spatial_scale(I: np.ndarray) -> int:
     imap = np.argmax(I, axis=0).flatten()
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
-    im, _ = mode(imap[ipk][isort[:50]])
+    im, _ = mode(imap[ipk][isort[:50]], keepdims=True)
     return im
 
 def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMode]:
@@ -271,7 +271,7 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
             return 1, EstimateMode.Forced
 
 def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int, spatial_scale: int, threshold_scaling,
-             max_iterations: int, yrange, xrange, percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+             max_iterations: int, percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Returns stats and ops from 'mov' using correlations in time."""
 
     mean_img = mov.mean(axis=0)
@@ -418,11 +418,6 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         if tj % 1000 == 0:
             print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
 
-    for stat in stats:
-        stat['ypix'] += int(yrange[0])
-        stat['xpix'] += int(xrange[0])
-        stat['med'][0] += int(yrange[0])
-        stat['med'][1] += int(xrange[0])
         
     new_ops = {
         'max_proj': max_proj,

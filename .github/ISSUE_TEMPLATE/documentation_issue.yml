@@ -1,0 +1,22 @@
+name: Documentation
+description: Report an issue related to suite2p documentation.
+title: "DOC: <Please write a comprehensive title after the 'DOC: ' prefix>"
+
+body:
+- type: textarea
+  attributes: 
+    label: "Issue with current documentation:"
+    description: >
+      Please make sure to leave a reference to the document/code you're
+      referring to. Please report where in https://suite2p.readthedocs.io/ you see this issue. 
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Idea or request for content:"
+    description: >
+      Please describe as clearly as possible what topics you think are missing
+      from the current documentation. Make sure to check
+      https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb 
+      and see if this documentation should be added there.

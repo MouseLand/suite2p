@@ -1,8 +1,227 @@
 from typing import Optional, Tuple, Sequence
 from contextlib import contextmanager
+import os
 
 import numpy as np
 
+class BinaryRWFile:
+    def __init__(self, Ly: int, Lx: int, filename: str):
+        """
+        Creates/Opens a Suite2p BinaryFile for reading and/or writing image data that acts like numpy array
+
+        Parameters
+        ----------
+        Ly: int
+            The height of each frame
+        Lx: int
+            The width of each frame
+        filename: str
+            The filename of the file to read from or write to
+        """
+        self.Ly = Ly
+        self.Lx = Lx
+        self.filename = filename
+        if not os.path.exists(filename):
+            self.file = open(filename, mode='w+b')
+        else:
+            self.file = open(filename, mode='r+b')
+        self._index = 0
+        self._can_read = True
+
+    @staticmethod
+    def convert_numpy_file_to_suite2p_binary(from_filename: str, to_filename: str) -> None:
+        """
+        Works with npz files, pickled npy files, etc.
+
+        Parameters
+        ----------
+        from_filename: str
+            The npy file to convert
+        to_filename: str
+            The binary file that will be created
+        """
+        np.load(from_filename).tofile(to_filename)
+
+    @property
+    def nbytesread(self):
+        """number of bytes per frame (FIXED for given file)"""
+        return np.int64(2 * self.Ly * self.Lx)
+
+    @property
+    def nbytes(self):
+        """total number of bytes in the file."""
+        with temporary_pointer(self.file) as f:
+            f.seek(0, 2)
+            return f.tell()
+
+    @property
+    def n_frames(self) -> int:
+        """total number of frames in the file."""
+        return int(self.nbytes // self.nbytesread)
+
+    @property
+    def shape(self) -> Tuple[int, int, int]:
+        """
+        The dimensions of the data in the file
+
+        Returns
+        -------
+        n_frames: int
+            The number of frames
+        Ly: int
+            The height of each frame
+        Lx: int
+            The width of each frame
+        """
+        return self.n_frames, self.Ly, self.Lx
+
+    @property
+    def size(self) -> int:
+        """
+        Returns the total number of pixels
+
+        Returns
+        -------
+        size: int
+        """
+        return np.prod(np.array(self.shape).astype(np.int64))
+
+    def close(self) -> None:
+        """
+        Closes the file.
+        """
+        self.file.close()
+        
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __setitem__(self, *items):
+        frame_indices, data = items
+        self.ix_write(data=data, indices=from_slice(frame_indices))
+        
+    def __getitem__(self, *items):
+        frame_indices, *crop = items
+        if isinstance(frame_indices, int):
+            frames = self.ix(indices=[frame_indices], is_slice=False)
+        elif isinstance(frame_indices, slice):
+            frames = self.ix(indices=from_slice(frame_indices), is_slice=True)
+        else:
+            frames = self.ix(indices=frame_indices, is_slice=False)
+        return frames[(slice(None),) + crop] if crop else frames
+
+    def sampled_mean(self) -> float:
+        """
+        Returns the sampled mean.
+        """
+        n_frames = self.n_frames
+        nsamps = min(n_frames, 1000)
+        inds = np.linspace(0, n_frames, 1+nsamps).astype(np.int64)[:-1]
+        frames = self.ix(indices=inds).astype(np.float32)
+        return frames.mean(axis=0)
+
+    def ix_write(self, data, indices: Sequence[int]):
+        """
+        Writes the frames at index values "indices".
+
+        Parameters
+        ----------
+        indices: int array
+            The frame indices to get, must be a slice
+
+        """
+        i0 = indices[0]
+        batch_size = len(indices)
+        if self._index != i0:
+            self.file.seek(self.nbytesread * (i0 - self._index), 1)
+        self._index = i0 + batch_size
+        self.write(data)  
+
+    def ix(self, indices: Sequence[int], is_slice=False):
+        """
+        Returns the frames at index values "indices".
+
+        Parameters
+        ----------
+        indices: int array
+            The frame indices to get
+
+        is_slice: bool, default False
+            if indices are slice, read slice with "read" function and return
+
+        Returns
+        -------
+        frames: len(indices) x Ly x Lx
+            The requested frames
+        """
+        if not is_slice:
+            frames = np.empty((len(indices), self.Ly, self.Lx), np.int16)
+            # load and bin data
+            with temporary_pointer(self.file) as f:
+                for frame, ixx in zip(frames, indices):
+                    if ixx!=self._index:
+                        f.seek(self.nbytesread * ixx)
+                    buff = f.read(self.nbytesread)
+                    data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                    frame[:] = np.reshape(data, (self.Ly, self.Lx))
+                    #self._index = ixx+1
+        else:
+            i0 = indices[0]
+            batch_size = len(indices)
+            if self._index != i0:
+                self.file.seek(self.nbytesread * i0)
+            _, frames = self.read(batch_size=batch_size, dtype=np.int16)
+            self._index = i0 + batch_size
+        
+        return frames
+
+    @property
+    def data(self) -> np.ndarray:
+        """
+        Returns all the frames in the file.
+
+        Returns
+        -------
+        frames: nImg x Ly x Lx
+            The frame data
+        """
+        with temporary_pointer(self.file) as f:
+            return np.fromfile(f, np.int16).reshape(-1, self.Ly, self.Lx)
+
+    def read(self, batch_size=1, dtype=np.float32) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns the next frame(s) in the file and its associated indices.
+
+        Parameters
+        ----------
+        batch_size: int
+            The number of frames to read at once.
+        frames: batch_size x Ly x Lx
+            The frame data
+        """
+        if not self._can_read:
+            raise IOError("BinaryFile needs to write before it can read again.")
+        nbytes = self.nbytesread * batch_size
+        buff = self.file.read(nbytes)
+        data = np.frombuffer(buff, dtype=np.int16, offset=0).reshape(-1, self.Ly, self.Lx).astype(dtype)
+        if data.size == 0:
+            return None
+        indices = np.arange(self._index, self._index + data.shape[0])
+        self._index += data.shape[0]
+        return indices, data
+
+    def write(self, data: np.ndarray) -> None:
+        """
+        Writes frame(s) to the file.
+
+        Parameters
+        ----------
+        data: 2D or 3D array
+            The frame(s) to write.  Should be the same width and height as the other frames in the file.
+        """
+        self.file.write(bytearray(np.minimum(data, 2 ** 15 - 2).astype('int16')))
 
 class BinaryFile:
 
@@ -190,7 +409,7 @@ class BinaryFile:
             i0 = indices[0]
             batch_size = len(indices)
             if self._index != i0:
-                f.seek(self.nbytesread * i0)
+                self.read_file.seek(self.nbytesread * i0)
             _, frames = self.read(batch_size=batch_size, dtype=np.int16)
             self._index = i0 + batch_size
         
@@ -414,6 +633,68 @@ class BinaryFileCombined:
         self._index += data.shape[0]
         
         return indices, data_all
+
+    def __getitem__(self, *items):
+        frame_indices, *crop = items
+        if isinstance(frame_indices, int):
+            frames = self.ix(indices=[frame_indices], is_slice=False)
+        elif isinstance(frame_indices, slice):
+            frames = self.ix(indices=from_slice(frame_indices), is_slice=True)
+        else:
+            frames = self.ix(indices=frame_indices)
+        return frames[(slice(None),) + crop] if crop else frames
+
+
+    def ix(self, indices: Sequence[int], is_slice=False):
+        """
+        Returns the frames at index values "indices".
+
+        Parameters
+        ----------
+        indices: int array
+            The frame indices to get
+
+        is_slice: bool, default False
+            if indices are slice, read slice with "read" function and return
+
+        Returns
+        -------
+        frames: len(indices) x Ly x Lx
+            The requested frames
+        """
+        for n, (nbytesr, read_file) in enumerate(zip(self.nbytesread, self.read_files)):
+            
+            if not is_slice:
+                frames = np.empty((len(indices), self.Ly[n], self.Lx[n]), np.int16)
+                # load and bin data
+                with temporary_pointer(read_file) as f:
+                    for frame, ixx in zip(frames, indices):
+                        if ixx!=self._index:
+                            f.seek(nbytesr * ixx)
+                        buff = f.read(nbytesr)
+                        data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                        frame[:] = np.reshape(data, (self.Ly[n], self.Lx[n]))
+                        if n==len(self.Ly)-1:
+                            self._index = ixx+1
+            else:
+                i0 = indices[0]
+                batch_size = len(indices)
+                if self._index != i0:
+                    read_file.seek(nbytesr * i0)
+                buff = read_file.read(nbytesr * batch_size)
+                data = np.frombuffer(buff, dtype=np.int16, offset=0)
+                frames = np.reshape(data, (-1, self.Ly[n], self.Lx[n]))
+                if n==len(self.Ly)-1:
+                    self._index = i0 + batch_size
+
+            if frames.size == 0:
+                return None
+            if n==0:
+                data_all = np.zeros((frames.shape[0], self.LY, self.LX), dtype=np.int16)
+            data_all[:, self.dy[n]:self.dy[n]+self.Ly[n], self.dx[n]:self.dx[n]+self.Lx[n]] = frames
+
+            
+        return data_all
 
     def iter_frames(self, batch_size: int = 1, dtype=np.float32):
         """

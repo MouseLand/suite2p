@@ -183,7 +183,7 @@ class ROI:
                          dy=dy, dx=dx, thres=2)
 
 
-def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
+def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=None,
               do_crop=True):
     """
     computes statistics of ROIs
@@ -191,9 +191,13 @@ def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
     ----------
     stat : dictionary
         'ypix', 'xpix', 'lam'
-    diameters : (dy, dx)
     
     FOV size : (Ly, Lx)
+
+    aspect : aspect ratio of recording
+
+    diameter : (dy, dx)    
+    
     Returns
     -------
     stat : dictionary
@@ -202,7 +206,15 @@ def roi_stats(stat, dy: int, dx: int, Ly: int, Lx: int, max_overlap=None,
     if 'med' not in stat[0]:
         for s in stat:
             s['med'] = median_pix(s['ypix'], s['xpix'])
-    
+
+    # approx size of masks for ROI aspect ratio estimation
+    d0 = 10 if diameter is None or (isinstance(diameter, int) and diameter==0) else diameter
+    if aspect is not None:
+        diameter = int(d0[0]) if isinstance(d0, (list, np.ndarray)) else int(d0)
+        dy, dx = int(aspect * diameter), diameter
+    else:
+        dy, dx = (int(d0), int(d0)) if not isinstance(d0, (list, np.ndarray)) else (int(d0[0]), int(d0[0]))
+        
     rois = [ROI(ypix=s['ypix'], xpix=s['xpix'], 
                 lam=s['lam'], med=s['med'], do_crop=do_crop) for s in stat]
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)

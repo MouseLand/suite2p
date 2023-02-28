@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a bug.
+title: "BUG: <Please write a comprehensive title after the 'BUG: ' prefix>"
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      Thank you for taking the time to file a bug report. Before creating a new
+      issue, please make sure to take a few minutes to check if this issue has been 
+      brought up before.
+    
+- type: textarea
+  attributes: 
+    label: "Describe the issue:"
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Reproduce the code example:"
+    description: >
+      A short code example that reproduces the problem/missing feature. It
+      should be self-contained, i.e., can be copy-pasted into the Python
+      interpreter or run as-is via `python myproblem.py`. Please include as much 
+      detail you can about the ops.npy that was used.
+    placeholder: |
+      import suite2p
+      << your code here >>
+    render: python
+  validations:
+    required: true
+  
+- type: textarea
+  attributes:
+    label: "Error message:"
+    description: >
+      Please include full error message, if any.
+    placeholder: |
+      << Full traceback starting from `Traceback: ...` >>
+    render: shell
+
+- type: textarea
+  attributes:
+    label: "Version information:"
+    description: >
+      Output from running `suite2p --version` in your command line.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Context for the issue:"
+    description: |
+      Please explain how this issue affects your work or why it should be prioritized.
+    placeholder: |
+      << your explanation here >>
+  validations:
+    required: false
+

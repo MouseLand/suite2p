@@ -166,21 +166,19 @@ def get_nd2_list(ops):
     """ make list of nd2 files to process
     if ops['look_one_level_down'], then all nd2's in all folders + one level down
     """
-    froot = ops['data_path']
     fold_list = ops['data_path']
     fsall = []
-    nfs = 0
-    first_tiffs = []
-    for k,fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops['look_one_level_down'],
+    first_nd2s = []
+    for _, fld in enumerate(fold_list):
+        fs, fnd2s = list_files(fld, ops['look_one_level_down'],
                                 ["*.nd2"])
         fsall.extend(fs)
-        first_tiffs.extend(list(ftiffs))
+        first_nd2s.extend(list(fnd2s))
     if len(fs)==0:
         print('Could not find any nd2 files')
         raise Exception('no nd2s')
     else:
-        ops['first_tiffs'] = np.array(first_tiffs).astype('bool')
+        ops['first_tiffs'] = np.array(first_nd2s).astype('bool')
         print('** Found %d nd2 files - converting to binary **'%(len(fsall)))
     return fsall, ops
 

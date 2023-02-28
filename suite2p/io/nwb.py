@@ -516,8 +516,7 @@ def save_nwb(save_folder):
         # BACKGROUNDS
         # (meanImg, Vcorr and max_proj are REQUIRED)
         bg_strs = ["meanImg", "Vcorr", "max_proj", "meanImg_chan2"]
-        nplanes = ops["nplanes"]
-        for iplane in range(nplanes):
+        for iplane, ops in enumerate(ops1):
             images = Images("Backgrounds_%d" % iplane)
             for bstr in bg_strs:
                 if bstr in ops:

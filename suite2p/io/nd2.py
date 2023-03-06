@@ -39,23 +39,18 @@ def nd2_to_binary(ops):
     for file_name in fs:
         # open nd2
         nd2_file = nd2.ND2File(file_name)
+        nd2_dims = {k: i for i, k in enumerate(nd2_file.sizes)}
 
-        get_dim_pos = {k: i for i, k in enumerate(nd2_file.sizes)}
-        known_fields = ['T', 'Z', 'C', 'Y', 'X']
-        fields_in_data = [x for x in known_fields if x in get_dim_pos]
-        assert len(fields_in_data) == len(
-            get_dim_pos
-        ), f'Unknown dimension is detected in {get_dim_pos}'
-        im = nd2_file.asarray().transpose([get_dim_pos[x] for x in fields_in_data])
+        valid_dimensions = set("TZCYX")
+        assert valid_dimensions == set(nd2_dims), f"Unknown or missing dimension in {nd2_dims}"
+
+        im = nd2_file.asarray().transpose([nd2_dims[x] for x in valid_dimensions])
 
         # expand dimensions to have [Time (T), Depth (Z), Channel (C), Height (Y), Width (X)].
-        if 'T' not in nd2_file.sizes:
-            im = np.expand_dims(im, 0)
-        if 'C' not in nd2_file.sizes:
-            im = np.expand_dims(im, -3)
-        if 'Z' not in nd2_file.sizes:
-            im = np.expand_dims(im, 1)
-
+        for i, dim in enumerate("TZC"):
+            if dim not in nd2_dims:
+                im = np.expand_dims(im, i)
+        
         nplanes = nd2_file.sizes['Z'] if 'Z' in nd2_file.sizes else 1
         nchannels = nd2_file.sizes['C'] if 'C' in nd2_file.sizes else 1
         nframes = nd2_file.sizes['T'] if 'T' in nd2_file.sizes else 1

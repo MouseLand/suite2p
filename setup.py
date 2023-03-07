@@ -14,7 +14,8 @@ install_deps = ['importlib-metadata',
         'h5py',
         'sbxreader',
         'scikit-learn',
-        'cellpose']
+        'cellpose',
+        'nd2']
 
 gui_deps = [
         "pyqt5",

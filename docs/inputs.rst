@@ -148,6 +148,14 @@ Scanbox binary files (*.sbx) work out of the box if you set ``ops['input_format'
 When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set ``ops['sbx_ndeadcols']``. Set this option to ``-1`` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
 Joao Couto (@jcouto) wrote the binary sbx parser.
 
+
+Nikon nd2 files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Suite2p reads nd2 files using the nd2 package and returns a numpy array representing the data with a minimum of two dimensions (Height, Width). The data can also have additional dimensions for Time, Depth, and Channel. If any dimensions are missing, Suite2p adds them in the order of Time, Depth, Channel, Height, and Width, resulting in a 5-dimensional array. To use Suite2p with nd2 files, simply set ``ops['input_format'] = "nd2".``
+
+
+
 BinaryRWFile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

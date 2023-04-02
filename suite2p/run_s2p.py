@@ -385,6 +385,8 @@ def run_s2p(ops={}, db={}, server={}):
             ops['input_format'] = 'nwb'
         elif ops.get('mesoscan'):
             ops['input_format'] = 'mesoscan'
+        elif ops.get('nd2'):
+            ops['input_format'] = 'nd2'
         elif HAS_HAUS:
             ops['input_format'] = 'haus'
         elif not 'input_format' in ops:
@@ -396,6 +398,7 @@ def run_s2p(ops={}, db={}, server={}):
             'h5': io.h5py_to_binary,
             'nwb': io.nwb_to_binary,
             'sbx': io.sbx_to_binary,
+            'nd2': io.nd2_to_binary,
             'mesoscan': io.mesoscan_to_binary,
             'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(ops.copy()),
             'bruker': io.ome_to_binary,

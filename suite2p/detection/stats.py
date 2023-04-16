@@ -59,8 +59,8 @@ class ROI:
             raise TypeError("xpix, ypix, and lam should all be the same size.")
 
     @classmethod
-    def from_stat_dict(cls, stat: Dict[str, Any]) -> ROI:
-        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'])
+    def from_stat_dict(cls, stat: Dict[str, Any], do_crop: bool = True) -> ROI:
+        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'], med=stat['med'], do_crop=do_crop)
 
     def to_array(self, Ly: int, Lx: int) -> np.ndarray:
         """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""

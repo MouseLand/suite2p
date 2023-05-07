@@ -7,7 +7,7 @@ def boundary(ypix,xpix):
     xpix = np.expand_dims(xpix.flatten(),axis=1)
     npix = ypix.shape[0]
     if npix>0:
-        msk = np.zeros((np.ptp(ypix)+6, np.ptp(xpix)+6), np.bool)
+        msk = np.zeros((np.ptp(ypix)+6, np.ptp(xpix)+6), bool)
         msk[ypix-ypix.min()+3, xpix-xpix.min()+3] = True
         msk = binary_dilation(msk)
         msk = binary_fill_holes(msk)

@@ -94,7 +94,7 @@ class RunWindow(QDialog):
         outkeys = ['preclassify','save_mat','save_NWB','combined','reg_tif','reg_tif_chan2','aspect','delete_bin','move_bin']
         regkeys = ['do_registration','align_by_chan','nimg_init','batch_size','smooth_sigma', 'smooth_sigma_time','maxregshift','th_badframes','keep_movie_raw','two_step_registration']
         nrkeys = [['nonrigid','block_size','snr_thresh','maxregshiftNR'], ['1Preg','spatial_hp_reg','pre_smooth','spatial_taper']]
-        cellkeys = ['roidetect', 'denoise', 'spatial_scale', 'threshold_scaling', 'max_overlap','max_iterations','high_pass','spatial_hp_detect']
+        cellkeys = ['roidetect', 'sparse_mode', 'denoise', 'spatial_scale', 'threshold_scaling', 'max_overlap','max_iterations','high_pass','spatial_hp_detect']
         anatkeys = ['anatomical_only', 'diameter', 'cellprob_threshold', 'flow_threshold', 'pretrained_model', 'spatial_hp_cp']
         neudeconvkeys = [['neuropil_extract', 'allow_overlap','inner_neuropil_radius','min_neuropil_pixels'], ['soma_crop','spikedetect','win_baseline','sig_baseline','neucoeff']]
         keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, anatkeys, neudeconvkeys]
@@ -136,6 +136,7 @@ class RunWindow(QDialog):
                     'whether to smooth before high-pass filtering before registration',
                     "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
                     'if 1, run cell (ROI) detection (either functional or anatomical if anatomical_only > 0)',
+                    'if 1, run sparse_mode cell detection',
                     'if 1, run PCA denoising on binned movie to improve cell detection',
                     'choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48',
                     'adjust the automatically determined threshold for finding ROIs by this scalar multiplier',

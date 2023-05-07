@@ -272,7 +272,7 @@ class MergeWindow(QDialog):
             self.ops[key] = self.editlist[k].get_text()
         goodind = []
         NN = len(parent.stat[parent.iscell])
-        notused = np.ones(NN, np.bool) # not in a suggested merge
+        notused = np.ones(NN, 'bool') # not in a suggested merge
         icell = np.where(parent.iscell)[0]
         for k in range(NN):
             if notused[k]:

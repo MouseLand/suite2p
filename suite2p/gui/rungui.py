@@ -234,7 +234,7 @@ class RunWindow(QDialog):
         qlabel.setToolTip('File format (selects which parser to use)')
         self.layout.addWidget(qlabel,1,0,1,1)
         self.inputformat = QComboBox()
-        [self.inputformat.addItem(f) for f in ['tif','bruker','sbx', 'h5','mesoscan','haus']]
+        [self.inputformat.addItem(f) for f in ['tif','bruker','sbx', 'h5','mesoscan','haus', 'nd2']]
         self.inputformat.currentTextChanged.connect(self.parse_inputformat)
         self.layout.addWidget(self.inputformat,2,0,1,1)
 

@@ -1,5 +1,6 @@
 import os
 import time
+import math
 
 import numpy as np
 import pyqtgraph as pg
@@ -7,6 +8,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget
 from matplotlib.colors import hsv_to_rgb
 from scipy import stats
+from scipy.ndimage import rotate
 
 from . import io
 from ..extraction import masks
@@ -22,14 +24,17 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, ops, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     '''
-
+    if 'aspect' in ops:
+        dy, dx = int(ops['aspect'] * 10), 10
+    else:
+        d0 = ops['diameter']
+        dy, dx = (d0, d0) if isinstance(d0, int) else d0
     t0 = time.time()
     # Concatenate stat so a good neuropil function can be formed
     stat_all = stat_manual.copy()
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
-    
-    stat_all = roi_stats(stat_all, ops['Ly'], ops['Lx'], aspect=ops.get('aspect', None), diameter=ops['diameter'])
+    stat_all = roi_stats(stat_all, dy, dx, ops['Ly'], ops['Lx'])
     cell_masks = [
         masks.create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'], allow_overlap=ops['allow_overlap']) for stat in stat_all
     ]
@@ -45,9 +50,9 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     )
     print('Masks made in %0.2f sec.' % (time.time() - t0))
 
-    F, Fneu, F_chan2, Fneu_chan2 = extract_traces_from_masks(ops, 
-                                                             manual_cell_masks, 
-                                                             manual_neuropil_masks)
+    F, Fneu, F_chan2, Fneu_chan2, ops = extract_traces_from_masks(ops, 
+                                                                  manual_cell_masks, 
+                                                                  manual_neuropil_masks)
 
     # compute activity statistics for classifier
     npix = np.array([stat_orig[n]['npix'] for n in range(len(stat_orig))]).astype('float32')
@@ -499,6 +504,7 @@ class sROI():
         self.ROI.handlePen = roipen
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
         self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
+        self.ROI.addRotateHandle([0.5, 1], [0.5, 0.5])
         self.ROI.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
         self.med = [imy, imx]
         parent.p0.addItem(self.ROI)
@@ -514,29 +520,41 @@ class sROI():
         parent.win.show()
         parent.show()
 
+    def rotate_ROI(self, parent, ellipse, xrange, yrange, posx, posy):
+        #Rotates ROI depending on Rotatehandle degree
+        ellipse = rotate(ellipse, angle=math.floor(self.ROI.angle()), order=0)
+        ellipse = np.flip(ellipse, axis=0)
+        xrange = (np.arange(-1 * int(ellipse.shape[1] - 1), 1) + int(posx)).astype(np.int32)
+        yrange = (np.arange(-1 * int(ellipse.shape[0] - 1), 1) + int(posy)).astype(np.int32)
+        yrange += int(np.floor(ellipse.shape[0] / 2)) + 1
+        return ellipse, xrange, yrange
+
     def position(self, parent):
         parent.iROI = self.iROI
         pos0 = self.ROI.getSceneHandlePositions()
+        sizex, sizey = self.ROI.size()
         pos = parent.p0.mapSceneToView(pos0[0][1])
+        br = self.ROI.boundingRect()
         posy = pos.y()
         posx = pos.x()
-        sizex, sizey = self.ROI.size()
+
         xrange = (np.arange(-1 * int(sizex), 1) + int(posx)).astype(np.int32)
         yrange = (np.arange(-1 * int(sizey), 1) + int(posy)).astype(np.int32)
         yrange += int(np.floor(sizey / 2)) + 1
         # what is ellipse circling?
-        br = self.ROI.boundingRect()
         ellipse = np.zeros((yrange.size, xrange.size), np.bool)
         x, y = np.meshgrid(np.arange(0, xrange.size, 1), np.arange(0, yrange.size, 1))
         ellipse = ((y - br.center().y()) ** 2 / (br.height() / 2) ** 2 +
                    (x - br.center().x()) ** 2 / (br.width() / 2) ** 2) <= 1
-
+        #checks if rotation is necessary
+        if self.ROI.angle() not in (0, 180, -180):
+            ellipse, xrange, yrange = self.rotate_ROI(parent, ellipse, xrange, yrange, posx, posy)
+        #ensures that ROI is not placed outside of movie coordinates
         ellipse = ellipse[:, np.logical_and(xrange >= 0, xrange < parent.Lx)]
         xrange = xrange[np.logical_and(xrange >= 0, xrange < parent.Lx)]
         ellipse = ellipse[np.logical_and(yrange >= 0, yrange < parent.Ly), :]
         yrange = yrange[np.logical_and(yrange >= 0, yrange < parent.Ly)]
 
-        # ellipse = lambda x,y: (((x+0.5)/(w/2.)-1)**2+ ((y+0.5)/(h/2.)-1)**2)**0.5 < 1, (w, h))
         self.ellipse = ellipse
         self.xrange = xrange
         self.yrange = yrange

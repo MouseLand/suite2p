@@ -7,8 +7,8 @@ install_deps = ['importlib-metadata',
         'scanimage-tiff-reader>=1.4.1',
         'torch==1.13.1',
         'paramiko',
-        'numpy>=1.16',
-        'numba>=0.43.1',
+        'numpy>=1.24.3',
+        'numba>=0.57.0',
         'matplotlib',
         'scipy>=1.9.0',
         'h5py',
@@ -26,7 +26,7 @@ gui_deps = [
       ]
 
 nwb_deps = [
-        "pynwb",
+        "pynwb>=2.3.2",
       ]
 test_deps = [
       'pytest',

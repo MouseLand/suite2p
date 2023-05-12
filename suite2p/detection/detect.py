@@ -35,11 +35,14 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
 	batch_size = min(good_frames.sum(), 500)
 	Lyc = yrange[1] - yrange[0]
 	Lxc = xrange[1] - xrange[0]
-	# Need to adjust binned movie size after calculating bad frames
-	num_good_frames = good_frames.sum()
-	mov = np.zeros((num_good_frames//bin_size, Lyc, Lxc), np.float32)
-	ik = 0
+
+	# Number of binned frames is rounded down when binning frames 
+	num_binned_frames = n_frames//bin_size
+	mov = np.zeros((num_binned_frames, Lyc, Lxc), np.float32)
+	curr_bin_number = 0
 	t0 = time.time()
+
+	# Iterate over n_frames to maintain binning over TIME
 	for k in np.arange(0, n_frames, batch_size):
 		data = f_reg[k : min(k + batch_size, n_frames)]
 
@@ -54,15 +57,25 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
 
 		# bin in time
 		if data.shape[0] > bin_size:
+			# Downsample by binning via reshaping and taking mean of each bin 
+			# only if current batch size exceeds or matches bin_size 
 			n_d = data.shape[0]
 			data = data[:(n_d // bin_size) * bin_size]
 			data = data.reshape(-1, bin_size, Lyc, Lxc).astype(np.float32).mean(axis=1)
-		n_bins = data.shape[0]
-		mov[ik : ik + n_bins] = data
-		ik += n_bins
+		else:
+			# Current batch size is below bin_size (could have many bad frames in this batch)
+			# Downsample taking the mean of batch to get a single bin
+			data = data.mean(axis=0)[np.newaxis,:,:]
+		# Only fill in binned data if not exceeding the number of bins mov has
+		if mov.shape[0] > curr_bin_number: 
+			# Fill in binned data
+			n_bins = data.shape[0]
+			mov[curr_bin_number : curr_bin_number + n_bins] = data
+			curr_bin_number += n_bins
 
 	print('Binned movie of size [%d,%d,%d] created in %0.2f sec.' % (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 	return mov
+
 
 
 def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, 

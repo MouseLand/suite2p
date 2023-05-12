@@ -425,7 +425,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         'ihop': ihop,
         'Vsplit': v_split,
         'Vcorr': v_corr,
-        'Vmap': v_map,
+        'Vmap': np.asanyarray(v_map, dtype='object'), # needed so that scipy.io.savemat doesn't fail in runpipeline with latest numpy (v1.24.3). dtype='object' is needed to have numpy array with elements having diff sizes
         'spatscale_pix': spatscale_pix,
     }
 

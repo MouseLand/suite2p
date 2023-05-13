@@ -108,7 +108,8 @@ def get_h5_list(ops):
     nfs = 0
     first_tiffs = []
     for k, fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.h5", "*.hdf5"])
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], 
+                                ["*.h5", "*.hdf5", "*.mesc"])
         fsall.extend(fs)
         first_tiffs.extend(list(ftiffs))
     if len(fs) == 0:

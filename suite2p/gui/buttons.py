@@ -99,9 +99,9 @@ class QuadButton(QPushButton):
                 parent.quadbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         self.xrange = np.array([self.xpos - .15, self.xpos + 1.15
-                                ]) * parent.ops["Lx"] / 3
+                               ]) * parent.ops["Lx"] / 3
         self.yrange = np.array([self.ypos - .15, self.ypos + 1.15
-                                ]) * parent.ops["Ly"] / 3
+                               ]) * parent.ops["Ly"] / 3
         # change the zoom
         parent.p1.setXRange(self.xrange[0], self.xrange[1])
         parent.p1.setYRange(self.yrange[0], self.yrange[1])
@@ -188,13 +188,11 @@ class TopButton(QPushButton):
             if parent.ops_plot["color"] == 0:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(False)
-                    parent.topbtns.button(b).setStyleSheet(
-                        parent.styleInactive)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
             else:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(True)
-                    parent.topbtns.button(b).setStyleSheet(
-                        parent.styleUnpressed)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
         else:
             for b in range(3):
                 parent.topbtns.button(b).setEnabled(False)

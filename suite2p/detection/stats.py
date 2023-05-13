@@ -53,8 +53,8 @@ class ROI:
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(
-        default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
+    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()),
+                              repr=False)
 
     def __post_init__(self):
         """Validate inputs."""
@@ -73,8 +73,8 @@ class ROI:
         return arr
 
     @classmethod
-    def stats_dicts_to_3d_array(cls, stats: Sequence[Dict[str, Any]], Ly: int,
-                                Lx: int, label_id: bool = False):
+    def stats_dicts_to_3d_array(cls, stats: Sequence[Dict[str, Any]], Ly: int, Lx: int,
+                                label_id: bool = False):
         """
         Outputs a (roi x Ly x Lx) float array from a sequence of stat dicts.
         Convenience function that repeatedly calls ROI.from_stat_dict() and ROI.to_array() for all rois.
@@ -121,8 +121,7 @@ class ROI:
     @property
     def soma_crop(self) -> np.ndarray:
         if self.do_crop and self.ypix.size > 10:
-            dists = ((self.ypix - self.med[0])**2 +
-                     (self.xpix - self.med[1])**2)**0.5
+            dists = ((self.ypix - self.med[0])**2 + (self.xpix - self.med[1])**2)**0.5
             radii = np.arange(0, dists.max(), 1)
             area = np.zeros_like(radii)
             for k, radius in enumerate(radii):
@@ -133,8 +132,7 @@ class ROI:
             if len(np.nonzero(darea > threshold)[0]) > 0:
                 ida = np.nonzero(darea > threshold)[0][0]
                 if len(np.nonzero(darea[ida:] < threshold)[0]):
-                    radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] +
-                                   ida]
+                    radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
             crop = dists < radius
             if crop.sum() == 0:
                 crop = np.ones(self.ypix.size, "bool")
@@ -144,8 +142,7 @@ class ROI:
 
     @property
     def mean_r_squared(self) -> float:
-        return mean_r_squared(y=self.ypix[self.soma_crop],
-                              x=self.xpix[self.soma_crop])
+        return mean_r_squared(y=self.ypix[self.soma_crop], x=self.xpix[self.soma_crop])
         #return mean_r_squared(y=self.ypix[self.lam > self.lam.max()/5], x=self.xpix[self.lam > self.lam.max()/5])
 
     @property
@@ -160,8 +157,8 @@ class ROI:
     @property
     def solidity(self) -> float:
         if self.npix_soma > 10:
-            points = np.stack(
-                (self.ypix[self.soma_crop], self.xpix[self.soma_crop]), axis=1)
+            points = np.stack((self.ypix[self.soma_crop], self.xpix[self.soma_crop]),
+                              axis=1)
             try:
                 hull = ConvexHull(points)
                 volume = hull.volume
@@ -175,8 +172,7 @@ class ROI:
     def get_mean_r_squared_normed_all(cls, rois: Sequence[ROI],
                                       first_n: int = 100) -> np.ndarray:
         return norm_by_average([roi.mean_r_squared for roi in rois],
-                               estimator=np.nanmedian, offset=1e-10,
-                               first_n=first_n)
+                               estimator=np.nanmedian, offset=1e-10, first_n=first_n)
 
     @property
     def npix_soma(self) -> int:
@@ -196,8 +192,8 @@ class ROI:
                          self.lam[self.soma_crop], dy=dy, dx=dx, thres=2)
 
 
-def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
-              max_overlap=None, do_crop=True):
+def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=None,
+              do_crop=True):
     """
     computes statistics of ROIs
     Parameters
@@ -221,20 +217,19 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
             s["med"] = median_pix(s["ypix"], s["xpix"])
 
     # approx size of masks for ROI aspect ratio estimation
-    d0 = 10 if diameter is None or (isinstance(diameter, int)
-                                    and diameter == 0) else diameter
+    d0 = 10 if diameter is None or (isinstance(diameter, int) and
+                                    diameter == 0) else diameter
     if aspect is not None:
-        diameter = int(d0[0]) if isinstance(d0,
-                                            (list, np.ndarray)) else int(d0)
+        diameter = int(d0[0]) if isinstance(d0, (list, np.ndarray)) else int(d0)
         dy, dx = int(aspect * diameter), diameter
     else:
         dy, dx = (int(d0),
-                  int(d0)) if not isinstance(d0, (list, np.ndarray)) else (int(
-                      d0[0]), int(d0[0]))
+                  int(d0)) if not isinstance(d0, (list, np.ndarray)) else (int(d0[0]),
+                                                                           int(d0[0]))
 
     rois = [
-        ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"],
-            do_crop=do_crop) for s in stat
+        ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"], do_crop=do_crop)
+        for s in stat
     ]
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
     for roi, s in zip(rois, stat):
@@ -251,14 +246,14 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
         s["aspect_ratio"] = ellipse.aspect_ratio
 
     mrs_normeds = norm_by_average(values=np.array([s["mrs"] for s in stat]),
-                                  estimator=np.nanmedian, offset=1e-10,
-                                  first_n=100)
+                                  estimator=np.nanmedian, offset=1e-10, first_n=100)
     npix_normeds = norm_by_average(values=np.array([s["npix"] for s in stat]),
                                    first_n=100)
-    npix_soma_normeds = norm_by_average(
-        values=np.array([s["npix_soma"] for s in stat]), first_n=100)
-    for s, mrs_normed, npix_normed, npix_soma_normed in zip(
-            stat, mrs_normeds, npix_normeds, npix_soma_normeds):
+    npix_soma_normeds = norm_by_average(values=np.array([s["npix_soma"] for s in stat]),
+                                        first_n=100)
+    for s, mrs_normed, npix_normed, npix_soma_normed in zip(stat, mrs_normeds,
+                                                            npix_normeds,
+                                                            npix_soma_normeds):
         s["mrs"] = mrs_normed
         s["npix_norm_no_crop"] = npix_normed
         s["npix_norm"] = npix_soma_normed
@@ -303,7 +298,7 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
 
     # normalize pixel weights
     lam = lam0.copy()
-    ix = lam > 0    #lam.max()/5
+    ix = lam > 0  #lam.max()/5
     y, x, lam = y[ix], x[ix], lam[ix]
     lam /= lam.sum()
 
@@ -322,8 +317,7 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     p = np.stack((np.cos(theta), np.sin(theta)))
     ellipse = (p.T * radii) @ evec.T + mu
     radii = np.sort(radii)[::-1]
-    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse, dy=dy,
-                       dx=dx)
+    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse, dy=dy, dx=dx)
 
 
 def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
@@ -340,7 +334,7 @@ def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray,
     keep_rois = []
     for ypix, xpix in reversed(
             list(zip(ypixs, xpixs))
-    ):    # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
+    ):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
         keep_roi = np.mean(n_overlaps[ypix, xpix] > 1) <= max_overlap
         keep_rois.append(keep_roi)
         if not keep_roi:
@@ -351,5 +345,4 @@ def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray,
 def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100,
                     offset: float = 0.) -> np.ndarray:
     """Returns array divided by the (average of the "first_n" values + offset), calculating the average with "estimator"."""
-    return np.array(values,
-                    dtype="float32") / (estimator(values[:first_n]) + offset)
+    return np.array(values, dtype="float32") / (estimator(values[:first_n]) + offset)

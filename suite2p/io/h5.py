@@ -28,8 +28,7 @@ def h5py_to_binary(ops):
     nchannels = ops1[0]["nchannels"]
 
     # open all binary files for writing
-    ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(
-        ops1, True)
+    ops1, h5list, reg_file, reg_file_chan2 = find_files_open_binaries(ops1, True)
     for ops in ops1:
         if not ops.get("data_path"):
             ops["data_path"] = [os.path.dirname(ops["h5py"])]
@@ -59,15 +58,14 @@ def h5py_to_binary(ops):
                 ik = 0
                 while 1:
                     if hdims == 3:
-                        irange = np.arange(ik, min(ik + nbatch, nframes_all),
-                                           1)
+                        irange = np.arange(ik, min(ik + nbatch, nframes_all), 1)
                         if irange.size == 0:
                             break
                         im = f[key][irange, :, :]
                     else:
                         irange = np.arange(
-                            ik / ncp,
-                            min(ik / ncp + nbatch / ncp, nframes_all / ncp), 1)
+                            ik / ncp, min(ik / ncp + nbatch / ncp, nframes_all / ncp),
+                            1)
                         if irange.size == 0:
                             break
                         im = f[key][irange, ...]
@@ -80,23 +78,22 @@ def h5py_to_binary(ops):
                         im = im / 2
                     for j in range(0, nplanes):
                         if iall == 0:
-                            ops1[j]["meanImg"] = np.zeros(
-                                (im.shape[1], im.shape[2]), np.float32)
+                            ops1[j]["meanImg"] = np.zeros((im.shape[1], im.shape[2]),
+                                                          np.float32)
                             if nchannels > 1:
                                 ops1[j]["meanImg_chan2"] = np.zeros(
                                     (im.shape[1], im.shape[2]), np.float32)
                             ops1[j]["nframes"] = 0
                         i0 = nchannels * ((j) % nplanes)
-                        im2write = im[np.arange(int(i0) + nfunc, nframes, ncp
-                                                ), :, :].astype(np.int16)
+                        im2write = im[np.arange(int(i0) +
+                                                nfunc, nframes, ncp), :, :].astype(
+                                                    np.int16)
                         reg_file[j].write(bytearray(im2write))
-                        ops1[j]["meanImg"] += im2write.astype(
-                            np.float32).sum(axis=0)
+                        ops1[j]["meanImg"] += im2write.astype(np.float32).sum(axis=0)
                         if nchannels > 1:
-                            im2write = im[
-                                np.arange(int(i0) + 1 -
-                                          nfunc, nframes, ncp), :, :].astype(
-                                              np.int16)
+                            im2write = im[np.arange(int(i0) + 1 -
+                                                    nfunc, nframes, ncp), :, :].astype(
+                                                        np.int16)
                             reg_file_chan2[j].write(bytearray(im2write))
                             ops1[j]["meanImg_chan2"] += im2write.astype(
                                 np.float32).sum(axis=0)

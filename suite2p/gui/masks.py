@@ -14,14 +14,13 @@ def make_buttons(parent, b0):
     """ color buttons at row b0 """
     # color buttons
     parent.color_names = [
-        "A: random", "S: skew", "D: compact", "F: footprint",
-        "G: aspect_ratio", "H: chan2_prob", "J: classifier, cell prob=",
-        "K: correlations, bin=", "L: corr with 1D var, bin=^^^",
-        "M: rastermap / custom"
+        "A: random", "S: skew", "D: compact", "F: footprint", "G: aspect_ratio",
+        "H: chan2_prob", "J: classifier, cell prob=", "K: correlations, bin=",
+        "L: corr with 1D var, bin=^^^", "M: rastermap / custom"
     ]
     parent.colorbtns = QButtonGroup(parent)
     clabel = QLabel(parent)
-    clabel.setText("<font color="white">Colors</font>")
+    clabel.setText("<font color='white'>Colors</font>")
     clabel.setFont(parent.boldfont)
     parent.l0.addWidget(clabel, b0, 0, 1, 1)
 
@@ -65,8 +64,7 @@ def make_buttons(parent, b0):
     parent.probedit.setText("0.5")
     parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
-    parent.probedit.returnPressed.connect(
-        lambda: suite2p.gui.merge.apply(parent))
+    parent.probedit.returnPressed.connect(lambda: suite2p.gui.merge.apply(parent))
     parent.l0.addWidget(parent.probedit, nv + b - 3, 1, 1, 1)
 
     parent.binedit = QLineEdit(parent)
@@ -85,12 +83,11 @@ def cmap_change(parent):
     index = parent.CmapChooser.currentIndex()
     parent.ops_plot["colormap"] = parent.CmapChooser.itemText(index)
     if parent.loaded:
-        print("colormap changed to %s, loading..." %
-              parent.ops_plot["colormap"])
+        print("colormap changed to %s, loading..." % parent.ops_plot["colormap"])
         istat = parent.colors["istat"]
         for c in range(1, istat.shape[0]):
-            parent.colors["cols"][c] = istat_transform(
-                istat[c], parent.ops_plot["colormap"])
+            parent.colors["cols"][c] = istat_transform(istat[c],
+                                                       parent.ops_plot["colormap"])
             rgb_masks(parent, parent.colors["cols"][c], c)
         parent.colormat = draw_colorbar(parent.ops_plot["colormap"])
         parent.update_plot()
@@ -98,8 +95,7 @@ def cmap_change(parent):
 
 def hsv2rgb(cols):
     cols = cols[:, np.newaxis]
-    cols = np.concatenate((cols, np.ones_like(cols), np.ones_like(cols)),
-                          axis=-1)
+    cols = np.concatenate((cols, np.ones_like(cols), np.ones_like(cols)), axis=-1)
     cols = (255 * hsv_to_rgb(cols)).astype(np.uint8)
     return cols
 
@@ -107,12 +103,10 @@ def hsv2rgb(cols):
 def make_colors(parent):
     parent.colors["colorbar"] = []
     ncells = len(parent.stat)
-    parent.colors["cols"] = np.zeros((len(parent.color_names), ncells, 3),
-                                     np.uint8)
-    parent.colors["istat"] = np.zeros((len(parent.color_names), ncells),
-                                      np.float32)
+    parent.colors["cols"] = np.zeros((len(parent.color_names), ncells, 3), np.uint8)
+    parent.colors["istat"] = np.zeros((len(parent.color_names), ncells), np.float32)
     np.random.seed(seed=0)
-    allcols = np.random.random((ncells, ))
+    allcols = np.random.random((ncells,))
     if "meanImg_chan2" in parent.ops:
         allcols = allcols / 1.4
         allcols = allcols + 0.1
@@ -253,17 +247,15 @@ def init_masks(parent):
             lam = lam / lam.sum()
             i = int(1 - iscell[n])
             # add cell on top
-            parent.rois["iROI"][i, 2, ypix,
-                                xpix] = parent.rois["iROI"][i, 1, ypix, xpix]
-            parent.rois["iROI"][i, 1, ypix,
-                                xpix] = parent.rois["iROI"][i, 0, ypix, xpix]
+            parent.rois["iROI"][i, 2, ypix, xpix] = parent.rois["iROI"][i, 1, ypix,
+                                                                        xpix]
+            parent.rois["iROI"][i, 1, ypix, xpix] = parent.rois["iROI"][i, 0, ypix,
+                                                                        xpix]
             parent.rois["iROI"][i, 0, ypix, xpix] = n
 
             # add weighting to all layers
-            parent.rois["Lam"][i, 2, ypix,
-                               xpix] = parent.rois["Lam"][i, 1, ypix, xpix]
-            parent.rois["Lam"][i, 1, ypix,
-                               xpix] = parent.rois["Lam"][i, 0, ypix, xpix]
+            parent.rois["Lam"][i, 2, ypix, xpix] = parent.rois["Lam"][i, 1, ypix, xpix]
+            parent.rois["Lam"][i, 1, ypix, xpix] = parent.rois["Lam"][i, 0, ypix, xpix]
             parent.rois["Lam"][i, 0, ypix, xpix] = lam
             parent.rois["Sroi"][i, ypix, xpix] = 1
             LamAll[ypix, xpix] = lam
@@ -280,9 +272,7 @@ def init_masks(parent):
 
     parent.rois["LamMean"] = LamAll[LamAll > 1e-10].mean()
     parent.rois["LamNorm"] = np.maximum(
-        0,
-        np.minimum(1,
-                   0.75 * parent.rois["Lam"][:, 0] / parent.rois["LamMean"]))
+        0, np.minimum(1, 0.75 * parent.rois["Lam"][:, 0] / parent.rois["LamMean"]))
     parent.colors["RGB"] = np.zeros((2, cols.shape[0], Ly, Lx, 4), np.uint8)
 
     for c in range(0, cols.shape[0]):
@@ -299,7 +289,7 @@ def rgb_masks(parent, col, c):
         parent.colors["RGB"][i, c, :, :, :3] = H
 
 
-def draw_masks(parent):    #ops, stat, ops_plot, iscell, ichosen):
+def draw_masks(parent):  #ops, stat, ops_plot, iscell, ichosen):
     """
 
     creates RGB masks using stat and puts them in M0 or M1 depending on
@@ -324,8 +314,7 @@ def draw_masks(parent):    #ops, stat, ops_plot, iscell, ichosen):
     # reset transparency
     for i in range(2):
         parent.colors["RGB"][i, color, :, :,
-                             3] = (opacity[view == 0] *
-                                   parent.rois["Sroi"][i] *
+                             3] = (opacity[view == 0] * parent.rois["Sroi"][i] *
                                    parent.rois["LamNorm"][i]).astype(np.uint8)
     M = [
         np.array(parent.colors["RGB"][0, color]),
@@ -336,8 +325,7 @@ def draw_masks(parent):    #ops, stat, ops_plot, iscell, ichosen):
         for n in parent.imerge:
             ypix = parent.stat[n]["ypix"].flatten()
             xpix = parent.stat[n]["xpix"].flatten()
-            v = (parent.rois["iROI"][wplot][:, ypix, xpix]
-                 > -1).sum(axis=0) - 1
+            v = (parent.rois["iROI"][wplot][:, ypix, xpix] > -1).sum(axis=0) - 1
             v = 1 - v / 3
             M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, v)
     else:
@@ -355,14 +343,13 @@ def draw_masks(parent):    #ops, stat, ops_plot, iscell, ichosen):
 
 
 def make_chosen_ROI(M0, ypix, xpix, v):
-    M0[ypix, xpix, :] = np.tile((255 * v[:, np.newaxis]).astype(np.uint8),
-                                (1, 4))
+    M0[ypix, xpix, :] = np.tile((255 * v[:, np.newaxis]).astype(np.uint8), (1, 4))
     return M0
 
 
 def make_chosen_circle(M0, ycirc, xcirc, col, sat):
     ncirc = ycirc.size
-    M0[ycirc, xcirc, :3] = col    #[np.newaxis,:]
+    M0[ycirc, xcirc, :3] = col  #[np.newaxis,:]
     M0[ycirc, xcirc, 3] = 255
     return M0
 
@@ -421,8 +408,7 @@ def beh_masks(parent):
                     (nb, parent.bin)).mean(axis=1)
     sn -= sn.mean()
     snstd = (sn**2).mean()**0.5
-    cc = np.dot(parent.Fbin,
-                sn.T) / parent.Fbin.shape[-1] / (parent.Fstd * snstd)
+    cc = np.dot(parent.Fbin, sn.T) / parent.Fbin.shape[-1] / (parent.Fstd * snstd)
     cc[n] = cc.mean()
     istat = cc
     inactive = False
@@ -444,8 +430,7 @@ def corr_masks(parent):
     n = np.array(parent.imerge)
     sn = parent.Fbin[n].mean(axis=-2).squeeze()
     snstd = (sn**2).mean()**0.5
-    cc = np.dot(parent.Fbin,
-                sn.T) / parent.Fbin.shape[-1] / (parent.Fstd * snstd)
+    cc = np.dot(parent.Fbin, sn.T) / parent.Fbin.shape[-1] / (parent.Fstd * snstd)
     cc[n] = cc.mean()
     istat = cc
     parent.colors["colorbar"][c] = [
@@ -501,16 +486,12 @@ def remove_roi(parent, n, i0):
     ypix = parent.stat[n]["ypix"]
     xpix = parent.stat[n]["xpix"]
     # cell indices
-    ipix = np.array(
-        (parent.rois["iROI"][i0, 0, :, :] == n).nonzero()).astype(np.int32)
-    ipix1 = np.array(
-        (parent.rois["iROI"][i0, 1, :, :] == n).nonzero()).astype(np.int32)
-    ipix2 = np.array(
-        (parent.rois["iROI"][i0, 2, :, :] == n).nonzero()).astype(np.int32)
+    ipix = np.array((parent.rois["iROI"][i0, 0, :, :] == n).nonzero()).astype(np.int32)
+    ipix1 = np.array((parent.rois["iROI"][i0, 1, :, :] == n).nonzero()).astype(np.int32)
+    ipix2 = np.array((parent.rois["iROI"][i0, 2, :, :] == n).nonzero()).astype(np.int32)
     # get rid of cell and push up overlaps on main views
     parent.rois["Lam"][i0, 0, ipix[0, :],
-                       ipix[1, :]] = parent.rois["Lam"][i0, 1, ipix[0, :],
-                                                        ipix[1, :]]
+                       ipix[1, :]] = parent.rois["Lam"][i0, 1, ipix[0, :], ipix[1, :]]
     parent.rois["Lam"][i0, 1, ipix[0, :], ipix[1, :]] = 0
     parent.rois["Lam"][i0, 1, ipix1[0, :],
                        ipix1[1, :]] = parent.rois["Lam"][i0, 2, ipix1[0, :],
@@ -518,8 +499,7 @@ def remove_roi(parent, n, i0):
     parent.rois["Lam"][i0, 2, ipix1[0, :], ipix1[1, :]] = 0
     parent.rois["Lam"][i0, 2, ipix2[0, :], ipix2[1, :]] = 0
     parent.rois["iROI"][i0, 0, ipix[0, :],
-                        ipix[1, :]] = parent.rois["iROI"][i0, 1, ipix[0, :],
-                                                          ipix[1, :]]
+                        ipix[1, :]] = parent.rois["iROI"][i0, 1, ipix[0, :], ipix[1, :]]
     parent.rois["iROI"][i0, 1, ipix[0, :], ipix[1, :]] = -1
     parent.rois["iROI"][i0, 1, ipix1[0, :],
                         ipix1[1, :]] = parent.rois["iROI"][i0, 2, ipix1[0, :],
@@ -528,14 +508,12 @@ def remove_roi(parent, n, i0):
     parent.rois["iROI"][i0, 2, ipix2[0, :], ipix2[1, :]] = -1
 
     # remove +/- 1 ROI exists
-    parent.rois["Sroi"][i0, ypix, xpix] = parent.rois["iROI"][i0, 0, ypix,
-                                                              xpix] > 0
+    parent.rois["Sroi"][i0, ypix, xpix] = parent.rois["iROI"][i0, 0, ypix, xpix] > 0
 
     parent.rois["LamNorm"][i0, ypix, xpix] = np.maximum(
         0,
         np.minimum(
-            1, 0.75 * parent.rois["Lam"][i0, 0, ypix, xpix] /
-            parent.rois["LamMean"]))
+            1, 0.75 * parent.rois["Lam"][i0, 0, ypix, xpix] / parent.rois["LamMean"]))
 
 
 def add_roi(parent, n, i):
@@ -545,22 +523,19 @@ def add_roi(parent, n, i):
     ypix = parent.stat[n]["ypix"]
     xpix = parent.stat[n]["xpix"]
     lam = parent.stat[n]["lam"]
-    parent.rois["iROI"][i, 2, ypix, xpix] = parent.rois["iROI"][i, 1, ypix,
-                                                                xpix]
-    parent.rois["iROI"][i, 1, ypix, xpix] = parent.rois["iROI"][i, 0, ypix,
-                                                                xpix]
+    parent.rois["iROI"][i, 2, ypix, xpix] = parent.rois["iROI"][i, 1, ypix, xpix]
+    parent.rois["iROI"][i, 1, ypix, xpix] = parent.rois["iROI"][i, 0, ypix, xpix]
     parent.rois["iROI"][i, 0, ypix, xpix] = n
     parent.rois["Lam"][i, 2, ypix, xpix] = parent.rois["Lam"][i, 1, ypix, xpix]
     parent.rois["Lam"][i, 1, ypix, xpix] = parent.rois["Lam"][i, 0, ypix, xpix]
-    parent.rois["Lam"][i, 0, ypix, xpix] = lam    #/ lam.sum()
+    parent.rois["Lam"][i, 0, ypix, xpix] = lam  #/ lam.sum()
 
     # set whether or not an ROI + weighting of pixels
     parent.rois["Sroi"][i, ypix, xpix] = 1
     parent.rois["LamNorm"][:, ypix, xpix] = np.maximum(
         0,
-        np.minimum(
-            1, 0.75 * parent.rois["Lam"][:, 0, ypix, xpix] /
-            parent.rois["LamMean"]))
+        np.minimum(1, 0.75 * parent.rois["Lam"][:, 0, ypix, xpix] /
+                   parent.rois["LamMean"]))
 
 
 def redraw_masks(parent, ypix, xpix):
@@ -658,13 +633,11 @@ class ColorButton(QPushButton):
             if bid == 0:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(False)
-                    parent.topbtns.button(b).setStyleSheet(
-                        parent.styleInactive)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
             else:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(True)
-                    parent.topbtns.button(b).setStyleSheet(
-                        parent.styleUnpressed)
+                    parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
         else:
             for b in range(3):
                 parent.topbtns.button(b).setEnabled(False)

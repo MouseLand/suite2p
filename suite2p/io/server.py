@@ -36,8 +36,8 @@ def ssh_connect(host, username, password, verbose=True):
     return ssh
 
 
-def send_jobs(save_folder, host=None, username=None, password=None,
-              server_root=None, local_root=None, n_cores=8):
+def send_jobs(save_folder, host=None, username=None, password=None, server_root=None,
+              local_root=None, n_cores=8):
     """ send each plane to compute on server separately
 
     add your own host, username, password and path on server 
@@ -46,8 +46,7 @@ def send_jobs(save_folder, host=None, username=None, password=None,
     """
 
     if host is None:
-        raise Exception(
-            "No server specified, please edit suite2p/io/server.py")
+        raise Exception("No server specified, please edit suite2p/io/server.py")
 
     # server_root is different from where you created the binaries, which is local_root
     nparts = len(Path(local_root).parts)
@@ -110,8 +109,7 @@ def send_jobs(save_folder, host=None, username=None, password=None,
             if copy:
                 ftp_client.put(fast_disk_orig / "data_raw.bin", op["raw_file"])
             if "raw_file_chan2" in op:
-                op["raw_file_chan2"] = unix_path(save_path /
-                                                 "data_chan2_raw.bin")
+                op["raw_file_chan2"] = unix_path(save_path / "data_chan2_raw.bin")
                 if copy:
                     ftp_client.put(fast_disk_orig / "data_raw_chan2.bin",
                                    op["raw_file_chan2"])

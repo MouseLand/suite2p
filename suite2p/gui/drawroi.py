@@ -29,13 +29,11 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
 
-    stat_all = roi_stats(stat_all, ops["Ly"], ops["Lx"],
-                         aspect=ops.get("aspect",
-                                        None), diameter=ops["diameter"])
+    stat_all = roi_stats(stat_all, ops["Ly"], ops["Lx"], aspect=ops.get("aspect", None),
+                         diameter=ops["diameter"])
     cell_masks = [
         masks.create_cell_mask(stat, Ly=ops["Ly"], Lx=ops["Lx"],
-                               allow_overlap=ops["allow_overlap"])
-        for stat in stat_all
+                               allow_overlap=ops["allow_overlap"]) for stat in stat_all
     ]
     cell_pix = masks.create_cell_pix(stat_all, Ly=ops["Ly"], Lx=ops["Lx"])
     manual_roi_stats = stat_all[:len(stat_manual)]
@@ -49,19 +47,18 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     )
     print("Masks made in %0.2f sec." % (time.time() - t0))
 
-    F, Fneu, F_chan2, Fneu_chan2 = extract_traces_from_masks(
-        ops, manual_cell_masks, manual_neuropil_masks)
+    F, Fneu, F_chan2, Fneu_chan2 = extract_traces_from_masks(ops, manual_cell_masks,
+                                                             manual_neuropil_masks)
 
     # compute activity statistics for classifier
-    npix = np.array([stat_orig[n]["npix"]
-                     for n in range(len(stat_orig))]).astype("float32")
+    npix = np.array([stat_orig[n]["npix"] for n in range(len(stat_orig))
+                    ]).astype("float32")
     for n in range(len(manual_roi_stats)):
-        manual_roi_stats[
-            n]["npix_norm"] = manual_roi_stats[n]["npix"] / np.mean(
-                npix[:100])    # What if there are less than 100 cells?
+        manual_roi_stats[n]["npix_norm"] = manual_roi_stats[n]["npix"] / np.mean(
+            npix[:100])  # What if there are less than 100 cells?
         manual_roi_stats[n]["compact"] = 1
         manual_roi_stats[n]["footprint"] = 2
-        manual_roi_stats[n]["manual"] = 1    # Add manual key
+        manual_roi_stats[n]["manual"] = 1  # Add manual key
 
     # subtract neuropil and compute skew, std from F
     dF = F - ops["neucoeff"] * Fneu
@@ -76,12 +73,10 @@ def masks_and_traces(ops, stat_manual, stat_orig):
             np.mean(manual_roi_stats[n]["xpix"])
         ]
 
-    dF = preprocess(F=dF, baseline=ops["baseline"],
-                    win_baseline=ops["win_baseline"],
+    dF = preprocess(F=dF, baseline=ops["baseline"], win_baseline=ops["win_baseline"],
                     sig_baseline=ops["sig_baseline"], fs=ops["fs"],
                     prctile_baseline=ops["prctile_baseline"])
-    spks = oasis(F=dF, batch_size=ops["batch_size"], tau=ops["tau"],
-                 fs=ops["fs"])
+    spks = oasis(F=dF, batch_size=ops["batch_size"], tau=ops["tau"], fs=ops["fs"])
 
     return F, Fneu, F_chan2, Fneu_chan2, spks, ops, manual_roi_stats
 
@@ -142,8 +137,8 @@ class ROIDraw(QMainWindow):
         self.p1.setMenuEnabled(False)
         self.p1.scene().sigMouseMoved.connect(self.mouse_moved)
 
-        self.p0 = self.win.addViewBox(name="plot1", lockAspect=True, row=0,
-                                      col=0, invertY=True)
+        self.p0 = self.win.addViewBox(name="plot1", lockAspect=True, row=0, col=0,
+                                      invertY=True)
         self.img0 = pg.ImageItem()
         self.p0.addItem(self.img0)
 
@@ -243,8 +238,7 @@ class ROIDraw(QMainWindow):
     def close_GUI(self):
         # Replace old stat file
         print("Saving old stat")
-        np.save(os.path.join(self.parent.basename, "stat_orig.npy"),
-                self.parent.stat)
+        np.save(os.path.join(self.parent.basename, "stat_orig.npy"), self.parent.stat)
 
         # Save iscell
         print("Num cells", self.nROIs)
@@ -255,9 +249,9 @@ class ROIDraw(QMainWindow):
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
         np.save(os.path.join(self.parent.basename, "stat.npy"), stat_all)
-        iscell_prob = np.concatenate((self.parent.iscell[:, np.newaxis],
-                                      self.parent.probcell[:, np.newaxis]),
-                                     axis=1)
+        iscell_prob = np.concatenate(
+            (self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]),
+            axis=1)
 
         new_iscell = np.ones((self.nROIs, 2))
         new_iscell = np.concatenate((new_iscell, iscell_prob), axis=0)
@@ -268,31 +262,26 @@ class ROIDraw(QMainWindow):
         Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
         Spks = np.concatenate(
             (self.Spks, self.parent.Spks), axis=0
-        )    # For now convert spikes to 0 for the new ROIS and then fix it later
+        )  # For now convert spikes to 0 for the new ROIS and then fix it later
         np.save(os.path.join(self.parent.basename, "F.npy"), Fcell)
         np.save(os.path.join(self.parent.basename, "Fneu.npy"), Fneu)
         np.save(os.path.join(self.parent.basename, "spks.npy"), Spks)
 
         if "reg_file_chan2" in self.parent.ops:
-            F_chan2 = np.load(os.path.join(self.parent.basename,
-                                           "F_chan2.npy"))
-            Fneu_chan2 = np.load(
-                os.path.join(self.parent.basename, "Fneu_chan2.npy"))
-            redorig = np.load(os.path.join(self.parent.basename,
-                                           "redcell.npy"))
+            F_chan2 = np.load(os.path.join(self.parent.basename, "F_chan2.npy"))
+            Fneu_chan2 = np.load(os.path.join(self.parent.basename, "Fneu_chan2.npy"))
+            redorig = np.load(os.path.join(self.parent.basename, "redcell.npy"))
             F_chan2 = np.concatenate((self.F_chan2, F_chan2), axis=0)
             Fneu_chan2 = np.concatenate((self.Fneu_chan2, Fneu_chan2), axis=0)
             Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
             new_redcell = np.zeros((self.nROIs, 2))
             new_redcell = np.concatenate((new_redcell, redorig), axis=0)
             np.save(os.path.join(self.parent.basename, "F_chan2.npy"), F_chan2)
-            np.save(os.path.join(self.parent.basename, "Fneu_chan2.npy"),
-                    Fneu_chan2)
-            np.save(os.path.join(self.parent.basename, "redcell.npy"),
-                    new_redcell)
+            np.save(os.path.join(self.parent.basename, "Fneu_chan2.npy"), Fneu_chan2)
+            np.save(os.path.join(self.parent.basename, "redcell.npy"), new_redcell)
 
-        print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks),
-              np.shape(new_iscell), np.shape(stat_all))
+        print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell),
+              np.shape(stat_all))
 
         # close GUI
         io.load_proc(self.parent)
@@ -301,25 +290,23 @@ class ROIDraw(QMainWindow):
 
     def normalize_img_add_masks(self):
         masked_image = np.zeros(
-            ((self.Ly, self.Lx, 3, 4)))    # 3 for RGB and 4 for buttons
-        for i in np.arange(4):    # 4 because 4 buttons
+            ((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
+        for i in np.arange(4):  # 4 because 4 buttons
             if i == 0:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
                      self.parent.ops["xrange"][0]:self.parent.
                      ops["xrange"][1]] = self.parent.ops["meanImg"][
-                         self.parent.ops["yrange"][0]:self.parent.
-                         ops["yrange"][1], self.parent.ops["xrange"][0]:self.
-                         parent.ops["xrange"][1]]
+                         self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
+                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
 
             elif i == 1:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
                      self.parent.ops["xrange"][0]:self.parent.
                      ops["xrange"][1]] = self.parent.ops["meanImgE"][
-                         self.parent.ops["yrange"][0]:self.parent.
-                         ops["yrange"][1], self.parent.ops["xrange"][0]:self.
-                         parent.ops["xrange"][1]]
+                         self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
+                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
             elif i == 2:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
@@ -329,9 +316,9 @@ class ROIDraw(QMainWindow):
             else:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 if "max_proj" in self.parent.ops:
-                    mimg[self.parent.ops["yrange"][0]:self.parent.
-                         ops["yrange"][1], self.parent.ops["xrange"][0]:self.
-                         parent.ops["xrange"][1]] = self.parent.ops["max_proj"]
+                    mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
+                         self.parent.ops["xrange"][0]:self.parent.
+                         ops["xrange"][1]] = self.parent.ops["max_proj"]
 
             mimg1 = np.percentile(mimg, 1)
             mimg99 = np.percentile(mimg, 99)
@@ -353,8 +340,9 @@ class ROIDraw(QMainWindow):
                 H[ypix, xpix] = np.random.rand()
                 S[ypix, xpix] = 1
 
-        pix = np.concatenate(((H[:, :, np.newaxis]), S[:, :, np.newaxis],
-                              mean_img[:, :, np.newaxis]), axis=-1)
+        pix = np.concatenate(
+            ((H[:, :, np.newaxis]), S[:, :, np.newaxis], mean_img[:, :, np.newaxis]),
+            axis=-1)
         pix = hsv_to_rgb(pix)
         return pix
 
@@ -388,8 +376,7 @@ class ROIDraw(QMainWindow):
         self.iROI = len(self.ROIs)
         self.nROIs = len(self.ROIs)
         self.ROIs.append(
-            sROI(iROI=self.nROIs, parent=self, pos=pos,
-                 diameter=int(self.diam.text())))
+            sROI(iROI=self.nROIs, parent=self, pos=pos, diameter=int(self.diam.text())))
         self.ROIs[-1].position(self)
         self.nROIs += 1
         print("%d cells added to manual GUI" % self.nROIs)
@@ -440,17 +427,15 @@ class ROIDraw(QMainWindow):
                 "npix": ypix.size,
                 "med": med
             })
-            self.tlabel.append(
-                pg.TextItem(str(n), self.ROIs[n].color, anchor=(0, 0)))
+            self.tlabel.append(pg.TextItem(str(n), self.ROIs[n].color, anchor=(0, 0)))
             self.tlabel[-1].setPos(xpix.mean(), ypix.mean())
             self.p0.addItem(self.tlabel[-1])
             self.scatter.append(
-                pg.ScatterPlotItem([xpix.mean()], [ypix.mean()],
-                                   pen=self.ROIs[n].color, symbol="+"))
+                pg.ScatterPlotItem([xpix.mean()], [ypix.mean()], pen=self.ROIs[n].color,
+                                   symbol="+"))
             self.p0.addItem(self.scatter[-1])
         if not os.path.isfile(self.parent.ops["reg_file"]):
-            self.parent.ops["reg_file"] = os.path.join(self.parent.basename,
-                                                       "data.bin")
+            self.parent.ops["reg_file"] = os.path.join(self.parent.basename, "data.bin")
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(
             self.parent.ops, stat0, self.parent.stat)
@@ -503,8 +488,7 @@ class sROI():
         self.xrange = xrange
         self.yrange = yrange
         if color is None:
-            self.color = hsv_to_rgb(
-                np.array([np.random.rand() / 1.4 + 0.1, 1, 1]))
+            self.color = hsv_to_rgb(np.array([np.random.rand() / 1.4 + 0.1, 1, 1]))
             self.color = tuple(255 * self.color)
         else:
             self.color = color
@@ -536,8 +520,7 @@ class sROI():
 
     def draw(self, parent, imy, imx, dy, dx):
         roipen = pg.mkPen(self.color, width=3, style=QtCore.Qt.SolidLine)
-        self.ROI = pg.EllipseROI([imx, imy], [dx, dy], pen=roipen,
-                                 removable=True)
+        self.ROI = pg.EllipseROI([imx, imy], [dx, dy], pen=roipen, removable=True)
         self.ROI.handleSize = 8
         self.ROI.handlePen = roipen
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
@@ -570,8 +553,7 @@ class sROI():
         # what is ellipse circling?
         br = self.ROI.boundingRect()
         ellipse = np.zeros((yrange.size, xrange.size), "bool")
-        x, y = np.meshgrid(np.arange(0, xrange.size, 1),
-                           np.arange(0, yrange.size, 1))
+        x, y = np.meshgrid(np.arange(0, xrange.size, 1), np.arange(0, yrange.size, 1))
         ellipse = ((y - br.center().y())**2 / (br.height() / 2)**2 +
                    (x - br.center().x())**2 / (br.width() / 2)**2) <= 1
 

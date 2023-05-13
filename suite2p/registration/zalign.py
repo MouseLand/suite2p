@@ -36,22 +36,21 @@ def register_stack(Z, ops):
     Lx = ops["Lx"]
 
     nbatch = ops["batch_size"]
-    meanImg = np.zeros((Ly, Lx))    # mean of this stack
+    meanImg = np.zeros((Ly, Lx))  # mean of this stack
 
-    yoff = np.zeros((0, ), np.float32)
-    xoff = np.zeros((0, ), np.float32)
-    corrXY = np.zeros((0, ), np.float32)
+    yoff = np.zeros((0,), np.float32)
+    xoff = np.zeros((0,), np.float32)
+    corrXY = np.zeros((0,), np.float32)
     if ops["nonrigid"]:
         yoff1 = np.zeros((0, nb), np.float32)
         xoff1 = np.zeros((0, nb), np.float32)
         corrXY1 = np.zeros((0, nb), np.float32)
 
     maskMul, maskOffset, cfRefImg = rigid.prepare_masks(
-        refImg, ops)    # prepare masks for rigid registration
+        refImg, ops)  # prepare masks for rigid registration
     if ops["nonrigid"]:
         # prepare masks for non- rigid registration
-        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(
-            refImg, ops)
+        maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.prepare_masks(refImg, ops)
         refAndMasks = [
             maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR
         ]
@@ -72,9 +71,9 @@ def register_stack(Z, ops):
         if data.size == 0:
             break
         data = np.reshape(data, (-1, Ly, Lx))
-        dwrite, ymax, xmax, cmax, yxnr = rigid.phasecorr(
-            data, refAndMasks, ops)    # not here
-        dwrite = dwrite.astype("int16")    # need to hold on to this
+        dwrite, ymax, xmax, cmax, yxnr = rigid.phasecorr(data, refAndMasks,
+                                                         ops)  # not here
+        dwrite = dwrite.astype("int16")  # need to hold on to this
         meanImg += dwrite.sum(axis=0)
         yoff = np.hstack((yoff, ymax))
         xoff = np.hstack((xoff, xmax))
@@ -89,8 +88,7 @@ def register_stack(Z, ops):
         k += 1
         if k % 5 == 0:
             print("%d/%d frames %4.2f sec" %
-                  (nfr, ops["nframes"],
-                   time.time() - k0))    # where is this timer set?
+                  (nfr, ops["nframes"], time.time() - k0))  # where is this timer set?
 
     # compute some potentially useful info
     ops["th_badframes"] = 100
@@ -100,11 +98,9 @@ def register_stack(Z, ops):
     cXY = corrXY / medfilt(corrXY, 101)
     px = dxy / np.mean(dxy) / np.maximum(0, cXY)
     ops["badframes"] = px > ops["th_badframes"]
-    ymin = np.maximum(0,
-                      np.ceil(np.amax(yoff[np.logical_not(ops["badframes"])])))
+    ymin = np.maximum(0, np.ceil(np.amax(yoff[np.logical_not(ops["badframes"])])))
     ymax = ops["Ly"] + np.minimum(0, np.floor(np.amin(yoff)))
-    xmin = np.maximum(0,
-                      np.ceil(np.amax(xoff[np.logical_not(ops["badframes"])])))
+    xmin = np.maximum(0, np.ceil(np.amax(xoff[np.logical_not(ops["badframes"])])))
     xmax = ops["Lx"] + np.minimum(0, np.floor(np.amin(xoff)))
     ops["yrange"] = [int(ymin), int(ymax)]
     ops["xrange"] = [int(xmin), int(xmax)]
@@ -173,8 +169,7 @@ def compute_zpos(Zreg, ops):
 
         maskMul, maskOffset = rigid.compute_masks(
             refImg=Z,
-            maskSlope=ops["spatial_taper"] if ops["1Preg"] else 3 *
-            ops["smooth_sigma"],
+            maskSlope=ops["spatial_taper"] if ops["1Preg"] else 3 * ops["smooth_sigma"],
         )
         cfRefImag = rigid.phasecorr_reference(refImg=Z,
                                               smooth_sigma=ops["smooth_sigma"])
@@ -200,8 +195,7 @@ def compute_zpos(Zreg, ops):
 
                 if ops["pre_smooth"]:
                     data = utils.spatial_smooth(data, int(ops["pre_smooth"]))
-                data = utils.spatial_high_pass(data,
-                                               int(ops["spatial_hp_reg"]))
+                data = utils.spatial_high_pass(data, int(ops["spatial_hp_reg"]))
 
             maskMul, maskOffset, cfRefImg = ref
             cfRefImg = cfRefImg.squeeze()

@@ -54,8 +54,7 @@ class Classifier:
             self.loaded = True
             self.classfile = classfile
             self._fit()
-        except (ValueError, KeyError, OSError, RuntimeError, TypeError,
-                NameError):
+        except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
             print("ERROR: incorrect classifier file")
             self.loaded = False
 
@@ -77,9 +76,8 @@ class Classifier:
             needs self.keys keys
 
         """
-        test_stats = np.array([
-            stat[j][k] for j in range(len(stat)) for k in self.keys
-        ]).reshape(len(stat), -1)
+        test_stats = np.array([stat[j][k] for j in range(len(stat)) for k in self.keys
+                              ]).reshape(len(stat), -1)
         logp = self._get_logp(test_stats)
         y_pred = self.model.predict_proba(logp)[:, 1]
         return y_pred
@@ -109,8 +107,8 @@ class Classifier:
             x[x > self.grid[-1, n]] = self.grid[-1, n]
             x[np.isnan(x)] = self.grid[0, n]
             ibin = np.digitize(x, self.grid[:, n], right=True) - 1
-            logp[:, n] = np.log(self.p[ibin, n] +
-                                1e-6) - np.log(1 - self.p[ibin, n] + 1e-6)
+            logp[:, n] = np.log(self.p[ibin, n] + 1e-6) - np.log(1 - self.p[ibin, n] +
+                                                                 1e-6)
         return logp
 
     def _fit(self):

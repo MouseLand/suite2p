@@ -11,19 +11,15 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
     if ops_matlab.get("date_proc"):
         try:
             ops_matlab["date_proc"] = str(
-                datetime.strftime(ops_matlab["date_proc"],
-                                  "%Y-%m-%d %H:%M:%S.%f"))
+                datetime.strftime(ops_matlab["date_proc"], "%Y-%m-%d %H:%M:%S.%f"))
         except:
             pass
     for k in ops_matlab.keys():
         if isinstance(ops_matlab[k], (pathlib.WindowsPath, pathlib.PosixPath)):
             ops_matlab[k] = os.fspath(ops_matlab[k].absolute())
         elif isinstance(ops_matlab[k], list) and len(ops_matlab[k]) > 0:
-            if isinstance(ops_matlab[k][0],
-                          (pathlib.WindowsPath, pathlib.PosixPath)):
-                ops_matlab[k] = [
-                    os.fspath(p.absolute()) for p in ops_matlab[k]
-                ]
+            if isinstance(ops_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
+                ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
                 print(k, ops_matlab[k])
 
     stat = np.array(stat, dtype=object)
@@ -83,8 +79,7 @@ def combined(save_folder, save=True):
     Multi-plane / multi-roi recordings are tiled after using dx,dy.
     """
     plane_folders = natsorted([
-        f.path for f in os.scandir(save_folder)
-        if f.is_dir() and f.name[:5] == "plane"
+        f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
     ops1 = [
         np.load(os.path.join(f, "ops.npy"), allow_pickle=True).item()
@@ -120,8 +115,8 @@ def combined(save_folder, save=True):
             if "meanImg_chan2" in ops:
                 meanImg_chan2[np.ix_(yrange, xrange)] = ops["meanImg_chan2"]
         if "meanImg_chan2_corrected" in ops:
-            meanImg_chan2_corrected[np.ix_(
-                yrange, xrange)] = ops["meanImg_chan2_corrected"]
+            meanImg_chan2_corrected[np.ix_(yrange,
+                                           xrange)] = ops["meanImg_chan2_corrected"]
 
         xrange = np.arange(dx[k] + ops["xrange"][0], dx[k] + ops["xrange"][-1])
         yrange = np.arange(dy[k] + ops["yrange"][0], dy[k] + ops["yrange"][-1])
@@ -180,8 +175,7 @@ def combined(save_folder, save=True):
 
     if save:
         if len(ops["save_folder"]) > 0:
-            fpath = os.path.join(ops["save_path0"], ops["save_folder"],
-                                 "combined")
+            fpath = os.path.join(ops["save_path0"], ops["save_folder"], "combined")
         else:
             fpath = os.path.join(ops["save_path0"], "suite2p", "combined")
     else:

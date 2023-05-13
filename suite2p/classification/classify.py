@@ -5,8 +5,7 @@ from .classifier import Classifier
 
 builtin_classfile = Path(__file__).joinpath(
     "../../classifiers/classifier.npy").resolve()
-user_classfile = Path.home().joinpath(
-    ".suite2p/classifiers/classifier_user.npy")
+user_classfile = Path.home().joinpath(".suite2p/classifiers/classifier_user.npy")
 
 
 def classify(

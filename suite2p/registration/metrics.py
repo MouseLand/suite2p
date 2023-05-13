@@ -63,11 +63,10 @@ def pclowhigh(mov, nlowhigh, nPC, random_state):
     return pclow, pchigh, w, v
 
 
-def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None,
-                pre_smooth=None, smooth_sigma=1.15, smooth_sigma_time=0,
-                block_size=(128, 128), maxregshift=0.1, maxregshiftNR=10,
-                reg_1p=False, snr_thresh=1.25, is_nonrigid=True,
-                bidiphase_offset=0, spatial_taper=50.0):
+def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None, pre_smooth=None,
+                smooth_sigma=1.15, smooth_sigma_time=0, block_size=(128, 128),
+                maxregshift=0.1, maxregshiftNR=10, reg_1p=False, snr_thresh=1.25,
+                is_nonrigid=True, bidiphase_offset=0, spatial_taper=50.0):
     """
     register top and bottom of PCs to each other
 
@@ -124,13 +123,12 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None,
                 data = utils.spatial_smooth(data, int(pre_smooth))
             refImg = utils.spatial_high_pass(data, int(spatial_hp))
 
-        rmin, rmax = np.int16(np.percentile(refImg, 1)), np.int16(
-            np.percentile(refImg, 99))
+        rmin, rmax = np.int16(np.percentile(refImg,
+                                            1)), np.int16(np.percentile(refImg, 99))
         refImg = np.clip(refImg, rmin, rmax)
 
         maskMul, maskOffset = rigid.compute_masks(
-            refImg=refImg,
-            maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma)
+            refImg=refImg, maskSlope=spatial_taper if reg_1p else 3 * smooth_sigma)
         cfRefImg = rigid.phasecorr_reference(
             refImg=refImg,
             smooth_sigma=smooth_sigma,
@@ -138,7 +136,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None,
 
         cfRefImg = cfRefImg[np.newaxis, :, :]
         if is_nonrigid:
-            maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma    # slope of taper mask at the edges
+            maskSlope = spatial_taper if reg_1p else 3 * smooth_sigma  # slope of taper mask at the edges
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg0=refImg,
@@ -156,14 +154,12 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None,
         if reg_1p:
             if pre_smooth:
                 dwrite = utils.spatial_smooth(dwrite, int(pre_smooth))
-            dwrite = utils.spatial_high_pass(dwrite,
-                                             int(spatial_hp))[np.newaxis, :]
+            dwrite = utils.spatial_high_pass(dwrite, int(spatial_hp))[np.newaxis, :]
         dwrite = np.clip(dwrite, rmin, rmax)
 
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
-            data=rigid.apply_masks(data=dwrite, maskMul=maskMul,
-                                   maskOffset=maskOffset),
+            data=rigid.apply_masks(data=dwrite, maskMul=maskMul, maskOffset=maskOffset),
             cfRefImg=cfRefImg.squeeze(),
             maxregshift=maxregshift,
             smooth_sigma_time=0,
@@ -176,8 +172,7 @@ def pc_register(pclow, pchigh, bidi_corrected, spatial_hp=None,
         if is_nonrigid:
 
             if smooth_sigma_time > 0:
-                dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time,
-                                           axis=0)
+                dwrite = gaussian_filter1d(dwrite, sigma=smooth_sigma_time, axis=0)
 
             ymax1, xmax1, cmax1, = nonrigid.phasecorr(
                 data=dwrite,
@@ -230,16 +225,16 @@ def get_pc_metrics(mov, ops, use_red=False):
         (pclow[np.newaxis, :, :, :], pchigh[np.newaxis, :, :, :]), axis=0)
 
     ops["regDX"] = pc_register(
-        pclow, pchigh, spatial_hp=ops["spatial_hp_reg"],
-        pre_smooth=ops["pre_smooth"], bidi_corrected=ops["bidi_corrected"],
+        pclow, pchigh, spatial_hp=ops["spatial_hp_reg"], pre_smooth=ops["pre_smooth"],
+        bidi_corrected=ops["bidi_corrected"],
         smooth_sigma=ops["smooth_sigma"] if "smooth_sigma" in ops else 1.15,
         smooth_sigma_time=ops["smooth_sigma_time"],
         block_size=ops["block_size"] if "block_size" in ops else [128, 128],
         maxregshift=ops["maxregshift"] if "maxregshift" in ops else 0.1,
         maxregshiftNR=ops["maxregshiftNR"] if "maxregshiftNR" in ops else 5,
-        reg_1p=ops["1Preg"] if "1Preg" in ops else False,
-        snr_thresh=ops["snr_thresh"], is_nonrigid=ops["nonrigid"],
-        bidiphase_offset=ops["bidiphase"], spatial_taper=ops["spatial_taper"])
+        reg_1p=ops["1Preg"] if "1Preg" in ops else False, snr_thresh=ops["snr_thresh"],
+        is_nonrigid=ops["nonrigid"], bidiphase_offset=ops["bidiphase"],
+        spatial_taper=ops["spatial_taper"])
     return ops
 
 
@@ -329,14 +324,13 @@ def corr_to_template(mov, tmpl):
 
 def optic_flow(mov, tmpl, nflows):
     """ optic flow computation using farneback """
-    window = int(1 / 0.2)    # window size
+    window = int(1 / 0.2)  # window size
     nframes, Ly, Lx = mov.shape
     mov = mov.astype(np.float32)
     mov = np.reshape(mov[:int(np.floor(nframes / window) * window), :, :],
                      (-1, window, Ly, Lx)).mean(axis=1)
 
-    mov = mov[
-        np.random.permutation(mov.shape[0])[:min(nflows, mov.shape[0])], :, :]
+    mov = mov[np.random.permutation(mov.shape[0])[:min(nflows, mov.shape[0])], :, :]
 
     pyr_scale = .5
     levels = 3
@@ -347,13 +341,12 @@ def optic_flow(mov, tmpl, nflows):
     flags = 0
 
     nframes, Ly, Lx = mov.shape
-    norms = np.zeros((nframes, ))
+    norms = np.zeros((nframes,))
     flows = np.zeros((nframes, Ly, Lx, 2))
 
     for n in range(nframes):
-        flow = cv2.calcOpticalFlowFarneback(tmpl, mov[n, :, :], None,
-                                            pyr_scale, levels, winsize,
-                                            iterations, poly_n, poly_sigma,
+        flow = cv2.calcOpticalFlowFarneback(tmpl, mov[n, :, :], None, pyr_scale, levels,
+                                            winsize, iterations, poly_n, poly_sigma,
                                             flags)
 
         flows[n, :, :, :] = flow
@@ -375,16 +368,14 @@ def get_flow_metrics(ops):
     Lxc = ops["xrange"][1] - ops["xrange"][0]
     img_corr = np.zeros((Lyc, Lxc), np.float32)
     img_median = np.zeros((Lyc, Lxc), np.float32)
-    correlations = np.zeros((0, ), np.float32)
+    correlations = np.zeros((0,), np.float32)
     flows = np.zeros((0, Lyc, Lxc, 2), np.float32)
-    norms = np.zeros((0, ), np.float32)
+    norms = np.zeros((0,), np.float32)
     smoothness = 0
     smoothness_corr = 0
 
-    nflows = np.minimum(ops["nframes"],
-                        int(np.floor(100 / (ops["nframes"] / nbatch))))
-    ncorrs = np.minimum(ops["nframes"],
-                        int(np.floor(1000 / (ops["nframes"] / nbatch))))
+    nflows = np.minimum(ops["nframes"], int(np.floor(100 / (ops["nframes"] / nbatch))))
+    ncorrs = np.minimum(ops["nframes"], int(np.floor(1000 / (ops["nframes"] / nbatch))))
 
     k = 0
     while True:
@@ -397,8 +388,7 @@ def get_flow_metrics(ops):
 
         mov = mov[np.ix_(np.arange(0, mov.shape[0], 1, int),
                          np.arange(ops["yrange"][0], ops["yrange"][1], 1, int),
-                         np.arange(ops["xrange"][0], ops["xrange"][1], 1,
-                                   int))]
+                         np.arange(ops["xrange"][0], ops["xrange"][1], 1, int))]
 
         img_corr += local_corr(mov[:, :, :], 1000, ops["num_workers"])
         img_median += bin_median(mov)
@@ -406,8 +396,8 @@ def get_flow_metrics(ops):
 
         smoothness += np.sqrt(
             np.sum(np.sum(np.array(np.gradient(np.mean(mov, 0)))**2, 0)))
-        smoothness_corr += np.sqrt(
-            np.sum(np.sum(np.array(np.gradient(img_corr))**2, 0)))
+        smoothness_corr += np.sqrt(np.sum(np.sum(np.array(np.gradient(img_corr))**2,
+                                                 0)))
 
         tmpl = img_median / k
 
@@ -418,9 +408,7 @@ def get_flow_metrics(ops):
         else:
             flows0 = []
             norms0 = []
-            print(
-                "flows not computed, cv2 not installed / did not import correctly"
-            )
+            print("flows not computed, cv2 not installed / did not import correctly")
 
         flows = np.vstack((flows, flows0))
         norms = np.hstack((norms, norms0))

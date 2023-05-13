@@ -8,8 +8,7 @@ from ..registration.nonrigid import make_blocks, spatial_taper
 def pca_denoise(mov: np.ndarray, block_size: List, n_comps_frac: float):
     t0 = time.time()
     nframes, Ly, Lx = mov.shape
-    yblock, xblock, _, block_size, _ = make_blocks(Ly, Lx,
-                                                   block_size=block_size)
+    yblock, xblock, _, block_size, _ = make_blocks(Ly, Lx, block_size=block_size)
 
     mov_mean = mov.mean(axis=0)
     mov -= mov_mean

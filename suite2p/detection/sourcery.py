@@ -16,7 +16,7 @@ def getSVDdata(mov: np.ndarray, ops):
     ops["max_proj"] = mov.max(axis=0)
     nbins, Lyc, Lxc = np.shape(mov)
 
-    sig = ops["diameter"] / 10.    # PICK UP
+    sig = ops["diameter"] / 10.  # PICK UP
     for j in range(nbins):
         mov[j, :, :] = gaussian_filter(mov[j, :, :], sig)
 
@@ -74,7 +74,7 @@ def drawClusters(stat, ops):
     Lx = ops["Lxc"]
 
     ncells = len(stat)
-    r = np.random.random((ncells, ))
+    r = np.random.random((ncells,))
     iclust = -1 * np.ones((Ly, Lx), np.int32)
     Lam = np.zeros((Ly, Lx))
     H = np.zeros((Ly, Lx, 1))
@@ -277,16 +277,14 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         yp, xp = extendROI(ypix, xpix, Ly, Lx, int(np.mean(d0)))
 
         # compute compactness of ROI
-        rs = r_squared(yp=yp, xp=xp, ypix=ypix, xpix=xpix, diam_y=d0[0],
-                       diam_x=d0[1])
+        rs = r_squared(yp=yp, xp=xp, ypix=ypix, xpix=xpix, diam_y=d0[0], diam_x=d0[1])
         stat["mrs"] = np.mean(rs)
         stat["mrs0"] = np.mean(rsort[:ypix.size])
         stat["compact"] = stat["mrs"] / (1e-10 + stat["mrs0"])
         stat["med"] = [np.median(stat["ypix"]), np.median(stat["xpix"])]
         stat["npix"] = xpix.size
         if "radius" not in stat:
-            ry, rx = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1],
-                               thres=2).radii
+            ry, rx = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1], thres=2).radii
             stat["radius"] = ry * d0.mean()
             stat["aspect_ratio"] = 2 * ry / (.01 + ry + rx)
 
@@ -319,8 +317,7 @@ def sub2ind(array_shape, rows, cols):
 
 def minDistance(inputs):
     y1, x1, y2, x2 = inputs
-    ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 -
-                                                 np.expand_dims(x2, axis=1))**2
+    ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 - np.expand_dims(x2, axis=1))**2
     return np.amin(ds)**.5
 
 
@@ -354,8 +351,8 @@ def connected_region(stat, ops):
 
 def extendROI(ypix, xpix, Ly, Lx, niter=1):
     for k in range(niter):
-        yx = ((ypix, ypix, ypix, ypix - 1, ypix + 1), (xpix, xpix + 1,
-                                                       xpix - 1, xpix, xpix))
+        yx = ((ypix, ypix, ypix, ypix - 1, ypix + 1), (xpix, xpix + 1, xpix - 1, xpix,
+                                                       xpix))
         yx = np.array(yx)
         yx = yx.reshape((2, -1))
         yu = np.unique(yx, axis=1)
@@ -401,13 +398,13 @@ def sourcery(mov: np.ndarray, ops):
     ops["diameter"] = np.array(ops["diameter"])
     ops["spatscale_pix"] = ops["diameter"][1]
     ops["aspect"] = ops["diameter"][0] / ops["diameter"][1]
-    ops, U, sdmov, u = getSVDdata(mov=mov, ops=ops)    # get SVD components
+    ops, U, sdmov, u = getSVDdata(mov=mov, ops=ops)  # get SVD components
     S, StU, StS = getStU(ops, U)
     Lyc, Lxc, nsvd = U.shape
     ops["Lyc"] = Lyc
     ops["Lxc"] = Lxc
     d0 = ops["diameter"]
-    sig = np.ceil(d0 / 4)    # smoothing constant
+    sig = np.ceil(d0 / 4)  # smoothing constant
     # make array of radii values of size (2*d0+1,2*d0+1)
     rs, dy, dx = circleMask(d0)
     nsvd = U.shape[-1]
@@ -432,7 +429,7 @@ def sourcery(mov: np.ndarray, ops):
             V, us = getVmap(Ucell, sig)
             if it == 0:
                 vrem = morphOpen(V, rs <= 1.)
-            V = V - vrem    # make V more uniform
+            V = V - vrem  # make V more uniform
             if it == 0:
                 V = V.astype("float64")
                 # find indices of all maxima in +/- 1 range
@@ -441,8 +438,7 @@ def sourcery(mov: np.ndarray, ops):
                 imax = V > (maxV - 1e-10)
                 peaks = V[imax]
                 # use the median of these peaks to decide if ROI is accepted
-                thres = ops["threshold_scaling"] * np.median(
-                    peaks[peaks > 1e-4])
+                thres = ops["threshold_scaling"] * np.median(peaks[peaks > 1e-4])
                 ops["Vcorr"] = V
             V = np.minimum(V, ops["Vcorr"])
 
@@ -467,11 +463,9 @@ def sourcery(mov: np.ndarray, ops):
             newcells = len(ypix) - ncells
             if it == 0:
                 Nfirst = newcells
-            L = np.append(L, np.zeros((Lyc, Lxc, newcells), "float32"),
-                          axis=-1)
+            L = np.append(L, np.zeros((Lyc, Lxc, newcells), "float32"), axis=-1)
             LtU = np.append(LtU, np.zeros((newcells, nsvd), "float32"), axis=0)
-            LtS = np.append(LtS, np.zeros((newcells, nbasis), "float32"),
-                            axis=0)
+            LtS = np.append(LtS, np.zeros((newcells, nbasis), "float32"), axis=0)
             for n in range(ncells, len(ypix)):
                 L[ypix[n], xpix[n], n] = lam[n]
                 LtU[n, :] = lam[n] @ U[ypix[n], xpix[n], :]
@@ -496,8 +490,7 @@ def sourcery(mov: np.ndarray, ops):
         while n < len(ypix):
             Ucell[ypix[n], xpix[n], :] += np.outer(lam[n], codes[k, :])
             ypix[n], xpix[n], lam[n], ix, codes[n, :] = iter_extend(
-                ypix[n], xpix[n], Ucell, codes[k, :], refine,
-                change_codes=change_codes)
+                ypix[n], xpix[n], Ucell, codes[k, :], refine, change_codes=change_codes)
             k += 1
             if ix.sum() == 0:
                 print("dropped ROI with no pixels")
@@ -516,8 +509,7 @@ def sourcery(mov: np.ndarray, ops):
                 LtU[n, :] = lam[n] @ U[ypix[n], xpix[n], :]
                 LtS[n, :] = lam[n] @ S[ypix[n], xpix[n], :]
         err = (Ucell**2).mean()
-        print("ROIs: %d, cost: %2.4f, time: %2.4f" %
-              (ncells, err, time.time() - i0))
+        print("ROIs: %d, cost: %2.4f, time: %2.4f" % (ncells, err, time.time() - i0))
 
         it += 1
         if refine == 0:
@@ -541,8 +533,7 @@ def sourcery(mov: np.ndarray, ops):
             ncells = len(ypix)
         if refine > 0:
             Ucell = Ucell + (S.reshape((-1, nbasis)) @ neu).reshape(U.shape)
-        if refine < 0 and (newcells < Nfirst / 10
-                           or it == ops["max_iterations"]):
+        if refine < 0 and (newcells < Nfirst / 10 or it == ops["max_iterations"]):
             refine = 3
             U, sdmov = getSVDproj(mov, ops, u)
             Ucell = U

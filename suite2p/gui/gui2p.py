@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(64, 64))
         app_icon.addFile(icon_path, QtCore.QSize(256, 256))
         self.setWindowIcon(app_icon)
-        self.setStyleSheet("QMainWindow {background: "black";}")
+        self.setStyleSheet("QMainWindow {background: 'black';}")
         self.stylePressed = ("QPushButton {Text-align: left; "
                              "background-color: rgb(100,50,100); "
                              "color:white;}")
@@ -50,8 +50,7 @@ class MainWindow(QMainWindow):
         class_dir = user_dir.joinpath("classifiers")
         class_dir.mkdir(exist_ok=True)
         self.classuser = os.fspath(class_dir.joinpath("classifier_user.npy"))
-        self.classorig = os.fspath(
-            s2p_dir.joinpath("classifiers", "classifier.npy"))
+        self.classorig = os.fspath(s2p_dir.joinpath("classifiers", "classifier.npy"))
         if not os.path.isfile(self.classuser):
             shutil.copy(self.classorig, self.classuser)
         self.classfile = self.classuser
@@ -82,13 +81,7 @@ class MainWindow(QMainWindow):
             "saturation": [0, 255],
             "colormap": "hsv"
         }
-        self.rois = {
-            "iROI": 0,
-            "Sroi": 0,
-            "Lam": 0,
-            "LamMean": 0,
-            "LamNorm": 0
-        }
+        self.rois = {"iROI": 0, "Sroi": 0, "Lam": 0, "LamMean": 0, "LamNorm": 0}
         self.colors = {"RGB": 0, "cols": 0, "colorbar": []}
 
         # --------- MAIN WIDGET LAYOUT ---------------------
@@ -154,7 +147,7 @@ class MainWindow(QMainWindow):
 
         buttons.make_selection(self)
         buttons.make_cellnotcell(self)
-        b0 = views.make_buttons(self)    # b0 says how many
+        b0 = views.make_buttons(self)  # b0 says how many
         b0 = masks.make_buttons(self, b0)
         masks.make_colorbar(self, b0)
         b0 += 1
@@ -169,7 +162,7 @@ class MainWindow(QMainWindow):
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QLabel(self)
         qlabel.setFont(self.boldfont)
-        qlabel.setText("<font color="white">Selected ROI:</font>")
+        qlabel.setText("<font color='white'>Selected ROI:</font>")
         self.l0.addWidget(qlabel, b0, 0, 1, 1)
         self.ROIedit = QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0, 10000))
@@ -302,8 +295,7 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         if self.loaded:
-            if event.modifiers(
-            ) != QtCore.Qt.ControlModifier and event.modifiers(
+            if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers(
             ) != QtCore.Qt.ShiftModifier:
                 if event.key() == QtCore.Qt.Key_Return:
                     if event.modifiers() == QtCore.Qt.AltModifier:
@@ -495,8 +487,7 @@ class MainWindow(QMainWindow):
             dy = np.minimum(dy, 300)
             imx = imx - dx / 2
             imy = imy - dy / 2
-            self.ROI = pg.RectROI([imx, imy], [dx, dy], pen="w",
-                                  sideScalers=True)
+            self.ROI = pg.RectROI([imx, imy], [dx, dy], pen="w", sideScalers=True)
             if wplot == 0:
                 self.p1.addItem(self.ROI)
             else:
@@ -542,8 +533,8 @@ class MainWindow(QMainWindow):
         icells = np.unique(iROI0[iROI0 >= 0])
         self.imerge = []
         for n in icells:
-            if (self.rois["iROI"][i, :, ypix, xpix] == n
-                ).sum() > 0.6 * self.stat[n]["npix"]:
+            if (self.rois["iROI"][i, :, ypix,
+                                  xpix] == n).sum() > 0.6 * self.stat[n]["npix"]:
                 self.imerge.append(n)
         if len(self.imerge) > 0:
             self.ichosen = self.imerge[0]
@@ -596,8 +587,8 @@ class MainWindow(QMainWindow):
                     iplot = 2
                 elif x == self.p3:
                     iplot = 3
-                elif ((x == self.p1 or x == self.p2) and x != self.img1
-                      and x != self.img2):
+                elif ((x == self.p1 or x == self.p2) and x != self.img1 and
+                      x != self.img2):
                     iplot = 4
                     if event.double():
                         zoom = True
@@ -622,16 +613,14 @@ class MainWindow(QMainWindow):
                         flip = False
                 if choose:
                     merged = False
-                    if event.modifiers(
-                    ) == QtCore.Qt.ShiftModifier or event.modifiers(
+                    if event.modifiers() == QtCore.Qt.ShiftModifier or event.modifiers(
                     ) == QtCore.Qt.ControlModifier:
                         if self.iscell[self.imerge[0]] == self.iscell[ichosen]:
                             if ichosen not in self.imerge:
                                 self.imerge.append(ichosen)
                                 self.ichosen = ichosen
                                 merged = True
-                            elif ichosen in self.imerge and len(
-                                    self.imerge) > 1:
+                            elif ichosen in self.imerge and len(self.imerge) > 1:
                                 self.imerge.remove(ichosen)
                                 self.ichosen = self.imerge[0]
                                 merged = True
@@ -666,8 +655,7 @@ class MainWindow(QMainWindow):
             key = self.stats_to_show[k - 1]
             ival = self.stat[n][key]
             if k == 1:
-                self.ROIstats[k].setText(key + ": [%d, %d]" %
-                                         (ival[0], ival[1]))
+                self.ROIstats[k].setText(key + ": [%d, %d]" % (ival[0], ival[1]))
             elif k == 2:
                 self.ROIstats[k].setText(key + ": %d" % (ival))
             else:
@@ -680,10 +668,9 @@ class MainWindow(QMainWindow):
             for i, k in enumerate(self.imerge):
                 apix = np.append(
                     apix,
-                    np.concatenate(
-                        (self.stat[k]["ypix"].flatten()[:, np.newaxis],
-                         self.stat[k]["xpix"].flatten()[:, np.newaxis]),
-                        axis=1), axis=0)
+                    np.concatenate((self.stat[k]["ypix"].flatten()[:, np.newaxis],
+                                    self.stat[k]["xpix"].flatten()[:, np.newaxis]),
+                                   axis=1), axis=0)
 
             imin = apix.min(axis=0)
             imax = apix.max(axis=0)

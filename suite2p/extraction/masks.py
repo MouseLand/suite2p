@@ -13,8 +13,8 @@ def create_masks(stats: List[Dict[str, Any]], Ly, Lx, ops=default_ops()):
     cell_pix = create_cell_pix(stats, Ly=Ly, Lx=Lx,
                                lam_percentile=ops.get("lam_percentile", 50.0))
     cell_masks = [
-        create_cell_mask(stat, Ly=Ly, Lx=Lx,
-                         allow_overlap=ops["allow_overlap"]) for stat in stats
+        create_cell_mask(stat, Ly=Ly, Lx=Lx, allow_overlap=ops["allow_overlap"])
+        for stat in stats
     ]
     if ops.get("neuropil_extract", True):
         neuropil_masks = create_neuropil_masks(
@@ -56,9 +56,8 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
     return cell_pix
 
 
-def create_cell_mask(
-        stat: Dict[str, Any], Ly: int, Lx: int,
-        allow_overlap: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+def create_cell_mask(stat: Dict[str, Any], Ly: int, Lx: int,
+                     allow_overlap: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     """
     creates cell masks for ROIs in stat and computes radii
 
@@ -114,7 +113,7 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
         # extend to get ring of dis-allowed pixels
         ypix, xpix = extendROI(ypix, xpix, Ly, Lx, niter=inner_neuropil_radius)
         nring = np.sum(valid_pixels(cell_pix, ypix,
-                                    xpix))    # count how many pixels are valid
+                                    xpix))  # count how many pixels are valid
 
         nreps = count()
         ypix1, xpix1 = ypix.copy(), xpix.copy()
@@ -122,7 +121,7 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
                 cell_pix, ypix1, xpix1)) - nring <= min_neuropil_pixels:
             if circular:
                 ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx,
-                                         extend_by)    # keep extending
+                                         extend_by)  # keep extending
             else:
                 ypix1, xpix1 = np.meshgrid(
                     np.arange(max(0,
@@ -132,14 +131,12 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
                     np.arange(max(0,
                                   xpix1.min() - extend_by),
                               min(Lx,
-                                  xpix1.max() + extend_by + 1), 1, int),
-                    indexing="ij")
+                                  xpix1.max() + extend_by + 1), 1, int), indexing="ij")
 
         ix = valid_pixels(cell_pix, ypix1, xpix1)
         neuropil_mask[ypix1[ix], xpix1[ix]] = True
         neuropil_mask[ypix, xpix] = False
-        neuropil_ipix.append(
-            np.ravel_multi_index(np.nonzero(neuropil_mask), (Ly, Lx)))
+        neuropil_ipix.append(np.ravel_multi_index(np.nonzero(neuropil_mask), (Ly, Lx)))
         idx += 1
 
     return neuropil_ipix

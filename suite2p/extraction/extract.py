@@ -62,14 +62,8 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500):
     batch_size = int(batch_size)
 
     cell_ipix, cell_lam = List(), List()
-    [
-        cell_ipix.append(cell_mask[0].astype(np.int64))
-        for cell_mask in cell_masks
-    ]
-    [
-        cell_lam.append(cell_mask[1].astype(np.float32))
-        for cell_mask in cell_masks
-    ]
+    [cell_ipix.append(cell_mask[0].astype(np.int64)) for cell_mask in cell_masks]
+    [cell_lam.append(cell_mask[1].astype(np.float32)) for cell_mask in cell_masks]
 
     #cell_ipix = [int64(cell_mask[0]) for cell_mask in cell_masks]
     #cell_lam = [float32(cell_mask[1]) for cell_mask in cell_masks]
@@ -113,8 +107,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500):
         # WITH NUMBA
         F[:, inds] = matmul_traces(Fi, data, cell_ipix, cell_lam)
         if neuropil_ipix is not None:
-            Fneu[:, inds] = matmul_neuropil(Fi, data, neuropil_ipix,
-                                            neuropil_npix)
+            Fneu[:, inds] = matmul_neuropil(Fi, data, neuropil_ipix, neuropil_npix)
 
         ix += nimg
     print("Extracted fluorescence from %d ROIs in %d frames, %0.2f sec." %
@@ -146,13 +139,11 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     """
     batch_size = ops["batch_size"]
     F_chan2, Fneu_chan2 = [], []
-    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],
-                      filename=ops["reg_file"]) as f:
-        F, Fneu = extract_traces(f, cell_masks, neuropil_masks,
-                                 batch_size=batch_size)
+    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"], filename=ops["reg_file"]) as f:
+        F, Fneu = extract_traces(f, cell_masks, neuropil_masks, batch_size=batch_size)
     if "reg_file_chan2" in ops:
         with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],
-                          filename=ops["reg_file_chan2"]) as f:
+                        filename=ops["reg_file_chan2"]) as f:
             F_chan2, Fneu_chan2 = extract_traces(f, cell_masks, neuropil_masks,
                                                  batch_size=batch_size)
     return F, Fneu, F_chan2, Fneu_chan2
@@ -200,11 +191,9 @@ def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None,
             neuropil_masks = neuropil_masks0
         print("Masks created, %0.2f sec." % (time.time() - t10))
 
-    F, Fneu = extract_traces(f_reg, cell_masks, neuropil_masks,
-                             batch_size=batch_size)
+    F, Fneu = extract_traces(f_reg, cell_masks, neuropil_masks, batch_size=batch_size)
     if f_reg_chan2 is not None:
-        F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, cell_masks,
-                                             neuropil_masks,
+        F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, cell_masks, neuropil_masks,
                                              batch_size=batch_size)
     else:
         F_chan2, Fneu_chan2 = [], []
@@ -254,8 +243,7 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     """
 
     if len(stat) == 0:
-        raise ValueError(
-            "stat array should not be of length 0 (no ROIs were found)")
+        raise ValueError("stat array should not be of length 0 (no ROIs were found)")
 
     # create cell and neuropil masks
     Ly, Lx = ops["Ly"], ops["Lx"]
@@ -305,8 +293,7 @@ def enhanced_mean_image(ops):
         ops["aspect"] = diameter[0] / diameter[1]
 
     diameter = 4 * np.ceil(
-        np.array([ops["spatscale_pix"] * ops["aspect"], ops["spatscale_pix"]
-                  ])) + 1
+        np.array([ops["spatscale_pix"] * ops["aspect"], ops["spatscale_pix"]])) + 1
     diameter = diameter.flatten().astype(np.int64)
     Imed = signal.medfilt2d(I, [diameter[0], diameter[1]])
     I = I - Imed
@@ -316,13 +303,11 @@ def enhanced_mean_image(ops):
     mimg99 = 6
     mimg0 = I
 
-    mimg0 = mimg0[ops["yrange"][0]:ops["yrange"][1],
-                  ops["xrange"][0]:ops["xrange"][1]]
+    mimg0 = mimg0[ops["yrange"][0]:ops["yrange"][1], ops["xrange"][0]:ops["xrange"][1]]
     mimg0 = (mimg0 - mimg1) / (mimg99 - mimg1)
     mimg0 = np.maximum(0, np.minimum(1, mimg0))
     mimg = mimg0.min() * np.ones((ops["Ly"], ops["Lx"]), np.float32)
-    mimg[ops["yrange"][0]:ops["yrange"][1],
-         ops["xrange"][0]:ops["xrange"][1]] = mimg0
+    mimg[ops["yrange"][0]:ops["yrange"][1], ops["xrange"][0]:ops["xrange"][1]] = mimg0
     ops["meanImgE"] = mimg
     print("added enhanced mean image")
     return ops

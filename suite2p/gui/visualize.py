@@ -66,7 +66,7 @@ class RangeSlider(QSlider):
                 height: 8px;\
                 width: 6px;\
                 margin: -8px 2; \
-                }"                                    )
+                }"                                                      )
         # 0 for the low, 1 for the high, -1 for both
         self.active_slider = 0
         self.parent = parent
@@ -98,7 +98,7 @@ class RangeSlider(QSlider):
             # Only draw the groove for the first slider so it doesn"t get drawn
             # on top of the existing ones every time
             if i == 0:
-                opt.subControls = QStyle.SC_SliderHandle    #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
+                opt.subControls = QStyle.SC_SliderHandle  #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
             else:
                 opt.subControls = QStyle.SC_SliderHandle
             if self.tickPosition() != self.NoTicks:
@@ -122,8 +122,8 @@ class RangeSlider(QSlider):
             self.active_slider = -1
             for i, value in enumerate([self._low, self._high]):
                 opt.sliderPosition = value
-                hit = style.hitTestComplexControl(style.CC_Slider, opt,
-                                                  event.pos(), self)
+                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(),
+                                                  self)
                 if hit == style.SC_SliderHandle:
                     self.active_slider = i
                     self.pressed_control = hit
@@ -133,8 +133,8 @@ class RangeSlider(QSlider):
                     break
             if self.active_slider < 0:
                 self.pressed_control = QStyle.SC_SliderHandle
-                self.click_offset = self.__pixelPosToRangeValue(
-                    self.__pick(event.pos()))
+                self.click_offset = self.__pixelPosToRangeValue(self.__pick(
+                    event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
         else:
@@ -185,10 +185,8 @@ class RangeSlider(QSlider):
         self.initStyleOption(opt)
         style = QApplication.style()
 
-        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove,
-                                  self)
-        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle,
-                                  self)
+        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
+        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)
 
         if self.orientation() == QtCore.Qt.Horizontal:
             slider_length = sr.width()
@@ -200,8 +198,7 @@ class RangeSlider(QSlider):
             slider_max = gr.bottom() - slider_length + 1
 
         return style.sliderValueFromPosition(self.minimum(), self.maximum(),
-                                             pos - slider_min,
-                                             slider_max - slider_min,
+                                             pos - slider_min, slider_max - slider_min,
                                              opt.upsideDown)
 
 
@@ -294,8 +291,7 @@ class VisWindow(QMainWindow):
         # cells to plot
         if len(self.parent.imerge) == 1:
             icell = self.parent.iscell[self.parent.imerge[0]]
-            self.cells = np.array(
-                (self.parent.iscell == icell).nonzero()).flatten()
+            self.cells = np.array((self.parent.iscell == icell).nonzero()).flatten()
         else:
             self.cells = np.array(self.parent.imerge).flatten()
         # compute spikes
@@ -342,8 +338,7 @@ class VisWindow(QMainWindow):
         colormap = cm.get_cmap("gray_r")
         colormap._init()
         lut = (colormap._lut * 255).view(
-            np.ndarray
-        )    # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
+            np.ndarray)  # Convert matplotlib colormap from 0-1 to 0 -255 for Qt
         lut = lut[0:-3, :]
         # apply the colormap
         self.img.setLookupTable(lut)
@@ -362,8 +357,7 @@ class VisWindow(QMainWindow):
         self.l0.addWidget(qlabel, 2, 3, 3, 2)
         self.isort = np.arange(0, self.cells.size).astype(np.int32)
         # ROI on main plot
-        redpen = pg.mkPen(pg.mkColor(255, 0, 0), width=3,
-                          style=QtCore.Qt.SolidLine)
+        redpen = pg.mkPen(pg.mkColor(255, 0, 0), width=3, style=QtCore.Qt.SolidLine)
         self.ROI = pg.RectROI([nt * .25, -1], [nt * .25, nn + 1],
                               maxBounds=QtCore.QRectF(-1., -1., nt + 1,
                                                       nn + 1), pen=redpen)
@@ -376,7 +370,7 @@ class VisWindow(QMainWindow):
         self.ROI.addScaleHandle([0., 0.5], [1., 0.5])
         self.ROI.sigRegionChangeFinished.connect(self.ROI_position)
         self.p1.addItem(self.ROI)
-        self.ROI.setZValue(10)    # make sure ROI is drawn above image
+        self.ROI.setZValue(10)  # make sure ROI is drawn above image
 
         self.LINE = pg.RectROI([-1, nn * .4], [nt * .25, nn * .2],
                                maxBounds=QtCore.QRectF(-1, -1., nt * .25,
@@ -390,13 +384,12 @@ class VisWindow(QMainWindow):
         self.LINE.addScaleHandle([0.5, 0], [0.5, 1])
         self.LINE.sigRegionChangeFinished.connect(self.LINE_position)
         self.p2.addItem(self.LINE)
-        self.LINE.setZValue(10)    # make sure ROI is drawn above image
+        self.LINE.setZValue(10)  # make sure ROI is drawn above image
 
-        greenpen = pg.mkPen(pg.mkColor(0, 255, 0), width=3,
-                            style=QtCore.Qt.SolidLine)
+        greenpen = pg.mkPen(pg.mkColor(0, 255, 0), width=3, style=QtCore.Qt.SolidLine)
         self.THRES = pg.RectROI([-0.5, 0], [nt * .25, 1],
-                                maxBounds=QtCore.QRectF(
-                                    -1., -10., nt * .25, 10), pen=greenpen)
+                                maxBounds=QtCore.QRectF(-1., -10., nt * .25,
+                                                        10), pen=greenpen)
         self.THRES.handleSize = 10
         self.THRES.handlePen = greenpen
         # Add top handle
@@ -448,8 +441,7 @@ class VisWindow(QMainWindow):
                 if event.button() == 1:
                     if event.double():
                         self.ROI.setPos([-1, -1])
-                        self.ROI.setSize(
-                            [self.sp.shape[1] + 1, self.sp.shape[0] + 1])
+                        self.ROI.setSize([self.sp.shape[1] + 1, self.sp.shape[0] + 1])
 
     def keyPressEvent(self, event):
         bid = -1
@@ -470,12 +462,10 @@ class VisWindow(QMainWindow):
                     # can move
                     if bid == 2:
                         move = True
-                        xrange = xrange - np.minimum(xrange.min() + 1,
-                                                     nt * 0.05)
+                        xrange = xrange - np.minimum(xrange.min() + 1, nt * 0.05)
                     else:
                         move = True
-                        xrange = xrange + np.minimum(nt - xrange.max() - 1,
-                                                     nt * 0.05)
+                        xrange = xrange + np.minimum(nt - xrange.max() - 1, nt * 0.05)
                     if move:
                         self.ROI.setPos([xrange.min() - 1, -1])
                         self.ROI.setSize([xrange.size + 1, nn + 1])
@@ -488,8 +478,7 @@ class VisWindow(QMainWindow):
                         yrange = yrange - np.minimum(yrange.min(), nn * 0.05)
                     else:
                         move = True
-                        yrange = yrange + np.minimum(nn - yrange.max() - 1,
-                                                     nn * 0.05)
+                        yrange = yrange + np.minimum(nn - yrange.max() - 1, nn * 0.05)
                     if move:
                         self.LINE.setPos([-1, yrange.min()])
                         self.LINE.setSize([self.xrange.size + 1, yrange.size])
@@ -510,14 +499,12 @@ class VisWindow(QMainWindow):
                         # can move
                         move = True
                         xmax = xrange.size - dx
-                        xrange = xrange.min() + np.arange(0, xmax).astype(
-                            np.int32)
+                        xrange = xrange.min() + np.arange(0, xmax).astype(np.int32)
                 else:
                     if xrange.size < nt - dx + 1:
                         move = True
                         xmax = xrange.size + dx
-                        xrange = xrange.min() + np.arange(0, xmax).astype(
-                            np.int32)
+                        xrange = xrange.min() + np.arange(0, xmax).astype(np.int32)
                 if move:
                     self.ROI.setPos([xrange.min() - 1, -1])
                     self.ROI.setSize([xrange.size + 1, nn + 1])
@@ -530,14 +517,12 @@ class VisWindow(QMainWindow):
                         # can move
                         move = True
                         ymax = yrange.size - dy
-                        yrange = yrange.min() + np.arange(0, ymax).astype(
-                            np.int32)
+                        yrange = yrange.min() + np.arange(0, ymax).astype(np.int32)
                 else:
                     if yrange.size < nn - dy + 1:
                         move = True
                         ymax = yrange.size + dy
-                        yrange = yrange.min() + np.arange(0, ymax).astype(
-                            np.int32)
+                        yrange = yrange.min() + np.arange(0, ymax).astype(np.int32)
                 if move:
                     self.LINE.setPos([-1, yrange.min()])
                     self.LINE.setSize([self.xrange.size + 1, yrange.size])
@@ -565,7 +550,7 @@ class VisWindow(QMainWindow):
             self.p3.plot(self.parent.beh_time, self.parent.beh, pen="w")
         self.p3.setXRange(self.xrange[0], self.xrange[-1])
         self.p3.addItem(self.THRES)
-        self.THRES.setZValue(10)    # make sure ROI is drawn above image
+        self.THRES.setZValue(10)  # make sure ROI is drawn above image
 
     def LINE_position(self):
         _, yrange = self.roi_range(self.LINE)
@@ -608,9 +593,7 @@ class VisWindow(QMainWindow):
         # edit buttons
         self.PCedit = QLineEdit(self)
         self.PCedit.setValidator(
-            QtGui.QIntValidator(1,
-                                np.minimum(self.sp.shape[0],
-                                           self.sp.shape[1])))
+            QtGui.QIntValidator(1, np.minimum(self.sp.shape[0], self.sp.shape[1])))
         self.PCedit.setText("1")
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
@@ -634,9 +617,7 @@ class VisWindow(QMainWindow):
         # activate buttons
         self.PCedit = QLineEdit(self)
         self.PCedit.setValidator(
-            QtGui.QIntValidator(1,
-                                np.minimum(self.sp.shape[0],
-                                           self.sp.shape[1])))
+            QtGui.QIntValidator(1, np.minimum(self.sp.shape[0], self.sp.shape[1])))
         self.PCedit.setText("1")
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
@@ -658,17 +639,16 @@ class VisWindow(QMainWindow):
         self.raster = True
         ncells = len(self.parent.stat)
         # cells not in sorting are set to -1
-        self.parent.isort = -1 * np.ones((ncells, ), dtype=np.int64)
+        self.parent.isort = -1 * np.ones((ncells,), dtype=np.int64)
         nsel = len(self.cells)
         I = np.zeros(nsel)
         I[self.isort1] = np.arange(nsel).astype("int")
-        self.parent.isort[self.cells] = I    #self.isort1
+        self.parent.isort[self.cells] = I  #self.isort1
         # set up colors for rastermap
         masks.rastermap_masks(self.parent)
         b = len(self.parent.color_names) - 1
         self.parent.colorbtns.button(b).setEnabled(True)
-        self.parent.colorbtns.button(b).setStyleSheet(
-            self.parent.styleUnpressed)
+        self.parent.colorbtns.button(b).setStyleSheet(self.parent.styleUnpressed)
         self.parent.rastermap = True
 
         self.comboBox.setCurrentIndex(1)
@@ -695,9 +675,8 @@ class VisWindow(QMainWindow):
         self.mapOn.setEnabled(False)
         self.tic = time.time()
         try:
-            self.model = Rastermap(n_components=ops["n_components"],
-                                   n_X=ops["n_X"], nPC=ops["nPC"],
-                                   init=ops["init"], alpha=ops["alpha"],
+            self.model = Rastermap(n_components=ops["n_components"], n_X=ops["n_X"],
+                                   nPC=ops["nPC"], init=ops["init"], alpha=ops["alpha"],
                                    K=ops["K"], constraints=ops["constraints"],
                                    annealing=ops["annealing"])
             self.model.fit(self.sp)
@@ -760,13 +739,11 @@ class VisWindow(QMainWindow):
                 if not hasattr(self, "isort2"):
                     self.model = Rastermap(n_components=ops["n_components"],
                                            n_X=ops["n_X"], nPC=ops["nPC"],
-                                           init=ops["init"],
-                                           alpha=ops["alpha"], K=ops["K"],
-                                           constraints=ops["constraints"],
+                                           init=ops["init"], alpha=ops["alpha"],
+                                           K=ops["K"], constraints=ops["constraints"],
                                            annealing=ops["annealing"])
                     unorm = (self.u**2).sum(axis=0)**0.5
-                    self.model.fit(self.sp.T, u=self.v * unorm,
-                                   v=self.u / unorm)
+                    self.model.fit(self.sp.T, u=self.v * unorm, v=self.u / unorm)
                     self.isort2 = np.argsort(self.model.embedding[:, 0])
                 self.tsort = self.isort2.astype(np.int32)
             else:
@@ -781,8 +758,7 @@ class VisWindow(QMainWindow):
         if i < 2:
             self.spF = gaussian_filter1d(
                 self.sp[np.ix_(self.isort, self.tsort)].T,
-                np.minimum(8, np.maximum(1, int(self.sp.shape[0] * 0.005))),
-                axis=1)
+                np.minimum(8, np.maximum(1, int(self.sp.shape[0] * 0.005))), axis=1)
             self.spF = self.spF.T
         else:
             self.spF = self.sp

@@ -4,8 +4,8 @@ from typing import Tuple
 
 import numpy as np
 from numba import vectorize, complex64
-from numpy.fft import ifftshift    #, fft2, ifft2
-from scipy.fft import next_fast_len    #, fft2, ifft2
+from numpy.fft import ifftshift  #, fft2, ifft2
+from scipy.fft import next_fast_len  #, fft2, ifft2
 from scipy.ndimage import gaussian_filter1d
 import torch
 
@@ -28,7 +28,7 @@ try:
         -------
         convolved_data: nImg x Ly x Lx
         """
-        return ifft2(apply_dotnorm(fft2(mov), img))    #.astype(np.complex64)
+        return ifft2(apply_dotnorm(fft2(mov), img))  #.astype(np.complex64)
 except:
     try:
         # pytorch > 1.7
@@ -96,10 +96,9 @@ def apply_dotnorm(Y, cfRefImg):
 #    return np.float32(x) * mul + add
 
 
-@vectorize([
-    "complex64(int16, float32, float32)",
-    "complex64(float32, float32, float32)"
-], nopython=True, target="parallel", cache=True)
+@vectorize(
+    ["complex64(int16, float32, float32)", "complex64(float32, float32, float32)"],
+    nopython=True, target="parallel", cache=True)
 def addmultiply(x, mul, add):
     return np.complex64(np.float32(x) * mul + add)
 
@@ -236,15 +235,12 @@ def spatial_smooth(data: np.ndarray, window: int):
         data = data[np.newaxis, :, :]
 
     half_pad = window // 2
-    data_padded = np.pad(data,
-                         ((0, 0), (half_pad, half_pad), (half_pad, half_pad)),
+    data_padded = np.pad(data, ((0, 0), (half_pad, half_pad), (half_pad, half_pad)),
                          mode="constant", constant_values=0)
 
     data_summed = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
-    data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :]
-                   )    # in X
-    data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window]
-                   )    # in Y
+    data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :])  # in X
+    data_summed = (data_summed[:, :, window:] - data_summed[:, :, :-window])  # in Y
     data_summed /= window**2
 
     return data_summed.squeeze()
@@ -268,8 +264,9 @@ def spatial_high_pass(data, N):
     """
     if data.ndim == 2:
         data = data[np.newaxis, :, :]
-    data_filtered = data - (spatial_smooth(data, N) / spatial_smooth(
-        np.ones((1, data.shape[1], data.shape[2])), N))
+    data_filtered = data - (spatial_smooth(data, N) /
+                            spatial_smooth(np.ones(
+                                (1, data.shape[1], data.shape[2])), N))
     return data_filtered.squeeze()
 
 
@@ -288,8 +285,7 @@ def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
     """
     Ly, Lx = img.shape
     return np.conj(fft2(img, (next_fast_len(Ly),
-                              next_fast_len(Lx)))) if pad_fft else np.conj(
-                                  fft2(img))
+                              next_fast_len(Lx)))) if pad_fft else np.conj(fft2(img))
 
 
 def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:

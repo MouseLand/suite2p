@@ -57,16 +57,13 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
             ndeadrows = 0
         # do not remove dead columns in unidirectional scanning mode
         # do this only if ndeadcols is -1
-        if tmpsbx.metadata[
-                "scanning_mode"] == "bidirectional" and ndeadcols == -1:
+        if tmpsbx.metadata["scanning_mode"] == "bidirectional" and ndeadcols == -1:
             ndeadcols = tmpsbx.ndeadcols
         else:
             ndeadcols = 0
         del tmpsbx
-        print("Removing {0} dead columns while loading sbx data.".format(
-            ndeadcols))
-        print(
-            "Removing {0} dead rows while loading sbx data.".format(ndeadrows))
+        print("Removing {0} dead columns while loading sbx data.".format(ndeadcols))
+        print("Removing {0} dead rows while loading sbx data.".format(ndeadrows))
 
     ops1[0]["sbx_ndeadcols"] = ndeadcols
     ops1[0]["sbx_ndeadrows"] = ndeadrows
@@ -96,20 +93,18 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
                 im2write = im[:, :, ichan, :, :]
                 for j in range(0, nplanes):
                     if iall == 0:
-                        ops1[j]["meanImg"] = np.zeros(
-                            (im.shape[3], im.shape[4]), np.float32)
+                        ops1[j]["meanImg"] = np.zeros((im.shape[3], im.shape[4]),
+                                                      np.float32)
                         if nchannels > 1:
                             ops1[j]["meanImg_chan2"] = np.zeros(
                                 (im.shape[3], im.shape[4]), np.float32)
                         ops1[j]["nframes"] = 0
                     if ichan == nfunc:
-                        ops1[j]["meanImg"] += np.squeeze(im2mean[j,
-                                                                 ichan, :, :])
+                        ops1[j]["meanImg"] += np.squeeze(im2mean[j, ichan, :, :])
                         reg_file[j].write(
                             bytearray(im2write[:, j, :, :].astype("int16")))
                     else:
-                        ops1[j]["meanImg_chan2"] += np.squeeze(
-                            im2mean[j, ichan, :, :])
+                        ops1[j]["meanImg_chan2"] += np.squeeze(im2mean[j, ichan, :, :])
                         reg_file_chan2[j].write(
                             bytearray(im2write[:, j, :, :].astype("int16")))
 

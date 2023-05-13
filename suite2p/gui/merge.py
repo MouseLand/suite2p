@@ -16,11 +16,11 @@ def distance_matrix(parent, ilist):
     for ij, j in enumerate(ilist):
         for ik, k in enumerate(ilist):
             if ij < ik:
-                idist[ij, ik] = (
-                    ((parent.stat[j]["ypix"][np.newaxis, :] -
-                      parent.stat[k]["ypix"][:, np.newaxis])**2 +
-                     (parent.stat[j]["xpix"][np.newaxis, :] -
-                      parent.stat[k]["xpix"][:, np.newaxis])**2)**0.5).mean()
+                idist[ij,
+                      ik] = (((parent.stat[j]["ypix"][np.newaxis, :] -
+                               parent.stat[k]["ypix"][:, np.newaxis])**2 +
+                              (parent.stat[j]["xpix"][np.newaxis, :] -
+                               parent.stat[k]["xpix"][:, np.newaxis])**2)**0.5).mean()
     return idist
 
 
@@ -42,9 +42,9 @@ def do_merge(parent):
 def merge_activity_masks(parent):
     print("merging activity... this may take some time")
     i0 = int(1 - parent.iscell[parent.ichosen])
-    ypix = np.zeros((0, ), np.int32)
-    xpix = np.zeros((0, ), np.int32)
-    lam = np.zeros((0, ), np.float32)
+    ypix = np.zeros((0,), np.int32)
+    xpix = np.zeros((0,), np.int32)
+    lam = np.zeros((0,), np.float32)
     footprints = np.array([])
     F = np.zeros((0, parent.Fcell.shape[1]), np.float32)
     Fneu = np.zeros((0, parent.Fcell.shape[1]), np.float32)
@@ -52,10 +52,8 @@ def merge_activity_masks(parent):
         F_chan2 = np.zeros((0, parent.Fcell.shape[1]), np.float32)
         Fneu_chan2 = np.zeros((0, parent.Fcell.shape[1]), np.float32)
         if not hasattr(parent, "F_chan2"):
-            parent.F_chan2 = np.load(
-                os.path.join(parent.basename, "F_chan2.npy"))
-            parent.Fneu_chan2 = np.load(
-                os.path.join(parent.basename, "Fneu_chan2.npy"))
+            parent.F_chan2 = np.load(os.path.join(parent.basename, "F_chan2.npy"))
+            parent.Fneu_chan2 = np.load(os.path.join(parent.basename, "Fneu_chan2.npy"))
 
     probcell = []
     probredcell = []
@@ -78,10 +76,8 @@ def merge_activity_masks(parent):
         F = np.append(F, parent.Fcell[n, :][np.newaxis, :], axis=0)
         Fneu = np.append(Fneu, parent.Fneu[n, :][np.newaxis, :], axis=0)
         if parent.hasred:
-            F_chan2 = np.append(F_chan2, parent.F_chan2[n, :][np.newaxis, :],
-                                axis=0)
-            Fneu_chan2 = np.append(Fneu_chan2,
-                                   parent.Fneu_chan2[n, :][np.newaxis, :],
+            F_chan2 = np.append(F_chan2, parent.F_chan2[n, :][np.newaxis, :], axis=0)
+            Fneu_chan2 = np.append(Fneu_chan2, parent.Fneu_chan2[n, :][np.newaxis, :],
                                    axis=0)
         probcell.append(parent.probcell[n])
         probredcell.append(parent.probredcell[n])
@@ -159,8 +155,8 @@ def merge_activity_masks(parent):
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis, :]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis, :]), axis=0)
     if parent.hasred:
-        parent.F_chan2 = np.concatenate(
-            (parent.F_chan2, F_chan2[np.newaxis, :]), axis=0)
+        parent.F_chan2 = np.concatenate((parent.F_chan2, F_chan2[np.newaxis, :]),
+                                        axis=0)
         parent.Fneu_chan2 = np.concatenate(
             (parent.Fneu_chan2, Fneu_chan2[np.newaxis, :]), axis=0)
     parent.Spks = np.concatenate((parent.Spks, spks), axis=0)
@@ -172,12 +168,9 @@ def merge_activity_masks(parent):
     parent.notmerged = np.append(parent.notmerged, False)
 
     ### for GUI drawing
-    ycirc, xcirc = utils.circle(parent.stat[-1]["med"],
-                                parent.stat[-1]["radius"])
-    goodi = ((ycirc >= 0)
-             & (xcirc >= 0)
-             & (ycirc < parent.ops["Ly"])
-             & (xcirc < parent.ops["Lx"]))
+    ycirc, xcirc = utils.circle(parent.stat[-1]["med"], parent.stat[-1]["radius"])
+    goodi = ((ycirc >= 0) & (xcirc >= 0) & (ycirc < parent.ops["Ly"]) &
+             (xcirc < parent.ops["Lx"]))
     parent.stat[-1]["ycirc"] = ycirc[goodi]
     parent.stat[-1]["xcirc"] = xcirc[goodi]
 
@@ -213,14 +206,12 @@ class MergeWindow(QDialog):
         mkeys = ["corr_thres", "dist_thres"]
         mlabels = ["correlation threshold", "euclidean distance threshold"]
         self.ops = {"corr_thres": 0.8, "dist_thres": 100.0}
-        self.layout.addWidget(
-            QLabel("Press enter in a text box to update params"), 0, 0, 1, 2)
-        self.layout.addWidget(
-            QLabel(
-                "(Correlations use "activity mode" and "bin" from main GUI)"),
-            1, 0, 1, 2)
-        self.layout.addWidget(QLabel(">>>>>>>>>>>> Parameters <<<<<<<<<<<"), 2,
+        self.layout.addWidget(QLabel("Press enter in a text box to update params"), 0,
                               0, 1, 2)
+        self.layout.addWidget(
+            QLabel("(Correlations use 'activity mode' and 'bin' from main GUI)"), 1, 0,
+            1, 2)
+        self.layout.addWidget(QLabel(">>>>>>>>>>>> Parameters <<<<<<<<<<<"), 2, 0, 1, 2)
         self.doMerge = QPushButton("merge selected ROIs", default=False,
                                    autoDefault=False)
         self.doMerge.clicked.connect(lambda: self.do_merge(parent))
@@ -249,17 +240,15 @@ class MergeWindow(QDialog):
             qedit = LineEdit(lkey, self)
             qedit.set_text(self.ops)
             qedit.setFixedWidth(90)
-            qedit.returnPressed.connect(
-                lambda: self.compute_merge_list(parent))
+            qedit.returnPressed.connect(lambda: self.compute_merge_list(parent))
             self.layout.addWidget(qedit, k * 2 + 2, 0, 1, 2)
             self.editlist.append(qedit)
             self.keylist.append(lkey)
             k += 1
 
         print("creating merge window... this may take some time")
-        self.CC = np.matmul(
-            parent.Fbin[parent.iscell],
-            parent.Fbin[parent.iscell].T) / parent.Fbin.shape[-1]
+        self.CC = np.matmul(parent.Fbin[parent.iscell],
+                            parent.Fbin[parent.iscell].T) / parent.Fbin.shape[-1]
         self.CC /= np.matmul(parent.Fstd[parent.iscell][:, np.newaxis],
                              parent.Fstd[parent.iscell][np.newaxis, :]) + 1e-3
         self.CC -= np.diag(np.diag(self.CC))
@@ -275,8 +264,7 @@ class MergeWindow(QDialog):
                                 parent.Fbin[-1].T) / parent.Fbin.shape[-1]
         self.cc_row /= parent.Fstd[parent.iscell] * parent.Fstd[-1] + 1e-3
         self.cc_row[-1] = 0
-        self.CC = np.concatenate((self.CC, self.cc_row[np.newaxis, :-1]),
-                                 axis=0)
+        self.CC = np.concatenate((self.CC, self.cc_row[np.newaxis, :-1]), axis=0)
         self.CC = np.concatenate((self.CC, self.cc_row[:, np.newaxis]), axis=1)
         for n in parent.imerge:
             self.CC[parent.imerge] = 0
@@ -293,13 +281,12 @@ class MergeWindow(QDialog):
             self.ops[key] = self.editlist[k].get_text()
         goodind = []
         NN = len(parent.stat[parent.iscell])
-        notused = np.ones(NN, "bool")    # not in a suggested merge
+        notused = np.ones(NN, "bool")  # not in a suggested merge
         icell = np.where(parent.iscell)[0]
         for k in range(NN):
             if notused[k]:
                 ilist = [
-                    i for i, x in enumerate(self.CC[k])
-                    if x >= self.ops["corr_thres"]
+                    i for i, x in enumerate(self.CC[k]) if x >= self.ops["corr_thres"]
                 ]
                 ilist.append(k)
                 if len(ilist) > 1:
@@ -320,8 +307,8 @@ class MergeWindow(QDialog):
         self.set_merge_list(parent, goodind)
 
     def set_merge_list(self, parent, goodind):
-        self.nMerge.setText(
-            "= %d possible merges found with these parameters" % len(goodind))
+        self.nMerge.setText("= %d possible merges found with these parameters" %
+                            len(goodind))
         self.merge_list = goodind
         self.n = 0
         if len(self.merge_list) > 0:
@@ -341,8 +328,8 @@ class MergeWindow(QDialog):
             for i in parent.imerge[1:]:
                 rgb = parent.colors["cols"][0, i]
                 pen = pg.mkPen(rgb, width=3)
-                scatter = pg.ScatterPlotItem(parent.Fbin[cell0],
-                                             parent.Fbin[i], pen=pen)
+                scatter = pg.ScatterPlotItem(parent.Fbin[cell0], parent.Fbin[i],
+                                             pen=pen)
                 self.p0.addItem(scatter)
                 sstring += " %d " % i
             self.p0.setLabel("left", sstring)

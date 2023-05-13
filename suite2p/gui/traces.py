@@ -27,8 +27,7 @@ def plot_trace(parent):
         if parent.neuropilOn:
             parent.p3.plot(parent.trange, fneu, pen="r")
         if parent.deconvOn:
-            parent.p3.plot(parent.trange, (sp + fmin),
-                           pen=(255, 255, 255, 150))
+            parent.p3.plot(parent.trange, (sp + fmin), pen=(255, 255, 255, 150))
         parent.fmin = fmin
         parent.fmax = fmax
         ax.setTicks(None)
@@ -39,7 +38,7 @@ def plot_trace(parent):
         pmerge = parent.imerge[:np.minimum(len(parent.imerge), nmax)]
         k = len(pmerge) - 1
         i = parent.activityMode
-        favg = np.zeros((parent.Fcell.shape[1], ))
+        favg = np.zeros((parent.Fcell.shape[1],))
         for n in pmerge[::-1]:
             if i == 0:
                 f = parent.Fcell[n, :]
@@ -63,17 +62,14 @@ def plot_trace(parent):
         # at bottom plot behavior and avg trace
         parent.fmin = 0
         if len(pmerge) > 5:
-            parent.p3.plot(parent.trange, -1 * bsc + favg * bsc,
-                           pen=(140, 140, 140))
+            parent.p3.plot(parent.trange, -1 * bsc + favg * bsc, pen=(140, 140, 140))
             parent.fmin = -1 * bsc
         if parent.bloaded:
-            parent.p3.plot(parent.trange, -1 * bsc + favg * bsc,
-                           pen=(140, 140, 140))
-            parent.p3.plot(parent.beh_time, -1 * bsc + parent.beh * bsc,
-                           pen="w")
+            parent.p3.plot(parent.trange, -1 * bsc + favg * bsc, pen=(140, 140, 140))
+            parent.p3.plot(parent.beh_time, -1 * bsc + parent.beh * bsc, pen="w")
             parent.fmin = -1 * bsc
             #parent.traceLabel[0].setText("<font color="gray">mean activity</font>")
-            #parent.traceLabel[1].setText("<font color="white">1D variable</font>")
+            #parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
             #parent.traceLabel[2].setText("")
             #ck.append((-0.5*bsc,"1D var"))
 
@@ -86,7 +82,7 @@ def plot_trace(parent):
 def make_buttons(parent, b0):
     # combo box to decide what kind of activity to view
     qlabel = QLabel(parent)
-    qlabel.setText("<font color="white">Activity mode:</font>")
+    qlabel.setText("<font color='white'>Activity mode:</font>")
     parent.l0.addWidget(qlabel, b0, 0, 1, 1)
     parent.comboBox = QComboBox(parent)
     parent.comboBox.setFixedWidth(100)
@@ -128,7 +124,7 @@ def make_buttons(parent, b0):
         b += 1
     # choose max # of cells plotted
     parent.l0.addWidget(
-        QLabel("<font color="white">max # plotted:</font>"),
+        QLabel("<font color='white'>max # plotted:</font>"),
         b0 + 2,
         0,
         1,

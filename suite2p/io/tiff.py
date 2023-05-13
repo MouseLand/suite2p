@@ -15,12 +15,11 @@ try:
     from ScanImageTiffReader import ScanImageTiffReader
     HAS_SCANIMAGE = True
 except ImportError:
-    HAS_SCANIMAGE = False 
+    HAS_SCANIMAGE = False
 
 
-
-def generate_tiff_filename(functional_chan: int, align_by_chan: int,
-                           save_path: str, k: int, ichan: bool) -> str:
+def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: str,
+                           k: int, ichan: bool) -> str:
     """
     Calculates a suite2p tiff filename from different parameters.
 
@@ -79,17 +78,15 @@ def save_tiff(mov: np.ndarray, fname: str) -> None:
             tif.write(frame)
 
 
-def open_tiff(
-        file: str,
-        sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
+def open_tiff(file: str,
+              sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
     """ Returns image and its length from tiff file with either ScanImageTiffReader or tifffile, based on "sktiff" """
     if sktiff:
         tif = TiffFile(file)
         Ltif = len(tif.pages)
     else:
         tif = ScanImageTiffReader(file)
-        Ltif = 1 if len(
-            tif.shape()) < 3 else tif.shape()[0]    # single page tiffs
+        Ltif = 1 if len(tif.shape()) < 3 else tif.shape()[0]  # single page tiffs
     return tif, Ltif
 
 
@@ -100,7 +97,7 @@ def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
             with ScanImageTiffReader(tiff_filename) as tif:
                 tif.data() if len(tif.shape()) < 3 else tif.data(
                     beg=0, end=np.minimum(batch_size,
-                                        tif.shape()[0] - 1))
+                                          tif.shape()[0] - 1))
             return False
         except:
             print(
@@ -136,16 +133,14 @@ def tiff_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(
-        ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
     # try tiff readers
     use_sktiff = True if ops["force_sktiff"] else use_sktiff_reader(
         fs[0], batch_size=ops1[0].get("batch_size"))
 
     batch_size = ops["batch_size"]
-    batch_size = nplanes * nchannels * math.ceil(batch_size /
-                                                 (nplanes * nchannels))
+    batch_size = nplanes * nchannels * math.ceil(batch_size / (nplanes * nchannels))
 
     # loop over all tiffs
     which_folder = -1
@@ -189,13 +184,12 @@ def tiff_to_binary(ops):
             for j in range(0, nplanes):
                 if ik == 0 and ix == 0:
                     ops1[j]["nframes"] = 0
-                    ops1[j]["frames_per_file"] = np.zeros((len(fs), ),
-                                                          dtype=int)
+                    ops1[j]["frames_per_file"] = np.zeros((len(fs),), dtype=int)
                     ops1[j]["meanImg"] = np.zeros((im.shape[1], im.shape[2]),
                                                   np.float32)
                     if nchannels > 1:
-                        ops1[j]["meanImg_chan2"] = np.zeros(
-                            (im.shape[1], im.shape[2]), np.float32)
+                        ops1[j]["meanImg_chan2"] = np.zeros((im.shape[1], im.shape[2]),
+                                                            np.float32)
                 i0 = nchannels * ((iplane + j) % nplanes)
                 if nchannels > 1:
                     nfunc = ops["functional_chan"] - 1
@@ -210,8 +204,7 @@ def tiff_to_binary(ops):
                 ops1[j]["frames_per_folder"][which_folder] += im2write.shape[0]
                 #print(ops1[j]["frames_per_folder"][which_folder])
                 if nchannels > 1:
-                    im2write = im[int(i0) + 1 - nfunc:nframes:nplanes *
-                                  nchannels]
+                    im2write = im[int(i0) + 1 - nfunc:nframes:nplanes * nchannels]
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]["meanImg_chan2"] += im2write.mean(axis=0)
 
@@ -288,7 +281,7 @@ def mesoscan_to_binary(ops):
     ops["lines"] = [None] * nplanes * ops["nrois"]
     ops["dy"] = [None] * nplanes * ops["nrois"]
     ops["dx"] = [None] * nplanes * ops["nrois"]
-    ops["iplane"] = np.zeros((nplanes * ops["nrois"], ), np.int32)
+    ops["iplane"] = np.zeros((nplanes * ops["nrois"],), np.int32)
     for n in range(ops["nrois"]):
         ops["lines"][n::ops["nrois"]] = [lines[n]] * nplanes
         ops["dy"][n::ops["nrois"]] = [dy[n]] * nplanes
@@ -304,8 +297,7 @@ def mesoscan_to_binary(ops):
 
     # open all binary files for writing
     # look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(
-        ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
 
     nchannels = ops1[0]["nchannels"]
@@ -353,8 +345,8 @@ def mesoscan_to_binary(ops):
                     ops1[j]["meanImg"] = np.zeros((len(jlines), im.shape[2]),
                                                   np.float32)
                     if nchannels > 1:
-                        ops1[j]["meanImg_chan2"] = np.zeros(
-                            (len(jlines), im.shape[2]), np.float32)
+                        ops1[j]["meanImg_chan2"] = np.zeros((len(jlines), im.shape[2]),
+                                                            np.float32)
                     ops1[j]["nframes"] = 0
                 i0 = nchannels * ((iplane + jplane) % nplanes)
                 if nchannels > 1:
@@ -375,8 +367,7 @@ def mesoscan_to_binary(ops):
                     im2write = im[np.ix_(frange, jlines,
                                          np.arange(0, im.shape[2], 1, int))]
                     reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]["meanImg_chan2"] += im2write.astype(
-                        np.float32).sum(axis=0)
+                    ops1[j]["meanImg_chan2"] += im2write.astype(np.float32).sum(axis=0)
             iplane = (iplane - nframes / nchannels) % nplanes
             ix += nframes
             ntotal += nframes
@@ -427,8 +418,7 @@ def ome_to_binary(ops):
     nplanes = ops1[0]["nplanes"]
 
     # open all binary files for writing and look for tiffs in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(
-        ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
 
     fs_Ch1, fs_Ch2 = [], []
@@ -488,8 +478,7 @@ def ome_to_binary(ops):
         gc.collect()
 
         if ik % 1000 == 0:
-            print("%d frames of binary, time %0.2f sec." %
-                  (ik, time.time() - t0))
+            print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))
 
     if nchannels > 1:
         for ik, file in enumerate(fs_Ch2):
@@ -505,8 +494,7 @@ def ome_to_binary(ops):
             gc.collect()
 
             if ik % 1000 == 0:
-                print("%d frames of binary, time %0.2f sec." %
-                      (ik, time.time() - t0))
+                print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))
 
     # write ops files
     do_registration = ops["do_registration"]

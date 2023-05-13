@@ -50,12 +50,9 @@ def make_masks_and_enable_buttons(parent):
         yext, xext = utils.boundary(ypix, xpix)
         parent.stat[n]["yext"] = yext
         parent.stat[n]["xext"] = xext
-        ycirc, xcirc = utils.circle(parent.stat[n]["med"],
-                                    parent.stat[n]["radius"])
-        goodi = ((ycirc >= 0)
-                 & (xcirc >= 0)
-                 & (ycirc < parent.ops["Ly"])
-                 & (xcirc < parent.ops["Lx"]))
+        ycirc, xcirc = utils.circle(parent.stat[n]["med"], parent.stat[n]["radius"])
+        goodi = ((ycirc >= 0) & (xcirc >= 0) & (ycirc < parent.ops["Ly"]) &
+                 (xcirc < parent.ops["Lx"]))
         parent.stat[n]["ycirc"] = ycirc[goodi]
         parent.stat[n]["xcirc"] = xcirc[goodi]
         parent.stat[n]["inmerge"] = 0
@@ -88,9 +85,8 @@ def make_masks_and_enable_buttons(parent):
     graphics.init_range(parent)
     traces.plot_trace(parent)
     parent.xyrat = 1.0
-    if (isinstance(parent.ops["diameter"],
-                   (list, np.ndarray)) and len(parent.ops["diameter"]) > 1
-            and parent.ops.get("aspect", 1.0)):
+    if (isinstance(parent.ops["diameter"], (list, np.ndarray)) and
+            len(parent.ops["diameter"]) > 1 and parent.ops.get("aspect", 1.0)):
         parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
     else:
         parent.xyrat = parent.ops.get("aspect", 1.0)
@@ -170,8 +166,8 @@ def enable_views_and_classifier(parent):
 def load_dialog(parent):
     options = QFileDialog.Options()
     options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getOpenFileName(parent, "Open stat.npy",
-                                       filter="stat.npy", options=options)
+    name = QFileDialog.getOpenFileName(parent, "Open stat.npy", filter="stat.npy",
+                                       options=options)
     parent.fname = name[0]
     load_proc(parent)
 
@@ -179,8 +175,8 @@ def load_dialog(parent):
 def load_dialog_NWB(parent):
     options = QFileDialog.Options()
     options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getOpenFileName(parent, "Open ophys.nwb",
-                                       filter="*.nwb", options=options)
+    name = QFileDialog.getOpenFileName(parent, "Open ophys.nwb", filter="*.nwb",
+                                       options=options)
     parent.fname = name[0]
     load_NWB(parent)
 
@@ -188,8 +184,7 @@ def load_dialog_NWB(parent):
 def load_dialog_folder(parent):
     options = QFileDialog.Options()
     options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getExistingDirectory(parent,
-                                            "Open folder with planeX folders",
+    name = QFileDialog.getExistingDirectory(parent, "Open folder with planeX folders",
                                             options=options)
     parent.fname = name
     load_folder(parent)
@@ -216,14 +211,12 @@ def load_folder(parent):
     print(parent.fname)
     save_folder = parent.fname
     plane_folders = [
-        f.path for f in os.scandir(save_folder)
-        if f.is_dir() and f.name[:5] == "plane"
+        f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ]
     stat_found = False
     if len(plane_folders) > 0:
-        stat_found = all([
-            os.path.isfile(os.path.join(f, "stat.npy")) for f in plane_folders
-        ])
+        stat_found = all(
+            [os.path.isfile(os.path.join(f, "stat.npy")) for f in plane_folders])
     if not stat_found:
         print("No processed planeX folders in folder")
         return
@@ -243,7 +236,7 @@ def load_files(name):
         ypix = stat[0]["ypix"]
     except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
         print("ERROR: this is not a stat.npy file :( "
-              "(needs stat[n]["ypix"]!)")
+              "(needs stat[n]['ypix']!)")
         stat = None
     goodfolder = False
     if stat is not None:
@@ -275,8 +268,8 @@ def load_files(name):
             print("no manual labels found (iscell.npy)")
             if goodfolder:
                 NN = Fcell.shape[0]
-                iscell = np.ones((NN, ), "bool")
-                probcell = np.ones((NN, ), np.float32)
+                iscell = np.ones((NN,), "bool")
+                probcell = np.ones((NN,), np.float32)
         try:
             redcell = np.load(basename + "/redcell.npy")
             probredcell = redcell[:, 1].copy()
@@ -287,8 +280,8 @@ def load_files(name):
             hasred = False
             if goodfolder:
                 NN = Fcell.shape[0]
-                redcell = np.zeros((NN, ), "bool")
-                probredcell = np.zeros((NN, ), np.float32)
+                redcell = np.zeros((NN,), "bool")
+                probredcell = np.zeros((NN,), np.float32)
     else:
         print("incorrect file, not a stat.npy")
         return None
@@ -370,9 +363,8 @@ def load_behavior(parent):
         parent.beh = beh
         parent.beh_time = beh_time
         if bresample:
-            parent.beh_resampled = resample_frames(
-                parent.beh, parent.beh_time, np.arange(0,
-                                                       parent.Fcell.shape[1]))
+            parent.beh_resampled = resample_frames(parent.beh, parent.beh_time,
+                                                   np.arange(0, parent.Fcell.shape[1]))
         else:
             parent.beh_resampled = parent.beh
         b = 8
@@ -402,10 +394,9 @@ def resample_frames(y, x, xt):
 def save_redcell(parent):
     np.save(
         os.path.join(parent.basename, "redcell.npy"),
-        np.concatenate(
-            (np.expand_dims(parent.redcell[parent.notmerged], axis=1),
-             np.expand_dims(parent.probredcell[parent.notmerged], axis=1)),
-            axis=1))
+        np.concatenate((np.expand_dims(parent.redcell[parent.notmerged], axis=1),
+                        np.expand_dims(parent.probredcell[parent.notmerged], axis=1)),
+                       axis=1))
 
 
 def save_iscell(parent):
@@ -430,17 +421,23 @@ def save_mat(parent):
         parent.ops["date_proc"] = []
     scipy.io.savemat(
         matpath, {
-            "stat": parent.stat,
-            "ops": parent.ops,
-            "F": parent.Fcell,
-            "Fneu": parent.Fneu,
-            "spks": parent.Spks,
-            "iscell": np.concatenate(
-                (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
-                axis=1),
-            "redcell": np.concatenate(
-                (np.expand_dims(parent.redcell, axis=1),
-                 np.expand_dims(parent.probredcell, axis=1)), axis=1)
+            "stat":
+                parent.stat,
+            "ops":
+                parent.ops,
+            "F":
+                parent.Fcell,
+            "Fneu":
+                parent.Fneu,
+            "spks":
+                parent.Spks,
+            "iscell":
+                np.concatenate(
+                    (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
+                    axis=1),
+            "redcell":
+                np.concatenate((np.expand_dims(parent.redcell, axis=1),
+                                np.expand_dims(parent.probredcell, axis=1)), axis=1)
         })
 
 
@@ -452,12 +449,11 @@ def save_merge(parent):
     np.save(os.path.join(parent.basename, "Fneu.npy"), parent.Fneu)
     if parent.hasred:
         np.save(os.path.join(parent.basename, "F_chan2.npy"), parent.F_chan2)
-        np.save(os.path.join(parent.basename, "Fneu_chan2.npy"),
-                parent.Fneu_chan2)
+        np.save(os.path.join(parent.basename, "Fneu_chan2.npy"), parent.Fneu_chan2)
         np.save(
             os.path.join(parent.basename, "redcell.npy"),
-            np.concatenate((np.expand_dims(parent.redcell, axis=1),
-                            np.expand_dims(parent.probredcell, axis=1)),
+            np.concatenate((np.expand_dims(
+                parent.redcell, axis=1), np.expand_dims(parent.probredcell, axis=1)),
                            axis=1))
     np.save(os.path.join(parent.basename, "spks.npy"), parent.Spks)
     iscell = np.concatenate(

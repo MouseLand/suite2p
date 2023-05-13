@@ -184,13 +184,11 @@ def temporal_high_pass_filter(mov: np.ndarray, width: int) -> np.ndarray:
         The filtered frames
     """
 
-    return hp_gaussian_filter(mov,
-                              width) if width < 10 else hp_rolling_mean_filter(
-                                  mov, width)    # gaussian is slower
+    return hp_gaussian_filter(mov, width) if width < 10 else hp_rolling_mean_filter(
+        mov, width)  # gaussian is slower
 
 
-def standard_deviation_over_time(mov: np.ndarray,
-                                 batch_size: int) -> np.ndarray:
+def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray:
     """
     Returns standard deviation of difference between pixels across time, computed in batches of batch_size.
 
@@ -210,8 +208,7 @@ def standard_deviation_over_time(mov: np.ndarray,
     batch_size = min(batch_size, nbins)
     sdmov = np.zeros((Ly, Lx), "float32")
     for ix in range(0, nbins, batch_size):
-        sdmov += ((np.diff(mov[ix:ix + batch_size, :, :],
-                           axis=0)**2).sum(axis=0))
+        sdmov += ((np.diff(mov[ix:ix + batch_size, :, :], axis=0)**2).sum(axis=0))
     sdmov = np.maximum(1e-10, np.sqrt(sdmov / nbins))
     return sdmov
 
@@ -236,24 +233,20 @@ def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
 
     # bin along Y
     movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), "float32")
-    movd[:, :Ly // 2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]],
-                                   axis=0)
+    movd[:, :Ly // 2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]], axis=0)
     if Ly % 2 == 1:
         movd[:, -1, :] = mov[:, -1, :] / 2 if taper_edge else mov[:, -1, :]
 
     # bin along X
-    mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))),
-                    "float32")
-    mov2[:, :, :Lx // 2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]],
-                                   axis=0)
+    mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))), "float32")
+    mov2[:, :, :Lx // 2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]], axis=0)
     if Lx % 2 == 1:
         mov2[:, :, -1] = movd[:, :, -1] / 2 if taper_edge else movd[:, :, -1]
 
     return mov2
 
 
-def threshold_reduce(mov: np.ndarray,
-                     intensity_threshold: float) -> np.ndarray:
+def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
     """
     Returns standard deviation of pixels, thresholded by "intensity_threshold".
     Run in a loop to reduce memory footprint.

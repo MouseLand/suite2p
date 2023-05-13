@@ -11,8 +11,7 @@ def add_args(parser: argparse.ArgumentParser):
                         help="run single plane ops")
     parser.add_argument("--ops", default=[], type=str, help="options")
     parser.add_argument("--db", default=[], type=str, help="options")
-    parser.add_argument("--version", action="store_true",
-                        help="print version number.")
+    parser.add_argument("--version", action="store_true", help="print version number.")
     ops0 = default_ops()
     for k in ops0.keys():
         v = dict(default=ops0[k], help="{0} : {1}".format(k, ops0[k]))
@@ -49,8 +48,7 @@ def parse_args(parser: argparse.ArgumentParser):
                 ops[k] = n.astype(type(default_key))
                 print(set_param_msg.format(k, ops[k]))
         elif isinstance(default_key, bool):
-            args_key = bool(
-                int(args_key))    # bool("0") is true, must convert to int
+            args_key = bool(int(args_key))  # bool("0") is true, must convert to int
             if default_key != args_key:
                 ops[k] = args_key
                 print(set_param_msg.format(k, ops[k]))

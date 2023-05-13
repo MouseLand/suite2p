@@ -1,6 +1,4 @@
 [style]
-based_on_style = pep8
-spaces_before_comment = 4
+based_on_style = google
 split_before_named_assigns = false
-allow_split_before_dict_value = false
 column_limit = 88

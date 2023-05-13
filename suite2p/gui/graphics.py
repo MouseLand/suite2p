@@ -10,9 +10,8 @@ from . import masks
 
 class TraceBox(pg.PlotItem):
 
-    def __init__(self, parent=None, border=None, lockAspect=False,
-                 enableMouse=True, invertY=False, enableMenu=True, name=None,
-                 invertX=False):
+    def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True,
+                 invertY=False, enableMenu=True, name=None, invertX=False):
         super(TraceBox, self).__init__()
         self.parent = parent
 
@@ -27,9 +26,8 @@ class TraceBox(pg.PlotItem):
 
 class ViewBox(pg.ViewBox):
 
-    def __init__(self, parent=None, border=None, lockAspect=False,
-                 enableMouse=True, invertY=False, enableMenu=True, name=None,
-                 invertX=False):
+    def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True,
+                 invertY=False, enableMenu=True, name=None, invertX=False):
         #pg.ViewBox.__init__(self, border, lockAspect, enableMouse,
         #invertY, enableMenu, name, invertX)
         super(ViewBox, self).__init__()
@@ -62,8 +60,7 @@ class ViewBox(pg.ViewBox):
             if posy >= 0 and posx >= 0 and posy <= self.parent.Lx and posx <= self.parent.Ly:
                 ichosen = int(self.parent.rois["iROI"][iplot, 0, posx, posy])
                 if ichosen < 0:
-                    if ev.button(
-                    ) == QtCore.Qt.RightButton and self.menuEnabled():
+                    if ev.button() == QtCore.Qt.RightButton and self.menuEnabled():
                         self.raiseContextMenu(ev)
                     return
                 else:
@@ -74,8 +71,7 @@ class ViewBox(pg.ViewBox):
                         masks.flip_plot(self.parent)
                     else:
                         merged = False
-                        if ev.modifiers(
-                        ) == QtCore.Qt.ShiftModifier or ev.modifiers(
+                        if ev.modifiers() == QtCore.Qt.ShiftModifier or ev.modifiers(
                         ) == QtCore.Qt.ControlModifier:
                             if self.parent.iscell[self.parent.imerge[
                                     0]] == self.parent.iscell[ichosen]:
@@ -99,50 +95,6 @@ class ViewBox(pg.ViewBox):
                             if btn.isChecked():
                                 btn.setStyleSheet(self.parent.styleUnpressed)
                     self.parent.update_plot()
-
-    def mouseDragEvent(self, ev, axis=None):
-        ## if axis is specified, event will only affect that axis.
-        ev.accept()    ## we accept all buttons
-
-        pos = ev.pos()
-        lastPos = ev.lastPos()
-        dif = pos - lastPos
-        dif = dif * -1
-
-        ## Ignore axes if mouse is disabled
-        mouseEnabled = np.array(self.state["mouseEnabled"], dtype=np.float)
-        mask = mouseEnabled.copy()
-        if axis is not None:
-            mask[1 - axis] = 0.0
-
-        ## Scale or translate based on mouse button
-        if ev.button() & (QtCore.Qt.LeftButton | QtCore.Qt.MidButton):
-            if self.state["mouseMode"] == pg.ViewBox.RectMode:
-                if ev.isFinish(
-                ):    ## This is the final move in the drag; change the view scale now
-                    #print "finish"
-                    self.rbScaleBox.hide()
-                    ax = QtCore.QRectF(Point(ev.buttonDownPos(ev.button())),
-                                       Point(pos))
-                    ax = self.childGroup.mapRectFromParent(ax)
-                    self.showAxRect(ax)
-                    self.axHistoryPointer += 1
-                    self.axHistory = self.axHistory[:self.axHistoryPointer] + [
-                        ax
-                    ]
-                else:
-                    ## update shape of scale box
-                    self.updateScaleBox(ev.buttonDownPos(), ev.pos())
-            else:
-                tr = dif * mask
-                tr = self.mapToView(tr) - self.mapToView(Point(0, 0))
-                x = tr.x() if mask[0] == 1 else None
-                y = tr.y() if mask[1] == 1 else None
-
-                self._resetTarget()
-                if x is not None or y is not None:
-                    self.translateBy(x=x, y=y)
-                self.sigRangeChangedManually.emit(self.state["mouseEnabled"])
 
     def zoom_plot(self):
         self.setXRange(0, self.parent.ops["Lx"])

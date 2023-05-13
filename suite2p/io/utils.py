@@ -77,7 +77,7 @@ def list_files(froot, look_one_level_down, exts):
         fs.extend(glob.glob(lpath))
     fs = natsorted(set(fs))
     if len(fs) > 0:
-        first_tiffs = np.zeros((len(fs), ), "bool")
+        first_tiffs = np.zeros((len(fs),), "bool")
         first_tiffs[0] = True
     else:
         first_tiffs = np.zeros(0, "bool")
@@ -92,8 +92,7 @@ def list_files(froot, look_one_level_down, exts):
             fsnew = natsorted(set(fsnew))
             if len(fsnew) > 0:
                 fs.extend(fsnew)
-                first_tiffs = np.append(first_tiffs,
-                                        np.zeros((len(fsnew), ), "bool"))
+                first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), "bool"))
                 first_tiffs[lfs] = True
                 lfs = len(fs)
     return fs, first_tiffs
@@ -109,8 +108,7 @@ def get_h5_list(ops):
     nfs = 0
     first_tiffs = []
     for k, fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops["look_one_level_down"],
-                                ["*.h5", "*.hdf5"])
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.h5", "*.hdf5"])
         fsall.extend(fs)
         first_tiffs.extend(list(ftiffs))
     if len(fs) == 0:
@@ -135,7 +133,7 @@ def get_tif_list(ops):
         fsall = []
         for tif in ops["tiff_list"]:
             fsall.append(os.path.join(froot[0], tif))
-        ops["first_tiffs"] = np.zeros((len(fsall), ), dtype="bool")
+        ops["first_tiffs"] = np.zeros((len(fsall),), dtype="bool")
         ops["first_tiffs"][0] = True
         print("** Found %d tifs - converting to binary **" % (len(fsall)))
     else:
@@ -252,8 +250,7 @@ def find_files_open_binaries(ops1, ish5=False):
         fs, ops2 = get_tif_list(ops1[0])
         for ops in ops1:
             ops["first_tiffs"] = ops2["first_tiffs"]
-            ops["frames_per_folder"] = np.zeros((ops2["first_tiffs"].sum(), ),
-                                                np.int32)
+            ops["frames_per_folder"] = np.zeros((ops2["first_tiffs"].sum(),), np.int32)
     for ops in ops1:
         ops["filelist"] = fs
     return ops1, fs, reg_file, reg_file_chan2
@@ -294,11 +291,10 @@ def init_ops(ops):
     # compile ops into list across planes
     for j in range(0, nplanes):
         if len(ops["save_folder"]) > 0:
-            ops["save_path"] = os.path.join(ops["save_path0"],
-                                            ops["save_folder"], "plane%d" % j)
-        else:
-            ops["save_path"] = os.path.join(ops["save_path0"], "suite2p",
+            ops["save_path"] = os.path.join(ops["save_path0"], ops["save_folder"],
                                             "plane%d" % j)
+        else:
+            ops["save_path"] = os.path.join(ops["save_path0"], "suite2p", "plane%d" % j)
 
         if ("fast_disk" not in ops) or len(ops["fast_disk"]) == 0:
             ops["fast_disk"] = ops["save_path0"].copy()
@@ -314,8 +310,7 @@ def init_ops(ops):
         if nchannels > 1:
             ops["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
             if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-                ops["raw_file_chan2"] = os.path.join(fast_disk,
-                                                     "data_chan2_raw.bin")
+                ops["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
         if "dy" in ops and ops["dy"] != "":
             ops["dy"] = dy[j]
             ops["dx"] = dx[j]
@@ -330,7 +325,7 @@ def init_ops(ops):
 def get_suite2p_path(path: Path) -> Path:
     """Find the root `suite2p` folder in the `path` variable"""
 
-    path = Path(path)    # In case `path` is a string
+    path = Path(path)  # In case `path` is a string
 
     # Cheap sanity check
     if "suite2p" in str(path):

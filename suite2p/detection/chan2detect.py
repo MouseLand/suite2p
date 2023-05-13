@@ -51,8 +51,7 @@ def intensity_ratio(ops, stats):
     cell_pix = masks.create_cell_pix(stats, Ly=ops["Ly"], Lx=ops["Lx"])
     cell_masks0 = [
         masks.create_cell_mask(stat, Ly=ops["Ly"], Lx=ops["Lx"],
-                               allow_overlap=ops["allow_overlap"])
-        for stat in stats
+                               allow_overlap=ops["allow_overlap"]) for stat in stats
     ]
     neuropil_ipix = masks.create_neuropil_masks(
         ypixs=[stat["ypix"] for stat in stats],
@@ -66,8 +65,7 @@ def intensity_ratio(ops, stats):
     for cell_mask, cell_mask0, neuropil_mask, neuropil_mask0 in zip(
             cell_masks, cell_masks0, neuropil_masks, neuropil_ipix):
         cell_mask[cell_mask0[0]] = cell_mask0[1]
-        neuropil_mask[neuropil_mask0.astype(
-            np.int64)] = 1. / len(neuropil_mask0)
+        neuropil_mask[neuropil_mask0.astype(np.int64)] = 1. / len(neuropil_mask0)
 
     mimg2 = ops["meanImg_chan2"]
     inpix = cell_masks @ mimg2.flatten()
@@ -83,7 +81,7 @@ def cellpose_overlap(stats, mimg2):
     masks = anatomical.roi_detect(mimg2)[0]
     Ly, Lx = masks.shape
     redstats = np.zeros((len(stats), 2),
-                        np.float32)    #changed the size of preallocated space
+                        np.float32)  #changed the size of preallocated space
     for i in range(len(stats)):
         smask = np.zeros((Ly, Lx), np.uint16)
         ypix0, xpix0 = stats[i]["ypix"], stats[i]["xpix"]
@@ -92,7 +90,7 @@ def cellpose_overlap(stats, mimg2):
         iou = ious.max()
         redstats[
             i,
-        ] = np.array([iou > 0.5, iou])    #this had the wrong dimension
+        ] = np.array([iou > 0.5, iou])  #this had the wrong dimension
     return redstats
 
 
@@ -104,8 +102,7 @@ def detect(ops, stats):
     # non-rigid regression with nblks x nblks pieces
     nblks = 3
     Ly, Lx = ops["Ly"], ops["Lx"]
-    ops["meanImg_chan2_corrected"] = correct_bleedthrough(
-        Ly, Lx, nblks, mimg, mimg2)
+    ops["meanImg_chan2_corrected"] = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
 
     redstats = None
     if ops.get("anatomical_red", True):

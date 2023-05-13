@@ -6,8 +6,9 @@ import numpy as np
 
 
 class BinaryFile:
-    def __init__(self, Ly: int, Lx: int, filename: str, 
-                 n_frames: int = None, dtype: str = "int16"):
+
+    def __init__(self, Ly: int, Lx: int, filename: str, n_frames: int = None,
+                 dtype: str = "int16"):
         """
         Creates/Opens a Suite2p BinaryFile for reading and/or writing image data that acts like numpy array
 
@@ -25,15 +26,15 @@ class BinaryFile:
         self.filename = filename
         self.dtype = dtype
         write = (not os.path.exists(self.filename))
-        
+
         if write and n_frames is None:
-            raise ValueError("need to provide number of frames n_frames when writing file")
+            raise ValueError(
+                "need to provide number of frames n_frames when writing file")
         elif not write:
             n_frames = self.n_frames
         shape = (n_frames, self.Ly, self.Lx)
         mode = "w+" if write else "r+"
-        self.file = np.memmap(self.filename, mode=mode, dtype=self.dtype,
-                              shape=shape)
+        self.file = np.memmap(self.filename, mode=mode, dtype=self.dtype, shape=shape)
         self._index = 0
         self._can_read = True
 
@@ -99,7 +100,7 @@ class BinaryFile:
         Closes the file.
         """
         self.file._mmap.close()
-        
+
     def __enter__(self):
         return self
 
@@ -111,8 +112,8 @@ class BinaryFile:
         if data.dtype != "int16":
             self.file[indices] = np.minimum(data, 2**15 - 2).astype("int16")
         else:
-            self.file[indices] = data 
-        
+            self.file[indices] = data
+
     def __getitem__(self, *items):
         indices, *crop = items
         return self.file[indices]
@@ -139,8 +140,7 @@ class BinaryFile:
         """
         return self.file[:]
 
-    def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int,
-                                                               int]] = None,
+    def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int, int]] = None,
                   y_range: Optional[Tuple[int, int]] = None,
                   bad_frames: Optional[np.ndarray] = None,
                   reject_threshold: float = 0.5) -> np.ndarray:
@@ -173,9 +173,9 @@ class BinaryFile:
         for k in np.arange(0, self.n_frames, batch_size):
             indices = slice(k, min(k + batch_size, self.n_frames))
             data = self.file[indices]
-        
+
             if x_range is not None and y_range is not None:
-                data = data[:, slice(*y_range), slice(*x_range)]    # crop
+                data = data[:, slice(*y_range), slice(*x_range)]  # crop
 
             good_indices = good_frames[indices]
             if np.mean(good_indices) > reject_threshold:
@@ -188,10 +188,12 @@ class BinaryFile:
         mov = np.stack(batches)
         return mov
 
+
 def from_slice(s: slice) -> Optional[np.ndarray]:
     """Creates an np.arange() array from a Python slice object.  Helps provide numpy-like slicing interfaces."""
     return np.arange(s.start, s.stop, s.step) if any([s.start, s.stop, s.step
-                                                      ]) else None
+                                                     ]) else None
+
 
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     """Returns an array with the mean of each time bin (of size "bin_size")."""
@@ -207,10 +209,11 @@ def temporary_pointer(file):
     yield file
     file.seek(orig_pointer)
 
+
 class BinaryFileCombined:
 
-    def __init__(self, LY: int, LX: int, Ly: np.ndarray, Lx: np.ndarray,
-                 dy: np.ndarray, dx: np.ndarray, read_filenames: str):
+    def __init__(self, LY: int, LX: int, Ly: np.ndarray, Lx: np.ndarray, dy: np.ndarray,
+                 dx: np.ndarray, read_filenames: str):
         """
         Creates/Opens a Suite2p BinaryFile for reading image data across planes
 
@@ -246,7 +249,7 @@ class BinaryFileCombined:
         n_frames = np.zeros(len(self.read_files))
         for rf in self.read_files:
             n_frames[i] = rf.n_frames
-        assert (n_frames==n_frames[0]).sum() == len(self.read_files)
+        assert (n_frames == n_frames[0]).sum() == len(self.read_files)
         self._index = 0
         self._can_read = True
 
@@ -275,7 +278,7 @@ class BinaryFileCombined:
     def n_frames(self) -> int:
         """total number of fraames in the read_file."""
         return self.read_files[0].n_frames
-    
+
     def __getitem__(self, *items):
         indices, *crop = items
         data0 = self.read_files[0][indices]
@@ -285,5 +288,5 @@ class BinaryFileCombined:
                 data0 = self.read_file[indices]
             data_all[:, self.dy[n]:self.dy[n] + self.Ly[n],
                      self.dx[n]:self.dx[n] + self.Lx[n]] = data0
-        
+
         return data_all

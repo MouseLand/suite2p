@@ -85,8 +85,7 @@ def classifier(parent):
     parent.statlabels = None
     parent.loadMenu = QMenu("Load", parent)
     parent.loadClass = QAction("from file", parent)
-    parent.loadClass.triggered.connect(
-        lambda: classgui.load_classifier(parent))
+    parent.loadClass.triggered.connect(lambda: classgui.load_classifier(parent))
     parent.loadClass.setEnabled(False)
     parent.loadMenu.addAction(parent.loadClass)
     parent.loadUClass = QAction("default classifier", parent)
@@ -95,20 +94,17 @@ def classifier(parent):
     parent.loadUClass.setEnabled(False)
     parent.loadMenu.addAction(parent.loadUClass)
     parent.loadSClass = QAction("built-in classifier", parent)
-    parent.loadSClass.triggered.connect(
-        lambda: classgui.load_s2p_classifier(parent))
+    parent.loadSClass.triggered.connect(lambda: classgui.load_s2p_classifier(parent))
     parent.loadSClass.setEnabled(False)
     parent.loadMenu.addAction(parent.loadSClass)
     parent.loadTrain = QAction("Build", parent)
     parent.loadTrain.triggered.connect(lambda: classgui.load_list(parent))
     parent.loadTrain.setEnabled(False)
     parent.saveDefault = QAction("Save loaded as default", parent)
-    parent.saveDefault.triggered.connect(
-        lambda: classgui.class_default(parent))
+    parent.saveDefault.triggered.connect(lambda: classgui.class_default(parent))
     parent.saveDefault.setEnabled(False)
     parent.resetDefault = QAction("Reset default to built-in", parent)
-    parent.resetDefault.triggered.connect(
-        lambda: classgui.reset_default(parent))
+    parent.resetDefault.triggered.connect(lambda: classgui.reset_default(parent))
     parent.resetDefault.setEnabled(True)
     class_menu = main_menu.addMenu("&Classifier")
     class_menu.addMenu(parent.loadMenu)
@@ -168,17 +164,15 @@ def plugins(parent):
     parent.plugins = {}
     plugin_menu = main_menu.addMenu("&Plugins")
     for entry_pt in iter_entry_points(group="suite2p.plugin", name=None):
-        plugin_obj = entry_pt.load(
-        )    # load the advertised class from entry_points
+        plugin_obj = entry_pt.load()  # load the advertised class from entry_points
         parent.plugins[entry_pt.name] = plugin_obj(
             parent
-        )    # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
+        )  # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
         action = QAction(
             parent.plugins[entry_pt.name].name, parent
-        )    # create plugin menu item with the name property of the loaded class
-        action.triggered.connect(
-            parent.plugins[entry_pt.name].trigger
-        )    # attach class method "trigger" to plugin menu action
+        )  # create plugin menu item with the name property of the loaded class
+        action.triggered.connect(parent.plugins[entry_pt.name].trigger
+                                )  # attach class method "trigger" to plugin menu action
         plugin_menu.addAction(action)
 
 

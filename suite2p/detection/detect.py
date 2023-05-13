@@ -15,11 +15,9 @@ def detect(ops, classfile=None):
 
     t0 = time.time()
     bin_size = int(
-        max(1, ops["nframes"] // ops["nbinned"],
-            np.round(ops["tau"] * ops["fs"])))
+        max(1, ops["nframes"] // ops["nbinned"], np.round(ops["tau"] * ops["fs"])))
     print("Binning movie in chunks of length %2.2d" % bin_size)
-    with BinaryFile(filename=ops["reg_file"], Ly=ops["Ly"],
-                    Lx=ops["Lx"]) as f:
+    with BinaryFile(filename=ops["reg_file"], Ly=ops["Ly"], Lx=ops["Lx"]) as f:
         mov = f.bin_movie(
             bin_size=bin_size,
             bad_frames=ops.get("badframes"),
@@ -37,8 +35,7 @@ def detect(ops, classfile=None):
 def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
     """ bin registered movie """
     n_frames = f_reg.shape[0]
-    good_frames = ~badframes if badframes is not None else np.ones(
-        n_frames, dtype=bool)
+    good_frames = ~badframes if badframes is not None else np.ones(n_frames, dtype=bool)
     batch_size = min(good_frames.sum(), 500)
     Lyc = yrange[1] - yrange[0]
     Lxc = xrange[1] - xrange[0]
@@ -68,8 +65,7 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
             # only if current batch size exceeds or matches bin_size
             n_d = data.shape[0]
             data = data[:(n_d // bin_size) * bin_size]
-            data = data.reshape(-1, bin_size, Lyc,
-                                Lxc).astype(np.float32).mean(axis=1)
+            data = data.reshape(-1, bin_size, Lyc, Lxc).astype(np.float32).mean(axis=1)
         else:
             # Current batch size is below bin_size (could have many bad frames in this batch)
             # Downsample taking the mean of batch to get a single bin
@@ -86,8 +82,8 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
     return mov
 
 
-def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
-                      ops=default_ops(), classfile=None):
+def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, ops=default_ops(),
+                      classfile=None):
     """
 	Main detection function. 
 
@@ -129,8 +125,7 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 
     if mov is None:
         bin_size = int(
-            max(1, n_frames // ops["nbinned"],
-                np.round(ops["tau"] * ops["fs"])))
+            max(1, n_frames // ops["nbinned"], np.round(ops["tau"] * ops["fs"])))
         print("Binning movie in chunks of length %2.2d" % bin_size)
         mov = bin_movie(f_reg, bin_size, yrange=yrange, xrange=xrange,
                         badframes=ops.get("badframes", None))
@@ -147,9 +142,8 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 
     if ops.get("denoise", 1):
         mov = pca_denoise(
-            mov,
-            block_size=[ops["block_size"][0] // 2,
-                        ops["block_size"][1] // 2], n_comps_frac=0.5)
+            mov, block_size=[ops["block_size"][0] // 2, ops["block_size"][1] // 2],
+            n_comps_frac=0.5)
 
     if ops.get("anatomical_only", 0):
         try:
@@ -158,9 +152,7 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
         except Exception as e:
             print("Warning: cellpose did not import")
             print(e)
-            print(
-                "cannot use anatomical mode, but otherwise suite2p will run normally"
-            )
+            print("cannot use anatomical mode, but otherwise suite2p will run normally")
             CELLPOSE_INSTALLED = False
         if not CELLPOSE_INSTALLED:
             print(
@@ -168,10 +160,9 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
             )
             print("$ pip install cellpose")
         else:
-            print(">>>> CELLPOSE finding masks in " + [
-                "max_proj / mean_img", "mean_img", "enhanced_mean_img",
-                "max_proj"
-            ][int(ops["anatomical_only"]) - 1])
+            print(">>>> CELLPOSE finding masks in " +
+                  ["max_proj / mean_img", "mean_img", "enhanced_mean_img", "max_proj"][
+                      int(ops["anatomical_only"]) - 1])
             stat = anatomical.select_rois(ops=ops, mov=mov,
                                           diameter=ops.get("diameter", None))
     else:
@@ -193,13 +184,12 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 
         if ops["preclassify"] > 0:
             if classfile is None:
-                print(
-                    f"NOTE: Applying user classifier at {str(user_classfile)}")
+                print(f"NOTE: Applying user classifier at {str(user_classfile)}")
                 classfile = user_classfile
 
             stat = roi_stats(stat, Ly, Lx, aspect=ops.get("aspect", None),
-                             diameter=ops.get("diameter", None),
-                             do_crop=ops.get("soma_crop", 1))
+                             diameter=ops.get("diameter",
+                                              None), do_crop=ops.get("soma_crop", 1))
             if len(stat) == 0:
                 iscell = np.zeros((0, 2))
             else:
@@ -207,12 +197,12 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
             np.save(Path(ops["save_path"]).joinpath("iscell.npy"), iscell)
             ic = (iscell[:, 0] > ops["preclassify"]).flatten().astype("bool")
             stat = stat[ic]
-            print("Preclassify threshold %0.2f, %d ROIs removed" %
-                  (ops["preclassify"], (~ic).sum()))
+            print("Preclassify threshold %0.2f, %d ROIs removed" % (ops["preclassify"],
+                                                                    (~ic).sum()))
 
         stat = roi_stats(stat, Ly, Lx, aspect=ops.get("aspect", None),
-                         diameter=ops.get("diameter", None),
-                         max_overlap=ops["max_overlap"],
+                         diameter=ops.get("diameter",
+                                          None), max_overlap=ops["max_overlap"],
                          do_crop=ops.get("soma_crop", 1))
         print("After removing overlaps, %d ROIs remain" % (len(stat)))
 

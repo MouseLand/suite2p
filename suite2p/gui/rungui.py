@@ -43,8 +43,7 @@ class RunWindow(QDialog):
         super(RunWindow, self).__init__(parent)
         self.setGeometry(10, 10, 1500, 900)
         self.setWindowTitle(
-            "Choose run options (hold mouse over parameters to see descriptions)"
-        )
+            "Choose run options (hold mouse over parameters to see descriptions)")
         self.parent = parent
         self.win = QWidget(self)
         self.layout = QGridLayout()
@@ -53,8 +52,8 @@ class RunWindow(QDialog):
         self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = parent.opsuser
-        self.ops_path = os.fspath(pathlib.Path.home().joinpath(
-            ".suite2p").joinpath("ops").absolute())
+        self.ops_path = os.fspath(
+            pathlib.Path.home().joinpath(".suite2p").joinpath("ops").absolute())
         try:
             self.reset_ops()
             print("loaded default ops")
@@ -89,23 +88,21 @@ class RunWindow(QDialog):
 
     def create_buttons(self):
         self.intkeys = [
-            "nplanes", "nchannels", "functional_chan", "align_by_chan",
-            "nimg_init", "batch_size", "max_iterations", "nbinned",
-            "inner_neuropil_radius", "min_neuropil_pixels", "spatial_scale",
-            "do_registration", "anatomical_only"
+            "nplanes", "nchannels", "functional_chan", "align_by_chan", "nimg_init",
+            "batch_size", "max_iterations", "nbinned", "inner_neuropil_radius",
+            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only"
         ]
         self.boolkeys = [
-            "delete_bin", "move_bin", "do_bidiphase", "reg_tif",
-            "reg_tif_chan2", "save_mat", "save_NWB"
+            "delete_bin", "move_bin", "do_bidiphase", "reg_tif", "reg_tif_chan2",
+            "save_mat", "save_NWB"
             "combined", "1Preg", "nonrigid", "connected", "roidetect",
-            "neuropil_extract", "spikedetect", "keep_movie_raw",
-            "allow_overlap", "sparse_mode"
+            "neuropil_extract", "spikedetect", "keep_movie_raw", "allow_overlap",
+            "sparse_mode"
         ]
         self.stringkeys = ["pretrained_model"]
         tifkeys = [
-            "nplanes", "nchannels", "functional_chan", "tau", "fs",
-            "do_bidiphase", "bidiphase", "multiplane_parallel",
-            "ignore_flyback"
+            "nplanes", "nchannels", "functional_chan", "tau", "fs", "do_bidiphase",
+            "bidiphase", "multiplane_parallel", "ignore_flyback"
         ]
         outkeys = [
             "preclassify", "save_mat", "save_NWB", "combined", "reg_tif",
@@ -119,29 +116,21 @@ class RunWindow(QDialog):
         nrkeys = [["nonrigid", "block_size", "snr_thresh", "maxregshiftNR"],
                   ["1Preg", "spatial_hp_reg", "pre_smooth", "spatial_taper"]]
         cellkeys = [
-            "roidetect", "sparse_mode", "denoise", "spatial_scale",
-            "threshold_scaling", "max_overlap", "max_iterations", "high_pass",
-            "spatial_hp_detect"
+            "roidetect", "sparse_mode", "denoise", "spatial_scale", "threshold_scaling",
+            "max_overlap", "max_iterations", "high_pass", "spatial_hp_detect"
         ]
         anatkeys = [
-            "anatomical_only", "diameter", "cellprob_threshold",
-            "flow_threshold", "pretrained_model", "spatial_hp_cp"
+            "anatomical_only", "diameter", "cellprob_threshold", "flow_threshold",
+            "pretrained_model", "spatial_hp_cp"
         ]
         neudeconvkeys = [[
             "neuropil_extract", "allow_overlap", "inner_neuropil_radius",
             "min_neuropil_pixels"
-        ],
-                         [
-                             "soma_crop", "spikedetect", "win_baseline",
-                             "sig_baseline", "neucoeff"
-                         ]]
-        keys = [
-            tifkeys, outkeys, regkeys, nrkeys, cellkeys, anatkeys,
-            neudeconvkeys
-        ]
+        ], ["soma_crop", "spikedetect", "win_baseline", "sig_baseline", "neucoeff"]]
+        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, anatkeys, neudeconvkeys]
         labels = [
-            "Main settings", "Output settings", "Registration",
-            ["Nonrigid", "1P"], "Functional detect", "Anat detect",
+            "Main settings", "Output settings", "Registration", ["Nonrigid", "1P"],
+            "Functional detect", "Anat detect",
             ["Extraction/Neuropil", "Classify/Deconv"]
         ]
         tooltips = [
@@ -153,17 +142,17 @@ class RunWindow(QDialog):
             "whether or not to compute bidirectional phase offset of recording (from line scanning)",
             "set a fixed number (in pixels) for the bidirectional phase offset",
             "process each plane with a separate job on a computing cluster",
-            "ignore flyback planes 0-indexed separated by a comma e.g. "0,10"; "-1" means no planes ignored so all planes processed",
+            "ignore flyback planes 0-indexed separated by a comma e.g. '0,10'; '-1' means no planes ignored so all planes processed",
             "apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)",
-            "save output also as mat file "Fall.mat"",
-            "save output also as NWB file "ophys.nwb"",
-            "combine results across planes in separate folder "combined" at end of processing",
+            "save output also as mat file 'Fall.mat'",
+            "save output also as NWB file 'ophys.nwb'",
+            "combine results across planes in separate folder 'combined' at end of processing",
             "if 1, registered tiffs are saved",
             "if 1, registered tiffs of channel 2 (non-functional channel) are saved",
             "um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)",
             "if 1, binary file is deleted after processing is complete",
             "if 1, and fast_disk is different than save_disk, binary file is moved to save_disk",
-            "if 1, registration is performed if it wasn"t performed already",
+            "if 1, registration is performed if it wasn't performed already",
             "when multi-channel, you can align by non-functional channel (1-based)",
             "# of subsampled frames for finding reference image",
             "number of frames per batch",
@@ -188,7 +177,7 @@ class RunWindow(QDialog):
             "adjust the automatically determined threshold for finding ROIs by this scalar multiplier",
             "ROIs with greater than this overlap as a fraction of total pixels will be discarded",
             "maximum number of iterations for ROI detection",
-            "temporal running mean subtraction with window of size "high_pass" (use low values for 1P)",
+            "temporal running mean subtraction with window of size 'high_pass' (use low values for 1P)",
             "spatial high-pass filter size (used to remove spatially-correlated neuropil)",
             "run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj",
             "input average diameter of ROIs in recording (can give a list e.g. 6,9 if aspect not equal), if set to 0 auto-determination run by Cellpose",
@@ -256,16 +245,14 @@ class RunWindow(QDialog):
                 k += 1
                 for key in keyl[kl]:
                     lops = 1
-                    if self.ops[key] or (self.ops[key] == 0) or len(
-                            self.ops[key]) == 0:
+                    if self.ops[key] or (self.ops[key] == 0) or len(self.ops[key]) == 0:
                         qedit = LineEdit(wk, key, self)
                         qlabel = QLabel(key)
                         qlabel.setToolTip(tooltips[kk])
                         qedit.set_text(self.ops)
                         qedit.setToolTip(tooltips[kk])
                         qedit.setFixedWidth(90)
-                        self.layout.addWidget(qlabel, k * 2 - 1, 2 * (l + 4),
-                                              1, 2)
+                        self.layout.addWidget(qlabel, k * 2 - 1, 2 * (l + 4), 1, 2)
                         self.layout.addWidget(qedit, k * 2, 2 * (l + 4), 1, 2)
                         self.keylist.append(key)
                         self.editlist.append(qedit)
@@ -291,8 +278,7 @@ class RunWindow(QDialog):
 
         key = "look_one_level_down"
         qlabel = QLabel(key)
-        qlabel.setToolTip(
-            "whether to look in all subfolders when searching for files")
+        qlabel.setToolTip("whether to look in all subfolders when searching for files")
         self.layout.addWidget(qlabel, 3, 0, 1, 1)
         qedit = LineEdit(wk, key, self)
         qedit.set_text(self.ops)
@@ -419,8 +405,7 @@ class RunWindow(QDialog):
 
     def compile_ops_db(self):
         for k, key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text(self.intkeys,
-                                                      self.boolkeys,
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys,
                                                       self.stringkeys)
         self.db = {}
         self.db["data_path"] = self.data_path
@@ -453,16 +438,14 @@ class RunWindow(QDialog):
         self.error = False
         ops_file = os.path.join(self.ops_path, "ops.npy")
         db_file = os.path.join(self.ops_path, "db.npy")
-        shutil.copy(os.path.join(self.ops_path, "ops%d.npy" % self.f),
-                    ops_file)
+        shutil.copy(os.path.join(self.ops_path, "ops%d.npy" % self.f), ops_file)
         shutil.copy(os.path.join(self.ops_path, "db%d.npy" % self.f), db_file)
         self.db = np.load(db_file, allow_pickle=True).item()
         print("Running suite2p!")
         print("starting process")
         print(self.db)
-        self.process.start(
-            "python -u -W ignore -m suite2p --ops "%s" --db "%s"" %
-            (ops_file, db_file))
+        self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"' %
+                           (ops_file, db_file))
 
     def stop(self):
         self.finish = False
@@ -489,19 +472,16 @@ class RunWindow(QDialog):
         if self.finish and not self.error:
             self.cleanButton.setEnabled(True)
             if len(self.opslist) == 1:
-                self.parent.fname = os.path.join(self.db["save_path0"],
-                                                 "suite2p", "plane0",
-                                                 "stat.npy")
+                self.parent.fname = os.path.join(self.db["save_path0"], "suite2p",
+                                                 "plane0", "stat.npy")
                 if os.path.exists(self.parent.fname):
-                    cursor.insertText(
-                        "Opening in GUI (can close this window)\n")
+                    cursor.insertText("Opening in GUI (can close this window)\n")
                     io.load_proc(self.parent)
                 else:
                     cursor.insertText("not opening plane in GUI (no ROIs)\n")
             else:
-                cursor.insertText(
-                    "BATCH MODE: %d more recordings remaining \n" %
-                    (len(self.opslist) - self.f - 1))
+                cursor.insertText("BATCH MODE: %d more recordings remaining \n" %
+                                  (len(self.opslist) - self.f - 1))
                 self.f += 1
                 if self.f < len(self.opslist):
                     self.run_S2P()
@@ -542,15 +522,13 @@ class RunWindow(QDialog):
     def save_text(self):
         for k in range(len(self.editlist)):
             key = self.keylist[k]
-            self.ops[key] = self.editlist[k].get_text(self.intkeys,
-                                                      self.boolkeys,
+            self.ops[key] = self.editlist[k].get_text(self.intkeys, self.boolkeys,
                                                       self.stringkeys)
 
     def load_ops(self, name=None):
         print("loading ops")
         if not (isinstance(name, str) and len(name) > 0):
-            name = QFileDialog.getOpenFileName(self,
-                                               "Open ops file (npy or json)")
+            name = QFileDialog.getOpenFileName(self, "Open ops file (npy or json)")
             name = name[0]
 
         if len(name) > 0:
@@ -566,8 +544,7 @@ class RunWindow(QDialog):
                 for key in ops:
                     if key != "data_path" and key != "save_path" and key != "fast_disk" and key != "cleanup" and key != "save_path0" and key != "h5py":
                         if key in self.keylist:
-                            self.editlist[self.keylist.index(key)].set_text(
-                                ops)
+                            self.editlist[self.keylist.index(key)].set_text(ops)
                         self.ops[key] = ops[key]
                 if not "input_format" in self.ops.keys():
                     self.ops["input_format"] = "tif"
@@ -585,8 +562,7 @@ class RunWindow(QDialog):
                     self.h5_key = ops["h5py_key"]
                 self.inputformat.currentTextChanged.connect(lambda x: x)
                 self.inputformat.setCurrentText(self.ops["input_format"])
-                self.inputformat.currentTextChanged.connect(
-                    self.parse_inputformat)
+                self.inputformat.currentTextChanged.connect(self.parse_inputformat)
                 if self.ops["input_format"] == "sbx":
                     self.runButton.setEnabled(True)
                     self.btiff.setEnabled(False)
@@ -632,8 +608,7 @@ class RunWindow(QDialog):
         self.logfile.write(output)
 
     def clean_script(self):
-        name = QFileDialog.getOpenFileName(self, "Open clean up file",
-                                           filter="*.py")
+        name = QFileDialog.getOpenFileName(self, "Open clean up file", filter="*.py")
         name = name[0]
         if name:
             self.cleanup = True
@@ -642,8 +617,7 @@ class RunWindow(QDialog):
             self.ops["clean_script"] = name
 
     def get_folders(self):
-        name = QFileDialog.getExistingDirectory(self,
-                                                "Add directory to data path")
+        name = QFileDialog.getExistingDirectory(self, "Add directory to data path")
         if len(name) > 0:
             self.data_path.append(name)
             self.qdata[len(self.data_path) - 1].setText(name)

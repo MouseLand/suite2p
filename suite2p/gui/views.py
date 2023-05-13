@@ -21,7 +21,7 @@ def make_buttons(parent):
     b = 0
     parent.viewbtns = QButtonGroup(parent)
     vlabel = QLabel(parent)
-    vlabel.setText("<font color="white">Background</font>")
+    vlabel.setText("<font color='white'>Background</font>")
     vlabel.setFont(parent.boldfont)
     vlabel.resize(vlabel.minimumSizeHint())
     parent.l0.addWidget(vlabel, 1, 0, 1, 1)
@@ -99,8 +99,7 @@ def init_views(parent):
                 mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
                 try:
                     mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
-                         parent.ops["xrange"][0]:parent.
-                         ops["xrange"][1]] = mproj
+                         parent.ops["xrange"][0]:parent.ops["xrange"][1]] = mproj
                 except:
                     print("maxproj not in combined view")
                 mimg = np.maximum(0, np.minimum(1, mimg))
@@ -131,10 +130,8 @@ def init_views(parent):
 def plot_views(parent):
     """ set parent.view1 and parent.view2 image based on parent.ops_plot["view"]"""
     k = parent.ops_plot["view"]
-    parent.view1.setImage(parent.views[k],
-                          levels=parent.ops_plot["saturation"])
-    parent.view2.setImage(parent.views[k],
-                          levels=parent.ops_plot["saturation"])
+    parent.view1.setImage(parent.views[k], levels=parent.ops_plot["saturation"])
+    parent.view2.setImage(parent.views[k], levels=parent.ops_plot["saturation"])
     parent.view1.show()
     parent.view2.show()
 
@@ -199,7 +196,7 @@ class RangeSlider(QSlider):
                 height: 8px;\
                 width: 6px;\
                 margin: -8px 2; \
-                }"                                    )
+                }"                                                      )
 
         #self.opt = QStyleOptionSlider()
         #self.opt.orientation=QtCore.Qt.Vertical
@@ -240,7 +237,7 @@ class RangeSlider(QSlider):
             # Only draw the groove for the first slider so it doesn"t get drawn
             # on top of the existing ones every time
             if i == 0:
-                opt.subControls = QStyle.SC_SliderHandle    #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
+                opt.subControls = QStyle.SC_SliderHandle  #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
             else:
                 opt.subControls = QStyle.SC_SliderHandle
 
@@ -275,8 +272,8 @@ class RangeSlider(QSlider):
 
             for i, value in enumerate([self._low, self._high]):
                 opt.sliderPosition = value
-                hit = style.hitTestComplexControl(style.CC_Slider, opt,
-                                                  event.pos(), self)
+                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(),
+                                                  self)
                 if hit == style.SC_SliderHandle:
                     self.active_slider = i
                     self.pressed_control = hit
@@ -289,8 +286,8 @@ class RangeSlider(QSlider):
 
             if self.active_slider < 0:
                 self.pressed_control = QStyle.SC_SliderHandle
-                self.click_offset = self.__pixelPosToRangeValue(
-                    self.__pick(event.pos()))
+                self.click_offset = self.__pixelPosToRangeValue(self.__pick(
+                    event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
         else:
@@ -344,10 +341,8 @@ class RangeSlider(QSlider):
         self.initStyleOption(opt)
         style = QApplication.style()
 
-        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove,
-                                  self)
-        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle,
-                                  self)
+        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
+        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)
 
         if self.orientation() == QtCore.Qt.Horizontal:
             slider_length = sr.width()
@@ -359,6 +354,5 @@ class RangeSlider(QSlider):
             slider_max = gr.bottom() - slider_length + 1
 
         return style.sliderValueFromPosition(self.minimum(), self.maximum(),
-                                             pos - slider_min,
-                                             slider_max - slider_min,
+                                             pos - slider_min, slider_max - slider_min,
                                              opt.upsideDown)

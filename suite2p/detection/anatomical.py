@@ -50,8 +50,7 @@ def patch_detect(patches, diam):
             cellprob = yi[-1]
             dP = yi[:2]
             niter = 1 / rsz * 200
-            p = dynamics.follow_flows(-1 * dP * (cellprob > 0) / 5.,
-                                      niter=niter)
+            p = dynamics.follow_flows(-1 * dP * (cellprob > 0) / 5., niter=niter)
             maski = dynamics.get_masks(p, iscell=(cellprob > 0), flows=dP,
                                        threshold=1.0)
             maski = fill_holes_and_remove_small_masks(maski)
@@ -69,14 +68,13 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     patch_masks = patch_detect(patches, diam)
     ly = patches[0].shape[0] // 2
     igood = np.zeros(nmasks, "bool")
-    for i, (patch_mask, stat,
-            (yi, xi)) in enumerate(zip(patch_masks, stats, seeds)):
+    for i, (patch_mask, stat, (yi, xi)) in enumerate(zip(patch_masks, stats, seeds)):
         mask = np.zeros((Lyc, Lxc), np.float32)
         ypix0, xpix0 = stat["ypix"], stat["xpix"]
         mask[ypix0, xpix0] = stat["lam"]
         func_mask = utils.square_mask(mask, ly, yi, xi)
-        ious = utils.mask_ious(patch_mask.astype(np.uint16),
-                               (func_mask > 0).astype(np.uint16))[0]
+        ious = utils.mask_ious(patch_mask.astype(np.uint16), (func_mask
+                                                              > 0).astype(np.uint16))[0]
         if len(ious) > 0 and ious.max() > 0.45:
             mask_id = np.argmax(ious) + 1
             patch_mask = patch_mask[max(0, ly - yi):min(2 * ly, Lyc + ly - yi),
@@ -98,8 +96,8 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     return stats
 
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0,
-               flow_threshold=1.5, pretrained_model=None):
+def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
+               pretrained_model=None):
     if not os.path.exists(pretrained_model):
         model = CellposeModel(model_type=pretrained_model)
     else:
@@ -184,25 +182,22 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
 
     t0 = time.time()
     if diameter is not None:
-        if isinstance(diameter,
-                      (list, np.ndarray)) and len(ops["diameter"]) > 1:
+        if isinstance(diameter, (list, np.ndarray)) and len(ops["diameter"]) > 1:
             rescale = diameter[1] / diameter[0]
             img = cv2.resize(img, (Lxc, int(Lyc * rescale)))
         else:
             rescale = 1.0
             diameter = [diameter, diameter]
         if diameter[1] > 0:
-            print(
-                "!NOTE! diameter set to %0.2f for cell detection with cellpose"
-                % diameter[1])
+            print("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
+                  diameter[1])
         else:
             print(
                 "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose"
             )
     else:
         print(
-            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose"
-        )
+            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
 
     if ops.get("spatial_hp_cp", 0):
         img = np.clip(normalize99(img), 0, 1)

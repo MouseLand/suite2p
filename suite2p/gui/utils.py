@@ -12,17 +12,17 @@ def boundary(ypix, xpix):
         msk[ypix - ypix.min() + 3, xpix - xpix.min() + 3] = True
         msk = binary_dilation(msk)
         msk = binary_fill_holes(msk)
-        k = np.ones((3, 3), dtype=int)    # for 4-connected
+        k = np.ones((3, 3), dtype=int)  # for 4-connected
         k = np.zeros((3, 3), dtype=int)
         k[1] = 1
-        k[:, 1] = 1    # for 8-connected
+        k[:, 1] = 1  # for 8-connected
         out = binary_dilation(msk == 0, k) & msk
 
         yext, xext = np.nonzero(out)
         yext, xext = yext + ypix.min() - 3, xext + xpix.min() - 3
     else:
-        yext = np.zeros((0, ))
-        xext = np.zeros((0, ))
+        yext = np.zeros((0,))
+        xext = np.zeros((0,))
     return yext, xext
 
 

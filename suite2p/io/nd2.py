@@ -13,15 +13,15 @@ def nd2_to_binary(ops):
     Parameters
     ----------
     ops: dictionary
-        'nplanes', 'data_path', 'save_path', 'save_folder', 'fast_disk',
-        'nchannels', 'keep_movie_raw', 'look_one_level_down'
+        "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
+        "nchannels", "keep_movie_raw", "look_one_level_down"
 
     Returns
     -------
         ops : dictionary of first plane
-            ops['reg_file'] or ops['raw_file'] is created binary
-            assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
-            'nframes', 'meanImg', 'meanImg_chan2'
+            ops["reg_file"] or ops["raw_file"] is created binary
+            assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
+            "nframes", "meanImg", "meanImg_chan2"
     """
 
     t0 = time.time()

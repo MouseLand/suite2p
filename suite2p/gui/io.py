@@ -15,10 +15,10 @@ def export_fig(parent):
 
 def make_masks_and_enable_buttons(parent):
     parent.checkBox.setChecked(True)
-    parent.ops_plot['color'] = 0
-    parent.ops_plot['view'] = 0
-    parent.colors['cols'] = 0
-    parent.colors['istat'] = 0
+    parent.ops_plot["color"] = 0
+    parent.ops_plot["view"] = 0
+    parent.colors["cols"] = 0
+    parent.colors["istat"] = 0
     if parent.checkBoxN.isChecked():
         parent.roi_text(False)
     parent.roi_text_labels = []
@@ -82,18 +82,18 @@ def make_masks_and_enable_buttons(parent):
     masks.init_masks(parent)
     M = masks.draw_masks(parent)
     masks.plot_masks(parent, M)
-    print(f'time to draw and plot masks: {time.time() - tic : .4f} sec')
+    print(f"time to draw and plot masks: {time.time() - tic : .4f} sec")
     parent.lcell1.setText("%d" % (ncells - parent.iscell.sum()))
     parent.lcell0.setText("%d" % (parent.iscell.sum()))
     graphics.init_range(parent)
     traces.plot_trace(parent)
     parent.xyrat = 1.0
-    if (isinstance(parent.ops['diameter'],
-                   (list, np.ndarray)) and len(parent.ops['diameter']) > 1
-            and parent.ops.get('aspect', 1.0)):
+    if (isinstance(parent.ops["diameter"],
+                   (list, np.ndarray)) and len(parent.ops["diameter"]) > 1
+            and parent.ops.get("aspect", 1.0)):
         parent.xyrat = parent.ops["diameter"][0] / parent.ops["diameter"][1]
     else:
-        parent.xyrat = parent.ops.get('aspect', 1.0)
+        parent.xyrat = parent.ops.get("aspect", 1.0)
 
     parent.p1.setAspectLocked(lock=True, ratio=parent.xyrat)
     parent.p2.setAspectLocked(lock=True, ratio=parent.xyrat)
@@ -113,7 +113,7 @@ def enable_views_and_classifier(parent):
     for b in range(len(parent.view_names)):
         parent.viewbtns.button(b).setEnabled(True)
         parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
-        # parent.viewbtns.button(b).setShortcut(QtGui.QKeySequence('R'))
+        # parent.viewbtns.button(b).setShortcut(QtGui.QKeySequence("R"))
         if b == 0:
             parent.viewbtns.button(b).setChecked(True)
             parent.viewbtns.button(b).setStyleSheet(parent.stylePressed)
@@ -200,7 +200,7 @@ def load_NWB(parent):
     print(name)
     try:
         procs = list(io.read_nwb(name))
-        if procs[1]['nchannels'] == 2:
+        if procs[1]["nchannels"] == 2:
             hasred = True
         else:
             hasred = False
@@ -209,7 +209,7 @@ def load_NWB(parent):
 
         parent.loaded = True
     except Exception as e:
-        print('ERROR with NWB: %s' % e)
+        print("ERROR with NWB: %s" % e)
 
 
 def load_folder(parent):
@@ -217,20 +217,20 @@ def load_folder(parent):
     save_folder = parent.fname
     plane_folders = [
         f.path for f in os.scandir(save_folder)
-        if f.is_dir() and f.name[:5] == 'plane'
+        if f.is_dir() and f.name[:5] == "plane"
     ]
     stat_found = False
     if len(plane_folders) > 0:
         stat_found = all([
-            os.path.isfile(os.path.join(f, 'stat.npy')) for f in plane_folders
+            os.path.isfile(os.path.join(f, "stat.npy")) for f in plane_folders
         ])
     if not stat_found:
-        print('No processed planeX folders in folder')
+        print("No processed planeX folders in folder")
         return
 
     # create a combined folder to hold iscell and redcell
     output = io.combined(save_folder, save=False)
-    parent.basename = os.path.join(parent.fname, 'combined')
+    parent.basename = os.path.join(parent.fname, "combined")
     load_to_GUI(parent, parent.basename, output)
     parent.loaded = True
     print(parent.fname)
@@ -242,8 +242,8 @@ def load_files(name):
         stat = np.load(name, allow_pickle=True)
         ypix = stat[0]["ypix"]
     except (ValueError, KeyError, OSError, RuntimeError, TypeError, NameError):
-        print('ERROR: this is not a stat.npy file :( '
-              '(needs stat[n]["ypix"]!)')
+        print("ERROR: this is not a stat.npy file :( "
+              "(needs stat[n]["ypix"]!)")
         stat = None
     goodfolder = False
     if stat is not None:
@@ -270,24 +270,24 @@ def load_files(name):
         try:
             iscell = np.load(basename + "/iscell.npy")
             probcell = iscell[:, 1]
-            iscell = iscell[:, 0].astype('bool')
+            iscell = iscell[:, 0].astype("bool")
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
             print("no manual labels found (iscell.npy)")
             if goodfolder:
                 NN = Fcell.shape[0]
-                iscell = np.ones((NN, ), 'bool')
+                iscell = np.ones((NN, ), "bool")
                 probcell = np.ones((NN, ), np.float32)
         try:
             redcell = np.load(basename + "/redcell.npy")
             probredcell = redcell[:, 1].copy()
-            redcell = redcell[:, 0].astype('bool')
+            redcell = redcell[:, 0].astype("bool")
             hasred = True
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
             print("no channel 2 labels found (redcell.npy)")
             hasred = False
             if goodfolder:
                 NN = Fcell.shape[0]
-                redcell = np.zeros((NN, ), 'bool')
+                redcell = np.zeros((NN, ), "bool")
                 probredcell = np.zeros((NN, ), np.float32)
     else:
         print("incorrect file, not a stat.npy")
@@ -321,23 +321,23 @@ def load_to_GUI(parent, basename, procs):
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks
-    parent.iscell = iscell.astype('bool')
+    parent.iscell = iscell.astype("bool")
     parent.probcell = probcell
-    parent.redcell = redcell.astype('bool')
+    parent.redcell = redcell.astype("bool")
     parent.probredcell = probredcell
     parent.hasred = hasred
-    parent.notmerged = np.ones_like(parent.iscell).astype('bool')
+    parent.notmerged = np.ones_like(parent.iscell).astype("bool")
     for n in range(len(parent.stat)):
         if parent.hasred:
-            parent.stat[n]['chan2_prob'] = parent.probredcell[n]
-        parent.stat[n]['inmerge'] = 0
+            parent.stat[n]["chan2_prob"] = parent.probredcell[n]
+        parent.stat[n]["inmerge"] = 0
     parent.stat = np.array(parent.stat)
     make_masks_and_enable_buttons(parent)
     parent.ichosen = 0
     parent.imerge = [0]
     for n in range(len(parent.stat)):
-        if 'imerge' not in parent.stat[n]:
-            parent.stat[n]['imerge'] = []
+        if "imerge" not in parent.stat[n]:
+            parent.stat[n]["imerge"] = []
 
 
 def load_behavior(parent):
@@ -380,7 +380,7 @@ def load_behavior(parent):
         parent.colorbtns.button(b).setStyleSheet(parent.styleUnpressed)
         masks.beh_masks(parent)
         traces.plot_trace(parent)
-        if hasattr(parent, 'VW'):
+        if hasattr(parent, "VW"):
             parent.VW.bloaded = parent.bloaded
             parent.VW.beh = parent.beh
             parent.VW.beh_time = parent.beh_time
@@ -391,7 +391,7 @@ def load_behavior(parent):
 
 
 def resample_frames(y, x, xt):
-    ''' resample y (defined at x) at times xt '''
+    """ resample y (defined at x) at times xt """
     ts = x.size / xt.size
     y = gaussian_filter1d(y, np.ceil(ts / 2), axis=0)
     f = interp1d(x, y, fill_value="extrapolate")
@@ -401,7 +401,7 @@ def resample_frames(y, x, xt):
 
 def save_redcell(parent):
     np.save(
-        os.path.join(parent.basename, 'redcell.npy'),
+        os.path.join(parent.basename, "redcell.npy"),
         np.concatenate(
             (np.expand_dims(parent.redcell[parent.notmerged], axis=1),
              np.expand_dims(parent.probredcell[parent.notmerged], axis=1)),
@@ -424,47 +424,47 @@ def save_iscell(parent):
 
 
 def save_mat(parent):
-    print('saving to mat')
-    matpath = os.path.join(parent.basename, 'Fall.mat')
-    if 'date_proc' in parent.ops:
-        parent.ops['date_proc'] = []
+    print("saving to mat")
+    matpath = os.path.join(parent.basename, "Fall.mat")
+    if "date_proc" in parent.ops:
+        parent.ops["date_proc"] = []
     scipy.io.savemat(
         matpath, {
-            'stat': parent.stat,
-            'ops': parent.ops,
-            'F': parent.Fcell,
-            'Fneu': parent.Fneu,
-            'spks': parent.Spks,
-            'iscell': np.concatenate(
+            "stat": parent.stat,
+            "ops": parent.ops,
+            "F": parent.Fcell,
+            "Fneu": parent.Fneu,
+            "spks": parent.Spks,
+            "iscell": np.concatenate(
                 (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
                 axis=1),
-            'redcell': np.concatenate(
+            "redcell": np.concatenate(
                 (np.expand_dims(parent.redcell, axis=1),
                  np.expand_dims(parent.probredcell, axis=1)), axis=1)
         })
 
 
 def save_merge(parent):
-    print('saving to NPY')
-    np.save(os.path.join(parent.basename, 'ops.npy'), parent.ops)
-    np.save(os.path.join(parent.basename, 'stat.npy'), parent.stat)
-    np.save(os.path.join(parent.basename, 'F.npy'), parent.Fcell)
-    np.save(os.path.join(parent.basename, 'Fneu.npy'), parent.Fneu)
+    print("saving to NPY")
+    np.save(os.path.join(parent.basename, "ops.npy"), parent.ops)
+    np.save(os.path.join(parent.basename, "stat.npy"), parent.stat)
+    np.save(os.path.join(parent.basename, "F.npy"), parent.Fcell)
+    np.save(os.path.join(parent.basename, "Fneu.npy"), parent.Fneu)
     if parent.hasred:
-        np.save(os.path.join(parent.basename, 'F_chan2.npy'), parent.F_chan2)
-        np.save(os.path.join(parent.basename, 'Fneu_chan2.npy'),
+        np.save(os.path.join(parent.basename, "F_chan2.npy"), parent.F_chan2)
+        np.save(os.path.join(parent.basename, "Fneu_chan2.npy"),
                 parent.Fneu_chan2)
         np.save(
-            os.path.join(parent.basename, 'redcell.npy'),
+            os.path.join(parent.basename, "redcell.npy"),
             np.concatenate((np.expand_dims(parent.redcell, axis=1),
                             np.expand_dims(parent.probredcell, axis=1)),
                            axis=1))
-    np.save(os.path.join(parent.basename, 'spks.npy'), parent.Spks)
+    np.save(os.path.join(parent.basename, "spks.npy"), parent.Spks)
     iscell = np.concatenate(
         (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
-    np.save(os.path.join(parent.basename, 'iscell.npy'), iscell)
+    np.save(os.path.join(parent.basename, "iscell.npy"), iscell)
 
-    parent.notmerged = np.ones(parent.iscell.size, 'bool')
+    parent.notmerged = np.ones(parent.iscell.size, "bool")
 
 
 def load_custom_mask(parent):

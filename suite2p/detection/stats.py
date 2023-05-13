@@ -10,7 +10,7 @@ from scipy.spatial import ConvexHull
 
 
 def distance_kernel(radius: int) -> np.ndarray:
-    """ Returns 2D array containing geometric distance from center, with radius 'radius'"""
+    """ Returns 2D array containing geometric distance from center, with radius "radius" """
     d = np.arange(-radius, radius + 1)
     dists_2d = norm(np.meshgrid(d, d), axis=0)
     return dists_2d
@@ -63,8 +63,8 @@ class ROI:
 
     @classmethod
     def from_stat_dict(cls, stat: Dict[str, Any], do_crop: bool = True) -> ROI:
-        return cls(ypix=stat['ypix'], xpix=stat['xpix'], lam=stat['lam'],
-                   med=stat['med'], do_crop=do_crop)
+        return cls(ypix=stat["ypix"], xpix=stat["xpix"], lam=stat["lam"],
+                   med=stat["med"], do_crop=do_crop)
 
     def to_array(self, Ly: int, Lx: int) -> np.ndarray:
         """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""
@@ -81,7 +81,7 @@ class ROI:
 
         Parameters
         ----------
-        stats : List of dictionary 'ypix', 'xpix', 'lam'
+        stats : List of dictionary "ypix", "xpix", "lam"
         Ly : y size of frame
         Lx : x size of frame
         label_id : whether array should be an integer value indicating ROI id or just 1 (indicating precence of ROI).
@@ -137,10 +137,10 @@ class ROI:
                                    ida]
             crop = dists < radius
             if crop.sum() == 0:
-                crop = np.ones(self.ypix.size, 'bool')
+                crop = np.ones(self.ypix.size, "bool")
             return crop
         else:
-            return np.ones(self.ypix.size, 'bool')
+            return np.ones(self.ypix.size, "bool")
 
     @property
     def mean_r_squared(self) -> float:
@@ -203,7 +203,7 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
     Parameters
     ----------
     stat : dictionary
-        'ypix', 'xpix', 'lam'
+        "ypix", "xpix", "lam"
     
     FOV size : (Ly, Lx)
 
@@ -214,11 +214,11 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
     Returns
     -------
     stat : dictionary
-        adds 'npix', 'npix_norm', 'med', 'footprint', 'compact', 'radius', 'aspect_ratio'
+        adds "npix", "npix_norm", "med", "footprint", "compact", "radius", "aspect_ratio"
     """
-    if 'med' not in stat[0]:
+    if "med" not in stat[0]:
         for s in stat:
-            s['med'] = median_pix(s['ypix'], s['xpix'])
+            s["med"] = median_pix(s["ypix"], s["xpix"])
 
     # approx size of masks for ROI aspect ratio estimation
     d0 = 10 if diameter is None or (isinstance(diameter, int)
@@ -233,36 +233,36 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
                       d0[0]), int(d0[0]))
 
     rois = [
-        ROI(ypix=s['ypix'], xpix=s['xpix'], lam=s['lam'], med=s['med'],
+        ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"],
             do_crop=do_crop) for s in stat
     ]
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
     for roi, s in zip(rois, stat):
-        s['mrs'] = roi.mean_r_squared
-        s['mrs0'] = roi.mean_r_squared0
-        s['compact'] = roi.mean_r_squared_compact
-        s['solidity'] = roi.solidity
-        s['npix'] = roi.n_pixels
-        s['npix_soma'] = roi.npix_soma
-        s['soma_crop'] = roi.soma_crop
-        s['overlap'] = roi.get_overlap_image(n_overlaps)
+        s["mrs"] = roi.mean_r_squared
+        s["mrs0"] = roi.mean_r_squared0
+        s["compact"] = roi.mean_r_squared_compact
+        s["solidity"] = roi.solidity
+        s["npix"] = roi.n_pixels
+        s["npix_soma"] = roi.npix_soma
+        s["soma_crop"] = roi.soma_crop
+        s["overlap"] = roi.get_overlap_image(n_overlaps)
         ellipse = roi.fit_ellipse(dy, dx)
-        s['radius'] = ellipse.radius
-        s['aspect_ratio'] = ellipse.aspect_ratio
+        s["radius"] = ellipse.radius
+        s["aspect_ratio"] = ellipse.aspect_ratio
 
-    mrs_normeds = norm_by_average(values=np.array([s['mrs'] for s in stat]),
+    mrs_normeds = norm_by_average(values=np.array([s["mrs"] for s in stat]),
                                   estimator=np.nanmedian, offset=1e-10,
                                   first_n=100)
-    npix_normeds = norm_by_average(values=np.array([s['npix'] for s in stat]),
+    npix_normeds = norm_by_average(values=np.array([s["npix"] for s in stat]),
                                    first_n=100)
     npix_soma_normeds = norm_by_average(
-        values=np.array([s['npix_soma'] for s in stat]), first_n=100)
+        values=np.array([s["npix_soma"] for s in stat]), first_n=100)
     for s, mrs_normed, npix_normed, npix_soma_normed in zip(
             stat, mrs_normeds, npix_normeds, npix_soma_normeds):
-        s['mrs'] = mrs_normed
-        s['npix_norm_no_crop'] = npix_normed
-        s['npix_norm'] = npix_soma_normed
-        s['footprint'] = 0 if 'footprint' not in s else s['footprint']
+        s["mrs"] = mrs_normed
+        s["npix_norm_no_crop"] = npix_normed
+        s["npix_norm"] = npix_soma_normed
+        s["footprint"] = 0 if "footprint" not in s else s["footprint"]
 
     if max_overlap is not None and max_overlap < 1.0:
         keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps,
@@ -270,11 +270,11 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None,
         stat = stat[keep_rois]
         n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
         rois = [
-            ROI(ypix=s['ypix'], xpix=s['xpix'], lam=s['lam'], med=s['med'],
+            ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"],
                 do_crop=do_crop) for s in stat
         ]
         for roi, s in zip(rois, stat):
-            s['overlap'] = roi.get_overlap_image(n_overlaps)
+            s["overlap"] = roi.get_overlap_image(n_overlaps)
 
     return stat
 
@@ -350,6 +350,6 @@ def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray,
 
 def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100,
                     offset: float = 0.) -> np.ndarray:
-    """Returns array divided by the (average of the 'first_n' values + offset), calculating the average with 'estimator'."""
+    """Returns array divided by the (average of the "first_n" values + offset), calculating the average with "estimator"."""
     return np.array(values,
-                    dtype='float32') / (estimator(values[:first_n]) + offset)
+                    dtype="float32") / (estimator(values[:first_n]) + offset)

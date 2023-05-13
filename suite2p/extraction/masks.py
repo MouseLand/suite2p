@@ -11,18 +11,18 @@ def create_masks(stats: List[Dict[str, Any]], Ly, Lx, ops=default_ops()):
     """ create cell and neuropil masks """
 
     cell_pix = create_cell_pix(stats, Ly=Ly, Lx=Lx,
-                               lam_percentile=ops.get('lam_percentile', 50.0))
+                               lam_percentile=ops.get("lam_percentile", 50.0))
     cell_masks = [
         create_cell_mask(stat, Ly=Ly, Lx=Lx,
-                         allow_overlap=ops['allow_overlap']) for stat in stats
+                         allow_overlap=ops["allow_overlap"]) for stat in stats
     ]
-    if ops.get('neuropil_extract', True):
+    if ops.get("neuropil_extract", True):
         neuropil_masks = create_neuropil_masks(
-            ypixs=[stat['ypix'] for stat in stats],
-            xpixs=[stat['xpix'] for stat in stats], cell_pix=cell_pix,
-            inner_neuropil_radius=ops['inner_neuropil_radius'],
-            min_neuropil_pixels=ops['min_neuropil_pixels'],
-            circular=ops.get('circular_neuropil', False))
+            ypixs=[stat["ypix"] for stat in stats],
+            xpixs=[stat["xpix"] for stat in stats], cell_pix=cell_pix,
+            inner_neuropil_radius=ops["inner_neuropil_radius"],
+            min_neuropil_pixels=ops["min_neuropil_pixels"],
+            circular=ops.get("circular_neuropil", False))
     else:
         neuropil_masks = None
     return cell_masks, neuropil_masks
@@ -40,10 +40,10 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
     lammap = np.zeros((Ly, Lx))
     radii = np.zeros(len(stats))
     for ni, stat in enumerate(stats):
-        radii[ni] = stat['radius']
-        ypix = stat['ypix']
-        xpix = stat['xpix']
-        lam = stat['lam']
+        radii[ni] = stat["radius"]
+        ypix = stat["ypix"]
+        xpix = stat["xpix"]
+        lam = stat["lam"]
         lammap[ypix, xpix] = np.maximum(lammap[ypix, xpix], lam)
     radius = np.median(radii)
     if lam_percentile > 0.0:
@@ -65,7 +65,7 @@ def create_cell_mask(
     Parameters
     ----------
 
-    stat : dictionary 'ypix', 'xpix', 'lam'
+    stat : dictionary "ypix", "xpix", "lam"
     Ly : y size of frame
     Lx : x size of frame
     allow_overlap : whether or not to include overlapping pixels in cell masks
@@ -76,10 +76,10 @@ def create_cell_mask(
     cell_masks : len ncells, each has tuple of pixels belonging to each cell and weights
     lam_normed
     """
-    mask = ... if allow_overlap else ~stat['overlap']
-    cell_mask = np.ravel_multi_index((stat['ypix'], stat['xpix']), (Ly, Lx))
+    mask = ... if allow_overlap else ~stat["overlap"]
+    cell_mask = np.ravel_multi_index((stat["ypix"], stat["xpix"]), (Ly, Lx))
     cell_mask = cell_mask[mask]
-    lam = stat['lam'][mask]
+    lam = stat["lam"][mask]
     lam_normed = lam / lam.sum() if lam.size > 0 else np.empty(0)
     return cell_mask, lam_normed
 
@@ -133,7 +133,7 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
                                   xpix1.min() - extend_by),
                               min(Lx,
                                   xpix1.max() + extend_by + 1), 1, int),
-                    indexing='ij')
+                    indexing="ij")
 
         ix = valid_pixels(cell_pix, ypix1, xpix1)
         neuropil_mask[ypix1[ix], xpix1[ix]] = True

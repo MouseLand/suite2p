@@ -64,7 +64,7 @@ def match_masks(iou):
     true_ind, pred_ind = linear_sum_assignment(costs)
     iout = np.zeros(iou.shape[0])
     iout[true_ind] = iou[true_ind, pred_ind]
-    preds = np.zeros(iou.shape[0], 'int')
+    preds = np.zeros(iou.shape[0], "int")
     preds[true_ind] = pred_ind + 1
     return iout, preds
 
@@ -124,7 +124,7 @@ def _intersection_over_union(masks_true, masks_pred):
 
 def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """
-    Returns a high-pass-filtered copy of the 3D array 'mov' using a gaussian kernel.
+    Returns a high-pass-filtered copy of the 3D array "mov" using a gaussian kernel.
 
     Parameters
     ----------
@@ -146,7 +146,7 @@ def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
 
 def hp_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """
-    Returns a high-pass-filtered copy of the 3D array 'mov' using a non-overlapping rolling mean kernel over time.
+    Returns a high-pass-filtered copy of the 3D array "mov" using a non-overlapping rolling mean kernel over time.
 
     Parameters
     ----------
@@ -208,7 +208,7 @@ def standard_deviation_over_time(mov: np.ndarray,
     """
     nbins, Ly, Lx = mov.shape
     batch_size = min(batch_size, nbins)
-    sdmov = np.zeros((Ly, Lx), 'float32')
+    sdmov = np.zeros((Ly, Lx), "float32")
     for ix in range(0, nbins, batch_size):
         sdmov += ((np.diff(mov[ix:ix + batch_size, :, :],
                            axis=0)**2).sum(axis=0))
@@ -218,7 +218,7 @@ def standard_deviation_over_time(mov: np.ndarray,
 
 def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
     """
-    Returns a pixel-downsampled movie from 'mov', tapering the edges of 'taper_edge' is True.
+    Returns a pixel-downsampled movie from "mov", tapering the edges of "taper_edge" is True.
 
     Parameters
     ----------
@@ -235,7 +235,7 @@ def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
     n_frames, Ly, Lx = mov.shape
 
     # bin along Y
-    movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), 'float32')
+    movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), "float32")
     movd[:, :Ly // 2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]],
                                    axis=0)
     if Ly % 2 == 1:
@@ -243,7 +243,7 @@ def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
 
     # bin along X
     mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))),
-                    'float32')
+                    "float32")
     mov2[:, :, :Lx // 2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]],
                                    axis=0)
     if Lx % 2 == 1:
@@ -255,7 +255,7 @@ def downsample(mov: np.ndarray, taper_edge: bool = True) -> np.ndarray:
 def threshold_reduce(mov: np.ndarray,
                      intensity_threshold: float) -> np.ndarray:
     """
-    Returns standard deviation of pixels, thresholded by 'intensity_threshold'.
+    Returns standard deviation of pixels, thresholded by "intensity_threshold".
     Run in a loop to reduce memory footprint.
 
     Parameters
@@ -271,7 +271,7 @@ def threshold_reduce(mov: np.ndarray,
         The standard deviation of the non-thresholded pixels
     """
     nbinned, Lyp, Lxp = mov.shape
-    Vt = np.zeros((Lyp, Lxp), 'float32')
+    Vt = np.zeros((Lyp, Lxp), "float32")
     for t in range(nbinned):
         Vt += mov[t]**2 * (mov[t] > intensity_threshold)
     Vt = Vt**.5

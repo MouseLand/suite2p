@@ -25,13 +25,13 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     Ly, Lx = refImg.shape
     maskMul = spatial_taper(maskSlope, Ly, Lx)
     maskOffset = refImg.mean() * (1. - maskMul)
-    return maskMul.astype('float32'), maskOffset.astype('float32')
+    return maskMul.astype("float32"), maskOffset.astype("float32")
 
 
 def apply_masks(data: np.ndarray, maskMul: np.ndarray,
                 maskOffset: np.ndarray) -> np.ndarray:
     """
-    Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'.
+    Returns a 3D image "data", multiplied by "maskMul" and then added "maskOffet".
 
     Parameters
     ----------
@@ -48,8 +48,8 @@ def apply_masks(data: np.ndarray, maskMul: np.ndarray,
 
 def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     """
-    Returns reference image fft'ed and complex conjugate and multiplied by gaussian filter in the fft domain,
-    with standard deviation 'smooth_sigma' computes fft'ed reference image for phasecorr.
+    Returns reference image fft"ed and complex conjugate and multiplied by gaussian filter in the fft domain,
+    with standard deviation "smooth_sigma" computes fft"ed reference image for phasecorr.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
     cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0],
                              cfRefImg.shape[1])
-    return cfRefImg.astype('complex64')
+    return cfRefImg.astype("complex64")
 
 
 def phasecorr(data, cfRefImg, maxregshift,
@@ -74,7 +74,7 @@ def phasecorr(data, cfRefImg, maxregshift,
     Parameters
     ----------
     data : int16
-        array that's frames x Ly x Lx
+        array that"s frames x Ly x Lx
     maxregshift : float
         maximum shift as a fraction of the minimum dimension of data (min(Ly,Lx) * maxregshift)
     smooth_sigma_time : float

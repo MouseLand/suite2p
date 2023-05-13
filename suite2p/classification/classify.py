@@ -4,15 +4,15 @@ from typing import Union, Sequence
 from .classifier import Classifier
 
 builtin_classfile = Path(__file__).joinpath(
-    '../../classifiers/classifier.npy').resolve()
+    "../../classifiers/classifier.npy").resolve()
 user_classfile = Path.home().joinpath(
-    '.suite2p/classifiers/classifier_user.npy')
+    ".suite2p/classifiers/classifier_user.npy")
 
 
 def classify(
         stat: np.ndarray,
         classfile: Union[str, Path],
-        keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
+        keys: Sequence[str] = ("npix_norm", "compact", "skew"),
 ):
     """ 
     Main classification function 
@@ -22,7 +22,7 @@ def classify(
     Parameters
     ----------------
 
-    stat: dictionary 'ypix', 'xpix', 'lam'
+    stat: dictionary "ypix", "xpix", "lam"
         Dictionary containing statistics for ROIs
 
     classfile: string (optional, default None)

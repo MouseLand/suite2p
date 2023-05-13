@@ -15,18 +15,18 @@ def detect(ops, classfile=None):
 
     t0 = time.time()
     bin_size = int(
-        max(1, ops['nframes'] // ops['nbinned'],
-            np.round(ops['tau'] * ops['fs'])))
-    print('Binning movie in chunks of length %2.2d' % bin_size)
-    with BinaryFile(read_filename=ops['reg_file'], Ly=ops['Ly'],
-                    Lx=ops['Lx']) as f:
+        max(1, ops["nframes"] // ops["nbinned"],
+            np.round(ops["tau"] * ops["fs"])))
+    print("Binning movie in chunks of length %2.2d" % bin_size)
+    with BinaryFile(read_filename=ops["reg_file"], Ly=ops["Ly"],
+                    Lx=ops["Lx"]) as f:
         mov = f.bin_movie(
             bin_size=bin_size,
-            bad_frames=ops.get('badframes'),
-            y_range=ops['yrange'],
-            x_range=ops['xrange'],
+            bad_frames=ops.get("badframes"),
+            y_range=ops["yrange"],
+            x_range=ops["xrange"],
         )
-        print('Binned movie [%d,%d,%d] in %0.2f sec.' %
+        print("Binned movie [%d,%d,%d] in %0.2f sec." %
               (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
 
         ops, stat = detection_wrapper(f, mov=mov, ops=ops, classfile=classfile)
@@ -81,7 +81,7 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
             mov[curr_bin_number:curr_bin_number + n_bins] = data
             curr_bin_number += n_bins
 
-    print('Binned movie of size [%d,%d,%d] created in %0.2f sec.' %
+    print("Binned movie of size [%d,%d,%d] created in %0.2f sec." %
           (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     return mov
 
@@ -118,67 +118,67 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 
 	ops : dictionary or list of dicts
 		
-	stat : dictionary 'ypix', 'xpix', 'lam'
+	stat : dictionary "ypix", "xpix", "lam"
 		Dictionary containing statistics for ROIs
 
 
 	"""
     n_frames, Ly, Lx = f_reg.shape
-    yrange = ops.get('yrange', [0, Ly]) if yrange is None else yrange
-    xrange = ops.get('xrange', [0, Lx]) if xrange is None else xrange
+    yrange = ops.get("yrange", [0, Ly]) if yrange is None else yrange
+    xrange = ops.get("xrange", [0, Lx]) if xrange is None else xrange
 
     if mov is None:
         bin_size = int(
-            max(1, n_frames // ops['nbinned'],
-                np.round(ops['tau'] * ops['fs'])))
-        print('Binning movie in chunks of length %2.2d' % bin_size)
+            max(1, n_frames // ops["nbinned"],
+                np.round(ops["tau"] * ops["fs"])))
+        print("Binning movie in chunks of length %2.2d" % bin_size)
         mov = bin_movie(f_reg, bin_size, yrange=yrange, xrange=xrange,
-                        badframes=ops.get('badframes', None))
+                        badframes=ops.get("badframes", None))
     else:
         if mov.shape[1] != yrange[-1] - yrange[0]:
-            raise ValueError('mov.shape[1] is not same size as yrange')
+            raise ValueError("mov.shape[1] is not same size as yrange")
         elif mov.shape[2] != xrange[-1] - xrange[0]:
-            raise ValueError('mov.shape[2] is not same size as xrange')
+            raise ValueError("mov.shape[2] is not same size as xrange")
 
-    if ops.get('inverted_activity', False):
+    if ops.get("inverted_activity", False):
         mov -= mov.min()
         mov *= -1
         mov -= mov.min()
 
-    if ops.get('denoise', 1):
+    if ops.get("denoise", 1):
         mov = pca_denoise(
             mov,
-            block_size=[ops['block_size'][0] // 2,
-                        ops['block_size'][1] // 2], n_comps_frac=0.5)
+            block_size=[ops["block_size"][0] // 2,
+                        ops["block_size"][1] // 2], n_comps_frac=0.5)
 
-    if ops.get('anatomical_only', 0):
+    if ops.get("anatomical_only", 0):
         try:
             from . import anatomical
             CELLPOSE_INSTALLED = True
         except Exception as e:
-            print('Warning: cellpose did not import')
+            print("Warning: cellpose did not import")
             print(e)
             print(
-                'cannot use anatomical mode, but otherwise suite2p will run normally'
+                "cannot use anatomical mode, but otherwise suite2p will run normally"
             )
             CELLPOSE_INSTALLED = False
         if not CELLPOSE_INSTALLED:
             print(
-                '~~~ tried to import cellpose to run anatomical but failed, install with: ~~~'
+                "~~~ tried to import cellpose to run anatomical but failed, install with: ~~~"
             )
-            print('$ pip install cellpose')
+            print("$ pip install cellpose")
         else:
-            print('>>>> CELLPOSE finding masks in ' + [
-                'max_proj / mean_img', 'mean_img', 'enhanced_mean_img',
-                'max_proj'
-            ][int(ops['anatomical_only']) - 1])
+            print(">>>> CELLPOSE finding masks in " + [
+                "max_proj / mean_img", "mean_img", "enhanced_mean_img",
+                "max_proj"
+            ][int(ops["anatomical_only"]) - 1])
             stat = anatomical.select_rois(ops=ops, mov=mov,
-                                          diameter=ops.get('diameter', None))
+                                          diameter=ops.get("diameter", None))
     else:
         stat = select_rois(
             ops=ops,
             mov=mov,
-            sparse_mode=ops['sparse_mode'],
+            sparse_mode=ops["sparse_mode"],
             classfile=classfile,
         )
 
@@ -186,42 +186,42 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
     xmin = int(xrange[0])
     if len(stat) > 0:
         for s in stat:
-            s['ypix'] += ymin
-            s['xpix'] += xmin
-            s['med'][0] += ymin
-            s['med'][1] += xmin
+            s["ypix"] += ymin
+            s["xpix"] += xmin
+            s["med"][0] += ymin
+            s["med"][1] += xmin
 
-        if ops['preclassify'] > 0:
+        if ops["preclassify"] > 0:
             if classfile is None:
                 print(
-                    f'NOTE: Applying user classifier at {str(user_classfile)}')
+                    f"NOTE: Applying user classifier at {str(user_classfile)}")
                 classfile = user_classfile
 
-            stat = roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None),
-                             diameter=ops.get('diameter', None),
-                             do_crop=ops.get('soma_crop', 1))
+            stat = roi_stats(stat, Ly, Lx, aspect=ops.get("aspect", None),
+                             diameter=ops.get("diameter", None),
+                             do_crop=ops.get("soma_crop", 1))
             if len(stat) == 0:
                 iscell = np.zeros((0, 2))
             else:
                 iscell = classify(stat=stat, classfile=classfile)
-            np.save(Path(ops['save_path']).joinpath('iscell.npy'), iscell)
-            ic = (iscell[:, 0] > ops['preclassify']).flatten().astype('bool')
+            np.save(Path(ops["save_path"]).joinpath("iscell.npy"), iscell)
+            ic = (iscell[:, 0] > ops["preclassify"]).flatten().astype("bool")
             stat = stat[ic]
-            print('Preclassify threshold %0.2f, %d ROIs removed' %
-                  (ops['preclassify'], (~ic).sum()))
+            print("Preclassify threshold %0.2f, %d ROIs removed" %
+                  (ops["preclassify"], (~ic).sum()))
 
-        stat = roi_stats(stat, Ly, Lx, aspect=ops.get('aspect', None),
-                         diameter=ops.get('diameter', None),
-                         max_overlap=ops['max_overlap'],
-                         do_crop=ops.get('soma_crop', 1))
-        print('After removing overlaps, %d ROIs remain' % (len(stat)))
+        stat = roi_stats(stat, Ly, Lx, aspect=ops.get("aspect", None),
+                         diameter=ops.get("diameter", None),
+                         max_overlap=ops["max_overlap"],
+                         do_crop=ops.get("soma_crop", 1))
+        print("After removing overlaps, %d ROIs remain" % (len(stat)))
 
     # if second channel, detect bright cells in second channel
-    if 'meanImg_chan2' in ops:
-        if 'chan2_thres' not in ops:
-            ops['chan2_thres'] = 0.65
+    if "meanImg_chan2" in ops:
+        if "chan2_thres" not in ops:
+            ops["chan2_thres"] = 0.65
         ops, redcell = chan2detect.detect(ops, stat)
-        np.save(Path(ops['save_path']).joinpath('redcell.npy'), redcell)
+        np.save(Path(ops["save_path"]).joinpath("redcell.npy"), redcell)
 
     return ops, stat
 
@@ -231,22 +231,22 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, sparse_mode: bool = True,
 
     t0 = time.time()
     if sparse_mode:
-        ops.update({'Lyc': mov.shape[1], 'Lxc': mov.shape[2]})
+        ops.update({"Lyc": mov.shape[1], "Lxc": mov.shape[2]})
         new_ops, stat = sparsedetect.sparsery(
             mov=mov,
-            high_pass=ops['high_pass'],
-            neuropil_high_pass=ops['spatial_hp_detect'],
-            batch_size=ops['batch_size'],
-            spatial_scale=ops['spatial_scale'],
-            threshold_scaling=ops['threshold_scaling'],
-            max_iterations=250 * ops['max_iterations'],
-            percentile=ops.get('active_percentile', 0.0),
+            high_pass=ops["high_pass"],
+            neuropil_high_pass=ops["spatial_hp_detect"],
+            batch_size=ops["batch_size"],
+            spatial_scale=ops["spatial_scale"],
+            threshold_scaling=ops["threshold_scaling"],
+            max_iterations=250 * ops["max_iterations"],
+            percentile=ops.get("active_percentile", 0.0),
         )
         ops.update(new_ops)
     else:
         ops, stat = sourcery.sourcery(mov=mov, ops=ops)
 
-    print('Detected %d ROIs, %0.2f sec' % (len(stat), time.time() - t0))
+    print("Detected %d ROIs, %0.2f sec" % (len(stat), time.time() - t0))
     stat = np.array(stat)
 
     if len(stat) == 0:

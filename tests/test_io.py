@@ -35,7 +35,7 @@ def replace_ops_save_path_with_local_path(request):
 
     # Workaround to load pickled NPY files on Windows containing
     # `PosixPath` objects
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         pathlib.PosixPath = pathlib.WindowsPath
 
     # Get the `data_folder` variable from the running test name    

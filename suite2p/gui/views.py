@@ -21,7 +21,7 @@ def make_buttons(parent):
     b = 0
     parent.viewbtns = QButtonGroup(parent)
     vlabel = QLabel(parent)
-    vlabel.setText("<font color='white'>Background</font>")
+    vlabel.setText("<font color="white">Background</font>")
     vlabel.setFont(parent.boldfont)
     vlabel.resize(vlabel.minimumSizeHint())
     parent.l0.addWidget(vlabel, 1, 0, 1, 1)
@@ -69,53 +69,53 @@ def init_views(parent):
     parent.views = np.zeros((7, parent.Ly, parent.Lx, 3), np.float32)
     for k in range(7):
         if k == 2:
-            if 'meanImgE' not in parent.ops:
+            if "meanImgE" not in parent.ops:
                 parent.ops = extraction.enhanced_mean_image(parent.ops)
-            mimg = parent.ops['meanImgE']
+            mimg = parent.ops["meanImgE"]
         elif k == 1:
-            mimg = parent.ops['meanImg']
+            mimg = parent.ops["meanImg"]
             mimg1 = np.percentile(mimg, 1)
             mimg99 = np.percentile(mimg, 99)
             mimg = (mimg - mimg1) / (mimg99 - mimg1)
             mimg = np.maximum(0, np.minimum(1, mimg))
         elif k == 3:
-            if 'Vcorr' in parent.ops:
-                vcorr = parent.ops['Vcorr']
+            if "Vcorr" in parent.ops:
+                vcorr = parent.ops["Vcorr"]
                 mimg1 = np.percentile(vcorr, 1)
                 mimg99 = np.percentile(vcorr, 99)
                 vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
                 mimg = mimg1 * np.ones((parent.Ly, parent.Lx), np.float32)
-                mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                     parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
+                mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
+                     parent.ops["xrange"][0]:parent.ops["xrange"][1]] = vcorr
                 mimg = np.maximum(0, np.minimum(1, mimg))
             else:
                 mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
         elif k == 4:
-            if 'max_proj' in parent.ops:
-                mproj = parent.ops['max_proj']
+            if "max_proj" in parent.ops:
+                mproj = parent.ops["max_proj"]
                 mimg1 = np.percentile(mproj, 1)
                 mimg99 = np.percentile(mproj, 99)
                 mproj = (mproj - mimg1) / (mimg99 - mimg1)
                 mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
                 try:
-                    mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                         parent.ops['xrange'][0]:parent.
-                         ops['xrange'][1]] = mproj
+                    mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
+                         parent.ops["xrange"][0]:parent.
+                         ops["xrange"][1]] = mproj
                 except:
-                    print('maxproj not in combined view')
+                    print("maxproj not in combined view")
                 mimg = np.maximum(0, np.minimum(1, mimg))
             else:
                 mimg = 0.5 * np.ones((parent.Ly, parent.Lx), np.float32)
         elif k == 5:
-            if 'meanImg_chan2_corrected' in parent.ops:
-                mimg = parent.ops['meanImg_chan2_corrected']
+            if "meanImg_chan2_corrected" in parent.ops:
+                mimg = parent.ops["meanImg_chan2_corrected"]
                 mimg1 = np.percentile(mimg, 1)
                 mimg99 = np.percentile(mimg, 99)
                 mimg = (mimg - mimg1) / (mimg99 - mimg1)
                 mimg = np.maximum(0, np.minimum(1, mimg))
         elif k == 6:
-            if 'meanImg_chan2' in parent.ops:
-                mimg = parent.ops['meanImg_chan2']
+            if "meanImg_chan2" in parent.ops:
+                mimg = parent.ops["meanImg_chan2"]
                 mimg1 = np.percentile(mimg, 1)
                 mimg99 = np.percentile(mimg, 99)
                 mimg = (mimg - mimg1) / (mimg99 - mimg1)
@@ -129,12 +129,12 @@ def init_views(parent):
 
 
 def plot_views(parent):
-    """ set parent.view1 and parent.view2 image based on parent.ops_plot['view']"""
-    k = parent.ops_plot['view']
+    """ set parent.view1 and parent.view2 image based on parent.ops_plot["view"]"""
+    k = parent.ops_plot["view"]
     parent.view1.setImage(parent.views[k],
-                          levels=parent.ops_plot['saturation'])
+                          levels=parent.ops_plot["saturation"])
     parent.view2.setImage(parent.views[k],
-                          levels=parent.ops_plot['saturation'])
+                          levels=parent.ops_plot["saturation"])
     parent.view1.show()
     parent.view2.show()
 
@@ -160,7 +160,7 @@ class ViewButton(QPushButton):
             if parent.viewbtns.button(b).isEnabled():
                 parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
-        parent.ops_plot['view'] = bid
+        parent.ops_plot["view"] = bid
         parent.update_plot()
 
 
@@ -211,7 +211,7 @@ class RangeSlider(QSlider):
     def level_change(self):
         if self.parent is not None:
             if self.parent.loaded:
-                self.parent.ops_plot['saturation'] = [self._low, self._high]
+                self.parent.ops_plot["saturation"] = [self._low, self._high]
                 self.parent.update_plot()
 
     def low(self):
@@ -237,7 +237,7 @@ class RangeSlider(QSlider):
             opt = QStyleOptionSlider()
             self.initStyleOption(opt)
 
-            # Only draw the groove for the first slider so it doesn't get drawn
+            # Only draw the groove for the first slider so it doesn"t get drawn
             # on top of the existing ones every time
             if i == 0:
                 opt.subControls = QStyle.SC_SliderHandle    #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
@@ -263,7 +263,7 @@ class RangeSlider(QSlider):
         style = QApplication.style()
         button = event.button()
         # In a normal slider control, when the user clicks on a point in the
-        # slider's total range, but not on the slider part of the control the
+        # slider"s total range, but not on the slider part of the control the
         # control would jump the slider value to where the user clicked.
         # For this control, clicks which are not direct hits will slide both
         # slider parts

@@ -54,8 +54,8 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     block_size = (block_size_y, block_size_x)
 
     # todo: could rounding to int here over-represent some pixels over others?
-    ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
-    xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
+    ystart = np.linspace(0, Ly - block_size[0], ny).astype("int")
+    xstart = np.linspace(0, Lx - block_size[1], nx).astype("int")
     yblock = [
         np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny)
         for _ in range(nx)
@@ -73,7 +73,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
 def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma,
                         yblock: np.ndarray, xblock: np.ndarray):
     """
-    Computes taper and fft'ed reference image for phasecorr.
+    Computes taper and fft"ed reference image for phasecorr.
 
     Parameters
     ----------
@@ -95,17 +95,17 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma,
     dims = (nb, Ly, Lx)
     cfRef_dims = dims
     gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
-    cfRefImg1 = np.zeros(cfRef_dims, 'complex64')
+    cfRefImg1 = np.zeros(cfRef_dims, "complex64")
 
     maskMul = spatial_taper(maskSlope, *refImg0.shape)
-    maskMul1 = np.zeros(dims, 'float32')
+    maskMul1 = np.zeros(dims, "float32")
     maskMul1[:] = spatial_taper(2 * smooth_sigma, Ly, Lx)
-    maskOffset1 = np.zeros(dims, 'float32')
+    maskOffset1 = np.zeros(dims, "float32")
     for yind, xind, maskMul1_n, maskOffset1_n, cfRefImg1_n in zip(
             yblock, xblock, maskMul1, maskOffset1, cfRefImg1):
         ix = np.ix_(
-            np.arange(yind[0], yind[-1]).astype('int'),
-            np.arange(xind[0], xind[-1]).astype('int'))
+            np.arange(yind[0], yind[-1]).astype("int"),
+            np.arange(xind[0], xind[-1]).astype("int"))
         refImg = refImg0[ix]
 
         # mask params
@@ -199,7 +199,7 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh,
     nb = len(yblock)
 
     # shifts and corrmax
-    Y = np.zeros((nimg, nb, ly, lx), 'float32')
+    Y = np.zeros((nimg, nb, ly, lx), "float32")
     for n in range(nb):
         yind, xind = yblock[n], xblock[n]
         Y[:, n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
@@ -225,7 +225,7 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh,
     ]
     ccsm = cc2[0]
     for n in range(nb):
-        snr = np.ones(nimg, 'float32')
+        snr = np.ones(nimg, "float32")
         for j, c2 in enumerate(cc2):
             ism = snr < snr_thresh
             if np.sum(ism) == 0:
@@ -261,12 +261,12 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh,
 
 
 @njit([
-    '(int16[:, :],float32[:,:], float32[:,:], float32[:,:])',
-    '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'
+    "(int16[:, :],float32[:,:], float32[:,:], float32[:,:])",
+    "(float32[:, :],float32[:,:], float32[:,:], float32[:,:])"
 ], cache=True)
 def map_coordinates(I, yc, xc, Y) -> None:
     """
-    In-place bilinear transform of image 'I' with ycoordinates yc and xcoordinates xc to Y
+    In-place bilinear transform of image "I" with ycoordinates yc and xcoordinates xc to Y
     
     Parameters
     -------------
@@ -298,8 +298,8 @@ def map_coordinates(I, yc, xc, Y) -> None:
 
 
 @njit([
-    'int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
-    'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'
+    "int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]",
+    "float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]"
 ], parallel=True, cache=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     """

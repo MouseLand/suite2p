@@ -43,8 +43,8 @@ class ViewBox(pg.ViewBox):
             self.setYLink(parent.p1)
 
         # set state
-        self.state['enableMenu'] = enableMenu
-        self.state['yInverted'] = invertY
+        self.state["enableMenu"] = enableMenu
+        self.state["yInverted"] = invertY
 
     def mouseDoubleClickEvent(self, ev):
         if self.parent.loaded:
@@ -60,7 +60,7 @@ class ViewBox(pg.ViewBox):
             else:
                 iplot = 1
             if posy >= 0 and posx >= 0 and posy <= self.parent.Lx and posx <= self.parent.Ly:
-                ichosen = int(self.parent.rois['iROI'][iplot, 0, posx, posy])
+                ichosen = int(self.parent.rois["iROI"][iplot, 0, posx, posy])
                 if ichosen < 0:
                     if ev.button(
                     ) == QtCore.Qt.RightButton and self.menuEnabled():
@@ -110,14 +110,14 @@ class ViewBox(pg.ViewBox):
         dif = dif * -1
 
         ## Ignore axes if mouse is disabled
-        mouseEnabled = np.array(self.state['mouseEnabled'], dtype=np.float)
+        mouseEnabled = np.array(self.state["mouseEnabled"], dtype=np.float)
         mask = mouseEnabled.copy()
         if axis is not None:
             mask[1 - axis] = 0.0
 
         ## Scale or translate based on mouse button
         if ev.button() & (QtCore.Qt.LeftButton | QtCore.Qt.MidButton):
-            if self.state['mouseMode'] == pg.ViewBox.RectMode:
+            if self.state["mouseMode"] == pg.ViewBox.RectMode:
                 if ev.isFinish(
                 ):    ## This is the final move in the drag; change the view scale now
                     #print "finish"
@@ -142,7 +142,7 @@ class ViewBox(pg.ViewBox):
                 self._resetTarget()
                 if x is not None or y is not None:
                     self.translateBy(x=x, y=y)
-                self.sigRangeChangedManually.emit(self.state['mouseEnabled'])
+                self.sigRangeChangedManually.emit(self.state["mouseEnabled"])
 
     def zoom_plot(self):
         self.setXRange(0, self.parent.ops["Lx"])
@@ -153,23 +153,23 @@ class ViewBox(pg.ViewBox):
 
 
 def init_range(parent):
-    parent.p1.setXRange(0, parent.ops['Lx'])
-    parent.p1.setYRange(0, parent.ops['Ly'])
-    parent.p2.setXRange(0, parent.ops['Lx'])
-    parent.p2.setYRange(0, parent.ops['Ly'])
+    parent.p1.setXRange(0, parent.ops["Lx"])
+    parent.p1.setYRange(0, parent.ops["Ly"])
+    parent.p2.setXRange(0, parent.ops["Lx"])
+    parent.p2.setYRange(0, parent.ops["Ly"])
     parent.p3.setLimits(xMin=0, xMax=parent.Fcell.shape[1])
     parent.trange = np.arange(0, parent.Fcell.shape[1])
 
 
 def ROI_index(ops, stat):
-    '''matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)'''
+    """matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)"""
     ncells = len(stat) - 1
-    Ly = ops['Ly']
-    Lx = ops['Lx']
+    Ly = ops["Ly"]
+    Lx = ops["Lx"]
     iROI = -1 * np.ones((Ly, Lx), dtype=np.int32)
     for n in range(ncells):
-        ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        ypix = stat[n]["ypix"][~stat[n]["overlap"]]
         if ypix is not None:
-            xpix = stat[n]['xpix'][~stat[n]['overlap']]
+            xpix = stat[n]["xpix"][~stat[n]["overlap"]]
             iROI[ypix, xpix] = n
     return iROI

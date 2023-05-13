@@ -2,13 +2,13 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from ..extraction import masks
 from . import utils
-'''
+"""
 identify cells with channel 2 brightness (aka red cells)
 
 main function is detect
-takes from ops: 'meanImg', 'meanImg_chan2', 'Ly', 'Lx'
-takes from stat: 'ypix', 'xpix', 'lam'
-'''
+takes from ops: "meanImg", "meanImg_chan2", "Ly", "Lx"
+takes from stat: "ypix", "xpix", "lam"
+"""
 
 
 def quadrant_mask(Ly, Lx, ny, nx, sT):
@@ -47,19 +47,19 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
 def intensity_ratio(ops, stats):
     """ compute pixels in cell and in area around cell (including overlaps)
         (exclude pixels from other cells) """
-    Ly, Lx = ops['Ly'], ops['Lx']
-    cell_pix = masks.create_cell_pix(stats, Ly=ops['Ly'], Lx=ops['Lx'])
+    Ly, Lx = ops["Ly"], ops["Lx"]
+    cell_pix = masks.create_cell_pix(stats, Ly=ops["Ly"], Lx=ops["Lx"])
     cell_masks0 = [
-        masks.create_cell_mask(stat, Ly=ops['Ly'], Lx=ops['Lx'],
-                               allow_overlap=ops['allow_overlap'])
+        masks.create_cell_mask(stat, Ly=ops["Ly"], Lx=ops["Lx"],
+                               allow_overlap=ops["allow_overlap"])
         for stat in stats
     ]
     neuropil_ipix = masks.create_neuropil_masks(
-        ypixs=[stat['ypix'] for stat in stats],
-        xpixs=[stat['xpix'] for stat in stats],
+        ypixs=[stat["ypix"] for stat in stats],
+        xpixs=[stat["xpix"] for stat in stats],
         cell_pix=cell_pix,
-        inner_neuropil_radius=ops['inner_neuropil_radius'],
-        min_neuropil_pixels=ops['min_neuropil_pixels'],
+        inner_neuropil_radius=ops["inner_neuropil_radius"],
+        min_neuropil_pixels=ops["min_neuropil_pixels"],
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
     neuropil_masks = np.zeros((len(stats), Ly * Lx), np.float32)
@@ -69,12 +69,12 @@ def intensity_ratio(ops, stats):
         neuropil_mask[neuropil_mask0.astype(
             np.int64)] = 1. / len(neuropil_mask0)
 
-    mimg2 = ops['meanImg_chan2']
+    mimg2 = ops["meanImg_chan2"]
     inpix = cell_masks @ mimg2.flatten()
     extpix = neuropil_masks @ mimg2.flatten()
     inpix = np.maximum(1e-3, inpix)
     redprob = inpix / (inpix + extpix)
-    redcell = redprob > ops['chan2_thres']
+    redcell = redprob > ops["chan2_thres"]
     return np.stack((redcell, redprob), axis=-1)
 
 
@@ -86,7 +86,7 @@ def cellpose_overlap(stats, mimg2):
                         np.float32)    #changed the size of preallocated space
     for i in range(len(stats)):
         smask = np.zeros((Ly, Lx), np.uint16)
-        ypix0, xpix0 = stats[i]['ypix'], stats[i]['xpix']
+        ypix0, xpix0 = stats[i]["ypix"], stats[i]["xpix"]
         smask[ypix0, xpix0] = 1
         ious = utils.mask_ious(masks, smask)[0]
         iou = ious.max()
@@ -97,24 +97,24 @@ def cellpose_overlap(stats, mimg2):
 
 
 def detect(ops, stats):
-    mimg = ops['meanImg'].copy()
-    mimg2 = ops['meanImg_chan2'].copy()
+    mimg = ops["meanImg"].copy()
+    mimg2 = ops["meanImg_chan2"].copy()
 
     # subtract bleedthrough of green into red channel
     # non-rigid regression with nblks x nblks pieces
     nblks = 3
-    Ly, Lx = ops['Ly'], ops['Lx']
-    ops['meanImg_chan2_corrected'] = correct_bleedthrough(
+    Ly, Lx = ops["Ly"], ops["Lx"]
+    ops["meanImg_chan2_corrected"] = correct_bleedthrough(
         Ly, Lx, nblks, mimg, mimg2)
 
     redstats = None
-    if ops.get('anatomical_red', True):
+    if ops.get("anatomical_red", True):
         try:
-            print('>>>> CELLPOSE estimating masks in anatomical channel')
+            print(">>>> CELLPOSE estimating masks in anatomical channel")
             redstats = cellpose_overlap(stats, mimg2)
         except:
             print(
-                'ERROR importing or running cellpose, continuing without anatomical estimates'
+                "ERROR importing or running cellpose, continuing without anatomical estimates"
             )
 
     if redstats is None:

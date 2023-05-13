@@ -57,7 +57,7 @@ def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes,
         xmin = np.ceil(np.abs(xoff[np.logical_not(badframes)]).max())
     else:
         warn(
-            'WARNING: >50% of frames have large movements, registration likely problematic'
+            "WARNING: >50% of frames have large movements, registration likely problematic"
         )
         ymin = np.ceil(np.abs(yoff).max())
         xmin = np.ceil(np.abs(xoff).max())
@@ -88,7 +88,7 @@ def pick_initial_reference(frames: np.ndarray):
 
     """
     nimg, Ly, Lx = frames.shape
-    frames = np.reshape(frames, (nimg, -1)).astype('float32')
+    frames = np.reshape(frames, (nimg, -1)).astype("float32")
     frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
     cc = np.matmul(frames, frames.T)
     ndiag = np.sqrt(np.diag(cc))
@@ -124,12 +124,12 @@ def compute_reference(frames, ops=default_ops()):
     """
 
     refImg = pick_initial_reference(frames)
-    if ops['1Preg']:
-        if ops['pre_smooth']:
-            refImg = utils.spatial_smooth(refImg, int(ops['pre_smooth']))
-            frames = utils.spatial_smooth(frames, int(ops['pre_smooth']))
-        refImg = utils.spatial_high_pass(refImg, int(ops['spatial_hp_reg']))
-        frames = utils.spatial_high_pass(frames, int(ops['spatial_hp_reg']))
+    if ops["1Preg"]:
+        if ops["pre_smooth"]:
+            refImg = utils.spatial_smooth(refImg, int(ops["pre_smooth"]))
+            frames = utils.spatial_smooth(frames, int(ops["pre_smooth"]))
+        refImg = utils.spatial_high_pass(refImg, int(ops["spatial_hp_reg"]))
+        frames = utils.spatial_high_pass(frames, int(ops["spatial_hp_reg"]))
 
     niter = 8
     for iter in range(0, niter):
@@ -139,15 +139,15 @@ def compute_reference(frames, ops=default_ops()):
                 frames,
                 *rigid.compute_masks(
                     refImg=refImg,
-                    maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 *
-                    ops['smooth_sigma'],
+                    maskSlope=ops["spatial_taper"] if ops["1Preg"] else 3 *
+                    ops["smooth_sigma"],
                 )),
             cfRefImg=rigid.phasecorr_reference(
                 refImg=refImg,
-                smooth_sigma=ops['smooth_sigma'],
+                smooth_sigma=ops["smooth_sigma"],
             ),
-            maxregshift=ops['maxregshift'],
-            smooth_sigma_time=ops['smooth_sigma_time'],
+            maxregshift=ops["maxregshift"],
+            smooth_sigma_time=ops["smooth_sigma_time"],
         )
         for frame, dy, dx in zip(frames, ymax, xmax):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
@@ -175,24 +175,24 @@ def compute_reference_masks(refImg, ops=default_ops()):
     else:
         maskMul, maskOffset = rigid.compute_masks(
             refImg=refImg,
-            maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 *
-            ops['smooth_sigma'],
+            maskSlope=ops["spatial_taper"] if ops["1Preg"] else 3 *
+            ops["smooth_sigma"],
         )
         cfRefImg = rigid.phasecorr_reference(
             refImg=refImg,
-            smooth_sigma=ops['smooth_sigma'],
+            smooth_sigma=ops["smooth_sigma"],
         )
         Ly, Lx = refImg.shape
         blocks = []
-        if ops.get('nonrigid'):
+        if ops.get("nonrigid"):
             blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx,
-                                          block_size=ops['block_size'])
+                                          block_size=ops["block_size"])
 
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.phasecorr_reference(
                 refImg0=refImg,
-                maskSlope=ops['spatial_taper'] if ops['1Preg'] else 3 *
-                ops['smooth_sigma'],    # slope of taper mask at the edges
-                smooth_sigma=ops['smooth_sigma'],
+                maskSlope=ops["spatial_taper"] if ops["1Preg"] else 3 *
+                ops["smooth_sigma"],    # slope of taper mask at the edges
+                smooth_sigma=ops["smooth_sigma"],
                 yblock=blocks[0],
                 xblock=blocks[1],
             )
@@ -223,18 +223,18 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
     --------
 
     ops : dictionary
-        'nframes', 'yoff', 'xoff', 'corrXY', 'yoff1', 'xoff1', 'corrXY1', 'badframes'
+        "nframes", "yoff", "xoff", "corrXY", "yoff1", "xoff1", "corrXY1", "badframes"
 
 
     """
 
     if nZ > 1:
-        cmax_best = -np.inf * np.ones(len(frames), 'float32')
-        cmax_all = -np.inf * np.ones((len(frames), nZ), 'float32')
-        zpos_best = np.zeros(len(frames), 'int')
-        run_nonrigid = ops['nonrigid']
+        cmax_best = -np.inf * np.ones(len(frames), "float32")
+        cmax_all = -np.inf * np.ones((len(frames), nZ), "float32")
+        zpos_best = np.zeros(len(frames), "int")
+        run_nonrigid = ops["nonrigid"]
         for z in range(nZ):
-            ops['nonrigid'] = False
+            ops["nonrigid"] = False
             outputs = register_frames(refAndMasks[z], frames.copy(),
                                       rmin=rmin[z], rmax=rmax[z],
                                       bidiphase=bidiphase, ops=ops, nZ=1)
@@ -248,7 +248,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
                     output) in enumerate(zip(outputs_best, outputs[:-4])):
                 output_best[ibest] = output[ibest]
         if run_nonrigid:
-            ops['nonrigid'] = True
+            ops["nonrigid"] = True
             nfr = frames.shape[0]
             for i, z in enumerate(zpos_best):
                 outputs = register_frames(refAndMasks[z], frames[[i]],
@@ -273,7 +273,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
             maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, blocks = refAndMasks
         else:
             refImg = refAndMasks
-            if ops.get('norm_frames', False) and 'rmin' not in ops:
+            if ops.get("norm_frames", False) and "rmin" not in ops:
                 rmin, rmax = np.int16(np.percentile(refImg, 1)), np.int16(
                     np.percentile(refImg, 99))
                 refImg = np.clip(refImg, rmin, rmax)
@@ -284,23 +284,23 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
             bidi.shift(frames, bidiphase)
 
         # if smoothing or filtering or clipping to compute registration shifts, make a copy of the frames
-        dtype = 'float32' if ops['smooth_sigma_time'] > 0 or ops[
-            '1Preg'] else frames.dtype
+        dtype = "float32" if ops["smooth_sigma_time"] > 0 or ops[
+            "1Preg"] else frames.dtype
         fsmooth = frames.copy().astype(
-            dtype) if ops['smooth_sigma_time'] > 0 or ops['1Preg'] else frames
+            dtype) if ops["smooth_sigma_time"] > 0 or ops["1Preg"] else frames
 
-        if ops['smooth_sigma_time']:
+        if ops["smooth_sigma_time"]:
             fsmooth = utils.temporal_smooth(data=fsmooth,
-                                            sigma=ops['smooth_sigma_time'])
+                                            sigma=ops["smooth_sigma_time"])
         else:
             fsmooth = frames
 
         # preprocessing for 1P recordings
-        if ops['1Preg']:
-            if ops['pre_smooth']:
-                fsmooth = utils.spatial_smooth(fsmooth, int(ops['pre_smooth']))
+        if ops["1Preg"]:
+            if ops["pre_smooth"]:
+                fsmooth = utils.spatial_smooth(fsmooth, int(ops["pre_smooth"]))
             fsmooth = utils.spatial_high_pass(fsmooth,
-                                              int(ops['spatial_hp_reg']))
+                                              int(ops["spatial_hp_reg"]))
 
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(
@@ -308,17 +308,17 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
                 data=np.clip(fsmooth, rmin, rmax) if rmin > -np.inf else
                 fsmooth, maskMul=maskMul, maskOffset=maskOffset),
             cfRefImg=cfRefImg,
-            maxregshift=ops['maxregshift'],
-            smooth_sigma_time=ops['smooth_sigma_time'],
+            maxregshift=ops["maxregshift"],
+            smooth_sigma_time=ops["smooth_sigma_time"],
         )
 
         for frame, dy, dx in zip(frames, ymax, xmax):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
         # non-rigid registration
-        if ops['nonrigid']:
+        if ops["nonrigid"]:
             # need to also shift smoothed/filtered data
-            if ops['smooth_sigma_time'] or ops['1Preg']:
+            if ops["smooth_sigma_time"] or ops["1Preg"]:
                 for fsm, dy, dx in zip(fsmooth, ymax, xmax):
                     fsm[:] = rigid.shift_frame(frame=fsm, dy=dy, dx=dx)
 
@@ -328,11 +328,11 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
                 maskMul=maskMulNR.squeeze(),
                 maskOffset=maskOffsetNR.squeeze(),
                 cfRefImg=cfRefImgNR.squeeze(),
-                snr_thresh=ops['snr_thresh'],
+                snr_thresh=ops["snr_thresh"],
                 NRsm=blocks[-1],
                 xblock=blocks[1],
                 yblock=blocks[0],
-                maxregshiftNR=ops['maxregshiftNR'],
+                maxregshiftNR=ops["maxregshiftNR"],
             )
 
             frames = nonrigid.transform_data(
@@ -351,16 +351,16 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf,
 
 def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None,
                  ops=default_ops()):
-    if ops['bidiphase'] != 0 and not ops['bidi_corrected']:
-        bidi.shift(frames, int(ops['bidiphase']))
+    if ops["bidiphase"] != 0 and not ops["bidi_corrected"]:
+        bidi.shift(frames, int(ops["bidiphase"]))
 
     for frame, dy, dx in zip(frames, yoff, xoff):
         frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
-    if ops['nonrigid']:
+    if ops["nonrigid"]:
         frames = nonrigid.transform_data(
             frames, yblock=blocks[0], xblock=blocks[1], nblocks=blocks[2],
-            ymax1=yoff1, xmax1=xoff1, bilinear=ops.get('bilinear_reg', True))
+            ymax1=yoff1, xmax1=xoff1, bilinear=ops.get("bilinear_reg", True))
     return frames
 
 
@@ -394,40 +394,40 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
 
     n_frames, Ly, Lx = f_align_in.shape
 
-    batch_size = ops['batch_size']
+    batch_size = ops["batch_size"]
     ### ----- compute reference image and bidiphase shift -------------- ###
     if refImg is None:
         # grab frames
         frames = f_align_in[np.linspace(
-            0, n_frames, 1 + np.minimum(ops['nimg_init'], n_frames),
+            0, n_frames, 1 + np.minimum(ops["nimg_init"], n_frames),
             dtype=int)[:-1]]
         # compute bidiphase shift
-        if ops['do_bidiphase'] and ops[
-                'bidiphase'] == 0 and not ops['bidi_corrected']:
+        if ops["do_bidiphase"] and ops[
+                "bidiphase"] == 0 and not ops["bidi_corrected"]:
             bidiphase = bidi.compute(frames)
-            print('NOTE: estimated bidiphase offset from data: %d pixels' %
+            print("NOTE: estimated bidiphase offset from data: %d pixels" %
                   bidiphase)
-            ops['bidiphase'] = bidiphase
+            ops["bidiphase"] = bidiphase
             # shift frames
             if bidiphase != 0:
-                bidi.shift(frames, int(ops['bidiphase']))
+                bidi.shift(frames, int(ops["bidiphase"]))
         else:
             bidiphase = 0
 
         if refImg is None:
             t0 = time.time()
             refImg = compute_reference(frames, ops=ops)
-            print('Reference frame, %0.2f sec.' % (time.time() - t0))
+            print("Reference frame, %0.2f sec." % (time.time() - t0))
 
     if isinstance(refImg, list):
         nZ = len(refImg)
-        print(f'List of reference frames len = {nZ}')
+        print(f"List of reference frames len = {nZ}")
     else:
         nZ = 1
 
     # normalize reference image
     refImg_orig = refImg.copy()
-    if ops.get('norm_frames', False):
+    if ops.get("norm_frames", False):
         refImg, rmin, rmax = normalize_reference_image(refImg)
     else:
         if nZ == 1:
@@ -436,8 +436,8 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
             rmin = -np.inf * np.ones(nZ)
             rmax = np.inf * np.ones(nZ)
 
-    if ops['bidiphase'] and not ops['bidi_corrected']:
-        bidiphase = int(ops['bidiphase'])
+    if ops["bidiphase"] and not ops["bidi_corrected"]:
+        bidiphase = int(ops["bidiphase"])
     else:
         bidiphase = 0
 
@@ -445,11 +445,11 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
 
     ### ------------- register frames to reference image ------------ ###
 
-    mean_img = np.zeros((Ly, Lx), 'float32')
+    mean_img = np.zeros((Ly, Lx), "float32")
     rigid_offsets, nonrigid_offsets, zpos, cmax_all = [], [], [], []
 
-    if ops['frames_include'] != -1:
-        n_frames = min(n_frames, ops['frames_include'])
+    if ops["frames_include"] != -1:
+        n_frames = min(n_frames, ops["frames_include"])
 
     t0 = time.time()
 
@@ -462,7 +462,7 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
         if zest is not None:
             zpos.extend(list(zest[0]))
             cmax_all.extend(list(zest[1]))
-        if ops['nonrigid']:
+        if ops["nonrigid"]:
             nonrigid_offsets.append([ymax1, xmax1, cmax1])
 
         mean_img += frames.sum(axis=0) / n_frames
@@ -472,19 +472,19 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
         else:
             f_align_out[k:min(k + batch_size, n_frames)] = frames
 
-        if (ops['reg_tif'] if ops['functional_chan'] == ops['align_by_chan']
-                else ops['reg_tif_chan2']):
+        if (ops["reg_tif"] if ops["functional_chan"] == ops["align_by_chan"]
+                else ops["reg_tif_chan2"]):
             fname = io.generate_tiff_filename(
-                functional_chan=ops['functional_chan'],
-                align_by_chan=ops['align_by_chan'], save_path=ops['save_path'],
+                functional_chan=ops["functional_chan"],
+                align_by_chan=ops["align_by_chan"], save_path=ops["save_path"],
                 k=k, ichan=True)
             io.save_tiff(mov=frames, fname=fname)
 
-        print('Registered %d/%d in %0.2fs' %
+        print("Registered %d/%d in %0.2fs" %
               (k + frames.shape[0], n_frames, time.time() - t0))
     rigid_offsets = utils.combine_offsets_across_batches(
         rigid_offsets, rigid=True)
-    if ops['nonrigid']:
+    if ops["nonrigid"]:
         nonrigid_offsets = utils.combine_offsets_across_batches(
             nonrigid_offsets, rigid=False)
 
@@ -497,36 +497,36 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None,
     """ shift frames for alternate channel in f_alt_in and write to f_alt_out if not None (else write to f_alt_in) """
     n_frames, Ly, Lx = f_alt_in.shape
     if yoff is None or xoff is None:
-        raise ValueError('no rigid registration offsets provided')
+        raise ValueError("no rigid registration offsets provided")
     elif yoff.shape[0] != n_frames or xoff.shape[0] != n_frames:
         raise ValueError(
-            'rigid registration offsets are not the same size as input frames')
+            "rigid registration offsets are not the same size as input frames")
     # Overwrite blocks if nonrigid registration is activated
     blocks = None
-    if ops.get('nonrigid'):
+    if ops.get("nonrigid"):
         if yoff1 is None or xoff1 is None:
             raise ValueError(
-                'nonrigid registration is activated but no nonrigid shifts provided'
+                "nonrigid registration is activated but no nonrigid shifts provided"
             )
         elif yoff1.shape[0] != n_frames or xoff1.shape[0] != n_frames:
             raise ValueError(
-                'nonrigid registration offsets are not the same size as input frames'
+                "nonrigid registration offsets are not the same size as input frames"
             )
 
         blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx,
-                                      block_size=ops['block_size'])
+                                      block_size=ops["block_size"])
 
-    if ops['frames_include'] != -1:
-        n_frames = min(n_frames, ops['frames_include'])
+    if ops["frames_include"] != -1:
+        n_frames = min(n_frames, ops["frames_include"])
 
-    mean_img = np.zeros((Ly, Lx), 'float32')
-    batch_size = ops['batch_size']
+    mean_img = np.zeros((Ly, Lx), "float32")
+    batch_size = ops["batch_size"]
     t0 = time.time()
     for k in np.arange(0, n_frames, batch_size):
-        frames = f_alt_in[k:min(k + batch_size, n_frames)].astype('float32')
+        frames = f_alt_in[k:min(k + batch_size, n_frames)].astype("float32")
         yoffk = yoff[k:min(k + batch_size, n_frames)].astype(int)
         xoffk = xoff[k:min(k + batch_size, n_frames)].astype(int)
-        if ops.get('nonrigid'):
+        if ops.get("nonrigid"):
             yoff1k = yoff1[k:min(k + batch_size, n_frames)]
             xoff1k = xoff1[k:min(k + batch_size, n_frames)]
         else:
@@ -541,15 +541,15 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, yoff=None, xoff=None,
         else:
             f_alt_out[k:min(k + batch_size, n_frames)] = frames
 
-        if (ops['reg_tif_chan2'] if ops['functional_chan']
-                == ops['align_by_chan'] else ops['reg_tif']):
+        if (ops["reg_tif_chan2"] if ops["functional_chan"]
+                == ops["align_by_chan"] else ops["reg_tif"]):
             fname = io.generate_tiff_filename(
-                functional_chan=ops['functional_chan'],
-                align_by_chan=ops['align_by_chan'], save_path=ops['save_path'],
+                functional_chan=ops["functional_chan"],
+                align_by_chan=ops["align_by_chan"], save_path=ops["save_path"],
                 k=k, ichan=False)
             io.save_tiff(mov=frames, fname=fname)
 
-        print('Second channel, Registered %d/%d in %0.2fs' %
+        print("Second channel, Registered %d/%d in %0.2fs" %
               (k + frames.shape[0], n_frames, time.time() - t0))
 
     return mean_img
@@ -562,7 +562,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     if f_raw is not None, f_raw is read and registered and saved to f_reg
     if f_raw_chan2 is not None, f_raw_chan2 is read and registered and saved to f_reg_chan2
 
-    the registration shifts are computed on chan2 if ops['functional_chan'] != ops['align_by_chan']
+    the registration shifts are computed on chan2 if ops["functional_chan"] != ops["align_by_chan"]
 
 
     Parameters
@@ -584,7 +584,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         size [Ly x Lx], initial reference image
 
     align_by_chan2: boolean
-        whether you'd like to align by non-functional channel
+        whether you"d like to align by non-functional channel
 
     ops : dictionary or list of dicts
         dictionary containing input arguments for suite2p pipeline
@@ -648,7 +648,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     n_frames, Ly, Lx = f_align_in.shape
     if f_alt_in is not None and f_alt_in.shape[0] == f_align_in.shape[0]:
         nchannels = 2
-        print('registering two channels')
+        print("registering two channels")
     else:
         nchannels = 1
 
@@ -658,7 +658,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zest = outputs
     yoff, xoff, corrXY = rigid_offsets
 
-    if ops['nonrigid']:
+    if ops["nonrigid"]:
         yoff1, xoff1, corrXY1 = nonrigid_offsets
     else:
         yoff1, xoff1, corryXY1 = None, None, None
@@ -680,27 +680,27 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         meanImg = mean_img_alt
 
     # compute valid region
-    badframes = np.zeros(n_frames, 'bool')
-    if 'data_path' in ops and len(ops['data_path']) > 0:
+    badframes = np.zeros(n_frames, "bool")
+    if "data_path" in ops and len(ops["data_path"]) > 0:
         badfrfile = path.abspath(
-            path.join(ops['data_path'][0], 'bad_frames.npy'))
+            path.join(ops["data_path"][0], "bad_frames.npy"))
         # Check if badframes file exists
         if path.isfile(badfrfile):
-            print('bad frames file path: %s' % badfrfile)
+            print("bad frames file path: %s" % badfrfile)
             bf_indices = np.load(badfrfile)
             bf_indices = bf_indices.flatten().astype(int)
             # Set indices of badframes to true
             badframes[bf_indices] = True
-            print('number of badframes: %d' % badframes.sum())
+            print("number of badframes: %d" % badframes.sum())
 
     # return frames which fall outside range
     badframes, yrange, xrange = compute_crop(
         xoff=xoff,
         yoff=yoff,
         corrXY=corrXY,
-        th_badframes=ops['th_badframes'],
+        th_badframes=ops["th_badframes"],
         badframes=badframes,
-        maxregshift=ops['maxregshift'],
+        maxregshift=ops["maxregshift"],
         Ly=Ly,
         Lx=Lx,
     )
@@ -715,8 +715,8 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     ----------
 
     ops : dictionary or list of dicts
-        'Ly', 'Lx', 'batch_size', 'align_by_chan', 'nonrigid'
-        (optional 'keep_movie_raw', 'raw_file')
+        "Ly", "Lx", "batch_size", "align_by_chan", "nonrigid"
+        (optional "keep_movie_raw", "raw_file")
 
     refImg : 2D array (optional, default None)
 
@@ -727,35 +727,35 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     --------
 
     ops : dictionary
-        'nframes', 'yoff', 'xoff', 'corrXY', 'yoff1', 'xoff1', 'corrXY1', 'badframes'
+        "nframes", "yoff", "xoff", "corrXY", "yoff1", "xoff1", "corrXY1", "badframes"
 
 
     """
-    Ly, Lx = ops['Ly'], ops['Lx']
-    n_frames = ops['nframes']
-    print('registering %d frames' % ops['nframes'])
+    Ly, Lx = ops["Ly"], ops["Lx"]
+    n_frames = ops["nframes"]
+    print("registering %d frames" % ops["nframes"])
 
     # get binary file paths
     raw = raw and ops.get(
-        'keep_movie_raw') and 'raw_file' in ops and path.isfile(
-            ops['raw_file'])
-    reg_file_align = ops['reg_file'] if (
-        ops['nchannels'] < 2 or ops['functional_chan']
-        == ops['align_by_chan']) else ops['reg_file_chan2']
+        "keep_movie_raw") and "raw_file" in ops and path.isfile(
+            ops["raw_file"])
+    reg_file_align = ops["reg_file"] if (
+        ops["nchannels"] < 2 or ops["functional_chan"]
+        == ops["align_by_chan"]) else ops["reg_file_chan2"]
     if raw:
-        raw_file_align = ops.get('raw_file') if (
-            ops['nchannels'] < 2 or ops['functional_chan']
-            == ops['align_by_chan']) else ops.get('raw_file_chan2')
+        raw_file_align = ops.get("raw_file") if (
+            ops["nchannels"] < 2 or ops["functional_chan"]
+            == ops["align_by_chan"]) else ops.get("raw_file_chan2")
     else:
         raw_file_align = None
-        if ops['do_bidiphase'] and ops['bidiphase'] != 0:
-            ops['bidi_corrected'] = True
+        if ops["do_bidiphase"] and ops["bidiphase"] != 0:
+            ops["bidi_corrected"] = True
 
-    if ops['nchannels'] > 1:
-        reg_file_alt = ops['reg_file_chan2'] if ops['functional_chan'] == ops[
-            'align_by_chan'] else ops['reg_file']
-        raw_file_alt = ops.get('raw_file_chan2') if ops[
-            'functional_chan'] == ops['align_by_chan'] else ops.get('raw_file')
+    if ops["nchannels"] > 1:
+        reg_file_alt = ops["reg_file_chan2"] if ops["functional_chan"] == ops[
+            "align_by_chan"] else ops["reg_file"]
+        raw_file_alt = ops.get("raw_file_chan2") if ops[
+            "functional_chan"] == ops["align_by_chan"] else ops.get("raw_file")
         raw_file_alt = raw_file_alt if raw else []
     else:
         reg_file_alt = reg_file_align
@@ -770,7 +770,7 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
             f_align_out = None
             f_alt_out.close()
             f_alt_out = None
-        if ops['nchannels'] == 1:
+        if ops["nchannels"] == 1:
             f_alt_in.close()
             f_alt_in = None
 
@@ -780,19 +780,19 @@ def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
     # refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zpos, mean_img_alt, badframes, yrange, xrange = outputs
 
     # # assign reference image and normalizers
-    # ops['refImg'] = refImg
-    # ops['rmin'], ops['rmax'] = rmin, rmax
+    # ops["refImg"] = refImg
+    # ops["rmin"], ops["rmax"] = rmin, rmax
     # # assign rigid offsets to ops
-    # ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    # ops["yoff"], ops["xoff"], ops["corrXY"] = rigid_offsets
     # # assign nonrigid offsets to ops
-    # ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    # ops["yoff1"], ops["xoff1"], ops["corrXY1"] = nonrigid_offsets
     # # assign mean images
-    # if ops['nchannels'] == 1 or ops['functional_chan'] == ops['align_by_chan']:
-    #     ops['meanImg'] = mean_img
-    # elif ops['nchannels'] == 2:
-    #     ops['meanImg_chan2'] = mean_img_alt
+    # if ops["nchannels"] == 1 or ops["functional_chan"] == ops["align_by_chan"]:
+    #     ops["meanImg"] = mean_img
+    # elif ops["nchannels"] == 2:
+    #     ops["meanImg_chan2"] = mean_img_alt
     # # assign crop computation and badframes
-    # ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
+    # ops["badframes"], ops["yrange"], ops["xrange"] = badframes, yrange, xrange
 
     ops = save_registration_outputs_to_ops(outputs, ops)
 
@@ -806,86 +806,86 @@ def save_registration_outputs_to_ops(registration_outputs, ops):
 
     refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, zest, meanImg_chan2, badframes, yrange, xrange = registration_outputs
     # assign reference image and normalizers
-    ops['refImg'] = refImg
-    ops['rmin'], ops['rmax'] = rmin, rmax
+    ops["refImg"] = refImg
+    ops["rmin"], ops["rmax"] = rmin, rmax
     # assign rigid offsets to ops
-    ops['yoff'], ops['xoff'], ops['corrXY'] = rigid_offsets
+    ops["yoff"], ops["xoff"], ops["corrXY"] = rigid_offsets
     # assign nonrigid offsets to ops
-    if ops['nonrigid']:
-        ops['yoff1'], ops['xoff1'], ops['corrXY1'] = nonrigid_offsets
+    if ops["nonrigid"]:
+        ops["yoff1"], ops["xoff1"], ops["corrXY1"] = nonrigid_offsets
     # assign mean images
-    ops['meanImg'] = meanImg
+    ops["meanImg"] = meanImg
     if meanImg_chan2 is not None:
-        ops['meanImg_chan2'] = meanImg_chan2
+        ops["meanImg_chan2"] = meanImg_chan2
     # assign crop computation and badframes
-    ops['badframes'], ops['yrange'], ops['xrange'] = badframes, yrange, xrange
+    ops["badframes"], ops["yrange"], ops["xrange"] = badframes, yrange, xrange
     if len(zest[0]) > 0:
-        ops['zpos_registration'] = np.array(zest[0])
-        ops['cmax_registration'] = np.array(zest[1])
+        ops["zpos_registration"] = np.array(zest[0])
+        ops["cmax_registration"] = np.array(zest[1])
     return ops
 
 
 def enhanced_mean_image(ops):
     """ computes enhanced mean image and adds it to ops
 
-    Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
+    Median filters ops["meanImg"] with 4*diameter in 2D and subtracts and
     divides by this median-filtered image to return a high-pass filtered
-    image ops['meanImgE']
+    image ops["meanImgE"]
 
     Parameters
     ----------
     ops : dictionary
-        uses 'meanImg', 'aspect', 'spatscale_pix', 'yrange' and 'xrange'
+        uses "meanImg", "aspect", "spatscale_pix", "yrange" and "xrange"
 
     Returns
     -------
         ops : dictionary
-            'meanImgE' field added
+            "meanImgE" field added
 
     """
 
-    I = ops['meanImg'].astype(np.float32)
+    I = ops["meanImg"].astype(np.float32)
     mimg0 = compute_enhanced_mean_image(I, ops)
-    #mimg = mimg0.min() * np.ones((ops['Ly'],ops['Lx']),np.float32)
-    #mimg[ops['yrange'][0]:ops['yrange'][1],
-    #    ops['xrange'][0]:ops['xrange'][1]] = mimg0
-    ops['meanImgE'] = mimg0
-    print('added enhanced mean image')
+    #mimg = mimg0.min() * np.ones((ops["Ly"],ops["Lx"]),np.float32)
+    #mimg[ops["yrange"][0]:ops["yrange"][1],
+    #    ops["xrange"][0]:ops["xrange"][1]] = mimg0
+    ops["meanImgE"] = mimg0
+    print("added enhanced mean image")
     return ops
 
 
 def compute_enhanced_mean_image(I, ops):
     """ computes enhanced mean image
 
-    Median filters ops['meanImg'] with 4*diameter in 2D and subtracts and
+    Median filters ops["meanImg"] with 4*diameter in 2D and subtracts and
     divides by this median-filtered image to return a high-pass filtered
-    image ops['meanImgE']
+    image ops["meanImgE"]
 
     Parameters
     ----------
     ops : dictionary
-        uses 'meanImg', 'aspect', 'spatscale_pix', 'yrange' and 'xrange'
+        uses "meanImg", "aspect", "spatscale_pix", "yrange" and "xrange"
 
     Returns
     -------
         ops : dictionary
-            'meanImgE' field added
+            "meanImgE" field added
 
     """
 
-    I = ops['meanImg'].astype(np.float32)
-    if 'spatscale_pix' not in ops:
-        if isinstance(ops['diameter'], int):
-            diameter = np.array([ops['diameter'], ops['diameter']])
+    I = ops["meanImg"].astype(np.float32)
+    if "spatscale_pix" not in ops:
+        if isinstance(ops["diameter"], int):
+            diameter = np.array([ops["diameter"], ops["diameter"]])
         else:
-            diameter = np.array(ops['diameter'])
+            diameter = np.array(ops["diameter"])
         if diameter[0] == 0:
             diameter[:] = 12
-        ops['spatscale_pix'] = diameter[1]
-        ops['aspect'] = diameter[0] / diameter[1]
+        ops["spatscale_pix"] = diameter[1]
+        ops["aspect"] = diameter[0] / diameter[1]
 
     diameter = 4 * np.ceil(
-        np.array([ops['spatscale_pix'] * ops['aspect'], ops['spatscale_pix']
+        np.array([ops["spatscale_pix"] * ops["aspect"], ops["spatscale_pix"]
                   ])) + 1
     diameter = diameter.flatten().astype(np.int64)
     Imed = medfilt2d(I, [diameter[0], diameter[1]])

@@ -166,8 +166,8 @@ def plugins(parent):
     # plugin menu
     main_menu = parent.menuBar()
     parent.plugins = {}
-    plugin_menu = main_menu.addMenu('&Plugins')
-    for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
+    plugin_menu = main_menu.addMenu("&Plugins")
+    for entry_pt in iter_entry_points(group="suite2p.plugin", name=None):
         plugin_obj = entry_pt.load(
         )    # load the advertised class from entry_points
         parent.plugins[entry_pt.name] = plugin_obj(
@@ -178,7 +178,7 @@ def plugins(parent):
         )    # create plugin menu item with the name property of the loaded class
         action.triggered.connect(
             parent.plugins[entry_pt.name].trigger
-        )    # attach class method 'trigger' to plugin menu action
+        )    # attach class method "trigger" to plugin menu action
         plugin_menu.addAction(action)
 
 

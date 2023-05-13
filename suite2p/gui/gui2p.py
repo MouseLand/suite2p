@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
         import suite2p
         s2p_dir = pathlib.Path(suite2p.__file__).parent
-        icon_path = os.fspath(s2p_dir.joinpath('logo', 'logo.png'))
+        icon_path = os.fspath(s2p_dir.joinpath("logo", "logo.png"))
 
         app_icon = QtGui.QIcon()
         app_icon.addFile(icon_path, QtCore.QSize(16, 16))
@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(64, 64))
         app_icon.addFile(icon_path, QtCore.QSize(256, 256))
         self.setWindowIcon(app_icon)
-        self.setStyleSheet("QMainWindow {background: 'black';}")
+        self.setStyleSheet("QMainWindow {background: "black";}")
         self.stylePressed = ("QPushButton {Text-align: left; "
                              "background-color: rgb(100,50,100); "
                              "color:white;}")
@@ -43,23 +43,23 @@ class MainWindow(QMainWindow):
         self.ops_plot = []
 
         ### first time running, need to check for user files
-        user_dir = pathlib.Path.home().joinpath('.suite2p')
+        user_dir = pathlib.Path.home().joinpath(".suite2p")
         user_dir.mkdir(exist_ok=True)
 
         # check for classifier file
-        class_dir = user_dir.joinpath('classifiers')
+        class_dir = user_dir.joinpath("classifiers")
         class_dir.mkdir(exist_ok=True)
-        self.classuser = os.fspath(class_dir.joinpath('classifier_user.npy'))
+        self.classuser = os.fspath(class_dir.joinpath("classifier_user.npy"))
         self.classorig = os.fspath(
-            s2p_dir.joinpath('classifiers', 'classifier.npy'))
+            s2p_dir.joinpath("classifiers", "classifier.npy"))
         if not os.path.isfile(self.classuser):
             shutil.copy(self.classorig, self.classuser)
         self.classfile = self.classuser
 
         # check for ops file (for running suite2p)
-        ops_dir = user_dir.joinpath('ops')
+        ops_dir = user_dir.joinpath("ops")
         ops_dir.mkdir(exist_ok=True)
-        self.opsuser = os.fspath(ops_dir.joinpath('ops_user.npy'))
+        self.opsuser = os.fspath(ops_dir.joinpath("ops_user.npy"))
         if not os.path.isfile(self.opsuser):
             np.save(self.opsuser, default_ops())
         self.opsfile = self.opsuser
@@ -75,21 +75,21 @@ class MainWindow(QMainWindow):
 
         # default plot options
         self.ops_plot = {
-            'ROIs_on': True,
-            'color': 0,
-            'view': 0,
-            'opacity': [127, 255],
-            'saturation': [0, 255],
-            'colormap': 'hsv'
+            "ROIs_on": True,
+            "color": 0,
+            "view": 0,
+            "opacity": [127, 255],
+            "saturation": [0, 255],
+            "colormap": "hsv"
         }
         self.rois = {
-            'iROI': 0,
-            'Sroi': 0,
-            'Lam': 0,
-            'LamMean': 0,
-            'LamNorm': 0
+            "iROI": 0,
+            "Sroi": 0,
+            "Lam": 0,
+            "LamMean": 0,
+            "LamNorm": 0
         }
-        self.colors = {'RGB': 0, 'cols': 0, 'colorbar': []}
+        self.colors = {"RGB": 0, "cols": 0, "colorbar": []}
 
         # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QWidget()
@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
 
         b0 = self.make_buttons()
         self.make_graphics(b0)
-        # so they're on top of plot, draw last
+        # so they"re on top of plot, draw last
         buttons.make_quadrants(self)
 
         # initialize merges
@@ -111,10 +111,10 @@ class MainWindow(QMainWindow):
         self.default_keys = model["keys"]
 
         # load initial file
-        #statfile = 'C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy'
-        #statfile = 'D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy'
-        #statfile = '/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy'
-        #folder = 'D:/DATA/GT1/singlechannel_half/suite2p/'
+        #statfile = "C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy"
+        #statfile = "D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy"
+        #statfile = "/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy"
+        #folder = "D:/DATA/GT1/singlechannel_half/suite2p/"
         #self.fname = folder
         #io.load_folder(self)
         if statfile is not None:
@@ -135,12 +135,12 @@ class MainWindow(QMainWindow):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         print(files)
         self.fname = files[0]
-        if os.path.splitext(self.fname)[-1] == '.npy':
+        if os.path.splitext(self.fname)[-1] == ".npy":
             io.load_proc(self)
-        elif os.path.splitext(self.fname)[-1] == '.nwb':
+        elif os.path.splitext(self.fname)[-1] == ".nwb":
             io.load_NWB(self)
         else:
-            print('invalid extension %s, use .nwb or .npy' %
+            print("invalid extension %s, use .nwb or .npy" %
                   os.path.splitext(self.fname)[-1])
 
     def make_buttons(self):
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QLabel(self)
         qlabel.setFont(self.boldfont)
-        qlabel.setText("<font color='white'>Selected ROI:</font>")
+        qlabel.setText("<font color="white">Selected ROI:</font>")
         self.l0.addWidget(qlabel, b0, 0, 1, 1)
         self.ROIedit = QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0, 10000))
@@ -408,7 +408,7 @@ class MainWindow(QMainWindow):
                     self.ROI_remove()
 
     def update_plot(self):
-        if self.ops_plot['color'] == 7:
+        if self.ops_plot["color"] == 7:
             masks.corr_masks(self)
         masks.plot_colorbar(self)
         self.ichosen_stats()
@@ -459,7 +459,7 @@ class MainWindow(QMainWindow):
             self.Fstd = (self.Fbin**2).mean(axis=1)**0.5
             self.trange = np.arange(0, self.Fcell.shape[1])
             # if in behavior-view, recompute
-            if self.ops_plot['color'] == 8:
+            if self.ops_plot["color"] == 8:
                 masks.beh_masks(self)
                 masks.plot_colorbar(self)
             self.update_plot()
@@ -538,11 +538,11 @@ class MainWindow(QMainWindow):
 
     def select_cells(self, ypix, xpix):
         i = self.ROIplot
-        iROI0 = self.rois['iROI'][i, 0, ypix, xpix]
+        iROI0 = self.rois["iROI"][i, 0, ypix, xpix]
         icells = np.unique(iROI0[iROI0 >= 0])
         self.imerge = []
         for n in icells:
-            if (self.rois['iROI'][i, :, ypix, xpix] == n
+            if (self.rois["iROI"][i, :, ypix, xpix] == n
                 ).sum() > 0.6 * self.stat[n]["npix"]:
                 self.imerge.append(n)
         if len(self.imerge) > 0:
@@ -561,11 +561,11 @@ class MainWindow(QMainWindow):
 
     def ROIs_on(self, state):
         if state == QtCore.Qt.Checked:
-            self.ops_plot['ROIs_on'] = True
+            self.ops_plot["ROIs_on"] = True
             self.p1.addItem(self.color1)
             self.p2.addItem(self.color2)
         else:
-            self.ops_plot['ROIs_on'] = False
+            self.ops_plot["ROIs_on"] = False
             self.p1.removeItem(self.color1)
             self.p2.removeItem(self.color2)
         self.win.show()
@@ -681,8 +681,8 @@ class MainWindow(QMainWindow):
                 apix = np.append(
                     apix,
                     np.concatenate(
-                        (self.stat[k]['ypix'].flatten()[:, np.newaxis],
-                         self.stat[k]['xpix'].flatten()[:, np.newaxis]),
+                        (self.stat[k]["ypix"].flatten()[:, np.newaxis],
+                         self.stat[k]["xpix"].flatten()[:, np.newaxis]),
                         axis=1), axis=0)
 
             imin = apix.min(axis=0)
@@ -693,7 +693,7 @@ class MainWindow(QMainWindow):
             imax[0] = max(icent[0] + irange, imax[0])
             imax[1] = max(icent[1] + irange, imax[1])
         else:
-            icent = np.array(self.stat[self.ichosen]['med'])
+            icent = np.array(self.stat[self.ichosen]["med"])
             imin = icent - irange
             imax = icent + irange
         self.p1.setYRange(imin[0], imax[0])

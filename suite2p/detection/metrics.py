@@ -28,13 +28,13 @@ def match_func_anat(stat_func, stat_anat, Ly, Lx, threshold=0.5):
     iou = np.zeros((len(stat_anat), len(stat_func)))
     ly = 15
     for i, sf in enumerate(stat_func):
-        if sf['ypix'].size < 20:
+        if sf["ypix"].size < 20:
             continue
-        ypix, xpix, lam = sf['ypix'].copy(), sf['xpix'].copy(), sf['lam'].copy(
+        ypix, xpix, lam = sf["ypix"].copy(), sf["xpix"].copy(), sf["lam"].copy(
         )
         lam /= (lam**2).sum()**0.5
         # box around ROI
-        ymed, xmed = sf['med'][0], sf['med'][1]
+        ymed, xmed = sf["med"][0], sf["med"][1]
         inds = (slice(max(0, ymed - ly),
                       min(ymed + ly,
                           Ly)), slice(max(0, xmed - ly), min(xmed + ly, Lx)))
@@ -45,12 +45,12 @@ def match_func_anat(stat_func, stat_anat, Ly, Lx, threshold=0.5):
 
         # matched anatomical masks (will not compute IOU for all masks)
         for j, sa in enumerate(stat_anat):
-            ypix_a, xpix_a = sa['ypix'], sa['xpix']
+            ypix_a, xpix_a = sa["ypix"], sa["xpix"]
             if (np.logical_and(ypix_a > inds[0].start, ypix_a
                                < inds[0].stop).sum() > 0
                     and np.logical_and(xpix_a > inds[1].start, xpix_a
                                        < inds[1].stop).sum() > 0):
-                lam_a = sa['lam'].copy()
+                lam_a = sa["lam"].copy()
                 lam_a /= (lam_a**2).sum()**0.5
                 ma = np.zeros((Ly, Lx), np.float32)
                 ma[ypix_a, xpix_a] = lam_a
@@ -58,8 +58,8 @@ def match_func_anat(stat_func, stat_anat, Ly, Lx, threshold=0.5):
                 mac /= ((mac**2).sum()**0.5 + 1e-10)
                 iou[j, i] = (mac * mfc).sum()
         if i % 1000 == 0:
-            print('%d ROIs processed' % i)
-    print('%d ROIs processed' % i)
+            print("%d ROIs processed" % i)
+    print("%d ROIs processed" % i)
 
     n_true = len(stat_anat)
     n_pred = len(stat_func)
@@ -69,7 +69,7 @@ def match_func_anat(stat_func, stat_anat, Ly, Lx, threshold=0.5):
     fn = n_true - tp
     fp = n_pred - tp
     ap = tp / (fn + tp + fp)
-    print('TP: %d, FN: %d, FP: %d, AP: %0.3f' % (tp, fn, fp, ap))
+    print("TP: %d, FN: %d, FP: %d, AP: %0.3f" % (tp, fn, fp, ap))
 
     return iou, iout, preds, ap
 
@@ -77,41 +77,41 @@ def match_func_anat(stat_func, stat_anat, Ly, Lx, threshold=0.5):
 def extend_anatomical(img_anat, masks_anat, mov=None, ops=None, reg_file=None):
     if mov is None:
         if reg_file is None:
-            reg_file = ops['reg_file']
+            reg_file = ops["reg_file"]
 
         bin_size = int(
-            max(1, ops['nframes'] // ops['nbinned'],
-                np.round(ops['tau'] * ops['fs'])))
+            max(1, ops["nframes"] // ops["nbinned"],
+                np.round(ops["tau"] * ops["fs"])))
         t0 = time.time()
-        with BinaryFile(read_filename=reg_file, Ly=ops['Ly'],
-                        Lx=ops['Lx']) as f:
+        with BinaryFile(read_filename=reg_file, Ly=ops["Ly"],
+                        Lx=ops["Lx"]) as f:
             mov = f.bin_movie(
                 bin_size=bin_size,
-                bad_frames=ops.get('badframes'),
-                y_range=ops['yrange'],
-                x_range=ops['xrange'],
+                bad_frames=ops.get("badframes"),
+                y_range=ops["yrange"],
+                x_range=ops["xrange"],
             )
-        print('Binned movie [%d,%d,%d] in %0.2f sec.' %
+        print("Binned movie [%d,%d,%d] in %0.2f sec." %
               (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     nt, Lyc, Lxc = mov.shape
 
     if ops is not None:
         # process movie
         mov = pca_denoise(
-            mov, [ops['block_size'][0] // 2, ops['block_size'][1] // 2], 0.5)
-        mov = temporal_high_pass_filter(mov=mov, width=int(ops['high_pass']))
-        sdmov = standard_deviation_over_time(mov, batch_size=ops['batch_size'])
+            mov, [ops["block_size"][0] // 2, ops["block_size"][1] // 2], 0.5)
+        mov = temporal_high_pass_filter(mov=mov, width=int(ops["high_pass"]))
+        sdmov = standard_deviation_over_time(mov, batch_size=ops["batch_size"])
         mov = neuropil_subtraction(mov=mov / sdmov,
-                                   filter_size=ops['spatial_hp_detect']
+                                   filter_size=ops["spatial_hp_detect"]
                                    )    # subtract low-pass filtered movie
     else:
-        ops = {'yrange': [0, Lyc], 'xrange': [0, Lxc]}
+        ops = {"yrange": [0, Lyc], "xrange": [0, Lxc]}
         sdmov = np.ones(mov.shape[1:])
 
-    redimg = img_anat[ops['yrange'][0]:ops['yrange'][-1],
-                      ops['xrange'][0]:ops['xrange'][-1]]
-    redmasks = masks_anat[ops['yrange'][0]:ops['yrange'][-1],
-                          ops['xrange'][0]:ops['xrange'][-1]]
+    redimg = img_anat[ops["yrange"][0]:ops["yrange"][-1],
+                      ops["xrange"][0]:ops["xrange"][-1]]
+    redmasks = masks_anat[ops["yrange"][0]:ops["yrange"][-1],
+                          ops["xrange"][0]:ops["xrange"][-1]]
     ly = 10
     stat_anat = []
     iorig = []
@@ -125,7 +125,7 @@ def extend_anatomical(img_anat, masks_anat, mov=None, ops=None, reg_file=None):
         inds = (slice(max(0, ymed - ly),
                       min(ymed + ly,
                           Lyc)), slice(max(0, xmed - ly), min(xmed + ly, Lxc)))
-        maskb = np.zeros((Lyc, Lxc), 'bool')
+        maskb = np.zeros((Lyc, Lxc), "bool")
         maskb[ypix, xpix] = 1
         maskb = maskb[inds].astype(np.float32)
         maskb /= (maskb.sum())**0.5
@@ -167,9 +167,9 @@ def extend_anatomical(img_anat, masks_anat, mov=None, ops=None, reg_file=None):
         xpix += max(0, xmed - ly)
         lam = cc[cc_mask] * sdmov[ypix, xpix]
         # ypix, xpix in full coordinates
-        ypix += ops['yrange'][0]
-        xpix += ops['xrange'][0]
-        stat_anat.append({'ypix': ypix, 'xpix': xpix, 'lam': lam})
+        ypix += ops["yrange"][0]
+        xpix += ops["xrange"][0]
+        stat_anat.append({"ypix": ypix, "xpix": xpix, "lam": lam})
         iorig.append(i)
 
     return stat_anat, iorig

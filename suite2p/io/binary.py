@@ -24,9 +24,9 @@ class BinaryRWFile:
         self.Lx = Lx
         self.filename = filename
         if not os.path.exists(filename):
-            self.file = open(filename, mode='w+b')
+            self.file = open(filename, mode="w+b")
         else:
-            self.file = open(filename, mode='r+b')
+            self.file = open(filename, mode="r+b")
         self._index = 0
         self._can_read = True
 
@@ -228,7 +228,7 @@ class BinaryRWFile:
         data: 2D or 3D array
             The frame(s) to write.  Should be the same width and height as the other frames in the file.
         """
-        self.file.write(bytearray(np.minimum(data, 2**15 - 2).astype('int16')))
+        self.file.write(bytearray(np.minimum(data, 2**15 - 2).astype("int16")))
 
 
 class BinaryFile:
@@ -255,14 +255,14 @@ class BinaryFile:
         self.write_filename = write_filename
 
         if read_filename == write_filename:
-            self.read_file = open(read_filename, mode='r+b')
+            self.read_file = open(read_filename, mode="r+b")
             self.write_file = self.read_file
         elif read_filename and not write_filename:
-            self.read_file = open(read_filename, mode='rb')
+            self.read_file = open(read_filename, mode="rb")
             self.write_file = write_filename
         elif read_filename and write_filename and read_filename != write_filename:
-            self.read_file = open(read_filename, mode='rb')
-            self.write_file = open(write_filename, mode='wb')
+            self.read_file = open(read_filename, mode="rb")
+            self.write_file = open(write_filename, mode="wb")
         else:
             raise IOError("Invalid combination of read_file and write_file")
 
@@ -484,7 +484,7 @@ class BinaryFile:
             self.write_file.seek(-2 * data.size, 1)
             self._can_read = True
         self.write_file.write(
-            bytearray(np.minimum(data, 2**15 - 2).astype('int16')))
+            bytearray(np.minimum(data, 2**15 - 2).astype("int16")))
 
     def bin_movie(self, bin_size: int, x_range: Optional[Tuple[int,
                                                                int]] = None,
@@ -543,7 +543,7 @@ def from_slice(s: slice) -> Optional[np.ndarray]:
 
 
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
-    """Returns an array with the mean of each time bin (of size 'bin_size')."""
+    """Returns an array with the mean of each time bin (of size "bin_size")."""
     n_frames, Ly, Lx = mov.shape
     mov = mov[:(n_frames // bin_size) * bin_size]
     return mov.reshape(-1, bin_size, Ly, Lx).astype(np.float32).mean(axis=1)
@@ -590,7 +590,7 @@ class BinaryFileCombined:
         self.read_filenames = read_filenames
 
         self.read_files = [
-            open(read_filename, mode='rb')
+            open(read_filename, mode="rb")
             for read_filename in self.read_filenames
         ]
         self._index = 0

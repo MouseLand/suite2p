@@ -38,17 +38,17 @@ def nwb_to_binary(ops):
     Parameters
     ----------
     ops: dictionary
-        requires 'nwb_file' key
-        optional keys 'nwb_driver', 'nwb_series'
-        uses 'nplanes', 'save_path', 'save_folder', 'fast_disk',
-        'nchannels', 'keep_movie_raw', 'look_one_level_down'
+        requires "nwb_file" key
+        optional keys "nwb_driver", "nwb_series"
+        uses "nplanes", "save_path", "save_folder", "fast_disk",
+        "nchannels", "keep_movie_raw", "look_one_level_down"
 
     Returns
     -------
         ops : dictionary of first plane
-            ops['reg_file'] or ops['raw_file'] is created binary
-            assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
-            'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'
+            ops["reg_file"] or ops["raw_file"] is created binary
+            assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
+            "frames_per_folder", "nframes", "meanImg", "meanImg_chan2"
 
     """
 
@@ -177,7 +177,7 @@ def read_nwb(fpath):
                     "lam": rois[n]["weight"],
                 })
             if multiplane:
-                stat[-1]['iplane'] = int(rois[n][0][-2])
+                stat[-1]["iplane"] = int(rois[n][0][-2])
         ops = default_ops()
 
         if multiplane:
@@ -192,8 +192,8 @@ def read_nwb(fpath):
         ops1 = []
         for iplane in range(nplanes):
             ops = default_ops()
-            bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
-            ops['nchannels'] = 1
+            bg_strs = ["meanImg", "Vcorr", "max_proj", "meanImg_chan2"]
+            ops["nchannels"] = 1
             for bstr in bg_strs:
                 if (bstr in nwbfile.processing["ophys"]["Backgrounds_%d" %
                                                         iplane].images):
@@ -209,8 +209,8 @@ def read_nwb(fpath):
             ops["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
             ops1.append(ops.copy())
 
-        stat = roi_stats(stat, ops['Ly'], ops['Lx'], ops['aspect'],
-                         ops['diameter'])
+        stat = roi_stats(stat, ops["Ly"], ops["Lx"], ops["aspect"],
+                         ops["diameter"])
 
         # fluorescence
         ophys = nwbfile.processing["ophys"]
@@ -526,4 +526,4 @@ def save_nwb(save_folder):
         with NWBHDF5IO(os.path.join(save_folder, "ophys.nwb"), "w") as fio:
             fio.write(nwbfile)
     else:
-        print('pip install pynwb OR don"t use mesoscope recording')
+        print("pip install pynwb OR don't use mesoscope recording")

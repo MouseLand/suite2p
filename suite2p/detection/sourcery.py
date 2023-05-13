@@ -12,23 +12,23 @@ from .utils import temporal_high_pass_filter, standard_deviation_over_time
 
 def getSVDdata(mov: np.ndarray, ops):
 
-    mov = temporal_high_pass_filter(mov, width=int(ops['high_pass']))
-    ops['max_proj'] = mov.max(axis=0)
+    mov = temporal_high_pass_filter(mov, width=int(ops["high_pass"]))
+    ops["max_proj"] = mov.max(axis=0)
     nbins, Lyc, Lxc = np.shape(mov)
 
-    sig = ops['diameter'] / 10.    # PICK UP
+    sig = ops["diameter"] / 10.    # PICK UP
     for j in range(nbins):
         mov[j, :, :] = gaussian_filter(mov[j, :, :], sig)
 
     # compute noise variance across frames
-    sdmov = standard_deviation_over_time(mov, batch_size=ops['batch_size'])
+    sdmov = standard_deviation_over_time(mov, batch_size=ops["batch_size"])
     mov /= sdmov
     mov = np.reshape(mov, (-1, Lyc * Lxc))
     # compute covariance of binned frames
     cov = mov @ mov.transpose() / mov.shape[1]
-    cov = cov.astype('float32')
+    cov = cov.astype("float32")
 
-    nsvd_for_roi = min(ops['nbinned'], int(cov.shape[0] / 2))
+    nsvd_for_roi = min(ops["nbinned"], int(cov.shape[0] / 2))
     u, s, v = np.linalg.svd(cov)
 
     u = u[:, :nsvd_for_roi]
@@ -40,15 +40,15 @@ def getSVDdata(mov: np.ndarray, ops):
 
 def getSVDproj(mov: np.ndarray, ops, u):
 
-    mov = temporal_high_pass_filter(mov, int(ops['high_pass']))
+    mov = temporal_high_pass_filter(mov, int(ops["high_pass"]))
 
     nbins, Lyc, Lxc = np.shape(mov)
-    if ('smooth_masks' in ops) and ops['smooth_masks']:
-        sig = np.maximum([.5, .5], ops['diameter'] / 20.)
+    if ("smooth_masks" in ops) and ops["smooth_masks"]:
+        sig = np.maximum([.5, .5], ops["diameter"] / 20.)
         for j in range(nbins):
             mov[j, :, :] = gaussian_filter(mov[j, :, :], sig)
     if 1:
-        sdmov = standard_deviation_over_time(mov, batch_size=ops['batch_size'])
+        sdmov = standard_deviation_over_time(mov, batch_size=ops["batch_size"])
         mov /= sdmov
         mov = np.reshape(mov, (-1, Lyc * Lxc))
 
@@ -70,8 +70,8 @@ def getStU(ops, U):
 
 
 def drawClusters(stat, ops):
-    Ly = ops['Lyc']
-    Lx = ops['Lxc']
+    Ly = ops["Lyc"]
+    Lx = ops["Lxc"]
 
     ncells = len(stat)
     r = np.random.random((ncells, ))
@@ -79,10 +79,10 @@ def drawClusters(stat, ops):
     Lam = np.zeros((Ly, Lx))
     H = np.zeros((Ly, Lx, 1))
     for n in range(ncells):
-        isingle = Lam[stat[n]['ypix'], stat[n]['xpix']] + 1e-4 < stat[n]['lam']
-        y = stat[n]['ypix'][isingle]
-        x = stat[n]['xpix'][isingle]
-        Lam[y, x] = stat[n]['lam'][isingle]
+        isingle = Lam[stat[n]["ypix"], stat[n]["xpix"]] + 1e-4 < stat[n]["lam"]
+        y = stat[n]["ypix"][isingle]
+        x = stat[n]["xpix"][isingle]
+        Lam[y, x] = stat[n]["lam"][isingle]
         #iclust[ypix,xpix] = n*np.ones(ypix.shape)
         H[y, x, 0] = r[n] * np.ones(y.shape)
 
@@ -112,15 +112,15 @@ def create_neuropil_basis(ops, Ly, Lx):
         basis functions (pixels x nbasis functions)
     """
 
-    if 'ratio_neuropil' in ops:
-        ratio_neuropil = ops['ratio_neuropil']
+    if "ratio_neuropil" in ops:
+        ratio_neuropil = ops["ratio_neuropil"]
     else:
         ratio_neuropil = 6.
-    if 'tile_factor' in ops:
-        tile_factor = ops['tile_factor']
+    if "tile_factor" in ops:
+        tile_factor = ops["tile_factor"]
     else:
         tile_factor = 1.
-    diameter = ops['diameter']
+    diameter = ops["diameter"]
 
     ntilesY = 1 + 2 * int(
         np.ceil(tile_factor * Ly / (ratio_neuropil * diameter[0] / 2)) / 2)
@@ -133,8 +133,8 @@ def create_neuropil_basis(ops, Ly, Lx):
     ys = np.arange(0, Ly)
     xs = np.arange(0, Lx)
 
-    Kx = np.ones((Lx, ntilesX), 'float32')
-    Ky = np.ones((Ly, ntilesY), 'float32')
+    Kx = np.ones((Lx, ntilesX), "float32")
+    Ky = np.ones((Ly, ntilesY), "float32")
     if 1:
         # basis functions are fourier modes
         for k in range(int((ntilesX - 1) / 2)):
@@ -190,7 +190,7 @@ def circleMask(d0):
 
 
 def morphOpen(V, footprint):
-    ''' computes the morphological opening of V (correlation map) with circular footprint'''
+    """ computes the morphological opening of V (correlation map) with circular footprint"""
     vrem = filters.minimum_filter(V, footprint=footprint)
     vrem = -filters.minimum_filter(-vrem, footprint=footprint)
     return vrem
@@ -211,7 +211,7 @@ def localMax(V, footprint, thres):
     -------
     i,j: indices of local max greater than thres
     """
-    maxV = filters.maximum_filter(V, footprint=footprint, mode='reflect')
+    maxV = filters.maximum_filter(V, footprint=footprint, mode="reflect")
     imax = V > np.maximum(thres, maxV - 1e-10)
     i, j = imax.nonzero()
     i = i.astype(np.int32)
@@ -220,7 +220,7 @@ def localMax(V, footprint, thres):
 
 
 def localRegion(i, j, dy, dx, Ly, Lx):
-    ''' returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)'''
+    """ returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)"""
     xc = dx + j
     yc = dy + i
     goodi = (xc >= 0) & (xc < Lx) & (yc >= 0) & (yc < Ly)
@@ -244,7 +244,7 @@ def r_squared(yp, xp, ypix, xpix, diam_y, diam_x, estimator=np.median):
 
 # this function needs to be updated with the new stat
 def get_stat(ops, stats, Ucell, codes, frac=0.5):
-    '''
+    """
     computes statistics of cells found using sourcery
 
     Parameters
@@ -261,17 +261,17 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
     -------
     stat
         assigned to stat: ipix, ypix, xpix, med, npix, lam, footprint, compact, aspect_ratio, ellipse
-    '''
-    d0, Ly, Lx = ops['diameter'], ops['Lyc'], ops['Lxc']
+    """
+    d0, Ly, Lx = ops["diameter"], ops["Lyc"], ops["Lxc"]
     rs, dy, dx = circleMask(d0)
     rsort = np.sort(rs.flatten())
 
     # Remove empty cells
-    stats = [stat for stat in stats if len(stat['ypix']) != 0]
+    stats = [stat for stat in stats if len(stat["ypix"]) != 0]
 
     footprints = np.zeros(len(stats))
     for k, (stat, code) in enumerate(zip(stats, codes)):
-        ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
+        ypix, xpix, lam = stat["ypix"], stat["xpix"], stat["lam"]
 
         # compute footprint of ROI
         yp, xp = extendROI(ypix, xpix, Ly, Lx, int(np.mean(d0)))
@@ -279,38 +279,38 @@ def get_stat(ops, stats, Ucell, codes, frac=0.5):
         # compute compactness of ROI
         rs = r_squared(yp=yp, xp=xp, ypix=ypix, xpix=xpix, diam_y=d0[0],
                        diam_x=d0[1])
-        stat['mrs'] = np.mean(rs)
-        stat['mrs0'] = np.mean(rsort[:ypix.size])
-        stat['compact'] = stat['mrs'] / (1e-10 + stat['mrs0'])
-        stat['med'] = [np.median(stat['ypix']), np.median(stat['xpix'])]
-        stat['npix'] = xpix.size
-        if 'radius' not in stat:
+        stat["mrs"] = np.mean(rs)
+        stat["mrs0"] = np.mean(rsort[:ypix.size])
+        stat["compact"] = stat["mrs"] / (1e-10 + stat["mrs0"])
+        stat["med"] = [np.median(stat["ypix"]), np.median(stat["xpix"])]
+        stat["npix"] = xpix.size
+        if "radius" not in stat:
             ry, rx = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1],
                                thres=2).radii
-            stat['radius'] = ry * d0.mean()
-            stat['aspect_ratio'] = 2 * ry / (.01 + ry + rx)
+            stat["radius"] = ry * d0.mean()
+            stat["aspect_ratio"] = 2 * ry / (.01 + ry + rx)
 
         proj = (Ucell[yp, xp, :] @ np.expand_dims(code, axis=1)).flatten()
         footprints[k] = np.nanmean(rs[proj > proj.max() * frac])
 
     mfoot = np.nanmedian(footprints)
     for stat, footprint in zip(stats, footprints):
-        stat['footprint'] = footprint / mfoot if not np.isnan(footprint) else 0
+        stat["footprint"] = footprint / mfoot if not np.isnan(footprint) else 0
 
-    npix = np.array([stat['npix'] for stat in stats], dtype='float32')
+    npix = np.array([stat["npix"] for stat in stats], dtype="float32")
     npix /= np.mean(npix[:100])
     for stat, npix0 in zip(stats, npix):
-        stat['npix_norm'] = npix0
+        stat["npix_norm"] = npix0
 
     return stats
 
 
 def getVmap(Ucell, sig):
-    us = gaussian_filter(Ucell, [sig[0], sig[1], 0.], mode='wrap')
+    us = gaussian_filter(Ucell, [sig[0], sig[1], 0.], mode="wrap")
     # compute log variance at each location
     log_variances = (us**2).mean(axis=-1) / gaussian_filter(
-        (Ucell**2).mean(axis=-1), sig, mode='wrap')
-    return log_variances.astype('float64'), us
+        (Ucell**2).mean(axis=-1), sig, mode="wrap")
+    return log_variances.astype("float64"), us
 
 
 def sub2ind(array_shape, rows, cols):
@@ -325,9 +325,9 @@ def minDistance(inputs):
 
 
 def get_connected(Ly, Lx, stat):
-    '''grow i0 until it cannot grow any more
-    '''
-    ypix, xpix, lam = stat['ypix'], stat['xpix'], stat['lam']
+    """grow i0 until it cannot grow any more
+    """
+    ypix, xpix, lam = stat["ypix"], stat["xpix"], stat["lam"]
     i0 = np.argmax(lam)
     mask = np.zeros((Ly, Lx))
     mask[ypix, xpix] = lam
@@ -341,14 +341,14 @@ def get_connected(Ly, Lx, stat):
             break
         nsel = len(ypix)
     lam = mask[ypix, xpix]
-    stat['ypix'], stat['xpix'], stat['lam'] = ypix, xpix, lam
+    stat["ypix"], stat["xpix"], stat["lam"] = ypix, xpix, lam
     return stat
 
 
 def connected_region(stat, ops):
-    if ('connected' not in ops) or ops['connected']:
+    if ("connected" not in ops) or ops["connected"]:
         for j in range(len(stat)):
-            stat[j] = get_connected(ops['Lyc'], ops['Lxc'], stat[j])
+            stat[j] = get_connected(ops["Lyc"], ops["Lxc"], stat[j])
     return stat
 
 
@@ -396,17 +396,17 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
 def sourcery(mov: np.ndarray, ops):
     change_codes = True
     i0 = time.time()
-    if isinstance(ops['diameter'], int):
-        ops['diameter'] = [ops['diameter'], ops['diameter']]
-    ops['diameter'] = np.array(ops['diameter'])
-    ops['spatscale_pix'] = ops['diameter'][1]
-    ops['aspect'] = ops['diameter'][0] / ops['diameter'][1]
+    if isinstance(ops["diameter"], int):
+        ops["diameter"] = [ops["diameter"], ops["diameter"]]
+    ops["diameter"] = np.array(ops["diameter"])
+    ops["spatscale_pix"] = ops["diameter"][1]
+    ops["aspect"] = ops["diameter"][0] / ops["diameter"][1]
     ops, U, sdmov, u = getSVDdata(mov=mov, ops=ops)    # get SVD components
     S, StU, StS = getStU(ops, U)
     Lyc, Lxc, nsvd = U.shape
-    ops['Lyc'] = Lyc
-    ops['Lxc'] = Lxc
-    d0 = ops['diameter']
+    ops["Lyc"] = Lyc
+    ops["Lxc"] = Lxc
+    d0 = ops["diameter"]
     sig = np.ceil(d0 / 4)    # smoothing constant
     # make array of radii values of size (2*d0+1,2*d0+1)
     rs, dy, dx = circleMask(d0)
@@ -417,7 +417,7 @@ def sourcery(mov: np.ndarray, ops):
     LtS = np.zeros((0, nbasis), np.float32)
     L = np.zeros((Lyc, Lxc, 0), np.float32)
     # regress maps onto basis functions and subtract neuropil contribution
-    neu = np.linalg.solve(StS, StU).astype('float32')
+    neu = np.linalg.solve(StS, StU).astype("float32")
     Ucell = U - (S.reshape((-1, nbasis)) @ neu).reshape(U.shape)
 
     it = 0
@@ -434,17 +434,17 @@ def sourcery(mov: np.ndarray, ops):
                 vrem = morphOpen(V, rs <= 1.)
             V = V - vrem    # make V more uniform
             if it == 0:
-                V = V.astype('float64')
+                V = V.astype("float64")
                 # find indices of all maxima in +/- 1 range
                 maxV = filters.maximum_filter(V, footprint=np.ones((3, 3)),
-                                              mode='reflect')
+                                              mode="reflect")
                 imax = V > (maxV - 1e-10)
                 peaks = V[imax]
                 # use the median of these peaks to decide if ROI is accepted
-                thres = ops['threshold_scaling'] * np.median(
+                thres = ops["threshold_scaling"] * np.median(
                     peaks[peaks > 1e-4])
-                ops['Vcorr'] = V
-            V = np.minimum(V, ops['Vcorr'])
+                ops["Vcorr"] = V
+            V = np.minimum(V, ops["Vcorr"])
 
             # add extra ROIs here
             n = ncells
@@ -467,10 +467,10 @@ def sourcery(mov: np.ndarray, ops):
             newcells = len(ypix) - ncells
             if it == 0:
                 Nfirst = newcells
-            L = np.append(L, np.zeros((Lyc, Lxc, newcells), 'float32'),
+            L = np.append(L, np.zeros((Lyc, Lxc, newcells), "float32"),
                           axis=-1)
-            LtU = np.append(LtU, np.zeros((newcells, nsvd), 'float32'), axis=0)
-            LtS = np.append(LtS, np.zeros((newcells, nbasis), 'float32'),
+            LtU = np.append(LtU, np.zeros((newcells, nsvd), "float32"), axis=0)
+            LtS = np.append(LtS, np.zeros((newcells, nbasis), "float32"),
                             axis=0)
             for n in range(ncells, len(ypix)):
                 L[ypix[n], xpix[n], n] = lam[n]
@@ -485,7 +485,7 @@ def sourcery(mov: np.ndarray, ops):
             codes = np.concatenate((cellcode, neucode), axis=0)
             Ucode = np.concatenate((LtU, StU), axis=0)
             codes = np.linalg.solve(codes + 1e-3 * np.eye((codes.shape[0])),
-                                    Ucode).astype('float32')
+                                    Ucode).astype("float32")
             neu = codes[ncells:, :]
             codes = codes[:ncells, :]
 
@@ -500,23 +500,23 @@ def sourcery(mov: np.ndarray, ops):
                 change_codes=change_codes)
             k += 1
             if ix.sum() == 0:
-                print('dropped ROI with no pixels')
+                print("dropped ROI with no pixels")
                 del ypix[n], xpix[n], lam[n]
                 continue
             Ucell[ypix[n], xpix[n], :] -= np.outer(lam[n], codes[n, :])
             n += 1
         codes = codes[:n, :]
         ncells = len(ypix)
-        L = np.zeros((Lyc, Lxc, ncells), 'float32')
-        LtU = np.zeros((ncells, nsvd), 'float32')
-        LtS = np.zeros((ncells, nbasis), 'float32')
+        L = np.zeros((Lyc, Lxc, ncells), "float32")
+        LtU = np.zeros((ncells, nsvd), "float32")
+        LtS = np.zeros((ncells, nbasis), "float32")
         for n in range(ncells):
             L[ypix[n], xpix[n], n] = lam[n]
             if refine < 0:
                 LtU[n, :] = lam[n] @ U[ypix[n], xpix[n], :]
                 LtS[n, :] = lam[n] @ S[ypix[n], xpix[n], :]
         err = (Ucell**2).mean()
-        print('ROIs: %d, cost: %2.4f, time: %2.4f' %
+        print("ROIs: %d, cost: %2.4f, time: %2.4f" %
               (ncells, err, time.time() - i0))
 
         it += 1
@@ -525,24 +525,24 @@ def sourcery(mov: np.ndarray, ops):
         if refine == 2:
             # good place to get connected regions
             stat = [{
-                'ypix': ypix[n],
-                'lam': lam[n],
-                'xpix': xpix[n]
+                "ypix": ypix[n],
+                "lam": lam[n],
+                "xpix": xpix[n]
             } for n in range(ncells)]
             stat = connected_region(stat, ops)
             # good place to remove ROIs that overlap, change ncells, codes, ypix, xpix, lam, L
             #stat, ix = remove_overlaps(stat, ops, Lyc, Lxc)
-            #print('removed %d overlapping ROIs'%(len(ypix)-len(ix)))
-            ypix = [stat[n]['ypix'] for n in range(len(stat))]
-            xpix = [stat[n]['xpix'] for n in range(len(stat))]
-            lam = [stat[n]['lam'] for n in range(len(stat))]
+            #print("removed %d overlapping ROIs"%(len(ypix)-len(ix)))
+            ypix = [stat[n]["ypix"] for n in range(len(stat))]
+            xpix = [stat[n]["xpix"] for n in range(len(stat))]
+            lam = [stat[n]["lam"] for n in range(len(stat))]
             #L = L[:,:,ix]
             #codes = codes[ix, :]
             ncells = len(ypix)
         if refine > 0:
             Ucell = Ucell + (S.reshape((-1, nbasis)) @ neu).reshape(U.shape)
         if refine < 0 and (newcells < Nfirst / 10
-                           or it == ops['max_iterations']):
+                           or it == ops["max_iterations"]):
             refine = 3
             U, sdmov = getSVDproj(mov, ops, u)
             Ucell = U
@@ -550,16 +550,16 @@ def sourcery(mov: np.ndarray, ops):
             StU = S.reshape((Lyc * Lxc, -1)).transpose() @ Ucell.reshape(
                 (Lyc * Lxc, -1))
             #StU = np.reshape(S, (Lyc*Lxc,-1)).transpose() @ np.reshape(Ucell, (Lyc*Lxc, -1))
-            neu = np.linalg.solve(StS, StU).astype('float32')
+            neu = np.linalg.solve(StS, StU).astype("float32")
         refine -= 1
     Ucell = U - (S.reshape((-1, nbasis)) @ neu).reshape(U.shape)
 
     sdmov = np.reshape(sdmov, (Lyc, Lxc))
-    ops['sdmov'] = sdmov
+    ops["sdmov"] = sdmov
     stat = [{
-        'ypix': ypix[n],
-        'lam': lam[n] * sdmov[ypix[n], xpix[n]],
-        'xpix': xpix[n]
+        "ypix": ypix[n],
+        "lam": lam[n] * sdmov[ypix[n], xpix[n]],
+        "xpix": xpix[n]
     } for n in range(ncells)]
 
     stat = postprocess(ops, stat, Ucell, codes)

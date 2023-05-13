@@ -43,24 +43,24 @@ class Classifier:
         try:
             model = np.load(classfile, allow_pickle=True).item()
             if keys is None:
-                self.keys = model['keys']
-                self.stats = model['stats']
+                self.keys = model["keys"]
+                self.stats = model["stats"]
             else:
-                model['keys'] = np.array(model['keys'])
-                ikey = np.isin(model['keys'], keys)
-                self.keys = model['keys'][ikey].tolist()
-                self.stats = model['stats'][:, ikey]
-            self.iscell = model['iscell']
+                model["keys"] = np.array(model["keys"])
+                ikey = np.isin(model["keys"], keys)
+                self.keys = model["keys"][ikey].tolist()
+                self.stats = model["stats"][:, ikey]
+            self.iscell = model["iscell"]
             self.loaded = True
             self.classfile = classfile
             self._fit()
         except (ValueError, KeyError, OSError, RuntimeError, TypeError,
                 NameError):
-            print('ERROR: incorrect classifier file')
+            print("ERROR: incorrect classifier file")
             self.loaded = False
 
     def run(self, stat, p_threshold: float = 0.5) -> np.ndarray:
-        """Returns cell classification thresholded with 'p_threshold' and its probability."""
+        """Returns cell classification thresholded with "p_threshold" and its probability."""
         probcell = self.predict_proba(stat)
         is_cell = probcell > p_threshold
         return np.stack([is_cell, probcell]).T
@@ -87,9 +87,9 @@ class Classifier:
     def save(self, filename: str) -> None:
         """ save classifier to filename """
         np.save(filename, {
-            'stats': self.stats,
-            'iscell': self.iscell,
-            'keys': self.keys
+            "stats": self.stats,
+            "iscell": self.iscell,
+            "keys": self.keys
         })
 
     def _get_logp(self, stats):
@@ -119,7 +119,7 @@ class Classifier:
         ncells, nstats = self.stats.shape
         ssort = np.sort(self.stats, axis=0)
         isort = np.argsort(self.stats, axis=0)
-        ix = np.linspace(0, ncells - 1, nodes).astype('int32')
+        ix = np.linspace(0, ncells - 1, nodes).astype("int32")
         grid = ssort[ix, :]
         p = np.zeros((nodes - 1, nstats))
         for j in range(nodes - 1):
@@ -129,5 +129,5 @@ class Classifier:
         self.grid = grid
         self.p = p
         logp = self._get_logp(self.stats)
-        self.model = LogisticRegression(C=100., solver='liblinear')
+        self.model = LogisticRegression(C=100., solver="liblinear")
         self.model.fit(logp, self.iscell)

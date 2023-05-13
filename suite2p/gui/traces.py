@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit, QCheckBox
 
 def plot_trace(parent):
     parent.p3.clear()
-    ax = parent.p3.getAxis('left')
+    ax = parent.p3.getAxis("left")
     if len(parent.imerge) == 1:
         n = parent.imerge[0]
         f = parent.Fcell[n, :]
@@ -23,9 +23,9 @@ def plot_trace(parent):
         sp *= fmax - fmin
         #sp += fmin*0.95
         if parent.tracesOn:
-            parent.p3.plot(parent.trange, f, pen='c')
+            parent.p3.plot(parent.trange, f, pen="c")
         if parent.neuropilOn:
-            parent.p3.plot(parent.trange, fneu, pen='r')
+            parent.p3.plot(parent.trange, fneu, pen="r")
         if parent.deconvOn:
             parent.p3.plot(parent.trange, (sp + fmin),
                            pen=(255, 255, 255, 150))
@@ -53,7 +53,7 @@ def plot_trace(parent):
             fmax = f.max()
             fmin = f.min()
             f = (f - fmin) / (fmax - fmin)
-            rgb = parent.colors['cols'][0][n, :]
+            rgb = parent.colors["cols"][0][n, :]
             parent.p3.plot(parent.trange, f + k * kspace, pen=rgb)
             ttick.append((k * kspace + f.mean(), str(n)))
             k -= 1
@@ -70,12 +70,12 @@ def plot_trace(parent):
             parent.p3.plot(parent.trange, -1 * bsc + favg * bsc,
                            pen=(140, 140, 140))
             parent.p3.plot(parent.beh_time, -1 * bsc + parent.beh * bsc,
-                           pen='w')
+                           pen="w")
             parent.fmin = -1 * bsc
-            #parent.traceLabel[0].setText("<font color='gray'>mean activity</font>")
-            #parent.traceLabel[1].setText("<font color='white'>1D variable</font>")
+            #parent.traceLabel[0].setText("<font color="gray">mean activity</font>")
+            #parent.traceLabel[1].setText("<font color="white">1D variable</font>")
             #parent.traceLabel[2].setText("")
-            #ck.append((-0.5*bsc,'1D var'))
+            #ck.append((-0.5*bsc,"1D var"))
 
         parent.fmax = (len(pmerge) - 1) * kspace + 1
         ax.setTicks([ttick])
@@ -86,7 +86,7 @@ def plot_trace(parent):
 def make_buttons(parent, b0):
     # combo box to decide what kind of activity to view
     qlabel = QLabel(parent)
-    qlabel.setText("<font color='white'>Activity mode:</font>")
+    qlabel.setText("<font color="white">Activity mode:</font>")
     parent.l0.addWidget(qlabel, b0, 0, 1, 1)
     parent.comboBox = QComboBox(parent)
     parent.comboBox.setFixedWidth(100)
@@ -128,7 +128,7 @@ def make_buttons(parent, b0):
         b += 1
     # choose max # of cells plotted
     parent.l0.addWidget(
-        QLabel("<font color='white'>max # plotted:</font>"),
+        QLabel("<font color="white">max # plotted:</font>"),
         b0 + 2,
         0,
         1,

@@ -15,7 +15,7 @@ try:
 
     def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
         """
-        Returns the 3D array 'mov' convolved by a 2D array 'img'.
+        Returns the 3D array "mov" convolved by a 2D array "img".
 
         Parameters
         ----------
@@ -38,7 +38,7 @@ except:
         from torch.fft import ifft2 as torch_ifft2
     except:
         # pytorch <= 1.7
-        raise ImportError('pytorch version > 1.7 required')
+        raise ImportError("pytorch version > 1.7 required")
 
     eps = torch.complex(torch.tensor(1e-5), torch.tensor(0.0))
 
@@ -62,7 +62,7 @@ except:
 
     def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
         """
-        Returns the 3D array 'mov' convolved by a 2D array 'img'.
+        Returns the 3D array "mov" convolved by a 2D array "img".
 
         Parameters
         ----------
@@ -86,20 +86,20 @@ except:
         return mov_fft.numpy()
 
 
-@vectorize([complex64(complex64, complex64)], nopython=True, target='parallel')
+@vectorize([complex64(complex64, complex64)], nopython=True, target="parallel")
 def apply_dotnorm(Y, cfRefImg):
     return Y / (np.complex64(1e-5) + np.abs(Y)) * cfRefImg
 
 
-#@vectorize(['float32(int16, float32, float32)', 'float32(float32, float32, float32)'], nopython=True, target='parallel', cache=True)
+#@vectorize(["float32(int16, float32, float32)", "float32(float32, float32, float32)"], nopython=True, target="parallel", cache=True)
 #def addmultiply(x, mul, add):
 #    return np.float32(x) * mul + add
 
 
 @vectorize([
-    'complex64(int16, float32, float32)',
-    'complex64(float32, float32, float32)'
-], nopython=True, target='parallel', cache=True)
+    "complex64(int16, float32, float32)",
+    "complex64(float32, float32, float32)"
+], nopython=True, target="parallel", cache=True)
 def addmultiply(x, mul, add):
     return np.complex64(np.float32(x) * mul + add)
 
@@ -141,7 +141,7 @@ def meshgrid_mean_centered(x: int, y: int) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def gaussian_fft(sig, Ly: int, Lx: int):
-    '''
+    """
     gaussian filter in the fft domain with std sig and size Ly,Lx
 
     Parameters
@@ -157,7 +157,7 @@ def gaussian_fft(sig, Ly: int, Lx: int):
     fhg: np.ndarray
         smoothing filter in Fourier domain
 
-    '''
+    """
     xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
     hgx = np.exp(-np.square(xx / sig) / 2)
     hgy = np.exp(-np.square(yy / sig) / 2)
@@ -168,7 +168,7 @@ def gaussian_fft(sig, Ly: int, Lx: int):
 
 
 def spatial_taper(sig, Ly, Lx):
-    '''
+    """
     Returns spatial taper  on edges with gaussian of std sig
 
     Parameters
@@ -184,7 +184,7 @@ def spatial_taper(sig, Ly, Lx):
     maskMul
 
 
-    '''
+    """
     xx, yy = meshgrid_mean_centered(x=Lx, y=Ly)
     mY = ((Ly - 1) / 2) - 2 * sig
     mX = ((Lx - 1) / 2) - 2 * sig
@@ -196,7 +196,7 @@ def spatial_taper(sig, Ly, Lx):
 
 def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
     """
-    Returns Gaussian filtered 'frames' ndarray over first dimension
+    Returns Gaussian filtered "frames" ndarray over first dimension
 
     Parameters
     ----------
@@ -238,7 +238,7 @@ def spatial_smooth(data: np.ndarray, window: int):
     half_pad = window // 2
     data_padded = np.pad(data,
                          ((0, 0), (half_pad, half_pad), (half_pad, half_pad)),
-                         mode='constant', constant_values=0)
+                         mode="constant", constant_values=0)
 
     data_summed = data_padded.cumsum(axis=1).cumsum(axis=2, dtype=np.float32)
     data_summed = (data_summed[:, window:, :] - data_summed[:, :-window, :]
@@ -275,7 +275,7 @@ def spatial_high_pass(data, N):
 
 def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
     """
-    Returns the complex conjugate of the fft-transformed 2D array 'img', optionally padded for speed.
+    Returns the complex conjugate of the fft-transformed 2D array "img", optionally padded for speed.
 
     Parameters
     ----------
@@ -294,7 +294,7 @@ def complex_fft2(img: np.ndarray, pad_fft: bool = False) -> np.ndarray:
 
 def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:
     """
-    Gaussian kernel from xs (1D array) to ys (1D array), with the 'sigL' smoothing width for up-sampling kernels, (best between 0.5 and 1.0)
+    Gaussian kernel from xs (1D array) to ys (1D array), with the "sigL" smoothing width for up-sampling kernels, (best between 0.5 and 1.0)
 
     Parameters
     ----------

@@ -65,7 +65,7 @@ def make_quadrants(parent):
     """ make quadrant buttons """
     parent.quadbtns = QButtonGroup(parent)
     for b in range(9):
-        btn = QuadButton(b, ' ' + str(b + 1), parent)
+        btn = QuadButton(b, " " + str(b + 1), parent)
         parent.quadbtns.addButton(btn, b)
         parent.l0.addWidget(btn, 0 + parent.quadbtns.button(b).ypos,
                             29 + parent.quadbtns.button(b).xpos, 1, 1)
@@ -99,9 +99,9 @@ class QuadButton(QPushButton):
                 parent.quadbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         self.xrange = np.array([self.xpos - .15, self.xpos + 1.15
-                                ]) * parent.ops['Lx'] / 3
+                                ]) * parent.ops["Lx"] / 3
         self.yrange = np.array([self.ypos - .15, self.ypos + 1.15
-                                ]) * parent.ops['Ly'] / 3
+                                ]) * parent.ops["Ly"] / 3
         # change the zoom
         parent.p1.setXRange(self.xrange[0], self.xrange[1])
         parent.p1.setYRange(self.yrange[0], self.yrange[1])
@@ -141,16 +141,16 @@ class SizeButton(QPushButton):
         elif bid == 1:
             parent.win.ci.layout.setColumnStretchFactor(0, ts)
             parent.win.ci.layout.setColumnStretchFactor(1, ts)
-            parent.p2.setXLink('plot1')
-            parent.p2.setYLink('plot1')
+            parent.p2.setXLink("plot1")
+            parent.p2.setYLink("plot1")
         elif bid == 2:
             parent.p2.linkView(parent.p2.XAxis, view=None)
             parent.p2.linkView(parent.p2.YAxis, view=None)
             parent.win.ci.layout.setColumnStretchFactor(0, 0)
             parent.win.ci.layout.setColumnStretchFactor(1, ts)
-        # only enable selection buttons when not in 'both' view
+        # only enable selection buttons when not in "both" view
         if bid != 1:
-            if parent.ops_plot['color'] != 0:
+            if parent.ops_plot["color"] != 0:
                 for btn in parent.topbtns.buttons():
                     btn.setStyleSheet(parent.styleUnpressed)
                     btn.setEnabled(True)
@@ -172,7 +172,7 @@ class TopButton(QPushButton):
 
     def __init__(self, bid, parent=None):
         super(TopButton, self).__init__(parent)
-        text = [' draw selection', ' select top n', ' select bottom n']
+        text = [" draw selection", " select top n", " select bottom n"]
         self.bid = bid
         self.setText(text[bid])
         self.setCheckable(True)
@@ -185,7 +185,7 @@ class TopButton(QPushButton):
     def press(self, parent):
         bid = self.bid
         if not parent.sizebtns.button(1).isChecked():
-            if parent.ops_plot['color'] == 0:
+            if parent.ops_plot["color"] == 0:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(False)
                     parent.topbtns.button(b).setStyleSheet(
@@ -222,9 +222,9 @@ class TopButton(QPushButton):
             wplot = 1
             draw = True
         if draw:
-            if parent.ops_plot['color'] != 0:
-                c = parent.ops_plot['color']
-                istat = parent.colors['istat'][c]
+            if parent.ops_plot["color"] != 0:
+                c = parent.ops_plot["color"]
+                istat = parent.colors["istat"][c]
                 if wplot == 0:
                     icell = np.array(parent.iscell.nonzero()).flatten()
                     istat = istat[parent.iscell]

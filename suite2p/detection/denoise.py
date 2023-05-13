@@ -34,7 +34,7 @@ def pca_denoise(mov: np.ndarray, block_size: List, n_comps_frac: float):
         reconstruction[:, yblock[i][0]:yblock[i][-1],
                        xblock[i][0]:xblock[i][-1]] += block_re[i]
     reconstruction /= norm
-    print('Binned movie denoised (for cell detection only) in %0.2f sec.' %
+    print("Binned movie denoised (for cell detection only) in %0.2f sec." %
           (time.time() - t0))
     reconstruction += mov_mean
     return reconstruction

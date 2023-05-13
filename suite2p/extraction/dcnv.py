@@ -4,7 +4,7 @@ from scipy.ndimage import maximum_filter1d, minimum_filter1d, gaussian_filter
 
 
 @njit([
-    'float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32'
+    "float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32"
 ], cache=True)
 def oasis_trace(F, v, w, t, l, s, tau, fs):
     """ spike deconvolution on a single neuron """
@@ -35,7 +35,7 @@ def oasis_trace(F, v, w, t, l, s, tau, fs):
 
 
 @njit([
-    'float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32'
+    "float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32"
 ], parallel=True, cache=True)
 def oasis_matrix(F, v, w, t, l, s, tau, fs):
     """ spike deconvolution on many neurons parallelized with prange  """
@@ -91,7 +91,7 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
                prctile_baseline: float = 8) -> np.ndarray:
     """ preprocesses fluorescence traces for spike deconvolution
 
-    baseline-subtraction with window 'win_baseline'
+    baseline-subtraction with window "win_baseline"
     
     Parameters
     ----------------
@@ -122,14 +122,14 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float,
 
     """
     win = int(win_baseline * fs)
-    if baseline == 'maximin':
+    if baseline == "maximin":
         Flow = gaussian_filter(F, [0., sig_baseline])
         Flow = minimum_filter1d(Flow, win)
         Flow = maximum_filter1d(Flow, win)
-    elif baseline == 'constant':
+    elif baseline == "constant":
         Flow = gaussian_filter(F, [0., sig_baseline])
         Flow = np.amin(Flow)
-    elif baseline == 'constant_prctile':
+    elif baseline == "constant_prctile":
         Flow = np.percentile(F, prctile_baseline, axis=1)
         Flow = np.expand_dims(Flow, axis=1)
     else:

@@ -95,7 +95,7 @@ class RangeSlider(QSlider):
         for i, value in enumerate([self._low, self._high]):
             opt = QStyleOptionSlider()
             self.initStyleOption(opt)
-            # Only draw the groove for the first slider so it doesn't get drawn
+            # Only draw the groove for the first slider so it doesn"t get drawn
             # on top of the existing ones every time
             if i == 0:
                 opt.subControls = QStyle.SC_SliderHandle    #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
@@ -267,15 +267,15 @@ class VisWindow(QMainWindow):
     def __init__(self, parent=None):
         super(VisWindow, self).__init__(parent)
         self.parent = parent
-        pg.setConfigOptions(imageAxisOrder='row-major')
+        pg.setConfigOptions(imageAxisOrder="row-major")
         self.setGeometry(70, 70, 1100, 900)
-        self.setWindowTitle('Visualize data')
+        self.setWindowTitle("Visualize data")
         self.cwidget = QWidget(self)
         self.setCentralWidget(self.cwidget)
         self.l0 = QGridLayout()
         #layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
-        #self.p0 = pg.ViewBox(lockAspect=False,name='plot1',border=[100,100,100],invertY=True)
+        #self.p0 = pg.ViewBox(lockAspect=False,name="plot1",border=[100,100,100],invertY=True)
         self.win = pg.GraphicsLayoutWidget()
         # --- cells image
         self.win = pg.GraphicsLayoutWidget()
@@ -315,29 +315,29 @@ class VisWindow(QMainWindow):
         self.sp /= 12
         self.tsort = np.arange(0, sp.shape[1]).astype(np.int32)
         # 100 ms bins
-        self.bin = int(np.maximum(1, int(self.parent.ops['fs'] / 10)))
+        self.bin = int(np.maximum(1, int(self.parent.ops["fs"] / 10)))
         # draw axes
         self.p1.setXRange(0, sp.shape[1])
         self.p1.setYRange(0, sp.shape[0])
         self.p1.setLimits(xMin=-10, xMax=sp.shape[1] + 10, yMin=-10,
                           yMax=sp.shape[0] + 10)
-        self.p1.setLabel('left', 'neurons')
-        self.p1.setLabel('bottom', 'time')
+        self.p1.setLabel("left", "neurons")
+        self.p1.setLabel("bottom", "time")
         # zoom in on a selected image region
         nt = sp.shape[1]
         nn = sp.shape[0]
         self.selected = np.arange(0, nn, 1, int)
-        self.p2 = self.win.addPlot(title='ZOOM IN', row=1, col=0, colspan=2)
+        self.p2 = self.win.addPlot(title="ZOOM IN", row=1, col=0, colspan=2)
         self.imgROI = pg.ImageItem(autoDownsample=True)
         self.p2.addItem(self.imgROI)
         self.p2.setMouseEnabled(x=False, y=False)
-        #self.p2.setLabel('left', 'neurons')
-        self.p2.hideAxis('bottom')
+        #self.p2.setLabel("left", "neurons")
+        self.p2.hideAxis("bottom")
         self.bloaded = self.parent.bloaded
-        self.p3 = self.win.addPlot(title='', row=2, col=0, colspan=2)
+        self.p3 = self.win.addPlot(title="", row=2, col=0, colspan=2)
         self.p3.setMouseEnabled(x=False, y=False)
-        #self.p3.getAxis('left').setTicks([[(0,'')]])
-        self.p3.setLabel('bottom', 'time')
+        #self.p3.getAxis("left").setTicks([[(0,"")]])
+        self.p3.setLabel("bottom", "time")
         # set colormap to viridis
         colormap = cm.get_cmap("gray_r")
         colormap._init()
@@ -355,8 +355,8 @@ class VisWindow(QMainWindow):
         slider = SatSlider(self)
         slider.setTickPosition(QSlider.TicksBelow)
         self.l0.addWidget(slider, 0, 2, 5, 1)
-        qlabel = VerticalLabel(text='saturation')
-        qlabel.setStyleSheet('color: white;')
+        qlabel = VerticalLabel(text="saturation")
+        qlabel.setStyleSheet("color: white;")
         self.img.setLevels([self.sat[0], self.sat[1]])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
         self.l0.addWidget(qlabel, 2, 3, 3, 2)
@@ -411,22 +411,22 @@ class VisWindow(QMainWindow):
 
         self.neural_sorting(2)
         # buttons for computations
-        self.mapOn = QPushButton('compute rastermap + PCs')
+        self.mapOn = QPushButton("compute rastermap + PCs")
         self.mapOn.clicked.connect(self.compute_map)
         self.l0.addWidget(self.mapOn, 0, 0, 1, 2)
         self.comboBox = QComboBox(self)
         self.l0.addWidget(self.comboBox, 1, 0, 1, 2)
-        self.l0.addWidget(QLabel('PC 1:'), 2, 0, 1, 2)
-        #self.l0.addWidget(QLabel(''),4,0,1,1)
-        self.selectBtn = QPushButton('show selected cells in GUI')
+        self.l0.addWidget(QLabel("PC 1:"), 2, 0, 1, 2)
+        #self.l0.addWidget(QLabel(""),4,0,1,1)
+        self.selectBtn = QPushButton("show selected cells in GUI")
         self.selectBtn.clicked.connect(self.select_cells)
         self.selectBtn.setEnabled(True)
         self.l0.addWidget(self.selectBtn, 3, 0, 1, 2)
-        self.sortTime = QCheckBox('&Time sort')
+        self.sortTime = QCheckBox("&Time sort")
         self.sortTime.setStyleSheet("color: white;")
         self.sortTime.stateChanged.connect(self.sort_time)
         self.l0.addWidget(self.sortTime, 4, 0, 1, 2)
-        self.l0.addWidget(QLabel(''), 5, 0, 1, 1)
+        self.l0.addWidget(QLabel(""), 5, 0, 1, 1)
         self.l0.setRowStretch(6, 1)
         self.raster = False
 
@@ -562,14 +562,14 @@ class VisWindow(QMainWindow):
         self.p3.clear()
         self.p3.plot(self.xrange, avg, pen=(255, 0, 0))
         if self.bloaded:
-            self.p3.plot(self.parent.beh_time, self.parent.beh, pen='w')
+            self.p3.plot(self.parent.beh_time, self.parent.beh, pen="w")
         self.p3.setXRange(self.xrange[0], self.xrange[-1])
         self.p3.addItem(self.THRES)
         self.THRES.setZValue(10)    # make sure ROI is drawn above image
 
     def LINE_position(self):
         _, yrange = self.roi_range(self.LINE)
-        self.selected = yrange.astype('int')
+        self.selected = yrange.astype("int")
         self.plot_traces()
 
     def THRES_position(self):
@@ -599,8 +599,8 @@ class VisWindow(QMainWindow):
         self.THRES.setSize([xrange.size + 1, self.tsize])
         self.THRES.setZValue(10)
 
-        axy = self.p2.getAxis('left')
-        axx = self.p2.getAxis('bottom')
+        axy = self.p2.getAxis("left")
+        axx = self.p2.getAxis("bottom")
         #axy.setTicks([[(0.0,str(yrange[0])),(float(yrange.size),str(yrange[-1]))]])
         self.imgROI.setLevels([self.sat[0], self.sat[1]])
 
@@ -611,11 +611,11 @@ class VisWindow(QMainWindow):
             QtGui.QIntValidator(1,
                                 np.minimum(self.sp.shape[0],
                                            self.sp.shape[1])))
-        self.PCedit.setText('1')
+        self.PCedit.setText("1")
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        qlabel = QLabel('PC: ')
-        qlabel.setStyleSheet('color: white;')
+        qlabel = QLabel("PC: ")
+        qlabel.setStyleSheet("color: white;")
         self.l0.addWidget(qlabel, 3, 0, 1, 1)
         self.l0.addWidget(self.PCedit, 3, 1, 1, 1)
         self.comboBox.addItem("PC")
@@ -637,18 +637,18 @@ class VisWindow(QMainWindow):
             QtGui.QIntValidator(1,
                                 np.minimum(self.sp.shape[0],
                                            self.sp.shape[1])))
-        self.PCedit.setText('1')
+        self.PCedit.setText("1")
         self.PCedit.setFixedWidth(60)
         self.PCedit.setAlignment(QtCore.Qt.AlignRight)
-        qlabel = QLabel('PC: ')
-        qlabel.setStyleSheet('color: white;')
+        qlabel = QLabel("PC: ")
+        qlabel.setStyleSheet("color: white;")
         self.l0.addWidget(qlabel, 2, 0, 1, 1)
         self.l0.addWidget(self.PCedit, 2, 1, 1, 1)
         self.comboBox.addItem("PC")
         self.PCedit.returnPressed.connect(self.PCreturn)
 
-        #model = np.load(os.path.join(parent.ops['save_path0'], 'embedding.npy'))
-        #model = np.load('embedding.npy', allow_pickle=True).item()
+        #model = np.load(os.path.join(parent.ops["save_path0"], "embedding.npy"))
+        #model = np.load("embedding.npy", allow_pickle=True).item()
         self.isort1 = np.argsort(self.model.embedding[:, 0])
         self.u = self.model.u
         self.v = self.model.v
@@ -661,7 +661,7 @@ class VisWindow(QMainWindow):
         self.parent.isort = -1 * np.ones((ncells, ), dtype=np.int64)
         nsel = len(self.cells)
         I = np.zeros(nsel)
-        I[self.isort1] = np.arange(nsel).astype('int')
+        I[self.isort1] = np.arange(nsel).astype("int")
         self.parent.isort[self.cells] = I    #self.isort1
         # set up colors for rastermap
         masks.rastermap_masks(self.parent)
@@ -679,55 +679,55 @@ class VisWindow(QMainWindow):
 
     def compute_map(self):
         ops = {
-            'n_components': 1,
-            'n_X': 100,
-            'alpha': 1.,
-            'K': 1.,
-            'nPC': 200,
-            'constraints': 2,
-            'annealing': True,
-            'init': 'pca',
-            'start_time': 0,
-            'end_time': -1
+            "n_components": 1,
+            "n_X": 100,
+            "alpha": 1.,
+            "K": 1.,
+            "nPC": 200,
+            "constraints": 2,
+            "annealing": True,
+            "init": "pca",
+            "start_time": 0,
+            "end_time": -1
         }
         self.error = False
         self.finish = True
         self.mapOn.setEnabled(False)
         self.tic = time.time()
         try:
-            self.model = Rastermap(n_components=ops['n_components'],
-                                   n_X=ops['n_X'], nPC=ops['nPC'],
-                                   init=ops['init'], alpha=ops['alpha'],
-                                   K=ops['K'], constraints=ops['constraints'],
-                                   annealing=ops['annealing'])
+            self.model = Rastermap(n_components=ops["n_components"],
+                                   n_X=ops["n_X"], nPC=ops["nPC"],
+                                   init=ops["init"], alpha=ops["alpha"],
+                                   K=ops["K"], constraints=ops["constraints"],
+                                   annealing=ops["annealing"])
             self.model.fit(self.sp)
-            #proc  = {'embedding': model.embedding, 'uv': [model.u, model.v],
-            #         'ops': ops, 'filename': args.S, 'train_time': train_time}
+            #proc  = {"embedding": model.embedding, "uv": [model.u, model.v],
+            #         "ops": ops, "filename": args.S, "train_time": train_time}
             #basename, fname = os.path.split(args.S)
-            #np.save(os.path.join(basename, 'embedding.npy'), proc)
-            print('raster map computed in %3.2f s' % (time.time() - self.tic))
+            #np.save(os.path.join(basename, "embedding.npy"), proc)
+            print("raster map computed in %3.2f s" % (time.time() - self.tic))
             self.activate()
         except:
-            print('Rastermap issue: Interrupted by error (not finished)\n')
-        #self.process.start('python -u -W ignore -m rastermap --S %s --ops %s'%
+            print("Rastermap issue: Interrupted by error (not finished)\n")
+        #self.process.start("python -u -W ignore -m rastermap --S %s --ops %s"%
         #                    (spath, opspath))
 
     def finished(self):
         if self.finish and not self.error:
-            print('raster map computed in %3.2f s' % (time.time() - self.tic))
+            print("raster map computed in %3.2f s" % (time.time() - self.tic))
             self.activate()
         else:
-            sys.stdout.write('Interrupted by error (not finished)\n')
+            sys.stdout.write("Interrupted by error (not finished)\n")
 
     def stdout_write(self):
-        output = str(self.process.readAllStandardOutput(), 'utf-8')
-        #self.logfile = open(os.path.join(self.save_path, 'suite2p/run.log'), 'a')
+        output = str(self.process.readAllStandardOutput(), "utf-8")
+        #self.logfile = open(os.path.join(self.save_path, "suite2p/run.log"), "a")
         sys.stdout.write(output)
         #self.logfile.close()
 
     def stderr_write(self):
-        sys.stdout.write('>>>ERROR<<<\n')
-        output = str(self.process.readAllStandardError(), 'utf-8')
+        sys.stdout.write(">>>ERROR<<<\n")
+        output = str(self.process.readAllStandardError(), "utf-8")
         sys.stdout.write(output)
         self.error = True
         self.finish = False
@@ -740,30 +740,30 @@ class VisWindow(QMainWindow):
             self.parent.ichosen = self.parent.imerge[0]
             self.parent.update_plot()
         else:
-            print('too many cells selected')
+            print("too many cells selected")
 
     def sort_time(self):
         if self.raster:
             if self.sortTime.isChecked():
                 ops = {
-                    'n_components': 1,
-                    'n_X': 100,
-                    'alpha': 1.,
-                    'K': 1.,
-                    'nPC': 200,
-                    'constraints': 2,
-                    'annealing': True,
-                    'init': 'pca',
-                    'start_time': 0,
-                    'end_time': -1
+                    "n_components": 1,
+                    "n_X": 100,
+                    "alpha": 1.,
+                    "K": 1.,
+                    "nPC": 200,
+                    "constraints": 2,
+                    "annealing": True,
+                    "init": "pca",
+                    "start_time": 0,
+                    "end_time": -1
                 }
-                if not hasattr(self, 'isort2'):
-                    self.model = Rastermap(n_components=ops['n_components'],
-                                           n_X=ops['n_X'], nPC=ops['nPC'],
-                                           init=ops['init'],
-                                           alpha=ops['alpha'], K=ops['K'],
-                                           constraints=ops['constraints'],
-                                           annealing=ops['annealing'])
+                if not hasattr(self, "isort2"):
+                    self.model = Rastermap(n_components=ops["n_components"],
+                                           n_X=ops["n_X"], nPC=ops["nPC"],
+                                           init=ops["init"],
+                                           alpha=ops["alpha"], K=ops["K"],
+                                           constraints=ops["constraints"],
+                                           annealing=ops["annealing"])
                     unorm = (self.u**2).sum(axis=0)**0.5
                     self.model.fit(self.sp.T, u=self.v * unorm,
                                    v=self.u / unorm)

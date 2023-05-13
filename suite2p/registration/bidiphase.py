@@ -38,7 +38,7 @@ def compute(frames: np.ndarray) -> int:
 
 def shift(frames: np.ndarray, bidiphase: int) -> None:
     """
-    Shift last axis of 'frames' by bidirectional phase offset in-place, bidiphase.
+    Shift last axis of "frames" by bidirectional phase offset in-place, bidiphase.
 
     Parameters
     ----------

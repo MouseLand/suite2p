@@ -16,20 +16,20 @@ from . import utils
 def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
     """Returns movie subtracted by a low-pass filtered version of itself to help ignore neuropil."""
     nbinned, Ly, Lx = mov.shape
-    c1 = uniform_filter(np.ones((Ly, Lx)), size=filter_size, mode='constant')
+    c1 = uniform_filter(np.ones((Ly, Lx)), size=filter_size, mode="constant")
     movt = np.zeros_like(mov)
     for frame, framet in zip(mov, movt):
         framet[:] = frame - (
-            uniform_filter(frame, size=filter_size, mode='constant') / c1)
+            uniform_filter(frame, size=filter_size, mode="constant") / c1)
     return movt
 
 
 def square_convolution_2d(mov: np.ndarray, filter_size: int) -> np.ndarray:
-    """Returns movie convolved by uniform kernel with width 'filter_size'."""
+    """Returns movie convolved by uniform kernel with width "filter_size"."""
     movt = np.zeros_like(mov, dtype=np.float32)
     for frame, framet in zip(mov, movt):
         framet[:] = filter_size * uniform_filter(frame, size=filter_size,
-                                                 mode='constant')
+                                                 mode="constant")
     return movt
 
 
@@ -258,8 +258,8 @@ def extend_mask(ypix, xpix, lam, Ly, Lx):
 
 
 class EstimateMode(Enum):
-    Forced = 'FORCED'
-    Estimated = 'estimated'
+    Forced = "FORCED"
+    Estimated = "estimated"
 
 
 def estimate_spatial_scale(I: np.ndarray) -> int:
@@ -293,7 +293,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int,
              batch_size: int, spatial_scale: int, threshold_scaling,
              max_iterations: int,
              percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """Returns stats and ops from 'mov' using correlations in time."""
+    """Returns stats and ops from "mov" using correlations in time."""
 
     mean_img = mov.mean(axis=0)
     mov = utils.temporal_high_pass_filter(mov=mov, width=int(high_pass))
@@ -305,13 +305,13 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int,
 
     _, Lyc, Lxc = mov.shape
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
-    gxy = [np.array(LL).astype('float32')]
+    gxy = [np.array(LL).astype("float32")]
     dmov = mov
     movu = []
 
     # downsample movie at various spatial scales
-    Lyp, Lxp = np.zeros(5, 'int32'), np.zeros(5,
-                                              'int32')    # downsampled sizes
+    Lyp, Lxp = np.zeros(5, "int32"), np.zeros(5,
+                                              "int32")    # downsampled sizes
     for j in range(5):
         movu0 = square_convolution_2d(dmov, 3)
         dmov = 2 * utils.downsample(dmov)
@@ -342,7 +342,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int,
         1, scale)    # threshold for accepted peaks (scale it by spatial scale)
     vmultiplier = max(1, mov.shape[0] / 1200)
     print(
-        'NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f '
+        "NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f "
         % (estimate_mode.value, spatscale_pix, vmultiplier, vmultiplier * Th2))
 
     # get standard deviation for pixels for all values > Th2
@@ -362,7 +362,7 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int,
     seeds = []
     extract_patches = False
     for tj in range(max_iterations):
-        # find peaks in stddev's
+        # find peaks in stddev"s
         v0max = np.array([V1[j].max() for j in range(5)])
         imap = np.argmax(v0max)
         imax = np.argmax(V1[imap])
@@ -443,26 +443,26 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int,
                   xs[j]] = (Mx**2 * np.float32(Mx > threshold)).sum(axis=0)**.5
 
         stats.append({
-            'ypix': ypix0.astype(int),
-            'xpix': xpix0.astype(int),
-            'lam': lam0 * sdmov[ypix0, xpix0],
-            'med': med,
-            'footprint': ihop[tj]
+            "ypix": ypix0.astype(int),
+            "xpix": xpix0.astype(int),
+            "lam": lam0 * sdmov[ypix0, xpix0],
+            "med": med,
+            "footprint": ihop[tj]
         })
 
         if tj % 1000 == 0:
-            print('%d ROIs, score=%2.2f' % (tj, v_max[tj]))
+            print("%d ROIs, score=%2.2f" % (tj, v_max[tj]))
 
     new_ops = {
-        'max_proj': max_proj,
-        'Vmax': v_max,
-        'ihop': ihop,
-        'Vsplit': v_split,
-        'Vcorr': v_corr,
-        'Vmap': np.asanyarray(
-            v_map, dtype='object'
-        ),    # needed so that scipy.io.savemat doesn't fail in runpipeline with latest numpy (v1.24.3). dtype='object' is needed to have numpy array with elements having diff sizes
-        'spatscale_pix': spatscale_pix,
+        "max_proj": max_proj,
+        "Vmax": v_max,
+        "ihop": ihop,
+        "Vsplit": v_split,
+        "Vcorr": v_corr,
+        "Vmap": np.asanyarray(
+            v_map, dtype="object"
+        ),    # needed so that scipy.io.savemat doesn"t fail in runpipeline with latest numpy (v1.24.3). dtype="object" is needed to have numpy array with elements having diff sizes
+        "spatscale_pix": spatscale_pix,
     }
 
     return new_ops, stats

@@ -1,24 +1,24 @@
 import setuptools
 
-install_deps = ['importlib-metadata',
-        'natsort',
-        'rastermap>0.1.0',
-        'tifffile',
-        'scanimage-tiff-reader>=1.4.1',
-        'torch>=1.13.1',
-        'numpy>=1.24.3',
-        'numba>=0.57.0',
-        'matplotlib',
-        'scipy>=1.9.0',
-        'scikit-learn',
-        'cellpose',
+install_deps = ["importlib-metadata",
+        "natsort",
+        "rastermap>0.1.0",
+        "tifffile",
+        "scanimage-tiff-reader>=1.4.1",
+        "torch>=1.13.1",
+        "numpy>=1.24.3",
+        "numba>=0.57.0",
+        "matplotlib",
+        "scipy>=1.9.0",
+        "scikit-learn",
+        "cellpose",
         ]
 
 gui_deps = [
         "pyqt5",
         "pyqt5-tools",
         "pyqt5.sip",
-        'pyqtgraph',
+        "pyqtgraph",
       ]
 
 io_deps = [
@@ -33,9 +33,9 @@ nwb_deps = [
       ]
 
 test_deps = [
-      'pytest',
-      'tenacity',
-      'tqdm',
+      "pytest",
+      "tenacity",
+      "tqdm",
       "pytest-qt>3.3.0",
     ]
 
@@ -63,19 +63,19 @@ setuptools.setup(
     url="https://github.com/MouseLand/suite2p",
     packages=setuptools.find_packages(),
     setup_requires=[
-      'pytest-runner',
-      'setuptools_scm',
+      "pytest-runner",
+      "setuptools_scm",
     ],
     use_scm_version=True,
     install_requires=install_deps,
     tests_require=test_deps,
     extras_require={
       "docs": [
-        'sphinx>=3.0',
-        'sphinxcontrib-apidoc',
-        'sphinx_rtd_theme',
-        'sphinx-prompt',
-        'sphinx-autodoc-typehints',
+        "sphinx>=3.0",
+        "sphinxcontrib-apidoc",
+        "sphinx_rtd_theme",
+        "sphinx-prompt",
+        "sphinx-autodoc-typehints",
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
@@ -90,10 +90,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
       entry_points = {
-        'console_scripts': [
-          'suite2p = suite2p.__main__:main',
-          'reg_metrics = benchmarks.registration_metrics:main',
-          'tiff2scanimage = scripts.make_tiff_scanimage_compatible:main',
+        "console_scripts": [
+          "suite2p = suite2p.__main__:main",
+          "reg_metrics = benchmarks.registration_metrics:main",
+          "tiff2scanimage = scripts.make_tiff_scanimage_compatible:main",
         ]
         },
 )

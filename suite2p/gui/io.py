@@ -430,22 +430,15 @@ def save_mat(parent):
         parent.ops['date_proc'] = []
     scipy.io.savemat(
         matpath, {
-            'stat':
-            parent.stat,
-            'ops':
-            parent.ops,
-            'F':
-            parent.Fcell,
-            'Fneu':
-            parent.Fneu,
-            'spks':
-            parent.Spks,
-            'iscell':
-            np.concatenate(
+            'stat': parent.stat,
+            'ops': parent.ops,
+            'F': parent.Fcell,
+            'Fneu': parent.Fneu,
+            'spks': parent.Spks,
+            'iscell': np.concatenate(
                 (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
                 axis=1),
-            'redcell':
-            np.concatenate(
+            'redcell': np.concatenate(
                 (np.expand_dims(parent.redcell, axis=1),
                  np.expand_dims(parent.probredcell, axis=1)), axis=1)
         })

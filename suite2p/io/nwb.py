@@ -159,18 +159,16 @@ def read_nwb(fpath):
         for n in range(len(rois)):
             if isinstance(rois[0], np.ndarray):
                 stat.append({
-                    "ypix":
-                    np.array([
+                    "ypix": np.array([
                         rois[n][i][0].astype("int")
                         for i in range(len(rois[n]))
                     ]),
-                    "xpix":
-                    np.array([
+                    "xpix": np.array([
                         rois[n][i][1].astype("int")
                         for i in range(len(rois[n]))
                     ]),
-                    "lam":
-                    np.array([rois[n][i][-1] for i in range(len(rois[n]))]),
+                    "lam": np.array(
+                        [rois[n][i][-1] for i in range(len(rois[n]))]),
                 })
             else:
                 stat.append({

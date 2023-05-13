@@ -440,21 +440,14 @@ def run_s2p(ops={}, db={}, server={}):
 
         # copy file format to a binary file
         convert_funs = {
-            'h5':
-            io.h5py_to_binary,
-            'nwb':
-            io.nwb_to_binary,
-            'sbx':
-            io.sbx_to_binary,
-            'nd2':
-            io.nd2_to_binary,
-            'mesoscan':
-            io.mesoscan_to_binary,
-            'haus':
-            lambda ops: haussio.load_haussio(ops['data_path'][0]).tosuite2p(
-                ops.copy()),
-            'bruker':
-            io.ome_to_binary,
+            'h5': io.h5py_to_binary,
+            'nwb': io.nwb_to_binary,
+            'sbx': io.sbx_to_binary,
+            'nd2': io.nd2_to_binary,
+            'mesoscan': io.mesoscan_to_binary,
+            'haus': lambda ops: haussio.load_haussio(ops['data_path'][0]).
+            tosuite2p(ops.copy()),
+            'bruker': io.ome_to_binary,
         }
         if ops['input_format'] in convert_funs:
             ops0 = convert_funs[ops['input_format']](ops.copy())

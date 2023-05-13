@@ -37,12 +37,13 @@ test_deps = [
 
 all_deps = gui_deps + nwb_deps + test_deps
 
+
 try:
     import torch
     a = torch.ones(2, 3)
-    version = int(torch.__version__[2])
-    if version >= 6:
-        install_deps.remove('torch>=1.7.1')
+    major_version, minor_version, _ = torch.__version__.split(".")
+    if major_version == "2" or int(minor_version) >= 6:
+        install_deps.remove("torch>=1.6")
 except:
     pass
 

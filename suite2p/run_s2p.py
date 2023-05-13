@@ -17,6 +17,25 @@ try:
 except ImportError:
     HAS_HAUS = False
 
+try:
+    import nd2
+    HAS_ND2 = True
+except ImportError:
+    HAS_ND2 = False
+
+try:
+    import h5py
+    HAS_H5PY = True
+except ImportError:
+    HAS_H5PY = False
+
+try:
+    import sbxreader
+    HAS_SBX = True
+except ImportError:
+    HAS_SBX = False
+
+
 from functools import partial
 from pathlib import Path
 

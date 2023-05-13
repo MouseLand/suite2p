@@ -5,38 +5,41 @@ install_deps = ['importlib-metadata',
         'rastermap>0.1.0',
         'tifffile',
         'scanimage-tiff-reader>=1.4.1',
-        'torch==1.13.1',
-        'paramiko',
+        'torch>=1.13.1',
         'numpy>=1.24.3',
         'numba>=0.57.0',
         'matplotlib',
         'scipy>=1.9.0',
-        'h5py',
-        'sbxreader',
         'scikit-learn',
         'cellpose',
-        'nd2']
+        ]
 
 gui_deps = [
         "pyqt5",
         "pyqt5-tools",
         "pyqt5.sip",
         'pyqtgraph',
-        'rastermap>0.1.0',
       ]
+
+io_deps = [
+    "paramiko",
+    "nd2",
+    "sbxreader",
+    "h5py"
+]
 
 nwb_deps = [
         "pynwb>=2.3.2",
       ]
+
 test_deps = [
       'pytest',
       'tenacity',
       'tqdm',
-      'pytest-qt==3.3.0',
+      "pytest-qt>3.3.0",
     ]
 
-all_deps = gui_deps + nwb_deps + test_deps
-
+all_deps = gui_deps + nwb_deps + test_deps + io_deps
 
 try:
     import torch
@@ -76,6 +79,7 @@ setuptools.setup(
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
+      "io": io_deps,
       "tests": test_deps,
       "all": all_deps,
     },

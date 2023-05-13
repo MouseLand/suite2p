@@ -1,7 +1,6 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 [![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)
-[![Build Status](https://travis-ci.org/Mouseland/suite2p.svg?branch=dev)](https://travis-ci.org/Mouseland/suite2p)
 [![Coverage Status](https://coveralls.io/repos/github/MouseLand/suite2p/badge.svg?branch=dev)](https://coveralls.io/github/MouseLand/suite2p?branch=dev)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![Downloads](https://pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
@@ -37,6 +36,13 @@ See this **twitter [thread](https://twitter.com/marius10p/status/103280477663388
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
 Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb).
+
+### CITATION
+
+If you use this package in your research, please cite the [paper](https://www.biorxiv.org/content/early/2017/07/20/061507):
+
+Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandini, M., & Harris, K. D. (2016). Suite2p: beyond 10,000 neurons with standard two-photon microscopy. BioRxiv, 061507.
+
 
 ## Read the Documentation at https://suite2p.readthedocs.io/
 
@@ -176,17 +182,14 @@ suite2p relies on the following excellent packages (which are automatically inst
 - [rastermap](https://github.com/MouseLand/rastermap)
 - [pyqtgraph](http://pyqtgraph.org/)
 - [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
+- [torch](http://pytorch.org)
 - [numpy](http://www.numpy.org/) (>=1.16.0)
 - [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html)
-- [mkl_fft](https://anaconda.org/conda-forge/mkl_fft)
 - [scanimage-tiff-reader](https://vidriotech.gitlab.io/scanimagetiffreader-python/)
 - [scipy](https://www.scipy.org/)
-- [h5py](https://www.h5py.org/)
 - [scikit-learn](http://scikit-learn.org/stable/)
-- [scanimage-tiff-reader](http://scanimage.gitlab.io/ScanImageTiffReaderDocs/)
 - [tifffile](https://pypi.org/project/tifffile/)
 - [natsort](https://natsort.readthedocs.io/en/master/)
-- [matplotlib](https://matplotlib.org/) (not for plotting (only using hsv_to_rgb and colormap function), should not conflict with PyQt5)
 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

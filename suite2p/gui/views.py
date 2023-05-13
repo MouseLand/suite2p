@@ -196,7 +196,7 @@ class RangeSlider(QSlider):
                 height: 8px;\
                 width: 6px;\
                 margin: -8px 2; \
-                }"                                                      )
+                }"                                                                        )
 
         #self.opt = QStyleOptionSlider()
         #self.opt.orientation=QtCore.Qt.Vertical

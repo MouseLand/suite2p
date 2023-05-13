@@ -66,7 +66,7 @@ class RangeSlider(QSlider):
                 height: 8px;\
                 width: 6px;\
                 margin: -8px 2; \
-                }"                                                      )
+                }"                                                                        )
         # 0 for the low, 1 for the high, -1 for both
         self.active_slider = 0
         self.parent = parent

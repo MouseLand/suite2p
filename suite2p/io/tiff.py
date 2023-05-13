@@ -7,10 +7,16 @@ import time
 from typing import Union, Tuple, Optional
 
 import numpy as np
-from ScanImageTiffReader import ScanImageTiffReader
 from tifffile import imread, TiffFile, TiffWriter
 
 from . import utils
+
+try:
+    from ScanImageTiffReader import ScanImageTiffReader
+    HAS_SCANIMAGE = True
+except ImportError:
+    HAS_SCANIMAGE = False 
+
 
 
 def generate_tiff_filename(functional_chan: int, align_by_chan: int,
@@ -89,17 +95,20 @@ def open_tiff(
 
 def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
     """Returns False if ScanImageTiffReader works on the tiff file, else True (in which case use tifffile)."""
-    try:
-        with ScanImageTiffReader(tiff_filename) as tif:
-            tif.data() if len(tif.shape()) < 3 else tif.data(
-                beg=0, end=np.minimum(batch_size,
-                                      tif.shape()[0] - 1))
-        return False
-    except:
-        print(
-            "NOTE: ScanImageTiffReader not working for this tiff type, using tifffile"
-        )
-        return True
+    if HAS_SCANIMAGE:
+        try:
+            with ScanImageTiffReader(tiff_filename) as tif:
+                tif.data() if len(tif.shape()) < 3 else tif.data(
+                    beg=0, end=np.minimum(batch_size,
+                                        tif.shape()[0] - 1))
+            return False
+        except:
+            print(
+                "NOTE: ScanImageTiffReader not working for this tiff type, using tifffile"
+            )
+            return True
+    else:
+        print("NOTE: ScanImageTiffReader not installed, using tifffile")
 
 
 def tiff_to_binary(ops):

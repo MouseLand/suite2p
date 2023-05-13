@@ -4,7 +4,6 @@ install_deps = ["importlib-metadata",
         "natsort",
         "rastermap>0.1.0",
         "tifffile",
-        "scanimage-tiff-reader>=1.4.1",
         "torch>=1.13.1",
         "numpy>=1.24.3",
         "numba>=0.57.0",
@@ -22,6 +21,7 @@ gui_deps = [
       ]
 
 io_deps = [
+    "scanimage-tiff-reader>=1.4.1",
     "paramiko",
     "nd2",
     "sbxreader",

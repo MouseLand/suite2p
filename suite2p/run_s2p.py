@@ -103,15 +103,15 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             "force_refImg", False) else None
 
         align_by_chan2 = ops["functional_chan"] != ops["align_by_chan"]
-        registration_outputs = registration.register.registration_wrapper(
+        registration_outputs = registration.registration_wrapper(
             f_reg, f_raw=f_raw, f_reg_chan2=f_reg_chan2,
             f_raw_chan2=f_raw_chan2, refImg=refImg,
             align_by_chan2=align_by_chan2, ops=ops)
 
-        ops = registration.register.save_registration_outputs_to_ops(
+        ops = registration.save_registration_outputs_to_ops(
             registration_outputs, ops)
         # add enhanced mean image
-        meanImgE = registration.register.compute_enhanced_mean_image(
+        meanImgE = registration.compute_enhanced_mean_image(
             ops["meanImg"].astype(np.float32), ops)
         ops["meanImgE"] = meanImgE
 
@@ -131,7 +131,7 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                 refImg = f_reg_chan2[inds].astype(np.float32).mean(axis=0)
             else:
                 refImg = f_reg[inds].astype(np.float32).mean(axis=0)
-            registration_outputs = registration.register.registration_wrapper(
+            registration_outputs = registration.registration_wrapper(
                 f_reg, f_raw=None, f_reg_chan2=f_reg_chan2, f_raw_chan2=None,
                 refImg=refImg, align_by_chan2=align_by_chan2, ops=ops)
             if ops.get("ops_path"):

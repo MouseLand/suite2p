@@ -193,7 +193,6 @@ def from_slice(s: slice) -> Optional[np.ndarray]:
     return np.arange(s.start, s.stop, s.step) if any([s.start, s.stop, s.step
                                                       ]) else None
 
-
 def binned_mean(mov: np.ndarray, bin_size) -> np.ndarray:
     """Returns an array with the mean of each time bin (of size "bin_size")."""
     n_frames, Ly, Lx = mov.shape

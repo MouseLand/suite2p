@@ -6,7 +6,7 @@ from numba import prange, njit, jit, int64, float32
 from numba.typed import List
 from scipy import stats, signal
 from .masks import create_masks
-from ..io import BinaryRWFile
+from ..io import BinaryFile
 from .. import default_ops
 
 
@@ -24,7 +24,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500):
     Parameters
     ----------------
 
-    f_in : np.ndarray or io.BinaryRWFile object
+    f_in : np.ndarray or io.BinaryFile object
         size n_frames, Ly, Lx
 
         
@@ -146,12 +146,12 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     """
     batch_size = ops["batch_size"]
     F_chan2, Fneu_chan2 = [], []
-    with BinaryRWFile(Ly=ops["Ly"], Lx=ops["Lx"],
+    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],
                       filename=ops["reg_file"]) as f:
         F, Fneu = extract_traces(f, cell_masks, neuropil_masks,
                                  batch_size=batch_size)
     if "reg_file_chan2" in ops:
-        with BinaryRWFile(Ly=ops["Ly"], Lx=ops["Lx"],
+        with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],
                           filename=ops["reg_file_chan2"]) as f:
             F_chan2, Fneu_chan2 = extract_traces(f, cell_masks, neuropil_masks,
                                                  batch_size=batch_size)
@@ -169,10 +169,10 @@ def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None,
 
     stat : array of dicts
 
-    f_reg : array of functional frames, np.ndarray or io.BinaryRWFile
+    f_reg : array of functional frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
-    f_reg_chan2 : array of anatomical frames, np.ndarray or io.BinaryRWFile
+    f_reg_chan2 : array of anatomical frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
 
@@ -261,8 +261,8 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
     Ly, Lx = ops["Ly"], ops["Lx"]
     reg_file = ops["reg_file"]
     reg_file_alt = ops.get("reg_file_chan2", ops["reg_file"])
-    with BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_in,\
-         BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_alt) as f_in_chan2:
+    with BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_in,\
+         BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_alt) as f_in_chan2:
         if ops["nchannels"] == 1:
             f_in_chan2.close()
             f_in_chan2 = None

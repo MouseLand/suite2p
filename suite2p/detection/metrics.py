@@ -83,7 +83,7 @@ def extend_anatomical(img_anat, masks_anat, mov=None, ops=None, reg_file=None):
             max(1, ops["nframes"] // ops["nbinned"],
                 np.round(ops["tau"] * ops["fs"])))
         t0 = time.time()
-        with BinaryFile(read_filename=reg_file, Ly=ops["Ly"],
+        with BinaryFile(filename=reg_file, Ly=ops["Ly"],
                         Lx=ops["Lx"]) as f:
             mov = f.bin_movie(
                 bin_size=bin_size,

@@ -18,7 +18,7 @@ def detect(ops, classfile=None):
         max(1, ops["nframes"] // ops["nbinned"],
             np.round(ops["tau"] * ops["fs"])))
     print("Binning movie in chunks of length %2.2d" % bin_size)
-    with BinaryFile(read_filename=ops["reg_file"], Ly=ops["Ly"],
+    with BinaryFile(filename=ops["reg_file"], Ly=ops["Ly"],
                     Lx=ops["Lx"]) as f:
         mov = f.bin_movie(
             bin_size=bin_size,
@@ -96,7 +96,7 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None,
 	Parameters
 	----------------
 
-	f_reg : np.ndarray or io.BinaryRWFile,
+	f_reg : np.ndarray or io.BinaryWFile,
 		n_frames x Ly x Lx
 
 	mov : ndarray (t x Lyc x Lxc)

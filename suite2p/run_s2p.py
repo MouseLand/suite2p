@@ -5,7 +5,7 @@ from natsort import natsorted
 from datetime import datetime
 from getpass import getpass
 import pathlib
-
+import contextlib
 import numpy as np
 #from scipy.io import savemat
 
@@ -16,6 +16,12 @@ try:
     HAS_HAUS = True
 except ImportError:
     HAS_HAUS = False
+
+try:
+    import pynwb
+    HAS_NWB = True
+except ImportError:
+    HAS_NWB = False
 
 try:
     import nd2
@@ -44,7 +50,7 @@ print = partial(print, flush=True)
 
 def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
              run_registration=True, ops=default_ops(), stat=None):
-    """ run suite2p processing on array or BinaryRWFile 
+    """ run suite2p processing on array or BinaryFile 
     
     f_reg: required, registered or unregistered frames
         n_frames x Ly x Lx
@@ -311,13 +317,13 @@ def run_plane(ops, ops_path=None, stat=None):
         print("binary path: %s" % ops["reg_file"])
         run_registration = False
 
-    Ly, Lx = ops["Ly"], ops["Lx"]
-
+    
     # get binary file paths
     raw = ops.get("keep_movie_raw") and "raw_file" in ops and os.path.isfile(
         ops["raw_file"])
     reg_file = ops["reg_file"]
     raw_file = ops.get("raw_file", 0) if raw else reg_file
+    # get number of frames in binary file to use to initialize files if needed
     if ops["nchannels"] > 1:
         reg_file_chan2 = ops["reg_file_chan2"]
         raw_file_chan2 = ops.get("raw_file_chan2",
@@ -325,21 +331,20 @@ def run_plane(ops, ops_path=None, stat=None):
     else:
         reg_file_chan2 = reg_file
         raw_file_chan2 = reg_file
+    
+    # shape of binary files
+    n_frames, Ly, Lx = ops["nframes"], ops["Ly"], ops["Lx"]
 
-
-    with io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file if raw else reg_file) as f_raw, \
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_reg, \
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2 if raw else reg_file_chan2) as f_raw_chan2,\
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2) as f_reg_chan2:
-        if not raw:
-            f_raw.close()
-            f_raw = None
-            f_raw_chan2.close()
-            f_raw_chan2 = None
-        if ops["nchannels"] == 1:
-            f_reg_chan2.close()
-            f_reg_chan2 = None
-
+    null = contextlib.nullcontext()
+    twoc = ops["nchannels"] > 1
+    with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames) \
+            if raw else null as f_raw, \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file, n_frames=n_frames) as f_reg, \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2, n_frames=n_frames) \
+            if raw and twoc else null as f_raw_chan2,\
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2, n_frames=n_frames) \
+            if twoc else null as f_reg_chan2:
+        
         ops = pipeline(f_reg, f_raw, f_reg_chan2, f_raw_chan2,
                        run_registration, ops, stat=stat)
 
@@ -443,15 +448,21 @@ def run_s2p(ops={}, db={}, server={}):
     else:
         if len(ops["h5py"]):
             ops["input_format"] = "h5"
+            if not HAS_H5PY:
+                raise ImportError("h5py not found; pip install h5py")
             # Overwrite data_path with path provided by h5py.
             # Use the directory containing the first h5 file
             ops["data_path"] = [os.path.split(ops["h5py"][0])[0]]
         elif len(ops["nwb_file"]):
             ops["input_format"] = "nwb"
+            if not HAS_NWB:
+                raise ImportError("nwb not found; pip install pynwb")
         elif ops.get("mesoscan"):
             ops["input_format"] = "mesoscan"
         elif ops.get("nd2"):
             ops["input_format"] = "nd2"
+            if not HAS_ND2:
+                raise ImportError("nd2 not found; pip install nd2")
         elif HAS_HAUS:
             ops["input_format"] = "haus"
         elif not "input_format" in ops:
@@ -474,6 +485,7 @@ def run_s2p(ops={}, db={}, server={}):
                 ops0 = ops0[0]
         else:
             ops0 = io.tiff_to_binary(ops.copy())
+            
         plane_folders = natsorted([
             f.path for f in os.scandir(save_folder)
             if f.is_dir() and f.name[:5] == "plane"

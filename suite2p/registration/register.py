@@ -388,7 +388,7 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None,
     
     if f_align_out is not None, registered frames are written to f_align_out
 
-    f_align_in, f_align_out can be a BinaryRWFile or any type of array that can be slice-indexed
+    f_align_in, f_align_out can be a BinaryFile or any type of array that can be slice-indexed
     
     """
 
@@ -568,16 +568,16 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     Parameters
     ----------------
 
-    f_reg : array of registered functional frames, np.ndarray or io.BinaryRWFile
+    f_reg : array of registered functional frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
-    f_raw : array of raw functional frames, np.ndarray or io.BinaryRWFile
+    f_raw : array of raw functional frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
-    f_reg_chan2 : array of registered anatomical frames, np.ndarray or io.BinaryRWFile
+    f_reg_chan2 : array of registered anatomical frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
-    f_raw_chan2 : array of raw anatomical frames, np.ndarray or io.BinaryRWFile
+    f_raw_chan2 : array of raw anatomical frames, np.ndarray or io.BinaryFile
         n_frames x Ly x Lx
 
     refImg : 2D array, int16
@@ -706,101 +706,6 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     )
 
     return refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, zest, meanImg_chan2, badframes, yrange, xrange
-
-
-def register_binary(ops: Dict[str, Any], refImg=None, raw=True):
-    """ main registration function
-
-    Parameters
-    ----------
-
-    ops : dictionary or list of dicts
-        "Ly", "Lx", "batch_size", "align_by_chan", "nonrigid"
-        (optional "keep_movie_raw", "raw_file")
-
-    refImg : 2D array (optional, default None)
-
-    raw : bool (optional, default True)
-        use raw_file for registration if available, if False forces reg_file to be used
-
-    Returns
-    --------
-
-    ops : dictionary
-        "nframes", "yoff", "xoff", "corrXY", "yoff1", "xoff1", "corrXY1", "badframes"
-
-
-    """
-    Ly, Lx = ops["Ly"], ops["Lx"]
-    n_frames = ops["nframes"]
-    print("registering %d frames" % ops["nframes"])
-
-    # get binary file paths
-    raw = raw and ops.get(
-        "keep_movie_raw") and "raw_file" in ops and path.isfile(
-            ops["raw_file"])
-    reg_file_align = ops["reg_file"] if (
-        ops["nchannels"] < 2 or ops["functional_chan"]
-        == ops["align_by_chan"]) else ops["reg_file_chan2"]
-    if raw:
-        raw_file_align = ops.get("raw_file") if (
-            ops["nchannels"] < 2 or ops["functional_chan"]
-            == ops["align_by_chan"]) else ops.get("raw_file_chan2")
-    else:
-        raw_file_align = None
-        if ops["do_bidiphase"] and ops["bidiphase"] != 0:
-            ops["bidi_corrected"] = True
-
-    if ops["nchannels"] > 1:
-        reg_file_alt = ops["reg_file_chan2"] if ops["functional_chan"] == ops[
-            "align_by_chan"] else ops["reg_file"]
-        raw_file_alt = ops.get("raw_file_chan2") if ops[
-            "functional_chan"] == ops["align_by_chan"] else ops.get("raw_file")
-        raw_file_alt = raw_file_alt if raw else []
-    else:
-        reg_file_alt = reg_file_align
-        raw_file_alt = reg_file_align
-
-    with io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file_align if raw else reg_file_align) as f_align_in, \
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_align) as f_align_out, \
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=raw_file_alt if raw else reg_file_alt) as f_alt_in,\
-         io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=reg_file_alt) as f_alt_out:
-        if not raw:
-            f_align_out.close()
-            f_align_out = None
-            f_alt_out.close()
-            f_alt_out = None
-        if ops["nchannels"] == 1:
-            f_alt_in.close()
-            f_alt_in = None
-
-        outputs = registration_wrapper(f_align_out, f_align_in, f_alt_out,
-                                       f_alt_in, refImg, ops=ops)
-
-    # refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zpos, mean_img_alt, badframes, yrange, xrange = outputs
-
-    # # assign reference image and normalizers
-    # ops["refImg"] = refImg
-    # ops["rmin"], ops["rmax"] = rmin, rmax
-    # # assign rigid offsets to ops
-    # ops["yoff"], ops["xoff"], ops["corrXY"] = rigid_offsets
-    # # assign nonrigid offsets to ops
-    # ops["yoff1"], ops["xoff1"], ops["corrXY1"] = nonrigid_offsets
-    # # assign mean images
-    # if ops["nchannels"] == 1 or ops["functional_chan"] == ops["align_by_chan"]:
-    #     ops["meanImg"] = mean_img
-    # elif ops["nchannels"] == 2:
-    #     ops["meanImg_chan2"] = mean_img_alt
-    # # assign crop computation and badframes
-    # ops["badframes"], ops["yrange"], ops["xrange"] = badframes, yrange, xrange
-
-    ops = save_registration_outputs_to_ops(outputs, ops)
-
-    # add enhanced mean image
-    ops = enhanced_mean_image(ops)
-
-    return ops
-
 
 def save_registration_outputs_to_ops(registration_outputs, ops):
 

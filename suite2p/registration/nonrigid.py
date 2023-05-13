@@ -23,7 +23,8 @@ def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:
     block_size: int
     nblocks: int
     """
-    return (L, 1) if block_size >= L else (block_size, int(np.ceil(1.5 * L / block_size)))
+    return (L, 1) if block_size >= L else (block_size,
+                                           int(np.ceil(1.5 * L / block_size)))
 
 
 def make_blocks(Ly, Lx, block_size=(128, 128)):
@@ -55,15 +56,22 @@ def make_blocks(Ly, Lx, block_size=(128, 128)):
     # todo: could rounding to int here over-represent some pixels over others?
     ystart = np.linspace(0, Ly - block_size[0], ny).astype('int')
     xstart = np.linspace(0, Lx - block_size[1], nx).astype('int')
-    yblock = [np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny) for _ in range(nx)]
-    xblock = [np.array([xstart[ix], xstart[ix] + block_size[1]]) for _ in range(ny) for ix in range(nx)]
+    yblock = [
+        np.array([ystart[iy], ystart[iy] + block_size[0]]) for iy in range(ny)
+        for _ in range(nx)
+    ]
+    xblock = [
+        np.array([xstart[ix], xstart[ix] + block_size[1]]) for _ in range(ny)
+        for ix in range(nx)
+    ]
 
     NRsm = kernelD2(xs=np.arange(nx), ys=np.arange(ny)).T
 
     return yblock, xblock, [ny, nx], block_size, NRsm
 
 
-def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np.ndarray, xblock: np.ndarray):
+def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma,
+                        yblock: np.ndarray, xblock: np.ndarray):
     """
     Computes taper and fft'ed reference image for phasecorr.
 
@@ -82,7 +90,8 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
     cfRefImg
 
     """
-    nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
+    nb, Ly, Lx = len(
+        yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
     cfRef_dims = dims
     gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
@@ -92,8 +101,11 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
     maskMul1 = np.zeros(dims, 'float32')
     maskMul1[:] = spatial_taper(2 * smooth_sigma, Ly, Lx)
     maskOffset1 = np.zeros(dims, 'float32')
-    for yind, xind, maskMul1_n, maskOffset1_n, cfRefImg1_n in zip(yblock, xblock, maskMul1, maskOffset1, cfRefImg1):
-        ix = np.ix_(np.arange(yind[0], yind[-1]).astype('int'), np.arange(xind[0], xind[-1]).astype('int'))
+    for yind, xind, maskMul1_n, maskOffset1_n, cfRefImg1_n in zip(
+            yblock, xblock, maskMul1, maskOffset1, cfRefImg1):
+        ix = np.ix_(
+            np.arange(yind[0], yind[-1]).astype('int'),
+            np.arange(xind[0], xind[-1]).astype('int'))
         refImg = refImg0[ix]
 
         # mask params
@@ -105,7 +117,11 @@ def phasecorr_reference(refImg0: np.ndarray, maskSlope, smooth_sigma, yblock: np
         cfRefImg1_n /= 1e-5 + np.absolute(cfRefImg1_n)
         cfRefImg1_n[:] *= gaussian_filter
 
-    return maskMul1[:, np.newaxis, :, :], maskOffset1[:, np.newaxis, :, :], cfRefImg1[:, np.newaxis, :, :]
+    return maskMul1[:, np.
+                    newaxis, :, :], maskOffset1[:, np.
+                                                newaxis, :, :], cfRefImg1[:,
+                                                                          np.
+                                                                          newaxis, :, :]
 
 
 def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
@@ -127,14 +143,21 @@ def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
     cc0 = cc[:, lpad:-lpad, lpad:-lpad].reshape(cc.shape[0], -1)
     # set to 0 all pts +-lpad from ymax,xmax
     cc1 = cc.copy()
-    for c1, ymax, xmax in zip(cc1, *np.unravel_index(np.argmax(cc0, axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):
+    for c1, ymax, xmax in zip(
+            cc1,
+            *np.unravel_index(np.argmax(cc0, axis=1),
+                              (2 * lcorr + 1, 2 * lcorr + 1))):
         c1[ymax:ymax + 2 * lpad, xmax:xmax + 2 * lpad] = 0
 
-    snr = np.amax(cc0, axis=1) / np.maximum(1e-10, np.amax(cc1.reshape(cc.shape[0], -1), axis=1))  # ensure positivity for outlier cases
+    snr = np.amax(cc0, axis=1) / np.maximum(
+        1e-10, np.amax(cc1.reshape(cc.shape[0], -1),
+                       axis=1))    # ensure positivity for outlier cases
     return snr
 
 
-def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10, lpad: int = 3):
+def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh,
+              NRsm, xblock, yblock, maxregshiftNR, subpixel: int = 10,
+              lpad: int = 3):
     """
     Compute phase correlations for each block
     
@@ -163,40 +186,43 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm,
     xmax1
     cmax1
     """
-    
+
     Kmat, nup = mat_upsample(lpad=3)
 
     nimg = data.shape[0]
     ly, lx = cfRefImg.shape[-2:]
 
     # maximum registration shift allowed
-    lcorr = int(np.minimum(np.round(maxregshiftNR), np.floor(np.minimum(ly, lx) / 2.) - lpad))
+    lcorr = int(
+        np.minimum(np.round(maxregshiftNR),
+                   np.floor(np.minimum(ly, lx) / 2.) - lpad))
     nb = len(yblock)
 
     # shifts and corrmax
     Y = np.zeros((nimg, nb, ly, lx), 'float32')
     for n in range(nb):
         yind, xind = yblock[n], xblock[n]
-        Y[:,n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
+        Y[:, n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
     Y = addmultiply(Y, maskMul, maskOffset)
-    batch = min(64, Y.shape[1]) #16
+    batch = min(64, Y.shape[1])    #16
     for n in np.arange(0, nb, batch):
-        nend = min(Y.shape[1], n+batch)
-        Y[:,n:nend] = convolve(mov=Y[:,n:nend], img=cfRefImg[n:nend])
+        nend = min(Y.shape[1], n + batch)
+        Y[:, n:nend] = convolve(mov=Y[:, n:nend], img=cfRefImg[n:nend])
 
     # calculate ccsm
     lhalf = lcorr + lpad
     cc0 = np.real(
         np.block(
-            [[Y[:, :, -lhalf:,    -lhalf:], Y[:, :, -lhalf:,    :lhalf + 1]],
-             [Y[:, :, :lhalf + 1, -lhalf:], Y[:, :, :lhalf + 1, :lhalf + 1]]]
-        )
-    )
+            [[Y[:, :, -lhalf:, -lhalf:], Y[:, :, -lhalf:, :lhalf + 1]],
+             [Y[:, :, :lhalf + 1, -lhalf:], Y[:, :, :lhalf + 1, :lhalf + 1]]]))
     cc0 = cc0.transpose(1, 0, 2, 3)
     cc0 = cc0.reshape(cc0.shape[0], -1)
 
     cc2 = [cc0, NRsm @ cc0, NRsm @ NRsm @ cc0]
-    cc2 = [c2.reshape(nb, nimg, 2 * lcorr + 2 * lpad + 1, 2 * lcorr + 2 * lpad + 1) for c2 in cc2]
+    cc2 = [
+        c2.reshape(nb, nimg, 2 * lcorr + 2 * lpad + 1,
+                   2 * lcorr + 2 * lpad + 1) for c2 in cc2
+    ]
     ccsm = cc2[0]
     for n in range(nb):
         snr = np.ones(nimg, 'float32')
@@ -214,27 +240,30 @@ def phasecorr(data: np.ndarray, maskMul, maskOffset, cfRefImg, snr_thresh, NRsm,
     ymax1 = np.empty((nimg, nb), np.float32)
     cmax1 = np.empty((nimg, nb), np.float32)
     xmax1 = np.empty((nimg, nb), np.float32)
-    ymax = np.empty((nb,), np.int32)
-    xmax = np.empty((nb,), np.int32)
-    
+    ymax = np.empty((nb, ), np.int32)
+    xmax = np.empty((nb, ), np.int32)
+
     for t in range(nimg):
-        ccmat = np.empty((nb, 2*lpad+1, 2*lpad+1), np.float32)
+        ccmat = np.empty((nb, 2 * lpad + 1, 2 * lpad + 1), np.float32)
         for n in range(nb):
             ix = np.argmax(ccsm[n, t][lpad:-lpad, lpad:-lpad], axis=None)
             ym, xm = np.unravel_index(ix, (2 * lcorr + 1, 2 * lcorr + 1))
-            ccmat[n] = ccsm[n, t][ ym:ym + 2 * lpad + 1, xm:xm + 2 * lpad + 1]
+            ccmat[n] = ccsm[n, t][ym:ym + 2 * lpad + 1, xm:xm + 2 * lpad + 1]
             ymax[n], xmax[n] = ym - lcorr, xm - lcorr
         ccb = ccmat.reshape(nb, -1) @ Kmat
         cmax1[t] = np.amax(ccb, axis=1)
-        ymax1[t], xmax1[t] = np.unravel_index(np.argmax(ccb, axis=1), (nup, nup))
+        ymax1[t], xmax1[t] = np.unravel_index(np.argmax(ccb, axis=1),
+                                              (nup, nup))
         ymax1[t] = (ymax1[t] - mdpt) / subpixel + ymax
         xmax1[t] = (xmax1[t] - mdpt) / subpixel + xmax
 
     return ymax1, xmax1, cmax1
 
 
-@njit(['(int16[:, :],float32[:,:], float32[:,:], float32[:,:])', 
-        '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'], cache=True)
+@njit([
+    '(int16[:, :],float32[:,:], float32[:,:], float32[:,:])',
+    '(float32[:, :],float32[:,:], float32[:,:], float32[:,:])'
+], cache=True)
 def map_coordinates(I, yc, xc, Y) -> None:
     """
     In-place bilinear transform of image 'I' with ycoordinates yc and xcoordinates xc to Y
@@ -249,27 +278,29 @@ def map_coordinates(I, yc, xc, Y) -> None:
     Y : Ly x Lx
         shifted I
     """
-    Ly,Lx = I.shape
+    Ly, Lx = I.shape
     yc_floor = yc.astype(np.int32)
     xc_floor = xc.astype(np.int32)
     yc = yc - yc_floor
     xc = xc - xc_floor
     for i in range(yc_floor.shape[0]):
         for j in range(yc_floor.shape[1]):
-            yf = min(Ly-1, max(0, yc_floor[i,j]))
-            xf = min(Lx-1, max(0, xc_floor[i,j]))
-            yf1= min(Ly-1, yf+1)
-            xf1= min(Lx-1, xf+1)
-            y = yc[i,j]
-            x = xc[i,j]
-            Y[i,j] = (np.float32(I[yf, xf]) * (1 - y) * (1 - x) +
-                      np.float32(I[yf, xf1]) * (1 - y) * x +
-                      np.float32(I[yf1, xf]) * y * (1 - x) +
-                      np.float32(I[yf1, xf1]) * y * x )
+            yf = min(Ly - 1, max(0, yc_floor[i, j]))
+            xf = min(Lx - 1, max(0, xc_floor[i, j]))
+            yf1 = min(Ly - 1, yf + 1)
+            xf1 = min(Lx - 1, xf + 1)
+            y = yc[i, j]
+            x = xc[i, j]
+            Y[i, j] = (np.float32(I[yf, xf]) * (1 - y) * (1 - x) +
+                       np.float32(I[yf, xf1]) * (1 - y) * x +
+                       np.float32(I[yf1, xf]) * y * (1 - x) +
+                       np.float32(I[yf1, xf1]) * y * x)
 
 
-@njit(['int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
-       'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'], parallel=True, cache=True)
+@njit([
+    'int16[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]',
+    'float32[:, :,:], float32[:,:,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:]'
+], parallel=True, cache=True)
 def shift_coordinates(data, yup, xup, mshy, mshx, Y):
     """
     Shift data into yup and xup coordinates
@@ -289,10 +320,11 @@ def shift_coordinates(data, yup, xup, mshy, mshx, Y):
         shifted data
     """
     for t in prange(data.shape[0]):
-        map_coordinates(data[t], mshy+yup[t], mshx+xup[t], Y[t])
+        map_coordinates(data[t], mshy + yup[t], mshx + xup[t], Y[t])
 
 
-@njit((float32[:, :,:], float32[:,:,:], float32[:,:], float32[:,:], float32[:,:,:], float32[:,:,:]), parallel=True, cache=True)
+@njit((float32[:, :, :], float32[:, :, :], float32[:, :], float32[:, :],
+       float32[:, :, :], float32[:, :, :]), parallel=True, cache=True)
 def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
     """
     interpolate from ymax1 to mshy to create coordinate transforms
@@ -311,8 +343,10 @@ def block_interp(ymax1, xmax1, mshy, mshx, yup, xup):
         x shifts for each coordinate
     """
     for t in prange(ymax1.shape[0]):
-        map_coordinates(ymax1[t], mshy, mshx, yup[t])  # y shifts for blocks to coordinate map
-        map_coordinates(xmax1[t], mshy, mshx, xup[t])  # x shifts for blocks to coordinate map
+        map_coordinates(ymax1[t], mshy, mshx,
+                        yup[t])    # y shifts for blocks to coordinate map
+        map_coordinates(xmax1[t], mshy, mshx,
+                        xup[t])    # x shifts for blocks to coordinate map
 
 
 def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
@@ -348,7 +382,9 @@ def upsample_block_shifts(Lx, Ly, nblocks, xblock, yblock, ymax1, xmax1):
     # includes centers of blocks AND edges of blocks
     # note indices are flipped for control points
     # block centers
-    yb = np.array(yblock[::nblocks[1]]).mean(axis=1)  # this recovers the coordinates of the meshgrid from (yblock, xblock)
+    yb = np.array(yblock[::nblocks[1]]).mean(
+        axis=1
+    )    # this recovers the coordinates of the meshgrid from (yblock, xblock)
     xb = np.array(xblock[:nblocks[1]]).mean(axis=1)
 
     iy = np.interp(np.arange(Ly), yb, np.arange(yb.size)).astype(np.float32)
@@ -405,8 +441,8 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1, bilinear=True):
         xup = np.round(xup)
 
     # use shifts and do bilinear interpolation
-    mshx, mshy = np.meshgrid(np.arange(Lx, dtype=np.float32), np.arange(Ly, dtype=np.float32))
+    mshx, mshy = np.meshgrid(np.arange(Lx, dtype=np.float32),
+                             np.arange(Ly, dtype=np.float32))
     Y = np.zeros_like(data, dtype=np.float32)
     shift_coordinates(data, yup, xup, mshy, mshx, Y)
     return Y
-

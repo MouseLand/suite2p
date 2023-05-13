@@ -28,7 +28,8 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     return maskMul.astype('float32'), maskOffset.astype('float32')
 
 
-def apply_masks(data: np.ndarray, maskMul: np.ndarray, maskOffset: np.ndarray) -> np.ndarray:
+def apply_masks(data: np.ndarray, maskMul: np.ndarray,
+                maskOffset: np.ndarray) -> np.ndarray:
     """
     Returns a 3D image 'data', multiplied by 'maskMul' and then added 'maskOffet'.
 
@@ -61,10 +62,13 @@ def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     """
     cfRefImg = complex_fft2(img=refImg)
     cfRefImg /= (1e-5 + np.absolute(cfRefImg))
-    cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
+    cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0],
+                             cfRefImg.shape[1])
     return cfRefImg.astype('complex64')
 
-def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int, float]:
+
+def phasecorr(data, cfRefImg, maxregshift,
+              smooth_sigma_time) -> Tuple[int, int, float]:
     """ compute phase correlation between data and reference image
 
     Parameters
@@ -86,22 +90,25 @@ def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int,
         maximum of phase correlation for each frame
 
     """
-    min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed
+    min_dim = np.minimum(
+        *data.shape[1:])    # maximum registration shift allowed
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
-    
+
     #cc = convolve(data, cfRefImg, lcorr)
     data = convolve(data, cfRefImg)
-    cc = np.real(np.block(
-                [[data[:,  -lcorr:, -lcorr:], data[:,  -lcorr:, :lcorr+1]],
-                [data[:, :lcorr+1, -lcorr:], data[:, :lcorr+1, :lcorr+1]]]
-            )
-            )
-        
-    cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc
+    cc = np.real(
+        np.block(
+            [[data[:, -lcorr:, -lcorr:], data[:, -lcorr:, :lcorr + 1]],
+             [data[:, :lcorr + 1, -lcorr:], data[:, :lcorr + 1, :lcorr + 1]]]))
 
-    ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)
+    cc = temporal_smooth(cc,
+                         smooth_sigma_time) if smooth_sigma_time > 0 else cc
+
+    ymax, xmax = np.zeros(data.shape[0],
+                          np.int32), np.zeros(data.shape[0], np.int32)
     for t in np.arange(data.shape[0]):
-        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None), (2 * lcorr + 1, 2 * lcorr + 1))
+        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None),
+                                            (2 * lcorr + 1, 2 * lcorr + 1))
     cmax = cc[np.arange(len(cc)), ymax, xmax]
     ymax, xmax = ymax - lcorr, xmax - lcorr
 

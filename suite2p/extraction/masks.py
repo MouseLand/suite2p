@@ -6,26 +6,29 @@ from scipy.ndimage import percentile_filter
 from ..detection.sparsedetect import extendROI
 from .. import default_ops
 
+
 def create_masks(stats: List[Dict[str, Any]], Ly, Lx, ops=default_ops()):
     """ create cell and neuropil masks """
 
-    cell_pix = create_cell_pix(stats, Ly=Ly, Lx=Lx, 
+    cell_pix = create_cell_pix(stats, Ly=Ly, Lx=Lx,
                                lam_percentile=ops.get('lam_percentile', 50.0))
-    cell_masks = [create_cell_mask(stat, Ly=Ly, Lx=Lx, allow_overlap=ops['allow_overlap']) for stat in stats]
+    cell_masks = [
+        create_cell_mask(stat, Ly=Ly, Lx=Lx,
+                         allow_overlap=ops['allow_overlap']) for stat in stats
+    ]
     if ops.get('neuropil_extract', True):
         neuropil_masks = create_neuropil_masks(
             ypixs=[stat['ypix'] for stat in stats],
-            xpixs=[stat['xpix'] for stat in stats],
-            cell_pix=cell_pix,
+            xpixs=[stat['xpix'] for stat in stats], cell_pix=cell_pix,
             inner_neuropil_radius=ops['inner_neuropil_radius'],
             min_neuropil_pixels=ops['min_neuropil_pixels'],
-            circular=ops.get('circular_neuropil', False)
-        )
+            circular=ops.get('circular_neuropil', False))
     else:
         neuropil_masks = None
     return cell_masks, neuropil_masks
 
-def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int, 
+
+def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
                     lam_percentile: float = 50.0) -> np.ndarray:
     """Returns Ly x Lx array of whether pixel contains a cell (1) or not (0).
     
@@ -36,7 +39,7 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
     cell_pix = np.zeros((Ly, Lx))
     lammap = np.zeros((Ly, Lx))
     radii = np.zeros(len(stats))
-    for ni,stat in enumerate(stats):
+    for ni, stat in enumerate(stats):
         radii[ni] = stat['radius']
         ypix = stat['ypix']
         xpix = stat['xpix']
@@ -44,15 +47,18 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
         lammap[ypix, xpix] = np.maximum(lammap[ypix, xpix], lam)
     radius = np.median(radii)
     if lam_percentile > 0.0:
-        filt = percentile_filter(lammap, percentile=lam_percentile, size=int(radius*5))
-        cell_pix = ~np.logical_or(lammap < filt, lammap==0)
+        filt = percentile_filter(lammap, percentile=lam_percentile,
+                                 size=int(radius * 5))
+        cell_pix = ~np.logical_or(lammap < filt, lammap == 0)
     else:
         cell_pix = lammap > 0.0
 
     return cell_pix
 
 
-def create_cell_mask(stat: Dict[str, Any], Ly: int, Lx: int, allow_overlap: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+def create_cell_mask(
+        stat: Dict[str, Any], Ly: int, Lx: int,
+        allow_overlap: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     """
     creates cell masks for ROIs in stat and computes radii
 
@@ -78,8 +84,8 @@ def create_cell_mask(stat: Dict[str, Any], Ly: int, Lx: int, allow_overlap: bool
     return cell_mask, lam_normed
 
 
-
-def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neuropil_pixels, circular=False):
+def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
+                          min_neuropil_pixels, circular=False):
     """ creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slower if circular)
 
     Parameters
@@ -102,27 +108,38 @@ def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius, min_neu
     Ly, Lx = cell_pix.shape
     assert len(xpixs) == len(ypixs)
     neuropil_ipix = []
-    idx=0
+    idx = 0
     for ypix, xpix in zip(ypixs, xpixs):
         neuropil_mask = np.zeros((Ly, Lx), bool)
         # extend to get ring of dis-allowed pixels
         ypix, xpix = extendROI(ypix, xpix, Ly, Lx, niter=inner_neuropil_radius)
-        nring = np.sum(valid_pixels(cell_pix, ypix, xpix))  # count how many pixels are valid
+        nring = np.sum(valid_pixels(cell_pix, ypix,
+                                    xpix))    # count how many pixels are valid
 
         nreps = count()
         ypix1, xpix1 = ypix.copy(), xpix.copy()
-        while next(nreps) < 100 and np.sum(valid_pixels(cell_pix, ypix1, xpix1)) - nring <= min_neuropil_pixels:
+        while next(nreps) < 100 and np.sum(valid_pixels(
+                cell_pix, ypix1, xpix1)) - nring <= min_neuropil_pixels:
             if circular:
-                ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx, extend_by)  # keep extending
+                ypix1, xpix1 = extendROI(ypix1, xpix1, Ly, Lx,
+                                         extend_by)    # keep extending
             else:
-                ypix1, xpix1 = np.meshgrid(np.arange(max(0, ypix1.min() - extend_by), min(Ly, ypix1.max() + extend_by + 1), 1, int), 
-                                           np.arange(max(0, xpix1.min() - extend_by), min(Lx, xpix1.max() + extend_by + 1), 1, int),
-                                           indexing='ij')
-            
+                ypix1, xpix1 = np.meshgrid(
+                    np.arange(max(0,
+                                  ypix1.min() - extend_by),
+                              min(Ly,
+                                  ypix1.max() + extend_by + 1), 1, int),
+                    np.arange(max(0,
+                                  xpix1.min() - extend_by),
+                              min(Lx,
+                                  xpix1.max() + extend_by + 1), 1, int),
+                    indexing='ij')
+
         ix = valid_pixels(cell_pix, ypix1, xpix1)
         neuropil_mask[ypix1[ix], xpix1[ix]] = True
         neuropil_mask[ypix, xpix] = False
-        neuropil_ipix.append(np.ravel_multi_index(np.nonzero(neuropil_mask), (Ly, Lx)))
-        idx+=1
+        neuropil_ipix.append(
+            np.ravel_multi_index(np.nonzero(neuropil_mask), (Ly, Lx)))
+        idx += 1
 
     return neuropil_ipix

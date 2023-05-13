@@ -30,7 +30,8 @@ def nd2_to_binary(ops):
 
     # open all binary files for writing
     # look for nd2s in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
+    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(
+        ops1, False)
     ops = ops1[0]
 
     # loop over all nd2 files
@@ -48,8 +49,7 @@ def nd2_to_binary(ops):
 
         # Sort the dimensions in the order of TZCYX, skipping the missing ones.
         im = nd2_file.asarray().transpose(
-            [nd2_dims[x] for x in valid_dimensions if x in nd2_dims]
-        )
+            [nd2_dims[x] for x in valid_dimensions if x in nd2_dims])
 
         # Expand array to include the missing dimensions.
         for i, dim in enumerate("TZC"):
@@ -69,7 +69,8 @@ def nd2_to_binary(ops):
         else:
             nfunc = 0
 
-        assert im.max() < 32768 and im.min() >= -32768, "image data is out of range"
+        assert im.max() < 32768 and im.min(
+        ) >= -32768, "image data is out of range"
         im = im.astype(np.int16)
 
         # loop over all frames
@@ -83,23 +84,21 @@ def nd2_to_binary(ops):
                 for j in range(0, nplanes):
                     if iall == 0:
                         ops1[j]["meanImg"] = np.zeros(
-                            (im_p.shape[3], im_p.shape[4]), np.float32
-                        )
+                            (im_p.shape[3], im_p.shape[4]), np.float32)
                         if nchannels > 1:
                             ops1[j]["meanImg_chan2"] = np.zeros(
-                                (im_p.shape[3], im_p.shape[4]), np.float32
-                            )
+                                (im_p.shape[3], im_p.shape[4]), np.float32)
                         ops1[j]["nframes"] = 0
                     if ichan == nfunc:
-                        ops1[j]["meanImg"] += np.squeeze(im2mean[j, ichan, :, :])
+                        ops1[j]["meanImg"] += np.squeeze(im2mean[j,
+                                                                 ichan, :, :])
                         reg_file[j].write(
-                            bytearray(im2write[:, j, :, :].astype("int16"))
-                        )
+                            bytearray(im2write[:, j, :, :].astype("int16")))
                     else:
-                        ops1[j]["meanImg_chan2"] += np.squeeze(im2mean[j, ichan, :, :])
+                        ops1[j]["meanImg_chan2"] += np.squeeze(
+                            im2mean[j, ichan, :, :])
                         reg_file_chan2[j].write(
-                            bytearray(im2write[:, j, :, :].astype("int16"))
-                        )
+                            bytearray(im2write[:, j, :, :].astype("int16")))
 
                     ops1[j]["nframes"] += im2write.shape[0]
             ik += nframes

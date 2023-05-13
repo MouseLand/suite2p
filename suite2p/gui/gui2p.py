@@ -10,6 +10,7 @@ from .. import run_s2p, default_ops
 
 
 class MainWindow(QMainWindow):
+
     def __init__(self, statfile=None):
         super(MainWindow, self).__init__()
         pg.setConfigOptions(imageAxisOrder="row-major")
@@ -40,7 +41,7 @@ class MainWindow(QMainWindow):
                               "color:gray;}")
         self.loaded = False
         self.ops_plot = []
-        
+
         ### first time running, need to check for user files
         user_dir = pathlib.Path.home().joinpath('.suite2p')
         user_dir.mkdir(exist_ok=True)
@@ -49,7 +50,8 @@ class MainWindow(QMainWindow):
         class_dir = user_dir.joinpath('classifiers')
         class_dir.mkdir(exist_ok=True)
         self.classuser = os.fspath(class_dir.joinpath('classifier_user.npy'))
-        self.classorig = os.fspath(s2p_dir.joinpath('classifiers', 'classifier.npy'))
+        self.classorig = os.fspath(
+            s2p_dir.joinpath('classifiers', 'classifier.npy'))
         if not os.path.isfile(self.classuser):
             shutil.copy(self.classorig, self.classuser)
         self.classfile = self.classuser
@@ -72,11 +74,22 @@ class MainWindow(QMainWindow):
         self.boldfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
 
         # default plot options
-        self.ops_plot = {'ROIs_on': True, 'color': 0, 'view': 0,
-                         'opacity': [127,255], 'saturation': [0, 255],
-                         'colormap': 'hsv'}
-        self.rois = {'iROI':0, 'Sroi':0, 'Lam':0, 'LamMean':0, 'LamNorm':0}
-        self.colors = {'RGB':0, 'cols':0, 'colorbar':[]}
+        self.ops_plot = {
+            'ROIs_on': True,
+            'color': 0,
+            'view': 0,
+            'opacity': [127, 255],
+            'saturation': [0, 255],
+            'colormap': 'hsv'
+        }
+        self.rois = {
+            'iROI': 0,
+            'Sroi': 0,
+            'Lam': 0,
+            'LamMean': 0,
+            'LamNorm': 0
+        }
+        self.colors = {'RGB': 0, 'cols': 0, 'colorbar': []}
 
         # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QWidget()
@@ -122,13 +135,13 @@ class MainWindow(QMainWindow):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         print(files)
         self.fname = files[0]
-        if os.path.splitext(self.fname)[-1]=='.npy':
+        if os.path.splitext(self.fname)[-1] == '.npy':
             io.load_proc(self)
-        elif os.path.splitext(self.fname)[-1]=='.nwb':
+        elif os.path.splitext(self.fname)[-1] == '.nwb':
             io.load_NWB(self)
         else:
-            print('invalid extension %s, use .nwb or .npy'%os.path.splitext(self.fname)[-1])
-
+            print('invalid extension %s, use .nwb or .npy' %
+                  os.path.splitext(self.fname)[-1])
 
     def make_buttons(self):
         # ROI CHECKBOX
@@ -141,22 +154,17 @@ class MainWindow(QMainWindow):
 
         buttons.make_selection(self)
         buttons.make_cellnotcell(self)
-        b0=views.make_buttons(self) # b0 says how many
-        b0=masks.make_buttons(self,b0)
+        b0 = views.make_buttons(self)    # b0 says how many
+        b0 = masks.make_buttons(self, b0)
         masks.make_colorbar(self, b0)
-        b0+=1
-        b0=classgui.make_buttons(self, b0)
-        b0+=1
+        b0 += 1
+        b0 = classgui.make_buttons(self, b0)
+        b0 += 1
 
         # ------ CELL STATS / ROI SELECTION --------
         # which stats
         self.stats_to_show = [
-            "med",
-            "npix",
-            "skew",
-            "compact",
-            "footprint",
-            "aspect_ratio"
+            "med", "npix", "skew", "compact", "footprint", "aspect_ratio"
         ]
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QLabel(self)
@@ -170,7 +178,7 @@ class MainWindow(QMainWindow):
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
         self.l0.addWidget(self.ROIedit, b0, 1, 1, 1)
-        b0+=1
+        b0 += 1
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1, len(self.stats_to_show) + 1):
@@ -180,10 +188,10 @@ class MainWindow(QMainWindow):
             self.ROIstats[k].setStyleSheet("color: white;")
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
             self.l0.addWidget(self.ROIstats[k], b0, 0, 1, 2)
-            b0+=1
-        self.l0.addWidget(QLabel(""), b0 , 0, 1, 2)
+            b0 += 1
+        self.l0.addWidget(QLabel(""), b0, 0, 1, 2)
         self.l0.setRowStretch(b0, 1)
-        b0+=2
+        b0 += 2
         b0 = traces.make_buttons(self, b0)
 
         # zoom to cell CHECKBOX
@@ -192,32 +200,28 @@ class MainWindow(QMainWindow):
         self.checkBoxz.setStyleSheet("color: white;")
         self.zoomtocell = False
         self.checkBoxz.stateChanged.connect(self.zoom_cell)
-        self.l0.addWidget(self.checkBoxz,
-        b0,15,
-        1, 2)
+        self.l0.addWidget(self.checkBoxz, b0, 15, 1, 2)
 
         self.checkBoxN = QCheckBox("add ROI # to plot")
         self.checkBoxN.setStyleSheet("color: white;")
         self.roitext = False
         self.checkBoxN.stateChanged.connect(self.roi_text)
         self.checkBoxN.setEnabled(False)
-        self.l0.addWidget(self.checkBoxN,
-        b0,18,
-        1, 2)
-        
+        self.l0.addWidget(self.checkBoxN, b0, 18, 1, 2)
+
         return b0
 
     def roi_text(self, state):
         if state == QtCore.Qt.Checked:
             for n in range(len(self.roi_text_labels)):
-                if self.iscell[n]==1:
+                if self.iscell[n] == 1:
                     self.p1.addItem(self.roi_text_labels[n])
                 else:
                     self.p2.addItem(self.roi_text_labels[n])
             self.roitext = True
         else:
             for n in range(len(self.roi_text_labels)):
-                if self.iscell[n]==1:
+                if self.iscell[n] == 1:
                     try:
                         self.p1.removeItem(self.roi_text_labels[n])
                     except:
@@ -243,10 +247,11 @@ class MainWindow(QMainWindow):
         self.win = pg.GraphicsLayoutWidget()
         self.win.move(600, 0)
         self.win.resize(1000, 500)
-        self.l0.addWidget(self.win, 1, 2, b0-1, 30)
+        self.l0.addWidget(self.win, 1, 2, b0 - 1, 30)
         layout = self.win.ci.layout
         # --- cells image
-        self.p1 = graphics.ViewBox(parent=self, lockAspect=True, name="plot1", border=[100, 100, 100], invertY=True)
+        self.p1 = graphics.ViewBox(parent=self, lockAspect=True, name="plot1",
+                                   border=[100, 100, 100], invertY=True)
         self.win.addItem(self.p1, 0, 0)
         self.p1.setMenuEnabled(False)
         self.p1.scene().contextMenuItem = self.p1
@@ -256,14 +261,15 @@ class MainWindow(QMainWindow):
         self.color1.autoDownsample = False
         self.p1.addItem(self.view1)
         self.p1.addItem(self.color1)
-        self.view1.setLevels([0,255])
-        self.color1.setLevels([0,255])
+        self.view1.setLevels([0, 255])
+        self.color1.setLevels([0, 255])
         #self.view1.setImage(np.random.rand(500,500,3))
         #x = np.arange(0,500)
         #img = np.concatenate((np.zeros((500,500,3)), 127*(1+np.tile(np.sin(x/100)[:,np.newaxis,np.newaxis],(1,500,1)))),axis=-1)
         #self.color1.setImage(img)
         # --- noncells image
-        self.p2 = graphics.ViewBox(parent=self, lockAspect=True, name="plot2", border=[100, 100, 100], invertY=True)
+        self.p2 = graphics.ViewBox(parent=self, lockAspect=True, name="plot2",
+                                   border=[100, 100, 100], invertY=True)
         self.win.addItem(self.p2, 0, 1)
         self.p2.setMenuEnabled(False)
         self.p2.scene().contextMenuItem = self.p2
@@ -273,8 +279,8 @@ class MainWindow(QMainWindow):
         self.color2.autoDownsample = False
         self.p2.addItem(self.view2)
         self.p2.addItem(self.color2)
-        self.view2.setLevels([0,255])
-        self.color2.setLevels([0,255])
+        self.view2.setLevels([0, 255])
+        self.color2.setLevels([0, 255])
 
         # LINK TWO VIEWS!
         self.p2.setXLink("plot1")
@@ -296,9 +302,11 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         if self.loaded:
-            if event.modifiers() != QtCore.Qt.ControlModifier and event.modifiers() != QtCore.Qt.ShiftModifier:
+            if event.modifiers(
+            ) != QtCore.Qt.ControlModifier and event.modifiers(
+            ) != QtCore.Qt.ShiftModifier:
                 if event.key() == QtCore.Qt.Key_Return:
-                    if event.modifiers()==QtCore.Qt.AltModifier:
+                    if event.modifiers() == QtCore.Qt.AltModifier:
                         if len(self.imerge) > 1:
                             merge.do_merge(self)
                 elif event.key() == QtCore.Qt.Key_Escape:
@@ -376,7 +384,7 @@ class MainWindow(QMainWindow):
                 elif event.key() == QtCore.Qt.Key_Left:
                     ctype = self.iscell[self.ichosen]
                     while -1:
-                        self.ichosen = (self.ichosen-1)%len(self.stat)
+                        self.ichosen = (self.ichosen - 1) % len(self.stat)
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
@@ -384,11 +392,11 @@ class MainWindow(QMainWindow):
                     self.update_plot()
 
                 elif event.key() == QtCore.Qt.Key_Right:
-                ##Agus
+                    ##Agus
                     self.ROI_remove()
                     ctype = self.iscell[self.ichosen]
                     while 1:
-                        self.ichosen = (self.ichosen+1)%len(self.stat)
+                        self.ichosen = (self.ichosen + 1) % len(self.stat)
                         if self.iscell[self.ichosen] is ctype:
                             break
                     self.imerge = [self.ichosen]
@@ -398,7 +406,6 @@ class MainWindow(QMainWindow):
                 elif event.key() == QtCore.Qt.Key_Up:
                     masks.flip_plot(self)
                     self.ROI_remove()
-
 
     def update_plot(self):
         if self.ops_plot['color'] == 7:
@@ -445,12 +452,11 @@ class MainWindow(QMainWindow):
             else:
                 f = self.Spks
             ncells = len(self.stat)
-            self.Fbin = f[:, : nb * self.bin].reshape(
-                (ncells, nb, self.bin)
-            ).mean(axis=2)
+            self.Fbin = f[:, :nb * self.bin].reshape(
+                (ncells, nb, self.bin)).mean(axis=2)
 
             self.Fbin -= self.Fbin.mean(axis=1)[:, np.newaxis]
-            self.Fstd = (self.Fbin ** 2).mean(axis=1)**0.5
+            self.Fstd = (self.Fbin**2).mean(axis=1)**0.5
             self.trange = np.arange(0, self.Fcell.shape[1])
             # if in behavior-view, recompute
             if self.ops_plot['color'] == 8:
@@ -489,10 +495,8 @@ class MainWindow(QMainWindow):
             dy = np.minimum(dy, 300)
             imx = imx - dx / 2
             imy = imy - dy / 2
-            self.ROI = pg.RectROI(
-                [imx, imy], [dx, dy],
-                pen="w", sideScalers=True
-            )
+            self.ROI = pg.RectROI([imx, imy], [dx, dy], pen="w",
+                                  sideScalers=True)
             if wplot == 0:
                 self.p1.addItem(self.ROI)
             else:
@@ -538,7 +542,8 @@ class MainWindow(QMainWindow):
         icells = np.unique(iROI0[iROI0 >= 0])
         self.imerge = []
         for n in icells:
-            if (self.rois['iROI'][i, :, ypix, xpix] == n).sum() > 0.6 * self.stat[n]["npix"]:
+            if (self.rois['iROI'][i, :, ypix, xpix] == n
+                ).sum() > 0.6 * self.stat[n]["npix"]:
                 self.imerge.append(n)
         if len(self.imerge) > 0:
             self.ichosen = self.imerge[0]
@@ -553,8 +558,6 @@ class MainWindow(QMainWindow):
             self.imerge = [self.ichosen]
             self.update_plot()
             self.show()
-
-
 
     def ROIs_on(self, state):
         if state == QtCore.Qt.Checked:
@@ -593,11 +596,8 @@ class MainWindow(QMainWindow):
                     iplot = 2
                 elif x == self.p3:
                     iplot = 3
-                elif (
-                    (x == self.p1 or x == self.p2) and
-                    x != self.img1 and
-                    x != self.img2
-                ):
+                elif ((x == self.p1 or x == self.p2) and x != self.img1
+                      and x != self.img2):
                     iplot = 4
                     if event.double():
                         zoom = True
@@ -622,13 +622,16 @@ class MainWindow(QMainWindow):
                         flip = False
                 if choose:
                     merged = False
-                    if event.modifiers() == QtCore.Qt.ShiftModifier or event.modifiers() == QtCore.Qt.ControlModifier:
+                    if event.modifiers(
+                    ) == QtCore.Qt.ShiftModifier or event.modifiers(
+                    ) == QtCore.Qt.ControlModifier:
                         if self.iscell[self.imerge[0]] == self.iscell[ichosen]:
                             if ichosen not in self.imerge:
                                 self.imerge.append(ichosen)
                                 self.ichosen = ichosen
                                 merged = True
-                            elif ichosen in self.imerge and len(self.imerge) > 1:
+                            elif ichosen in self.imerge and len(
+                                    self.imerge) > 1:
                                 self.imerge.remove(ichosen)
                                 self.ichosen = self.imerge[0]
                                 merged = True
@@ -663,9 +666,8 @@ class MainWindow(QMainWindow):
             key = self.stats_to_show[k - 1]
             ival = self.stat[n][key]
             if k == 1:
-                self.ROIstats[k].setText(
-                    key + ": [%d, %d]" % (ival[0], ival[1])
-                )
+                self.ROIstats[k].setText(key + ": [%d, %d]" %
+                                         (ival[0], ival[1]))
             elif k == 2:
                 self.ROIstats[k].setText(key + ": %d" % (ival))
             else:
@@ -674,20 +676,22 @@ class MainWindow(QMainWindow):
     def zoom_to_cell(self):
         irange = 0.1 * np.array([self.Ly, self.Lx]).max()
         if len(self.imerge) > 1:
-            apix = np.zeros((0,2))
-            for i,k in enumerate(self.imerge):
-                apix = np.append(apix,
-                        np.concatenate((self.stat[k]['ypix'].flatten()[:,np.newaxis],
-                                        self.stat[k]['xpix'].flatten()[:,np.newaxis]), axis=1),
-                        axis=0)
+            apix = np.zeros((0, 2))
+            for i, k in enumerate(self.imerge):
+                apix = np.append(
+                    apix,
+                    np.concatenate(
+                        (self.stat[k]['ypix'].flatten()[:, np.newaxis],
+                         self.stat[k]['xpix'].flatten()[:, np.newaxis]),
+                        axis=1), axis=0)
 
             imin = apix.min(axis=0)
             imax = apix.max(axis=0)
             icent = apix.mean(axis=0)
-            imin[0] = min(icent[0]-irange, imin[0])
-            imin[1] = min(icent[1]-irange, imin[1])
-            imax[0] = max(icent[0]+irange, imax[0])
-            imax[1] = max(icent[1]+irange, imax[1])
+            imin[0] = min(icent[0] - irange, imin[0])
+            imin[1] = min(icent[1] - irange, imin[1])
+            imax[0] = max(icent[0] + irange, imax[0])
+            imax[1] = max(icent[1] + irange, imax[1])
         else:
             icent = np.array(self.stat[self.ichosen]['med'])
             imin = icent - irange
@@ -699,14 +703,14 @@ class MainWindow(QMainWindow):
         self.win.show()
         self.show()
 
+
 def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QApplication(sys.argv)
     import suite2p
     s2ppath = os.path.dirname(os.path.realpath(suite2p.__file__))
-    icon_path = os.path.join(s2ppath, "logo","logo.png"
-    )
+    icon_path = os.path.join(s2ppath, "logo", "logo.png")
     app_icon = QtGui.QIcon()
     app_icon.addFile(icon_path, QtCore.QSize(16, 16))
     app_icon.addFile(icon_path, QtCore.QSize(24, 24))

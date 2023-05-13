@@ -3,14 +3,17 @@ from pathlib import Path
 from typing import Union, Sequence
 from .classifier import Classifier
 
-builtin_classfile = Path(__file__).joinpath('../../classifiers/classifier.npy').resolve()
-user_classfile = Path.home().joinpath('.suite2p/classifiers/classifier_user.npy')
+builtin_classfile = Path(__file__).joinpath(
+    '../../classifiers/classifier.npy').resolve()
+user_classfile = Path.home().joinpath(
+    '.suite2p/classifiers/classifier_user.npy')
 
 
-def classify(stat: np.ndarray,
-             classfile: Union[str, Path],
-             keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
-             ):
+def classify(
+        stat: np.ndarray,
+        classfile: Union[str, Path],
+        keys: Sequence[str] = ('npix_norm', 'compact', 'skew'),
+):
     """ 
     Main classification function 
     

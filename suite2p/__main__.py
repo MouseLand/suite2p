@@ -2,14 +2,17 @@ import argparse
 import numpy as np
 from suite2p import default_ops, version
 
+
 def add_args(parser: argparse.ArgumentParser):
     """
     Adds suite2p ops arguments to parser.
     """
-    parser.add_argument('--single_plane', action='store_true', help='run single plane ops')
+    parser.add_argument('--single_plane', action='store_true',
+                        help='run single plane ops')
     parser.add_argument('--ops', default=[], type=str, help='options')
     parser.add_argument('--db', default=[], type=str, help='options')
-    parser.add_argument('--version', action='store_true', help='print version number.')
+    parser.add_argument('--version', action='store_true',
+                        help='print version number.')
     ops0 = default_ops()
     for k in ops0.keys():
         v = dict(default=ops0[k], help='{0} : {1}'.format(k, ops0[k]))
@@ -19,7 +22,7 @@ def add_args(parser: argparse.ArgumentParser):
         if (type(v['default']) in [np.ndarray, list]) and len(v['default']):
             v['nargs'] = '+'
             v['type'] = type(v['default'][0])
-        parser.add_argument('--'+k, **v)
+        parser.add_argument('--' + k, **v)
     return parser
 
 
@@ -46,7 +49,8 @@ def parse_args(parser: argparse.ArgumentParser):
                 ops[k] = n.astype(type(default_key))
                 print(set_param_msg.format(k, ops[k]))
         elif isinstance(default_key, bool):
-            args_key = bool(int(args_key))  # bool('0') is true, must convert to int
+            args_key = bool(
+                int(args_key))    # bool('0') is true, must convert to int
             if default_key != args_key:
                 ops[k] = args_key
                 print(set_param_msg.format(k, ops[k]))
@@ -58,7 +62,8 @@ def parse_args(parser: argparse.ArgumentParser):
 
 
 def main():
-    args, ops = parse_args(add_args(argparse.ArgumentParser(description='Suite2p parameters')))
+    args, ops = parse_args(
+        add_args(argparse.ArgumentParser(description='Suite2p parameters')))
     if args.version:
         print("suite2p v{}".format(version))
     elif args.single_plane and args.ops:

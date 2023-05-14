@@ -475,7 +475,7 @@ def ome_to_binary(ops):
         ops1[ix]["frames_per_folder"][0] += 1
         ops1[ix]["meanImg"] += im.astype(np.float32)
         reg_file[ix].write(bytearray(im))
-        gc.collect()
+        #gc.collect()
 
         if ik % 1000 == 0:
             print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))
@@ -491,7 +491,7 @@ def ome_to_binary(ops):
             ix = iplanes[ik]
             ops1[ix]["meanImg_chan2"] += im.astype(np.float32)
             reg_file_chan2[ix].write(bytearray(im))
-            gc.collect()
+            #gc.collect()
 
             if ik % 1000 == 0:
                 print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))

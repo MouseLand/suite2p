@@ -223,7 +223,8 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                 iscell = np.load(os.path.join(ops["save_path"], "iscell.npy"))
                 redcell = np.load(os.path.join(
                     ops["save_path"], "redcell.npy")) if ops["nchannels"] == 2 else []
-                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
+                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
+                            F_chan2, Fneu_chan2)
         else:
             print("no ROIs found, only ops.npy file saved")
     else:

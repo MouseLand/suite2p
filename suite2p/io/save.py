@@ -6,7 +6,8 @@ import scipy
 import pathlib
 
 
-def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
+def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
+             F_chan2=None, Fneu_chan2=None):
     ops_matlab = ops.copy()
     if ops_matlab.get("date_proc"):
         try:
@@ -24,16 +25,30 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell):
 
     stat = np.array(stat, dtype=object)
 
-    scipy.io.savemat(
-        file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
-            "stat": stat,
-            "ops": ops_matlab,
-            "F": F,
-            "Fneu": Fneu,
-            "spks": spks,
-            "iscell": iscell,
-            "redcell": redcell
-        })
+    if F_chan2 is None:
+        scipy.io.savemat(
+            file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
+                "stat": stat,
+                "ops": ops_matlab,
+                "F": F,
+                "Fneu": Fneu,
+                "spks": spks,
+                "iscell": iscell,
+                "redcell": redcell
+            })
+    else:
+        scipy.io.savemat(
+            file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
+                "stat": stat,
+                "ops": ops_matlab,
+                "F": F,
+                "Fneu": Fneu,
+                "spks": spks,
+                "iscell": iscell,
+                "redcell": redcell,
+                "F_chan2": F_chan2,
+                "Fneu_chan2": Fneu_chan2
+            })
 
 
 def compute_dydx(ops1):
@@ -205,8 +220,6 @@ def combined(save_folder, save=True):
             matpath = os.path.join(ops["save_path"], "Fall.mat")
             save_mat(ops, stat, F, Fneu, spks, iscell, redcell)
 
-    return stat, ops, F, Fneu, spks, iscell[:,
-                                            0], iscell[:,
-                                                       1], redcell[:,
-                                                                   0], redcell[:,
-                                                                               1], hasred
+    return (stat, ops, F, Fneu, spks, 
+            iscell[:,0], iscell[:,1], 
+            redcell[:,0], redcell[:,1], hasred)

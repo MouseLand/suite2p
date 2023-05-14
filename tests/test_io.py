@@ -21,7 +21,7 @@ def binfile1500(test_ops):
     op = io.tiff_to_binary(test_ops)
     bin_filename = str(Path(op["save_path0"]).joinpath("suite2p/plane0/data.bin"))
     with io.BinaryFile(
-        Ly=op["Ly"], Lx=op["Lx"], read_filename=bin_filename
+        Ly=op["Ly"], Lx=op["Lx"], filename=bin_filename
     ) as bin_file:
         yield bin_file
 
@@ -35,7 +35,7 @@ def replace_ops_save_path_with_local_path(request):
 
     # Workaround to load pickled NPY files on Windows containing
     # `PosixPath` objects
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         pathlib.PosixPath = pathlib.WindowsPath
 
     # Get the `data_folder` variable from the running test name    
@@ -93,7 +93,7 @@ def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
     test_ops["data_path"] = []
     op = io.h5py_to_binary(test_ops)
     output_data = io.BinaryFile(
-        read_filename=Path(op["save_path0"], "suite2p/plane0/data.bin"),
+        filename=Path(op["save_path0"], "suite2p/plane0/data.bin"),
         Ly=op["Ly"],
         Lx=op["Lx"],
     ).data

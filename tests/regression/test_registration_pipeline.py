@@ -5,7 +5,9 @@ Tests for the Suite2p Registration Module
 import numpy as np
 from pathlib import Path
 from tifffile import imread
-from suite2p.registration import register_binary
+import contextlib
+import os
+from suite2p import registration, io #import register_binary
 
 
 def prepare_for_registration(op, input_file_name, dimensions):
@@ -54,7 +56,32 @@ def check_registration_output(op, dimensions, input_path, reg_output_path_list, 
     reg_ops = []
     npl = op['nplanes']
     for i in range(npl):
-        curr_op = register_binary(ops[i])
+        #curr_op = register_binary(ops[i])
+        raw = ops[i].get("keep_movie_raw") and "raw_file" in ops[i] and os.path.isfile(
+            ops[i]["raw_file"])
+        reg_file = ops[i]["reg_file"]
+        raw_file = ops[i].get("raw_file", 0) if raw else reg_file
+        if ops[i]["nchannels"] > 1:
+            reg_file_chan2 = ops[i]["reg_file_chan2"]
+            raw_file_chan2 = ops[i].get("raw_file_chan2",
+                                    0) if raw else reg_file_chan2
+        else:
+            reg_file_chan2 = reg_file
+            raw_file_chan2 = reg_file
+        null = contextlib.nullcontext()
+        twoc = ops[i]["nchannels"] > 1
+        raw_file = ops[i]["raw_file"]
+        Ly, Lx = ops[i]["Ly"], ops[i]["Lx"]
+        with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file) if raw else null as f_raw, \
+            io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_reg, \
+            io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2) if raw and twoc else null as f_raw_chan2,\
+            io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2) if twoc else null as f_reg_chan2:
+            
+            registration_outputs = registration.register.registration_wrapper(
+                f_reg, f_raw=f_raw, f_reg_chan2=f_reg_chan2,
+                f_raw_chan2=f_raw_chan2, ops=ops[i])
+            curr_op = registration.register.save_registration_outputs_to_ops(
+                registration_outputs, ops[i])
         registered_data = imread(reg_output_path_list[i*npl])
         output_check = imread(output_path_list[i*npl])
         assert np.array_equal(registered_data, output_check)

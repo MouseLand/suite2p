@@ -34,9 +34,7 @@ def mainmenu(parent):
     parent.addAction(loadFolder)
 
     # load a behavioral trace
-    parent.loadBeh = QAction(
-        "Load behavior or stim trace (1D only)", parent
-    )
+    parent.loadBeh = QAction("Load behavior or stim trace (1D only)", parent)
     parent.loadBeh.triggered.connect(lambda: io.load_behavior(parent))
     parent.loadBeh.setEnabled(False)
     parent.addAction(parent.loadBeh)
@@ -51,8 +49,7 @@ def mainmenu(parent):
     # Save NWB file
     parent.saveNWB = QAction("Save NWB file", parent)
     parent.saveNWB.triggered.connect(
-        lambda: save_nwb(get_suite2p_path(parent.basename))
-    )
+        lambda: save_nwb(get_suite2p_path(parent.basename)))
     parent.saveNWB.setEnabled(False)
     parent.addAction(parent.saveNWB)
 
@@ -80,6 +77,7 @@ def mainmenu(parent):
     file_menu.addAction(exportFig)
     file_menu.addAction(parent.manual)
 
+
 def classifier(parent):
     main_menu = parent.menuBar()
     # classifier menu
@@ -91,7 +89,8 @@ def classifier(parent):
     parent.loadClass.setEnabled(False)
     parent.loadMenu.addAction(parent.loadClass)
     parent.loadUClass = QAction("default classifier", parent)
-    parent.loadUClass.triggered.connect(lambda: classgui.load_default_classifier(parent))
+    parent.loadUClass.triggered.connect(
+        lambda: classgui.load_default_classifier(parent))
     parent.loadUClass.setEnabled(False)
     parent.loadMenu.addAction(parent.loadUClass)
     parent.loadSClass = QAction("built-in classifier", parent)
@@ -113,6 +112,7 @@ def classifier(parent):
     class_menu.addAction(parent.resetDefault)
     class_menu.addAction(parent.saveDefault)
 
+
 def visualizations(parent):
     # visualizations menuBar
     main_menu = parent.menuBar()
@@ -126,6 +126,7 @@ def visualizations(parent):
     parent.custommask.triggered.connect(lambda: io.load_custom_mask(parent))
     parent.custommask.setEnabled(False)
     vis_menu.addAction(parent.custommask)
+
 
 def registration(parent):
     # registration menuBar
@@ -142,6 +143,7 @@ def registration(parent):
     reg_menu.addAction(parent.reg)
     reg_menu.addAction(parent.regPC)
 
+
 def mergebar(parent):
     # merge menuBar
     main_menu = parent.menuBar()
@@ -155,37 +157,49 @@ def mergebar(parent):
     merge_menu.addAction(parent.sugMerge)
     merge_menu.addAction(parent.saveMerge)
 
+
 def plugins(parent):
     # plugin menu
     main_menu = parent.menuBar()
     parent.plugins = {}
-    plugin_menu = main_menu.addMenu('&Plugins')
-    for entry_pt in iter_entry_points(group='suite2p.plugin', name=None):
-        plugin_obj = entry_pt.load() # load the advertised class from entry_points
-        parent.plugins[entry_pt.name] = plugin_obj(parent) # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
-        action = QAction(parent.plugins[entry_pt.name].name, parent) # create plugin menu item with the name property of the loaded class
-        action.triggered.connect(parent.plugins[entry_pt.name].trigger) # attach class method 'trigger' to plugin menu action
+    plugin_menu = main_menu.addMenu("&Plugins")
+    for entry_pt in iter_entry_points(group="suite2p.plugin", name=None):
+        plugin_obj = entry_pt.load()  # load the advertised class from entry_points
+        parent.plugins[entry_pt.name] = plugin_obj(
+            parent
+        )  # initialize an object instance from the loaded class and keep it alive in parent; expose parent to plugin
+        action = QAction(
+            parent.plugins[entry_pt.name].name, parent
+        )  # create plugin menu item with the name property of the loaded class
+        action.triggered.connect(parent.plugins[entry_pt.name].trigger
+                                )  # attach class method "trigger" to plugin menu action
         plugin_menu.addAction(action)
+
 
 def run_suite2p(parent):
     RW = rungui.RunWindow(parent)
     RW.show()
 
+
 def manual_label(parent):
     MW = drawroi.ROIDraw(parent)
     MW.show()
+
 
 def vis_window(parent):
     parent.VW = visualize.VisWindow(parent)
     parent.VW.show()
 
+
 def reg_window(parent):
     RW = reggui.BinaryPlayer(parent)
     RW.show()
 
+
 def regPC_window(parent):
     RW = reggui.PCViewer(parent)
     RW.show()
+
 
 def suggest_merge(parent):
     MergeWindow = merge.MergeWindow(parent)

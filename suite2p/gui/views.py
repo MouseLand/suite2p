@@ -28,13 +28,13 @@ def make_buttons(parent):
     for names in parent.view_names:
         btn = ViewButton(b, "&" + names, parent)
         parent.viewbtns.addButton(btn, b)
-        if b>0:
+        if b > 0:
             parent.l0.addWidget(btn, b + 2, 0, 1, 1)
         else:
             parent.l0.addWidget(btn, b + 2, 0, 1, 1)
             label = QLabel("sat: ")
             label.setStyleSheet("color: white;")
-            parent.l0.addWidget(label, b+2,1,1,1)
+            parent.l0.addWidget(label, b + 2, 1, 1, 1)
         btn.setEnabled(False)
         b += 1
     parent.viewbtns.setExclusive(True)
@@ -44,10 +44,11 @@ def make_buttons(parent):
     slider.setLow(0)
     slider.setHigh(255)
     slider.setTickPosition(QSlider.TicksBelow)
-    parent.l0.addWidget(slider, 3,1,len(parent.view_names)-2,1)
+    parent.l0.addWidget(slider, 3, 1, len(parent.view_names) - 2, 1)
 
-    b+=2
+    b += 2
     return b
+
 
 def init_views(parent):
     """ make views using parent.ops
@@ -65,81 +66,84 @@ def init_views(parent):
 
     """
     parent.Ly, parent.Lx = parent.ops["Ly"], parent.ops["Lx"]
-    parent.views   = np.zeros((7,parent.Ly, parent.Lx, 3), np.float32)
+    parent.views = np.zeros((7, parent.Ly, parent.Lx, 3), np.float32)
     for k in range(7):
-        if k==2:
-            if 'meanImgE' not in parent.ops:
+        if k == 2:
+            if "meanImgE" not in parent.ops:
                 parent.ops = extraction.enhanced_mean_image(parent.ops)
-            mimg = parent.ops['meanImgE']
-        elif k==1:
-            mimg = parent.ops['meanImg']
-            mimg1 = np.percentile(mimg,1)
-            mimg99 = np.percentile(mimg,99)
-            mimg     = (mimg - mimg1) / (mimg99 - mimg1)
-            mimg = np.maximum(0,np.minimum(1,mimg))
-        elif k==3:
-            if 'Vcorr' in parent.ops:
-                vcorr = parent.ops['Vcorr']
-                mimg1 = np.percentile(vcorr,1)
-                mimg99 = np.percentile(vcorr,99)
+            mimg = parent.ops["meanImgE"]
+        elif k == 1:
+            mimg = parent.ops["meanImg"]
+            mimg1 = np.percentile(mimg, 1)
+            mimg99 = np.percentile(mimg, 99)
+            mimg = (mimg - mimg1) / (mimg99 - mimg1)
+            mimg = np.maximum(0, np.minimum(1, mimg))
+        elif k == 3:
+            if "Vcorr" in parent.ops:
+                vcorr = parent.ops["Vcorr"]
+                mimg1 = np.percentile(vcorr, 1)
+                mimg99 = np.percentile(vcorr, 99)
                 vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
-                mimg = mimg1 * np.ones((parent.Ly, parent.Lx),np.float32)
-                mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                    parent.ops['xrange'][0]:parent.ops['xrange'][1]] = vcorr
-                mimg = np.maximum(0,np.minimum(1,mimg))
+                mimg = mimg1 * np.ones((parent.Ly, parent.Lx), np.float32)
+                mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
+                     parent.ops["xrange"][0]:parent.ops["xrange"][1]] = vcorr
+                mimg = np.maximum(0, np.minimum(1, mimg))
             else:
                 mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
-        elif k==4:
-            if 'max_proj' in parent.ops:
-                mproj = parent.ops['max_proj']
-                mimg1 = np.percentile(mproj,1)
-                mimg99 = np.percentile(mproj,99)
+        elif k == 4:
+            if "max_proj" in parent.ops:
+                mproj = parent.ops["max_proj"]
+                mimg1 = np.percentile(mproj, 1)
+                mimg99 = np.percentile(mproj, 99)
                 mproj = (mproj - mimg1) / (mimg99 - mimg1)
-                mimg = np.zeros((parent.Ly, parent.Lx),np.float32)
+                mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
                 try:
-                    mimg[parent.ops['yrange'][0]:parent.ops['yrange'][1],
-                        parent.ops['xrange'][0]:parent.ops['xrange'][1]] = mproj
+                    mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
+                         parent.ops["xrange"][0]:parent.ops["xrange"][1]] = mproj
                 except:
-                    print('maxproj not in combined view')
-                mimg = np.maximum(0,np.minimum(1,mimg))
+                    print("maxproj not in combined view")
+                mimg = np.maximum(0, np.minimum(1, mimg))
             else:
                 mimg = 0.5 * np.ones((parent.Ly, parent.Lx), np.float32)
-        elif k==5:
-            if 'meanImg_chan2_corrected' in parent.ops:
-                mimg = parent.ops['meanImg_chan2_corrected']
-                mimg1 = np.percentile(mimg,1)
-                mimg99 = np.percentile(mimg,99)
-                mimg     = (mimg - mimg1) / (mimg99 - mimg1)
-                mimg = np.maximum(0,np.minimum(1,mimg))
-        elif k==6:
-            if 'meanImg_chan2' in parent.ops:
-                mimg = parent.ops['meanImg_chan2']
-                mimg1 = np.percentile(mimg,1)
-                mimg99 = np.percentile(mimg,99)
-                mimg     = (mimg - mimg1) / (mimg99 - mimg1)
-                mimg = np.maximum(0,np.minimum(1,mimg))
+        elif k == 5:
+            if "meanImg_chan2_corrected" in parent.ops:
+                mimg = parent.ops["meanImg_chan2_corrected"]
+                mimg1 = np.percentile(mimg, 1)
+                mimg99 = np.percentile(mimg, 99)
+                mimg = (mimg - mimg1) / (mimg99 - mimg1)
+                mimg = np.maximum(0, np.minimum(1, mimg))
+        elif k == 6:
+            if "meanImg_chan2" in parent.ops:
+                mimg = parent.ops["meanImg_chan2"]
+                mimg1 = np.percentile(mimg, 1)
+                mimg99 = np.percentile(mimg, 99)
+                mimg = (mimg - mimg1) / (mimg99 - mimg1)
+                mimg = np.maximum(0, np.minimum(1, mimg))
         else:
-            mimg = np.zeros((parent.Ly, parent.Lx),np.float32)
+            mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
 
         mimg *= 255
         mimg = mimg.astype(np.uint8)
-        parent.views[k] = np.tile(mimg[:,:,np.newaxis], (1,1,3))
+        parent.views[k] = np.tile(mimg[:, :, np.newaxis], (1, 1, 3))
+
 
 def plot_views(parent):
-    """ set parent.view1 and parent.view2 image based on parent.ops_plot['view']"""
-    k    = parent.ops_plot['view']
-    parent.view1.setImage(parent.views[k], levels=parent.ops_plot['saturation'])
-    parent.view2.setImage(parent.views[k], levels=parent.ops_plot['saturation'])
+    """ set parent.view1 and parent.view2 image based on parent.ops_plot["view"]"""
+    k = parent.ops_plot["view"]
+    parent.view1.setImage(parent.views[k], levels=parent.ops_plot["saturation"])
+    parent.view2.setImage(parent.views[k], levels=parent.ops_plot["saturation"])
     parent.view1.show()
     parent.view2.show()
+
 
 class ViewButton(QPushButton):
     """ custom QPushButton class for quadrant plotting
         requires buttons to put into a QButtonGroup (parent.viewbtns)
          allows only 1 button to pressed at a time
     """
+
     def __init__(self, bid, Text, parent=None):
-        super(ViewButton,self).__init__(parent)
+        super(ViewButton, self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
         self.setStyleSheet(parent.styleInactive)
@@ -147,12 +151,13 @@ class ViewButton(QPushButton):
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
+
     def press(self, parent, bid):
         for b in range(len(parent.views)):
             if parent.viewbtns.button(b).isEnabled():
                 parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
-        parent.ops_plot['view'] = bid
+        parent.ops_plot["view"] = bid
         parent.update_plot()
 
 
@@ -169,6 +174,7 @@ class RangeSlider(QSlider):
         Found this slider here: https://www.mail-archive.com/pyqt@riverbankcomputing.com/msg22889.html
         and modified it
     """
+
     def __init__(self, parent=None, *args):
         super(RangeSlider, self).__init__(*args)
 
@@ -190,8 +196,7 @@ class RangeSlider(QSlider):
                 height: 8px;\
                 width: 6px;\
                 margin: -8px 2; \
-                }")
-
+                }"                                                                        )
 
         #self.opt = QStyleOptionSlider()
         #self.opt.orientation=QtCore.Qt.Vertical
@@ -203,7 +208,7 @@ class RangeSlider(QSlider):
     def level_change(self):
         if self.parent is not None:
             if self.parent.loaded:
-                self.parent.ops_plot['saturation'] = [self._low, self._high]
+                self.parent.ops_plot["saturation"] = [self._low, self._high]
                 self.parent.update_plot()
 
     def low(self):
@@ -229,10 +234,10 @@ class RangeSlider(QSlider):
             opt = QStyleOptionSlider()
             self.initStyleOption(opt)
 
-            # Only draw the groove for the first slider so it doesn't get drawn
+            # Only draw the groove for the first slider so it doesn"t get drawn
             # on top of the existing ones every time
             if i == 0:
-                opt.subControls = QStyle.SC_SliderHandle#QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
+                opt.subControls = QStyle.SC_SliderHandle  #QStyle.SC_SliderGroove | QStyle.SC_SliderHandle
             else:
                 opt.subControls = QStyle.SC_SliderHandle
 
@@ -249,14 +254,13 @@ class RangeSlider(QSlider):
             opt.sliderValue = value
             style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
 
-
     def mousePressEvent(self, event):
         event.accept()
 
         style = QApplication.style()
         button = event.button()
         # In a normal slider control, when the user clicks on a point in the
-        # slider's total range, but not on the slider part of the control the
+        # slider"s total range, but not on the slider part of the control the
         # control would jump the slider value to where the user clicked.
         # For this control, clicks which are not direct hits will slide both
         # slider parts
@@ -268,7 +272,8 @@ class RangeSlider(QSlider):
 
             for i, value in enumerate([self._low, self._high]):
                 opt.sliderPosition = value
-                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(), self)
+                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(),
+                                                  self)
                 if hit == style.SC_SliderHandle:
                     self.active_slider = i
                     self.pressed_control = hit
@@ -281,7 +286,8 @@ class RangeSlider(QSlider):
 
             if self.active_slider < 0:
                 self.pressed_control = QStyle.SC_SliderHandle
-                self.click_offset = self.__pixelPosToRangeValue(self.__pick(event.pos()))
+                self.click_offset = self.__pixelPosToRangeValue(self.__pick(
+                    event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
         else:
@@ -330,7 +336,6 @@ class RangeSlider(QSlider):
         else:
             return pt.y()
 
-
     def __pixelPosToRangeValue(self, pos):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
@@ -349,5 +354,5 @@ class RangeSlider(QSlider):
             slider_max = gr.bottom() - slider_length + 1
 
         return style.sliderValueFromPosition(self.minimum(), self.maximum(),
-                                             pos-slider_min, slider_max-slider_min,
+                                             pos - slider_min, slider_max - slider_min,
                                              opt.upsideDown)

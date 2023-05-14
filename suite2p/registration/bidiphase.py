@@ -26,19 +26,19 @@ def compute(frames: np.ndarray) -> int:
 
     d2 = np.conj(fft.fft(frames[:, ::2, :], axis=2))
     d2 /= np.abs(d2) + 1e-5
-    d2 = d2[:,:d1.shape[1],:]
+    d2 = d2[:, :d1.shape[1], :]
 
     cc = np.real(fft.ifft(d1 * d2, axis=2))
     cc = cc.mean(axis=1).mean(axis=0)
     cc = fft.fftshift(cc)
 
-    bidiphase = -(np.argmax(cc[-10 + Lx // 2 : 11 + Lx // 2]) - 10)
+    bidiphase = -(np.argmax(cc[-10 + Lx // 2:11 + Lx // 2]) - 10)
     return bidiphase
 
 
 def shift(frames: np.ndarray, bidiphase: int) -> None:
     """
-    Shift last axis of 'frames' by bidirectional phase offset in-place, bidiphase.
+    Shift last axis of "frames" by bidirectional phase offset in-place, bidiphase.
 
     Parameters
     ----------

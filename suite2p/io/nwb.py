@@ -38,17 +38,17 @@ def nwb_to_binary(ops):
     Parameters
     ----------
     ops: dictionary
-        requires 'nwb_file' key
-        optional keys 'nwb_driver', 'nwb_series'
-        uses 'nplanes', 'save_path', 'save_folder', 'fast_disk',
-        'nchannels', 'keep_movie_raw', 'look_one_level_down'
+        requires "nwb_file" key
+        optional keys "nwb_driver", "nwb_series"
+        uses "nplanes", "save_path", "save_folder", "fast_disk",
+        "nchannels", "keep_movie_raw", "look_one_level_down"
 
     Returns
     -------
         ops : dictionary of first plane
-            ops['reg_file'] or ops['raw_file'] is created binary
-            assigns keys 'Ly', 'Lx', 'tiffreader', 'first_tiffs',
-            'frames_per_folder', 'nframes', 'meanImg', 'meanImg_chan2'
+            ops["reg_file"] or ops["raw_file"] is created binary
+            assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
+            "frames_per_folder", "nframes", "meanImg", "meanImg_chan2"
 
     """
 
@@ -93,8 +93,7 @@ def nwb_to_binary(ops):
                 raise ValueError("no TwoPhotonSeries in NWB file")
             elif len(TwoPhotonSeries_names) > 1:
                 raise Warning(
-                    "more than one TwoPhotonSeries in NWB file, choosing first one"
-                )
+                    "more than one TwoPhotonSeries in NWB file, choosing first one")
             ops["nwb_series"] = TwoPhotonSeries_names[0]
 
         series = nwbfile.acquisition[ops["nwb_series"]]
@@ -119,9 +118,8 @@ def nwb_to_binary(ops):
             ops["meanImg"] += im.astype(np.float32).sum(axis=0)
 
             if ikend % (batch_size * 4) == 0:
-                print(
-                    "%d frames of binary, time %0.2f sec." % (ikend, time.time() - t0)
-                )
+                print("%d frames of binary, time %0.2f sec." %
+                      (ikend, time.time() - t0))
         gc.collect()
 
     # write ops files
@@ -148,44 +146,38 @@ def read_nwb(fpath):
         # ROIs
         try:
             rois = nwbfile.processing["ophys"]["ImageSegmentation"][
-                "PlaneSegmentation"
-            ]["pixel_mask"]
+                "PlaneSegmentation"]["pixel_mask"]
             multiplane = False
         except Exception:
             rois = nwbfile.processing["ophys"]["ImageSegmentation"][
-                "PlaneSegmentation"
-            ]["voxel_mask"]
+                "PlaneSegmentation"]["voxel_mask"]
             multiplane = True
         stat = []
         for n in range(len(rois)):
             if isinstance(rois[0], np.ndarray):
-                stat.append(
-                    {
-                        "ypix": np.array(
-                            [rois[n][i][0].astype("int") for i in range(len(rois[n]))]
-                        ),
-                        "xpix": np.array(
-                            [rois[n][i][1].astype("int") for i in range(len(rois[n]))]
-                        ),
-                        "lam": np.array([rois[n][i][-1] for i in range(len(rois[n]))]),
-                    }
-                )
+                stat.append({
+                    "ypix":
+                        np.array(
+                            [rois[n][i][0].astype("int") for i in range(len(rois[n]))]),
+                    "xpix":
+                        np.array(
+                            [rois[n][i][1].astype("int") for i in range(len(rois[n]))]),
+                    "lam":
+                        np.array([rois[n][i][-1] for i in range(len(rois[n]))]),
+                })
             else:
-                stat.append(
-                    {
-                        "ypix": rois[n]["x"].astype("int"),
-                        "xpix": rois[n]["y"].astype("int"),
-                        "lam": rois[n]["weight"],
-                    }
-                )
+                stat.append({
+                    "ypix": rois[n]["x"].astype("int"),
+                    "xpix": rois[n]["y"].astype("int"),
+                    "lam": rois[n]["weight"],
+                })
             if multiplane:
-                stat[-1]['iplane'] = int(rois[n][0][-2])
+                stat[-1]["iplane"] = int(rois[n][0][-2])
         ops = default_ops()
 
         if multiplane:
-            nplanes = (
-                np.max(np.array([stat[n]["iplane"] for n in range(len(stat))])) + 1
-            )
+            nplanes = (np.max(np.array([stat[n]["iplane"] for n in range(len(stat))])) +
+                       1)
         else:
             nplanes = 1
         stat = np.array(stat)
@@ -194,18 +186,13 @@ def read_nwb(fpath):
         ops1 = []
         for iplane in range(nplanes):
             ops = default_ops()
-            bg_strs = ['meanImg', 'Vcorr', 'max_proj', 'meanImg_chan2']
-            ops['nchannels'] = 1
+            bg_strs = ["meanImg", "Vcorr", "max_proj", "meanImg_chan2"]
+            ops["nchannels"] = 1
             for bstr in bg_strs:
-                if (
-                    bstr
-                    in nwbfile.processing["ophys"]["Backgrounds_%d" % iplane].images
-                ):
-                    ops[bstr] = np.array(
-                        nwbfile.processing["ophys"]["Backgrounds_%d" % iplane][
-                            bstr
-                        ].data
-                    )
+                if (bstr in nwbfile.processing["ophys"]["Backgrounds_%d" %
+                                                        iplane].images):
+                    ops[bstr] = np.array(nwbfile.processing["ophys"]["Backgrounds_%d" %
+                                                                     iplane][bstr].data)
                     if bstr == "meanImg_chan2":
                         ops["nchannels"] = 2
             ops["Ly"], ops["Lx"] = ops[bg_strs[0]].shape
@@ -215,7 +202,7 @@ def read_nwb(fpath):
             ops["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
             ops1.append(ops.copy())
 
-        stat = roi_stats(stat, ops['Ly'], ops['Lx'], ops['aspect'], ops['diameter'])
+        stat = roi_stats(stat, ops["Ly"], ops["Lx"], ops["aspect"], ops["diameter"])
 
         # fluorescence
         ophys = nwbfile.processing["ophys"]
@@ -282,8 +269,8 @@ def read_nwb(fpath):
                     if "meanImg_chan2" in ops:
                         meanImg_chan2[np.ix_(yrange, xrange)] = ops["meanImg_chan2"]
                 for j in np.nonzero(
-                    np.array([stat[n]["iplane"] == k for n in range(len(stat))])
-                )[0]:
+                        np.array([stat[n]["iplane"] == k for n in range(len(stat))
+                                 ]))[0]:
                     stat[j]["xpix"] += ops["dx"]
                     stat[j]["ypix"] += ops["dy"]
                     stat[j]["med"][0] += ops["dy"]
@@ -302,13 +289,11 @@ def read_nwb(fpath):
 def save_nwb(save_folder):
     """convert folder with plane folders to NWB format"""
 
-    plane_folders = natsorted(
-        [
-            Path(f.path)
-            for f in os.scandir(save_folder)
-            if f.is_dir() and f.name[:5] == "plane"
-        ]
-    )
+    plane_folders = natsorted([
+        Path(f.path)
+        for f in os.scandir(save_folder)
+        if f.is_dir() and f.name[:5] == "plane"
+    ])
     ops1 = [
         np.load(f.joinpath("ops.npy"), allow_pickle=True).item() for f in plane_folders
     ]
@@ -382,8 +367,7 @@ def save_nwb(save_folder):
             reference_images=image_series,
         )
         ophys_module = nwbfile.create_processing_module(
-            name="ophys", description="optical physiology processed data"
-        )
+            name="ophys", description="optical physiology processed data")
         ophys_module.add(img_seg)
 
         file_strs = ["F.npy", "Fneu.npy", "spks.npy"]
@@ -399,8 +383,7 @@ def save_nwb(save_folder):
                 if nchannels > 1:
                     for fstr in file_strs_chan2:
                         traces_chan2.append(
-                            np.load(plane_folders[iplane].joinpath(fstr))
-                        )
+                            np.load(plane_folders[iplane].joinpath(fstr)))
                 PlaneCellsIdx = iplane * np.ones(len(iscell))
             else:
                 iscell = np.append(
@@ -411,9 +394,8 @@ def save_nwb(save_folder):
                 for i, fstr in enumerate(file_strs):
                     trace = np.load(os.path.join(ops["save_path"], fstr))
                     if trace.shape[1] < Nfr:
-                        fcat = np.zeros(
-                            (trace.shape[0], Nfr - trace.shape[1]), "float32"
-                        )
+                        fcat = np.zeros((trace.shape[0], Nfr - trace.shape[1]),
+                                        "float32")
                         trace = np.concatenate((trace, fcat), axis=1)
                     traces[i] = np.append(traces[i], trace, axis=0)
                 if nchannels > 1:
@@ -424,28 +406,23 @@ def save_nwb(save_folder):
                             axis=0,
                         )
                 PlaneCellsIdx = np.append(
-                    PlaneCellsIdx, iplane * np.ones(len(iscell) - len(PlaneCellsIdx))
-                )
+                    PlaneCellsIdx, iplane * np.ones(len(iscell) - len(PlaneCellsIdx)))
 
-            stat = np.load(
-                os.path.join(ops["save_path"], "stat.npy"), allow_pickle=True
-            )
+            stat = np.load(os.path.join(ops["save_path"], "stat.npy"),
+                           allow_pickle=True)
             ncells[iplane] = len(stat)
             for n in range(ncells[iplane]):
                 if multiplane:
-                    pixel_mask = np.array(
-                        [
-                            stat[n]["ypix"],
-                            stat[n]["xpix"],
-                            iplane * np.ones(stat[n]["npix"]),
-                            stat[n]["lam"],
-                        ]
-                    )
+                    pixel_mask = np.array([
+                        stat[n]["ypix"],
+                        stat[n]["xpix"],
+                        iplane * np.ones(stat[n]["npix"]),
+                        stat[n]["lam"],
+                    ])
                     ps.add_roi(voxel_mask=pixel_mask.T)
                 else:
                     pixel_mask = np.array(
-                        [stat[n]["ypix"], stat[n]["xpix"], stat[n]["lam"]]
-                    )
+                        [stat[n]["ypix"], stat[n]["xpix"], stat[n]["lam"]])
                     ps.add_roi(pixel_mask=pixel_mask.T)
 
         ps.add_column("iscell", "two columns - iscell & probcell", iscell)
@@ -455,12 +432,9 @@ def save_nwb(save_folder):
             if iplane == 0:
                 rt_region.append(
                     ps.create_roi_table_region(
-                        region=list(
-                            np.arange(0, ncells[iplane]),
-                        ),
+                        region=list(np.arange(0, ncells[iplane]),),
                         description=f"ROIs for plane{int(iplane)}",
-                    )
-                )
+                    ))
             else:
                 rt_region.append(
                     ps.create_roi_table_region(
@@ -468,11 +442,9 @@ def save_nwb(save_folder):
                             np.arange(
                                 np.sum(ncells[:iplane]),
                                 ncells[iplane] + np.sum(ncells[:iplane]),
-                            )
-                        ),
+                            )),
                         description=f"ROIs for plane{int(iplane)}",
-                    )
-                )
+                    ))
 
         # FLUORESCENCE (all are required)
         name_strs = ["Fluorescence", "Neuropil", "Deconvolved"]
@@ -505,9 +477,8 @@ def save_nwb(save_folder):
                     )
 
                     if iplane == 0:
-                        fl = Fluorescence(
-                            roi_response_series=roi_resp_series, name=nstr
-                        )
+                        fl = Fluorescence(roi_response_series=roi_resp_series,
+                                          name=nstr)
                     else:
                         fl.add_roi_response_series(roi_response_series=roi_resp_series)
 
@@ -523,8 +494,8 @@ def save_nwb(save_folder):
                     if bstr == "Vcorr" or bstr == "max_proj":
                         img = np.zeros((ops["Ly"], ops["Lx"]), np.float32)
                         img[
-                            ops["yrange"][0] : ops["yrange"][-1],
-                            ops["xrange"][0] : ops["xrange"][-1],
+                            ops["yrange"][0]:ops["yrange"][-1],
+                            ops["xrange"][0]:ops["xrange"][-1],
                         ] = ops[bstr]
                     else:
                         img = ops[bstr]
@@ -535,4 +506,4 @@ def save_nwb(save_folder):
         with NWBHDF5IO(os.path.join(save_folder, "ophys.nwb"), "w") as fio:
             fio.write(nwbfile)
     else:
-        print('pip install pynwb OR don"t use mesoscope recording')
+        print("pip install pynwb OR don't use mesoscope recording")

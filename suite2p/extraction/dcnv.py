@@ -105,7 +105,7 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float, sig_baseline: 
         window (in seconds) for max filter
 
     sig_baseline : float
-        width of Gaussian filter in seconds
+        width of Gaussian filter in frames
 
     fs : float
         sampling rate per plane

@@ -59,6 +59,8 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         manual_roi_stats[n]["compact"] = 1
         manual_roi_stats[n]["footprint"] = 2
         manual_roi_stats[n]["manual"] = 1  # Add manual key
+        if "iplane" in stat_orig[0]:
+            manual_roi_stats[n]["iplane"] = stat_orig[0]["iplane"]
 
     # subtract neuropil and compute skew, std from F
     dF = F - ops["neucoeff"] * Fneu

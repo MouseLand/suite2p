@@ -4,8 +4,12 @@ import math
 import time
 import numpy as np
 from . import utils
-import nd2
 
+try:
+    import nd2 
+    ND2 = True
+except ImportError:
+    ND2 = False
 
 def nd2_to_binary(ops):
     """finds nd2 files and writes them to binaries

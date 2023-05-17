@@ -15,6 +15,7 @@ try:
     from ScanImageTiffReader import ScanImageTiffReader
     HAS_SCANIMAGE = True
 except ImportError:
+    ScanImageTiffReader = None
     HAS_SCANIMAGE = False
 
 
@@ -106,6 +107,7 @@ def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
             return True
     else:
         print("NOTE: ScanImageTiffReader not installed, using tifffile")
+        return True
 
 
 def tiff_to_binary(ops):

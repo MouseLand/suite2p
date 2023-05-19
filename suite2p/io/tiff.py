@@ -441,8 +441,9 @@ def ome_to_binary(ops):
     nchannels = ops1[0]["nchannels"]
 
     # loop over all tiffs
-    with ScanImageTiffReader(fs_Ch1[0]) as tif:
-        im0 = tif.data()
+    TiffReader = ScanImageTiffReader if HAS_SCANIMAGE else TiffFile
+    with TiffReader(fs_Ch1[0]) as tif:
+        im0 = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
 
     for ops1_0 in ops1:
         ops1_0["nframes"] = 0
@@ -465,8 +466,8 @@ def ome_to_binary(ops):
 
     for ik, file in enumerate(fs_Ch1):
         # read tiff
-        with ScanImageTiffReader(file) as tif:
-            im = tif.data()
+        with TiffReader(file) as tif:
+            im = tif.data()  if HAS_SCANIMAGE else tif.pages[0].asarray()
         if im.dtype.type == np.uint16:
             im = (im // 2)
         im = im.astype(np.int16)
@@ -484,8 +485,8 @@ def ome_to_binary(ops):
 
     if nchannels > 1:
         for ik, file in enumerate(fs_Ch2):
-            with ScanImageTiffReader(file) as tif:
-                im = tif.data()
+            with TiffReader(file) as tif:
+                im = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
             if im.dtype.type == np.uint16:
                 im = (im // 2)
 

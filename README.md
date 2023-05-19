@@ -58,7 +58,7 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 7. Now run `python -m suite2p` and you're all set.
 8. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
-For additional dependencies, like NWB and Scanbox support, use the command `pip install suite2p[io]`.
+For additional dependencies, like NWB and Scanbox support, use the command `python -m pip install suite2p[io]`.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 

@@ -1,7 +1,7 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
 [![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=dev)](https://suite2p.readthedocs.io/en/dev/?badge=dev)
-[![Coverage Status](https://coveralls.io/repos/github/MouseLand/suite2p/badge.svg?branch=dev)](https://coveralls.io/github/MouseLand/suite2p?branch=dev)
+[![codecov](https://codecov.io/gh/MouseLand/suite2p/branch/main/graph/badge.svg?token=OJEC3mty85)](https://codecov.io/gh/MouseLand/suite2p)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![Downloads](https://pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
 [![Downloads](https://pepy.tech/badge/suite2p/month)](https://pepy.tech/project/suite2p)
@@ -54,9 +54,11 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 3. Create a new environment with `conda create --name suite2p python=3.8`.
 4. To activate this new environment, run `conda activate suite2p`
 5. (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`.  
-6. (Option 2) You can install the GUI version with `python -m pip install suite2p[all]`. If you're on a zsh server, you may need to use `' '` around the suite2p[all] call: `python -m pip install 'suite2p[all]'`. This also installs the NWB dependencies.
+6. (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
 7. Now run `python -m suite2p` and you're all set.
 8. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
+
+For additional dependencies, like NWB and Scanbox support, use the command `pip install suite2p[io]`.
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 

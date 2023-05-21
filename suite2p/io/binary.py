@@ -190,12 +190,22 @@ class BinaryFile:
         mov = np.stack(batches)
         return mov
 
-    def write_tiff(self, fname):
-        "Writes entire BinaryFile's contents into a tiff file."
+    def write_tiff(self, fname, range_dict={}):
+        "Writes BinaryFile's contents using selected ranges from range_dict into a tiff file."
+        n_frames, Ly, Lx = self.shape
+        frame_range, y_range, x_range = (0,n_frames), (0, Ly), (0, Lx)
         with TiffWriter(fname, bigtiff=True) as f:
             # Iterate through current data and write each frame to a tiff
-            for i in range(self.shape[0]):
-                curr_frame = np.floor(self.file[i, :,:]).astype(np.int16)
+            # All ranges should be Tuples(int,int)
+            if 'frame_range' in range_dict:
+                frame_range = range_dict['frame_range']
+            if 'x_range' in range_dict:
+                x_range = range_dict['x_range']
+            if 'y_range' in range_dict:
+                y_range = range_dict['y_range']
+            print('Frame Range: {}, y_range: {}, x_range{}'.format(frame_range, y_range, x_range))
+            for i in range(frame_range[0], frame_range[1]):
+                curr_frame = np.floor(self.file[i, y_range[0]:y_range[1], x_range[0]:x_range[1]]).astype(np.int16)
                 f.write(curr_frame)
         print('Tiff has been saved to {}'.format(fname))
 

@@ -1,5 +1,7 @@
 from typing import Optional, Tuple, Sequence
 from contextlib import contextmanager
+from tifffile import TiffWriter
+
 import os
 
 import numpy as np
@@ -188,6 +190,14 @@ class BinaryFile:
         mov = np.stack(batches)
         return mov
 
+    def write_tiff(self, fname):
+        "Writes entire BinaryFile's contents into a tiff file."
+        with TiffWriter(fname, bigtiff=True) as f:
+            # Iterate through current data and write each frame to a tiff
+            for i in range(self.shape[0]):
+                curr_frame = np.floor(self.file[i, :,:]).astype(np.int16)
+                f.write(curr_frame)
+        print('Tiff has been saved to {}'.format(fname))
 
 def from_slice(s: slice) -> Optional[np.ndarray]:
     """Creates an np.arange() array from a Python slice object.  Helps provide numpy-like slicing interfaces."""

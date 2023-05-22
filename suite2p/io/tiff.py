@@ -75,8 +75,8 @@ def save_tiff(mov: np.ndarray, fname: str) -> None:
 
     """
     with TiffWriter(fname) as tif:
-        for frame in np.floor(mov).astype(np.int16):
-            tif.write(frame)
+        tif.write(np.floor(mov).astype(np.int16))
+            
 
 
 def open_tiff(file: str,

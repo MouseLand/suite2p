@@ -30,7 +30,6 @@ def masks_and_traces(ops, stat_manual, stat_orig):
         d0 = ops['diameter']
         dy, dx = (d0, d0) if isinstance(d0, int) else d0
     t0 = time.time()
-    print('ops',ops)
     
     # Concatenate stat so a good neuropil function can be formed
     stat_all = stat_manual.copy()

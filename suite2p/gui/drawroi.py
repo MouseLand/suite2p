@@ -1,8 +1,6 @@
 import os
 import time
 import math
-#for debugging purposes
-import logging
 
 import numpy as np
 import pyqtgraph as pg
@@ -57,10 +55,6 @@ def masks_and_traces(ops, stat_manual, stat_orig):
     F, Fneu, F_chan2, Fneu_chan2 = extract_traces_from_masks(ops, 
                                                                   manual_cell_masks, 
                                                                   manual_neuropil_masks)
-    print("F: ", F)
-    print("Fneu: ", Fneu)
-    print("F_chan2: ", F_chan2)
-    print("Fneu_chan2: ", Fneu_chan2)
 
     # compute activity statistics for classifier
     npix = np.array([stat_orig[n]['npix'] for n in range(len(stat_orig))]).astype('float32')
@@ -245,14 +239,8 @@ class ROIDraw(QMainWindow):
             event.ignore()
 
     def close_GUI(self):
-        print("open closeGUI function")
         # Replace old stat file
         print('Saving old stat')
-        print("self")
-        print(self)
-        print("self directory")
-        print(self.__dir__())
-        print('self_parent', self.parent)
         np.save(os.path.join(self.parent.basename, 'stat_orig.npy'), self.parent.stat)
 
         # Save iscell
@@ -260,9 +248,6 @@ class ROIDraw(QMainWindow):
 
         # Append new stat file with old and save
         print('Saving new stat')
-        print(self)
-        print("new stat:")
-        print(self.new_stat)
         stat_all = self.new_stat.copy()
         for n in range(len(self.parent.stat)):
             stat_all.append(self.parent.stat[n])
@@ -303,7 +288,6 @@ class ROIDraw(QMainWindow):
         io.load_proc(self.parent)
         self.saveGUI = True
         self.close()
-        print("closed closeGUI function")
 
     def normalize_img_add_masks(self):
         masked_image = np.zeros(((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
@@ -435,17 +419,7 @@ class ROIDraw(QMainWindow):
         if not os.path.isfile(self.parent.ops['reg_file']):
             self.parent.ops['reg_file'] = os.path.join(self.parent.basename, 'data.bin')
 
-#DEBUG
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(self.parent.ops, stat0, self.parent.stat)
-        logging.warning("test warning msg")
-        print('F:', F)
-        print('Fneu',Fneu)
-        print('F_chan2', F_chan2)
-        print('Fneu_chan2', Fneu_chan2)
-        print('spks:', spks)
-        print("stats below:")
-        print(stat)
-        print()
         self.Fcell = F
         self.Fneu = Fneu
         self.F_chan2 = F_chan2

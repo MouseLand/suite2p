@@ -217,13 +217,7 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=No
         
     rois = [ROI(ypix=s['ypix'], xpix=s['xpix'], 
                 lam=s['lam'], med=s['med'], do_crop=do_crop) for s in stat]
-    #DEBUG
-    print("print rois: ")
-    print(rois)
-    print("print Ly")
-    print(Ly)
-    print("print Lx")
-    print(Lx)
+
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
     for roi, s in zip(rois, stat):
         s['mrs'] = roi.mean_r_squared

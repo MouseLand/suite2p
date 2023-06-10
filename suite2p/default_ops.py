@@ -117,7 +117,7 @@ def default_ops():
         "max_overlap":
             0.75,  # cells with more overlap than this get removed during triage, before refinement
         "high_pass":
-            100,  # running mean subtraction with window of size "high_pass" (use low values for 1P)
+            100,  # running mean subtraction across bins with a window of size "high_pass" (use low values for 1P)
         "spatial_hp_detect":
             25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         "denoise": False,  # denoise binned movie for cell detection in sparse_mode

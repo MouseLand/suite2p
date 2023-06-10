@@ -247,7 +247,7 @@ ROI detection settings
   1.0.
 
 - **high_pass**: (*int, default: 100*) running mean subtraction across
-  time with window of size 'high_pass'. Values of less than 10 are
+  bins of frames with window of size 'high_pass'. Values of less than 10 are
   recommended for 1P data where there are often large full-field
   changes in brightness.
 

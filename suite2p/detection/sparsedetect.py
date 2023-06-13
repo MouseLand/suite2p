@@ -1,3 +1,6 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 from typing import Tuple, Dict, List, Any
 from copy import deepcopy
 from enum import Enum

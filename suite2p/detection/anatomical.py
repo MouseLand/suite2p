@@ -1,3 +1,6 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 import numpy as np
 from typing import Any, Dict
 from scipy.ndimage import find_objects, gaussian_filter

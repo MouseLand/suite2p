@@ -61,7 +61,7 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 
 For additional dependencies, like h5py, NWB, Scanbox, and server job support, use the command `python -m pip install suite2p[io]`.
 
-If you are running suite2p on Windows or Linux we recommend installing ScanImage Tiff Reader with `pip install scanimage-tiff-reader`.
+If you are running suite2p on Windows or Linux we recommend installing ScanImage Tiff Reader with `pip install scanimage-tiff-reader` (this package is no longer supported on Mac, but may be supported again in the near future, we will change the instructions accordingly if so).
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 

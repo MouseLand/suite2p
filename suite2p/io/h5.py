@@ -3,7 +3,11 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 """
 import math
 
-import h5py
+try:
+    import h5py
+    HAS_H5PY=True
+except:
+    HAS_H5PY=False
 import numpy as np
 import os
 
@@ -25,6 +29,9 @@ def h5py_to_binary(ops):
             "Ly", "Lx", ops["reg_file"] or ops["raw_file"] is created binary
 
     """
+    if not HAS_H5PY:
+        raise ImportError("h5py is required for this file type, please 'pip install h5py'")
+
     ops1 = init_ops(ops)
 
     nplanes = ops1[0]["nplanes"]

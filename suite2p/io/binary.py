@@ -1,3 +1,6 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 from typing import Optional, Tuple, Sequence
 from contextlib import contextmanager
 from tifffile import TiffWriter

@@ -1,3 +1,6 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 from .version import version
 from .default_ops import default_ops
 from .run_s2p import run_s2p, run_plane, pipeline

@@ -1,3 +1,6 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 from __future__ import annotations
 
 from typing import Tuple, Optional, NamedTuple, Sequence, List, Dict, Any

@@ -1,13 +1,19 @@
+"""
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+"""
 import sys, os, time, glob
 from pathlib import Path
 from natsort import natsorted
-import paramiko
 import numpy as np
+try:
+    import paramiko
+    HAS_PARAMIKO = True 
+except:
+    HAS_PARAMIKO = False
 
 
 def unix_path(path):
     return str(path).replace(os.sep, "/")
-
 
 def ssh_connect(host, username, password, verbose=True):
     """ from paramiko example """
@@ -35,7 +41,6 @@ def ssh_connect(host, username, password, verbose=True):
             sys.exit(1)
     return ssh
 
-
 def send_jobs(save_folder, host=None, username=None, password=None, server_root=None,
               local_root=None, n_cores=8):
     """ send each plane to compute on server separately
@@ -44,6 +49,8 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
     for where to save the data
 
     """
+    if not HAS_PARAMIKO:
+        raise ImportError("paramiko required, please 'pip install paramiko'")
 
     if host is None:
         raise Exception("No server specified, please edit suite2p/io/server.py")

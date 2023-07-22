@@ -77,7 +77,7 @@ Suite2p can accomodate many different file formats. Refer to this
 
 - **nwb_series** (*str, default: ''*) Name of TwoPhotonSeries values you wish to retrieve from your NWB file. 
 
-- **save_path0** (*list[str], default: empty list*) List containing pathname of where you'd like to save your pipeline results. If list is empty, the first element of ``ops['data_path']`` is used. 
+- **save_path0** (*str, default: ''*) String containing pathname of where you'd like to save your pipeline results. If no pathname is provided, the first element of ``ops['data_path']`` is used. 
 
 - **save_folder** (*list[str], default: empty list*) List containing directory name you'd like results to be saved under. Defaults to ``"suite2p"``. 
 

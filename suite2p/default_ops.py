@@ -25,7 +25,7 @@ def default_ops():
         "nwb_driver": "",  # driver for nwb file (nothing if file is local)
         "nwb_series":
             "",  # TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file
-        "save_path0": [],  # stores results, defaults to first item in data_path
+        "save_path0": '',  # pathname where you'd like to store results, defaults to first item in data_path
         "save_folder": [],  # directory you"d like suite2p results to be saved to
         "subfolders": [
         ],  # subfolders you"d like to search through when look_one_level_down is set to True

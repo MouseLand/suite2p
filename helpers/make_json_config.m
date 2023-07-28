@@ -19,7 +19,7 @@ stack = loadFramesBuff(fullfile(root, fname),1,1,1);
 % fs = hSI.hRoiManager.scanVolumeRate;
 %     fs = 5;
 
-% get relevant infomation for TIFF header
+% get relevant information for TIFF header
 artist_info     = header(1).Artist;
 
 % retrieve ScanImage ROIs information from json-encoded string

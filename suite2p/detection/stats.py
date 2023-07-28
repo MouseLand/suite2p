@@ -87,7 +87,7 @@ class ROI:
         stats : List of dictionary "ypix", "xpix", "lam"
         Ly : y size of frame
         Lx : x size of frame
-        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating precence of ROI).
+        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating presence of ROI).
         """
         arrays = []
         for i, stat in enumerate(stats):

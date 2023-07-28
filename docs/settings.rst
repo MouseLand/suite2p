@@ -54,7 +54,7 @@ These are the essential settings that are dataset-specific.
 File input/output settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suite2p can accomodate many different file formats. Refer to this
+Suite2p can accommodate many different file formats. Refer to this
 :ref:`page <inputs-diff-file-types>` for a detailed list of formats suite2p can work with. 
 
 - **fast_disk**: (*list[str], default: empty list*) specifies location where temporary binary file will be stored. Defaults to ``save_path0`` if no directory is provided by user. 

@@ -241,7 +241,7 @@ def two_comps(mpix0, lam, Th2):
 
 
 def extend_mask(ypix, xpix, lam, Ly, Lx):
-    """ extend mask into 8 surrrounding pixels """
+    """ extend mask into 8 surrounding pixels """
     nel = len(xpix)
     yx = ((ypix, ypix, ypix, ypix - 1, ypix - 1, ypix - 1, ypix + 1, ypix + 1,
            ypix + 1), (xpix, xpix + 1, xpix - 1, xpix, xpix + 1, xpix - 1, xpix,

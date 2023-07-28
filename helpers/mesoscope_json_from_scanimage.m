@@ -20,7 +20,7 @@ catch
     fs = 4;
 end
 
-% get relevant infomation for TIFF header
+% get relevant information for TIFF header
 artist_info     = header(1).Artist;
 
 % retrieve ScanImage ROIs information from json-encoded string 

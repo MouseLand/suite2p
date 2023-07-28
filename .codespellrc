@@ -1,4 +1,4 @@
 [codespell]
 skip = .git,*.pdf,*.svg
-#
-# ignore-words-list =
+ignore-regex = ("image/png": *".*|hSI)
+ignore-words-list = iterm,bloaded

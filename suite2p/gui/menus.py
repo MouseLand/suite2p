@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QAction, QMenu

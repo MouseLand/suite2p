@@ -2,7 +2,7 @@ function [frames, headers] = loadFramesBuff(tiff, firstIdx, lastIdx, stride, tem
 %loadFrames Loads the frames of a Tiff file into an array (Y,X,T)
 %   MOVIE = loadFrames(TIFF, [FIRST], [LAST], [STRIDE], []) loads
 %   frames from the Tiff file specified by TIFF, which should be a filename
-%   or an already open Tiff object. Optionallly FIRST, LAST and STRIDE
+%   or an already open Tiff object. Optionally FIRST, LAST and STRIDE
 %   specify the range of frame indices to load.
 
 if nargin>4 && ~isempty(temp_file)

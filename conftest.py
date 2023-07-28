@@ -37,7 +37,7 @@ def download_cached_inputs(data_path):
         extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
 
 def initialize_ops(tmpdir, data_dir):
-    """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accomodate creation of ops for both pytest and non-pytest settings."""
+    """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accommodate creation of ops for both pytest and non-pytest settings."""
     ops = suite2p.default_ops()
     ops.update(
         {

@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from typing import Tuple
 
@@ -22,7 +22,7 @@ def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
 
     Returns
     -------
-    maskMul: float arrray
+    maskMul: float array
     maskOffset: float array
     """
     Ly, Lx = refImg.shape

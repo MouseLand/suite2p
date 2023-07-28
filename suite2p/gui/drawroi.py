@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os
 import time
@@ -233,7 +233,7 @@ class ROIDraw(QMainWindow):
     def check_proc(self, event):
         cproc = QMessageBox.question(
             self, "PROC",
-            "Would you like to save traces before closing? (if you havent extracted the traces, click Cancel and extract!)",
+            "Would you like to save traces before closing? (if you haven't extracted the traces, click Cancel and extract!)",
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
         if cproc == QMessageBox.Yes:
             self.close_GUI()

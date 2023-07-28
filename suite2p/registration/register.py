@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import time
 from os import path
@@ -77,7 +77,7 @@ def pick_initial_reference(frames: np.ndarray):
 
     the seed frame is the frame with the largest correlations with other frames;
     the average of the seed frame with its top 20 correlated pairs is the
-    inital reference frame returned
+    initial reference frame returned
 
     Parameters
     ----------

@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from __future__ import annotations
 
@@ -87,7 +87,7 @@ class ROI:
         stats : List of dictionary "ypix", "xpix", "lam"
         Ly : y size of frame
         Lx : x size of frame
-        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating precence of ROI).
+        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating presence of ROI).
         """
         arrays = []
         for i, stat in enumerate(stats):

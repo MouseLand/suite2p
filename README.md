@@ -52,7 +52,7 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 ### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
-3. Create a new environment with `conda create --name suite2p python=3.8`.
+3. Create a new environment with `conda create --name suite2p python=3.9`.
 4. To activate this new environment, run `conda activate suite2p`
 5. (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`.  
 6. (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
@@ -76,7 +76,7 @@ pip install --upgrade suite2p
 1. Download an iTerm2 terminal from this [link](https://iterm2.com/). Install it into your /Applications folder. If you already have downloaded iTerm, duplicate it and give it whatever name you'd like (e.g., "iterm2Rosetta"). 
 2. Navigate to the iTerm app you will use, right click it, and then select "Get Info". Check "Open using Rosetta". 
 3. Open up this iTerm app and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
-4. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.8`
+4. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.9`
 5. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
 
 
@@ -102,7 +102,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create --name suite2p`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
-4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .`
+4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .[all]`
 5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).
 
 ## Examples

@@ -25,7 +25,7 @@ def default_ops():
         "nwb_driver": "",  # driver for nwb file (nothing if file is local)
         "nwb_series":
             "",  # TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file
-        "save_path0": [],  # stores results, defaults to first item in data_path
+        "save_path0": '',  # pathname where you'd like to store results, defaults to first item in data_path
         "save_folder": [],  # directory you"d like suite2p results to be saved to
         "subfolders": [
         ],  # subfolders you"d like to search through when look_one_level_down is set to True
@@ -120,7 +120,7 @@ def default_ops():
         "max_overlap":
             0.75,  # cells with more overlap than this get removed during triage, before refinement
         "high_pass":
-            100,  # running mean subtraction with window of size "high_pass" (use low values for 1P)
+            100,  # running mean subtraction across bins with a window of size "high_pass" (use low values for 1P)
         "spatial_hp_detect":
             25,  # window for spatial high-pass filtering for neuropil subtraction before detection
         "denoise": False,  # denoise binned movie for cell detection in sparse_mode

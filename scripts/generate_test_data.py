@@ -70,7 +70,7 @@ class GenerateDetectionTestData:
 			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
 			(404, 360)
 		)
-		with suite2p.io.BinaryRWFile(Ly = ops[0]['Ly'], Lx = ops[0]['Lx'], filename=ops[0]['reg_file']) as f_reg:
+		with suite2p.io.BinaryFile(Ly = ops[0]['Ly'], Lx = ops[0]['Lx'], filename=ops[0]['reg_file']) as f_reg:
 			ops, stat = suite2p.detection.detection_wrapper(f_reg, ops=ops[0])
 			ops['neuropil_extract'] = True
 			cell_masks, neuropil_masks = masks.create_masks(stat, ops['Ly'], ops['Lx'], ops=ops)
@@ -107,7 +107,7 @@ class GenerateDetectionTestData:
 		two_plane_ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
 		for i in range(len(two_plane_ops)):
 			op = two_plane_ops[i]
-			with suite2p.io.BinaryRWFile(Ly = op['Ly'], Lx = op['Lx'], filename=op['reg_file']) as f_reg:
+			with suite2p.io.BinaryFile(Ly = op['Ly'], Lx = op['Lx'], filename=op['reg_file']) as f_reg:
 				# Neuropil_masks are later needed for extraction test data step
 				op['neuropil_extract'] = True
 				op, stat = suite2p.detection.detection_wrapper(f_reg, ops=op)

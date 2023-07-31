@@ -156,10 +156,10 @@ Suite2p reads nd2 files using the nd2 package and returns a numpy array represen
 
 
 
-BinaryRWFile
+BinaryFile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``BinaryRWFile`` is a special class in suite2p that is used to read/write imaging data and acts like a Numpy Array. Inputs of any format listed above will be converted into a ``BinaryRWFile`` before being passed in through the suite2p pipeline. An input file can easily be changed to a ``BinaryRWFile`` in the following way: 
+The ``BinaryFile`` is a special class in suite2p that is used to read/write imaging data and acts like a Numpy Array. Inputs of any format listed above will be converted into a ``BinaryFile`` before being passed in through the suite2p pipeline. An input file can easily be changed to a ``BinaryFile`` in the following way: 
 
 ::
 
@@ -167,10 +167,10 @@ The ``BinaryRWFile`` is a special class in suite2p that is used to read/write im
 
    fname = "gt1.tif" # Let's say input is of shape (4200, 325, 556)
    Lx, Ly = 556, 326 # Lx and Ly are the x and y dimensions of the imaging input
-   # Read in our input tif and convert it to a BinaryRWFile
-   f_input = suite2p.io.BinaryRWFile(Ly=Ly, Lx=Lx, filename=fname)
+   # Read in our input tif and convert it to a BinaryFile
+   f_input = suite2p.io.BinaryFile(Ly=Ly, Lx=Lx, filename=fname)
 
-``BinaryRWFile`` can work with any of the input formats above. For instance, if you'd like to convert an input binary file, you can do the following:
+``BinaryFile`` can work with any of the input formats above. For instance, if you'd like to convert an input binary file, you can do the following:
 
 ::
 

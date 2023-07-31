@@ -60,7 +60,7 @@ def generate_tiff_filename(functional_chan: int, align_by_chan: int, save_path: 
             wchan = 0
     if not os.path.isdir(tifroot):
         os.makedirs(tifroot)
-    fname = "file%0.3d_chan%d.tif" % (k, wchan)
+    fname = "file00%0.3d_chan%d.tif" % (k, wchan)
     fname = os.path.join(tifroot, fname)
     return fname
 

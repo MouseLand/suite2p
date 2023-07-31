@@ -2,7 +2,7 @@ import setuptools
 
 install_deps = ["importlib-metadata",
         "natsort",
-        "rastermap>0.1.0,<=0.1.3",
+        "rastermap>=0.9.0",
         "tifffile",
         "torch>=1.13.1",
         "numpy>=1.24.3",

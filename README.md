@@ -120,9 +120,10 @@ Then:
 
 ### Using the GUI
 
-![multiselect](gui_images/multiselect.gif)
+<img src="https://www.suite2p.org/static/images/multiselect.gif" width="800" alt="selecting multiple ROIs in suite2p with Ctrl"/>
 
-suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results.
+
+The suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, you can load the results with File -> Load results or by dragging and dropping the stat.npy file into the GUI.
 
 The GUI serves two main functions:
 

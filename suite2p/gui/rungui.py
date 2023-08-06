@@ -1,13 +1,13 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import glob, json, os, shutil, pathlib
+import glob, json, os, shutil, pathlib, sys
 from datetime import datetime
 
 import numpy as np
 
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
 
 from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
@@ -444,11 +444,14 @@ class RunWindow(QDialog):
         shutil.copy(os.path.join(self.ops_path, "ops%d.npy" % self.f), ops_file)
         shutil.copy(os.path.join(self.ops_path, "db%d.npy" % self.f), db_file)
         self.db = np.load(db_file, allow_pickle=True).item()
-        print("Running suite2p!")
-        print("starting process")
         print(self.db)
-        self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"' %
-                           (ops_file, db_file))
+        print("Running suite2p with command:")
+        cmd = f"-u -W ignore -m suite2p --ops {ops_file} --db {db_file}"
+        print("python " + cmd)
+        self.process.start(sys.executable, cmd.split(" "))
+
+        #self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"' %
+        #                   (ops_file, db_file))
 
     def stop(self):
         self.finish = False

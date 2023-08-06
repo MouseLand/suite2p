@@ -40,6 +40,28 @@ test_deps = [
       "pytest-qt>3.3.0",
 ]
 
+# check if pyqt/pyside already installed
+try:
+    import PyQt5
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
+
+try:
+    import PySide2
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
+
+try:
+    import PySide6
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
+
 all_deps = gui_deps + nwb_deps + test_deps + io_deps
 
 try:

@@ -5,8 +5,8 @@ from pathlib import Path
 import matplotlib.cm
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
 from matplotlib.colors import hsv_to_rgb
 
 import suite2p.gui.merge

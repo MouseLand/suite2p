@@ -11,17 +11,17 @@ install_deps = ["importlib-metadata",
         "scipy>=1.9.0",
         "scikit-learn",
         "cellpose",
+        "scanimage-tiff-reader>=1.4.1"
         ]
 
 gui_deps = [
-        "pyqt5",
-        "pyqt5-tools",
-        "pyqt5.sip",
+        "qtpy",
+        "pyqt6",
+        "pyqt6.sip",
         "pyqtgraph",
       ]
 
 io_deps = [
-    "scanimage-tiff-reader>=1.4.1",
     "paramiko",
     "nd2",
     "sbxreader",

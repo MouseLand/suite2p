@@ -7,9 +7,9 @@ import time
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QStyle
-from PyQt5.QtWidgets import QMainWindow, QGridLayout, QCheckBox, QLabel, QLineEdit, QSlider, QFileDialog, QPushButton, QToolButton, QButtonGroup, QWidget
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QStyle
+from qtpy.QtWidgets import QMainWindow, QGridLayout, QCheckBox, QLabel, QLineEdit, QSlider, QFileDialog, QPushButton, QToolButton, QButtonGroup, QWidget
 from scipy.ndimage import gaussian_filter1d
 from natsort import natsorted
 from tifffile import imread

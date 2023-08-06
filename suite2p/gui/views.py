@@ -2,9 +2,9 @@
 Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QPushButton, QSlider, QButtonGroup, QLabel, QStyle, QStyleOptionSlider, QApplication
-from PyQt5.QtGui import QPainter
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QPushButton, QSlider, QButtonGroup, QLabel, QStyle, QStyleOptionSlider, QApplication
+from qtpy.QtGui import QPainter
 
 from .. import extraction
 

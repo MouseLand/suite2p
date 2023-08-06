@@ -4,8 +4,8 @@ Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer an
 import os, time
 import numpy as np
 import scipy.io
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from qtpy import QtGui
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from . import utils, masks, views, graphics, traces, classgui
 from .. import io

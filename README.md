@@ -171,5 +171,11 @@ ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
+# License
+
+Copyright (C) 2023 Howard Hughes Medical Institute Janelia Research Campus, the labs of Carsen Stringer and Marius Pachitariu.
+
+**This code is licensed under GPL v3 (no redistribution without credit, and no redistribution in private repos, see the [license](LICENSE) for more details).**
+
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

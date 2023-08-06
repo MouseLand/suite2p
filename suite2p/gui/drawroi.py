@@ -1,13 +1,13 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os
 import time
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget
 from matplotlib.colors import hsv_to_rgb
 from scipy import stats
 

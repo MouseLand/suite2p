@@ -1,5 +1,5 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from .dcnv import preprocess, oasis
 from .extract import create_masks_and_extract, enhanced_mean_image, extract_traces_from_masks, extraction_wrapper

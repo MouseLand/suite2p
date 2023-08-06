@@ -1,14 +1,14 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import sys
 import time
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QStyle
-from PyQt5.QtWidgets import QWidget, QSlider, QMainWindow, QGridLayout, QStyleOptionSlider, QApplication, QLabel, QLineEdit, QPushButton, QComboBox, QCheckBox
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QStyle
+from qtpy.QtWidgets import QWidget, QSlider, QMainWindow, QGridLayout, QStyleOptionSlider, QApplication, QLabel, QLineEdit, QPushButton, QComboBox, QCheckBox
 from matplotlib import cm
 from rastermap.rastermap import Rastermap
 from scipy.ndimage import gaussian_filter1d
@@ -634,8 +634,8 @@ class VisWindow(QMainWindow):
         #model = np.load(os.path.join(parent.ops["save_path0"], "embedding.npy"))
         #model = np.load("embedding.npy", allow_pickle=True).item()
         self.isort1 = np.argsort(self.model.embedding[:, 0])
-        self.u = self.model.u
-        self.v = self.model.v
+        self.Usv = self.model.Usv
+        self.Vsv = self.model.Vsv
         self.comboBox.addItem("rastermap")
         #self.isort1, self.isort2 = mapping.main(self.sp,None,self.u,self.sv,self.v)
 
@@ -678,19 +678,16 @@ class VisWindow(QMainWindow):
         self.mapOn.setEnabled(False)
         self.tic = time.time()
         try:
-            self.model = Rastermap(n_components=ops["n_components"], n_X=ops["n_X"],
-                                   nPC=ops["nPC"], init=ops["init"], alpha=ops["alpha"],
-                                   K=ops["K"], constraints=ops["constraints"],
-                                   annealing=ops["annealing"])
+            self.model = Rastermap()
             self.model.fit(self.sp)
             #proc  = {"embedding": model.embedding, "uv": [model.u, model.v],
             #         "ops": ops, "filename": args.S, "train_time": train_time}
             #basename, fname = os.path.split(args.S)
             #np.save(os.path.join(basename, "embedding.npy"), proc)
-            print("raster map computed in %3.2f s" % (time.time() - self.tic))
             self.activate()
-        except:
+        except Exception as e:
             print("Rastermap issue: Interrupted by error (not finished)\n")
+            print(e)
         #self.process.start("python -u -W ignore -m rastermap --S %s --ops %s"%
         #                    (spath, opspath))
 
@@ -740,13 +737,9 @@ class VisWindow(QMainWindow):
                     "end_time": -1
                 }
                 if not hasattr(self, "isort2"):
-                    self.model = Rastermap(n_components=ops["n_components"],
-                                           n_X=ops["n_X"], nPC=ops["nPC"],
-                                           init=ops["init"], alpha=ops["alpha"],
-                                           K=ops["K"], constraints=ops["constraints"],
-                                           annealing=ops["annealing"])
-                    unorm = (self.u**2).sum(axis=0)**0.5
-                    self.model.fit(self.sp.T, u=self.v * unorm, v=self.u / unorm)
+                    self.model = Rastermap()
+                    #unorm = (self.u**2).sum(axis=0)**0.5
+                    self.model.fit(self.sp.T, Usv=self.Vsv, Vsv=self.Usv)
                     self.isort2 = np.argsort(self.model.embedding[:, 0])
                 self.tsort = self.isort2.astype(np.int32)
             else:
@@ -755,7 +748,7 @@ class VisWindow(QMainWindow):
 
     def neural_sorting(self, i):
         if i == 0:
-            self.isort = np.argsort(self.u[:, int(self.PCedit.text()) - 1])
+            self.isort = np.argsort(self.Usv[:, int(self.PCedit.text()) - 1])
         elif i == 1:
             self.isort = self.isort1
         if i < 2:

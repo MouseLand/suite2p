@@ -2,7 +2,7 @@ import setuptools
 
 install_deps = ["importlib-metadata",
         "natsort",
-        "rastermap>0.1.0",
+        "rastermap>=0.9.0",
         "tifffile",
         "torch>=1.13.1",
         "numpy>=1.24.3",
@@ -11,17 +11,17 @@ install_deps = ["importlib-metadata",
         "scipy>=1.9.0",
         "scikit-learn",
         "cellpose",
+        "scanimage-tiff-reader>=1.4.1"
         ]
 
 gui_deps = [
-        "pyqt5",
-        "pyqt5-tools",
-        "pyqt5.sip",
+        "qtpy",
+        "pyqt6",
+        "pyqt6.sip",
         "pyqtgraph",
       ]
 
 io_deps = [
-    "scanimage-tiff-reader>=1.4.1",
     "paramiko",
     "nd2",
     "sbxreader",
@@ -39,6 +39,28 @@ test_deps = [
       "pynwb>=2.3.2", #this is needed as test_io contains a test with nwb
       "pytest-qt>3.3.0",
 ]
+
+# check if pyqt/pyside already installed
+try:
+    import PyQt5
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
+
+try:
+    import PySide2
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
+
+try:
+    import PySide6
+    gui_deps.remove("pyqt6")
+    gui_deps.remove("pyqt6.sip")
+except:
+    pass
 
 all_deps = gui_deps + nwb_deps + test_deps + io_deps
 

@@ -8,7 +8,7 @@ A short recording is available [here](https://drive.google.com/file/d/1Q8OT7mxn9
 
 There are more details on the readme, but in brief:
 
-1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
+1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.9** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.9`.
 4. To activate this new environment, run `conda activate suite2p`
@@ -16,7 +16,7 @@ There are more details on the readme, but in brief:
 7. Now run `python -m suite2p` and you're all set.
 8. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
-For additional dependencies, like h5py, NWB, Scanbox, and server job support, use the command `python -m pip install suite2p[io]`.
+For additional dependencies, like h5py, NWB, Scanbox, and server job support, use the command `python -m pip install suite2p[io]`. If using the zsh shell, make sure to use `' '` around the suite2p[io].
 
 ### 2. Run suite2p on the dataset
 
@@ -44,7 +44,7 @@ Once suite2p finishes running, you will see the output in the GUI, and you can c
 1. Pan  = Left-Click  + drag
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
 3. Full view = Double left-click OR escape key
-4. Swap cell = Right-click on the cell
+4. Swap ROI label = Right-click on the ROI to changes its label (ie, cell to non-cell).
 5. Select multiple cells = (Ctrl + left-click) OR (SHIFT + left-click) AND/OR ("Draw selection" button)
 
 You will see ROIs classified as CELLS on the left, and ROIs classified as NOT CELLS on the right, classified using suite2p's default classifier. You can click on different cells with left-click to see their activity over time
@@ -67,7 +67,7 @@ You can see all the ROIs detected if you go under the Colors bar and set `J: cla
 
 We can build our own classifier but for now we'll be using the built-in classifier or default classifier that was used when we ran suite2p. This was trained using our own manual curation of GCaMP6s imaging of cells in cortex. Let's set the cell probability threshold to 0.25 and click enter. Now most of the elongated, smaller and/or frilly ROIs are on the right side. You can further classify ROIs yourself by right-clicking to flip the ROI to the other side. The assignment of the ROIs is updated each time you click / change the cell probability, and is available in the output file `iscell.npy`. 
 
-The ROI statistics are available in `stat.npy`. You can see more info about this [here](https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields). 
+The ROI statistics are available in `stat.npy`. You can see more info about this [here](https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields). To revisit a past run of suite2p, click `File > Load processed data`. 
 
 ### 6. Signal extraction
 

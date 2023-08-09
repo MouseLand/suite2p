@@ -209,7 +209,7 @@ class BinaryFile:
             print('Frame Range: {}, y_range: {}, x_range{}'.format(frame_range, y_range, x_range))
             for i in range(frame_range[0], frame_range[1]):
                 curr_frame = np.floor(self.file[i, y_range[0]:y_range[1], x_range[0]:x_range[1]]).astype(np.int16)
-                f.write(curr_frame)
+                f.write(curr_frame, contiguous=True)
         print('Tiff has been saved to {}'.format(fname))
 
 def from_slice(s: slice) -> Optional[np.ndarray]:

@@ -1,11 +1,11 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QDialog, QLineEdit, QGridLayout, QMessageBox, QLabel, QPushButton, QWidget
+from qtpy import QtGui
+from qtpy.QtWidgets import QDialog, QLineEdit, QGridLayout, QMessageBox, QLabel, QPushButton, QWidget
 from scipy import stats
 
 from . import masks, io

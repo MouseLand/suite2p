@@ -1,12 +1,12 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os
 import shutil
 
 import numpy as np
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QMessageBox, QFileDialog, QListWidget, QGridLayout, QWidget, QAbstractItemView
+from qtpy import QtGui
+from qtpy.QtWidgets import QDialog, QLabel, QPushButton, QMessageBox, QFileDialog, QListWidget, QGridLayout, QWidget, QAbstractItemView
 
 from . import masks
 from .. import classification

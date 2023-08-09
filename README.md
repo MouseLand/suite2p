@@ -15,8 +15,8 @@
 [![GitHub forks](https://img.shields.io/github/forks/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
 
 
-Pipeline for processing two-photon calcium imaging data.  
-Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus  
+Pipeline for processing two-photon calcium imaging data.
+Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus
 
 suite2p includes the following modules:
 
@@ -25,12 +25,11 @@ suite2p includes the following modules:
 * Spike detection
 * Visualization GUI
 
-This code was written by Carsen Stringer and Marius Pachitariu.  
+This code was written by Carsen Stringer and Marius Pachitariu.
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
-The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507).  
-The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
+The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
-You can now run suite2p in google colab, no need to locally install: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
+You can now run suite2p in google colab, no need to locally install (although we recommend doing so eventually): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
 
 See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations.
 
@@ -47,21 +46,18 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 
 ## Read the Documentation at https://suite2p.readthedocs.io/
 
-## Installation
+## Local installation
 
-### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.9`.
 4. To activate this new environment, run `conda activate suite2p`
-5. (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`.  
+5. (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`.
 6. (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
 7. Now run `python -m suite2p` and you're all set.
 8. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
 For additional dependencies, like h5py, NWB, Scanbox, and server job support, use the command `python -m pip install suite2p[io]`.
-
-If you are running suite2p on Windows or Linux we recommend installing ScanImage Tiff Reader with `pip install scanimage-tiff-reader` (this package is no longer supported on Mac, but may be supported again in the near future, we will change the instructions accordingly if so).
 
 If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
 
@@ -72,13 +68,11 @@ To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), 
 pip install --upgrade suite2p
 ~~~~
 
-### Installation for Macs with Apple Silicon chips (e.g., M1)
-1. Download an iTerm2 terminal from this [link](https://iterm2.com/). Install it into your /Applications folder. If you already have downloaded iTerm, duplicate it and give it whatever name you'd like (e.g., "iterm2Rosetta"). 
-2. Navigate to the iTerm app you will use, right click it, and then select "Get Info". Check "Open using Rosetta". 
-3. Open up this iTerm app and follow steps 1 & 2 in the installation section [above](#installation_section) to install anaconda.
-4. Use the following command `CONDA_SUBDIR=osx-64 conda create --name suite2p python=3.9`
-5. Follow steps 4-7 in the installation section [above](#installation_section) to install the `suite2p` package. 
+### Dependencies
 
+This package relies on the awesomeness of [pyqtgraph](http://pyqtgraph.org/), [PyQt6](http://pyqt.sourceforge.net/Docs/PyQt6/), [torch](http://pytorch.org), [numpy](http://www.numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scanimage-tiff-reader](https://vidriotech.gitlab.io/scanimagetiffreader-python/), [scipy](https://www.scipy.org/), [scikit-learn](http://scikit-learn.org/stable/), [tifffile](https://pypi.org/project/tifffile/), [natsort](https://natsort.readthedocs.io/en/master/), and our neural visualization tool [rastermap](https://github.com/MouseLand/rastermap). You can pip install or conda install all of these packages. If having issues with PyQt6, then try to install within it conda install pyqt. On Ubuntu you may need to `sudo apt-get install libegl1` to support PyQt6. Alternatively, you can use PyQt5 by running `pip uninstall PyQt6` and `pip install PyQt5`. If you already have a PyQt version installed, suite2p will not install a new one.
+
+The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an [issue](https://github.com/MouseLand/suite2p/issues) if you have installation problems. 
 
 ### Installing the latest github version of the code
 
@@ -88,16 +82,11 @@ pip install git+https://github.com/MouseLand/suite2p.git
 ~~~
 
 If you want to download and edit the code, and use that version,
-1. Clone the repository with git and `cd suite2p` 
+1. Clone the repository with git and `cd suite2p`
 2. Run `pip install -e .` in that folder
 
-**Common issues**
 
-If you are on Yosemite Mac OS, PyQt doesn't work, and you won't be able to install suite2p. More recent versions of Mac OS are fine.
-
-The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an issue if you have installation problems. The registration step runs faster on Ubuntu than Windows, so if you have a choice we recommend using the Ubuntu OS.
-
-## Installation for developers
+### Installation for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda env create --name suite2p`
@@ -131,9 +120,10 @@ Then:
 
 ### Using the GUI
 
-![multiselect](gui_images/multiselect.gif)
+<img src="https://www.suite2p.org/static/images/multiselect.gif" width="800" alt="selecting multiple ROIs in suite2p with Ctrl"/>
 
-suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, load the results with File -> Load results.
+
+The suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, you can load the results with File -> Load results or by dragging and dropping the stat.npy file into the GUI.
 
 The GUI serves two main functions:
 
@@ -148,7 +138,7 @@ The GUI serves two main functions:
 
 Main GUI controls (works in all views):
 
-1. Pan  = Left-Click  + drag  
+1. Pan  = Left-Click  + drag
 2. Zoom = (Scroll wheel) OR (Right-Click + drag)
 3. Full view = Double left-click OR escape key
 4. Swap cell = Right-click on the cell
@@ -169,32 +159,24 @@ from suite2p.run_s2p import run_s2p
 ops1 = run_s2p(ops, db)
 ~~~~
 
-See our example jupyter notebook [here](jupyter/run_pipeline_tiffs_or_batch.ipynb). It also explains how to batch-run suite2p.
+See our example jupyter notebook [here](https://github.com/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2023.ipynb).
 
 ## Outputs
 
 ~~~~
-F.npy: array of fluorescence traces (ROIs by timepoints)  
-Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)  
-spks.npy: array of deconvolved traces (ROIs by timepoints)  
-stat.npy: array of statistics computed for each cell (ROIs by 1)  
+F.npy: array of fluorescence traces (ROIs by timepoints)
+Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)
+spks.npy: array of deconvolved traces (ROIs by timepoints)
+stat.npy: array of statistics computed for each cell (ROIs by 1)
 ops.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 
-## Dependencies
-suite2p relies on the following excellent packages (which are automatically installed with conda/pip if missing):
-- [rastermap](https://github.com/MouseLand/rastermap)
-- [pyqtgraph](http://pyqtgraph.org/)
-- [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/)
-- [torch](http://pytorch.org)
-- [numpy](http://www.numpy.org/) (>=1.16.0)
-- [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html)
-- [scanimage-tiff-reader](https://vidriotech.gitlab.io/scanimagetiffreader-python/)
-- [scipy](https://www.scipy.org/)
-- [scikit-learn](http://scikit-learn.org/stable/)
-- [tifffile](https://pypi.org/project/tifffile/)
-- [natsort](https://natsort.readthedocs.io/en/master/)
+# License
+
+Copyright (C) 2023 Howard Hughes Medical Institute Janelia Research Campus, the labs of Carsen Stringer and Marius Pachitariu.
+
+**This code is licensed under GPL v3 (no redistribution without credit, and no redistribution in private repos, see the [license](LICENSE) for more details).**
 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).

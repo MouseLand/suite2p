@@ -1,9 +1,9 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QPushButton, QButtonGroup, QLabel, QLineEdit
+from qtpy import QtGui, QtCore
+from qtpy.QtWidgets import QPushButton, QButtonGroup, QLabel, QLineEdit
 
 
 def make_selection(parent):

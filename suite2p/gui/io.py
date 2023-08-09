@@ -1,11 +1,11 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os, time
 import numpy as np
 import scipy.io
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from qtpy import QtGui
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from . import utils, masks, views, graphics, traces, classgui
 from .. import io
@@ -167,31 +167,33 @@ def enable_views_and_classifier(parent):
 
 
 def load_dialog(parent):
-    options = QFileDialog.Options()
-    options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getOpenFileName(parent, "Open stat.npy", filter="stat.npy",
-                                       options=options)
+    dlg_kwargs = {
+        "parent": parent,
+        "caption": "Open stat.npy",
+        "filter": "stat.npy",
+    }
+    name = QFileDialog.getOpenFileName(**dlg_kwargs)
     parent.fname = name[0]
     load_proc(parent)
 
-
 def load_dialog_NWB(parent):
-    options = QFileDialog.Options()
-    options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getOpenFileName(parent, "Open ophys.nwb", filter="*.nwb",
-                                       options=options)
+    dlg_kwargs = {
+        "parent": parent,
+        "caption": "Open ophys.nwb",
+        "filter": "*.nwb",
+    }
+    name = QFileDialog.getOpenFileName(**dlg_kwargs)
     parent.fname = name[0]
     load_NWB(parent)
 
-
 def load_dialog_folder(parent):
-    options = QFileDialog.Options()
-    options |= QFileDialog.DontUseNativeDialog
-    name = QFileDialog.getExistingDirectory(parent, "Open folder with planeX folders",
-                                            options=options)
+    dlg_kwargs = {
+        "parent": parent,
+        "caption": "Open folder with planeX folders",
+    }    
+    name = QFileDialog.getExistingDirectory(**dlg_kwargs)
     parent.fname = name
     load_folder(parent)
-
 
 def load_NWB(parent):
     name = parent.fname

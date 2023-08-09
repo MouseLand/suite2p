@@ -1,9 +1,9 @@
 """
-Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtCore
+from qtpy import QtCore
 from pyqtgraph import Point
 from pyqtgraph import functions as fn
 from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu

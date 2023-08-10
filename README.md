@@ -41,6 +41,17 @@ Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?
 ## Read the Documentation at https://suite2p.readthedocs.io/
 
 ## Installation
+### <a name="installation_section"></a> Installation of modified codebase for processing bruker raw files
+1. If you have an older `suite2p` environment you can remove it with `conda env remove -n suite2p` before creating a new one.
+2. Create a new environment with `conda create --name suite2p python=3.8`.
+3. To activate this new environment, run `conda activate suite2p`
+4. To install the minimal version of suite2p, run `python -m pip install suite2p`.  
+5. Pull the repo from github, run `git clone https:\\github.com\tbabola\suite2p`.
+6. Navigate into directory `cd suite2p`.
+7. Run `pip install -e .` in that folder.
+8. Open up s2p by typing `suite2p`.
+
+
 
 ### <a name="installation_section"></a> Installation for Linux, Windows, and MacOS (intel processors) machines
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.

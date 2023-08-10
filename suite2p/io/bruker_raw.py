@@ -150,12 +150,12 @@ def brukerRaw_to_binary(ops):
             reg_file_chan2[j].close()
     return ops
 
-def multisamplingAverage(bin, samplesPerPixel):
-    bin = bin.reshape(-1,samplesPerPixel)
+def multisamplingAverage(bin, samplesPerPixel,nchannels):
+    bin = bin.reshape(nchannels,samplesPerPixel,-1,order='F')
     addmask = np.sum(bin <= 2**13,1,dtype="uint16")
     bin[bin > 2**13] = 0
     bin = np.floor_divide(np.sum(bin,1,dtype="uint16"),addmask)
-
+    bin = np.ndarray.flatten(bin,order='F')    
     return bin
 
 def calculateCompleteFrames(bin, nXpixels,nYpixels,nchannels,samplesPerPixel, nplanes):

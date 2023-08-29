@@ -4,8 +4,8 @@
 ![tests](https://github.com/mouseland/cellpose/actions/workflows/test_and_deploy.yml/badge.svg)
 [![codecov](https://codecov.io/gh/MouseLand/suite2p/branch/main/graph/badge.svg?token=OJEC3mty85)](https://codecov.io/gh/MouseLand/suite2p)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
-[![Downloads](https://pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
-[![Downloads](https://pepy.tech/badge/suite2p/month)](https://pepy.tech/project/suite2p)
+[![Downloads](https://static.pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
+[![Downloads](https://static.pepy.tech/badge/suite2p/month)](https://pepy.tech/project/suite2p)
 [![Python version](https://img.shields.io/pypi/pyversions/suite2p)](https://pypistats.org/packages/suite2p)
 [![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors-anon/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/graphs/contributors)
@@ -29,7 +29,7 @@ This code was written by Carsen Stringer and Marius Pachitariu.
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
-You can now run suite2p in google colab, no need to locally install (although we recommend doing so eventually): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
+You can now run suite2p in google colab, no need to locally install (although we recommend doing so eventually): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2023.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
 
 See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations.
 

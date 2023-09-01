@@ -554,7 +554,7 @@ class MainWindow(QMainWindow):
             self.show()
 
     def ROIs_on(self, state):
-        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
+        if state == QtCore.Qt.Checked:
             self.ops_plot["ROIs_on"] = True
             self.p1.addItem(self.color1)
             self.p2.addItem(self.color2)

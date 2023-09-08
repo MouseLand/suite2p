@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
         return b0
 
     def roi_text(self, state):
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             for n in range(len(self.roi_text_labels)):
                 if self.iscell[n] == 1:
                     self.p1.addItem(self.roi_text_labels[n])
@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
 
     def zoom_cell(self, state):
         if self.loaded:
-            if state == QtCore.Qt.Checked:
+            if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
                 self.zoomtocell = True
             else:
                 self.zoomtocell = False

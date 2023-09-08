@@ -198,7 +198,6 @@ and it will ask you to specify a file location for the new classifier.
 Then you can load the classifier that you built into the GUI, or you can
 save it as your default classifier.
 
-
 Visualizing activity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

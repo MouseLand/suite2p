@@ -227,7 +227,7 @@ def find_files_open_binaries(ops1, ish5=False):
         input_format = "h5"
     print(input_format)
     if input_format == "h5":
-        if ops1[0]["h5py]"]:
+        if ops1[0]["h5py"]:
             fs = ops1[0]["h5py"]
         else:
             if len(ops1[0]["data_path"]) > 0:

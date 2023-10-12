@@ -1,5 +1,5 @@
 """
-Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import glob
 import os
@@ -227,18 +227,16 @@ def find_files_open_binaries(ops1, ish5=False):
         input_format = "h5"
     print(input_format)
     if input_format == "h5":
-        if len(ops1[0]["data_path"]) > 0:
-            fs, ops2 = get_h5_list(ops1[0])
-            print("NOTE: using a list of h5 files:")
-            print(fs)
-        # find h5"s
+        if ops1[0]["h5py]"]:
+            fs = ops1[0]["h5py"]
         else:
-            if ops1[0]["look_one_level_down"]:
-                fs = list_h5(ops1[0])
+            if len(ops1[0]["data_path"]) > 0:
+                fs, ops2 = get_h5_list(ops1[0])
                 print("NOTE: using a list of h5 files:")
                 print(fs)
+            # find h5"s
             else:
-                fs = [ops1[0]["h5py"]]
+                raise Exception("No h5 files found")
     elif input_format == "sbx":
         # find sbx
         fs, ops2 = get_sbx_list(ops1[0])

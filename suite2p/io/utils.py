@@ -60,6 +60,41 @@ def get_sbx_list(ops):
         print("** Found %d sbx - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+def get_movie_list(ops):
+    """ make list of movie files to process
+    if ops["subfolders"], then all  ops["data_path"][0] / ops["subfolders"] / *.avi or *.mp4
+    if ops["look_one_level_down"], then all tiffs in all folders + one level down
+    """
+    froot = ops["data_path"]
+    # use a user-specified list of tiffs
+    if len(froot) == 1:
+        if "subfolders" in ops and len(ops["subfolders"]) > 0:
+            fold_list = []
+            for folder_down in ops["subfolders"]:
+                fold = os.path.join(froot[0], folder_down)
+                fold_list.append(fold)
+        else:
+            fold_list = ops["data_path"]
+    else:
+        fold_list = froot
+    fsall = []
+    for k, fld in enumerate(fold_list):
+        try:
+            fs = search_for_ext(fld, extension="mp4",
+                                look_one_level_down=ops["look_one_level_down"])
+            fsall.extend(fs)
+        except:
+            fs = search_for_ext(fld, extension="avi",
+                                look_one_level_down=ops["look_one_level_down"])
+            fsall.extend(fs)
+    if len(fsall) == 0:
+        print(fold_list)
+        raise Exception("No files, check path.")
+    else:
+        print("** Found %d movies - converting to binary **" % (len(fsall)))
+    return fsall, ops
+
+
 
 def list_h5(ops):
     froot = os.path.dirname(ops["h5py"])
@@ -248,6 +283,10 @@ def find_files_open_binaries(ops1, ish5=False):
         # find nd2s
         fs, ops2 = get_nd2_list(ops1[0])
         print("Nikon files:")
+        print("\n".join(fs))
+    elif input_format == "movie":
+        fs, ops2 = get_movie_list(ops1[0])
+        print("Movie files:")
         print("\n".join(fs))
     else:
         # find tiffs

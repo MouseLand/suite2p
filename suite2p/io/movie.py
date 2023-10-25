@@ -5,6 +5,7 @@ except:
     HAS_CV2 = False 
 
 import numpy as np
+import time
 from typing import Optional, Tuple, Sequence
 from .utils import find_files_open_binaries, init_ops
 
@@ -144,6 +145,7 @@ def movie_to_binary(ops):
     ncp = nplanes * nchannels
     nbatch = ncp * int(np.ceil(ops1[0]["batch_size"] / ncp))
     print(filenames)
+    t0 = time.time()
     with VideoReader(filenames=filenames) as vr:
         if ops1[0]["fs"]<=0:
             for ops in ops1:
@@ -184,6 +186,9 @@ def movie_to_binary(ops):
                 ops1[j]["nframes"] += im2write.shape[0]
                 #ops1[j]["nframes_per_folder"][ih5] += im2write.shape[0]
             ik += nframes
+            if ik % (nbatch * 4) == 0:
+                print("%d frames of binary, time %0.2f sec." %
+                      (ik, time.time() - t0))
 
     # write ops files
     do_registration = ops1[0]["do_registration"]
@@ -203,15 +208,3 @@ def movie_to_binary(ops):
         if nchannels > 1:
             reg_file_chan2[j].close()
     return ops1[0]
-
-#vr = VideoReader(filenames=["/media/carsen/ssd4/laura/miniscope/6PM4_2022-10-14_movie.mp4", 
-#                            "/media/carsen/ssd4/laura/miniscope/6PM4_2022-10-14_movie (copy).mp4"])
-#im = vr.get_frames(np.array([74000, 77000]))
-
-ops = default_ops()
-ops["fs"] = 0
-ops["data_path"] = ["/media/carsen/ssd4/laura/miniscope/"]
-ops["save_path0"] = ops["data_path"][0]
-ops["input_format"] = "movie"
-
-ops_out = movie_to_binary(ops)

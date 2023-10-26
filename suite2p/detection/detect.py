@@ -125,6 +125,8 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, ops=default_ops
     n_frames, Ly, Lx = f_reg.shape
     yrange = ops.get("yrange", [0, Ly]) if yrange is None else yrange
     xrange = ops.get("xrange", [0, Lx]) if xrange is None else xrange
+    ops["yrange"] = yrange
+    ops["xrange"] = xrange
 
     if mov is None:
         bin_size = int(
@@ -137,6 +139,10 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, ops=default_ops
             raise ValueError("mov.shape[1] is not same size as yrange")
         elif mov.shape[2] != xrange[-1] - xrange[0]:
             raise ValueError("mov.shape[2] is not same size as xrange")
+
+    if "meanImg" not in ops:
+        ops["meanImg"] = mov.mean(axis=0)
+        ops["max_proj"] = mov.max(axis=0)
 
     if ops.get("inverted_activity", False):
         mov -= mov.min()

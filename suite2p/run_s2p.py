@@ -413,6 +413,9 @@ def run_s2p(ops={}, db={}, server={}):
     if len(plane_folders) > 0 and (ops.get("input_format") and ops["input_format"]=="binary"):
         # binary file is already made, will use current ops
         ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
+        if isinstance(ops["Lys"], int):
+            ops["Lys"] = [ops["Lys"]]
+            ops["Lxs"] = [ops["Lxs"]]
         for i, (f, opf) in enumerate(zip(plane_folders, ops_paths)):
             ops["bin_file"] = os.path.join(f, "data.bin")
             ops["Ly"] = ops["Lys"][i]

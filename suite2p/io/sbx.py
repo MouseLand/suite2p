@@ -9,12 +9,10 @@ from .utils import init_ops, find_files_open_binaries
 
 try:
     from sbxreader import sbx_memmap
+    HAS_SBX = True
 except:
-    print("Could not load the sbx reader, installing with pip.")
-    from subprocess import call
-    call("pip install sbxreader", shell=True)
-    from sbxreader import sbx_memmap
-
+    HAS_SBX = False
+    
 
 def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
     """  finds scanbox files and writes them to binaries
@@ -31,6 +29,8 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
             "Ly", "Lx", ops["reg_file"] or ops["raw_file"] is created binary
 
     """
+    if not HAS_SBX:
+        raise ImportError("sbxreader is required for this file type, please 'pip install sbxreader'")
 
     ops1 = init_ops(ops)
     # the following should be taken from the metadata and not needed but the files are initialized before...

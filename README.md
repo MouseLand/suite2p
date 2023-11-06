@@ -92,7 +92,7 @@ If you want to download and edit the code, and use that version,
 ### Installation for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
-2. Run `conda env create --name suite2p`
+2. Run `conda create --name suite2p python=3.9`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .[all]`
 5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).

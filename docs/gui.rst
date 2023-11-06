@@ -198,6 +198,18 @@ and it will ask you to specify a file location for the new classifier.
 Then you can load the classifier that you built into the GUI, or you can
 save it as your default classifier.
 
+Applying a custom classifier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Go to the "Classifier" menu and click "Load / from file". A window will 
+pop up and allow you to select a classfier from a file that you have 
+already built. Upon loading, the GUI will recolor ROIs according to their
+iscell probability according to the new classifier, but they will retain 
+their previous category and the ``iscell.npy`` file will not be updated. 
+If you want to apply this new classifier to the ROIs category and update 
+the ``iscell.npy`` file, then click the classifier probability box, enter
+your threshold, and press enter. 
+
 Visualizing activity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

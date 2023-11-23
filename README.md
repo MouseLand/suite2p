@@ -1,7 +1,7 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
-[![Documentation Status](https://readthedocs.org/projects/cellpose/badge/?version=latest)](https://cellpose.readthedocs.io/en/latest/?badge=latest)
-![tests](https://github.com/mouseland/cellpose/actions/workflows/test_and_deploy.yml/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=latest)](https://suite2p.readthedocs.io/en/latest/?badge=latest)
+![tests](https://github.com/mouseland/suite2p/actions/workflows/test_and_deploy.yml/badge.svg)
 [![codecov](https://codecov.io/gh/MouseLand/suite2p/branch/main/graph/badge.svg?token=OJEC3mty85)](https://codecov.io/gh/MouseLand/suite2p)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![Downloads](https://static.pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)

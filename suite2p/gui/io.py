@@ -4,6 +4,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import os, time
 import numpy as np
 import scipy.io
+from scipy.ndimage import gaussian_filter1d
 from qtpy import QtGui
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 

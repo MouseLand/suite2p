@@ -65,9 +65,9 @@ Correlations with 1D var
 You can load an external stimulus or behavioral trace (1D) using "File -
 Load behavior or stim trace (1D only)". The GUI expects a \*.npy file
 that is the same length as the data in time (F.shape[1] from "F.npy").
-You can then look at the correlation of each cell with this trace. And
-it will be plotted along with the cell traces if you select multiple
-cells or in the "Visualize" menu.
+The length should match the number of frames in "F.npy". You can then look at the correlation of each 
+cell with this trace. And it will be plotted along with the cell traces 
+if you select multiple cells or in the "Visualize" menu.
 
 .. _rastermap--custom:
 

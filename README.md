@@ -1,7 +1,7 @@
 # suite2p <img src="suite2p/logo/logo_unshaded.png" width="250" title="sweet two pea" alt="sweet two pea" align="right" vspace = "50">
 
-[![Documentation Status](https://readthedocs.org/projects/cellpose/badge/?version=latest)](https://cellpose.readthedocs.io/en/latest/?badge=latest)
-![tests](https://github.com/mouseland/cellpose/actions/workflows/test_and_deploy.yml/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/suite2p/badge/?version=latest)](https://suite2p.readthedocs.io/en/latest/?badge=latest)
+![tests](https://github.com/mouseland/suite2p/actions/workflows/test_and_deploy.yml/badge.svg)
 [![codecov](https://codecov.io/gh/MouseLand/suite2p/branch/main/graph/badge.svg?token=OJEC3mty85)](https://codecov.io/gh/MouseLand/suite2p)
 [![PyPI version](https://badge.fury.io/py/suite2p.svg)](https://badge.fury.io/py/suite2p)
 [![Downloads](https://static.pepy.tech/badge/suite2p)](https://pepy.tech/project/suite2p)
@@ -27,6 +27,7 @@ suite2p includes the following modules:
 
 This code was written by Carsen Stringer and Marius Pachitariu.
 For support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+
 The reference paper is [here](https://www.biorxiv.org/content/early/2017/07/20/061507). The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
 You can now run suite2p in google colab, no need to locally install (although we recommend doing so eventually): [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2023.ipynb). Note you do not have access to the GUI via google colab, but you can download the processed files and view them locally in the GUI.
@@ -36,6 +37,8 @@ See this **twitter [thread](https://twitter.com/marius10p/status/103280477663388
 The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs.
 
 Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb).
+
+**Note on pull requests**: we accept very few pull requests due to the maintenance efforts required to support new code, and we do not accept pull requests from automated code checkers. If you wrote code that interfaces/changes suite2p behavior, a common approach would be to keep that in a fork and pull periodically from the main branch to make sure you have the latest updates.
 
 ### CITATION
 
@@ -89,7 +92,7 @@ If you want to download and edit the code, and use that version,
 ### Installation for developers
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
-2. Run `conda env create --name suite2p`
+2. Run `conda create --name suite2p python=3.9`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .[all]`
 5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).

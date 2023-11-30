@@ -98,7 +98,7 @@ def brukerRaw_to_binary(ops):
                 bin = bin[:nXpixels*nYpixels*nchannels*samplesPerPixel*numToTake*nplanes]
 
             if samplesPerPixel > 1:
-                bin = multisamplingAverage(bin,samplesPerPixel)
+                bin = multisamplingAverage(bin,samplesPerPixel,nchannels)
             elif samplesPerPixel == 1:
                 bin[bin > 2**13] = 0
 

@@ -150,6 +150,8 @@ def get_h5_list(ops):
                                 ["*.h5", "*.hdf5", "*.mesc"])
         fsall.extend(fs)
         first_tiffs.extend(list(ftiffs))
+    #if len(fs) > 0 and not isinstance(fs, list):
+    #    fs = [fs]
     if len(fs) == 0:
         print("Could not find any h5 files")
         raise Exception("no h5s")
@@ -262,18 +264,18 @@ def find_files_open_binaries(ops1, ish5=False):
         input_format = "h5"
     print(input_format)
     if input_format == "h5":
-        if len(ops1[0]["data_path"]) > 0:
-            fs, ops2 = get_h5_list(ops1[0])
-            print("NOTE: using a list of h5 files:")
-            print(fs)
-        # find h5"s
+        print(f"OPS1 h5py: {ops1[0]['h5py']}")
+        if ops1[0]["h5py"]:
+            fs = ops1[0]["h5py"]
+            fs = [fs]
         else:
-            if ops1[0]["look_one_level_down"]:
-                fs = list_h5(ops1[0])
+            if len(ops1[0]["data_path"]) > 0:
+                fs, ops2 = get_h5_list(ops1[0])
                 print("NOTE: using a list of h5 files:")
-                print(fs)
+            # find h5"s
             else:
-                fs = [ops1[0]["h5py"]]
+                raise Exception("No h5 files found")
+        
     elif input_format == "sbx":
         # find sbx
         fs, ops2 = get_sbx_list(ops1[0])

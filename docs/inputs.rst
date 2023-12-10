@@ -107,7 +107,7 @@ In the PrairieView software, set your preferences to convert your raw files to m
 * Preferences > Save Multipage TIFFs
 * Preferences > Automatically Convert Raw Files > After Acquisition
 
-This will cause the GUI to be unresponsive for some time after each acquisition. Please keep in mind that this only works when you're working with files from a single channel recording.
+This will cause the GUI to be unresponsive for some time after each acquisition. This should work for both single-channel and 2-channel recordings.
 
 Mesoscope tiffs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

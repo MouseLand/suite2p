@@ -1,6 +1,7 @@
 import setuptools
 
 install_deps = ["importlib-metadata",
+        "xmltodict",
         "natsort",
         "rastermap>=0.9.0",
         "tifffile",

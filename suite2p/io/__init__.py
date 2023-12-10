@@ -2,6 +2,7 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from .h5 import h5py_to_binary
+from .raw import raw_to_binary
 from .nwb import save_nwb, read_nwb, nwb_to_binary
 from .save import combined, compute_dydx, save_mat
 from .sbx import sbx_to_binary

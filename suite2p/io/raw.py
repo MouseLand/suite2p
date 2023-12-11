@@ -76,7 +76,7 @@ def _initialize_destination_files(ops, raw_file_configurations, use_recorded_def
     if use_recorded_defaults:
         ops['nplanes'] = cfg.zplanes
         if cfg.channel > 1:
-            ops['nchannels'] = 2 # TODO-yp-4
+            ops['nchannels'] = 2
         ops['fs'] = cfg.frame_rate
 
     # Prepare conversion environment for all files

@@ -6,8 +6,12 @@ import numpy as np
 
 from os import makedirs, listdir
 from os.path import isdir, isfile, getsize, join
-from xmltodict import parse
 
+try:
+    from xmltodict import parse
+    HAS_XML = True
+except (ModuleNotFoundError, ImportError):
+    HAS_XML = False
 
 EXTENSION = 'raw'
 
@@ -33,6 +37,9 @@ def raw_to_binary(ops, use_recorded_defaults=True):
         ops : dictionary of first plane
 
     """
+
+    if not HAS_XML:
+        raise ImportError("xmltodict is required for RAW file support (pip install xmltodict)")
 
     # Load raw file configurations
     raw_file_configurations = [_RawFile(path) for path in ops['data_path']]

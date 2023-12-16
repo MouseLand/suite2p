@@ -15,12 +15,6 @@ import numpy as np
 from . import extraction, io, registration, detection, classification, default_ops
 
 try:
-    from haussmeister import haussio
-    HAS_HAUS = True
-except ImportError:
-    HAS_HAUS = False
-
-try:
     import pynwb
     HAS_NWB = True
 except ImportError:
@@ -466,8 +460,6 @@ def run_s2p(ops={}, db={}, server={}):
             ops["input_format"] = "nd2"
             if not HAS_ND2:
                 raise ImportError("nd2 not found; pip install nd2")
-        elif HAS_HAUS:
-            ops["input_format"] = "haus"
         elif not "input_format" in ops:
             ops["input_format"] = "tif"
         elif ops["input_format"] == "movie":
@@ -486,9 +478,8 @@ def run_s2p(ops={}, db={}, server={}):
                 io.nd2_to_binary,
             "mesoscan":
                 io.mesoscan_to_binary,
-            "haus":
-                lambda ops: haussio.load_haussio(ops["data_path"][0]).tosuite2p(ops.
-                                                                                copy()),
+            "raw":
+                io.raw_to_binary,
             "bruker":
                 io.ome_to_binary,
             "movie":

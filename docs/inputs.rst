@@ -129,10 +129,10 @@ you're using this and having trouble because it's not straightforward.
 Thorlabs raw files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Christoph Schmidt-Hieber (@neurodroid) has written `haussmeister`_ which
-can load and convert ThorLabs \*.raw files to suite2p binary files!
-suite2p will automatically use this if you have pip installed it
-(``pip install haussmeister``).
+Suite2p has been upgraded with internal support for Thorlabs raw files (Yael Prilutski).
+Specify "raw" for "input_format".
+Designed to work with one or several planes and/or channels.
+
 
 .. _hdf5-files-and-sbx:
 

@@ -262,7 +262,11 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
                 else:
                     for output, output_best in zip(outputs[:-1], outputs_best):
                         output_best[i] = output[0]
-        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
+        if len(outputs_best)==7:
+            frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
+        else:
+            frames, ymax, xmax, cmax = outputs_best
+            ymax1, xmax1, cmax1 = None, None, None
         return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, (zpos_best, cmax_all)
     else:
         if len(refAndMasks) == 7 or not isinstance(refAndMasks, np.ndarray):
@@ -306,7 +310,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
             maxregshift=ops["maxregshift"],
             smooth_sigma_time=ops["smooth_sigma_time"],
         )
-
+        
         for frame, dy, dx in zip(frames, ymax, xmax):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
@@ -638,6 +642,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     else:
         nchannels = 1
 
+    
     outputs = compute_reference_and_register_frames(f_align_in, f_align_out=f_align_out,
                                                     refImg=refImg, ops=ops)
     refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zest = outputs

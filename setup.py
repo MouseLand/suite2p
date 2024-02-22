@@ -10,7 +10,7 @@ install_deps = ["importlib-metadata",
         "matplotlib",
         "scipy>=1.9.0",
         "scikit-learn",
-        "cellpose",
+        "cellpose<3.0",
         "scanimage-tiff-reader>=1.4.1"
         ]
 
@@ -40,6 +40,10 @@ test_deps = [
       "tqdm",
       "pynwb>=2.3.2", #this is needed as test_io contains a test with nwb
       "pytest-qt>3.3.0",
+]
+
+dcimg_deps = [
+    "dcimg @ git+https://github.com/lens-biophotonics/dcimg.git"
 ]
 
 # check if pyqt/pyside already installed
@@ -104,6 +108,7 @@ setuptools.setup(
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
+      "dcimg": dcimg_deps,
       "io": io_deps,
       "tests": test_deps,
       "all": all_deps,

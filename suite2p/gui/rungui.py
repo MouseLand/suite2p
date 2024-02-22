@@ -276,7 +276,7 @@ class RunWindow(QDialog):
         self.inputformat = QComboBox()
         [
             self.inputformat.addItem(f)
-            for f in ["tif", "binary", "bruker", "sbx", "h5", "movie", "nd2", "mesoscan", "raw"]
+            for f in ["tif", "binary", "bruker", "sbx", "h5", "movie", "nd2", "mesoscan", "raw", "dcimg"]
         ]
         self.inputformat.currentTextChanged.connect(self.parse_inputformat)
         self.layout.addWidget(self.inputformat, 2, 0, 1, 1)

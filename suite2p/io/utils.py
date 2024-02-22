@@ -226,6 +226,26 @@ def get_nd2_list(ops):
         print("** Found %d nd2 files - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+def get_dcimg_list(ops):
+    """ make list of dcimg files to process
+        if ops["look_one_level_down"], then all dcimg"s in all folders + one level down
+    """
+    froot = ops["data_path"]
+    fold_list = ops["data_path"]
+    fsall = []
+    nfs = 0
+    first_tiffs = []
+    for k, fld in enumerate(fold_list):
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.dcimg"])
+        fsall.extend(fs)
+        first_tiffs.extend(list(ftiffs))
+    if len(fs) == 0:
+        print("Could not find any dcimg files")
+        raise Exception("no dcimg")
+    else:
+        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
+        print("** Found %d dcimg files - converting to binary **" % (len(fsall)))
+    return fsall, ops
 
 def find_files_open_binaries(ops1, ish5=False):
     """  finds tiffs or h5 files and opens binaries for writing
@@ -290,6 +310,11 @@ def find_files_open_binaries(ops1, ish5=False):
         fs, ops2 = get_movie_list(ops1[0])
         print("Movie files:")
         print("\n".join(fs))
+    elif input_format == "dcimg":
+        # find dcimgs
+        fs, ops2 = get_dcimg_list(ops1[0])
+        print("DCAM image files:")
+        print("\n".join(fs))
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])
@@ -342,7 +367,7 @@ def init_ops(ops):
             ops["save_path"] = os.path.join(ops["save_path0"], "suite2p", "plane%d" % j)
 
         if ("fast_disk" not in ops) or len(ops["fast_disk"]) == 0:
-            ops["fast_disk"] = ops["save_path0"]
+            ops["fast_disk"] = ops["save_path0"].copy()
         fast_disk = os.path.join(ops["fast_disk"], "suite2p", "plane%d" % j)
         ops["ops_path"] = os.path.join(ops["save_path"], "ops.npy")
         ops["reg_file"] = os.path.join(fast_disk, "data.bin")

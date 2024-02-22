@@ -68,7 +68,7 @@ try:
 except:
     pass
 
-all_deps = gui_deps + nwb_deps + test_deps + io_deps
+all_deps = gui_deps + nwb_deps + test_deps + io_deps + dcimg_deps
 
 try:
     import torch

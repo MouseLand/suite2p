@@ -438,7 +438,7 @@ class RunWindow(QDialog):
         # pre-download model
         pretrained_model_string = self.ops.get("pretrained_model", "cyto")
         pretrained_model_string = pretrained_model_string if pretrained_model_string is not None else "cyto"
-        pretrained_model_path = model_path(pretrained_model_string, 0, True)
+        pretrained_model_path = model_path(pretrained_model_string, 0)
         self.finish = True
         self.error = False
         ops_file = os.path.join(self.ops_path, "ops.npy")

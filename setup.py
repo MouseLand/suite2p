@@ -42,6 +42,10 @@ test_deps = [
       "pytest-qt>3.3.0",
 ]
 
+dcimg_deps = [
+    "dcimg @ git+https://github.com/lens-biophotonics/dcimg.git"
+]
+
 # check if pyqt/pyside already installed
 try:
     import PyQt5
@@ -64,7 +68,7 @@ try:
 except:
     pass
 
-all_deps = gui_deps + nwb_deps + test_deps + io_deps
+all_deps = gui_deps + nwb_deps + test_deps + io_deps + dcimg_deps
 
 try:
     import torch
@@ -104,6 +108,7 @@ setuptools.setup(
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
+      "dcimg": dcimg_deps,
       "io": io_deps,
       "tests": test_deps,
       "all": all_deps,

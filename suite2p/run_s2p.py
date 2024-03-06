@@ -44,6 +44,12 @@ try:
 except ImportError:
     HAS_CV2 = False
 
+try:
+    import dcimg
+    HAS_DCIMG = True
+except ImportError:
+    HAS_DCIMG = False
+
 from functools import partial
 from pathlib import Path
 
@@ -460,6 +466,10 @@ def run_s2p(ops={}, db={}, server={}):
             ops["input_format"] = "nd2"
             if not HAS_ND2:
                 raise ImportError("nd2 not found; pip install nd2")
+        elif ops.get("dcimg"):
+            ops["input_format"] = "dcimg"
+            if not HAS_DCIMG:
+                raise ImportError("dcimg not found; pip install dcimg")
         elif not "input_format" in ops:
             ops["input_format"] = "tif"
         elif ops["input_format"] == "movie":
@@ -484,6 +494,8 @@ def run_s2p(ops={}, db={}, server={}):
                 io.ome_to_binary,
             "movie":
                 io.movie_to_binary,
+            "dcimg":
+                io.dcimg_to_binary,
         }
         if ops["input_format"] in convert_funs:
             ops0 = convert_funs[ops["input_format"]](ops.copy())

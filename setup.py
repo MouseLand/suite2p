@@ -25,7 +25,9 @@ io_deps = [
     "paramiko",
     "nd2",
     "sbxreader",
-    "h5py"
+    "h5py",
+    "opencv-python-headless",
+    "xmltodict"
 ]
 
 nwb_deps = [
@@ -62,7 +64,7 @@ try:
 except:
     pass
 
-all_deps = gui_deps + nwb_deps + test_deps + io_deps
+all_deps = gui_deps + nwb_deps + test_deps + io_deps 
 
 try:
     import torch
@@ -102,6 +104,7 @@ setuptools.setup(
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
+      "dcimg": dcimg_deps,
       "io": io_deps,
       "tests": test_deps,
       "all": all_deps,

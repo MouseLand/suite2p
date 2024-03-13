@@ -112,6 +112,33 @@ def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
         print("NOTE: ScanImageTiffReader not installed, using tifffile")
         return True
 
+def read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff):
+    # tiff reading
+    if ix >= Ltif:
+        return None
+    nfr = min(Ltif - ix, batch_size)
+    if use_sktiff:
+        im = imread(file, key=range(ix, ix + nfr))
+    elif Ltif == 1:
+        im = tif.data()
+    else:
+        im = tif.data(beg=ix, end=ix + nfr)
+    # for single-page tiffs, add 1st dim
+    if len(im.shape) < 3:
+        im = np.expand_dims(im, axis=0)
+
+    # check if uint16
+    if im.dtype.type == np.uint16:
+        im = (im // 2).astype(np.int16)
+    elif im.dtype.type == np.int32:
+        im = (im // 2).astype(np.int16)
+    elif im.dtype.type != np.int16:
+        im = im.astype(np.int16)
+
+    if im.shape[0] > nfr:
+        im = im[:nfr, :, :]
+
+    return im
 
 def tiff_to_binary(ops):
     """  finds tiff files and writes them to binaries
@@ -158,33 +185,10 @@ def tiff_to_binary(ops):
             which_folder += 1
             iplane = 0
         ix = 0
-
         while 1:
-            if ix >= Ltif:
-                break
-            nfr = min(Ltif - ix, batch_size)
-            # tiff reading
-            if use_sktiff:
-                im = imread(file, key=range(ix, ix + nfr))
-            elif Ltif == 1:
-                im = tif.data()
-            else:
-                im = tif.data(beg=ix, end=ix + nfr)
-
-            # for single-page tiffs, add 1st dim
-            if len(im.shape) < 3:
-                im = np.expand_dims(im, axis=0)
-
-            # check if uint16
-            if im.dtype.type == np.uint16:
-                im = (im // 2).astype(np.int16)
-            elif im.dtype.type == np.int32:
-                im = (im // 2).astype(np.int16)
-            elif im.dtype.type != np.int16:
-                im = im.astype(np.int16)
-
-            if im.shape[0] > nfr:
-                im = im[:nfr, :, :]
+            im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)
+            if im is None:
+                break          
             nframes = im.shape[0]
             for j in range(0, nplanes):
                 if ik == 0 and ix == 0:
@@ -212,7 +216,6 @@ def tiff_to_binary(ops):
                     im2write = im[int(i0) + 1 - nfunc:nframes:nplanes * nchannels]
                     reg_file_chan2[j].write(bytearray(im2write))
                     ops1[j]["meanImg_chan2"] += im2write.mean(axis=0)
-
             iplane = (iplane - nframes / nchannels) % nplanes
             ix += nframes
             ntotal += nframes
@@ -425,6 +428,8 @@ def ome_to_binary(ops):
     # open all binary files for writing and look for tiffs in all requested folders
     ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
     ops = ops1[0]
+    batch_size = ops["batch_size"]
+    use_sktiff = not HAS_SCANIMAGE
 
     fs_Ch1, fs_Ch2 = [], []
     for f in fs:
@@ -442,18 +447,26 @@ def ome_to_binary(ops):
     if len(fs_Ch2) == 0:
         ops1[0]["nchannels"] = 1
     nchannels = ops1[0]["nchannels"]
-
+    print(f"nchannels = {nchannels}")
+    
     # loop over all tiffs
     TiffReader = ScanImageTiffReader if HAS_SCANIMAGE else TiffFile
     with TiffReader(fs_Ch1[0]) as tif:
-        im0 = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
-
+        if HAS_SCANIMAGE:
+            n_pages = tif.shape()[0] if len(tif.shape()) > 2 else 1
+            shape = tif.shape()[-2:]
+        else:
+            n_pages = len(tif.pages)
+            im0 = tif.pages[0].asarray()
+            shape = im0.shape
+    
     for ops1_0 in ops1:
         ops1_0["nframes"] = 0
         ops1_0["frames_per_folder"][0] = 0
-        ops1_0["meanImg"] = np.zeros(im0.shape, np.float32)
+        ops1_0["frames_per_file"] = np.ones(len(fs_Ch1), "int") if n_pages==1 else np.zeros(len(fs_Ch1), "int")
+        ops1_0["meanImg"] = np.zeros(shape, np.float32)
         if nchannels > 1:
-            ops1_0["meanImg_chan2"] = np.zeros(im0.shape, np.float32)
+            ops1_0["meanImg_chan2"] = np.zeros(shape, np.float32)
 
     bruker_bidirectional = ops.get("bruker_bidirectional", False)
     iplanes = np.arange(0, nplanes)
@@ -467,45 +480,75 @@ def ome_to_binary(ops):
                           int(np.ceil(len(fs_Ch1) / (2 * nplanes)))).flatten()
         iplanes = iplanes[:len(fs_Ch1)]
 
+    itot = 0
     for ik, file in enumerate(fs_Ch1):
+        ip = iplanes[ik]
         # read tiff
-        with TiffReader(file) as tif:
-            im = tif.data()  if HAS_SCANIMAGE else tif.pages[0].asarray()
-        if im.dtype.type == np.uint16:
-            im = (im // 2)
-        im = im.astype(np.int16)
-
-        # write to binary
-        ix = iplanes[ik]
-        ops1[ix]["nframes"] += 1
-        ops1[ix]["frames_per_folder"][0] += 1
-        ops1[ix]["meanImg"] += im.astype(np.float32)
-        reg_file[ix].write(bytearray(im))
-        #gc.collect()
-
-        if ik % 1000 == 0:
-            print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))
-
-    if nchannels > 1:
-        for ik, file in enumerate(fs_Ch2):
+        if n_pages==1:    
             with TiffReader(file) as tif:
-                im = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
+                im = tif.data()  if HAS_SCANIMAGE else tif.pages[0].asarray()
             if im.dtype.type == np.uint16:
                 im = (im // 2)
-
             im = im.astype(np.int16)
-            ix = iplanes[ik]
-            ops1[ix]["meanImg_chan2"] += im.astype(np.float32)
-            reg_file_chan2[ix].write(bytearray(im))
-            #gc.collect()
 
-            if ik % 1000 == 0:
-                print("%d frames of binary, time %0.2f sec." % (ik, time.time() - t0))
+            # write to binary
+            ops1[ip]["nframes"] += 1
+            ops1[ip]["frames_per_folder"][0] += 1
+            ops1[ip]["meanImg"] += im.astype(np.float32)
+            reg_file[ip].write(bytearray(im))
+            #gc.collect()
+        else:
+            tif, Ltif = open_tiff(file, not HAS_SCANIMAGE)
+            # keep track of the plane identity of the first frame (channel identity is assumed always 0)
+            ix = 0
+            while 1:
+                im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)
+                if im is None:
+                    break          
+                nframes = im.shape[0]
+                ix += nframes
+                itot += nframes
+                reg_file[ip].write(bytearray(im))
+                ops1[ip]["meanImg"] += im.astype(np.float32).sum(axis=0)
+                ops1[ip]["nframes"] += im.shape[0]
+                ops1[ip]["frames_per_file"][ik] += nframes
+                ops1[ip]["frames_per_folder"][0] += nframes
+                if itot % 1000 == 0:
+                    print("%d frames of binary, time %0.2f sec." % (itot, time.time() - t0))
+                gc.collect()            
+
+    if nchannels > 1:
+        itot = 0
+        for ik, file in enumerate(fs_Ch2):
+            ip = iplanes[ik]
+            if n_pages==1:
+                with TiffReader(file) as tif:
+                    im = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
+                if im.dtype.type == np.uint16:
+                    im = (im // 2)
+                im = im.astype(np.int16)
+                ops1[ip]["meanImg_chan2"] += im.astype(np.float32)
+                reg_file_chan2[ip].write(bytearray(im))
+            else:
+                tif, Ltif = open_tiff(file, not HAS_SCANIMAGE)
+                ix = 0
+                while 1:
+                    im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)
+                    if im is None:
+                        break          
+                    nframes = im.shape[0]
+                    ix += nframes
+                    itot += nframes
+                    ops1[ip]["meanImg_chan2"] += im.astype(np.float32).sum(axis=0)
+                    reg_file_chan2[ip].write(bytearray(im))
+                    if itot % 1000 == 0:
+                        print("%d frames of binary, time %0.2f sec." % (itot, time.time() - t0))
+                    gc.collect()
 
     # write ops files
     do_registration = ops["do_registration"]
     for ops in ops1:
-        ops["Ly"], ops["Lx"] = im0.shape
+        ops["Ly"], ops["Lx"] = shape
         if not do_registration:
             ops["yrange"] = np.array([0, ops["Ly"]])
             ops["xrange"] = np.array([0, ops["Lx"]])

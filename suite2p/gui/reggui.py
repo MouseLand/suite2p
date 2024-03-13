@@ -13,6 +13,7 @@ from qtpy.QtWidgets import QMainWindow, QGridLayout, QCheckBox, QLabel, QLineEdi
 from scipy.ndimage import gaussian_filter1d
 from natsort import natsorted
 from tifffile import imread
+import json
 
 from . import masks, views, graphics, traces, classgui, utils
 from .. import registration
@@ -354,8 +355,7 @@ class BinaryPlayer(QMainWindow):
         self.p2.setLimits(xMin=0, xMax=self.nframes)
 
     def open(self):
-        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file",
-                                               filter="ops*.npy")
+        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file or single-plane ops.json file")
         # load ops in same folder
         if filename:
             print(filename[0])
@@ -430,7 +430,19 @@ class BinaryPlayer(QMainWindow):
 
     def openFile(self, filename, fromgui):
         try:
-            ops = np.load(filename, allow_pickle=True).item()
+            ext = os.path.splitext(filename)[1]
+            if ext == ".npy":
+                ops = np.load(filename, allow_pickle=True).item()
+                dirname = os.path.dirname(filename)
+            elif ext == ".json":
+                with open(filename, "r") as f:
+                    ops = json.load(f)
+                ops["Ly"] = ops["Lys"] if isinstance(ops["Lys"], int) else ops["Lys"][0]
+                ops["Lx"] = ops["Lxs"] if isinstance(ops["Lxs"], int) else ops["Lxs"][0]
+                dirname = os.path.join(os.path.dirname(filename), "suite2p/plane0/")
+                ops["reg_file"] = os.path.join(dirname, "data.bin")
+                nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
+                ops["nframes"] = os.path.getsize(ops["reg_file"]) // nbytesread
             self.LY = ops["Ly"]
             self.LX = ops["Lx"]
             self.Ly = [ops["Ly"]]
@@ -442,7 +454,7 @@ class BinaryPlayer(QMainWindow):
                 self.reg_loc = [ops["reg_file"]]
             else:
                 self.reg_loc = [
-                    os.path.abspath(os.path.join(os.path.dirname(filename), "data.bin"))
+                    os.path.abspath(os.path.join(dirname, "data.bin"))
                 ]
             self.reg_file = [open(self.reg_loc[-1], "rb")]
             self.wraw = False

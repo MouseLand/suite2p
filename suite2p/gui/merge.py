@@ -316,7 +316,7 @@ class MergeWindow(QDialog):
         self.n = 0
         if len(self.merge_list) > 0:
             self.suggestMerge.setEnabled(True)
-            self.unmerged = np.ones(len(self.merge_list), np.bool)
+            self.unmerged = np.ones(len(self.merge_list), bool)
             self.suggest_merge(parent)
 
     def suggest_merge(self, parent):

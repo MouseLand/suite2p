@@ -93,10 +93,21 @@ imageJ and suite2p can recognize (see matlab tiff writing
 Bruker
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+**Single Page Tifs**:
 Using Bruker Prairie View system, .RAW files are batch converted to single .ome.tifs.
 Now, you can load the resulting multiple tif files (i.e. one per frame per channel) to suite2p to be converted to binary.
 This looks for files containing 'Ch1', and will assume all additional files are 'Ch2'.
 Select "input_format" as "bruker" in the drop down menu in the GUI or set ``ops['input_format'] = "bruker"``.
+
+**Multi Page Tifs**:
+To speed up the processing of input from bruker scopes, we recommend you save your .RAW files as multipage tifs.  This can be done using the Bruker Prairie View system. 
+
+In the PrairieView software, set your preferences to convert your raw files to multipage TIFFs. 
+
+* Preferences > Save Multipage TIFFs
+* Preferences > Automatically Convert Raw Files > After Acquisition
+
+This will cause the GUI to be unresponsive for some time after each acquisition. This should work for both single-channel and 2-channel recordings.
 
 Mesoscope tiffs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,10 +129,10 @@ you're using this and having trouble because it's not straightforward.
 Thorlabs raw files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Christoph Schmidt-Hieber (@neurodroid) has written `haussmeister`_ which
-can load and convert ThorLabs \*.raw files to suite2p binary files!
-suite2p will automatically use this if you have pip installed it
-(``pip install haussmeister``).
+Suite2p has been upgraded with internal support for Thorlabs raw files (Yael Prilutski).
+Specify "raw" for "input_format".
+Designed to work with one or several planes and/or channels.
+
 
 .. _hdf5-files-and-sbx:
 

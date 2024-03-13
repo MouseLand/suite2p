@@ -60,6 +60,41 @@ def get_sbx_list(ops):
         print("** Found %d sbx - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+def get_movie_list(ops):
+    """ make list of movie files to process
+    if ops["subfolders"], then all  ops["data_path"][0] / ops["subfolders"] / *.avi or *.mp4
+    if ops["look_one_level_down"], then all tiffs in all folders + one level down
+    """
+    froot = ops["data_path"]
+    # use a user-specified list of tiffs
+    if len(froot) == 1:
+        if "subfolders" in ops and len(ops["subfolders"]) > 0:
+            fold_list = []
+            for folder_down in ops["subfolders"]:
+                fold = os.path.join(froot[0], folder_down)
+                fold_list.append(fold)
+        else:
+            fold_list = ops["data_path"]
+    else:
+        fold_list = froot
+    fsall = []
+    for k, fld in enumerate(fold_list):
+        try:
+            fs = search_for_ext(fld, extension="mp4",
+                                look_one_level_down=ops["look_one_level_down"])
+            fsall.extend(fs)
+        except:
+            fs = search_for_ext(fld, extension="avi",
+                                look_one_level_down=ops["look_one_level_down"])
+            fsall.extend(fs)
+    if len(fsall) == 0:
+        print(fold_list)
+        raise Exception("No files, check path.")
+    else:
+        print("** Found %d movies - converting to binary **" % (len(fsall)))
+    return fsall, ops
+
+
 
 def list_h5(ops):
     froot = os.path.dirname(ops["h5py"])
@@ -115,6 +150,8 @@ def get_h5_list(ops):
                                 ["*.h5", "*.hdf5", "*.mesc"])
         fsall.extend(fs)
         first_tiffs.extend(list(ftiffs))
+    #if len(fs) > 0 and not isinstance(fs, list):
+    #    fs = [fs]
     if len(fs) == 0:
         print("Could not find any h5 files")
         raise Exception("no h5s")
@@ -189,6 +226,26 @@ def get_nd2_list(ops):
         print("** Found %d nd2 files - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+def get_dcimg_list(ops):
+    """ make list of dcimg files to process
+        if ops["look_one_level_down"], then all dcimg"s in all folders + one level down
+    """
+    froot = ops["data_path"]
+    fold_list = ops["data_path"]
+    fsall = []
+    nfs = 0
+    first_tiffs = []
+    for k, fld in enumerate(fold_list):
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.dcimg"])
+        fsall.extend(fs)
+        first_tiffs.extend(list(ftiffs))
+    if len(fs) == 0:
+        print("Could not find any dcimg files")
+        raise Exception("no dcimg")
+    else:
+        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
+        print("** Found %d dcimg files - converting to binary **" % (len(fsall)))
+    return fsall, ops
 
 def find_files_open_binaries(ops1, ish5=False):
     """  finds tiffs or h5 files and opens binaries for writing
@@ -227,18 +284,18 @@ def find_files_open_binaries(ops1, ish5=False):
         input_format = "h5"
     print(input_format)
     if input_format == "h5":
-        if len(ops1[0]["data_path"]) > 0:
-            fs, ops2 = get_h5_list(ops1[0])
-            print("NOTE: using a list of h5 files:")
-            print(fs)
-        # find h5"s
+        print(f"OPS1 h5py: {ops1[0]['h5py']}")
+        if ops1[0]["h5py"]:
+            fs = ops1[0]["h5py"]
+            fs = [fs]
         else:
-            if ops1[0]["look_one_level_down"]:
-                fs = list_h5(ops1[0])
+            if len(ops1[0]["data_path"]) > 0:
+                fs, ops2 = get_h5_list(ops1[0])
                 print("NOTE: using a list of h5 files:")
-                print(fs)
+            # find h5"s
             else:
-                fs = [ops1[0]["h5py"]]
+                raise Exception("No h5 files found")
+        
     elif input_format == "sbx":
         # find sbx
         fs, ops2 = get_sbx_list(ops1[0])
@@ -248,6 +305,15 @@ def find_files_open_binaries(ops1, ish5=False):
         # find nd2s
         fs, ops2 = get_nd2_list(ops1[0])
         print("Nikon files:")
+        print("\n".join(fs))
+    elif input_format == "movie":
+        fs, ops2 = get_movie_list(ops1[0])
+        print("Movie files:")
+        print("\n".join(fs))
+    elif input_format == "dcimg":
+        # find dcimgs
+        fs, ops2 = get_dcimg_list(ops1[0])
+        print("DCAM image files:")
         print("\n".join(fs))
     else:
         # find tiffs

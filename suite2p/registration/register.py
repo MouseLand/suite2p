@@ -171,7 +171,7 @@ def compute_reference_masks(refImg, ops=default_ops()):
     if isinstance(refImg, list):
         refAndMasks_all = []
         for rimg in refImg:
-            refAndMasks = compute_reference_masks(rimg)
+            refAndMasks = compute_reference_masks(rimg, ops=ops)
             refAndMasks_all.append(refAndMasks)
         return refAndMasks_all
     else:
@@ -227,7 +227,6 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
 
 
     """
-
     if nZ > 1:
         cmax_best = -np.inf * np.ones(len(frames), "float32")
         cmax_all = -np.inf * np.ones((len(frames), nZ), "float32")
@@ -252,7 +251,6 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
                 outputs = register_frames(refAndMasks[z], frames[[i]], rmin=rmin[z],
                                           rmax=rmax[z], bidiphase=bidiphase, ops=ops,
                                           nZ=1)
-
                 if i == 0:
                     outputs_best = []
                     for output in outputs[:-1]:
@@ -262,7 +260,11 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
                 else:
                     for output, output_best in zip(outputs[:-1], outputs_best):
                         output_best[i] = output[0]
-        frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
+        if len(outputs_best)==7:
+            frames, ymax, xmax, cmax, ymax1, xmax1, cmax1 = outputs_best
+        else:
+            frames, ymax, xmax, cmax = outputs_best
+            ymax1, xmax1, cmax1 = None, None, None
         return frames, ymax, xmax, cmax, ymax1, xmax1, cmax1, (zpos_best, cmax_all)
     else:
         if len(refAndMasks) == 7 or not isinstance(refAndMasks, np.ndarray):
@@ -306,7 +308,7 @@ def register_frames(refAndMasks, frames, rmin=-np.inf, rmax=np.inf, bidiphase=0,
             maxregshift=ops["maxregshift"],
             smooth_sigma_time=ops["smooth_sigma_time"],
         )
-
+        
         for frame, dy, dx in zip(frames, ymax, xmax):
             frame[:] = rigid.shift_frame(frame=frame, dy=dy, dx=dx)
 
@@ -433,7 +435,6 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
         bidiphase = 0
 
     refAndMasks = compute_reference_masks(refImg, ops)
-
     ### ------------- register frames to reference image ------------ ###
 
     mean_img = np.zeros((Ly, Lx), "float32")

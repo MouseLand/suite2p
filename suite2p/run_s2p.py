@@ -15,12 +15,6 @@ import numpy as np
 from . import extraction, io, registration, detection, classification, default_ops
 
 try:
-    from haussmeister import haussio
-    HAS_HAUS = True
-except ImportError:
-    HAS_HAUS = False
-
-try:
     import pynwb
     HAS_NWB = True
 except ImportError:
@@ -43,6 +37,18 @@ try:
     HAS_SBX = True
 except ImportError:
     HAS_SBX = False
+
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+
+try:
+    import dcimg
+    HAS_DCIMG = True
+except ImportError:
+    HAS_DCIMG = False
 
 from functools import partial
 from pathlib import Path
@@ -403,7 +409,22 @@ def run_s2p(ops={}, db={}, server={}):
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
-    if len(plane_folders) > 0:
+    
+    if len(plane_folders) > 0 and (ops.get("input_format") and ops["input_format"]=="binary"):
+        # binary file is already made, will use current ops
+        ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
+        if isinstance(ops["Lys"], int):
+            ops["Lys"] = [ops["Lys"]]
+            ops["Lxs"] = [ops["Lxs"]]
+        for i, (f, opf) in enumerate(zip(plane_folders, ops_paths)):
+            ops["bin_file"] = os.path.join(f, "data.bin")
+            ops["Ly"] = ops["Lys"][i]
+            ops["Lx"] = ops["Lxs"][i]
+            nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
+            ops["nframes"] = os.path.getsize(ops["bin_file"]) // nbytesread
+            np.save(opf, ops)
+        files_found_flag = True
+    elif len(plane_folders) > 0:
         ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
         ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
         binaries_found_flag = all([
@@ -445,10 +466,15 @@ def run_s2p(ops={}, db={}, server={}):
             ops["input_format"] = "nd2"
             if not HAS_ND2:
                 raise ImportError("nd2 not found; pip install nd2")
-        elif HAS_HAUS:
-            ops["input_format"] = "haus"
+        elif ops.get("dcimg"):
+            ops["input_format"] = "dcimg"
+            if not HAS_DCIMG:
+                raise ImportError("dcimg not found; pip install dcimg")
         elif not "input_format" in ops:
             ops["input_format"] = "tif"
+        elif ops["input_format"] == "movie":
+            if not HAS_CV2:
+                raise ImportError("cv2 not found; pip install opencv-python-headless")
 
         # copy file format to a binary file
         convert_funs = {
@@ -462,11 +488,14 @@ def run_s2p(ops={}, db={}, server={}):
                 io.nd2_to_binary,
             "mesoscan":
                 io.mesoscan_to_binary,
-            "haus":
-                lambda ops: haussio.load_haussio(ops["data_path"][0]).tosuite2p(ops.
-                                                                                copy()),
+            "raw":
+                io.raw_to_binary,
             "bruker":
                 io.ome_to_binary,
+            "movie":
+                io.movie_to_binary,
+            "dcimg":
+                io.dcimg_to_binary,
         }
         if ops["input_format"] in convert_funs:
             ops0 = convert_funs[ops["input_format"]](ops.copy())

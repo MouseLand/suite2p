@@ -122,7 +122,7 @@ def register_stack(Z, ops):
     return Zreg, ops
 
 
-def compute_zpos(Zreg, ops):
+def compute_zpos(Zreg, ops, reg_file=None):
     """ compute z position of frames given z-stack Zreg
 
     Parameters
@@ -156,10 +156,11 @@ def compute_zpos(Zreg, ops):
             :,
         ]
 
-    nbytes = os.path.getsize(ops["reg_file"])
+    reg_file = ops["reg_file"] if reg_file is None else reg_file
+    nbytes = os.path.getsize(reg_file)
     nFrames = int(nbytes / (2 * Ly * Lx))
 
-    reg_file = open(ops["reg_file"], "rb")
+    reg_file = open(reg_file, "rb")
     refAndMasks = []
     for Z in Zreg:
         if ops["1Preg"]:

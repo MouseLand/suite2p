@@ -105,7 +105,7 @@ def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
         model = CellposeModel(model_type=pretrained_model)
     else:
         model = CellposeModel(pretrained_model=pretrained_model)
-    masks = model.eval(mproj, net_avg=True, channels=[0, 0], diameter=diameter,
+    masks = model.eval(mproj, channels=[0, 0], diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]
     shape = masks.shape

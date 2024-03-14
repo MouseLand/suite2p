@@ -226,6 +226,26 @@ def get_nd2_list(ops):
         print("** Found %d nd2 files - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+def get_dcimg_list(ops):
+    """ make list of dcimg files to process
+        if ops["look_one_level_down"], then all dcimg"s in all folders + one level down
+    """
+    froot = ops["data_path"]
+    fold_list = ops["data_path"]
+    fsall = []
+    nfs = 0
+    first_tiffs = []
+    for k, fld in enumerate(fold_list):
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.dcimg"])
+        fsall.extend(fs)
+        first_tiffs.extend(list(ftiffs))
+    if len(fs) == 0:
+        print("Could not find any dcimg files")
+        raise Exception("no dcimg")
+    else:
+        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
+        print("** Found %d dcimg files - converting to binary **" % (len(fsall)))
+    return fsall, ops
 
 def find_files_open_binaries(ops1, ish5=False):
     """  finds tiffs or h5 files and opens binaries for writing
@@ -289,6 +309,11 @@ def find_files_open_binaries(ops1, ish5=False):
     elif input_format == "movie":
         fs, ops2 = get_movie_list(ops1[0])
         print("Movie files:")
+        print("\n".join(fs))
+    elif input_format == "dcimg":
+        # find dcimgs
+        fs, ops2 = get_dcimg_list(ops1[0])
+        print("DCAM image files:")
         print("\n".join(fs))
     else:
         # find tiffs

@@ -9,5 +9,6 @@ from .sbx import sbx_to_binary
 from .movie import movie_to_binary
 from .tiff import mesoscan_to_binary, ome_to_binary, tiff_to_binary, generate_tiff_filename, save_tiff
 from .nd2 import nd2_to_binary
+from .dcam import dcimg_to_binary
 from .binary import BinaryFile, BinaryFileCombined
 from .server import send_jobs

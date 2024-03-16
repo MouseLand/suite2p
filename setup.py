@@ -27,7 +27,8 @@ io_deps = [
     "sbxreader",
     "h5py",
     "opencv-python-headless",
-    "xmltodict"
+    "xmltodict",
+    "dcimg"
 ]
 
 nwb_deps = [

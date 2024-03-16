@@ -105,7 +105,6 @@ setuptools.setup(
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
-      "dcimg": dcimg_deps,
       "io": io_deps,
       "tests": test_deps,
       "all": all_deps,

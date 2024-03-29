@@ -34,7 +34,7 @@ def patch_detect(patches, diam):
     print("refining masks using cellpose")
     npatches = len(patches)
     ly = patches[0].shape[0]
-    model = Cellpose(net_avg=False)
+    model = Cellpose()
     imgs = np.zeros((npatches, ly, ly, 2), np.float32)
     for i, m in enumerate(patches):
         imgs[i, :, :, 0] = transforms.normalize99(m)
@@ -101,8 +101,9 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
 
 def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
                pretrained_model=None):
+    pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
     if not os.path.exists(pretrained_model):
-        model = CellposeModel(model_type=pretrained_model)
+        model = Cellpose(model_type=pretrained_model)
     else:
         model = CellposeModel(pretrained_model=pretrained_model)
     masks = model.eval(mproj, channels=[0, 0], diameter=diameter,

@@ -93,8 +93,8 @@ def cellpose_overlap(stats, mimg2):
         iou = ious.max()
         redstats[
             i,
-        ] = np.array([iou > 0.5, iou])  #this had the wrong dimension
-    return redstats
+        ] = np.array([iou > 0.25, iou])  #this had the wrong dimension
+    return redstats, masks
 
 
 def detect(ops, stats):
@@ -111,7 +111,7 @@ def detect(ops, stats):
     if ops.get("anatomical_red", True):
         try:
             print(">>>> CELLPOSE estimating masks in anatomical channel")
-            redstats = cellpose_overlap(stats, mimg2)
+            redstats, masks = cellpose_overlap(stats, mimg2)
         except:
             print(
                 "ERROR importing or running cellpose, continuing without anatomical estimates"
@@ -119,5 +119,7 @@ def detect(ops, stats):
 
     if redstats is None:
         redstats = intensity_ratio(ops, stats)
+    else:
+        ops["chan2_masks"] = masks
 
     return ops, redstats

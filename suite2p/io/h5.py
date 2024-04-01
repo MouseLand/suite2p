@@ -74,7 +74,7 @@ def h5py_to_binary(ops):
                         im = f[key][irange, :, :]
                     else:
                         irange = np.arange(
-                            ik / ncp, min(ik / ncp + nbatch / ncp, nframes_all / ncp),
+                            int(ik / ncp), int(min(ik / ncp + nbatch / ncp, nframes_all / ncp)),
                             1)
                         if irange.size == 0:
                             break

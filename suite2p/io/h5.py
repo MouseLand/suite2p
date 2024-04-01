@@ -52,19 +52,16 @@ def h5py_to_binary(ops):
 
     for ih5, h5 in enumerate(h5list):
         with h5py.File(h5, "r") as f:
-            # if h5py data is 5D or 4D instead of 3D, assume that
-            # data = (nchan x) (nframes x) nplanes x pixels x pixels
             # 5D/4D data is flattened to process the same way as interleaved data
             for key in keys:
                 hdims = f[key].ndim
                 # keep track of the plane identity of the first frame (channel identity is assumed always 0)
                 ncp = nplanes * nchannels
                 nbatch = ncp * math.ceil(ops1[0]["batch_size"] / ncp)
-                nframes_all = f[key].shape[
-                    0] if hdims == 3 else f[key].shape[0] * f[key].shape[1]
+                nframes_all = np.prod(f[key].shape[:-2]) # product except for the last two dim
                 nbatch = min(nbatch, nframes_all)
                 nfunc = ops["functional_chan"] - 1 if nchannels > 1 else 0
-                # loop over all tiffs
+                # loop over all frames
                 ik = 0
                 while 1:
                     if hdims == 3:
@@ -78,31 +75,58 @@ def h5py_to_binary(ops):
                             1)
                         if irange.size == 0:
                             break
-                        im = f[key][irange, ...]
-                        if im.ndim == 5 and im.shape[0] == nchannels:
+                        if hdims == 4:
+                            # for 4D, expect
+                            # data = nframes x nplanes x pixels x pixels or
+                            # data = nframes x nchans x pixels x pixels
+                            # Data sanity check
+                            if not (
+                                    ((f[key].shape[1] == nchannels) and (nplanes == 1)) or
+                                    ((f[key].shape[1] == nplanes) and (nchannels == 1))):
+                                raise ValueError("Channel/Plane dimension mismatch.\n"
+                                                 "h5 file should follow the following dimension\n"
+                                                 "nframes x nplanes x pixels x pixels or"
+                                                 "nframes x nchans x pixels x pixels")
+                            im = f[key][irange, ...]
+                        elif hdims == 5:
+                            # for 5D, expect
+                            # data = nchans x nframes x nplanes x pixels x pixels
+                            # Data sanity check
+                            if not (
+                                    (f[key].shape[0] == nchannels) and
+                                    (f[key].shape[2] == nplanes)):
+                                raise ValueError("Channel/Plane dimension mismatch.\n"
+                                                 "h5 file should follow the following dimension\n"
+                                                 "nchans x nframes x nplanes x pixels x pixels")
+                            im = f[key][:, irange, :, :, :]
                             im = im.transpose((1, 0, 2, 3, 4))
                         # flatten to frames x pixels x pixels
+                        # for 5D data with 2 channels, 2 planes, this results
+                        # [fr0 ch0 pl0], [fr0 ch0 pl1], [fr0 ch1 pl0],
+                        # [fr0 ch1 pl1] [fr1 ch0 pl0], ...
                         im = np.reshape(im, (-1, im.shape[-2], im.shape[-1]))
                     nframes = im.shape[0]
-                    if type(im[0, 0, 0]) == np.uint16:
+                    if im.dtype == np.uint16:
                         im = im / 2
                     for j in range(0, nplanes):
                         if iall == 0:
                             ops1[j]["meanImg"] = np.zeros((im.shape[1], im.shape[2]),
                                                           np.float32)
                             if nchannels > 1:
+                                # TODO: either show error when nchannel > 2 or
+                                # implement generalized func. for nchannel > 2
                                 ops1[j]["meanImg_chan2"] = np.zeros(
                                     (im.shape[1], im.shape[2]), np.float32)
                             ops1[j]["nframes"] = 0
-                        i0 = nchannels * ((j) % nplanes)
+                        i0 = j
                         im2write = im[np.arange(int(i0) +
-                                                nfunc, nframes, ncp), :, :].astype(
+                                                nfunc*nplanes, nframes, ncp), :, :].astype(
                                                     np.int16)
                         reg_file[j].write(bytearray(im2write))
                         ops1[j]["meanImg"] += im2write.astype(np.float32).sum(axis=0)
                         if nchannels > 1:
-                            im2write = im[np.arange(int(i0) + 1 -
-                                                    nfunc, nframes, ncp), :, :].astype(
+                            im2write = im[np.arange(int(i0) + nplanes -
+                                                    nfunc*nplanes, nframes, ncp), :, :].astype(
                                                         np.int16)
                             reg_file_chan2[j].write(bytearray(im2write))
                             ops1[j]["meanImg_chan2"] += im2write.astype(

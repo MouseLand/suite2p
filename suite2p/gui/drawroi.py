@@ -444,6 +444,8 @@ class ROIDraw(QMainWindow):
             self.p0.addItem(self.scatter[-1])
         if not os.path.isfile(self.parent.ops["reg_file"]):
             self.parent.ops["reg_file"] = os.path.join(self.parent.basename, "data.bin")
+        if 'reg_file_chan2' in self.parent.ops and not os.path.isfile(self.parent.ops["reg_file_chan2"]):
+            self.parent.ops["reg_file_chan2"] = os.path.join(self.parent.basename, "data_chan2.bin")
 
         F, Fneu, F_chan2, Fneu_chan2, spks, ops, stat = masks_and_traces(
             self.parent.ops, stat0, self.parent.stat)

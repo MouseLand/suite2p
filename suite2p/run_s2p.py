@@ -50,6 +50,12 @@ try:
 except ImportError:
     HAS_DCIMG = False
 
+try:
+    import isx
+    HAS_ISX = True
+except ImportError:
+    HAS_ISX = False
+
 from functools import partial
 from pathlib import Path
 
@@ -409,7 +415,7 @@ def run_s2p(ops={}, db={}, server={}):
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
-    
+
     if len(plane_folders) > 0 and (ops.get("input_format") and ops["input_format"]=="binary"):
         # binary file is already made, will use current ops
         ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
@@ -470,6 +476,10 @@ def run_s2p(ops={}, db={}, server={}):
             ops["input_format"] = "dcimg"
             if not HAS_DCIMG:
                 raise ImportError("dcimg not found; pip install dcimg")
+        elif ops.get("isxd"):
+            ops["input_format"] = "isxd"
+            if not HAS_ISX:
+                raise ImportError("isx not found; pip install isx")
         elif not "input_format" in ops:
             ops["input_format"] = "tif"
         elif ops["input_format"] == "movie":
@@ -496,6 +506,8 @@ def run_s2p(ops={}, db={}, server={}):
                 io.movie_to_binary,
             "dcimg":
                 io.dcimg_to_binary,
+            "isxd":
+                io.isxd_to_binary,
         }
         if ops["input_format"] in convert_funs:
             ops0 = convert_funs[ops["input_format"]](ops.copy())

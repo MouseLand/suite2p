@@ -26,7 +26,6 @@ def median_pix(ypix, xpix):
     ymed = ypix[imin]
     return [ymed, xmed]
 
-
 class EllipseData(NamedTuple):
     mu: float
     cov: float
@@ -47,17 +46,19 @@ class EllipseData(NamedTuple):
     def aspect_ratio(self) -> float:
         ry, rx = self.radii
         return aspect_ratio(width=ry, height=rx)
-
+    
+def default_rsort():
+    return np.sort(distance_kernel(radius=30).flatten())
 
 @dataclass(frozen=True)
 class ROI:
+    # To avoid the ValueError caused by using a mutable default value in your dataclass, you should use the default_factory argument of the field function. 
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()),
-                              repr=False)
+    rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
 
     def __post_init__(self):
         """Validate inputs."""

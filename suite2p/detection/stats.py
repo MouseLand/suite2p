@@ -7,6 +7,7 @@ from typing import Tuple, Optional, NamedTuple, Sequence, List, Dict, Any
 from dataclasses import dataclass, field
 from warnings import warn
 
+import sys
 import numpy as np
 from numpy.linalg import norm
 from scipy.spatial import ConvexHull
@@ -58,7 +59,10 @@ class ROI:
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
+    if sys.version_info >= (3, 12):
+        rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
+    else:
+        rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
 
     def __post_init__(self):
         """Validate inputs."""

@@ -59,7 +59,7 @@ class ROI:
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    if sys.version_info >= (3, 12):
+    if sys.version_info >= (3, 11):
         rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
     else:
         rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)

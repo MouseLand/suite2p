@@ -122,12 +122,12 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
 
 
 def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
-               pretrained_model=None):
+               pretrained_model=None, device=torch.device("cuda")):
     pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
     if not os.path.exists(pretrained_model):
-        model = Cellpose(model_type=pretrained_model)
+        model = Cellpose(model_type=pretrained_model, device=device)
     else:
-        model = CellposeModel(pretrained_model=pretrained_model)
+        model = CellposeModel(pretrained_model=pretrained_model, device=device)
     masks = model.eval(mproj, channels=[0, 0], diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]
@@ -138,6 +138,11 @@ def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
     median_diam = np.median(mask_diams)
     print(">>>> %d masks detected, median diameter = %0.2f " %
           (masks.max(), median_diam))
+    
+    if device.type == "cuda":
+        del model
+        torch.cuda.empty_cache()
+
     return masks, centers, median_diam, mask_diams.astype(np.int32)
 
 

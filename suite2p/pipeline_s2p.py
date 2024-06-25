@@ -17,7 +17,7 @@ from . import extraction, registration, detection, classification, default_ops, 
 
 def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
              run_registration=True, ops=default_ops(), badframes=None, stat=None,
-             device=torch.device("cpu")):
+             device=torch.device("cuda")):
     """Run suite2p processing on array or BinaryFile.
 
     Parameters:

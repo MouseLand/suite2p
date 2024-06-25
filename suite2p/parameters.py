@@ -36,6 +36,7 @@ def default_ops():
         # Suite2p version
         "suite2p_version": version,  #current version of suite2p used for pipeline
 
+        "torch_device": "cuda",  # torch device using GPU ("cuda") or CPU ("cpu")
         "tau": 1.,  # this is the timescale for deconvolution
         "fs":
             10., # sampling rate per plane, e.g. 10 for standard recordings with 3 planes

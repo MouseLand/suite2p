@@ -44,7 +44,31 @@ files_to_binary = {
         io.dcimg_to_binary,
 }
 
-def check_run_registration(ops, db):
+
+def _assign_torch_device(str_device):
+    """
+    Checks if CUDA is available and working with PyTorch.
+
+    Args:
+        gpu_number (int): The GPU device number to use (default is 0).
+
+    Returns:
+        bool: True if CUDA is available and working, False otherwise.
+    """
+    if str_device == "cpu":
+        print("** using CPU **")
+        return torch.device(str_device)
+    else:
+        try:
+            device = torch.device(str_device)
+            _ = torch.zeros([1, 2, 3]).to(device)
+            print(f"** torch.device('{str_device}') installed and working. **")
+            return torch.device(str_device)
+        except:
+            print(f"torch.device('{str_device}') not working, using cpu.")
+            return torch.device("cpu")
+
+def _check_run_registration(ops, db):
     if ops["run"]["do_registration"] > 0:
         reg_outputs_path = os.path.join(db["save_path"], "reg_outputs.npy")
         reg_outputs = (np.load(reg_outputs_path, allow_pickle=True).item() 
@@ -68,7 +92,7 @@ def check_run_registration(ops, db):
         run_registration = False
     return run_registration
 
-def find_existing_binaries(plane_folders):
+def _find_existing_binaries(plane_folders):
     db_paths = [os.path.join(f, "db.npy") for f in plane_folders]
     ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
     db_found_flag = all([os.path.isfile(db_path) for db_path in db_paths])
@@ -101,6 +125,9 @@ def run_plane(db, ops, db_path=None, stat=None):
 
     ops = {**default_ops(), **ops}
     ops["date_proc"] = datetime.now().astimezone()
+    
+    # torch device
+    device = _assign_torch_device(ops["torch_device"])
 
     # for running on server or on moved files, specify db_path and paths are renamed
     if (db_path is not None and os.path.exists(db_path) and not
@@ -125,7 +152,7 @@ def run_plane(db, ops, db_path=None, stat=None):
         print("WARNING: number of frames < 200, unpredictable behaviors may occur")
 
     # check if registration should be done
-    run_registration = check_run_registration(ops, db)
+    run_registration = _check_run_registration(ops, db)
     
     # get binary file paths
     reg_file = db["reg_file"]
@@ -158,7 +185,8 @@ def run_plane(db, ops, db_path=None, stat=None):
             if twoc else null as f_reg_chan2:
 
         outputs = pipeline(db["save_path"], f_reg, f_raw, f_reg_chan2, f_raw_chan2, 
-                   run_registration, ops, badframes=badframes0, stat=stat)
+                   run_registration, ops, badframes=badframes0, stat=stat,
+                   device=device)
 
     # save as matlab file
     if ops["io"]["save_mat"]:
@@ -215,7 +243,7 @@ def run_s2p(db={}, ops=default_ops(), server={}):
         # TODO: fix this
         ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
     elif len(plane_folders) > 0:
-        files_found_flag, db_paths, ops_paths = find_existing_binaries(plane_folders)
+        files_found_flag, db_paths, ops_paths = _find_existing_binaries(plane_folders)
     else:
         files_found_flag = False
 

@@ -1,358 +1,599 @@
 Settings (ops.npy)
 ------------------
 
-Suite2p can be run with different configurations using the ``ops`` dictionary. The ``ops`` dictionary will describe the settings used for a particular run of the pipeline. Here is a summary of all the parameters that the pipeline takes and their default values. 
-
-Main settings
-~~~~~~~~~~~~~
-
-These are the essential settings that are dataset-specific.
-
--  **nplanes**: (*int, default: 1*) each tiff has this many planes in
-   sequence
-
--  **nchannels**: (*int, default: 1*) each tiff has this many channels
-   per plane
-
--  **functional_chan**: (*int, default: 1*) this channel is used to
-   extract functional ROIs (1-based, so 1 means first channel, and 2
-   means second channel)
-
--  **tau**: (*float, default: 1.0*) The timescale of the sensor (in
-   seconds), used for deconvolution kernel. The kernel is fixed to have
-   this decay and is not fit to the data. We recommend:
-
-   -  0.7 for GCaMP6f
-   -  1.0 for GCaMP6m
-   -  1.25-1.5 for GCaMP6s
-
--  **force_sktiff**: (*boolean, default: False*) specifies whether or not to use scikit-image for reading in tiffs
-
--  **fs**: (*float, default: 10.0*) Sampling rate (per plane). For
-   instance, if you have a 10 plane recording acquired at 30Hz, then the
-   sampling rate per plane is 3Hz, so set ops['fs'] = 3.
-
--  **do_bidiphase**: (*bool, default: False*) whether or not to compute
-   bidirectional phase offset from misaligned line scanning experiment
-   (applies to 2P recordings only). suite2p will estimate the
-   bidirectional phase offset from ops['nimg_init'] frames if this is
-   set to 1 (and ops['bidiphase']=0), and then apply this computed
-   offset to all frames.
-
--  **bidiphase**: (*int, default: 0*) bidirectional phase offset from
-   line scanning (set by user). If set to any value besides 0, then this
-   offset is used and applied to all frames in the recording.
-
-- **bidi_corrected**: (*bool, default: False*) Specifies whether to do bidi correction. 
-
-- **frames_include**: (*int, default: -1*) if greater than zero, only *frames_include* frames are processed. useful for testing parameters on a subset of data.
-
-- **multiplane_parallel**: (*boolean, default: False*) specifies whether or not to run pipeline on server 
-
-- **ignore_flyback**: (*list[ints], default: empty list*) specifies which planes will be ignored as flyback planes by the pipeline. 
-
-File input/output settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Suite2p can accomodate many different file formats. Refer to this
-:ref:`page <inputs-diff-file-types>` for a detailed list of formats suite2p can work with. 
-
-- **fast_disk**: (*list[str], default: empty list*) specifies location where temporary binary file will be stored. Defaults to ``save_path0`` if no directory is provided by user. 
-
-- **delete_bin** (*bool, default:False*) specifies whether to delete binary file created during registration stage. 
-
-- **mesoscan** (*bool, default: False*) specifies whether file being read in is a scanimage mesoscope recording
-
-- **bruker** (*bool, default: False*) specifies whether provided tif files are single page BRUKER tiffs
-
-- **bruker_bidirectional** (*bool, default: False*) specifies whether BRUKER files are bidirectional multiplane recordings. The ``True`` setting corresponds to the following plane order (first plane is indexed as zero): [0,1,2,2,1,0]. ``False`` corresponds to [0,1,2,0,1,2]. 
-
-- **h5py** (*list[str], default: empty list*) specifies path to h5py file that will be used as inputs. Keep in mind the pathname provided here overwrites the pathname specified in ``ops[data_path]``. 
-
-- **h5py_key** (*str, default: 'data'*) key used to access data array in h5py file. Only use this when the ``h5py`` setting is set to ``True``. 
-
-- **nwb_file** (*str, default: ''*) specifies path to NWB file you use to use as input
-
-- **nwb_driver** (*str, default: ''*) location of driver for NWB file. Leave this empty if the pathname refers to a local file.
-
-- **nwb_series** (*str, default: ''*) Name of TwoPhotonSeries values you wish to retrieve from your NWB file. 
-
-- **save_path0** (*str, default: ''*) String containing pathname of where you'd like to save your pipeline results. If no pathname is provided, the first element of ``ops['data_path']`` is used. 
-
-- **save_folder** (*list[str], default: empty list*) List containing directory name you'd like results to be saved under. Defaults to ``"suite2p"``. 
-
-- **look_one_level_down**: (*bool, default: False*) specifies whether to look in all subfolders when searching for tiffs. Make sure to specify subfolders in the ``subfolders`` parameter below. 
-
-- **subfolders** (*list[str], default: empty list*) Specifies subfolders you'd like to look through. Make sure to have the above parameter ``ops[look_one_level_down] = True`` when using this parameter.
-
-- **move_bin** (*bool, default: False*) If True and ``ops['fast_disk']`` is different from ``ops[save_disk]``, the created binary file is moved to ``ops['save_disk']``. 
-
-Output settings
-~~~~~~~~~~~~~~~
-
--  **preclassify**: (*float, default: 0.0*) (**new**) apply classifier
-   before signal extraction with probability threshold of "preclassify".
-   If this is set to 0.0, then all detected ROIs are kept and signals
-   are computed.
-
-- **save_nwb**: (*bool, default: False*) whether to save output as NWB file 
-
--  **save_mat**: (*bool, default: False*) whether to save the results in
-   matlab format in file "Fall.mat". NOTE the cells you click in the GUI
-   will NOT change "Fall.mat". But there is a **new** button in the GUI
-   you can click to resave "Fall.mat" in the "File" window.
-
--  **combined**: (*bool, default: True*) combine results across planes
-   in separate folder "combined" at end of processing. This folder will
-   allow all planes to be loaded into the GUI simultaneously.
-
--  **aspect**: (*float, default: 1.0) (**new**) ratio of um/pixels in X
-   to um/pixels in Y (ONLY for correct aspect ratio in GUI, not used for
-   other processing)
-
--  **report_time**: (*bool, default: True) (**new**) whether or not to return
-   a timing dictionary for each plane. Timing dictionary will contain keys
-   corresponding to stages and values corresponding to the duration of that stage.
-
-
-Registration settings
-~~~~~~~~~~~~~~~~~~~~~
-
-These settings are specific to the registration module of suite2p.
-
-- **do_registration**: (*bool, default: True*) whether or not to run
-  registration
-
-- **align_by_chan**: (*int, default: 1*) which channel to use for
-  alignment (1-based, so 1 means 1st channel and 2 means 2nd channel).
-  If you have a non-functional channel with something like td-Tomato
-  expression, you may want to use this channel for alignment rather
-  than the functional channel.
-
-- **nimg_init**: (*int, default: 300*) how many frames to use to
-  compute reference image for registration
-
-- **batch_size**: (*int, default: 500*) how many frames to register
-  simultaneously in each batch. This depends on memory constraints - it
-  will be faster to run if the batch is larger, but it will require
-  more RAM.
-
-- **maxregshift**: (*float, default: 0.1*) the maximum shift as a
-  fraction of the frame size. If the frame is Ly pixels x Lx pixels,
-  then the maximum pixel shift in pixels will be max(Ly,Lx) \*
-  ops['maxregshift'].
-
-- **smooth_sigma**: (*float, default: 1.15*) standard deviation in
-  pixels of the gaussian used to smooth the phase correlation between
-  the reference image and the frame which is being registered. A value
-  of *>4* is recommended for one-photon recordings (with a 512x512
-  pixel FOV).
-
-- **smooth_sigma_time**: (*float, default: 0*) standard deviation in time frames
-  of the gaussian used to smooth the data before phase correlation is computed.
-  Might need this to be set to 1 or 2 for low SNR data.
-
-- **keep_movie_raw**: (*bool, default: False*) whether or not to keep
-  the binary file of the non-registered frames. You can view the
-  registered and non-registered binaries together in the GUI in the
-  "View registered binaries" view if you set this to *True*.
-
-- **two_step_registration**: (*bool, default: False*) whether or not to run
-  registration twice (for low SNR data). *keep_movie_raw* must be True for this
-  to work.
-
-- **reg_tif**: (*bool, default: False*) whether or not to write the
-  registered binary to tiff files
-
-- **reg_tif_chan2**: (*bool, default: False*) whether or not to write
-  the registered binary of the non-functional channel to tiff files
-
-- **subpixel**: (*int, default:10*) Precision of Subpixel Registration (1/subpixel steps)
-
-- **th_badframes**: (*float, default: 1.0*) Involved with setting threshold for excluding frames for cropping. Set this smaller to exclude more frames. 
-
-- **norm_frames**: (*bool, default: True*) Normalize frames when detecting shifts
-
-- **force_refImg**: (*bool, default: False*) Specifies whether to use refImg stored in ``ops``. Make sure that ``ops['refImg']`` has a valid file pathname. 
-
-- **pad_fft**: (*bool, default: False*) Specifies whether to pad image or not during FFT portion of registration. 
-
-1P registration
-^^^^^^^^^^^^^^^
-
-- **1Preg**: (*bool, default: False*) whether to perform high-pass
-  spatial filtering and tapering (parameters set below), which help
-  with 1P registration
-
-- **spatial_hp_reg**: (*int, default: 42*) window in pixels for spatial
-  high-pass filtering before registration
-
-- **pre_smooth**: (*float, default: 0*) if > 0, defines stddev of
-  Gaussian smoothing, which is applied before spatial high-pass
-  filtering
-
-- **spatial_taper**: (*float, default: 40*) how many pixels to ignore
-  on edges - they are set to zero (important for vignetted windows, for
-  FFT padding do not set BELOW 3*ops['smooth_sigma'])
-
-Non-rigid registration
-^^^^^^^^^^^^^^^^^^^^^^
-
-- **nonrigid**: (*bool, default: True*) whether or not to perform
-  non-rigid registration, which splits the field of view into blocks
-  and computes registration offsets in each block separately.
-
-- **block_size**: (*two ints, default: [128,128]*) size of blocks for
-  non-rigid registration, in pixels. HIGHLY recommend keeping this a
-  power of 2 and/or 3 (e.g. 128, 256, 384, etc) for efficient fft
-
-- **snr_thresh**: (*float, default: 1.2*) how big the phase correlation
-  peak has to be relative to the noise in the phase correlation map for
-  the block shift to be accepted. In low SNR recordings like
-  one-photon, I'd recommend a larger value like *1.5*, so that block
-  shifts are only accepted if there is significant SNR in the phase
-  correlation.
-
-- **maxregshiftNR**: (*float, default: 5.0*) maximum shift in pixels of
-  a block relative to the rigid shift
-
-ROI detection settings 
-~~~~~~~~~~~~~~~~~~~~~~
-
-- **roidetect**: (*bool, default: True*) whether or not to run ROI
-  detect and extraction
-
-- **sparse_mode**: (*bool, default: True*) whether or not to use sparse_mode cell detection
-
-- **spatial_scale**: (*int, default: 0*), what the optimal scale of the
-  recording is in pixels. if set to 0, then the algorithm determines it
-  automatically (recommend this on the first try). If it seems off, set it yourself to the following values:
-  1 (=6 pixels), 2 (=12 pixels), 3 (=24 pixels), or 4 (=48 pixels).
-
-- **connected**: (*bool, default: True*) whether or not to require ROIs
-  to be fully connected (set to *0* for dendrites/boutons)
-
-- **threshold_scaling**: (*float, default: 1.0*) this controls the
-  threshold at which to detect ROIs (how much the ROIs have to stand
-  out from the noise to be detected). if you set this higher, then
-  fewer ROIs will be detected, and if you set it lower, more ROIs will
-  be detected.
-
-- **spatial_hp_detect**: (*int, default: 25*) window for spatial high-pass filtering for neuropil subtracation before ROI detection takes place.
-
-- **max_overlap**: (*float, default: 0.75*) we allow overlapping ROIs
-  during cell detection. After detection, ROIs with more than
-  ops['max_overlap'] fraction of their pixels overlapping with other
-  ROIs will be discarded. Therefore, to throw out NO ROIs, set this to
-  1.0.
-
-- **high_pass**: (*int, default: 100*) running mean subtraction across
-  bins of frames with window of size 'high_pass'. Values of less than 10 are
-  recommended for 1P data where there are often large full-field
-  changes in brightness.
-
-- **smooth_masks**: (*bool, default: True*) whether to smooth masks in
-  final pass of cell detection. This is useful especially if you are in
-  a high noise regime.
-
-- **max_iterations**: (*int, default: 20*) how many iterations over
-  which to extract cells - at most ops['max_iterations'], but usually
-  stops before due to ops['threshold_scaling'] criterion.
-
-- **nbinned**: (*int, default: 5000*) maximum number of binned frames
-  to use for ROI detection.
-
-- **denoise**: (*bool, default: False*) Whether or not binned movie should be denoised before cell detection in sparse_mode. If True, make sure to set ``ops['sparse_mode']`` is also set to True. 
-
-Cellpose Detection 
-^^^^^^^^^^^^^^^^^^
-These settings are only used if ``ops['anatomical_only']`` is set to an integer greater than 0. 
-
-- **anatomical_only**: (*int, default: 0*) If greater than 0, specifies what to use `Cellpose <https://cellpose.readthedocs.io/>`_ on.
-
-    - 1: Will find masks on max projection image divided by mean image.
-    - 2: Will find masks on mean image
-    - 3: Will find masks on enhanced mean image
-    - 4: Will find masks on maximum projection image 
-
-- **diameter**: (*int, default: 0*) Diameter that will be used for cellpose. If set to zero, diameter is estimated. 
-
-- **cellprob_threshold**: (*float, default: 0.0*) specifies threshold for cell detection that will be used by cellpose. 
-
-- **flow_threshold**: (*float, default: 1.5*) specifies flow threshold that will be used for cellpose.
-
-- **spatial_hp_cp**: (*int, default: 0*) Window for spatial high-pass filtering of image to be used for cellpose. 
-
-- **pretrained_model**: (*str, default: 'cyto'*) Path to pretrained model or string for model type (can be user's model ).
-
-Signal extraction settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- **neuropil_extract**: (*bool, default: True*) Whether or not to extract signal from neuropil. If False, Fneu is set to zero. 
-
-- **allow_overlap**: (*bool, default: False*) whether or not to extract
-  signals from pixels which belong to two ROIs. By default, any pixels
-  which belong to two ROIs (overlapping pixels) are excluded from the
-  computation of the ROI trace.
-
-- **min_neuropil_pixels**: (*int, default: 350*) minimum number of
-  pixels used to compute neuropil for each cell
-
-- **inner_neuropil_radius**: (*int, default: 2*) number of pixels to
-  keep between ROI and neuropil donut
-
-- **lam_percentile**: (*int, default: 50*)Percentile of Lambda within area to ignore when excluding cell pixels for neuropil extraction
-
-Spike deconvolution settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We neuropil-correct the trace ``Fout = F - ops['neucoeff'] * Fneu``, and
-then baseline-correct these traces with an ``ops['baseline']`` filter, and
-then detect spikes.
-
-- **spikedetect**: (*bool, default: True*) Whether or not to run spike_deconvolution
-
-- **neucoeff**: (*float, default: 0.7*) neuropil coefficient for all ROIs.
-
-- **baseline**: (*string, default 'maximin'*) how to compute the
-  baseline of each trace. This baseline is then subtracted from each
-  cell. *'maximin'* computes a moving baseline by filtering the data
-  with a Gaussian of width ``ops['sig_baseline'] * ops['fs']``, and then
-  minimum filtering with a window of ``ops['win_baseline'] * ops['fs']``,
-  and then maximum filtering with the same window. *'constant'*
-  computes a constant baseline by filtering with a Gaussian of width
-  ``ops['sig_baseline'] * ops['fs']`` and then taking the minimum value of
-  this filtered trace. *'constant_percentile'* computes a constant
-  baseline by taking the ``ops['prctile_baseline']`` percentile of the
-  trace.
-
-- **win_baseline**: (*float, default: 60.0*) window for maximin filter
-  in seconds
-
-- **sig_baseline**: (*float, default: 10.0*) Gaussian filter width in
-  seconds, used before maximin filtering or taking the minimum value of
-  the trace, ``ops['baseline'] = 'maximin'`` or ``'constant'``.
-
-- **prctile_baseline**: (*float, optional, default: 8*) percentile of
-  trace to use as baseline if ``ops['baseline'] = 'constant_percentile'``.
-
-Classification settings
-~~~~~~~~~~~~~~~~~~~~~~~
-
-- **soma_crop**: (*bool, default: True*) Specifies whether to crop dendrites for cell classification stats (e.g., compactness)
-
-- **use_builtin_classifier**: (*bool, default: False*) Specifies whether or not to use built-in classifier for cell detection. This will override classifier specified in ``ops['classifier_path']`` if set to True. 
-
-- **classifier_path**: (*str, default: ''*) Path to classifier file you want to use for cell classification
-
-Channel 2 specific settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- **chan2_thres**: threshold for calling an ROI "detected" on a second
-  channel
-
-
-Miscellaneous settings
-~~~~~~~~~~~~~~~~~~~~~~
-
-- **suite2p_version**: specifies version of suite2p pipeline that was run with these settings. Changing this parameter will NOT change the version of suite2p used. 
+Suite2p can be run with different configurations using the ``db`` and ``ops`` dictionaries. The ``db`` dictionary has the file/binary settings, and the ``ops`` dictionary will describe the settings used for a particular run of the pipeline. 
+
+file settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+db["data_path"]
+	List of folders with tiffs or other files to process.
+                    Default value: [] ;   
+                    Min, max: (None, None) ; 
+                    Type: list
+                
+db["look_one_level_down"]
+	Whether to look in all subfolders of all data_path folders when searching for tiffs.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+db["input_format"]
+	Can be ['tif', 'h5', 'nwb', 'bruker', 'mesoscan', 'movie', 'dcimg'].
+                    Default value: tif ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["keep_movie_raw"]
+	Whether to keep binary file of non-registered frames.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+db["nplanes"]
+	Each tiff / file has this many planes in sequence.
+                    Default value: 1 ;   
+                    Min, max: (1, 100) ; 
+                    Type: int
+                
+db["nchannels"]
+	Specify one- or two- channel recording.
+                    Default value: 1 ;   
+                    Min, max: (1, 2) ; 
+                    Type: int
+                
+db["functional_chan"]
+	This channel is used to extract functional ROIs (1-based).
+                    Default value: 1 ;   
+                    Min, max: (1, 2) ; 
+                    Type: int
+                
+db["ignore_flyback"]
+	List of planes to not process (0-based).
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: list
+                
+db["subfolders"]
+	If len(data_path)==1, subfolders of data_path[0] to use when look_one_level_down is set to True.
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: list
+                
+db["file_list"]
+	List of files to process (default is all files in data_path, only supported with one data_path folder).
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: list
+                
+db["save_path0"]
+	Directory to store results, defaults to data_path[0].
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["fast_disk"]
+	Directory to store temporary binary file (recommended to be SSD), defaults to save_path0.
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["save_folder"]
+	Directory within save_path0 to save results.
+                    Default value: suite2p ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["h5py_key"]
+	Key in h5py where data array is stored.
+                    Default value: data ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["nwb_driver"]
+	Driver for nwb file (nothing if file is local).
+                    Default value:  ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["nwb_series"]
+	TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file.
+                    Default value:  ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+db["force_sktiff"]
+	Whether or not to use scikit-image for tiff reading.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+db["bruker_bidirectional"]
+	Tiffs in 0, 1, 2, 2, 1, 0 ... order.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+db["batch_size"]
+	Number of frames per batch when writing binary files.
+                    Default value: 500 ;   
+                    Min, max: (None, None) ; 
+                    Type: int
+                
+general settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["torch_device"]
+	Torch device using GPU ('cuda') or CPU ('cpu').
+                    Default value: cuda ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["tau"]
+	Timescale for deconvolution and binning in seconds.
+                    Default value: 1.0 ;   
+                    Min, max: (0.0, 10.0) ; 
+                    Type: float
+                
+ops["fs"]
+	Sampling rate per plane.
+                    Default value: 10.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["diameter"]
+	ROI diameter in pixels for sourcery and cellpose detection.
+                    Default value: 12.0 ;   
+                    Min, max: (1.0, inf) ; 
+                    Type: float
+                
+ops["aspect"]
+	Pixel X/Y aspect ratio.
+                    Default value: 1.0 ;   
+                    Min, max: (0.1, 10.0) ; 
+                    Type: float
+                
+ops["classifier_path"]
+	Path to classifier file for ROIs.
+                    Default value: None ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["use_builtin_classifier"]
+	Whether or not to use built-in classifier for ROIs.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+
+
+run settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["run"]["multiplane_parallel"]
+	Whether or not to run each plane as a server job.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["run"]["do_registration"]
+	Whether to motion register data (2 forces re-registration).
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["run"]["do_regmetrics"]
+	Whether to register data (2 forces re-registration).
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["run"]["do_detection"]
+	Whether or not to run ROI detection and extraction.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["run"]["do_deconvolution"]
+	Whether or not to run spike deconvolution.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+
+
+io settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["io"]["delete_bin"]
+	Whether to delete binary file after processing.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["io"]["move_bin"]
+	If True, and fast_disk is different than save_path, binary file is moved to save_path.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["io"]["combined"]
+	Combine multiple planes after processing into a single result / single canvas for GUI.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["io"]["save_mat"]
+	Whether to save output as matlab file.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["io"]["save_NWB"]
+	Whether to save output as NWB file.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+
+
+registration settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["registration"]["do_bidiphase"]
+	Whether or not to compute bidirectional phase offset from recording and apply to all frames in recording (applies to 2P recordings only).
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["bidiphase"]
+	Bidirectional phase offset from line scanning (set by user). Applied to all frames in recording.
+                    Default value: 0.0 ;   
+                    Min, max: (0, inf) ; 
+                    Type: float
+                
+ops["registration"]["nimg_init"]
+	Subsampled frames for finding reference image.
+                    Default value: 300 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+ops["registration"]["batch_size"]
+	Number of frames per batch.
+                    Default value: 100 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["registration"]["align_by_chan2"]
+	When two-channel, you can align by non-functional channel (called chan2).
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["maxregshift"]
+	Max allowed registration shift, as a fraction of frame max(width and height).
+                    Default value: 0.1 ;   
+                    Min, max: (0.0, 1.0) ; 
+                    Type: float
+                
+ops["registration"]["two_step_registration"]
+	Whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["reg_tif"]
+	Whether to save registered tiffs.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["reg_tif_chan2"]
+	Whether to save chan2 registered tiffs.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["subpixel"]
+	Precision of subpixel registration (1/subpixel steps).
+                    Default value: 10 ;   
+                    Min, max: (1, 100) ; 
+                    Type: int
+                
+ops["registration"]["smooth_sigma_time"]
+	Gaussian smoothing in time to compute registration shifts.
+                    Default value: 0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["registration"]["smooth_sigma"]
+	Gaussian smoothing in XY; ~1 good for 2P recordings, 3-5 may work well for 1P recordings.
+                    Default value: 1.15 ;   
+                    Min, max: (0.25, inf) ; 
+                    Type: float
+                
+ops["registration"]["spatial_taper"]
+	Edge tapering width in pixels (may want larger for 1P recordings).
+                    Default value: 3.45 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["registration"]["th_badframes"]
+	Determines which frames to exclude when determining cropping - set it smaller to exclude more frames.
+                    Default value: 1.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["registration"]["norm_frames"]
+	Normalize frames when detecting shifts.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["nonrigid"]
+	Whether to use nonrigid registration.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["registration"]["block_size"]
+	Block size for non-rigid registration (** keep this a multiple of 2, 3, and 5 **).
+                    Default value: (128, 128) ;   
+                    Min, max: (None, None) ; 
+                    Type: tuple
+                
+ops["registration"]["snr_thresh"]
+	If any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing.
+                    Default value: 1.2 ;   
+                    Min, max: (1.0, inf) ; 
+                    Type: float
+                
+ops["registration"]["maxregshiftNR"]
+	Maximum pixel shift allowed for nonrigid, relative to rigid, may need to increase for unstable recordings.
+                    Default value: 5 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+
+
+detection settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["detection"]["algorithm"]
+	Algorithm used for cell detection (sparsery, sourcery or cellpose).
+                    Default value: sparsery ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["detection"]["denoise"]
+	Whether to use PCA denoising for cell detection.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["detection"]["block_size"]
+	Block size for denoising.
+                    Default value: (64, 64) ;   
+                    Min, max: (None, None) ; 
+                    Type: tuple
+                
+ops["detection"]["nbins"]
+	Max number of binned frames for cell detection (may need to reduce if reduced RAM).
+                    Default value: 5000 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["detection"]["bin_size"]
+	Size of bins for cell detection (default is tau * fs).
+                    Default value: None ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["detection"]["highpass_time"]
+	Running mean subtraction across bins with a window of size highpass_time (may want to use low values for 1P).
+                    Default value: 100 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+ops["detection"]["threshold_scaling"]
+	Adjust the automatically determined threshold in sparsery and sourcery by this scalar multiplier (smaller=more cells).
+                    Default value: 1.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["detection"]["npix_norm_min"]
+	Minimum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).
+                    Default value: 0.25 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["detection"]["npix_norm_max"]
+	Maximum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).
+                    Default value: 3.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["detection"]["max_overlap"]
+	ROIs with more overlap than this fraction with other ROIs are discarded.
+                    Default value: 0.75 ;   
+                    Min, max: (0.0, 1.0) ; 
+                    Type: float
+                
+ops["detection"]["soma_crop"]
+	Crop dendrites from ROI to determine ROI npix_norm and compactness.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["detection"]["chan2_threshold"]
+	IoU threshold between red ROI and functional ROI to define as 'redcell'
+                    Default value: 0.25 ;   
+                    Min, max: (0.0, 1.0) ; 
+                    Type: float
+                
+ops["detection"]["sparsery_settings"]["highpass_neuropil"]
+	Highpass filter on binned movie to subtract neuropil signal (may want smaller/larger values depending on ROI diameter).
+                    Default value: 25 ;   
+                    Min, max: (5, inf) ; 
+                    Type: int
+                
+ops["detection"]["sparsery_settings"]["max_ROIs"]
+	Maximum number of ROIs to detect.
+                    Default value: 5000 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["detection"]["sparsery_settings"]["spatial_scale"]
+	Spatial scale for cell detection (0 for auto-detect scaling, 1=6 pixels, 2=12 pixels, 3=24 pixels, 4=48 pixels).
+                    Default value: 0 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+ops["detection"]["sparsery_settings"]["active_percentile"]
+	Percentile of active pixels in the movie to use for thresholding; default is zero (recommended), which instead uses threshold.
+                    Default value: 0.0 ;   
+                    Min, max: (0.0, 1.0) ; 
+                    Type: float
+                
+ops["detection"]["sourcery_settings"]["connected"]
+	Whether or not to keep ROIs fully connected (set to 0 for dendrites).
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["detection"]["sourcery_settings"]["max_iterations"]
+	Maximum number of iterations for ROI detection.
+                    Default value: 20 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["detection"]["sourcery_settings"]["smooth_masks"]
+	Whether or not to smooth masks.
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["detection"]["cellpose_settings"]["cellpose_model"]
+	Cellpose model name or model path to use for cell detection (cyto, nuclei, etc).
+                    Default value: cyto ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["detection"]["cellpose_settings"]["img"]
+	Cellpose image to use for cell detection (1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj).
+                    Default value: 1 ;   
+                    Min, max: (1, 4) ; 
+                    Type: int
+                
+ops["detection"]["cellpose_settings"]["highpass_spatial"]
+	Highpass image with sigma before running cellpose.
+                    Default value: 0 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+ops["detection"]["cellpose_settings"]["params"]
+	Parameters for cellpose, provided as a dict.
+                    Default value: {} ;   
+                    Min, max: (None, None) ; 
+                    Type: dict
+                
+ops["detection"]["cellpose_settings"]["model_chan2"]
+	Cellpose model name or model path to use for channel 2.
+                    Default value: nuclei ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["detection"]["cellpose_settings"]["params_chan2"]
+	Parameters for cellpose chan2, provided as a dict.
+                    Default value: {} ;   
+                    Min, max: (None, None) ; 
+                    Type: dict
+                
+
+
+extraction settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["extraction"]["snr_threshold"]
+	SNR threshold for ROIs.
+                    Default value: 0.25 ;   
+                    Min, max: (-inf, 1.0) ; 
+                    Type: float
+                
+ops["extraction"]["batch_size"]
+	Batch size for extraction.
+                    Default value: 500 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["extraction"]["neuropil_extract"]
+	Whether or not to extract neuropil; if False, Fneu is set to zero.
+                    Default value: True ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["extraction"]["neuropil_coefficient"]
+	Coefficient for neuropil subtraction.
+                    Default value: 0.7 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["extraction"]["inner_neuropil_radius"]
+	Number of pixels to exclude from neuropil next to ROI.
+                    Default value: 2 ;   
+                    Min, max: (0, inf) ; 
+                    Type: int
+                
+ops["extraction"]["min_neuropil_pixels"]
+	Minimum number of pixels in the per ROI neuropil.
+                    Default value: 350 ;   
+                    Min, max: (1, inf) ; 
+                    Type: int
+                
+ops["extraction"]["lam_percentile"]
+	Percentile of ROI lam weights to ignore when excluding cell pixels for neuropil extraction.
+                    Default value: 50.0 ;   
+                    Min, max: (0.0, 100.0) ; 
+                    Type: float
+                
+ops["extraction"]["allow_overlap"]
+	Pixels that are overlapping are thrown out (False) or used for both ROIs (True).
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+ops["extraction"]["circular_neuropil"]
+	Force neuropil_masks to be circular instead of square (slow).
+                    Default value: False ;   
+                    Min, max: (None, None) ; 
+                    Type: bool
+                
+
+
+dcnv_preprocess settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ops["dcnv_preprocess"]["baseline"]
+	Method for baseline estimation ('maximin', 'prctile' or 'constant').
+                    Default value: maximin ;   
+                    Min, max: (None, None) ; 
+                    Type: str
+                
+ops["dcnv_preprocess"]["win_baseline"]
+	Window (in seconds) for max filter.
+                    Default value: 1.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["dcnv_preprocess"]["sig_baseline"]
+	Width of Gaussian filter in frames (applied to find constant or before maximin filter).
+                    Default value: 1.0 ;   
+                    Min, max: (0.0, inf) ; 
+                    Type: float
+                
+ops["dcnv_preprocess"]["prctile_baseline"]
+	Percentile of trace to use as baseline if using 'constant_prctile' for baseline.
+                    Default value: 8.0 ;   
+                    Min, max: (0.0, 100.0) ; 
+                    Type: float
+                

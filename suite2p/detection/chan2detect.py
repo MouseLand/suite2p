@@ -77,7 +77,7 @@ def intensity_ratio(mimg2, stats, chan2_threshold=0.65):
     return np.stack((redcell, redprob), axis=-1)
 
 
-def cellpose_overlap(stats, mimg2, device=torch.device("cuda")):
+def cellpose_overlap(stats, mimg2, chan2_threshold=0.25, device=torch.device("cuda")):
     from . import anatomical
     masks = anatomical.roi_detect(mimg2, device=device)[0]
     Ly, Lx = masks.shape
@@ -91,7 +91,7 @@ def cellpose_overlap(stats, mimg2, device=torch.device("cuda")):
         iou = ious.max()
         redstats[
             i,
-        ] = np.array([iou > 0.25, iou])  #this had the wrong dimension
+        ] = np.array([iou > chan2_threshold, iou])  #this had the wrong dimension
     return redstats, masks
 
 
@@ -104,7 +104,9 @@ def detect(meanImg, meanImg_chan2, stats, cellpose_chan2=True, chan2_threshold=0
     if cellpose_chan2:
         try:
             print(">>>> CELLPOSE estimating masks in anatomical channel")
-            redstats, masks = cellpose_overlap(stats, mimg2, device=device)
+            redstats, masks = cellpose_overlap(stats, mimg2, 
+                                               chan2_threshold=chan2_threshold,
+                                               device=device)
         except:
             print(
                 "ERROR importing or running cellpose, continuing with intensity-based anatomical estimates"

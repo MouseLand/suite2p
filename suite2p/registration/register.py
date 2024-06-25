@@ -500,7 +500,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     n_frames, Ly, Lx = f_align_in.shape
     badframes0 = np.zeros(n_frames, "bool") if badframes is None else badframes.copy()
 
-    compute_bidi = (ops["do_bidiphase"] and ops["bidiphase"] == 0 and not ops["bidi_corrected"])
+    compute_bidi = ops["do_bidiphase"] and ops["bidiphase"] == 0
     # grab frames
     if refImg is None or compute_bidi:
         ix_frames = np.linspace(0, n_frames, 1 + min(ops["nimg_init"], n_frames), 

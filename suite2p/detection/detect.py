@@ -69,7 +69,7 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5
     return mov
 
 
-def detection_wrapper(f_reg, tau=1., fs=30, meanImg_chan2=None,
+def detection_wrapper(f_reg, diameter=12., tau=1., fs=30, meanImg_chan2=None,
                       yrange=None, xrange=None, badframes=None, mov=None, 
                       classfile=None, ops=default_ops()["detection"],
                       device=torch.device("cuda")):
@@ -146,7 +146,7 @@ def detection_wrapper(f_reg, tau=1., fs=30, meanImg_chan2=None,
                       int(ops["cellpose_img"]) - 1])
             new_ops, stat = anatomical.select_rois(meanImg, max_proj, ops=ops,
                                           yrange=yrange, xrange=xrange,
-                                          diameter=ops.get("diameter", None), 
+                                          diameter=diameter, 
                                           device=device)
         else:
             print("Warning: cellpose did not import ", anatomical.cellpose_error)
@@ -154,7 +154,7 @@ def detection_wrapper(f_reg, tau=1., fs=30, meanImg_chan2=None,
             
     if ops["algorithm"] != "cellpose" or not anatomical.CELLPOSE_INSTALLED:
         ops["algorithm"] = "sparsery" if ops["algorithm"] == "cellpose" else ops["algorithm"]
-        sdmov = utils.standard_deviation_over_time(mov, batch_size=ops["batch_size"])
+        sdmov = utils.standard_deviation_over_time(mov, batch_size=500)
         if ops["algorithm"] == "sparsery":
             new_ops, stat = sparsedetect.sparsery(
                 mov=mov, sdmov=sdmov,
@@ -162,7 +162,7 @@ def detection_wrapper(f_reg, tau=1., fs=30, meanImg_chan2=None,
                 **ops["sparsery_settings"]
             )
         else:
-            new_ops, stat = sourcery.sourcery(mov=mov, sdmov=sdmov, diameter=ops["diameter"],
+            new_ops, stat = sourcery.sourcery(mov=mov, sdmov=sdmov, diameter=diameter,
                                               threshold_scaling=ops["threshold_scaling"],
                                               **ops["sourcery_settings"])
     print("Detected %d ROIs, %0.2f sec" % (len(stat), time.time() - t0))

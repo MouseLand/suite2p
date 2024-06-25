@@ -107,6 +107,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                                                                     meanImg_chan2=meanImg_chan2,
                                                     yrange=yrange, xrange=xrange,
                                                     tau=ops["tau"], fs=ops["fs"],
+                                                    diameter=ops["diameter"],
                                                 ops=ops["detection"], classfile=classfile,
                                                 device=device)
         np.save(os.path.join(save_path, "stat.npy"), stat)

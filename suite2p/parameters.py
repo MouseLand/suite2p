@@ -2,165 +2,898 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from .version import version
+import numpy as np
+
+# Format for parameter specification:
+# parameter: {
+#     "gui_name": text displayed next to edit box in GUI
+#     "type": callable datatype for this parameter, like int or float.
+#     "min": minimum value allowed (inclusive).
+#     "max": maximum value allowed (inclusive).
+#     "exclude": list of individual values to exclude from allowed range.
+#     "default": default value used by gui and API
+#     "description": Explanation of parameter's use. Populates parameter help
+#                    in GUI.
+# }
+
+### recording setup and paths for creating binaries
+
+DB = {
+        "data_path": {
+            "gui_name": "Data path",
+            "type": list,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": [],
+            "description": "List of folders with tiffs or other files to process.",
+        },
+        "look_one_level_down": {
+            "gui_name": "Look one level down",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to look in all subfolders of all data_path folders when searching for tiffs.",
+        },
+        "input_format": {
+            "gui_name": "Input format",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "tif",
+            "description": "Can be ['tif', 'h5', 'nwb', 'bruker', 'mesoscan', 'movie', 'dcimg'].",
+        },
+        "keep_movie_raw": {
+            "gui_name": "Keep movie raw",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to keep binary file of non-registered frames.",
+        },
+        "nplanes": {
+            "gui_name": "Number of planes",
+            "type": int,
+            "min": 1,
+            "max": 100,
+            "exclude": [],
+            "default": 1,
+            "description": "Each tiff / file has this many planes in sequence.",
+        },
+        "nchannels": {
+            "gui_name": "Number of channels",
+            "type": int,
+            "min": 1,
+            "max": 2,
+            "exclude": [],
+            "default": 1,
+            "description": "Specify one- or two- channel recording.",
+        },
+        "functional_chan": {
+            "gui_name": "Functional channel",
+            "type": int,
+            "min": 1,
+            "max": 2,
+            "exclude": [],
+            "default": 1,
+            "description": "This channel is used to extract functional ROIs (1-based).",
+        },
+        "ignore_flyback": {
+            "gui_name": "Ignore flyback",
+            "type": None,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": None,
+            "description": "List of planes to not process (0-based).",
+        },
+        "subfolders": {
+            "gui_name": "Subfolders",
+            "type": None,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": None,
+            "description": "If len(data_path)==1, subfolders of data_path[0] to use when look_one_level_down is set to True.",
+        },
+        "file_list": {
+            "gui_name": "File list",
+            "type": None,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": None,
+            "description": "List of files to process (default is all files in data_path, only supported with one data_path folder).",
+        },
+        "save_path0": {
+            "gui_name": "save_path0",
+            "type": None,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": None,
+            "description": "Directory to store results, defaults to data_path[0].",
+        },
+        "fast_disk": {
+            "gui_name": "Fast disk",
+            "type": None,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": None,
+            "description": "Directory to store temporary binary file (recommended to be SSD), defaults to save_path0.",
+        },
+        "save_folder": {
+            "gui_name": "Save folder",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "suite2p",
+            "description": "Directory within save_path0 to save results.",
+        },
+        "h5py_key": {
+            "gui_name": "h5py key",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "data",
+            "description": "Key in h5py where data array is stored.",
+        },
+        "nwb_driver": {
+            "gui_name": "nwb driver",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "",
+            "description": "Driver for nwb file (nothing if file is local).",
+        },
+        "nwb_series": {
+            "gui_name": "nwb series",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "",
+            "description": "TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file.",
+        },
+        "force_sktiff": {
+            "gui_name": "Force scikit-image tiff",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to use scikit-image for tiff reading.",
+        },
+        "bruker_bidirectional": {
+            "gui_name": "Bruker bidirectional",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Tiffs in 0, 1, 2, 2, 1, 0 ... order.",
+        },
+        "batch_size": {
+            "gui_name": "Batch size",
+            "type": int,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": 500,
+            "description": "Number of frames per batch when writing binary files.",
+        },
+    }
+
+### options for running the pipeline
+# TODO: add version to final ops
+OPS = {
+    "torch_device": {
+        "gui_name": "Torch device",
+        "type": str,
+        "min": None,
+        "max": None,
+        "exclude": [],
+        "default": "cuda",
+        "description": "Torch device using GPU ('cuda') or CPU ('cpu').",
+    },
+    "tau": {
+        "gui_name": "Ca timescale",
+        "type": float,
+        "min": 0.,
+        "max": 10.,
+        "exclude": [0],
+        "default": 1.,
+        "description": "Timescale for deconvolution and binning in seconds.",
+    },
+    "fs": {
+        "gui_name": "Sampling frequency",
+        "type": float,
+        "min": 0.,
+        "max": np.inf,
+        "exclude": [0],
+        "default": 10.,
+        "description": "Sampling rate per plane.",
+    },
+    "diameter": {
+        "gui_name": "Diameter",
+        "type": float,
+        "min": 1.,
+        "max": np.inf,
+        "exclude": [0],
+        "default": 12.,
+        "description": "ROI diameter in pixels for sourcery and cellpose detection.",
+    },
+    "aspect": {
+        "gui_name": "Aspect ratio",
+        "type": float,
+        "min": 0.1,
+        "max": 10.,
+        "exclude": [0],
+        "default": 1.,
+        "description": "Pixel X/Y aspect ratio.",
+    },
+    "classifier_path": {
+        "gui_name": "Classifier path",
+        "type": str,
+        "min": None,
+        "max": None,
+        "exclude": [],
+        "default": None,
+        "description": "Path to classifier file for ROIs.",
+    },
+    "use_builtin_classifier": {
+            "gui_name": "Use built-in classifier",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to use built-in classifier for ROIs.",
+    },  
+    "run": {
+        "multiplane_parallel": {
+            "gui_name": "Multiplane parallel",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to run each plane as a server job.",
+        },
+        "do_registration": {
+            "gui_name": "Do registration",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether to motion register data (2 forces re-registration).",
+        },
+        "do_regmetrics": {
+            "gui_name": "Compute registration metrics",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether to register data (2 forces re-registration).",
+        },
+        "do_detection": {
+            "gui_name": "Do ROI detection",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether or not to run ROI detection and extraction.",
+        },
+        "do_deconvolution": {
+            "gui_name": "Do spike deconvolution",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether or not to run spike deconvolution.",
+        },
+    },
+    "io": {
+        "delete_bin": {
+            "gui_name": "Delete binary",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to delete binary file after processing.",
+        },
+        "move_bin": {
+            "gui_name": "Move binary",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "If True, and fast_disk is different than save_path, binary file is moved to save_path.",
+        },
+        "combined": {
+            "gui_name": "Combine planes",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Combine multiple planes after processing into a single result / single canvas for GUI.",
+        },
+        "save_mat": {
+            "gui_name": "Save mat",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save output as matlab file.",
+        },
+        "save_NWB": {
+            "gui_name": "Save NWB",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save output as NWB file.",
+        },
+    },
+    "registration": {
+        "do_bidiphase": {
+            "gui_name": "Compute bidirectional phase offset",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to compute bidirectional phase offset from recording and apply to all frames in recording (applies to 2P recordings only).",
+        },
+        "bidiphase": {
+            "gui_name": "Bidirectional phase offset",
+            "type": float,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 0.,
+            "description": "Bidirectional phase offset from line scanning (set by user). Applied to all frames in recording.",
+        },
+        "nimg_init": {
+            "gui_name": "Subsampled frames for reference image",
+            "type": int,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 300,
+            "description": "Subsampled frames for finding reference image.",
+        },
+        "batch_size": {
+            "gui_name": "Number of frames per batch",
+            "type": int,
+            "min": 1,
+            "max": np.inf,
+            "exclude": [],
+            "default": 100,
+            "description": "Number of frames per batch.",
+        },
+        "align_by_chan2": {
+            "gui_name": "Align by non-functional channel",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "When two-channel, you can align by non-functional channel (called chan2).",
+        },
+        "maxregshift": {
+            "gui_name": "Max registration shift",
+            "type": float,
+            "min": 0.,
+            "max": 1.,
+            "exclude": [],
+            "default": 0.1,
+            "description": "Max allowed registration shift, as a fraction of frame max(width and height).",
+        },
+        "two_step_registration": {
+            "gui_name": "Run registration twice",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True.",
+        },
+        "reg_tif": {
+            "gui_name": "Save registered tiffs",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save registered tiffs.",
+        },
+        "reg_tif_chan2": {
+            "gui_name": "Save chan2 registered tiffs",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save chan2 registered tiffs.",
+        },
+        "subpixel": {
+            "gui_name": "Precision of subpixel registration",
+            "type": int,
+            "min": 1,
+            "max": 100,
+            "exclude": [],
+            "default": 10,
+            "description": "Precision of subpixel registration (1/subpixel steps).",
+        },
+        "smooth_sigma_time": {
+            "gui_name": "Gaussian smoothing in time",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 0,
+            "description": "Gaussian smoothing in time to compute registration shifts.",
+        },
+        "smooth_sigma": {
+            "gui_name": "Gaussian smoothing in XY",
+            "type": float,
+            "min": 0.25,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.15,
+            "description": "Gaussian smoothing in XY; ~1 good for 2P recordings, 3-5 may work well for 1P recordings.",
+        },
+        "spatial_taper": {
+            "gui_name": "Edge tapering width",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 3.45,
+            "description": "Edge tapering width in pixels (may want larger for 1P recordings).",
+        },
+        "th_badframes": {
+            "gui_name": "Threshold for bad frames",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.,
+            "description": "Determines which frames to exclude when determining cropping - set it smaller to exclude more frames.",
+        },
+        "norm_frames": {
+            "gui_name": "Normalize frames",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Normalize frames when detecting shifts.",
+        },
+        "nonrigid": {
+            "gui_name": "Use nonrigid registration",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether to use nonrigid registration.",
+        },
+        "block_size": {
+            "gui_name": "Block size",
+            "type": tuple,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": (128, 128),
+            "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and 5 **).",
+        },
+        "snr_thresh": {
+            "gui_name": "Nonrigid SNR threshold",
+            "type": float,
+            "min": 1.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.2,
+            "description": "If any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing.",
+        },
+        "maxregshiftNR": {
+            "gui_name": "Max pixel shift for nonrigid",
+            "type": int,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 5,
+            "description": "Maximum pixel shift allowed for nonrigid, relative to rigid, may need to increase for unstable recordings.",
+        },
+    },
+    "detection": {
+        "algorithm": {
+            "gui_name": "Detection algorithm",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "sparsery",
+            "description": "Algorithm used for cell detection (sparsery, sourcery or cellpose).",
+        },
+        "denoise": {
+            "gui_name": "Denoise",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to use PCA denoising for cell detection.",
+        },
+        "block_size": {
+            "gui_name": "Denoising block size",
+            "type": tuple,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": (64, 64),
+            "description": "Block size for denoising.",
+        },
+        "nbins": {
+            "gui_name": "Max binned frames",
+            "type": int,
+            "min": 1,
+            "max": np.inf,
+            "exclude": [],
+            "default": 5000,
+            "description": "Max number of binned frames for cell detection (may need to reduce if reduced RAM).",
+        },
+        "bin_size": {
+            "gui_name": "Bin size",
+            "type": int,
+            "min": 1,
+            "max": np.inf,
+            "exclude": [],
+            "default": None,
+            "description": "Size of bins for cell detection (default is tau * fs).",
+        },
+        "highpass_time": {
+            "gui_name": "Highpass time",
+            "type": int,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 100,
+            "description": "Running mean subtraction across bins with a window of size highpass_time (may want to use low values for 1P).",
+        },
+        "threshold_scaling": {
+            "gui_name": "Threshold scaling",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.0,
+            "description": "Adjust the automatically determined threshold in sparsery and sourcery by this scalar multiplier (smaller=more cells).",
+        },
+        "npix_norm_min": {
+            "gui_name": "Min npix norm",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 0.25,
+            "description": "Minimum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).",
+        },
+        "npix_norm_max": {
+            "gui_name": "Max npix norm",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 3.0,
+            "description": "Maximum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).",
+        },
+        "max_overlap": {
+            "gui_name": "Max overlap",
+            "type": float,
+            "min": 0.,
+            "max": 1.,
+            "exclude": [],
+            "default": 0.75,
+            "description": "ROIs with more overlap than this fraction with other ROIs are discarded.",
+        },
+        "soma_crop": {
+            "gui_name": "Soma crop",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Crop dendrites from ROI to determine ROI npix_norm and compactness.",
+        },
+        "chan2_threshold": {
+            "gui_name": "Chan2 threshold",
+            "type": float,
+            "min": 0.,
+            "max": 1.,
+            "exclude": [],
+            "default": 0.25,
+            "description": "IoU threshold between red ROI and functional ROI to define as 'redcell'",
+        },
+        "sparsery_settings": {
+            "highpass_neuropil": {
+                "gui_name": "Highpass neuropil",
+                "type": int,
+                "min": 5,
+                "max": np.inf,
+                "exclude": [],
+                "default": 25,
+                "description": "Highpass filter on binned movie to subtract neuropil signal (may want smaller/larger values depending on ROI diameter).",
+            },
+            "max_ROIs": {
+                "gui_name": "Max ROIs",
+                "type": int,
+                "min": 1,
+                "max": np.inf,
+                "exclude": [],
+                "default": 5000,
+                "description": "Maximum number of ROIs to detect.",
+            },
+            "spatial_scale": {
+                "gui_name": "Spatial scale",
+                "type": int,
+                "min": 0,
+                "max": np.inf,
+                "exclude": [],
+                "default": 0,
+                "description": "Spatial scale for cell detection (0 for auto-detect scaling, 1=6 pixels, 2=12 pixels, 3=24 pixels, 4=48 pixels).",
+            },
+            "active_percentile":{
+                "gui_name": "Active percentile",
+                "type": float,
+                "min": 0.,
+                "max": 1.,
+                "exclude": [],
+                "default": 0.,
+                "description": "Percentile of active pixels in the movie to use for thresholding; default is zero (recommended), which instead uses threshold.",
+            },
+        },
+        "sourcery_settings": {
+            "connected": {
+                "gui_name": "Connected",
+                "type": bool,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": True,
+                "description": "Whether or not to keep ROIs fully connected (set to 0 for dendrites).",
+            },
+            "max_iterations": {
+                "gui_name": "Max iterations",
+                "type": int,
+                "min": 1,
+                "max": np.inf,
+                "exclude": [],
+                "default": 20,
+                "description": "Maximum number of iterations for ROI detection.",
+            },
+            "smooth_masks": {
+                "gui_name": "Smooth masks",
+                "type": bool,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": False,
+                "description": "Whether or not to smooth masks.",
+            },
+        },
+        "cellpose_settings": {
+            "cellpose_model": {
+                "gui_name": "Cellpose model",
+                "type": str,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": "cyto",
+                "description": "Cellpose model name or model path to use for cell detection (cyto, nuclei, etc).",
+            },
+            "img": {
+                "gui_name": "Cellpose image",
+                "type": int,
+                "min": 1,
+                "max": 4,
+                "exclude": [],
+                "default": 1,
+                "description": "Cellpose image to use for cell detection (1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj).",
+            },
+            "highpass_spatial": {
+                "gui_name": "Highpass spatial",
+                "type": int,
+                "min": 0,
+                "max": np.inf,
+                "exclude": [],
+                "default": 0,
+                "description": "Highpass image with sigma before running cellpose.",
+            },
+            "params": {
+                "gui_name": "Cellpose parameters",
+                "type": dict,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": {},
+                "description": "Parameters for cellpose, provided as a dict.",
+            },
+            "model_chan2": {
+                "gui_name": "Cellpose model chan2",
+                "type": str,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": "nuclei",
+                "description": "Cellpose model name or model path to use for channel 2.",
+            },
+            "params_chan2": {
+                "gui_name": "Cellpose parameters chan2",
+                "type": dict,
+                "min": None,
+                "max": None,
+                "exclude": [],
+                "default": {},
+                "description": "Parameters for cellpose chan2, provided as a dict.",
+            },
+        },
+    },
+    "extraction": {
+        "snr_threshold": {
+            "gui_name": "SNR threshold",
+            "type": float,
+            "min": -np.inf,
+            "max": 1.,
+            "exclude": [],
+            "default": 0.25,
+            "description": "SNR threshold for ROIs.",
+        },
+        "batch_size": {
+            "gui_name": "Batch size",
+            "type": int,
+            "min": 1,
+            "max": np.inf,
+            "exclude": [],
+            "default": 500,
+            "description": "Batch size for extraction.",
+        },
+        "neuropil_extract": {
+            "gui_name": "Extract neuropil",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": True,
+            "description": "Whether or not to extract neuropil; if False, Fneu is set to zero.",
+        },
+        "neuropil_coefficient": {
+            "gui_name": "Neuropil coefficient",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 0.7,
+            "description": "Coefficient for neuropil subtraction.",
+        },
+        "inner_neuropil_radius": {
+            "gui_name": "Inner neuropil radius",
+            "type": int,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 2,
+            "description": "Number of pixels to exclude from neuropil next to ROI.",
+        },
+        "min_neuropil_pixels": {
+            "gui_name": "Min neuropil pixels",
+            "type": int,
+            "min": 1,
+            "max": np.inf,
+            "exclude": [],
+            "default": 350,
+            "description": "Minimum number of pixels in the per ROI neuropil.",
+        },
+        "lam_percentile": {
+            "gui_name": "Lambda percentile",
+            "type": float,
+            "min": 0.,
+            "max": 100.,
+            "exclude": [],
+            "default": 50.,
+            "description": "Percentile of ROI lam weights to ignore when excluding cell pixels for neuropil extraction.",
+        },
+        "allow_overlap": {
+            "gui_name": "Allow overlap",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Pixels that are overlapping are thrown out (False) or used for both ROIs (True).",
+        },
+        "circular_neuropil": {
+            "gui_name": "Circular neuropil",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Force neuropil_masks to be circular instead of square (slow).",
+        },
+    },
+    "dcnv_preprocess": {
+        "baseline": {
+            "gui_name": "Baseline type",
+            "type": str,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": "maximin",
+            "description": "Method for baseline estimation ('maximin', 'prctile' or 'constant').",
+        },
+        "win_baseline": {
+            "gui_name": "Baseline window",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.,
+            "description": "Window (in seconds) for max filter.",
+        },
+        "sig_baseline": {
+            "gui_name": "Baseline sigma",
+            "type": float,
+            "min": 0.,
+            "max": np.inf,
+            "exclude": [],
+            "default": 1.,
+            "description": "Width of Gaussian filter in frames (applied to find constant or before maximin filter).",
+        },
+        "prctile_baseline": {
+            "gui_name": "Baseline percentile",
+            "type": float,
+            "min": 0.,
+            "max": 100.,
+            "exclude": [],
+            "default": 8.,
+            "description": "Percentile of trace to use as baseline if using 'constant_prctile' for baseline.",
+        },
+    },  
+}
+
+def default_dict(d):
+    dnew = {}
+    for k, v in d.items():
+        if "description" in v:
+            dnew[k] = v["default"] 
+        else:
+            dnew[k] = default_dict(v)
+    return dnew
 
 def default_db():
-    """ default recording setup and paths used for creating binaries """
-    return {
-        "data_path":  [], # list of folders with tiffs or other files to process
-        "look_one_level_down": False,  # whether to look in all subfolders of all data_path folders when searching for tiffs
-        "input_format": "tif", # can be "tif", "h5", "nwb", "bruker", "mesoscan", "movie", or "dcimg"
-        "keep_movie_raw":
-                False,  # whether to keep binary file of non-registered frames. 
-        "nplanes": 1,  # each tiff / file has this many planes in sequence
-        "nchannels": 1,  # specify one- or two- channel recording
-        "functional_chan":
-                1,  # this channel is used to extract functional ROIs (1-based)
-        "ignore_flyback": None,
-        "subfolders": None,  # (optional) if len(data_path)==1, subfolders of db["data_path"][0] to use when look_one_level_down is set to True
-        "file_list": None, # list of files to process (default is all files in data_path, only supported with one data_path folder)
-        "save_path0": None,  # pathname where you'd like to store results, defaults to first item in data_path
-        "fast_disk": None,  # used to store temporary binary file, defaults to save_path0
-        "save_folder": "suite2p",  # directory you"d like suite2p results to be saved to (defaults to suite2p subfolder)
-        "h5py_key": "data",  #key in h5py where data array is stored
-        "nwb_driver": "",  # driver for nwb file (nothing if file is local)
-        "nwb_series":
-                 "",  # TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file
-        "force_sktiff": False,  # whether or not to use scikit-image for tiff reading
-        "bruker_bidirectional": False, # tiffs in 0, 1, 2, 2, 1, 0 ... order    
-        "batch_size": 500, # number of frames per batch when writing binary files
-    }
+    """ default options to run pipeline """
+    return default_dict(DB)
 
 def default_ops():
     """ default options to run pipeline """
-    return {
-        # Suite2p version
-        "suite2p_version": version,  #current version of suite2p used for pipeline
-
-        "torch_device": "cuda",  # torch device using GPU ("cuda") or CPU ("cpu")
-        "tau": 1.,  # this is the timescale for deconvolution
-        "fs":
-            10., # sampling rate per plane, e.g. 10 for standard recordings with 3 planes
-        "diameter": 12.,  # this is the main parameter for cell detection
-        "aspect": 1, # pixel X/Y aspect ratio
-            
-        # run settings
-        "run": {
-            "multiplane_parallel": False,  # whether or not to run on server
-            "do_registration": True,  # whether to register data (2 forces re-registration)
-            "do_regmetrics": True,  # whether to register data (2 forces re-registration)
-            "do_detection": True,  # whether or not to run ROI detection + extraction
-            "do_deconvolution": True,  # whether or not to run spike deconvolution
-        },
-
-        "io": {
-            # file input/output settings
-            "delete_bin": False,  # whether to delete binary file after processing
-            "move_bin":
-                False,  # if 1, and fast_disk is different than save_disk, binary file is moved to save_disk
-            "combined":
-                True,  # combine multiple planes into a single result /single canvas for GUI
-            "save_mat": False,  # whether to save output as matlab files
-            "save_NWB": False,  # whether to save output as NWB file
-         },
-        
-        "registration": {
-            # bidirectional phase offset
-            "do_bidiphase":
-                False,  #whether or not to compute bidirectional phase offset (applies to 2P recordings only)
-            "bidiphase":
-                0,  # Bidirectional Phase offset from line scanning (set by user). Applied to all frames in recording.
-            "bidi_corrected":
-                False,  # Whether to do bidirectional correction during registration
-            "two_step_registration":
-                False,  # whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True. 
-            "nimg_init": 300,  # subsampled frames for finding reference image
-            "batch_size": 100,  # number of frames per batch
-            "align_by_chan2": False,  # when two-channel, you can align by non-functional channel (called chan2)
-            "maxregshift":
-                0.1,  # max allowed registration shift, as a fraction of frame max(width and height)
-            "reg_tif": False,  # whether to save registered tiffs
-            "reg_tif_chan2": False,  # whether to save channel 2 registered tiffs
-            "subpixel": 10,  # precision of subpixel registration (1/subpixel steps)
-            "smooth_sigma_time": 0,  # gaussian smoothing in time
-            "smooth_sigma":
-                1.15,  # gaussian smoothing in XY; ~1 good for 2P recordings, recommend 3-5 for 1P recordings
-            "spatial_taper": 3.45, 
-                # edge tapering width in pixels (may want larger for 1P recordings)
-            "th_badframes":
-                1.0,  # this parameter determines which frames to exclude when determining cropping - set it smaller to exclude more frames
-            "norm_frames": True,  # normalize frames when detecting shifts
-            # non rigid registration settings
-            "nonrigid": True,  # whether to use nonrigid registration
-            "block_size": [128,
-                        128],  # block size to register (** keep this a multiple of 2, 3, and 5 **)
-            "snr_thresh":
-                1.2,  # if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing
-            "maxregshiftNR":
-                5,  # maximum pixel shift allowed for nonrigid, relative to rigid
-        },
-        
-        # cell detection settings with suite2p
-        "detection": {
-            "algorithm": "sparsery", # ["sparsery", "sourcery", "cellpose"],
-            "denoise": False,  # whether to use denoising,
-            "block_size": (64, 64), # block size for denoising
-            "nbins": 5000, # max number of binned frames for cell detection
-            "batch_size": 500, # number of frames per batch
-            "diameter": 10, # approximate diameter of cells in pixels
-            "bin_size": None, # size of bins for cell detection (default is tau * fs)
-            "highpass_time": 100, # running mean subtraction across bins with a window of size "highpass_time" (use low values for 1P) - used before max_proj computation and detection
-            "threshold_scaling": 1.0, # adjust the automatically determined threshold in sparsery and sourcery by this scalar multiplier
-            "npix_norm_min": 0.25,
-            "npix_norm_max": 3.0,
-            "max_overlap":
-                0.75,  # cells with more overlap than this get removed during triage, before refinement
-            "soma_crop": True,  # crop dendrites for cell classification stats like compactness
-            "chan2_threshold": 0.65, # minimum for detection of brightness on channel 2, if cellpose is not used
-            "sparsery_settings": {"highpass_neuropil": 25,
-                            "max_ROIs": 5000,
-                            "spatial_scale": 0,
-                            "active_percentile": 0.,},
-            "sourcery_settings": {"connected": True, # whether or not to keep ROIs fully connected (set to 0 for dendrites)
-                            "max_iterations": 20,
-                            "smooth_masks": False
-                            },
-            "cellpose_settings": {"model": "cyto", # cellpose model to use
-                            "img": 1, # run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj
-                            "highpass_spatial": 0, # highpass img before running cellpose
-                            "params": {}, # parameters for cellpose
-                            "model_chan2": "nuclei", # cellpose model to use for channel 2
-                            "params_chan2": {} # parameters for cellpose chan2
-                            }
-        },
-        
-        # ROI extraction and deconvolution parameters
-        "extraction": {
-            "snr_threshold": 0.25, # snr threshold for ROIs
-            "batch_size": 500, # batch size for extraction
-            "neuropil_extract":
-                True,  # whether or not to extract neuropil; if False, Fneu is set to zero
-            "neuropil_coefficient": 0.7,
-            "inner_neuropil_radius":
-                2,  # number of pixels to keep between ROI and neuropil donut
-            "min_neuropil_pixels": 350,  # minimum number of pixels in the neuropil
-            "lam_percentile":
-                50.,  # percentile of lambda within area to ignore when excluding cell pixels for neuropil extraction
-            "allow_overlap":
-                False,  # pixels that are overlapping are thrown out (False) or added to both ROIs (True)
-            "circular_neuropil": False, # force neuropil_masks to be circular instead of square (slow)
-            "use_builtin_classifier":
-                False,  # whether or not to use built-in classifier for cell detection (overrides
-            },
-            
-        "dcnv_preprocess": {
-            "baseline": "maximin",  # baselining mode (can also choose "prctile")
-            "win_baseline": 60.,  # window for maximin
-            "sig_baseline": 10.,  # smoothing constant for gaussian filter
-            "prctile_baseline": 8.,  # optional (whether to use a percentile baseline)
-        },
-        
-        # classifier specified in classifier_path if set to True)
-        "classifier_path": None,  # path to classifier
-        "use_builtin_classifier": False,  # whether or not to use built-in classifier for cell detection (overrides user classifier)
-            
-    }
+    return default_dict(OPS)

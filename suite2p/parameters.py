@@ -84,7 +84,7 @@ DB = {
         },
         "ignore_flyback": {
             "gui_name": "Ignore flyback",
-            "type": None,
+            "type": list,
             "min": None,
             "max": None,
             "exclude": [],
@@ -93,7 +93,7 @@ DB = {
         },
         "subfolders": {
             "gui_name": "Subfolders",
-            "type": None,
+            "type": list,
             "min": None,
             "max": None,
             "exclude": [],
@@ -102,7 +102,7 @@ DB = {
         },
         "file_list": {
             "gui_name": "File list",
-            "type": None,
+            "type": list,
             "min": None,
             "max": None,
             "exclude": [],
@@ -111,7 +111,7 @@ DB = {
         },
         "save_path0": {
             "gui_name": "save_path0",
-            "type": None,
+            "type": str,
             "min": None,
             "max": None,
             "exclude": [],
@@ -120,7 +120,7 @@ DB = {
         },
         "fast_disk": {
             "gui_name": "Fast disk",
-            "type": None,
+            "type": str,
             "min": None,
             "max": None,
             "exclude": [],
@@ -193,7 +193,6 @@ DB = {
     }
 
 ### options for running the pipeline
-# TODO: add version to final ops
 OPS = {
     "torch_device": {
         "gui_name": "Torch device",
@@ -468,7 +467,7 @@ OPS = {
             "max": np.inf,
             "exclude": [],
             "default": 3.45,
-            "description": "Edge tapering width in pixels (may want larger for 1P recordings).",
+            "description": "Edge tapering width in pixels, may want larger for 1P recordings.",
         },
         "th_badframes": {
             "gui_name": "Threshold for bad frames",
@@ -504,7 +503,7 @@ OPS = {
             "max": None,
             "exclude": [],
             "default": (128, 128),
-            "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and 5 **).",
+            "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and/or 5 **).",
         },
         "snr_thresh": {
             "gui_name": "Nonrigid SNR threshold",
@@ -533,7 +532,7 @@ OPS = {
             "max": None,
             "exclude": [],
             "default": "sparsery",
-            "description": "Algorithm used for cell detection (sparsery, sourcery or cellpose).",
+            "description": "Algorithm used for cell detection ['sparsery', 'sourcery', 'cellpose'].",
         },
         "denoise": {
             "gui_name": "Denoise",
@@ -587,7 +586,7 @@ OPS = {
             "max": np.inf,
             "exclude": [],
             "default": 1.0,
-            "description": "Adjust the automatically determined threshold in sparsery and sourcery by this scalar multiplier (smaller=more cells).",
+            "description": "Adjust the automatically determined threshold in sparsery and sourcery by this scalar multiplier - set it smaller to find more cells.",
         },
         "npix_norm_min": {
             "gui_name": "Min npix norm",
@@ -657,7 +656,7 @@ OPS = {
                 "gui_name": "Spatial scale",
                 "type": int,
                 "min": 0,
-                "max": np.inf,
+                "max": 4,
                 "exclude": [],
                 "default": 0,
                 "description": "Spatial scale for cell detection (0 for auto-detect scaling, 1=6 pixels, 2=12 pixels, 3=24 pixels, 4=48 pixels).",
@@ -713,12 +712,12 @@ OPS = {
             },
             "img": {
                 "gui_name": "Cellpose image",
-                "type": int,
-                "min": 1,
-                "max": 4,
+                "type": str,
+                "min": None,
+                "max": None,
                 "exclude": [],
-                "default": 1,
-                "description": "Cellpose image to use for cell detection (1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj).",
+                "default": "max_proj / meanImg",
+                "description": "Cellpose image to use for cell detection ['max_proj / meanImg', 'meanImg', 'max_proj'].",
             },
             "highpass_spatial": {
                 "gui_name": "Highpass spatial",
@@ -849,7 +848,7 @@ OPS = {
             "max": None,
             "exclude": [],
             "default": "maximin",
-            "description": "Method for baseline estimation ('maximin', 'prctile' or 'constant').",
+            "description": "Method for baseline estimation ['maximin', 'prctile', 'constant'].",
         },
         "win_baseline": {
             "gui_name": "Baseline window",
@@ -896,4 +895,55 @@ def default_db():
 
 def default_ops():
     """ default options to run pipeline """
-    return default_dict(OPS)
+    ops = default_dict(OPS)
+    ops["version"] = version  
+    return ops
+
+def add_descriptions(d, dstr="ops", k0=None):
+    all_params = []
+    kstr = "" if k0 is None else k0
+    
+    for k, v in d.items():
+        if "description" in v:
+            s = f"""
+                    Default value: {str(v["default"])} ;   
+                    Min, max: ({str(v['min'])}, {str(v['max'])}) ; 
+                    Type: {v['type'].__name__}
+                """
+            v["description"] += s
+            all_params.append([f'{dstr}{kstr}["{k}"]',
+                               v["description"]])
+        else:
+            all_params0 = add_descriptions(v, k0=kstr + f'["{k}"]')
+            all_params.append(k)
+            all_params.extend(all_params0)
+    return all_params
+
+def print_all_params():
+    all_dbs = add_descriptions(DB, dstr="db")
+    all_params = add_descriptions(OPS, dstr="ops")
+
+    n = 0
+    print(f"file settings")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+    for kv in all_dbs:
+        print(kv[0])
+        print("\t"+kv[1])
+        n += 1 
+
+    print(f"general settings")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+
+    for kv in all_params:
+        if isinstance(kv, list):
+            print(kv[0])
+            print("\t"+kv[1])
+            n += 1
+        else:
+            if "settings" not in kv:
+                print("\n")
+                print(f"{kv} settings")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+
+    return n 
+                

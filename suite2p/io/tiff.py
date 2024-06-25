@@ -79,7 +79,7 @@ def read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff):
 
     return im
 
-def tiff_to_binary(db0, ops):
+def tiff_to_binary(dbs, ops, reg_file, reg_file_chan2):
     """  finds tiff files and writes them to binaries
 
     Parameters
@@ -97,26 +97,15 @@ def tiff_to_binary(db0, ops):
     """
 
     t0 = time.time()
-    
-    # find files
-    fs, first_files = utils.get_file_list(db0)
-    db0["file_list"] = fs 
-    db0["first_files"] = first_files
-    
-    # copy dbs to list per plane + create folders
-    dbs = utils.init_dbs(db0)
-    print(dbs[0])
-    np.save(os.path.join(db0["save_path0"], db0["save_folder"], "db.npy"), db0)
-    np.save(os.path.join(db0["save_path0"], db0["save_folder"], "ops.npy"), ops)
-    
-    # open all binary files for writing
-    reg_file, reg_file_chan2 = utils.open_binaries(dbs)
         
-    # try tiff readers
-    batch_size = db0["batch_size"]
-    use_sktiff = True if db0["force_sktiff"] else use_sktiff_reader(fs[0], batch_size=batch_size)
+    fs = dbs[0]["file_list"]
+    first_files = dbs[0]["first_files"]
 
-    nplanes, nchannels = db0["nplanes"], db0["nchannels"]
+    # try tiff readers
+    batch_size = dbs[0]["batch_size"]
+    use_sktiff = True if dbs[0]["force_sktiff"] else use_sktiff_reader(fs[0], batch_size=batch_size)
+
+    nplanes, nchannels = dbs[0]["nplanes"], dbs[0]["nchannels"]
     batch_size = nplanes * nchannels * math.ceil(batch_size / (nplanes * nchannels))
 
     # loop over all tiffs

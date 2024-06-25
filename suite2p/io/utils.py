@@ -89,36 +89,6 @@ def get_file_list(db):
             print(f"** Found {len(fsall)} files - converting to binary **")
     return fsall, first_files
 
-def open_binaries(dbs):
-    """  finds imaging files and opens binaries for writing
-
-    Parameters
-    ----------
-    dbs : list of dictionaries
-        w/ keys "reg_file", "nchannels", "raw_file", "raw_file_chan2", "reg_file_chan2"
-
-    Returns
-    -------
-        ops1 : list of dictionaries
-            adds fields "filelist", "first_tiffs", opens binaries
-
-    """
-    reg_file = []
-    reg_file_chan2 = []
-
-    for db in dbs:
-        nchannels = db["nchannels"]
-        if db["keep_movie_raw"]:
-            reg_file.append(open(db["raw_file"], "wb"))
-            if nchannels > 1:
-                reg_file_chan2.append(open(db["raw_file_chan2"], "wb"))
-        else:
-            reg_file.append(open(db["reg_file"], "wb"))
-            if nchannels > 1:
-                reg_file_chan2.append(open(db["reg_file_chan2"], "wb"))
-    return reg_file, reg_file_chan2
-
-
 def init_dbs(db0):
     """ initializes db files for each plane in recording
 

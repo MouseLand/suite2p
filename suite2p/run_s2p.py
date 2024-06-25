@@ -22,6 +22,8 @@ print = partial(print, flush=True)
 
 # copy file format to a binary file
 files_to_binary = {
+    "tif":
+        io.tiff_to_binary,
     "h5":
         io.h5py_to_binary,
     "nwb":
@@ -202,9 +204,12 @@ def run_s2p(db={}, ops=default_ops(), server={}):
     if db["save_folder"] is None or len(db["save_folder"]) == 0:
         db["save_folder"] = "suite2p"
     save_folder = os.path.join(db["save_path0"], db["save_folder"])
-    plane_folders = natsorted([
-        f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
-    ])
+    if os.path.exists(save_folder):
+        plane_folders = natsorted([
+            f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
+        ])
+    else:
+        plane_folders = []
     
     if len(plane_folders) > 0 and (ops.get("input_format") and ops["input_format"]=="binary"):
         # TODO: fix this
@@ -229,20 +234,36 @@ def run_s2p(db={}, ops=default_ops(), server={}):
 
     # if not set up files and copy tiffs/h5py to binary
     else:
-        if not "input_format" in db:
-            db["input_format"] = "tif"
+        db["input_format"] = db.get("input_format", "tif")
         
-        if db["input_format"] in files_to_binary:
-            dbs = files_to_binary[ops["input_format"]](db, ops.copy())
-        else:
-            dbs = io.tiff_to_binary(db, ops.copy())
-
-        print("Wrote {} frames per binary, {} planes + {} channels, {:0.2f}sec".format(
-                time.time() - t0, dbs[0]["nframes"], len(dbs), dbs[0]["nchannels"]))
+        # find files
+        fs, first_files = io.get_file_list(db)
+        db["file_list"] = fs 
+        db["first_files"] = first_files
         
+        # copy dbs to list per plane + create folders
+        dbs = io.init_dbs(db)
         db_paths = [db["db_path"] for db in dbs]
         ops_paths = [db["ops_path"] for db in dbs]
-        save_folder = dbs[0]["save_folder"]
+        save_folder = os.path.join(db["save_path0"], db["save_folder"])
+        np.save(os.path.join(save_folder, "db.npy"), db)
+        np.save(os.path.join(save_folder, "ops.npy"), ops)
+        
+        # open all binary files for writing
+        with contextlib.ExitStack() as stack:
+            raw_str = "raw" if db.get("keep_movie_raw", False) else "reg"
+            fnames = [db[f"{raw_str}_file"] for db in dbs]
+            files = [stack.enter_context(open(f, "wb")) for f in fnames]
+            if db["nchannels"] > 1:
+                fnames_chan2 = [db[f"{raw_str}_file_chan2"] for db in dbs]
+                files_chan2 = [stack.enter_context(open(f, "wb")) for f in fnames_chan2]
+            else:
+                files_chan2 = None
+            
+            dbs = files_to_binary[db["input_format"]](dbs, ops, files, files_chan2)
+        
+        print("Wrote {} frames per binary, {} planes + {} channels, {:0.2f}sec".format(
+                time.time() - t0, dbs[0]["nframes"], len(dbs), dbs[0]["nchannels"]))
         
     if ops["run"]["multiplane_parallel"]:
         if server:  # if user puts in server settings

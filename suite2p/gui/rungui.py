@@ -7,7 +7,9 @@ from datetime import datetime
 import numpy as np
 
 from qtpy import QtGui, QtCore
-from qtpy.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
+from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget, 
+                            QGridLayout, QMainWindow, QComboBox, QTextEdit, 
+                            QFileDialog, QAction)
 
 from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
@@ -39,8 +41,8 @@ class TextChooser(QDialog):
         self.accept()
 
 
-### custom QDialog which allows user to fill in ops and run suite2p!
-class RunWindow(QDialog):
+### custom QMainWindow which allows user to fill in ops and run suite2p!
+class RunWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
@@ -73,6 +75,47 @@ class RunWindow(QDialog):
         for f in fs:
             os.remove(f)
 
+        main_menu = self.menuBar()
+        file_menu = main_menu.addMenu("&File")
+        loadOps = QAction("&Load ops file")
+        loadOps.triggered.connect(self.load_ops)
+        loadOps.setEnabled(True)
+        file_menu.addAction(loadOps)
+        
+        saveDef = QAction("&Save ops as default")
+        saveDef.triggered.connect(self.save_default_ops)
+        saveDef.setEnabled(True)
+        file_menu.addAction(saveDef)
+        
+        revertDef = QAction("Revert default ops to built-in")
+        revertDef.triggered.connect(self.revert_default_ops)
+        revertDef.setEnabled(True)
+        file_menu.addAction(revertDef)
+
+        saveOps = QAction("Save current ops to file")
+        saveOps.triggered.connect(self.save_ops)
+        saveOps.setEnabled(True)
+        file_menu.addAction(saveOps)
+
+        file_submenu = file_menu.addMenu("Load example ops")
+        onePOps = QAction("1P imaging")
+        onePOps.triggered.connect(lambda: self.load_ops("ops_1P.npy"))
+        file_submenu.addAction(onePOps)
+        dendriteOps = QAction("dendrites / axons")
+        dendriteOps.triggered.connect(lambda: self.load_ops("ops_dendrite.npy"))
+        file_submenu.addAction(dendriteOps)
+
+        batch_menu = main_menu.addMenu("&Batch processing")
+        self.addToBatch = QAction("Save db+ops to batch list")
+        self.addToBatch.triggered.connect(self.add_batch)
+        self.addToBatch.setEnabled(False)
+        batch_menu.addAction(self.addToBatch)
+
+        self.batchList = QAction("View/edit batch list")
+        self.batchList.triggered.connect(self.remove_ops)
+        self.batchList.setEnabled(False)
+        batch_menu.addAction(self.batchList)
+        
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
@@ -205,30 +248,8 @@ class RunWindow(QDialog):
         qlabel = QLabel("File paths")
         qlabel.setFont(bigfont)
         self.layout.addWidget(qlabel, 0, 0, 1, 1)
-        loadOps = QPushButton("Load ops file")
-        loadOps.clicked.connect(self.load_ops)
-        saveDef = QPushButton("Save ops as default")
-        saveDef.clicked.connect(self.save_default_ops)
-        revertDef = QPushButton("Revert default ops to built-in")
-        revertDef.clicked.connect(self.revert_default_ops)
-        saveOps = QPushButton("Save ops to file")
-        saveOps.clicked.connect(self.save_ops)
-        self.layout.addWidget(loadOps, 0, 4, 1, 2)
-        self.layout.addWidget(saveDef, 1, 4, 1, 2)
-        self.layout.addWidget(revertDef, 2, 4, 1, 2)
-        self.layout.addWidget(saveOps, 3, 4, 1, 2)
         self.layout.addWidget(QLabel(""), 4, 4, 1, 2)
-        self.layout.addWidget(QLabel("Load example ops"), 5, 4, 1, 2)
-        for k in range(3):
-            qw = QPushButton("Save ops to file")
-        #saveOps.clicked.connect(self.save_ops)
-        self.opsbtns = QButtonGroup(self)
-        opsstr = ["1P imaging", "dendrites/axons"]
-        self.opsname = ["1P", "dendrite"]
-        for b in range(len(opsstr)):
-            btn = OpsButton(b, opsstr[b], self)
-            self.opsbtns.addButton(btn, b)
-            self.layout.addWidget(btn, 6 + b, 4, 1, 2)
+        
         l = 0
         self.keylist = []
         self.editlist = []
@@ -334,30 +355,7 @@ class RunWindow(QDialog):
         self.stopButton.setEnabled(False)
         self.layout.addWidget(self.stopButton, n0, 1, 1, 1)
         self.stopButton.clicked.connect(self.stop)
-        # cleanup button
-        self.cleanButton = QPushButton("Add a clean-up *.py")
-        self.cleanButton.setToolTip("will run at end of processing")
-        self.cleanButton.setEnabled(True)
-        self.layout.addWidget(self.cleanButton, n0, 2, 1, 2)
-        self.cleanup = False
-        self.cleanButton.clicked.connect(self.clean_script)
-        self.cleanLabel = QLabel("")
-        self.layout.addWidget(self.cleanLabel, n0, 4, 1, 12)
-        #n0+=1
-        self.listOps = QPushButton("save settings and\n add more (batch)")
-        self.listOps.clicked.connect(self.add_batch)
-        self.layout.addWidget(self.listOps, n0, 12, 1, 2)
-        self.listOps.setEnabled(False)
-        self.removeOps = QPushButton("remove last added")
-        self.removeOps.clicked.connect(self.remove_ops)
-        self.layout.addWidget(self.removeOps, n0, 14, 1, 2)
-        self.removeOps.setEnabled(False)
-        self.odata = []
-        self.n_batch = 15
-        for n in range(self.n_batch):
-            self.odata.append(QLabel(""))
-            self.layout.addWidget(self.odata[n], n0 + 1 + n, 12, 1, 4)
-
+        
     def remove_ops(self):
         L = len(self.opslist)
         if L == 1:

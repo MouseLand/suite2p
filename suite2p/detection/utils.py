@@ -2,7 +2,6 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
-from numba import jit
 from scipy.optimize import linear_sum_assignment
 from scipy.ndimage import gaussian_filter
 from cellpose.metrics import _intersection_over_union, mask_ious

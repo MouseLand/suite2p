@@ -8,7 +8,7 @@ import pyqtgraph as pg
 from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
 
-from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
+from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks, utils, rungui
 from .. import run_s2p, default_ops
 
 
@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(64, 64))
         app_icon.addFile(icon_path, QtCore.QSize(256, 256))
         self.setWindowIcon(app_icon)
-        self.setStyleSheet("QMainWindow {background: 'black';}")
+        #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.stylePressed = ("QPushButton {Text-align: left; "
                              "background-color: rgb(100,50,100); "
                              "color:white;}")
@@ -42,6 +42,8 @@ class MainWindow(QMainWindow):
         self.styleInactive = ("QPushButton {Text-align: left; "
                               "background-color: rgb(50,50,50); "
                               "color:gray;}")
+        self.setStyleSheet(utils.stylesheet())
+        #self.setPalette(utils.DarkPalette())
         self.loaded = False
         self.ops_plot = []
 
@@ -106,13 +108,8 @@ class MainWindow(QMainWindow):
         model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]
 
+        
         # load initial file
-        #statfile = "C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy"
-        #statfile = "D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy"
-        #statfile = "/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy"
-        #folder = "D:/DATA/GT1/singlechannel_half/suite2p/"
-        #self.fname = folder
-        #io.load_folder(self)
         if statfile is not None:
             self.fname = statfile
             io.load_proc(self)
@@ -120,6 +117,9 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
         self.show()
         self.win.show()
+        
+        RW = rungui.RunWindow(self)
+        RW.show()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -709,6 +709,8 @@ def run(statfile=None):
     app.setWindowIcon(app_icon)
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
+    app.setStyle("Fusion")
+    
     # GUI.save_gui_data()
     sys.exit(ret)
 

@@ -26,7 +26,6 @@ def make_buttons(parent, b0):
     parent.addtoclass = QPushButton(" add current data to classifier")
     parent.addtoclass.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.addtoclass.clicked.connect(lambda: add_to(parent))
-    parent.addtoclass.setStyleSheet(parent.styleInactive)
     b0 += 1
     parent.l0.addWidget(parent.addtoclass, b0, 0, 1, 2)
     return b0
@@ -66,7 +65,6 @@ def class_file(parent):
 def class_activated(parent):
     class_file(parent)
     parent.saveDefault.setEnabled(True)
-    parent.addtoclass.setStyleSheet(parent.styleUnpressed)
     parent.addtoclass.setEnabled(True)
 
 

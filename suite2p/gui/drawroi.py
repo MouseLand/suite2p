@@ -95,18 +95,12 @@ class ViewButton(QPushButton):
         super(ViewButton, self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
-        self.setStyleSheet(parent.styleUnpressed)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent, bid))
         self.show()
 
     def press(self, parent, bid):
-        for b in range(len(parent.views)):
-            if parent.viewbtns.button(b).isEnabled():
-                parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
-        self.setStyleSheet(parent.stylePressed)
-
         parent.img0.setImage(parent.masked_images[:, :, :, bid])
 
         parent.win.show()

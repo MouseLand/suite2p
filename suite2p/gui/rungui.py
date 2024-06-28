@@ -1,60 +1,55 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import glob, json, os, shutil, pathlib, sys
+import glob, json, os, shutil, pathlib, sys, copy
 from datetime import datetime
 
 import numpy as np
 
-from qtpy import QtGui, QtCore
+from qtpy import QtGui, QtCore 
 from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget, 
                             QGridLayout, QMainWindow, QComboBox, QTextEdit, 
-                            QFileDialog, QAction)
+                            QFileDialog, QAction, QToolButton, QStyle,
+                            QListWidget, QCheckBox, QScrollArea)
+from superqt import QCollapsible 
 
 from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
 from . import io
-from .. import default_ops
+from .. import default_ops, default_db, parameters
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 
-
-# type in h5py key
-class TextChooser(QDialog):
-
-    def __init__(self, parent=None):
-        super(TextChooser, self).__init__(parent)
-        self.setGeometry(300, 300, 180, 100)
-        self.setWindowTitle("h5 key")
-        self.win = QWidget(self)
-        layout = QGridLayout()
-        self.win.setLayout(layout)
-        self.qedit = QLineEdit("data")
-        layout.addWidget(QLabel("h5 key for data field"), 0, 0, 1, 3)
-        layout.addWidget(self.qedit, 1, 0, 1, 2)
-        done = QPushButton("OK")
-        done.clicked.connect(self.exit_list)
-        layout.addWidget(done, 2, 1, 1, 1)
-
-    def exit_list(self):
-        self.h5_key = self.qedit.text()
-        self.accept()
-
+def create_input(key, OPS, ops_gui):
+    qlabel = QLabel(OPS[key]["gui_name"])
+    qlabel.setToolTip(OPS[key]["description"])
+    qlabel.setFixedWidth(120)
+    if OPS[key]["type"] == bool:
+        ops_gui[key] = QCheckBox()
+        ops_gui[key].setChecked(OPS[key]["default"])
+    else:
+        ops_gui[key] = QLineEdit()
+        ops_gui[key].setFixedWidth(80)
+        if OPS[key]["default"] is not None:
+            ops_gui[key].setText(str(OPS[key]["default"]))
+    ops_gui[key].setToolTip(OPS[key]["description"])
+    return qlabel 
 
 ### custom QMainWindow which allows user to fill in ops and run suite2p!
 class RunWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super(RunWindow, self).__init__(parent)
-        self.setGeometry(10, 10, 1500, 900)
+        self.setGeometry(65, 65, 1100, 900)
         self.setWindowTitle(
             "Choose run options (hold mouse over parameters to see descriptions)")
         self.parent = parent
-        self.win = QWidget(self)
+        cwidget = QWidget()
         self.layout = QGridLayout()
+        cwidget.setLayout(self.layout)
+        self.setCentralWidget(cwidget)
         self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
-        self.win.setLayout(self.layout)
         # initial ops values
         self.opsfile = parent.opsuser
         self.ops_path = os.fspath(
@@ -77,33 +72,33 @@ class RunWindow(QMainWindow):
 
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
-        loadOps = QAction("&Load ops file")
-        loadOps.triggered.connect(self.load_ops)
-        loadOps.setEnabled(True)
-        file_menu.addAction(loadOps)
+        self.loadOps = QAction("&Load ops file")
+        self.loadOps.triggered.connect(self.load_ops)
+        self.loadOps.setEnabled(True)
+        file_menu.addAction(self.loadOps)
         
-        saveDef = QAction("&Save ops as default")
-        saveDef.triggered.connect(self.save_default_ops)
-        saveDef.setEnabled(True)
-        file_menu.addAction(saveDef)
+        self.saveDef = QAction("&Save ops as default")
+        self.saveDef.triggered.connect(self.save_default_ops)
+        self.saveDef.setEnabled(True)
+        file_menu.addAction(self.saveDef)
         
-        revertDef = QAction("Revert default ops to built-in")
-        revertDef.triggered.connect(self.revert_default_ops)
-        revertDef.setEnabled(True)
-        file_menu.addAction(revertDef)
+        self.revertDef = QAction("Revert default ops to built-in")
+        self.revertDef.triggered.connect(self.revert_default_ops)
+        self.revertDef.setEnabled(True)
+        file_menu.addAction(self.revertDef)
 
-        saveOps = QAction("Save current ops to file")
-        saveOps.triggered.connect(self.save_ops)
-        saveOps.setEnabled(True)
-        file_menu.addAction(saveOps)
+        self.saveOps = QAction("Save current ops to file")
+        self.saveOps.triggered.connect(self.save_ops)
+        self.saveOps.setEnabled(True)
+        file_menu.addAction(self.saveOps)
 
         file_submenu = file_menu.addMenu("Load example ops")
-        onePOps = QAction("1P imaging")
-        onePOps.triggered.connect(lambda: self.load_ops("ops_1P.npy"))
-        file_submenu.addAction(onePOps)
-        dendriteOps = QAction("dendrites / axons")
-        dendriteOps.triggered.connect(lambda: self.load_ops("ops_dendrite.npy"))
-        file_submenu.addAction(dendriteOps)
+        self.onePOps = QAction("1P imaging")
+        self.onePOps.triggered.connect(lambda: self.load_ops("ops_1P.npy"))
+        file_submenu.addAction(self.onePOps)
+        self.dendriteOps = QAction("dendrites / axons")
+        self.dendriteOps.triggered.connect(lambda: self.load_ops("ops_dendrite.npy"))
+        file_submenu.addAction(self.dendriteOps)
 
         batch_menu = main_menu.addMenu("&Batch processing")
         self.addToBatch = QAction("Save db+ops to batch list")
@@ -119,10 +114,17 @@ class RunWindow(QMainWindow):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        self.opslist = []
         self.batch = False
         self.f = 0
-        self.create_buttons()
+
+        self.OPS = parameters.OPS
+        self.ops = default_ops()
+        parameters.add_descriptions(self.OPS)
+        self.DB = parameters.DB
+        self.db = default_db()
+        parameters.add_descriptions(self.DB, dstr="db")
+        
+        self.create_db_ops_inputs()
 
     def reset_ops(self):
         self.ops = np.load(self.opsfile, allow_pickle=True).item()
@@ -132,161 +134,16 @@ class RunWindow(QMainWindow):
             for k in range(len(self.editlist)):
                 self.editlist[k].set_text(self.ops)
 
-    def create_buttons(self):
-        self.intkeys = [
-            "nplanes", "nchannels", "functional_chan", "align_by_chan", "nimg_init",
-            "batch_size", "max_iterations", "nbinned", "inner_neuropil_radius",
-            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only"
-        ]
-        self.boolkeys = [
-            "delete_bin", "move_bin", "do_bidiphase", "reg_tif", "reg_tif_chan2",
-            "save_mat", "save_NWB"
-            "combined", "1Preg", "nonrigid", "connected", "roidetect",
-            "neuropil_extract", "spikedetect", "keep_movie_raw", "allow_overlap",
-            "sparse_mode"
-        ]
-        self.stringkeys = ["pretrained_model"]
-        tifkeys = [
-            "nplanes", "nchannels", "functional_chan", "tau", "fs", "do_bidiphase",
-            "bidiphase", "multiplane_parallel", "ignore_flyback"
-        ]
-        outkeys = [
-            "preclassify", "save_mat", "save_NWB", "combined", "reg_tif",
-            "reg_tif_chan2", "aspect", "delete_bin", "move_bin"
-        ]
-        regkeys = [
-            "do_registration", "align_by_chan", "nimg_init", "batch_size",
-            "smooth_sigma", "smooth_sigma_time", "maxregshift", "th_badframes",
-            "keep_movie_raw", "two_step_registration"
-        ]
-        nrkeys = [["nonrigid", "block_size", "snr_thresh", "maxregshiftNR"],
-                  ["1Preg", "spatial_hp_reg", "pre_smooth", "spatial_taper"]]
-        cellkeys = [
-            "roidetect", "sparse_mode", "denoise", "spatial_scale", "connected",
-            "threshold_scaling", "max_overlap", "max_iterations", "high_pass",
-            "spatial_hp_detect"
-        ]
-        anatkeys = [
-            "anatomical_only", "diameter", "cellprob_threshold", "flow_threshold",
-            "pretrained_model", "spatial_hp_cp"
-        ]
-        neudeconvkeys = [[
-            "neuropil_extract", "allow_overlap", "inner_neuropil_radius",
-            "min_neuropil_pixels"
-        ], ["soma_crop", "spikedetect", "win_baseline", "sig_baseline", "neucoeff"]]
-        keys = [tifkeys, outkeys, regkeys, nrkeys, cellkeys, anatkeys, neudeconvkeys]
-        labels = [
-            "Main settings", "Output settings", "Registration", ["Nonrigid", "1P"],
-            "Functional detect", "Anat detect",
-            ["Extraction/Neuropil", "Classify/Deconv"]
-        ]
-        tooltips = [
-            "each tiff has this many planes in sequence",
-            "each tiff has this many channels per plane",
-            "this channel is used to extract functional ROIs (1-based)",
-            "timescale of sensor in deconvolution (in seconds)",
-            "sampling rate (per plane)",
-            "whether or not to compute bidirectional phase offset of recording (from line scanning)",
-            "set a fixed number (in pixels) for the bidirectional phase offset",
-            "process each plane with a separate job on a computing cluster",
-            "ignore flyback planes 0-indexed separated by a comma e.g. '0,10'; '-1' means no planes ignored so all planes processed",
-            "apply ROI classifier before signal extraction with probability threshold (set to 0 to turn off)",
-            "save output also as mat file 'Fall.mat'",
-            "save output also as NWB file 'ophys.nwb'",
-            "combine results across planes in separate folder 'combined' at end of processing",
-            "if 1, registered tiffs are saved",
-            "if 1, registered tiffs of channel 2 (non-functional channel) are saved",
-            "um/pixels in X / um/pixels in Y (for correct aspect ratio in GUI)",
-            "if 1, binary file is deleted after processing is complete",
-            "if 1, and fast_disk is different than save_disk, binary file is moved to save_disk",
-            "if 1, registration is performed if it wasn't performed already",
-            "when multi-channel, you can align by non-functional channel (1-based)",
-            "# of subsampled frames for finding reference image",
-            "number of frames per batch",
-            "gaussian smoothing after phase corr: 1.15 good for 2P recordings, recommend 2-5 for 1P recordings",
-            "gaussian smoothing in time, useful for low SNR data",
-            "max allowed registration shift, as a fraction of frame max(width and height)",
-            "this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames",
-            "if 1, unregistered binary is kept in a separate file data_raw.bin",
-            "run registration twice (useful if data is really noisy), *keep_movie_raw must be 1*",
-            "whether to use nonrigid registration (splits FOV into blocks of size block_size)",
-            "block size in number of pixels in Y and X (two numbers separated by a comma)",
-            "if any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing",
-            "maximum *pixel* shift allowed for nonrigid, relative to rigid",
-            "whether to perform high-pass filtering and tapering for registration (necessary for 1P recordings)",
-            "window for spatial high-pass filtering before registration",
-            "whether to smooth before high-pass filtering before registration",
-            "how much to ignore on edges (important for vignetted windows, for FFT padding do not set BELOW 3*smooth_sigma)",
-            "if 1, run cell (ROI) detection (either functional or anatomical if anatomical_only > 0)",
-            "if 1, run sparse_mode cell detection",
-            "if 1, run PCA denoising on binned movie to improve cell detection",
-            "choose size of ROIs: 0 = multi-scale; 1 = 6 pixels, 2 = 12, 3 = 24, 4 = 48",
-            "whether or not to require ROIs to be fully connected (set to 0 for dendrites/boutons)",
-            "adjust the automatically determined threshold for finding ROIs by this scalar multiplier",
-            "ROIs with greater than this overlap as a fraction of total pixels will be discarded",
-            "maximum number of iterations for ROI detection",
-            "temporal running mean subtraction with window of size 'high_pass' (use low values for 1P)",
-            "spatial high-pass filter size (used to remove spatially-correlated neuropil)",
-            "run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj",
-            "input average diameter of ROIs in recording (can give a list e.g. 6,9 if aspect not equal), if set to 0 auto-determination run by Cellpose",
-            "cellprob_threshold for cellpose",
-            "flow_threshold for cellpose (throws out masks, if getting too few masks, set to 0)",
-            "model type string from Cellpose (can be a built-in model or a user model that is added to the Cellpose GUI)",
-            "high-pass image spatially by a multiple of the diameter (if field is non-uniform, a value of ~2 is recommended",
-            "whether or not to extract neuropil; if 0, Fneu is set to 0",
-            "allow shared pixels to be used for fluorescence extraction from overlapping ROIs (otherwise excluded from both ROIs)",
-            "number of pixels between ROI and neuropil donut",
-            "minimum number of pixels in the neuropil",
-            "if 1, crop dendrites for cell classification stats like compactness",
-            "if 1, run spike detection (deconvolution)",
-            "window for maximin",
-            "smoothing constant for gaussian filter",
-            "neuropil coefficient",
-        ]
+    def create_db_ops_inputs(self):
+        self.db_gui = {}
+        self.ops_gui = {}
 
+        XLfont = QtGui.QFont("Arial", 12, QtGui.QFont.Bold)
         bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
         qlabel = QLabel("File paths")
-        qlabel.setFont(bigfont)
+        qlabel.setFont(XLfont)
         self.layout.addWidget(qlabel, 0, 0, 1, 1)
-        self.layout.addWidget(QLabel(""), 4, 4, 1, 2)
-        
-        l = 0
-        self.keylist = []
-        self.editlist = []
-        kk = 0
-        wk = 0
-        for lkey in keys:
-            k = 0
-            kl = 0
-            if type(labels[l]) is list:
-                labs = labels[l]
-                keyl = lkey
-            else:
-                labs = [labels[l]]
-                keyl = [lkey]
-            for label in labs:
-                qlabel = QLabel(label)
-                qlabel.setFont(bigfont)
-                self.layout.addWidget(qlabel, k * 2, 2 * (l + 4), 1, 2)
-                k += 1
-                for key in keyl[kl]:
-                    lops = 1
-                    if self.ops[key] or (self.ops[key] == 0) or len(self.ops[key]) == 0:
-                        qedit = LineEdit(wk, key, self)
-                        qlabel = QLabel(key)
-                        qlabel.setToolTip(tooltips[kk])
-                        qedit.set_text(self.ops)
-                        qedit.setToolTip(tooltips[kk])
-                        qedit.setFixedWidth(90)
-                        self.layout.addWidget(qlabel, k * 2 - 1, 2 * (l + 4), 1, 2)
-                        self.layout.addWidget(qedit, k * 2, 2 * (l + 4), 1, 2)
-                        self.keylist.append(key)
-                        self.editlist.append(qedit)
-                        wk += 1
-                    k += 1
-                    kk += 1
-                kl += 1
-            l += 1
+        self.layout.addWidget(QLabel(""), 4, 4, 1, 2) 
 
         # data_path
         key = "input_format"
@@ -294,56 +151,54 @@ class RunWindow(QMainWindow):
         qlabel.setFont(bigfont)
         qlabel.setToolTip("File format (selects which parser to use)")
         self.layout.addWidget(qlabel, 1, 0, 1, 1)
-        self.inputformat = QComboBox()
+        self.db_gui["input_format"] = QComboBox()
         [
-            self.inputformat.addItem(f)
-            for f in ["tif", "binary", "bruker", "sbx", "h5", "movie", "nd2", "mesoscan", "raw", "dcimg"]
+            self.db_gui["input_format"].addItem(f)
+            for f in ["tif", "bruker", "sbx", "h5", "movie", "nd2", "mesoscan", "raw", "dcimg"]
         ]
-        self.inputformat.currentTextChanged.connect(self.parse_inputformat)
-        self.layout.addWidget(self.inputformat, 2, 0, 1, 1)
+        self.layout.addWidget(self.db_gui["input_format"], 1, 1, 1, 1)
+        self.db_gui["look_one_level_down"] = QCheckBox("look one level down")
+        self.db_gui["look_one_level_down"].setLayoutDirection(QtCore.Qt.RightToLeft) 
+        self.db_gui["look_one_level_down"].setChecked(False)
+        self.db_gui["look_one_level_down"].setToolTip(self.DB["look_one_level_down"]["description"])
+        self.layout.addWidget(self.db_gui["look_one_level_down"], 1, 2, 1, 1)
 
-        key = "look_one_level_down"
-        qlabel = QLabel(key)
-        qlabel.setToolTip("whether to look in all subfolders when searching for files")
-        self.layout.addWidget(qlabel, 3, 0, 1, 1)
-        qedit = LineEdit(wk, key, self)
-        qedit.set_text(self.ops)
-        qedit.setFixedWidth(95)
-        self.layout.addWidget(qedit, 4, 0, 1, 1)
-        self.keylist.append(key)
-        self.editlist.append(qedit)
-
-        cw = 4
-        self.btiff = QPushButton("Add directory to data_path")
-        self.btiff.clicked.connect(self.get_folders)
-        self.layout.addWidget(self.btiff, 5, 0, 1, cw)
+        cw = 5
         qlabel = QLabel("data_path")
         qlabel.setFont(bigfont)
-        self.layout.addWidget(qlabel, 6, 0, 1, 1)
-        self.qdata = []
-        for n in range(9):
-            self.qdata.append(QLabel(""))
-            self.layout.addWidget(self.qdata[n], n + 7, 0, 1, cw)
+        qlabel.setToolTip(self.DB["data_path"]["description"])
+        self.layout.addWidget(qlabel, 2, 0, 1, 1)
+        self.db_gui["data_path"] = QListWidget()
+        self.layout.addWidget(self.db_gui["data_path"], 3, 0, 8, cw)
+        self.addDataPath = QPushButton("add folder")
+        self.addDataPath.setFixedWidth(100)
+        self.addDataPath.setToolTip(self.DB["data_path"]["description"])
+        self.addDataPath.clicked.connect(self.get_folders)
+        self.layout.addWidget(self.addDataPath, 2, 1, 1, 1)
+        self.removeDataPath = QPushButton("remove selected")
+        self.removeDataPath.setFixedWidth(100)
+        #self.remove_data_path.clicked.connect(self.remove_data_path)
+        self.layout.addWidget(self.removeDataPath, 2, 2, 1, 1)
 
-        self.bsave = QPushButton("Add save_path (default is 1st data_path)")
+        self.bsave = QPushButton("add save_path0 (default is 1st data_path)")
         self.bsave.clicked.connect(self.save_folder)
-        self.layout.addWidget(self.bsave, 16, 0, 1, cw)
+        self.layout.addWidget(self.bsave, 13, 0, 1, cw)
         self.savelabel = QLabel("")
-        self.layout.addWidget(self.savelabel, 17, 0, 1, cw)
+        self.layout.addWidget(self.savelabel, 14, 0, 1, cw)
         # fast_disk
-        self.bbin = QPushButton("Add fast_disk (default is save_path)")
+        self.bbin = QPushButton("add fast_disk (default is save_path0)")
         self.bbin.clicked.connect(self.bin_folder)
-        self.layout.addWidget(self.bbin, 18, 0, 1, cw)
+        self.layout.addWidget(self.bbin, 15, 0, 1, cw)
         self.binlabel = QLabel("")
-        self.layout.addWidget(self.binlabel, 19, 0, 1, cw)
+        self.layout.addWidget(self.binlabel, 16, 0, 1, cw)
+        n0 = 17
         self.runButton = QPushButton("RUN SUITE2P")
         self.runButton.clicked.connect(self.run_S2P)
-        n0 = 22
         self.layout.addWidget(self.runButton, n0, 0, 1, 1)
         self.runButton.setEnabled(False)
         self.textEdit = QTextEdit()
-        self.layout.addWidget(self.textEdit, n0 + 1, 0, 30, 2 * l)
-        self.textEdit.setFixedHeight(300)
+        self.layout.addWidget(self.textEdit, n0 + 1, 0, 16, cw+2)
+        #self.textEdit.setFixedHeight(300)
         self.process = QtCore.QProcess(self)
         self.process.readyReadStandardOutput.connect(self.stdout_write)
         self.process.readyReadStandardError.connect(self.stderr_write)
@@ -355,6 +210,99 @@ class RunWindow(QMainWindow):
         self.stopButton.setEnabled(False)
         self.layout.addWidget(self.stopButton, n0, 1, 1, 1)
         self.stopButton.clicked.connect(self.stop)
+        
+
+        self.dbkeys = [
+             "keep_movie_raw", "nplanes", "nchannels",
+            "functional_chan", "ignore_flyback", "h5py_key", 
+            "nwb_series", "force_sktiff"
+        ]
+        qlabel = QLabel("file settings")
+        qlabel.setFont(bigfont)
+        self.layout.addWidget(qlabel, 0, cw, 1, 2)
+        b = 1
+        for key in self.dbkeys:
+            qlabel = create_input(key, self.DB, self.db_gui)
+            self.layout.addWidget(qlabel, b, cw, 1, 1)
+            self.layout.addWidget(self.db_gui[key], b, cw+1, 1, 1)
+            b+=1
+
+        self.genkeys = [
+            "torch_device", "tau", "fs", "diameter", "aspect"
+        ]
+        qlabel = QLabel("general settings")
+        qlabel.setFont(bigfont)
+        self.layout.addWidget(qlabel, b+1, cw, 1, 2)
+        b+=2
+        for key in self.genkeys:
+            qlabel = create_input(key, self.OPS, self.ops_gui)
+            self.layout.addWidget(qlabel, b, cw, 1, 1)
+            self.layout.addWidget(self.ops_gui[key], b, cw+1, 1, 1)
+            b+=1
+
+        scrollArea = QScrollArea()
+        scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scrollArea.setStyleSheet("""QScrollArea { border: none }""")
+        scrollArea.setWidgetResizable(True)
+        swidget = QWidget(self)
+        scrollArea.setWidget(swidget)
+        layoutScroll = QGridLayout()
+        swidget.setLayout(layoutScroll)
+        self.layout.addWidget(scrollArea, 0, cw+2, n0+17, 4)
+
+
+        labels = ["run", "io", "registration", "detection", "extraction", 
+                  "dcnv_preprocess"]
+        b = 0
+        for label in labels:
+            qbox = QCollapsible(f"{label} settings")
+            qbox._toggle_btn.setFont(bigfont)
+            qboxG = QGridLayout()
+            _content = QWidget()
+            _content.setLayout(qboxG)
+            _content.setMaximumHeight(0)
+            _content.setMinimumHeight(0)
+            qbox.setContent(_content)
+            layoutScroll.addWidget(qbox, b, cw+2, 1, 1)
+            b+=2
+            
+
+        
+        # l = 0
+        # self.keylist = []
+        # self.editlist = []
+        # kk = 0
+        # wk = 0
+        # for lkey in keys:
+        #     k = 0
+        #     kl = 0
+        #     labs = [self.OPS[lkey]["gui_name"]]
+        #     keyl = [lkey]
+        #     for label in labs:
+        #         qlabel = QLabel(label)
+        #         qlabel.setFont(bigfont)
+        #         self.layout.addWidget(qlabel, k * 2, 2 * (l + 4), 1, 2)
+        #         k += 1
+        #         for key in keyl:
+        #             lops = 1
+        #             if self.OPS[key]: #or (self.ops[key] == 0) or len(self.ops[key]) == 0:
+        #                 qedit = LineEdit(wk, key, self)
+        #                 qlabel = QLabel(key)
+        #                 qlabel.setToolTip(self.OPS[key]["description"])
+        #                 qedit.set_text(self.OPS[key])
+        #                 qedit.setToolTip(self.OPS[key]["description"])
+        #                 qedit.setFixedWidth(90)
+        #                 self.layout.addWidget(qlabel, k * 2 - 1, 2 * (l + 4), 1, 2)
+        #                 self.layout.addWidget(qedit, k * 2, 2 * (l + 4), 1, 2)
+        #                 self.keylist.append(key)
+        #                 self.editlist.append(qedit)
+        #                 wk += 1
+        #             k += 1
+        #             kk += 1
+        #         kl += 1
+        #     l += 1
+
+       
         
     def remove_ops(self):
         L = len(self.opslist)
@@ -696,31 +644,14 @@ class LineEdit(QLineEdit):
                 okey = float(self.text())
         return okey
 
-    def set_text(self, ops):
-        key = self.key
-        if key == "diameter" or key == "block_size":
-            if (type(ops[key]) is not int) and (len(ops[key]) > 1):
-                dstr = str(int(ops[key][0])) + ", " + str(int(ops[key][1]))
-            else:
-                dstr = str(int(ops[key]))
-        elif key == "ignore_flyback":
-            if not isinstance(ops[key], (list, np.ndarray)):
-                ops[key] = [ops[key]]
-            if len(ops[key]) == 0:
-                dstr = "-1"
-            else:
-                dstr = ""
-                for i in ops[key]:
-                    dstr += str(int(i))
-                    if i < len(ops[key]) - 1:
-                        dstr += ", "
+    def set_text(self, odict):
+        if odict["type"] == list:
+            self.setText([str(o)+", " if k < len(odict["default"])-1 else str(o) 
+                        for k, o in enumerate(odict["default"]) 
+                          ])
         else:
-            if type(ops[key]) is not bool:
-                dstr = str(ops[key])
-            else:
-                dstr = str(int(ops[key]))
-        self.setText(dstr)
-
+            self.setText(str(odict["default"]))
+        
 
 class OpsButton(QPushButton):
 

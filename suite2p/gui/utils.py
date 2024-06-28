@@ -3,7 +3,106 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import numpy as np
 from scipy.ndimage.morphology import binary_dilation, binary_fill_holes
+from qtpy import QtGui
 
+"""        QToolTip { 
+                            background-color: black; 
+                            color: white; 
+                            border: black solid 1px
+                            }"""
+
+def stylesheet():
+    return """
+
+        QComboBox {color: white;
+                    background-color: rgb(40,40,40);}
+                    QComboBox::item:enabled { color: white;
+                    background-color: rgb(40,40,40);
+                    selection-color: white;
+                    selection-background-color: rgb(50,100,50);}
+                    QComboBox::item:!enabled {
+                            background-color: rgb(40,40,40);
+                            color: rgb(100,100,100);
+                        }
+        QScrollArea > QWidget > QWidget
+                {
+                    background: transparent;
+                    border: none;
+                    margin: 0px 0px 0px 0px;
+                } 
+                           
+        QGroupBox 
+            { border: 1px solid white; color: rgb(255,255,255);
+                           border-radius: 6px;
+                            margin-top: 8px;
+                            padding: 0px 0px;}            
+                           
+        QPushButton:pressed {Text-align: center; 
+                             background-color: rgb(150,50,150); 
+                             border-color: white;
+                             color:white;}
+                            QToolTip { 
+                           background-color: black; 
+                           color: white; 
+                           border: black solid 1px
+                           }
+        QPushButton:!pressed {Text-align: center; 
+                               background-color: rgb(50,50,50);
+                                border-color: white;
+                               color:white;}
+                                QToolTip { 
+                           background-color: black; 
+                           color: white; 
+                           border: black solid 1px
+                           }
+        QPushButton:disabled {Text-align: center; 
+                             background-color: rgb(30,30,30);
+                             border-color: white;
+                              color:rgb(80,80,80);}
+                               QToolTip { 
+                           background-color: black; 
+                           color: white; 
+                           border: black solid 1px
+                           }
+                        
+        """
+
+
+class DarkPalette(QtGui.QPalette):
+    """Class that inherits from pyqtgraph.QtGui.QPalette and renders dark colours for the application.
+    (from pykilosort/kilosort4)
+    """
+
+    def __init__(self):
+        QtGui.QPalette.__init__(self)
+        self.setup()
+
+    def setup(self):
+        self.setColor(QtGui.QPalette.Window, QtGui.QColor(20, 20, 20))
+        self.setColor(QtGui.QPalette.WindowText, QtGui.QColor(255, 255, 255))
+        self.setColor(QtGui.QPalette.Base, QtGui.QColor(20, 20, 20))
+        self.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(20, 20, 20))
+        self.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 255))
+        self.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(255, 255, 255))
+        self.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))
+        self.setColor(QtGui.QPalette.Button, QtGui.QColor(40, 40, 40))
+        self.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
+        self.setColor(QtGui.QPalette.BrightText, QtGui.QColor(255, 0, 0))
+        self.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
+        self.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
+        self.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(0, 0, 0))
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text,
+                      QtGui.QColor(128, 128, 128))
+        self.setColor(
+            QtGui.QPalette.Disabled,
+            QtGui.QPalette.ButtonText,
+            QtGui.QColor(128, 128, 128),
+        )
+        self.setColor(
+            QtGui.QPalette.Disabled,
+            QtGui.QPalette.WindowText,
+            QtGui.QColor(128, 128, 128),
+        )
 
 def boundary(ypix, xpix):
     """ returns pixels of mask that are on the exterior of the mask """

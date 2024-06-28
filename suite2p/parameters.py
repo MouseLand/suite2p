@@ -164,13 +164,13 @@ DB = {
             "description": "TwoPhotonSeries name, defaults to first TwoPhotonSeries in nwb file.",
         },
         "force_sktiff": {
-            "gui_name": "Force scikit-image tiff",
+            "gui_name": "Force tifffile reader",
             "type": bool,
             "min": None,
             "max": None,
             "exclude": [],
             "default": False,
-            "description": "Whether or not to use scikit-image for tiff reading.",
+            "description": "Use tifffile for tiff reading instead of scanimage-tiff-reader.",
         },
         "bruker_bidirectional": {
             "gui_name": "Bruker bidirectional",
@@ -258,22 +258,13 @@ OPS = {
             "description": "Whether or not to use built-in classifier for ROIs.",
     },  
     "run": {
-        "multiplane_parallel": {
-            "gui_name": "Multiplane parallel",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "Whether or not to run each plane as a server job.",
-        },
         "do_registration": {
             "gui_name": "Do registration",
-            "type": bool,
-            "min": None,
-            "max": None,
+            "type": int,
+            "min": 0,
+            "max": 2,
             "exclude": [],
-            "default": True,
+            "default": 1,
             "description": "Whether to motion register data (2 forces re-registration).",
         },
         "do_regmetrics": {
@@ -303,26 +294,17 @@ OPS = {
             "default": True,
             "description": "Whether or not to run spike deconvolution.",
         },
+        "multiplane_parallel": {
+            "gui_name": "Multiplane parallel",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to run each plane as a server job.",
+        },
     },
     "io": {
-        "delete_bin": {
-            "gui_name": "Delete binary",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "Whether to delete binary file after processing.",
-        },
-        "move_bin": {
-            "gui_name": "Move binary",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "If True, and fast_disk is different than save_path, binary file is moved to save_path.",
-        },
         "combined": {
             "gui_name": "Combine planes",
             "type": bool,
@@ -350,8 +332,53 @@ OPS = {
             "default": False,
             "description": "Whether to save output as NWB file.",
         },
+        "delete_bin": {
+            "gui_name": "Delete binary",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to delete binary file after processing.",
+        },
+        "move_bin": {
+            "gui_name": "Move binary",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "If True, and fast_disk is different than save_path, binary file is moved to save_path.",
+        },
     },
     "registration": {
+        "align_by_chan2": {
+            "gui_name": "Align by non-functional channel",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "When two-channel, you can align by non-functional channel (called chan2).",
+        },
+        "nimg_init": {
+            "gui_name": "Subsampled frames for reference image",
+            "type": int,
+            "min": 0,
+            "max": np.inf,
+            "exclude": [],
+            "default": 300,
+            "description": "Number of subsampled frames for finding reference image - choose more if reference image is poor.",
+        },
+        "maxregshift": {
+            "gui_name": "Max registration shift",
+            "type": float,
+            "min": 0.,
+            "max": 1.,
+            "exclude": [],
+            "default": 0.1,
+            "description": "Max allowed registration shift, as a fraction of frame max(width and height).",
+        },
         "do_bidiphase": {
             "gui_name": "Compute bidirectional phase offset",
             "type": bool,
@@ -370,15 +397,6 @@ OPS = {
             "default": 0.,
             "description": "Bidirectional phase offset from line scanning (set by user). Applied to all frames in recording.",
         },
-        "nimg_init": {
-            "gui_name": "Subsampled frames for reference image",
-            "type": int,
-            "min": 0,
-            "max": np.inf,
-            "exclude": [],
-            "default": 300,
-            "description": "Subsampled frames for finding reference image.",
-        },
         "batch_size": {
             "gui_name": "Number of frames per batch",
             "type": int,
@@ -386,61 +404,34 @@ OPS = {
             "max": np.inf,
             "exclude": [],
             "default": 100,
-            "description": "Number of frames per batch.",
+            "description": "Number of frames per batch - choose fewer if using GPU and running out of memory.",
         },
-        "align_by_chan2": {
-            "gui_name": "Align by non-functional channel",
+        "nonrigid": {
+            "gui_name": "Use nonrigid registration",
             "type": bool,
             "min": None,
             "max": None,
             "exclude": [],
-            "default": False,
-            "description": "When two-channel, you can align by non-functional channel (called chan2).",
+            "default": True,
+            "description": "Whether to use nonrigid registration.",
         },
-        "maxregshift": {
-            "gui_name": "Max registration shift",
-            "type": float,
-            "min": 0.,
-            "max": 1.,
-            "exclude": [],
-            "default": 0.1,
-            "description": "Max allowed registration shift, as a fraction of frame max(width and height).",
-        },
-        "two_step_registration": {
-            "gui_name": "Run registration twice",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "Whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True.",
-        },
-        "reg_tif": {
-            "gui_name": "Save registered tiffs",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "Whether to save registered tiffs.",
-        },
-        "reg_tif_chan2": {
-            "gui_name": "Save chan2 registered tiffs",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": False,
-            "description": "Whether to save chan2 registered tiffs.",
-        },
-        "subpixel": {
-            "gui_name": "Precision of subpixel registration",
+        "maxregshiftNR": {
+            "gui_name": "Max pixel shift for nonrigid",
             "type": int,
-            "min": 1,
-            "max": 100,
+            "min": 0,
+            "max": np.inf,
             "exclude": [],
-            "default": 10,
-            "description": "Precision of subpixel registration (1/subpixel steps).",
+            "default": 5,
+            "description": "Maximum pixel shift allowed for nonrigid, relative to rigid, may need to increase value for unstable recordings.",
+        },
+        "block_size": {
+            "gui_name": "Block size",
+            "type": tuple,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": (128, 128),
+            "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and/or 5 **).",
         },
         "smooth_sigma_time": {
             "gui_name": "Gaussian smoothing in time",
@@ -476,7 +467,7 @@ OPS = {
             "max": np.inf,
             "exclude": [],
             "default": 1.,
-            "description": "Determines which frames to exclude when determining cropping - set it smaller to exclude more frames.",
+            "description": "Determines which frames to exclude when determining cropping - set it smaller to exclude more frames, particularly if crop seems small.",
         },
         "norm_frames": {
             "gui_name": "Normalize frames",
@@ -487,24 +478,6 @@ OPS = {
             "default": True,
             "description": "Normalize frames when detecting shifts.",
         },
-        "nonrigid": {
-            "gui_name": "Use nonrigid registration",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": True,
-            "description": "Whether to use nonrigid registration.",
-        },
-        "block_size": {
-            "gui_name": "Block size",
-            "type": tuple,
-            "min": None,
-            "max": None,
-            "exclude": [],
-            "default": (128, 128),
-            "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and/or 5 **).",
-        },
         "snr_thresh": {
             "gui_name": "Nonrigid SNR threshold",
             "type": float,
@@ -514,15 +487,43 @@ OPS = {
             "default": 1.2,
             "description": "If any nonrigid block is below this threshold, it gets smoothed until above this threshold. 1.0 results in no smoothing.",
         },
-        "maxregshiftNR": {
-            "gui_name": "Max pixel shift for nonrigid",
+        "subpixel": {
+            "gui_name": "Precision of subpixel registration",
             "type": int,
-            "min": 0,
-            "max": np.inf,
+            "min": 1,
+            "max": 100,
             "exclude": [],
-            "default": 5,
-            "description": "Maximum pixel shift allowed for nonrigid, relative to rigid, may need to increase for unstable recordings.",
+            "default": 10,
+            "description": "Precision of subpixel registration for nonrigid (1/subpixel steps).",
         },
+        "two_step_registration": {
+            "gui_name": "Run registration twice",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether or not to run registration twice (useful for low SNR data). Set keep_movie_raw to True if setting this parameter to True.",
+        },
+        "reg_tif": {
+            "gui_name": "Save registered tiffs",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save registered tiffs.",
+        },
+        "reg_tif_chan2": {
+            "gui_name": "Save chan2 registered tiffs",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "exclude": [],
+            "default": False,
+            "description": "Whether to save chan2 registered tiffs.",
+        },
+        
     },
     "detection": {
         "algorithm": {
@@ -905,14 +906,22 @@ def add_descriptions(d, dstr="ops", k0=None):
     
     for k, v in d.items():
         if "description" in v:
-            s = f"""
-                    Default value: {str(v["default"])} ;   
-                    Min, max: ({str(v['min'])}, {str(v['max'])}) ; 
-                    Type: {v['type'].__name__}
-                """
+            pname = f'{dstr}{kstr}["{k}"]'
+            if v["min"] is not None:
+                s = f"""
+                        {pname} ; 
+                        Default value: {str(v["default"])} ;   
+                        Min, max: ({str(v['min'])}, {str(v['max'])}) ; 
+                        Type: {v['type'].__name__}
+                    """
+            else:
+                s = f"""
+                        {pname} ; 
+                        Default value: {str(v["default"])} ;   
+                        Type: {v['type'].__name__}
+                    """
             v["description"] += s
-            all_params.append([f'{dstr}{kstr}["{k}"]',
-                               v["description"]])
+            all_params.append([pname, v["description"]])
         else:
             all_params0 = add_descriptions(v, k0=kstr + f'["{k}"]')
             all_params.append(k)

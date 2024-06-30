@@ -16,6 +16,7 @@ install_deps = ["importlib-metadata",
 
 gui_deps = [
         "qtpy",
+        "superqt",
         "pyqt6",
         "pyqt6.sip",
         "pyqtgraph",

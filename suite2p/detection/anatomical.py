@@ -170,7 +170,8 @@ def masks_to_stats(masks, weights):
     return stats
 
 
-def select_rois(mean_img, max_proj, ops: Dict[str, Any], yrange, xrange, diameter=None,
+def select_rois(mean_img, max_proj, ops: Dict[str, Any], yrange, xrange, 
+                diameter=[12., 12.],
                 device=torch.device("cuda")):
     """ find ROIs in static frames
     
@@ -209,23 +210,12 @@ def select_rois(mean_img, max_proj, ops: Dict[str, Any], yrange, xrange, diamete
         weights = max_proj
 
     t0 = time.time()
-    if diameter is not None:
-        if isinstance(diameter, (list, np.ndarray)) and len(ops["diameter"]) > 1:
-            rescale = diameter[1] / diameter[0]
-            img = cv2.resize(img, (Lxc, int(Lyc * rescale)))
-        else:
-            rescale = 1.0
-            diameter = [diameter, diameter]
-        if diameter[1] > 0:
-            print("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
-                  diameter[1])
-        else:
-            print(
-                "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose"
-            )
-    else:
-        print(
-            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
+
+    rescale = diameter[1] / diameter[0]
+    if rescale != 1.0:
+        img = cv2.resize(img, (Lxc, int(Lyc * rescale)))
+    print("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
+                diameter[1])
 
     if ops.get("spatial_hp_cp", 0):
         img = np.clip(normalize99(img), 0, 1)

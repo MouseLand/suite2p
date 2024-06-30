@@ -69,7 +69,7 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5
     return mov
 
 
-def detection_wrapper(f_reg, diameter=12., tau=1., fs=30, meanImg_chan2=None,
+def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=None,
                       yrange=None, xrange=None, badframes=None, mov=None, 
                       classfile=None, ops=default_ops()["detection"],
                       device=torch.device("cuda")):
@@ -180,8 +180,7 @@ def detection_wrapper(f_reg, diameter=12., tau=1., fs=30, meanImg_chan2=None,
         if "med" in s:
             s["med"][0] += ymin; s["med"][1] += xmin
 
-    stat = roi_stats(stat, Ly, Lx, aspect=ops.get("aspect", None),
-                        diameter=ops.get("diameter", None), 
+    stat = roi_stats(stat, Ly, Lx, diameter=diameter, 
                         max_overlap=ops.get("max_overlap", 0.75),
                         do_soma_crop=ops.get("soma_crop", 1), 
                         npix_norm_min=ops.get("npix_norm_min", 0.5),
@@ -201,6 +200,7 @@ def detection_wrapper(f_reg, diameter=12., tau=1., fs=30, meanImg_chan2=None,
 
     new_ops["meanImg"] = meanImg
     new_ops["max_proj"] = max_proj
+    new_ops["diameter"] = diameter
 
     return new_ops, stat, redcell
 

@@ -103,6 +103,12 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     print("----------- ROI DETECTION")
     t11 = time.time()
     if stat is None:
+        if not isinstance(ops["diameter"], (list, tuple, np.ndarray)):
+            ops["diameter"] = np.array([ops["diameter"], ops["diameter"]])
+        elif isinstance(ops["diameter"], (list, tuple)):
+            ops["diameter"] = np.array(ops["diameter"])
+        if ops["diameter"].size == 1:
+            ops["diameter"] = np.array([ops["diameter"], ops["diameter"]])
         detect_outputs, stat, redcell = detection.detection_wrapper(f_reg, 
                                                                     meanImg_chan2=meanImg_chan2,
                                                     yrange=yrange, xrange=xrange,

@@ -43,7 +43,6 @@ class MainWindow(QMainWindow):
                               "background-color: rgb(50,50,50); "
                               "color:gray;}")
         self.setStyleSheet(utils.stylesheet())
-        #self.setPalette(utils.DarkPalette())
         self.loaded = False
         self.ops_plot = []
 
@@ -707,9 +706,11 @@ def run(statfile=None):
     app_icon.addFile(icon_path, QtCore.QSize(64, 64))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
+    app.setStyle("Fusion")
+    app.setPalette(utils.DarkPalette())
+    app.setStyleSheet(utils.stylesheet())
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
-    app.setStyle("Fusion")
     
     # GUI.save_gui_data()
     sys.exit(ret)

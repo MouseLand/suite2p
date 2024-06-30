@@ -293,8 +293,7 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
     
     change_codes = True
     t0 = time.time()
-    if isinstance(diameter, int):
-        diameter = np.array([diameter, diameter])
+    
     U, u = getSVDdata(mov=mov, diameter=diameter)  # get SVD components
     S, StU, StS = getStU(diameter, U)
     Ly, Lx, nsvd = U.shape

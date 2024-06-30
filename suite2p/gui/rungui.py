@@ -15,15 +15,19 @@ from superqt import QCollapsible
 
 from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
-from . import io
+from . import io, utils
 from .. import default_ops, default_db, parameters
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 
+def list_to_str(l):
+    return ", ".join(str(l0) for l0 in l)
+
 def create_input(key, OPS, ops_gui):
     qlabel = QLabel(OPS[key]["gui_name"])
     qlabel.setToolTip(OPS[key]["description"])
-    qlabel.setFixedWidth(120)
+    qlabel.setFixedWidth(160)
+    qlabel.setAlignment(QtCore.Qt.AlignRight)
     if OPS[key]["type"] == bool:
         ops_gui[key] = QCheckBox()
         ops_gui[key].setChecked(OPS[key]["default"])
@@ -31,7 +35,10 @@ def create_input(key, OPS, ops_gui):
         ops_gui[key] = QLineEdit()
         ops_gui[key].setFixedWidth(80)
         if OPS[key]["default"] is not None:
-            ops_gui[key].setText(str(OPS[key]["default"]))
+            if OPS[key]["type"] == list or OPS[key]["type"] == tuple:
+                ops_gui[key].setText(list_to_str(OPS[key]["default"]))
+            else:
+                ops_gui[key].setText(str(OPS[key]["default"]))
     ops_gui[key].setToolTip(OPS[key]["description"])
     return qlabel 
 
@@ -51,6 +58,8 @@ class RunWindow(QMainWindow):
         self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
         # initial ops values
+        self.setStyleSheet(utils.stylesheet())
+        self.setPalette(utils.DarkPalette())
         self.opsfile = parent.opsuser
         self.ops_path = os.fspath(
             pathlib.Path.home().joinpath(".suite2p").joinpath("ops").absolute())
@@ -138,17 +147,17 @@ class RunWindow(QMainWindow):
         self.db_gui = {}
         self.ops_gui = {}
 
-        XLfont = QtGui.QFont("Arial", 12, QtGui.QFont.Bold)
-        bigfont = QtGui.QFont("Arial", 10, QtGui.QFont.Bold)
+        XLfont = "QLabel {font-size: 12pt; font: Arial; font-weight: bold;}"
+        bigfont = "QLabel {font-size: 10pt; font: Arial; font-weight: bold;}"
         qlabel = QLabel("File paths")
-        qlabel.setFont(XLfont)
+        qlabel.setStyleSheet(XLfont)
         self.layout.addWidget(qlabel, 0, 0, 1, 1)
         self.layout.addWidget(QLabel(""), 4, 4, 1, 2) 
 
         # data_path
         key = "input_format"
         qlabel = QLabel(key)
-        qlabel.setFont(bigfont)
+        qlabel.setStyleSheet(bigfont)
         qlabel.setToolTip("File format (selects which parser to use)")
         self.layout.addWidget(qlabel, 1, 0, 1, 1)
         self.db_gui["input_format"] = QComboBox()
@@ -165,20 +174,20 @@ class RunWindow(QMainWindow):
 
         cw = 5
         qlabel = QLabel("data_path")
-        qlabel.setFont(bigfont)
+        qlabel.setStyleSheet(bigfont)
         qlabel.setToolTip(self.DB["data_path"]["description"])
         self.layout.addWidget(qlabel, 2, 0, 1, 1)
-        self.db_gui["data_path"] = QListWidget()
+        self.db_gui["data_path"] = QLabel() #QListWidget()
         self.layout.addWidget(self.db_gui["data_path"], 3, 0, 8, cw)
         self.addDataPath = QPushButton("add folder")
         self.addDataPath.setFixedWidth(100)
         self.addDataPath.setToolTip(self.DB["data_path"]["description"])
         self.addDataPath.clicked.connect(self.get_folders)
         self.layout.addWidget(self.addDataPath, 2, 1, 1, 1)
-        self.removeDataPath = QPushButton("remove selected")
-        self.removeDataPath.setFixedWidth(100)
+        #self.removeDataPath = QPushButton("remove selected")
+        #self.removeDataPath.setFixedWidth(100)
         #self.remove_data_path.clicked.connect(self.remove_data_path)
-        self.layout.addWidget(self.removeDataPath, 2, 2, 1, 1)
+        #self.layout.addWidget(self.removeDataPath, 2, 2, 1, 1)
 
         self.bsave = QPushButton("add save_path0 (default is 1st data_path)")
         self.bsave.clicked.connect(self.save_folder)
@@ -218,7 +227,8 @@ class RunWindow(QMainWindow):
             "nwb_series", "force_sktiff"
         ]
         qlabel = QLabel("file settings")
-        qlabel.setFont(bigfont)
+        qlabel.setStyleSheet(bigfont)
+        qlabel.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(qlabel, 0, cw, 1, 2)
         b = 1
         for key in self.dbkeys:
@@ -228,10 +238,11 @@ class RunWindow(QMainWindow):
             b+=1
 
         self.genkeys = [
-            "torch_device", "tau", "fs", "diameter", "aspect"
+            "torch_device", "tau", "fs", "diameter"
         ]
         qlabel = QLabel("general settings")
-        qlabel.setFont(bigfont)
+        qlabel.setAlignment(QtCore.Qt.AlignCenter)
+        qlabel.setStyleSheet(bigfont)
         self.layout.addWidget(qlabel, b+1, cw, 1, 2)
         b+=2
         for key in self.genkeys:
@@ -256,13 +267,23 @@ class RunWindow(QMainWindow):
         b = 0
         for label in labels:
             qbox = QCollapsible(f"{label} settings")
-            qbox._toggle_btn.setFont(bigfont)
+            qbox._toggle_btn.setStyleSheet(bigfont)
             qboxG = QGridLayout()
             _content = QWidget()
             _content.setLayout(qboxG)
             _content.setMaximumHeight(0)
             _content.setMinimumHeight(0)
+            bl = 0
+            self.ops_gui[label] = {}
+            for key in self.OPS[label].keys():
+                if "gui_name" in self.OPS[label][key]:
+                    qlabel = create_input(key, self.OPS[label], self.ops_gui[label])
+                    qboxG.addWidget(qlabel, bl, cw, 1, 1)
+                    qboxG.addWidget(self.ops_gui[label][key], bl, cw+1, 1, 1)
+                    bl+=1
             qbox.setContent(_content)
+            if label=="run":
+                qbox.expand()
             layoutScroll.addWidget(qbox, b, cw+2, 1, 1)
             b+=2
             
@@ -280,7 +301,7 @@ class RunWindow(QMainWindow):
         #     keyl = [lkey]
         #     for label in labs:
         #         qlabel = QLabel(label)
-        #         qlabel.setFont(bigfont)
+        #         qlabel.setStyleSheet(bigfont)
         #         self.layout.addWidget(qlabel, k * 2, 2 * (l + 4), 1, 2)
         #         k += 1
         #         for key in keyl:

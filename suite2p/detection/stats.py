@@ -69,7 +69,7 @@ def soma_crop(ypix, xpix, lam, med):
         crop = np.ones(ypix.size, "bool")
     return crop
     
-def roi_stats(stats, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=0.75,
+def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
               do_soma_crop=True, npix_norm_min=0.5, npix_norm_max=2.0,
               median=False):
     """
@@ -79,8 +79,7 @@ def roi_stats(stats, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=0
         stats (list): List of dictionaries containing the statistics of cells.
         Ly (int): Height of the image.
         Lx (int): Width of the image.
-        aspect (float, optional): Aspect ratio of the imaging pixels. Defaults to None.
-        diameter (int or list or np.ndarray, optional): Diameter of the cells. Defaults to None.
+        diameter (list or np.ndarray, optional): Diameter of the cells. Defaults to None.
         max_overlap (float, optional): Maximum overlap allowed between cells. Defaults to 0.75.
         do_soma_crop (bool, optional): Flag indicating whether to crop dendritic pixels for computing compactness and aspect ratio. Defaults to True.
 
@@ -95,16 +94,8 @@ def roi_stats(stats, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=0
     """
    
     # approx size of masks for ROI aspect ratio estimation
-    d0 = 10 if diameter is None or (isinstance(diameter, int) and
-                                    diameter == 0) else diameter
-    if aspect is not None:
-        diameter = int(d0[0]) if isinstance(d0, (list, np.ndarray)) else int(d0)
-        dy, dx = int(aspect * diameter), diameter
-    else:
-        dy, dx = (int(d0),
-                  int(d0)) if not isinstance(d0, (list, np.ndarray)) else (int(d0[0]),
-                                                                           int(d0[0]))
-    d0 = np.array([dy, dx])
+    dy, dx = diameter[0], diameter[1]
+    d0 = np.array([int(dy), int(dx)])
 
     rs, dy, dx = circleMask(d0)
     dists_disk = np.sort(rs.flatten())

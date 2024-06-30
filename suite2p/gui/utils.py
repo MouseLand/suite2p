@@ -13,30 +13,12 @@ from qtpy import QtGui
 
 def stylesheet():
     return """
-
-        QComboBox {color: white;
-                    background-color: rgb(40,40,40);}
-                    QComboBox::item:enabled { color: white;
-                    background-color: rgb(40,40,40);
-                    selection-color: white;
-                    selection-background-color: rgb(50,100,50);}
-                    QComboBox::item:!enabled {
-                            background-color: rgb(40,40,40);
-                            color: rgb(100,100,100);
-                        }
-        QScrollArea > QWidget > QWidget
-                {
-                    background: transparent;
-                    border: none;
-                    margin: 0px 0px 0px 0px;
-                } 
-                           
-        QGroupBox 
-            { border: 1px solid white; color: rgb(255,255,255);
-                           border-radius: 6px;
-                            margin-top: 8px;
-                            padding: 0px 0px;}            
-                           
+        QToolTip {font-size: 10pt; font: Arial;}
+        QLineEdit {border: 1px solid rgb(80, 80, 80); font-size: 10pt; font: Arial;}
+        QLabel {font-size: 10pt; font: Arial;}
+        QPushButton {font-size: 9pt; font: Arial; font-weight: bold;}
+        QComboBox {font-size: 10pt; font: Arial;}
+        QCheckBox {font-size: 10pt; font: Arial;}
         QPushButton:pressed {Text-align: center; 
                              background-color: rgb(150,50,150); 
                              border-color: white;
@@ -78,10 +60,10 @@ class DarkPalette(QtGui.QPalette):
         self.setup()
 
     def setup(self):
-        self.setColor(QtGui.QPalette.Window, QtGui.QColor(20, 20, 20))
+        self.setColor(QtGui.QPalette.Window, QtGui.QColor(50, 50, 50))
         self.setColor(QtGui.QPalette.WindowText, QtGui.QColor(255, 255, 255))
-        self.setColor(QtGui.QPalette.Base, QtGui.QColor(20, 20, 20))
-        self.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(20, 20, 20))
+        self.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
+        self.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(0, 0, 0))
         self.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(255, 255, 255))
         self.setColor(QtGui.QPalette.ToolTipText, QtGui.QColor(255, 255, 255))
         self.setColor(QtGui.QPalette.Text, QtGui.QColor(255, 255, 255))

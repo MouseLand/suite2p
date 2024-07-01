@@ -264,7 +264,7 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
     fr_torch = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
                                for frame, dy, dx in zip(fr_torch, yoff, xoff)], axis=0)
 
-    if yoff is not None:
+    if yoff1 is not None:
         if isinstance(yoff1, np.ndarray):
             yoff1 = torch.from_numpy(yoff1).pin_memory().to(device)
             xoff1 = torch.from_numpy(xoff1).pin_memory().to(device)

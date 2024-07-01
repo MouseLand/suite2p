@@ -278,14 +278,16 @@ class RunWindow(QMainWindow):
             for key in self.OPS[label].keys():
                 if "gui_name" in self.OPS[label][key]:
                     qlabel = create_input(key, self.OPS[label], self.ops_gui[label])
-                    qboxG.addWidget(qlabel, bl, cw, 1, 1)
-                    qboxG.addWidget(self.ops_gui[label][key], bl, cw+1, 1, 1)
+                    qboxG.addWidget(qlabel, bl, 0, 1, 1)
+                    qboxG.addWidget(self.ops_gui[label][key], bl, 1, 1, 1)
                     bl+=1
             qbox.setContent(_content)
             if label=="run":
                 qbox.expand()
-            layoutScroll.addWidget(qbox, b, cw+2, 1, 1)
+            layoutScroll.addWidget(qbox, b, 0, 1, 1)
             b+=2
+        layoutScroll.addWidget(QLabel(""), b, 0, 1, 1)
+        
             
 
         

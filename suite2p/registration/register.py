@@ -205,9 +205,6 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
         maskMul, maskOffset, cfRefImg = rigid.compute_masks_ref_smooth_fft(refImg=rimg, maskSlope=spatial_taper,
                                                                  smooth_sigma=spatial_smooth)
         Ly, Lx = refImg.shape
-        #maskMul = torch.from_numpy(maskMul).to(device)
-        #maskOffset = torch.from_numpy(maskOffset).to(device)
-        #cfRefImg = torch.from_numpy(cfRefImg).to(device)
         maskMul, maskOffset = maskMul.to(device), maskOffset.to(device)
         cfRefImg = cfRefImg.to(device)
         blocks = []
@@ -217,9 +214,6 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
                 refImg0=rimg, maskSlope=spatial_taper, smooth_sigma=spatial_smooth, 
                 yblock=blocks[0], xblock=blocks[1],
             )
-            # maskMulNR = torch.from_numpy(maskMulNR).to(device)
-            # maskOffsetNR = torch.from_numpy(maskOffsetNR).to(device)
-            # cfRefImgNR = torch.from_numpy(cfRefImgNR).to(device)
             maskMulNR, maskOffsetNR = maskMulNR.to(device), maskOffsetNR.to(device)
             cfRefImgNR = cfRefImgNR.to(device)
 

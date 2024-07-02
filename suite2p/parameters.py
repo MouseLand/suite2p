@@ -2,6 +2,7 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from .version import version
+from pathlib import Path
 import numpy as np
 
 # Format for parameter specification:
@@ -10,13 +11,15 @@ import numpy as np
 #     "type": callable datatype for this parameter, like int or float.
 #     "min": minimum value allowed (inclusive).
 #     "max": maximum value allowed (inclusive).
-#     "exclude": list of individual values to exclude from allowed range.
 #     "default": default value used by gui and API
 #     "description": Explanation of parameter's use. Populates parameter help
 #                    in GUI.
 # }
 
 ### recording setup and paths for creating binaries
+
+OPS_FOLDER = Path.home() / ".suite2p" / "ops" 
+OPS_FOLDER.mkdir(exist_ok=True, parents=True)
 
 DB = {
         "data_path": {
@@ -213,7 +216,7 @@ OPS = {
         "min": None,
         "max": None,
         "default": None,
-        "description": "Path to classifier file for ROIs.",
+        "description": "Path to classifier file for ROIs (default is ~/.suite2p/classifiers/classifier_user.npy).",
     },
     "use_builtin_classifier": {
             "gui_name": "Use built-in classifier",
@@ -221,7 +224,7 @@ OPS = {
             "min": None,
             "max": None,
             "default": False,
-            "description": "Whether or not to use built-in classifier for ROIs.",
+            "description": "Use built-in classifier (classifier.npy) instead of user classifier (classifier_user.npy) for ROIs.",
     },  
     "run": {
         "do_registration": {
@@ -797,6 +800,15 @@ def default_ops():
     """ default options to run pipeline """
     ops = default_dict(OPS)
     ops["version"] = version  
+    return ops
+
+def user_ops():
+    """ user-default options to run pipeline """
+    if (OPS_FOLDER / "ops_user.npy").exists():
+        ops = np.load(OPS_FOLDER / "ops_user.npy", allow_pickle=True).item()
+        ops = {**default_ops(), **ops}
+    else:
+        ops = default_ops()
     return ops
 
 def add_descriptions(d, dstr="ops", k0=None):

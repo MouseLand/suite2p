@@ -50,7 +50,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128), lpad=3, subpixel=10):
     block_size: int, int
     NRsm: array
     """
-
+    block_size = (int(block_size[0]), int(block_size[1]))
     block_size_y, ny = calculate_nblocks(L=Ly, block_size=block_size[0])
     block_size_x, nx = calculate_nblocks(L=Lx, block_size=block_size[1])
     block_size = (block_size_y, block_size_x)

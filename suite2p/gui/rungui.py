@@ -13,8 +13,6 @@ from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget,
                             QListWidget, QCheckBox, QScrollArea)
 from superqt import QCollapsible 
 
-from cellpose.models import get_user_models, model_path, MODEL_NAMES
-
 from . import io, utils
 from .. import default_ops, user_ops, OPS_FOLDER, default_db, parameters
 
@@ -23,7 +21,7 @@ from .. import default_ops, user_ops, OPS_FOLDER, default_db, parameters
 def list_to_str(l):
     return ", ".join(str(l0) for l0 in l)
 
-FILE_KEYS = ["input_format", "algorithm", "img"]
+FILE_KEYS = ["data_path", "save_path0", "fast_disk"]
 COMBO_KEYS = ["input_format", "algorithm", "img"]
 
 def create_input(key, OPS, ops_gui, width=160):
@@ -51,48 +49,74 @@ def create_input(key, OPS, ops_gui, width=160):
     ops_gui[key].setToolTip(OPS[key]["description"])
     return qlabel 
 
-def get_ops(OPS, ops_gui, level=0):
-    if level==0:
+def get_ops(OPS, ops_gui, ops=None):
+    if ops is None:
         ops = user_ops()
     for key in ops_gui.keys():
+        print(key)
+        print(OPS[key])
+        #print(OPS[key]["type"])
         if "gui_name" not in OPS[key]:
-            ops[key] = get_ops(OPS[key], ops_gui[key], level=1)
-        if OPS[key]["type"] == bool:
-            ops[key] = ops_gui[key].isChecked()
+            print("HIIIII....................")
+            ops[key] = {}
+            ops[key] = get_ops(OPS[key], ops_gui[key], ops=ops[key])
         else:
-            if key in COMBO_KEYS:
-                ops[key] = ops_gui[key].currentText()
-            elif len(ops_gui[key].text()) > 0:
-                if OPS[key]["type"] == list or OPS[key]["type"] == tuple:
-                    ops[key] = [float(x) for x in ops_gui[key].text().split(",")]
-                elif OPS[key]["type"] == str:
-                    ops[key] = ops_gui[key].text()
-                else:
-                    # convert to int or float
-                    ops[key] = OPS[key]["type"](ops_gui[key].text())
+            if OPS[key]["type"] == bool:
+                ops[key] = ops_gui[key].isChecked()
             else:
-                ops[key] = None
+                if key in COMBO_KEYS:
+                    ops[key] = ops_gui[key].currentText()
+                elif len(ops_gui[key].text()) > 0:
+                    if OPS[key]["type"] == list or OPS[key]["type"] == tuple:
+                        ops[key] = [float(x) for x in ops_gui[key].text().split(",")]
+                    elif OPS[key]["type"] == str:
+                        ops[key] = ops_gui[key].text()
+                    elif OPS[key]["type"] == dict:
+                        # todo : add dict parsing
+                        pass
+                    else:
+                        # convert to int or float
+                        ops[key] = OPS[key]["type"](ops_gui[key].text())
+                else:
+                    ops[key] = None
     return ops
 
-def get_db(DB, db_gui):
+def get_db(DB, db_gui, extra_keys={}):
     db = default_db()
     for key in db_gui.keys():
-        if OPS[key]["type"] == bool:
-            ops[key] = ops_gui[key].isChecked()
+        if DB[key]["type"] == bool:
+            db[key] = db_gui[key].isChecked()
         else:
             if key in COMBO_KEYS:
-                ops[key] = ops_gui[key].currentText()
-            elif len(ops_gui[key].text()) > 0:
-                if OPS[key]["type"] == list or OPS[key]["type"] == tuple:
-                    ops[key] = [float(x) for x in ops_gui[key].text().split(",")]
-                elif OPS[key]["type"] == str:
-                    ops[key] = ops_gui[key].text()
+                db[key] = db_gui[key].currentText()
+            elif key in FILE_KEYS:
+                if key == "data_path":
+                    db[key] = []
+                    for i in range(9):
+                        folder = db_gui[key][i].text()
+                        if len(folder) > 0:
+                            db[key].append(folder)
+                else:
+                    folder = db_gui[key].text()
+                    if key == "save_path0":
+                        db[key] = folder if len(folder) > 0 else db["data_path"][0]
+                    else:
+                        db[key] = folder if len(folder) > 0 else None
+
+            elif len(db_gui[key].text()) > 0:
+                if DB[key]["type"] == list or DB[key]["type"] == tuple:
+                    db[key] = [float(x) for x in db_gui[key].text().split(",")]
+                elif DB[key]["type"] == str:
+                    db[key] = db_gui[key].text()
                 else:
                     # convert to int or float
-                    ops[key] = OPS[key]["type"](ops_gui[key].text())
+                    db[key] = DB[key]["type"](db_gui[key].text())
             else:
-                ops[key] = None
-    return ops
+                db[key] = None
+
+    for key in extra_keys.keys():
+        db[key] = extra_keys[key]
+    return db
 
 def set_ops(OPS, ops_gui):
     for key in ops_gui.keys():
@@ -456,20 +480,21 @@ class RunWindow(QMainWindow):
         self.listOps.setEnabled(False)
 
     def run_S2P(self):
-        if len(self.opslist) == 0:
-            self.add_ops()
-        # pre-download model
-        pretrained_model_string = self.ops.get("pretrained_model", "cyto")
-        pretrained_model_string = pretrained_model_string if pretrained_model_string is not None else "cyto"
-        pretrained_model_path = model_path(pretrained_model_string, 0)
         self.finish = True
         self.error = False
-        ops_file = os.path.join(self.ops_path, "ops.npy")
-        db_file = os.path.join(self.ops_path, "db.npy")
-        shutil.copy(os.path.join(self.ops_path, "ops%d.npy" % self.f), ops_file)
-        shutil.copy(os.path.join(self.ops_path, "db%d.npy" % self.f), db_file)
-        self.db = np.load(db_file, allow_pickle=True).item()
-        print(self.db)
+        
+        if len(self.batch_list) == 0:
+            db = get_db(self.DB, self.db_gui, self.extra_keys)
+            ops = get_ops(self.OPS, self.ops_gui)
+            save_path0 = db["save_path0"]
+            self.save_path = os.path.join(save_path0, db["save_folder"])
+            ops_file = os.path.join(self.save_path, "ops.npy")
+            db_file = os.path.join(self.save_path, "db.npy")
+            if not os.path.isdir(self.save_path):
+                os.makedirs(self.save_path)
+            np.save(ops_file, ops)
+            np.save(db_file, db)
+
         print("Running suite2p with command:")
         cmd = f"-u -W ignore -m suite2p --ops {ops_file} --db {db_file}"
         print("python " + cmd)
@@ -486,11 +511,7 @@ class RunWindow(QMainWindow):
     def started(self):
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(True)
-        self.cleanButton.setEnabled(False)
-        save_folder = os.path.join(self.db["save_path0"], "suite2p/")
-        if not os.path.isdir(save_folder):
-            os.makedirs(save_folder)
-        self.logfile = open(os.path.join(save_folder, "run.log"), "a")
+        self.logfile = open(os.path.join(self.save_path, "run.log"), "a")
         dstring = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         self.logfile.write("\n >>>>> started run at %s" % dstring)
 
@@ -501,7 +522,6 @@ class RunWindow(QMainWindow):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         if self.finish and not self.error:
-            self.cleanButton.setEnabled(True)
             if len(self.opslist) == 1:
                 self.parent.fname = os.path.join(self.db["save_path0"], "suite2p",
                                                  "plane0", "stat.npy")

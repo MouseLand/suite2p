@@ -9,7 +9,6 @@ from .utils import convolve, complex_fft2, spatial_taper, gaussian_fft, temporal
 
 import torch
 
-
 def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns maskMul and maskOffset from an image and slope parameter

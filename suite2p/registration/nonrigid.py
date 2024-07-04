@@ -70,7 +70,7 @@ def make_blocks(Ly, Lx, block_size=(128, 128), lpad=3, subpixel=10):
     ]
 
     NRsm = kernelD2(xs=torch.arange(nx), ys=torch.arange(ny)).T.numpy()
-    Kmat, nup = mat_upsample(lpad=3, subpixel=10)
+    Kmat, nup = mat_upsample(lpad=lpad, subpixel=subpixel)
     return yblock, xblock, [ny, nx], block_size, NRsm, Kmat, nup
 
 

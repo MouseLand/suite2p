@@ -59,7 +59,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     else:
         classfile, ctype = classification.user_classfile, "default"
     print(f"NOTE: applying {ctype} classifier: {classfile}")
-
+    
     if run_registration:
         t11 = time.time()
         print("----------- REGISTRATION")
@@ -132,7 +132,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     snr_threshold = ops["extraction"]["snr_threshold"]
     for step in range(1 + (snr_threshold > 0)):
         F, Fneu, F_chan2, Fneu_chan2 = extraction.extraction_wrapper(
-            stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops["extraction"])
+            stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops["extraction"],
+            device=device)
         # subtract neuropil
         dF = F.copy() - ops["extraction"]["neuropil_coefficient"] * Fneu
         # remove ROIs with low SNR and recompute overlapping pixels

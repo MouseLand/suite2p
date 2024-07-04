@@ -148,13 +148,13 @@ def compute_reference(frames, ops=default_ops(), device=torch.device("cuda")):
     """
     fr_reg = torch.from_numpy(frames)
     refImg = pick_initial_reference(fr_reg)
-
+    
     niter = 8
     batch_size = ops["batch_size"]
     for iter in range(0, niter):
         # rigid registration shifts to reference
         maskMul, maskOffset, cfRefImg = compute_filters_and_norm(refImg, False, ops["smooth_sigma"],
-                                           ops["spatial_taper"], None, device)[:3]
+                                           ops["spatial_taper"], block_size=None, device=device)[:3]
 
         for k in range(0, fr_reg.shape[0], batch_size):
             fr_reg_batch = fr_reg[k:min(k + batch_size, fr_reg.shape[0])].to(device)
@@ -209,7 +209,8 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
         cfRefImg = cfRefImg.to(device)
         blocks = []
         if block_size is not None:
-            blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=block_size)
+            blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=block_size,
+                                          lpad=lpad, subpixel=subpixel)
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.compute_masks_ref_smooth_fft(
                 refImg0=rimg, maskSlope=spatial_taper, smooth_sigma=spatial_smooth, 
                 yblock=blocks[0], xblock=blocks[1],
@@ -513,7 +514,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
     if refImg is None:
         t0 = time.time()
-        refImg = compute_reference(frames, ops=ops)
+        refImg = compute_reference(frames, ops=ops, device=device)
         print("Reference frame, %0.2f sec." % (time.time() - t0))
     refImg_orig = refImg.copy()
     

@@ -10,7 +10,7 @@ from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget, 
                             QGridLayout, QMainWindow, QComboBox, QTextEdit, 
                             QFileDialog, QAction, QToolButton, QStyle,
-                            QListWidget, QCheckBox, QScrollArea)
+                            QListWidget, QCheckBox, QScrollArea, QAbstractItemView)
 from superqt import QCollapsible 
 
 from . import io, utils
@@ -23,6 +23,44 @@ def list_to_str(l):
 
 FILE_KEYS = ["data_path", "save_path0", "fast_disk"]
 COMBO_KEYS = ["input_format", "algorithm", "img"]
+
+
+
+
+
+### custom QDialog with an editable list 
+class BatchView(QDialog):
+    def __init__(self, parent=None):
+        super(BatchView, self).__init__(parent)
+        self.setGeometry(300, 300, 600, 320)
+        self.setWindowTitle("Batch list")
+        self.win = QWidget(self)
+        layout = QGridLayout()
+        self.win.setLayout(layout)
+        layout.addWidget(QLabel('(select multiple using ctrl)'), 0, 0, 1, 1)
+        self.list = QListWidget(parent)
+        self.list.setSelectionMode(QAbstractItemView.MultiSelection)
+        layout.addWidget(self.list, 1, 0, 10, 1)
+        self.list.addItems(parent.batch_list)
+
+        remove = QPushButton('remove selected')
+        remove.clicked.connect(lambda: self.remove_selected(parent))
+        layout.addWidget(done, 11, 0, 1, 1)
+
+        done = QPushButton('close')
+        done.clicked.connect(self.exit_list)
+        layout.addWidget(done, 11, 1, 1, 1)
+
+    def remove_selected(self, parent):
+        for item in self.list.selectedItems():
+            parent.batch_list.removeItem(item.text())
+            print("removed", item.text())
+        parent.list.clear()
+        parent.list.addItems(parent.batch_list)
+
+    def exit_list(self):
+        self.accept()
+        
 
 def create_input(key, OPS, ops_gui, width=160):
     qlabel = QLabel(OPS[key]["gui_name"])
@@ -53,11 +91,7 @@ def get_ops(OPS, ops_gui, ops=None):
     if ops is None:
         ops = user_ops()
     for key in ops_gui.keys():
-        print(key)
-        print(OPS[key])
-        #print(OPS[key]["type"])
         if "gui_name" not in OPS[key]:
-            print("HIIIII....................")
             ops[key] = {}
             ops[key] = get_ops(OPS[key], ops_gui[key], ops=ops[key])
         else:
@@ -127,7 +161,8 @@ def set_ops(OPS, ops_gui):
         else:
             if OPS[key]["default"] is not None:
                 if key in COMBO_KEYS:
-                    ops_gui[key].setCurrentItem(OPS[key]["default"])
+                    all_items = [ops_gui[key].itemText(i) for i in range(ops_gui[key].count())]
+                    ops_gui[key].setCurrentIndex(all_items.index(OPS[key]["default"]))
                 elif OPS[key]["type"] == list or OPS[key]["type"] == tuple:
                     ops_gui[key].setText(list_to_str(OPS[key]["default"]))
                 else:
@@ -151,8 +186,10 @@ def set_db(DB, db_gui):
         else:
             if DB[key]["default"] is not None:
                 if key in COMBO_KEYS:
-                    db_gui[key].setCurrentItem(DB[key]["default"])
+                    all_items = [db_gui[key].itemText(i) for i in range(db_gui[key].count())]
+                    db_gui[key].setCurrentIndex(all_items.index(DB[key]["default"]))
                 elif DB[key]["type"] == list or DB[key]["type"] == tuple:
+                    print(key, DB[key]["default"])
                     db_gui[key].setText(list_to_str(DB[key]["default"]))
                 else:
                     db_gui[key].setText(str(DB[key]["default"]))
@@ -191,8 +228,9 @@ class RunWindow(QMainWindow):
         self.data_path = []
         self.save_path = []
         self.fast_disk = []
-        self.batch = False
+        self.ibatch = 0
         self.batch_list = []
+
         self.extra_keys = {}
         self.create_menu_bar()
 
@@ -244,7 +282,7 @@ class RunWindow(QMainWindow):
         batch_menu.addAction(self.addToBatch)
 
         self.batchList = QAction("View/edit batch list")
-        self.batchList.triggered.connect(self.remove_ops)
+        self.batchList.triggered.connect(self.add_batch)
         self.batchList.setEnabled(False)
         batch_menu.addAction(self.batchList)
 
@@ -439,61 +477,45 @@ class RunWindow(QMainWindow):
         layoutScroll.addWidget(QLabel(""), b, 0, 1, 1)
         layoutScroll.setColumnStretch(0, b)       
         
-    def remove_ops(self):
-        L = len(self.opslist)
-        if L == 1:
-            self.batch = False
-            self.opslist = []
-            self.removeOps.setEnabled(False)
-        else:
-            del self.opslist[L - 1]
-        self.odata[L - 1].setText("")
-        self.odata[L - 1].setToolTip("")
-        self.f = 0
-
+    def save_db_ops(self):
+        db = get_db(self.DB, self.db_gui, self.extra_keys)
+        ops = get_ops(self.OPS, self.ops_gui)
+        save_path0 = db["save_path0"]
+        self.save_path = os.path.join(save_path0, db["save_folder"])
+        ops_file = os.path.join(self.save_path, "ops.npy")
+        db_file = os.path.join(self.save_path, "db.npy")
+        if not os.path.isdir(self.save_path):
+            os.makedirs(self.save_path)
+        np.save(ops_file, ops)
+        np.save(db_file, db)
+        
     def add_batch(self):
-        self.add_ops()
-        L = len(self.opslist)
-        self.odata[L].setText(self.datastr)
-        self.odata[L].setToolTip(self.datastr)
-
-        # clear file fields
-        self.db = {}
-        self.data_path = []
-        self.save_path = []
-        self.fast_disk = []
-        for n in range(self.n_batch):
-            self.qdata[n].setText("")
-        self.savelabel.setText("")
-        self.binlabel.setText("")
-
-        # clear all ops
-        # self.reset_ops()
-
-        # enable all the file loaders again
-        self.btiff.setEnabled(True)
-        self.bsave.setEnabled(True)
-        self.bbin.setEnabled(True)
+        self.save_db_ops()
+        self.batch_list.append(self.save_path)
+        L = len(self.batch_list)
+        
+        # clear db and extra_keys
+        set_default_db(self.DB, default_db())
+        set_db(self.DB, self.db_gui)
+        self.extra_keys = {}
+        
         # and enable the run button
         self.runButton.setEnabled(True)
-        self.removeOps.setEnabled(True)
-        self.listOps.setEnabled(False)
+        self.removeBatch.setEnabled(True)
+        self.listBatch.setEnabled(True)
 
     def run_S2P(self):
         self.finish = True
         self.error = False
         
         if len(self.batch_list) == 0:
-            db = get_db(self.DB, self.db_gui, self.extra_keys)
-            ops = get_ops(self.OPS, self.ops_gui)
-            save_path0 = db["save_path0"]
-            self.save_path = os.path.join(save_path0, db["save_folder"])
-            ops_file = os.path.join(self.save_path, "ops.npy")
-            db_file = os.path.join(self.save_path, "db.npy")
-            if not os.path.isdir(self.save_path):
-                os.makedirs(self.save_path)
-            np.save(ops_file, ops)
-            np.save(db_file, db)
+            self.save_db_ops()            
+        else:
+            self.save_path = self.batch_list[self.ibatch]
+
+        ops_file = os.path.join(self.save_path, "ops.npy")
+        db_file = os.path.join(self.save_path, "db.npy")
+        
 
         print("Running suite2p with command:")
         cmd = f"-u -W ignore -m suite2p --ops {ops_file} --db {db_file}"
@@ -522,7 +544,7 @@ class RunWindow(QMainWindow):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
         if self.finish and not self.error:
-            if len(self.opslist) == 1:
+            if len(self.batch_list) == 0:
                 self.parent.fname = os.path.join(self.db["save_path0"], "suite2p",
                                                  "plane0", "stat.npy")
                 if os.path.exists(self.parent.fname):
@@ -532,19 +554,15 @@ class RunWindow(QMainWindow):
                     cursor.insertText("not opening plane in GUI (no ROIs)\n")
             else:
                 cursor.insertText("BATCH MODE: %d more recordings remaining \n" %
-                                  (len(self.opslist) - self.f - 1))
-                self.f += 1
-                if self.f < len(self.opslist):
+                                  (len(self.batch_list) - self.ibatch - 1))
+                self.ibatch += 1
+                if self.ibatch < len(self.batch_list):
                     self.run_S2P()
         elif not self.error:
             cursor.insertText("Interrupted by user (not finished)\n")
         else:
             cursor.insertText("Interrupted by error (not finished)\n")
-
-        # remove current ops from processing list
-        if len(self.opslist) == 1:
-            del self.opslist[0]
-
+        
     def save_ops(self):
         name = QFileDialog.getSaveFileName(self, "Ops name (*.npy)")
         ops = get_ops(self.OPS, self.ops_gui)

@@ -24,10 +24,6 @@ def list_to_str(l):
 FILE_KEYS = ["data_path", "save_path0", "fast_disk"]
 COMBO_KEYS = ["input_format", "algorithm", "img"]
 
-
-
-
-
 ### custom QDialog with an editable list 
 class BatchView(QDialog):
     def __init__(self, parent=None):
@@ -37,17 +33,17 @@ class BatchView(QDialog):
         self.win = QWidget(self)
         layout = QGridLayout()
         self.win.setLayout(layout)
-        layout.addWidget(QLabel('(select multiple using ctrl)'), 0, 0, 1, 1)
+        layout.addWidget(QLabel("(select multiple using ctrl)"), 0, 0, 1, 1)
         self.list = QListWidget(parent)
         self.list.setSelectionMode(QAbstractItemView.MultiSelection)
         layout.addWidget(self.list, 1, 0, 10, 1)
         self.list.addItems(parent.batch_list)
 
-        remove = QPushButton('remove selected')
+        remove = QPushButton("remove selected")
         remove.clicked.connect(lambda: self.remove_selected(parent))
-        layout.addWidget(done, 11, 0, 1, 1)
+        layout.addWidget(remove, 11, 0, 1, 1)
 
-        done = QPushButton('close')
+        done = QPushButton("close")
         done.clicked.connect(self.exit_list)
         layout.addWidget(done, 11, 1, 1, 1)
 
@@ -61,7 +57,6 @@ class BatchView(QDialog):
     def exit_list(self):
         self.accept()
         
-
 def create_input(key, OPS, ops_gui, width=160):
     qlabel = QLabel(OPS[key]["gui_name"])
     qlabel.setToolTip(OPS[key]["description"])
@@ -282,9 +277,14 @@ class RunWindow(QMainWindow):
         batch_menu.addAction(self.addToBatch)
 
         self.batchList = QAction("View/edit batch list")
-        self.batchList.triggered.connect(self.add_batch)
-        self.batchList.setEnabled(False)
+        self.batchList.triggered.connect(self.view_batch)
+        #self.batchList.setEnabled(False)
         batch_menu.addAction(self.batchList)
+
+    def view_batch(parent):
+        # will return
+        BV = BatchView(parent)
+        result = BV.exec_()
 
     def load_ops(self, filename=None):
         if filename is None:
@@ -501,8 +501,6 @@ class RunWindow(QMainWindow):
         
         # and enable the run button
         self.runButton.setEnabled(True)
-        self.removeBatch.setEnabled(True)
-        self.listBatch.setEnabled(True)
 
     def run_S2P(self):
         self.finish = True
@@ -545,7 +543,7 @@ class RunWindow(QMainWindow):
         cursor.movePosition(cursor.End)
         if self.finish and not self.error:
             if len(self.batch_list) == 0:
-                self.parent.fname = os.path.join(self.db["save_path0"], "suite2p",
+                self.parent.fname = os.path.join(self.save_path,
                                                  "plane0", "stat.npy")
                 if os.path.exists(self.parent.fname):
                     cursor.insertText("Opening in GUI (can close this window)\n")
@@ -613,7 +611,7 @@ class RunWindow(QMainWindow):
                         self.db_gui["data_path"][i].setToolTip(name)
                         break 
                 self.runButton.setEnabled(True)
-                self.batchList.setEnabled(True)
+                self.addToBatch.setEnabled(True)
             else:
                 self.db_gui[ftype].setText(name)
                 self.db_gui[ftype].setToolTip(name)

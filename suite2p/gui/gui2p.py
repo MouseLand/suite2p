@@ -117,8 +117,8 @@ class MainWindow(QMainWindow):
         self.show()
         self.win.show()
         
-        RW = rungui.RunWindow(self)
-        RW.show()
+        #RW = rungui.RunWindow(self)
+        #RW.show()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

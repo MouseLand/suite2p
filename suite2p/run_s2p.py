@@ -32,8 +32,6 @@ files_to_binary = {
         io.sbx_to_binary,
     "nd2":
         io.nd2_to_binary,
-    "mesoscan":
-        io.mesoscan_to_binary,
     "raw":
         io.raw_to_binary,
     "bruker":
@@ -290,8 +288,8 @@ def run_s2p(db={}, ops=default_ops(), server={}):
             
             dbs = files_to_binary[db["input_format"]](dbs, ops, files, files_chan2)
         
-        print("Wrote {} frames per binary, {} planes + {} channels, {:0.2f}sec".format(
-                time.time() - t0, dbs[0]["nframes"], len(dbs), dbs[0]["nchannels"]))
+        print("Wrote {} frames per binary, {} folders + {} channels, {:0.2f}sec".format(
+                dbs[0]["nframes"], len(dbs), dbs[0]["nchannels"], time.time() - t0))
         
     if ops["run"]["multiplane_parallel"]:
         if server:  # if user puts in server settings

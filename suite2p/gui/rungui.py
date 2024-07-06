@@ -21,6 +21,11 @@ from .. import default_ops, user_ops, OPS_FOLDER, default_db, parameters
 def list_to_str(l):
     return ", ".join(str(l0) for l0 in l)
 
+DB_KEYS = [  "input_format", "look_one_level_down",
+             "keep_movie_raw", "nplanes", "nchannels",
+             "functional_chan", "ignore_flyback", "save_folder",
+             "h5py_key", "nwb_series", "force_sktiff"
+        ]
 FILE_KEYS = ["data_path", "save_path0", "fast_disk"]
 COMBO_KEYS = ["input_format", "algorithm", "img"]
 
@@ -128,7 +133,7 @@ def get_db(DB, db_gui, extra_keys={}):
                 else:
                     folder = db_gui[key].text()
                     if key == "save_path0":
-                        db[key] = folder if len(folder) > 0 else db["data_path"][0]
+                        db[key] = folder if len(folder) > 0 else None
                     else:
                         db[key] = folder if len(folder) > 0 else None
 
@@ -194,13 +199,18 @@ def set_db(DB, db_gui):
 def set_default_db(DB, db):
     for key in DB.keys():
         DB[key]["default"] = db[key]
+        del db[key]
 
 def set_default_ops(OPS, ops):
     for key in OPS.keys():
+        print(key)
+        print(OPS[key])
+        print(ops[key])
         if "gui_name" not in OPS[key]:
             set_default_ops(OPS[key], ops[key])
         else:
             OPS[key]["default"] = ops[key]   
+            del ops[key]
 
 ### custom QMainWindow which allows user to fill in ops and run suite2p!
 class RunWindow(QMainWindow):
@@ -234,14 +244,21 @@ class RunWindow(QMainWindow):
         parameters.add_descriptions(self.OPS)
         self.DB = parameters.DB
         parameters.add_descriptions(self.DB, dstr="db")
+        # remove keys not in GUI
+        remove_keys = [key for key in self.DB if key not in FILE_KEYS and 
+                           key not in DB_KEYS]
+        for key in remove_keys:
+            del self.DB[key]
         set_default_ops(self.OPS, user_ops())
         self.create_db_ops_inputs()
+
+        #self.load_ops(filename="/media/carsen/ssd2/suite2p_paper/2/ops.json")
 
     def create_menu_bar(self):
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
         self.loadOps = QAction("&Load ops file")
-        self.loadOps.triggered.connect(self.load_ops)
+        self.loadOps.triggered.connect(lambda: self.load_ops(filename=None))
         self.loadOps.setEnabled(True)
         file_menu.addAction(self.loadOps)
         
@@ -293,24 +310,29 @@ class RunWindow(QMainWindow):
 
         if filename is None:
             ops = user_ops() 
+            db, ops_in = None, None
         else:
             if isinstance(filename, pathlib.Path):
                 filename = str(filename)
             ext = os.path.splitext(filename)[1]
             if ext == ".json":
                 with open(filename, "r") as f:
-                    ops = json.load(f)
+                    ops_in = json.load(f)
             else:
-                ops = np.load(filename, allow_pickle=True).item()
+                ops_in = np.load(filename, allow_pickle=True).item()
+            db, ops, ops_in = parameters.convert_ops_orig(ops_in, 
+                                                          db=get_db(self.DB, self.db_gui, self.extra_keys), 
+                                                          ops=get_ops(self.OPS, self.ops_gui))
         set_default_ops(self.OPS, ops)
-        set_default_db(self.DB, ops) # check if any db keys are in ops
         set_ops(self.OPS, self.ops_gui)
-        set_db(self.DB, self.db_gui)
+        if db is not None:
+            set_default_db(self.DB, db) # check if any db keys are in ops
+            set_db(self.DB, self.db_gui)
 
-        for key in ops.keys():
-            if key not in self.OPS.keys() or key not in self.DB.keys():
+        if ops_in is not None:
+            for key in ops_in.keys():
                 print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
-                self.extra_keys[key] = ops[key]
+                self.extra_keys[key] = ops_in[key]
     
     def load_db(self, filename=None):
         if filename is None:
@@ -330,12 +352,8 @@ class RunWindow(QMainWindow):
         set_db(self.DB, self.db_gui)
 
         for key in db.keys():
-            if key not in self.DB.keys():
-                if key not in self.OPS.keys():
-                    print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
-                    self.extra_keys[key] = db[key]
-                else:
-                    print(f"key {key} is an OPS key, load with ops file")
+            print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
+            self.extra_keys[key] = db[key]
 
     def create_db_ops_inputs(self):
         self.db_gui = {}
@@ -394,17 +412,12 @@ class RunWindow(QMainWindow):
         self.process.finished.connect(self.finished)
 
 
-        self.dbkeys = [
-             "keep_movie_raw", "nplanes", "nchannels",
-             "functional_chan", "ignore_flyback", "save_folder",
-             "h5py_key", "nwb_series", "force_sktiff"
-        ]
         qlabel = QLabel("file settings")
         qlabel.setStyleSheet(bigfont)
         qlabel.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(qlabel, 0, cw, 1, 2)
         b = 1
-        for key in self.dbkeys:
+        for key in DB_KEYS[2:]:
             qlabel = create_input(key, self.DB, self.db_gui)
             self.layout.addWidget(qlabel, b, cw, 1, 1)
             self.layout.addWidget(self.db_gui[key], b, cw+1, 1, 1)
@@ -541,7 +554,7 @@ class RunWindow(QMainWindow):
         self.stopButton.setEnabled(False)
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)
-        if self.finish and not self.error:
+        if self.finish:# and not self.error:
             if len(self.batch_list) == 0:
                 self.parent.fname = os.path.join(self.save_path,
                                                  "plane0", "stat.npy")

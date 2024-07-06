@@ -108,21 +108,35 @@ def init_dbs(db0):
     nplanes = db0["nplanes"]
     nchannels = db0["nchannels"]
     keep_movie_raw = db0["keep_movie_raw"]
+    nfolders = nplanes
+    iplane = db0.get("iplane", np.arange(0, nplanes))
     if "lines" in db0:
-        lines = db0["lines"]
-    if "iplane" in db0:
-        iplane = db0["iplane"]
-        #ops["nplanes"] = len(ops["lines"])
+        nrois = len(db0["lines"])
+        db0["nrois"] = nrois
+        nfolders *= nrois
+        print(f"NOTE: nplanes={nplanes}, nrois={nrois} => nfolders = {nfolders}")
+        # replicate lines across planes if nplanes > 1
+        if nplanes > 1:
+            lines0, dy0, dx0 = db0["lines"].copy(), db0["dy"].copy(), db0["dx"].copy()
+            dy0, dx0 = np.array(dy0), np.array(dx0)
+            dy = np.tile(dy0[np.newaxis, :], (nplanes, 1)).flatten()
+            dx = np.tile(dx0[np.newaxis, :], (nplanes, 1)).flatten()
+            lines = []
+            [lines.extend(lines0) for _ in range(nplanes)]
+            iroi = np.tile(np.arange(nrois)[np.newaxis,:], (nplanes, 1)).flatten()
+            iplane = np.tile(np.arange(nplanes)[:, np.newaxis], (1, nrois)).flatten()
+        else:
+            lines, dy, dx = db0["lines"].copy(), db0["dy"].copy(), db0["dx"].copy()
+            iroi = np.arange(nrois)
+            iplane = np.zeros(nrois, "int")
+    
     dbs = []
     if db0.get("fast_disk", None) is None or len(db0["fast_disk"]) == 0:
         db0["fast_disk"] = db0["save_path0"]
     fast_disk = db0["fast_disk"]
-    # for mesoscope recording FOV locations
-    if "dy" in db0 and db0["dy"] != "":
-        dy = db0["dy"]
-        dx = db0["dx"]
+    
     # compile dbs into list across planes
-    for j in range(0, nplanes):
+    for j in range(0, nfolders):
         db = copy.deepcopy(db0)
         db["save_path"] = os.path.join(db["save_path0"], db["save_folder"], f"plane{j}")
         fast_disk = os.path.join(db["fast_disk"], "suite2p", f"plane{j}")
@@ -133,16 +147,14 @@ def init_dbs(db0):
         if keep_movie_raw:
             db["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
         if "lines" in db:
-            db["lines"] = lines[j]
-        if "iplane" in db:
-            db["iplane"] = iplane[j]
+            db["lines"], db["dy"], db["dx"] = lines[j], dy[j], dx[j]
+            db["iroi"] = iroi[j]
+        db["iplane"] = iplane[j]
         if nchannels > 1:
             db["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
             if keep_movie_raw:
                 db["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
-        if "dy" in db and db["dy"] != "":
-            db["dy"] = dy[j]
-            db["dx"] = dx[j]
+        
         os.makedirs(db["fast_disk"], exist_ok=True)
         os.makedirs(db["save_path"], exist_ok=True)
         dbs.append(db)

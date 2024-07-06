@@ -44,7 +44,7 @@ DB = {
             "min": None,
             "max": None,
             "default": "tif",
-            "description": "Can be ['tif', 'h5', 'nwb', 'bruker', 'mesoscan', 'movie', 'dcimg'].",
+            "description": "Can be ['tif', 'h5', 'nwb', 'bruker', 'movie', 'dcimg'].",
         },
         "keep_movie_raw": {
             "gui_name": "Keep movie raw",
@@ -652,7 +652,7 @@ OPS = {
                 "type": dict,
                 "min": None,
                 "max": None,
-                "default": {},
+                "default": None,
                 "description": "Parameters for cellpose, provided as a dict.",
             },
             "model_chan2": {
@@ -668,7 +668,7 @@ OPS = {
                 "type": dict,
                 "min": None,
                 "max": None,
-                "default": {},
+                "default": None,
                 "description": "Parameters for cellpose chan2, provided as a dict.",
             },
         },
@@ -866,4 +866,41 @@ def print_all_params():
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
     return n 
+
+def set_db(db, db_in):
+    for key in db.keys():
+        if key in db_in:
+            db[key] = db_in[key]
+            del db_in[key]
+
+def set_ops(ops, ops_in):
+    for key in ops.keys():
+        if key in ops_in:
+            if isinstance(ops[key], dict) and len(ops[key].keys()) > 0:
+                set_ops(ops[key], ops_in[key])
+                del ops_in[key]
+            else:
+                ops[key] = ops_in[key]   
+                del ops_in[key]
+
+def set_ops_orig(ops, ops_in):
+    # also support flattened keys from old suite2p
+    for key in ops.keys():
+        if isinstance(ops[key], dict) and len(ops[key].keys()) > 0:
+            set_ops_orig(ops[key], ops_in)
+        elif key in ops_in:
+            ops[key] = ops_in[key]   
+            del ops_in[key]
+
+def convert_ops_orig(ops_in, db=default_db(), ops=default_ops()):
+    """ convert ops from old suite2p to new suite2p db and ops format """
+    set_db(db, ops_in)
+    set_ops(ops, ops_in)
+    set_ops_orig(ops, ops_in)
+    if "roidetect" in ops_in:
+        ops["run"]["do_detection"] = ops_in.pop("roidetect")
+    if "spikedetect" in ops_in:
+        ops["run"]["do_deconvolution"] = ops_in.pop("spikedetect")
+    return db, ops, ops_in
+
                 

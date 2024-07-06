@@ -18,6 +18,7 @@ import json
 from . import masks, views, graphics, traces, classgui, utils
 from .. import registration
 from ..io.save import compute_dydx
+from ..io import BinaryFile
 
 
 class BinaryPlayer(QMainWindow):
@@ -185,8 +186,10 @@ class BinaryPlayer(QMainWindow):
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
                 self.iscell = parent.iscell
+                self.ops = parent.ops
+                self.basename = parent.basename
                 self.Floaded = True
-                self.openFile(filename, True)
+                self.openFile(True)
 
     def add_masks(self):
         if self.loaded:
@@ -244,22 +247,22 @@ class BinaryPlayer(QMainWindow):
         self.cframe += 1
         if self.cframe > self.nframes - 1:
             self.cframe = 0
-            if self.LY > 0:
-                for n in range(len(self.reg_file)):
-                    self.reg_file[n].seek(0, 0)
-            else:
-                self.reg_file.seek(0, 0)
-                if self.wraw:
-                    self.reg_file_raw.seek(0, 0)
-                if self.wred:
-                    self.reg_file_chan2.seek(0, 0)
-                if self.wraw_wred:
-                    self.reg_file_raw_chan2.seek(0, 0)
+            # if self.LY > 0:
+            #     for n in range(len(self.reg_file)):
+            #         self.reg_file[n].seek(0, 0)
+            # else:
+            #     self.reg_file.seek(0, 0)
+            #     if self.wraw:
+            #         self.reg_file_raw.seek(0, 0)
+            #     if self.wred:
+            #         self.reg_file_chan2.seek(0, 0)
+            #     if self.wraw_wred:
+            #         self.reg_file_raw_chan2.seek(0, 0)
         self.img = np.zeros((self.LY, self.LX), dtype=np.int16)
         for n in range(len(self.reg_loc)):
-            buff = self.reg_file[n].read(self.nbytesread[n])
-            img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
-                             (self.Ly[n], self.Lx[n]))
+            img = self.reg_file[n][self.cframe]
+            #img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
+            #                 (self.Ly[n], self.Lx[n]))
             self.img[self.dy[n]:self.dy[n] + self.Ly[n],
                      self.dx[n]:self.dx[n] + self.Lx[n]] = img
 
@@ -428,8 +431,8 @@ class BinaryPlayer(QMainWindow):
             self.ops = ops1
             self.setup_views()
 
-    def openFile(self, filename, fromgui):
-        try:
+    def openFile(self, fromgui=True, filename=None):
+        if filename is not None:
             ext = os.path.splitext(filename)[1]
             if ext == ".npy":
                 ops = np.load(filename, allow_pickle=True).item()
@@ -449,6 +452,8 @@ class BinaryPlayer(QMainWindow):
                 ops["reg_file"] = os.path.join(dirname, "data.bin")
                 nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
                 ops["nframes"] = os.path.getsize(ops["reg_file"]) // nbytesread
+        else:
+            ops = self.ops
             self.LY = ops["Ly"]
             self.LX = ops["Lx"]
             self.Ly = [ops["Ly"]]
@@ -460,9 +465,10 @@ class BinaryPlayer(QMainWindow):
                 self.reg_loc = [ops["reg_file"]]
             else:
                 self.reg_loc = [
-                    os.path.abspath(os.path.join(dirname, "data.bin"))
+                    os.path.abspath(os.path.join(self.basename, "data.bin"))
                 ]
-            self.reg_file = [open(self.reg_loc[-1], "rb")]
+            self.reg_file = [BinaryFile(Ly, Lx, reg_file, write=False) 
+                             for Ly, Lx, reg_file in zip(self.Ly, self.Lx, self.reg_loc)]
             self.wraw = False
             self.wred = False
             self.wraw_wred = False
@@ -526,20 +532,20 @@ class BinaryPlayer(QMainWindow):
             good = True
             print(self.Floaded)
             self.filename = filename
-        except Exception as e:
-            print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
-            print(e)
-            try:
-                for n in range(len(self.reg_loc)):
-                    self.reg_file[n].close()
-                print("closed binaries")
-            except:
-                print("tried to close binaries")
-            good = False
-        if good:
-            self.filename = filename
-            self.ops = [ops]
-            self.setup_views()
+        # except Exception as e:
+        #     print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
+        #     print(e)
+        #     try:
+        #         for n in range(len(self.reg_loc)):
+        #             self.reg_file[n].close()
+        #         print("closed binaries")
+        #     except:
+        #         print("tried to close binaries")
+        #     good = False
+        #if good:
+        self.filename = filename
+        self.ops = [ops]
+        self.setup_views()
 
     def setup_views(self):
         self.p1.clear()
@@ -553,10 +559,7 @@ class BinaryPlayer(QMainWindow):
         self.srange = frames.mean() + frames.std() * np.array([-2, 5])
 
         self.movieLabel.setText(self.reg_loc[-1])
-        self.nbytesread = []
-        for n in range(len(self.reg_loc)):
-            self.nbytesread.append(2 * self.Ly[n] * self.Lx[n])
-
+        
         #aspect ratio
         if "aspect" in ops:
             self.xyrat = ops["aspect"]
@@ -569,7 +572,7 @@ class BinaryPlayer(QMainWindow):
         self.vside.setAspectLocked(lock=True, ratio=self.xyrat)
 
         self.nframes = ops["nframes"]
-        self.time_step = 1. / ops["fs"] * 1000 / 5  # 5x real-time
+        self.time_step = max(1, int(np.round(1. / ops["fs"] * 1000 / 5)))  # 5x real-time
         self.frameDelta = int(np.maximum(5, self.nframes / 200))
         self.frameSlider.setSingleStep(self.frameDelta)
         self.currentMovieDirectory = QtCore.QFileInfo(self.filename).path()
@@ -819,14 +822,14 @@ class BinaryPlayer(QMainWindow):
             self.cframe = np.maximum(0, np.minimum(self.nframes - 1, self.cframe))
             self.cframe = int(self.cframe)
             # seek to absolute position
-            for n in range(len(self.reg_file)):
-                self.reg_file[n].seek(self.nbytesread[n] * self.cframe, 0)
-            if self.wraw:
-                self.reg_file_raw.seek(self.nbytesread[-1] * self.cframe, 0)
-            if self.wred:
-                self.reg_file_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
-            if self.wraw_wred:
-                self.reg_file_raw_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
+            #for n in range(len(self.reg_file)):
+            #    self.reg_file[n].seek(self.nbytesread[n] * self.cframe, 0)
+            # if self.wraw:
+            #     self.reg_file_raw.seek(self.nbytesread[-1] * self.cframe, 0)
+            # if self.wred:
+            #     self.reg_file_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
+            # if self.wraw_wred:
+            #     self.reg_file_raw_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 

@@ -129,7 +129,7 @@ def run_plane(db, ops, db_path=None, stat=None):
 
     # for running on server or on moved files, specify db_path and paths are renamed
     if (db_path is not None and os.path.exists(db_path) and not
-        (os.path.exists(db["reg_file"]) or os.path.exists(db["raw_file"]))):
+        (os.path.exists(db["reg_file"]) or os.path.exists(db.get("raw_file", None)))):
         db["save_path"] = os.path.split(db_path)[0]
         db["db_path"] = db_path
         db["ops_path"] = os.path.join(db["save_path"], "ops.npy")

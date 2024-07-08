@@ -18,10 +18,55 @@ except ImportError:
 from . import register
 from .. import default_ops
 
-
 import torch 
 
 def pclowhigh(mov, nlowhigh, nPC, random_state):
+    """
+    Compute mean of top and bottom PC weights for nPC"s of mov
+
+    computes nPC PCs of mov and returns average of top and bottom
+
+    Parameters
+    ----------
+    mov : frames x Ly x Lx
+        subsampled frames from movie
+    nlowhigh : int
+        number of frames to average at top and bottom of each PC
+    nPC : int
+        number of PCs to compute
+    random_state:
+        a value that sets the seed for the PCA randomizer.
+
+    Returns
+    -------
+        pclow : float, array
+            average of bottom of spatial PC: nPC x Ly x Lx
+        pchigh : float, array
+            average of top of spatial PC: nPC x Ly x Lx
+        w : float, array
+            singular values of decomposition of mov
+        v : float, array
+            frames x nPC, how the PCs vary across frames
+    """
+    nframes, Ly, Lx = mov.shape
+    mov = mov.reshape((nframes, -1))
+    mov = mov.astype(np.float32)
+    mimg = mov.mean(axis=0)
+    mov -= mimg
+    pca = PCA(n_components=nPC, random_state=random_state).fit(mov.T)
+    v = pca.components_.T
+    w = pca.singular_values_
+    mov += mimg
+    mov = np.transpose(np.reshape(mov, (-1, Ly, Lx)), (1, 2, 0))
+    pclow = np.zeros((nPC, Ly, Lx), np.float32)
+    pchigh = np.zeros((nPC, Ly, Lx), np.float32)
+    isort = np.argsort(v, axis=0)
+    for i in range(nPC):
+        pclow[i] = mov[:, :, isort[:nlowhigh, i]].mean(axis=-1)
+        pchigh[i] = mov[:, :, isort[-nlowhigh:, i]].mean(axis=-1)
+    return pclow, pchigh, w, v
+
+def pclowhigh_torch(mov, nlowhigh, nPC, random_state):
     """
     Compute mean of top and bottom PC weights for nPC"s of mov
 
@@ -117,7 +162,7 @@ def pc_register(pclow, pchigh, smooth_sigma=1.15, block_size=(128, 128),
         X[i, 2] = ((ymax1**2 + xmax1**2)**.5).max().cpu().numpy()
     return X
 
-def get_pc_metrics(f_reg, yrange=None, xrange=None, ops=default_ops(), 
+def get_pc_metrics(f_reg, yrange=None, xrange=None, ops=default_ops()["registration"], 
                    device=torch.device("cpu")):
 
     """
@@ -153,12 +198,13 @@ def get_pc_metrics(f_reg, yrange=None, xrange=None, ops=default_ops(),
     inds = np.linspace(0, n_frames - 1, nsamp).astype("int")
     mov = f_reg[inds][:, yrange[0] : yrange[-1], xrange[0] : xrange[-1]]
     
-    mov = torch.from_numpy(mov).to(device).float()
     random_state = ops["reg_metrics_rs"] if "reg_metrics_rs" in ops else None
     nPC = ops["reg_metric_n_pc"] if "reg_metric_n_pc" in ops else 30
     pclow, pchigh, sv, tPC = pclowhigh(
         mov, nlowhigh=np.minimum(300, mov.shape[0] // 2), nPC=nPC,
         random_state=random_state)
+    pclow = torch.from_numpy(pclow).to(device).float()
+    pchigh = torch.from_numpy(pchigh).to(device).float()
     regPC = torch.stack((pclow, pchigh), dim=0).cpu().numpy()
     regDX = pc_register(
         pclow, pchigh, smooth_sigma=ops["smooth_sigma"], block_size=ops["block_size"],

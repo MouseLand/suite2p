@@ -973,6 +973,9 @@ class PCViewer(QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, "ops"):
             if parent.ops["save_path"][-8:] != "combined":
+                self.ops = parent.ops
+                self.openFile()
+            else:
                 filename = os.path.abspath(os.path.join(parent.basename, "ops.npy"))
                 print(filename)
                 self.openFile(filename)
@@ -1032,24 +1035,27 @@ class PCViewer(QMainWindow):
             print(filename[0])
             self.openFile(filename[0])
 
-    def openFile(self, filename):
-        try:
-            ops = np.load(filename, allow_pickle=True).item()
-            self.PC = ops["regPC"]
+    def openFile(self, filename=None):
+        if filename is not None:
+            try:
+                ops = np.load(filename, allow_pickle=True).item()
+            except Exception as e:
+                print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
+                print(e)
+                good = False            
+        else:
+            self.PC = self.ops["regPC"]
             self.PC = np.clip(self.PC, np.percentile(self.PC, 1),
                               np.percentile(self.PC, 99))
 
             self.Ly, self.Lx = self.PC.shape[2:]
-            self.DX = ops["regDX"]
-            if "tPC" in ops:
-                self.tPC = ops["tPC"]
+            self.DX = self.ops["regDX"]
+            if "tPC" in self.ops:
+                self.tPC = self.ops["tPC"]
             else:
                 self.tPC = np.zeros((1, self.PC.shape[1]))
             good = True
-        except Exception as e:
-            print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
-            print(e)
-            good = False
+
         if good:
             self.loaded = True
             self.nPCs = self.PC.shape[1]

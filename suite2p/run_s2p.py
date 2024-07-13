@@ -146,7 +146,7 @@ def run_plane(db, ops, db_path=None, stat=None):
         np.save(db["ops_path"], ops)
 
     # check that there are sufficient numbers of frames
-    if db["nframes"] < 50: raise ValueError("number of frames should be at least 50")
+    if db["nframes"] < 10: raise ValueError("number of frames should be at least 50")
     elif db["nframes"] < 200:
         print("WARNING: number of frames < 200, unpredictable behaviors may occur")
 

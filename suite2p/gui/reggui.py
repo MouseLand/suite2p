@@ -120,7 +120,7 @@ class BinaryPlayer(QMainWindow):
 
         #self.p2.autoRange(padding=0.01)
         self.win.ci.layout.setRowStretchFactor(0, 12)
-        self.movieLabel = QLabel("No ops chosen")
+        self.movieLabel = QLabel("No settings chosen")
         self.movieLabel.setStyleSheet("color: white;")
         self.movieLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.nframes = 0
@@ -179,14 +179,14 @@ class BinaryPlayer(QMainWindow):
         self.wraw_wred = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
-        if hasattr(parent, "ops"):
+        if hasattr(parent, "settings"):
             if parent.ops["save_path"][-8:] != "combined":
-                filename = os.path.abspath(os.path.join(parent.basename, "ops.npy"))
+                filename = os.path.abspath(os.path.join(parent.basename, "settings.npy"))
                 print(filename)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
                 self.iscell = parent.iscell
-                self.ops = parent.ops
+                self.settings = parent.ops
                 self.basename = parent.basename
                 self.Floaded = True
                 self.openFile(True)
@@ -324,7 +324,7 @@ class BinaryPlayer(QMainWindow):
         for n in np.nonzero(self.iscell)[0]:
             ypix = self.stat[n]["ypix"].flatten()
             xpix = self.stat[n]["xpix"].flatten()
-            if not self.ops[0]["extraction"]["allow_overlap"]:
+            if not self.settings[0]["extraction"]["allow_overlap"]:
                 ypix = ypix[~self.stat[n]["overlap"]]
                 xpix = xpix[~self.stat[n]["overlap"]]
             yext, xext = utils.boundary(ypix, xpix)
@@ -358,8 +358,8 @@ class BinaryPlayer(QMainWindow):
         self.p2.setLimits(xMin=0, xMax=self.nframes)
 
     def open(self):
-        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file or single-plane ops.json file")
-        # load ops in same folder
+        filename = QFileDialog.getOpenFileName(self, "Open single-plane settings.npy file or single-plane settings.json file")
+        # load settings in same folder
         if filename:
             print(filename[0])
             self.openFile(filename[0], False)
@@ -367,7 +367,7 @@ class BinaryPlayer(QMainWindow):
     def open_combined(self):
         filename = QFileDialog.getExistingDirectory(
             self, "Load binaries for all planes (choose folder with planeX folders)")
-        # load ops in same folder
+        # load settings in same folder
         if filename:
             print(filename)
             self.openCombined(filename)
@@ -379,8 +379,8 @@ class BinaryPlayer(QMainWindow):
                 for f in os.scandir(save_folder)
                 if f.is_dir() and f.name[:5] == "plane"
             ])
-            ops1 = [
-                np.load(os.path.join(f, "ops.npy"), allow_pickle=True).item()
+            settings1 = [
+                np.load(os.path.join(f, "settings.npy"), allow_pickle=True).item()
                 for f in plane_folders
             ]
             self.LY = 0
@@ -395,11 +395,11 @@ class BinaryPlayer(QMainWindow):
             self.wred = False
             self.wraw_wred = False
             # check that all binaries still exist
-            dy, dx = compute_dydx(ops1)
-            for ipl, ops in enumerate(ops1):
-                #if os.path.isfile(ops["reg_file"]):
-                if os.path.isfile(ops["reg_file"]):
-                    reg_file = ops["reg_file"]
+            dy, dx = compute_dydx(settings1)
+            for ipl, settings in enumerate(settings1):
+                #if os.path.isfile(settings["reg_file"]):
+                if os.path.isfile(settings["reg_file"]):
+                    reg_file = settings["reg_file"]
                 else:
                     reg_file = os.path.abspath(
                         os.path.join(os.path.dirname(filename), "plane%d" % ipl,
@@ -407,8 +407,8 @@ class BinaryPlayer(QMainWindow):
                 print(reg_file, os.path.isfile(reg_file))
                 self.reg_loc.append(reg_file)
                 self.reg_file.append(open(self.reg_loc[-1], "rb"))
-                self.Ly.append(ops["Ly"])
-                self.Lx.append(ops["Lx"])
+                self.Ly.append(settings["Ly"])
+                self.Lx.append(settings["Lx"])
                 self.dy.append(dy[ipl])
                 self.dx.append(dx[ipl])
                 self.LY = np.maximum(self.LY, self.Ly[-1] + self.dy[-1])
@@ -428,41 +428,41 @@ class BinaryPlayer(QMainWindow):
                 print("tried to close binaries")
         if good:
             self.filename = save_folder
-            self.ops = ops1
+            self.settings = settings1
             self.setup_views()
 
     def openFile(self, fromgui=True, filename=None):
         if filename is not None:
             ext = os.path.splitext(filename)[1]
             if ext == ".npy":
-                ops = np.load(filename, allow_pickle=True).item()
+                settings = np.load(filename, allow_pickle=True).item()
                 dirname = os.path.dirname(filename)
                 try:
                     db = np.load(os.path.join(dirname, "db.npy"), allow_pickle=True).item()
                     reg_outputs = np.load(os.path.join(dirname, "reg_outputs.npy"), allow_pickle=True).item()
-                    ops = {**db, **ops, **reg_outputs}
+                    settings = {**db, **settings, **reg_outputs}
                 except:
                     print("no reg_outputs.npy found")
             elif ext == ".json":
                 with open(filename, "r") as f:
-                    ops = json.load(f)
-                ops["Ly"] = ops["Lys"] if isinstance(ops["Lys"], int) else ops["Lys"][0]
-                ops["Lx"] = ops["Lxs"] if isinstance(ops["Lxs"], int) else ops["Lxs"][0]
+                    settings = json.load(f)
+                settings["Ly"] = settings["Lys"] if isinstance(settings["Lys"], int) else settings["Lys"][0]
+                settings["Lx"] = settings["Lxs"] if isinstance(settings["Lxs"], int) else settings["Lxs"][0]
                 dirname = os.path.join(os.path.dirname(filename), "suite2p/plane0/")
-                ops["reg_file"] = os.path.join(dirname, "data.bin")
-                nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
-                ops["nframes"] = os.path.getsize(ops["reg_file"]) // nbytesread
+                settings["reg_file"] = os.path.join(dirname, "data.bin")
+                nbytesread = np.int64(2 * settings["Ly"] * settings["Lx"])
+                settings["nframes"] = os.path.getsize(settings["reg_file"]) // nbytesread
         else:
-            ops = self.ops
-            self.LY = ops["Ly"]
-            self.LX = ops["Lx"]
-            self.Ly = [ops["Ly"]]
-            self.Lx = [ops["Lx"]]
+            settings = self.settings
+            self.LY = settings["Ly"]
+            self.LX = settings["Lx"]
+            self.Ly = [settings["Ly"]]
+            self.Lx = [settings["Lx"]]
             self.dx = [0]
             self.dy = [0]
 
-            if os.path.isfile(ops["reg_file"]):
-                self.reg_loc = [ops["reg_file"]]
+            if os.path.isfile(settings["reg_file"]):
+                self.reg_loc = [settings["reg_file"]]
             else:
                 self.reg_loc = [
                     os.path.abspath(os.path.join(self.basename, "data.bin"))
@@ -472,12 +472,12 @@ class BinaryPlayer(QMainWindow):
             self.wraw = False
             self.wred = False
             self.wraw_wred = False
-            if "reg_file_raw" in ops or "raw_file" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    if "reg_file_raw" in ops:
-                        self.reg_loc_raw = ops["reg_file_raw"]
+            if "reg_file_raw" in settings or "raw_file" in settings:
+                if self.reg_loc == settings["reg_file"]:
+                    if "reg_file_raw" in settings:
+                        self.reg_loc_raw = settings["reg_file_raw"]
                     else:
-                        self.reg_loc_raw = ops["raw_file"]
+                        self.reg_loc_raw = settings["raw_file"]
                 else:
                     self.reg_loc_raw = os.path.abspath(
                         os.path.join(os.path.dirname(filename), "data_raw.bin"))
@@ -486,20 +486,20 @@ class BinaryPlayer(QMainWindow):
                     self.wraw = True
                 except:
                     self.wraw = False
-            if "reg_file_chan2" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    self.reg_loc_red = ops["reg_file_chan2"]
+            if "reg_file_chan2" in settings:
+                if self.reg_loc == settings["reg_file"]:
+                    self.reg_loc_red = settings["reg_file_chan2"]
                 else:
                     self.reg_loc_red = os.path.abspath(
                         os.path.join(os.path.dirname(filename), "data_chan2.bin"))
                 self.reg_file_chan2 = open(self.reg_loc_red, "rb")
                 self.wred = True
-            if "reg_file_raw_chan2" in ops or "raw_file_chan2" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    if "reg_file_raw_chan2" in ops:
-                        self.reg_loc_raw_chan2 = ops["reg_file_raw_chan2"]
+            if "reg_file_raw_chan2" in settings or "raw_file_chan2" in settings:
+                if self.reg_loc == settings["reg_file"]:
+                    if "reg_file_raw_chan2" in settings:
+                        self.reg_loc_raw_chan2 = settings["reg_file_raw_chan2"]
                     else:
-                        self.reg_loc_raw_chan2 = ops["raw_file_chan2"]
+                        self.reg_loc_raw_chan2 = settings["raw_file_chan2"]
                 else:
                     self.reg_loc_raw_chan2 = os.path.abspath(
                         os.path.join(os.path.dirname(filename), "data_raw_chan2.bin"))
@@ -533,7 +533,7 @@ class BinaryPlayer(QMainWindow):
             print(self.Floaded)
             self.filename = filename
         # except Exception as e:
-        #     print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
+        #     print("ERROR: settings.npy incorrect / missing settings['reg_file'] and others")
         #     print(e)
         #     try:
         #         for n in range(len(self.reg_loc)):
@@ -544,7 +544,7 @@ class BinaryPlayer(QMainWindow):
         #     good = False
         #if good:
         self.filename = filename
-        self.ops = [ops]
+        self.settings = [settings]
         self.setup_views()
 
     def setup_views(self):
@@ -553,39 +553,39 @@ class BinaryPlayer(QMainWindow):
         self.ichosen = 0
         self.ROIedit.setText("0")
         # get scaling from 100 random frames
-        ops = self.ops[-1]
-        frames = subsample_frames(ops, np.minimum(ops["nframes"] - 1, 100),
+        settings = self.settings[-1]
+        frames = subsample_frames(settings, np.minimum(settings["nframes"] - 1, 100),
                                   self.reg_loc[-1])
         self.srange = frames.mean() + frames.std() * np.array([-2, 5])
 
         self.movieLabel.setText(self.reg_loc[-1])
         
         #aspect ratio
-        if "aspect" in ops:
-            self.xyrat = ops["aspect"]
-        elif "diameter" in ops and (type(ops["diameter"]) is not int) and (len(
-                ops["diameter"]) > 1):
-            self.xyrat = ops["diameter"][0] / ops["diameter"][1]
+        if "aspect" in settings:
+            self.xyrat = settings["aspect"]
+        elif "diameter" in settings and (type(settings["diameter"]) is not int) and (len(
+                settings["diameter"]) > 1):
+            self.xyrat = settings["diameter"][0] / settings["diameter"][1]
         else:
             self.xyrat = 1.0
         self.vmain.setAspectLocked(lock=True, ratio=self.xyrat)
         self.vside.setAspectLocked(lock=True, ratio=self.xyrat)
 
-        self.nframes = ops["nframes"]
-        self.time_step = max(1, int(np.round(1. / ops["fs"] * 1000 / 5)))  # 5x real-time
+        self.nframes = settings["nframes"]
+        self.time_step = max(1, int(np.round(1. / settings["fs"] * 1000 / 5)))  # 5x real-time
         self.frameDelta = int(np.maximum(5, self.nframes / 200))
         self.frameSlider.setSingleStep(self.frameDelta)
         self.currentMovieDirectory = QtCore.QFileInfo(self.filename).path()
         if self.nframes > 0:
             self.updateFrameSlider()
             self.updateButtons()
-        # plot ops X-Y offsets
-        if "yoff" in ops:
-            self.yoff = ops["yoff"]
-            self.xoff = ops["xoff"]
+        # plot settings X-Y offsets
+        if "yoff" in settings:
+            self.yoff = settings["yoff"]
+            self.xoff = settings["xoff"]
         else:
-            self.yoff = np.zeros((ops["nframes"],))
-            self.xoff = np.zeros((ops["nframes"],))
+            self.yoff = np.zeros((settings["nframes"],))
+            self.xoff = np.zeros((settings["nframes"],))
         self.p1.plot(self.yoff, pen="g")
         self.p1.plot(self.xoff, pen="y")
         self.p1.setRange(
@@ -730,9 +730,9 @@ class BinaryPlayer(QMainWindow):
             self.zbox.setEnabled(True)
             self.zbox.setChecked(True)
             self.zmax = np.zeros(self.nframes, "int")
-            if "zcorr" in self.ops[0]:
-                if self.zstack.shape[0] == self.ops[0]["zcorr"].shape[0]:
-                    zcorr = self.ops[0]["zcorr"]
+            if "zcorr" in self.settings[0]:
+                if self.zstack.shape[0] == self.settings[0]["zcorr"].shape[0]:
+                    zcorr = self.settings[0]["zcorr"]
                     self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1),
                                           axis=1)
                     self.plot_zcorr()
@@ -766,8 +766,8 @@ class BinaryPlayer(QMainWindow):
 
     def createButtons(self, parent):
         iconSize = QtCore.QSize(30, 30)
-        openButton = QPushButton("load ops.npy")
-        openButton.setToolTip("Open single-plane ops.npy")
+        openButton = QPushButton("load settings.npy")
+        openButton.setToolTip("Open single-plane settings.npy")
         openButton.clicked.connect(self.open)
 
         openButton2 = QPushButton("load folder")
@@ -849,10 +849,10 @@ class BinaryPlayer(QMainWindow):
         print("paused")
 
     def compute_z(self, parent):
-        ops, zcorr = registration.compute_zpos(self.zstack, self.ops[0])
-        parent.ops = ops
+        settings, zcorr = registration.compute_zpos(self.zstack, self.settings[0])
+        parent.ops = settings
         self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
-        np.save(self.filename, ops)
+        np.save(self.filename, settings)
         self.plot_zcorr()
 
     def plot_zcorr(self):
@@ -865,10 +865,10 @@ class BinaryPlayer(QMainWindow):
         self.p3.setXLink("plot_shift")
 
 
-def subsample_frames(ops, nsamps, reg_loc):
-    nFrames = ops["nframes"]
-    Ly = ops["Ly"]
-    Lx = ops["Lx"]
+def subsample_frames(settings, nsamps, reg_loc):
+    nFrames = settings["nframes"]
+    Ly = settings["Ly"]
+    Lx = settings["Lx"]
     frames = np.zeros((nsamps, Ly, Lx), dtype="int16")
     nbytesread = 2 * Ly * Lx
     istart = np.linspace(0, nFrames, 1 + nsamps).astype("int64")
@@ -971,12 +971,12 @@ class PCViewer(QMainWindow):
         self.updateTimer.timeout.connect(self.next_frame)
         #self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
-        if hasattr(parent, "ops"):
+        if hasattr(parent, "settings"):
             if parent.ops["save_path"][-8:] != "combined":
-                self.ops = parent.ops
+                self.settings = parent.ops
                 self.openFile()
             else:
-                filename = os.path.abspath(os.path.join(parent.basename, "ops.npy"))
+                filename = os.path.abspath(os.path.join(parent.basename, "settings.npy"))
                 print(filename)
                 self.openFile(filename)
 
@@ -985,7 +985,7 @@ class PCViewer(QMainWindow):
         openButton = QToolButton()
         openButton.setIcon(self.style().standardIcon(QStyle.SP_DialogOpenButton))
         openButton.setIconSize(iconSize)
-        openButton.setToolTip("Open ops file")
+        openButton.setToolTip("Open settings file")
         openButton.clicked.connect(self.open)
 
         self.playButton = QToolButton()
@@ -1028,9 +1028,9 @@ class PCViewer(QMainWindow):
         self.pauseButton.setEnabled(False)
 
     def open(self):
-        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file",
-                                               filter="ops*.npy")
-        # load ops in same folder
+        filename = QFileDialog.getOpenFileName(self, "Open single-plane settings.npy file",
+                                               filter="settings*.npy")
+        # load settings in same folder
         if filename:
             print(filename[0])
             self.openFile(filename[0])
@@ -1038,20 +1038,20 @@ class PCViewer(QMainWindow):
     def openFile(self, filename=None):
         if filename is not None:
             try:
-                ops = np.load(filename, allow_pickle=True).item()
+                settings = np.load(filename, allow_pickle=True).item()
             except Exception as e:
-                print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
+                print("ERROR: settings.npy incorrect / missing settings['regPC'] and settings['regDX']")
                 print(e)
                 good = False            
         else:
-            self.PC = self.ops["regPC"]
+            self.PC = self.settings["regPC"]
             self.PC = np.clip(self.PC, np.percentile(self.PC, 1),
                               np.percentile(self.PC, 99))
 
             self.Ly, self.Lx = self.PC.shape[2:]
-            self.DX = self.ops["regDX"]
-            if "tPC" in self.ops:
-                self.tPC = self.ops["tPC"]
+            self.DX = self.settings["regDX"]
+            if "tPC" in self.settings:
+                self.tPC = self.settings["tPC"]
             else:
                 self.tPC = np.zeros((1, self.PC.shape[1]))
             good = True

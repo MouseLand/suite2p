@@ -5,10 +5,10 @@ You can register your frames using the first channel of the recording,
 or using the second channel. Say your first channel shows GCaMP and your
 second channel shows td-Tomato, you might want to use the second channel
 for registration if it has higher SNR. If so, set
-``ops['align_by_chan']=2``. Otherwise, leave ``ops['align_by_chan']=1``
+``settings['align_by_chan']=2``. Otherwise, leave ``settings['align_by_chan']=1``
 (default). 
 
-Your registered output for the first channel of the recording will be saved as ``data.bin`` in the suite2p output folder. If you run the pipeline using more than 2 channels(``ops['nchannels'] = 2``), you will also see a registered output for the second channel's data saved as ``data_chan2.bin``. 
+Your registered output for the first channel of the recording will be saved as ``data.bin`` in the suite2p output folder. If you run the pipeline using more than 2 channels(``settings['nchannels'] = 2``), you will also see a registered output for the second channel's data saved as ``data_chan2.bin``. 
 
 Finding a target reference image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,21 +20,21 @@ motion-corrected, the average will not be crisp - there will be fuzzy
 edges because objects in the image have been moving around across the
 frames. Therefore, we do an initial iterative alignment procedure on a
 random subset of frames in order to get a crisp reference image for
-registration. We first take ``ops['nimg_init']`` random frames of the
+registration. We first take ``settings['nimg_init']`` random frames of the
 movie. Then from those frames, we take the top 20 frames that are most
 correlated to each other and take the mean of those frames as our
 initial reference image. Then we refine this reference image iteratively
 by aligning all the random frames to the reference image, and then
 recomputing the reference image as the mean of the best aligned frames.
 
-The function that performs these steps can be run as follows (where ops
+The function that performs these steps can be run as follows (where settings
 needs the reg_file, Ly, Lx, and nimg_init parameters):
 
 .. code:: python
 
    from suite2p.registration import register
 
-   refImg = register.pick_initial_reference(ops)
+   refImg = register.pick_initial_reference(settings)
 
 Here is an example reference image on the right, compared to just taking
 the average of a random subset of frames (on the left):
@@ -43,20 +43,20 @@ the average of a random subset of frames (on the left):
    :width: 600
 
 If the reference image doesn't look good, try increasing
-``ops['nimg_init']``.
+``settings['nimg_init']``.
 
 Registering the frames to the reference image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the reference image is obtained, we align each frame to the
 reference image. The frames are registered in batches of size
-``ops['batch_size']`` (default is 500 frames per batch).
+``settings['batch_size']`` (default is 500 frames per batch).
 
 We first perform rigid registration (assuming that the whole image
 shifts by some (dy,dx)), and then optionally after that we perform
 non-rigid registration (assuming that subsegments of the image shift by
 separate amounts). To turn on non-rigid registration, set
-``ops['nonrigid']=True``. We will outline the parameters of each
+``settings['nonrigid']=True``. We will outline the parameters of each
 registration step below.
 
 .. _1-rigid-registration:
@@ -91,26 +91,26 @@ Comparison
    :width: 600
 
 You can set a maximum shift size using the option
-``ops['maxregshift']``. By default, it is 0.1, which means that the
+``settings['maxregshift']``. By default, it is 0.1, which means that the
 maximum shift of the frame from the reference in the Y direction is
-``0.1 * ops['Ly']`` and in X is ``0.1 * ops['Lx']`` where Ly and Lx are
+``0.1 * settings['Ly']`` and in X is ``0.1 * settings['Lx']`` where Ly and Lx are
 the Y and X sizes of the frame.
 
 After computing the shifts, the frames are shifted in the Fourier domain
 (allowing subpixel shifts of the images). The shifts are saved in
-``ops['yoff']`` and ``ops['xoff']`` for y and x shifts respectively. The
+``settings['yoff']`` and ``settings['xoff']`` for y and x shifts respectively. The
 peak of the phase-correlation of each frame with the reference image is
-saved in ``ops['corrXY']``.
+saved in ``settings['corrXY']``.
 
 You can run this independently from the pipeline, if you have a
-reference image (ops requires the parameters nonrigid=False,
+reference image (settings requires the parameters nonrigid=False,
 num_workers, and maxregshift):
 
 .. code:: python
 
    maskMul,maskOffset,cfRefImg = register.prepare_masks(refImg)
    refAndMasks = [maskMul,maskOffset,cfRefImg]
-   aligned_data, yshift, xshift, corrXY, yxnr = register.phasecorr(data, refAndMasks, ops)
+   aligned_data, yshift, xshift, corrXY, yxnr = register.phasecorr(data, refAndMasks, settings)
 
 (see bioRxiv preprint comparing cross/phase `here <https://www.biorxiv.org/content/early/2016/06/30/061507>`_)
 
@@ -126,14 +126,14 @@ of each subsection (called a block) separately. Non-rigid registration
 will approximately double the registration time.
 
 The size of the blocks to divide the image into is defined by
-``ops['block_size'] = [128,128]`` which is the size in Y and X in
+``settings['block_size'] = [128,128]`` which is the size in Y and X in
 pixels. If Y is the direction of line-scanning for 2p imaging, you may
 want to divide it into smaller blocks in that direction.
 
 .. image:: _static/overlapping_blocks.png
    :width: 600
 
-Each block is able to shift up to ``ops['maxregshiftNR']`` pixels in Y
+Each block is able to shift up to ``settings['maxregshiftNR']`` pixels in Y
 and X. We recommend to keep this small unless you're in a very high
 signal-to-noise ratio regime and your motion is very large. For subpixel shifts, 
 we use Kriging interpolation and run it on each block. 
@@ -165,28 +165,28 @@ We then use bilinear interpolation to warp the frame using these shifts.
 Metrics for registration quality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The inputs required for PC metrics are the following fields in ops:
+The inputs required for PC metrics are the following fields in settings:
 ``nframes``, ``Ly``, ``Lx``, ``reg_file``. Your movie must have at least 1500 frames in each plane
-for the metrics to be calculated. You can run on the red channel (ops['reg_file_chan2']) if use_red=True.
-The outputs saved from the PC metrics are ``ops['regDX']``, ``ops['tPC']`` and ``ops['regPC']``.
+for the metrics to be calculated. You can run on the red channel (settings['reg_file_chan2']) if use_red=True.
+The outputs saved from the PC metrics are ``settings['regDX']``, ``settings['tPC']`` and ``settings['regPC']``.
 
 ::
    
    from suite2p.registration import metrics 
 
-   ops = metrics.get_pc_metrics(ops, use_red=False)
+   settings = metrics.get_pc_metrics(settings, use_red=False)
    
-``ops['tPC']`` are the time courses of each of the principal 
+``settings['tPC']`` are the time courses of each of the principal 
 components of the registered movie. Note 
 the time-course is not the entire movie, it's only the subset of frames used to 
 compute the PCs (2000-5000 frames equally sampled throughout the movie). 
 
-``ops['regPC']`` are computed from the spatial principal components of the
-registered movie. ``ops['regPC'][0,0,:,:]`` is the average of the top
-500 frames of the 1st PC, ``ops['regPC'][1,0,:,:]`` is the average of
-the bottom 500 frames of the 1st PC. ``ops['regDX']`` quantifies the
-movement in each PC (``iPC``) by registering ``ops['regPC'][0,iPC,:,:]``
-and ``ops['regPC'][1,iPC,:,:]`` to the reference image ``ops['refImg']`` (if available, 
+``settings['regPC']`` are computed from the spatial principal components of the
+registered movie. ``settings['regPC'][0,0,:,:]`` is the average of the top
+500 frames of the 1st PC, ``settings['regPC'][1,0,:,:]`` is the average of
+the bottom 500 frames of the 1st PC. ``settings['regDX']`` quantifies the
+movement in each PC (``iPC``) by registering ``settings['regPC'][0,iPC,:,:]``
+and ``settings['regPC'][1,iPC,:,:]`` to the reference image ``settings['refImg']`` (if available, 
 if not the mean of all the frames is used as the reference image)
 and computing the registration shifts.
 
@@ -209,10 +209,10 @@ To run the script, use the following command:
 
 .. prompt:: bash
 
-    reg_metrics <INSERT_OPS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
+    reg_metrics <INSERT_SETTINGS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
 
 Once you run the ``reg_metrics`` command, registration will be performed for the input file with default
-ops parameters and an output similar to the following will be shown:
+settings parameters and an output similar to the following will be shown:
 
 ::
 
@@ -222,7 +222,7 @@ ops parameters and an output similar to the following will be shown:
     Avg_Rigid: 0.000000     Avg_Average NR: 0.028889        Avg_Max NR: 0.120000
     Max_Rigid: 0.000000     Max_Average NR: 0.044444        Max_Max NR: 0.200000
 
-For each ``nplane``, these statistics (Average and Max) are calculated across PCs on the offsets found in ``ops['regDX']``.
+For each ``nplane``, these statistics (Average and Max) are calculated across PCs on the offsets found in ``settings['regDX']``.
 If the registration works perfectly and most of the motion is removed from the registered dataset, these scores
 should all be very close to zero.
 
@@ -244,7 +244,7 @@ what your eyes say over what the CLI script reports.
 
         reg_metrics path_to_data_tif --nplanes 2 --smooth_sigma 1.2
 
-    runs the script with ``ops['nplanes'] = 2`` and ``ops['smooth_sigma'] = 1.2``.
+    runs the script with ``settings['nplanes'] = 2`` and ``settings['smooth_sigma'] = 1.2``.
     You can see all the arguments ``reg_metrics`` takes with the following command:
 
     .. prompt:: bash

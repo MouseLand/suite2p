@@ -4,8 +4,11 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import os
 
 import numpy as np
+import logging 
+logger = logging.getLogger(__name__)
 
-from .utils import init_ops, find_files_open_binaries
+
+from .utils import init_settings, find_files_open_binaries
 
 try:
     from sbxreader import sbx_memmap
@@ -14,38 +17,38 @@ except:
     HAS_SBX = False
     
 
-def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
+def sbx_to_binary(settings, ndeadcols=-1, ndeadrows=0):
     """  finds scanbox files and writes them to binaries
 
     Parameters
     ----------
-    ops : dictionary
+    settings : dictionary
         "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
         "nchannels", "keep_movie_raw", "look_one_level_down"
 
     Returns
     -------
-        ops : dictionary of first plane
-            "Ly", "Lx", ops["reg_file"] or ops["raw_file"] is created binary
+        settings : dictionary of first plane
+            "Ly", "Lx", settings["reg_file"] or settings["raw_file"] is created binary
 
     """
     if not HAS_SBX:
         raise ImportError("sbxreader is required for this file type, please 'pip install sbxreader'")
 
-    ops1 = init_ops(ops)
+    settings1 = init_settings(settings)
     # the following should be taken from the metadata and not needed but the files are initialized before...
-    nplanes = ops1[0]["nplanes"]
-    nchannels = ops1[0]["nchannels"]
+    nplanes = settings1[0]["nplanes"]
+    nchannels = settings1[0]["nchannels"]
     # open all binary files for writing
-    ops1, sbxlist, reg_file, reg_file_chan2 = find_files_open_binaries(ops1)
+    settings1, sbxlist, reg_file, reg_file_chan2 = find_files_open_binaries(settings1)
     iall = 0
-    for j in range(ops1[0]["nplanes"]):
-        ops1[j]["nframes_per_folder"] = np.zeros(len(sbxlist), np.int32)
+    for j in range(settings1[0]["nplanes"]):
+        settings1[j]["nframes_per_folder"] = np.zeros(len(sbxlist), np.int32)
     ik = 0
-    if "sbx_ndeadcols" in ops1[0].keys():
-        ndeadcols = int(ops1[0]["sbx_ndeadcols"])
-    if "sbx_ndeadrows" in ops1[0].keys():
-        ndeadrows = int(ops1[0]["sbx_ndeadrows"])
+    if "sbx_ndeadcols" in settings1[0].keys():
+        ndeadcols = int(settings1[0]["sbx_ndeadcols"])
+    if "sbx_ndeadrows" in settings1[0].keys():
+        ndeadrows = int(settings1[0]["sbx_ndeadrows"])
 
     if ndeadcols == -1 or ndeadrows == -1:
         # compute dead rows and cols from the first file
@@ -65,24 +68,24 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
         else:
             ndeadcols = 0
         del tmpsbx
-        print("Removing {0} dead columns while loading sbx data.".format(ndeadcols))
-        print("Removing {0} dead rows while loading sbx data.".format(ndeadrows))
+        logger.info("Removing {0} dead columns while loading sbx data.".format(ndeadcols))
+        logger.info("Removing {0} dead rows while loading sbx data.".format(ndeadrows))
 
-    ops1[0]["sbx_ndeadcols"] = ndeadcols
-    ops1[0]["sbx_ndeadrows"] = ndeadrows
+    settings1[0]["sbx_ndeadcols"] = ndeadcols
+    settings1[0]["sbx_ndeadrows"] = ndeadrows
 
     for ifile, sbxfname in enumerate(sbxlist):
         f = sbx_memmap(sbxfname)
         nplanes = f.shape[1]
         nchannels = f.shape[2]
         nframes = f.shape[0]
-        iblocks = np.arange(0, nframes, ops1[0]["batch_size"])
+        iblocks = np.arange(0, nframes, settings1[0]["batch_size"])
         if iblocks[-1] < nframes:
             iblocks = np.append(iblocks, nframes)
 
         # data = nframes x nplanes x nchannels x pixels x pixels
         if nchannels > 1:
-            nfunc = ops1[0]["functional_chan"] - 1
+            nfunc = settings1[0]["functional_chan"] - 1
         else:
             nfunc = 0
         # loop over all frames
@@ -96,42 +99,42 @@ def sbx_to_binary(ops, ndeadcols=-1, ndeadrows=0):
                 im2write = im[:, :, ichan, :, :]
                 for j in range(0, nplanes):
                     if iall == 0:
-                        ops1[j]["meanImg"] = np.zeros((im.shape[3], im.shape[4]),
+                        settings1[j]["meanImg"] = np.zeros((im.shape[3], im.shape[4]),
                                                       np.float32)
                         if nchannels > 1:
-                            ops1[j]["meanImg_chan2"] = np.zeros(
+                            settings1[j]["meanImg_chan2"] = np.zeros(
                                 (im.shape[3], im.shape[4]), np.float32)
-                        ops1[j]["nframes"] = 0
+                        settings1[j]["nframes"] = 0
                     if ichan == nfunc:
-                        ops1[j]["meanImg"] += np.squeeze(im2mean[j, ichan, :, :])
+                        settings1[j]["meanImg"] += np.squeeze(im2mean[j, ichan, :, :])
                         reg_file[j].write(
                             bytearray(im2write[:, j, :, :].astype("int16")))
                     else:
-                        ops1[j]["meanImg_chan2"] += np.squeeze(im2mean[j, ichan, :, :])
+                        settings1[j]["meanImg_chan2"] += np.squeeze(im2mean[j, ichan, :, :])
                         reg_file_chan2[j].write(
                             bytearray(im2write[:, j, :, :].astype("int16")))
 
-                    ops1[j]["nframes"] += im2write.shape[0]
-                    ops1[j]["nframes_per_folder"][ifile] += im2write.shape[0]
+                    settings1[j]["nframes"] += im2write.shape[0]
+                    settings1[j]["nframes_per_folder"][ifile] += im2write.shape[0]
             ik += nframes
             iall += nframes
 
-    # write ops files
-    do_registration = ops1[0]["do_registration"]
-    do_nonrigid = ops1[0]["nonrigid"]
-    for ops in ops1:
-        ops["Ly"] = im.shape[3]
-        ops["Lx"] = im.shape[4]
+    # write settings files
+    do_registration = settings1[0]["do_registration"]
+    do_nonrigid = settings1[0]["nonrigid"]
+    for settings in settings1:
+        settings["Ly"] = im.shape[3]
+        settings["Lx"] = im.shape[4]
         if not do_registration:
-            ops["yrange"] = np.array([0, ops["Ly"]])
-            ops["xrange"] = np.array([0, ops["Lx"]])
-        #ops["meanImg"] /= ops["nframes"]
+            settings["yrange"] = np.array([0, settings["Ly"]])
+            settings["xrange"] = np.array([0, settings["Lx"]])
+        #settings["meanImg"] /= settings["nframes"]
         #if nchannels>1:
-        #    ops["meanImg_chan2"] /= ops["nframes"]
-        np.save(ops["ops_path"], ops)
-    # close all binary files and write ops files
+        #    settings["meanImg_chan2"] /= settings["nframes"]
+        np.save(settings["settings_path"], settings)
+    # close all binary files and write settings files
     for j in range(0, nplanes):
         reg_file[j].close()
         if nchannels > 1:
             reg_file_chan2[j].close()
-    return ops1[0]
+    return settings1[0]

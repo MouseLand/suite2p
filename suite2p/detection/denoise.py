@@ -5,6 +5,9 @@ import numpy as np
 from typing import List
 import time
 from sklearn.decomposition import PCA
+import logging 
+logger = logging.getLogger(__name__)
+
 from ..registration.nonrigid import make_blocks, spatial_taper
 
 
@@ -36,7 +39,7 @@ def pca_denoise(mov: np.ndarray, block_size: List, n_comps_frac: float):
         reconstruction[:, yblock[i][0]:yblock[i][-1],
                        xblock[i][0]:xblock[i][-1]] += block_re[i]
     reconstruction /= norm
-    print("Binned movie denoised (for cell detection only) in %0.2f sec." %
+    logger.info("Binned movie denoised (for cell detection only) in %0.2f sec." %
           (time.time() - t0))
     reconstruction += mov_mean
     return reconstruction

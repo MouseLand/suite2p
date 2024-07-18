@@ -25,9 +25,9 @@ def data_dir():
 
 
 @pytest.fixture()
-def test_ops(tmpdir, data_dir):
-    """Initializes ops to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
-    return initialize_ops(tmpdir, data_dir)
+def test_settings(tmpdir, data_dir):
+    """Initializes settings to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
+    return initialize_settings(tmpdir, data_dir)
 
 def download_cached_inputs(data_path):
     """ Downloads test_input data if not present on machine. This function was created so it can also be used by scripts/generate_test_data.py."""
@@ -36,10 +36,10 @@ def download_cached_inputs(data_path):
     if not os.path.exists(cached_inputs):
         extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
 
-def initialize_ops(tmpdir, data_dir):
-    """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accomodate creation of ops for both pytest and non-pytest settings."""
-    ops = suite2p.default_ops()
-    ops.update(
+def initialize_settings(tmpdir, data_dir):
+    """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accomodate creation of settings for both pytest and non-pytest settings."""
+    settings = suite2p.default_settings()
+    settings.update(
         {
             'use_builtin_classifier': True,
             'data_path': [Path(data_dir).joinpath('test_inputs')],
@@ -49,7 +49,7 @@ def initialize_ops(tmpdir, data_dir):
             'soma_crop': False
         }
     )
-    return ops
+    return settings
 
 def extract_zip(cached_file, url, data_path):
     download_url_to_file(url, cached_file)        

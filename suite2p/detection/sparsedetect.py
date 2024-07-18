@@ -6,6 +6,9 @@ from copy import deepcopy
 from enum import Enum
 from warnings import warn
 import time
+import logging 
+logger = logging.getLogger(__name__)
+
 
 import numpy as np
 from numpy.linalg import norm
@@ -350,7 +353,7 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
 def sparsery(mov: np.ndarray, sdmov, highpass_neuropil: int,
              spatial_scale: int, threshold_scaling, max_ROIs: int,
              active_percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """Returns stats and ops from "mov" using correlations in time."""
+    """Returns stats and settings from "mov" using correlations in time."""
 
     mov = neuropil_subtraction(
         mov=mov / sdmov,
@@ -392,7 +395,7 @@ def sparsery(mov: np.ndarray, sdmov, highpass_neuropil: int,
     Th2 = threshold_scaling * 5 * max(
         1, scale)  # threshold for accepted peaks (scale it by spatial scale)
     vmultiplier = max(1, mov.shape[0] / 1200)
-    print("NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f " %
+    logger.info("NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f " %
           (estimate_mode.value, spatscale_pix, vmultiplier, vmultiplier * Th2))
 
     # get standard deviation for pixels for all values > Th2
@@ -412,7 +415,7 @@ def sparsery(mov: np.ndarray, sdmov, highpass_neuropil: int,
     seeds = []
     extract_patches = False
 
-    print(f"max_ROIs set to {max_ROIs} - will run for {max_ROIs} ROIs or until no more ROIs above threshold are found.")
+    logger.info(f"max_ROIs set to {max_ROIs} - will run for {max_ROIs} ROIs or until no more ROIs above threshold are found.")
     t0 = time.time()
     for tj in range(max_ROIs):
         # find peaks in stddev"s
@@ -501,10 +504,10 @@ def sparsery(mov: np.ndarray, sdmov, highpass_neuropil: int,
 
         if tj % 500 == 0:
             t1 = time.time() - t0
-            print(f"ROIs: {tj},\t last score: {v_max[tj]:0.4f}, \t time: {t1:0.2f}sec")
+            logger.info(f"ROIs: {tj},\t last score: {v_max[tj]:0.4f}, \t time: {t1:0.2f}sec")
 
 
-    new_ops = {
+    new_settings = {
         "Vmax": v_max,
         "ihop": ihop,
         "Vsplit": v_split,
@@ -515,4 +518,4 @@ def sparsery(mov: np.ndarray, sdmov, highpass_neuropil: int,
         "spatscale_pix": spatscale_pix,
     }
 
-    return new_ops, stats
+    return new_settings, stats

@@ -8,7 +8,7 @@ Some issues on this: `#273 <https://github.com/MouseLand/suite2p/issues/273>`_,
 `#207 <https://github.com/MouseLand/suite2p/issues/207>`_,
 `#125 <https://github.com/MouseLand/suite2p/issues/125>`_.
 
-Why does this happen? suite2p crops the field-of-view so that areas that move out of
+Why does this happen? suite2p crsettings the field-of-view so that areas that move out of
 view on the edges are not used for ROI detection and signal extraction. These areas are
 excluded because they are not always in the FOV - they move in and out and therefore 
 activity in these regions is unreliable to estimate. 
@@ -16,12 +16,12 @@ activity in these regions is unreliable to estimate.
 suite2p determines the region to crop based on the maximum rigid shifts in XY. You can view
 these shifts with the movie in the "View registered binary" window. If these shifts are too large
 and don't seem to be accurate (low SNR regime), you can decrease the maximum shift that suite2p can 
-estimate by setting ops['maxregshift'] lower than its default (which is 0.1 = 10% of the size of the FOV).
+estimate by setting settings['maxregshift'] lower than its default (which is 0.1 = 10% of the size of the FOV).
 suite2p does exclude some of the large outlier shifts when computing the crop, and determines the threshold
-of what is an "outlier" using the parameter ops['th_badframes']. Set this lower to increase the number of
-"outliers". These "outliers" are labelled as ops['badframes'] and these frames are excluded also from ROI detection.
+of what is an "outlier" using the parameter settings['th_badframes']. Set this lower to increase the number of
+"outliers". These "outliers" are labelled as settings['badframes'] and these frames are excluded also from ROI detection.
 
-You can add frames to this list of ops['badframes'] by creating 
+You can add frames to this list of settings['badframes'] by creating 
 a numpy array (0-based, the first frame is zero) and save it as bad_frames.npy in the folder 
 with your tiffs (if you have multiple folders, save it in the FIRST folder with tiffs, 
 or if you have subfolders with 'look_one_level_down' it should be in the parent folder).
@@ -105,15 +105,15 @@ Scanimage now can do z-correction ONLINE for you!
 No signals in manually selected ROIs 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you circle an ROI in the manual selection GUI on top of another ROI and ops['allow_overlap'] is 0 or False,
+If you circle an ROI in the manual selection GUI on top of another ROI and settings['allow_overlap'] is 0 or False,
 then that ROI will have no activity because it has no non-overlapping pixels. You can change this after processing with 
 
 ::
 
    import numpy as np
-   np.load('ops.npy', allow_pickle=True).item()
-   np.save('ops_original.npy', ops)
-   ops['allow_overlap'] = True
-   np.save('ops.npy', ops)
+   np.load('settings.npy', allow_pickle=True).item()
+   np.save('settings_original.npy', settings)
+   settings['allow_overlap'] = True
+   np.save('settings.npy', settings)
 
 Thanks @marysethomas, see full issue here: `#651 <https://github.com/MouseLand/suite2p/issues/651>`_,

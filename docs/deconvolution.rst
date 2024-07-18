@@ -23,26 +23,26 @@ run your own data separately if you want):
    sig_baseline = 10.0 # in bins, standard deviation of gaussian with which to smooth
    win_baseline = 60.0 # in seconds, window in which to compute max/min filters
 
-   ops = {'tau': tau, 'fs': fs, 'neucoeff': neucoeff,
+   settings = {'tau': tau, 'fs': fs, 'neucoeff': neucoeff,
           'baseline': baseline, 'sig_baseline': sig_baseline, 'win_baseline': win_baseline}
 
    # load traces and subtract neuropil
    F = np.load('F.npy')
    Fneu = np.load('Fneu.npy')
-   Fc = F - ops['neucoeff'] * Fneu
+   Fc = F - settings['neucoeff'] * Fneu
 
    # baseline operation
    Fc = dcnv.preprocess(
         F=Fc,
-        baseline=ops['baseline'],
-        win_baseline=ops['win_baseline'],
-        sig_baseline=ops['sig_baseline'],
-        fs=ops['fs'],
-        prctile_baseline=ops['prctile_baseline']
+        baseline=settings['baseline'],
+        win_baseline=settings['win_baseline'],
+        sig_baseline=settings['sig_baseline'],
+        fs=settings['fs'],
+        prctile_baseline=settings['prctile_baseline']
     )
 
    # get spikes
-   spks = dcnv.oasis(F=Fc, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
+   spks = dcnv.oasis(F=Fc, batch_size=settings['batch_size'], tau=settings['tau'], fs=settings['fs'])
 
 .. _OASIS paper: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423
 .. _paper: http://www.jneurosci.org/content/38/37/7976

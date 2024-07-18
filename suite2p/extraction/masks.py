@@ -7,7 +7,7 @@ import numpy as np
 from scipy.ndimage import percentile_filter
 
 from ..detection.sparsedetect import extendROI
-from .. import default_ops
+from .. import default_settings
 
 
 def create_masks(stats: List[Dict[str, Any]], Ly, Lx, lam_percentile=50., 

@@ -261,7 +261,7 @@ class Slider(QSlider):
         parent.win.show()
 
 
-### custom QDialog which allows user to fill in ops and run suite2p!
+### custom QDialog which allows user to fill in settings and run suite2p!
 class VisWindow(QMainWindow):
 
     def __init__(self, parent=None):
@@ -661,7 +661,7 @@ class VisWindow(QMainWindow):
         self.sortTime.setChecked(False)
 
     def compute_map(self):
-        ops = {
+        settings = {
             "n_components": 1,
             "n_X": 100,
             "alpha": 1.,
@@ -681,15 +681,15 @@ class VisWindow(QMainWindow):
             self.model = Rastermap()
             self.model.fit(self.sp)
             #proc  = {"embedding": model.embedding, "uv": [model.u, model.v],
-            #         "ops": ops, "filename": args.S, "train_time": train_time}
+            #         "settings": settings, "filename": args.S, "train_time": train_time}
             #basename, fname = os.path.split(args.S)
             #np.save(os.path.join(basename, "embedding.npy"), proc)
             self.activate()
         except Exception as e:
             print("Rastermap issue: Interrupted by error (not finished)\n")
             print(e)
-        #self.process.start("python -u -W ignore -m rastermap --S %s --ops %s"%
-        #                    (spath, opspath))
+        #self.process.start("python -u -W ignore -m rastermap --S %s --settings %s"%
+        #                    (spath, settingspath))
 
     def finished(self):
         if self.finish and not self.error:
@@ -724,7 +724,7 @@ class VisWindow(QMainWindow):
     def sort_time(self):
         if self.raster:
             if self.sortTime.isChecked():
-                ops = {
+                settings = {
                     "n_components": 1,
                     "n_X": 100,
                     "alpha": 1.,

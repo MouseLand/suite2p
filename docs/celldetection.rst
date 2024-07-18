@@ -18,20 +18,20 @@ SVDs ( = PCs) of data
 
 Before computing the principal components of the movie, we bin the data
 such that we have at least as many frames to take the SVD of as
-specified in the option ``ops['navg_frames_svd']``. The bin size will be
-the maximum of ``nframes/ops['navg_frames_svd']`` and
-``ops['tau'] * ops['fs']`` (the number of samples per transient). We
+specified in the option ``settings['navg_frames_svd']``. The bin size will be
+the maximum of ``nframes/settings['navg_frames_svd']`` and
+``settings['tau'] * settings['fs']`` (the number of samples per transient). We
 then bin the movie into this bin size and subtract the mean of the
 binned movie across time. Then we smooth the movie in Y and X with a
-gaussian filter of standard deviation ``sig = ops['diameter']/10``. The
+gaussian filter of standard deviation ``sig = settings['diameter']/10``. The
 we normalize the pixels by their noise variance. The noise variance is
 variance of each pixel in the movie across time (at least 1e-10). Then
 we compute the covariance of the movie (``mov @ mov.T``). Then we
 compute the SVD of the covariance and keep the top
-``ops['nsvd_for_roi']`` spatial components (components that are Y x X).
+``settings['nsvd_for_roi']`` spatial components (components that are Y x X).
 
 The function that performs this is ``celldetect2.getSVDdata`` and it
-requires the ops described above, and Ly, Lx, yrange, xrange, and a
+requires the settings described above, and Ly, Lx, yrange, xrange, and a
 reg\_file location.
 
 Sourcery
@@ -43,7 +43,7 @@ of the following steps:
 
 1. **Smoothing of spatial components**: The components are smoothed with
    a Gaussian filter in Y and X with standard deviation
-   ``sig = ops['diameter']`` (this matrix is called ``us``). Note that
+   ``sig = settings['diameter']`` (this matrix is called ``us``). Note that
    diameter can be a list (for unequal pixel/um in Y and X). Next the
    mean of the squared smoothed components is computed. The mean of the
    squared un-smoothed components is also computed. The *correlation
@@ -56,7 +56,7 @@ of the following steps:
    largest remaining peaks such that they are greater than the
    threshold, which is set to be proportional to the median of the peaks
    in the whole correlation map:
-   ``ops['threshold_scaling'] * np.median(peaks[peaks>1e-4])``. The
+   ``settings['threshold_scaling'] * np.median(peaks[peaks>1e-4])``. The
    initial activity ``code`` for this newly detected peak is the value
    of ``us`` (Gaussian smoothed PCs) at this peak. This is a vector of
    values across the PCs (nPCs in length).
@@ -74,12 +74,12 @@ of the following steps:
 4. **Neuropil computation**: Now that the new codes are computed, the
    neuropil is estimated. We set spatial basis functions for the
    neuropil, which are raised cosines that tile the FOV. The parameter
-   ``ops['ratio_neuropil']`` determines how big you expect the neuropil
+   ``settings['ratio_neuropil']`` determines how big you expect the neuropil
    basis functions to be relative to the cell diameter
-   (``ops['diameter']``). The default is 6. This results in a tiling of
+   (``settings['diameter']``). The default is 6. This results in a tiling of
    7x7 raised cosines if your FOV is 512x512 pixels and your diameter is
    12 pixels. For one-photon recordings, we recommend setting
-   ``ops['ratio_neuropil']`` to 2 or 3. Next we perform regression to
+   ``settings['ratio_neuropil']`` to 2 or 3. Next we perform regression to
    compute the contribution of the neuropil on the PCs, and we subtract
    the estimated neuropil contribution from the ``U`` PCs. And these
    steps are repeated until the stopping criterion is reached.
@@ -88,10 +88,10 @@ of the following steps:
 iteration is defined as ``Nfirst``. The cell detection is stopped if the
 number of cells detected in the current iteration is less than
 ``Nfirst/10`` or if the iteration is the last iteration (defined by
-``ops['max_iterations']``).
+``settings['max_iterations']``).
 
 **Refinement step**: We remove masks which have more than a fraction
-``ops['max_overlap']`` of their pixels overlapping with other masks.
-Also, if ``ops['connected']=1``, then only the connected regions of ROIs
+``settings['max_overlap']`` of their pixels overlapping with other masks.
+Also, if ``settings['connected']=1``, then only the connected regions of ROIs
 are kept. If you are looking for dendritic components, you may want to
-set ``ops['connected']=0``.
+set ``settings['connected']=0``.

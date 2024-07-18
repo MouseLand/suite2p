@@ -4,13 +4,17 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 import torch
 from scipy.ndimage import gaussian_filter
+
+import logging 
+logger = logging.getLogger(__name__)
+
 from ..extraction import masks
 from . import utils
 """
 identify cells with channel 2 brightness (aka red cells)
 
 main function is detect
-takes from ops: "meanImg", "meanImg_chan2", "Ly", "Lx"
+takes from settings: "meanImg", "meanImg_chan2", "Ly", "Lx"
 takes from stat: "ypix", "xpix", "lam"
 """
 
@@ -103,12 +107,12 @@ def detect(meanImg, meanImg_chan2, stats, cellpose_chan2=True, chan2_threshold=0
     redstats = None
     if cellpose_chan2:
         try:
-            print(">>>> CELLPOSE estimating masks in anatomical channel")
+            logger.info(">>>> CELLPOSE estimating masks in anatomical channel")
             redstats, masks = cellpose_overlap(stats, mimg2, 
                                                chan2_threshold=chan2_threshold,
                                                device=device)
         except:
-            print(
+            logger.info(
                 "ERROR importing or running cellpose, continuing with intensity-based anatomical estimates"
             )
 
@@ -116,7 +120,7 @@ def detect(meanImg, meanImg_chan2, stats, cellpose_chan2=True, chan2_threshold=0
         # subtract bleedthrough of green into red channel
         # non-rigid regression with nblks x nblks pieces
         nblks = 3
-        #Ly, Lx = ops["Ly"], ops["Lx"]
+        #Ly, Lx = settings["Ly"], settings["Lx"]
         #mimg2_corr = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
         redstats = intensity_ratio(mimg2, stats, chan2_threshold=chan2_threshold)
     

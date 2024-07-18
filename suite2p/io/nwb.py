@@ -13,7 +13,7 @@ from natsort import natsorted
 
 from ..detection.stats import roi_stats
 from . import utils
-from .. import default_ops
+from .. import default_settings
 
 try:
     from pynwb import NWBHDF5IO, NWBFile
@@ -32,14 +32,14 @@ except ModuleNotFoundError:
     NWB = False
 
 
-def nwb_to_binary(ops):
+def nwb_to_binary(settings):
     """convert nwb file to binary (experimental)
 
     converts single plane single channel nwb file to binary for suite2p processing
 
     Parameters
     ----------
-    ops: dictionary
+    settings: dictionary
         requires "nwb_file" key
         optional keys "nwb_driver", "nwb_series"
         uses "nplanes", "save_path", "save_folder", "fast_disk",
@@ -47,46 +47,46 @@ def nwb_to_binary(ops):
 
     Returns
     -------
-        ops : dictionary of first plane
-            ops["reg_file"] or ops["raw_file"] is created binary
+        settings : dictionary of first plane
+            settings["reg_file"] or settings["raw_file"] is created binary
             assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
             "frames_per_folder", "nframes", "meanImg", "meanImg_chan2"
 
     """
 
     # force 1 plane 1 chan for now
-    ops["nplanes"] = 1
-    ops["nchannels"] = 1
+    settings["nplanes"] = 1
+    settings["nchannels"] = 1
 
-    # initialize ops with reg_file and raw_file paths, etc
-    ops = utils.init_ops(ops)[0]
+    # initialize settings with reg_file and raw_file paths, etc
+    settings = utils.init_settings(settings)[0]
 
     t0 = time.time()
-    nplanes = ops["nplanes"]
-    nchannels = ops["nchannels"]
+    nplanes = settings["nplanes"]
+    nchannels = settings["nchannels"]
 
-    batch_size = ops["batch_size"]
+    batch_size = settings["batch_size"]
     batch_size = int(nplanes * nchannels * np.ceil(batch_size / (nplanes * nchannels)))
 
     # open reg_file (and when available reg_file_chan2)
-    if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-        reg_file = open(ops["raw_file"], "wb")
+    if "keep_movie_raw" in settings and settings["keep_movie_raw"]:
+        reg_file = open(settings["raw_file"], "wb")
         if nchannels > 1:
-            reg_file_chan2 = open(ops["raw_file_chan2"], "wb")
+            reg_file_chan2 = open(settings["raw_file_chan2"], "wb")
     else:
-        reg_file = open(ops["reg_file"], "wb")
+        reg_file = open(settings["reg_file"], "wb")
         if nchannels > 1:
-            reg_file_chan2 = open(ops["reg_file_chan2"], "wb")
+            reg_file_chan2 = open(settings["reg_file_chan2"], "wb")
 
     nwb_driver = None
-    if ops.get("nwb_driver") and isinstance(nwb_driver, str):
-        nwb_driver = ops["nwb_driver"]
+    if settings.get("nwb_driver") and isinstance(nwb_driver, str):
+        nwb_driver = settings["nwb_driver"]
 
-    with NWBHDF5IO(ops["nwb_file"], "r", driver=nwb_driver) as fio:
+    with NWBHDF5IO(settings["nwb_file"], "r", driver=nwb_driver) as fio:
         nwbfile = fio.read()
 
         # get TwoPhotonSeries
-        if not ops.get("nwb_series"):
+        if not settings.get("nwb_series"):
             TwoPhotonSeries_names = []
             for v in nwbfile.acquisition.values():
                 if isinstance(v, TwoPhotonSeries):
@@ -96,16 +96,16 @@ def nwb_to_binary(ops):
             elif len(TwoPhotonSeries_names) > 1:
                 raise Warning(
                     "more than one TwoPhotonSeries in NWB file, choosing first one")
-            ops["nwb_series"] = TwoPhotonSeries_names[0]
+            settings["nwb_series"] = TwoPhotonSeries_names[0]
 
-        series = nwbfile.acquisition[ops["nwb_series"]]
-        series_shape = nwbfile.acquisition[ops["nwb_series"]].data.shape
-        ops["nframes"] = series_shape[0]
-        ops["frames_per_file"] = np.array([ops["nframes"]])
-        ops["frames_per_folder"] = np.array([ops["nframes"]])
-        ops["meanImg"] = np.zeros((series_shape[1], series_shape[2]), np.float32)
-        for ik in np.arange(0, ops["nframes"], batch_size):
-            ikend = min(ik + batch_size, ops["nframes"])
+        series = nwbfile.acquisition[settings["nwb_series"]]
+        series_shape = nwbfile.acquisition[settings["nwb_series"]].data.shape
+        settings["nframes"] = series_shape[0]
+        settings["frames_per_file"] = np.array([settings["nframes"]])
+        settings["frames_per_folder"] = np.array([settings["nframes"]])
+        settings["meanImg"] = np.zeros((series_shape[1], series_shape[2]), np.float32)
+        for ik in np.arange(0, settings["nframes"], batch_size):
+            ikend = min(ik + batch_size, settings["nframes"])
             im = series.data[ik:ikend]
 
             # check if uint16
@@ -117,27 +117,27 @@ def nwb_to_binary(ops):
                 im = im.astype(np.int16)
 
             reg_file.write(bytearray(im))
-            ops["meanImg"] += im.astype(np.float32).sum(axis=0)
+            settings["meanImg"] += im.astype(np.float32).sum(axis=0)
 
             if ikend % (batch_size * 4) == 0:
-                print("%d frames of binary, time %0.2f sec." %
+                logger.info("%d frames of binary, time %0.2f sec." %
                       (ikend, time.time() - t0))
         gc.collect()
 
-    # write ops files
-    ops["Ly"], ops["Lx"] = ops["meanImg"].shape
-    ops["yrange"] = np.array([0, ops["Ly"]])
-    ops["xrange"] = np.array([0, ops["Lx"]])
-    ops["meanImg"] /= ops["nframes"]
+    # write settings files
+    settings["Ly"], settings["Lx"] = settings["meanImg"].shape
+    settings["yrange"] = np.array([0, settings["Ly"]])
+    settings["xrange"] = np.array([0, settings["Lx"]])
+    settings["meanImg"] /= settings["nframes"]
     if nchannels > 1:
-        ops["meanImg_chan2"] /= ops["nframes"]
-    # close all binary files and write ops files
-    np.save(ops["ops_path"], ops)
+        settings["meanImg_chan2"] /= settings["nframes"]
+    # close all binary files and write settings files
+    np.save(settings["settings_path"], settings)
     reg_file.close()
     if nchannels > 1:
         reg_file_chan2.close()
 
-    return ops
+    return settings
 
 
 def read_nwb(fpath):
@@ -175,7 +175,7 @@ def read_nwb(fpath):
                 })
             if multiplane:
                 stat[-1]["iplane"] = int(rois[n][0][-2])
-        ops = default_ops()
+        settings = default_settings()
 
         if multiplane:
             nplanes = (np.max(np.array([stat[n]["iplane"] for n in range(len(stat))])) +
@@ -184,27 +184,27 @@ def read_nwb(fpath):
             nplanes = 1
         stat = np.array(stat)
 
-        # ops with backgrounds
-        ops1 = []
+        # settings with backgrounds
+        settings1 = []
         for iplane in range(nplanes):
-            ops = default_ops()
+            settings = default_settings()
             bg_strs = ["meanImg", "Vcorr", "max_proj", "meanImg_chan2"]
-            ops["nchannels"] = 1
+            settings["nchannels"] = 1
             for bstr in bg_strs:
                 if (bstr in nwbfile.processing["ophys"]["Backgrounds_%d" %
                                                         iplane].images):
-                    ops[bstr] = np.array(nwbfile.processing["ophys"]["Backgrounds_%d" %
+                    settings[bstr] = np.array(nwbfile.processing["ophys"]["Backgrounds_%d" %
                                                                      iplane][bstr].data)
                     if bstr == "meanImg_chan2":
-                        ops["nchannels"] = 2
-            ops["Ly"], ops["Lx"] = ops[bg_strs[0]].shape
-            ops["yrange"] = [0, ops["Ly"]]
-            ops["xrange"] = [0, ops["Lx"]]
-            ops["tau"] = 1.0
-            ops["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
-            ops1.append(ops.copy())
+                        settings["nchannels"] = 2
+            settings["Ly"], settings["Lx"] = settings[bg_strs[0]].shape
+            settings["yrange"] = [0, settings["Ly"]]
+            settings["xrange"] = [0, settings["Lx"]]
+            settings["tau"] = 1.0
+            settings["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
+            settings1.append(settings.copy())
 
-        stat = roi_stats(stat, ops["Ly"], ops["Lx"], ops["aspect"], ops["diameter"])
+        stat = roi_stats(stat, settings["Ly"], settings["Lx"], settings["aspect"], settings["diameter"])
 
         # fluorescence
         ophys = nwbfile.processing["ophys"]
@@ -228,7 +228,7 @@ def read_nwb(fpath):
         F = get_fluo("Fluorescence")
         Fneu = get_fluo("Neuropil")
         spks = get_fluo("Deconvolved")
-        dF = F - ops["neucoeff"] * Fneu
+        dF = F - settings["neucoeff"] * Fneu
         for n in range(len(stat)):
             stat[n]["skew"] = scipy.stats.skew(dF[n])
 
@@ -244,48 +244,48 @@ def read_nwb(fpath):
         probredcell = np.zeros_like(probcell)
 
         if multiplane:
-            ops = ops1[0].copy()
-            Lx = ops["Lx"]
-            Ly = ops["Ly"]
-            nX = np.ceil(np.sqrt(ops["Ly"] * ops["Lx"] * len(ops1)) / ops["Lx"])
+            settings = settings1[0].copy()
+            Lx = settings["Lx"]
+            Ly = settings["Ly"]
+            nX = np.ceil(np.sqrt(settings["Ly"] * settings["Lx"] * len(settings1)) / settings["Lx"])
             nX = int(nX)
-            for j in range(len(ops1)):
-                ops1[j]["dx"] = (j % nX) * Lx
-                ops1[j]["dy"] = int(j / nX) * Ly
+            for j in range(len(settings1)):
+                settings1[j]["dx"] = (j % nX) * Lx
+                settings1[j]["dy"] = int(j / nX) * Ly
 
-            LY = int(np.amax(np.array([ops["Ly"] + ops["dy"] for ops in ops1])))
-            LX = int(np.amax(np.array([ops["Lx"] + ops["dx"] for ops in ops1])))
+            LY = int(np.amax(np.array([settings["Ly"] + settings["dy"] for settings in settings1])))
+            LX = int(np.amax(np.array([settings["Lx"] + settings["dx"] for settings in settings1])))
             meanImg = np.zeros((LY, LX))
             max_proj = np.zeros((LY, LX))
-            if ops["nchannels"] > 1:
+            if settings["nchannels"] > 1:
                 meanImg_chan2 = np.zeros((LY, LX))
 
             Vcorr = np.zeros((LY, LX))
-            for k, ops in enumerate(ops1):
-                xrange = np.arange(ops["dx"], ops["dx"] + ops["Lx"])
-                yrange = np.arange(ops["dy"], ops["dy"] + ops["Ly"])
-                meanImg[np.ix_(yrange, xrange)] = ops["meanImg"]
-                Vcorr[np.ix_(yrange, xrange)] = ops["Vcorr"]
-                max_proj[np.ix_(yrange, xrange)] = ops["max_proj"]
-                if ops["nchannels"] > 1:
-                    if "meanImg_chan2" in ops:
-                        meanImg_chan2[np.ix_(yrange, xrange)] = ops["meanImg_chan2"]
+            for k, settings in enumerate(settings1):
+                xrange = np.arange(settings["dx"], settings["dx"] + settings["Lx"])
+                yrange = np.arange(settings["dy"], settings["dy"] + settings["Ly"])
+                meanImg[np.ix_(yrange, xrange)] = settings["meanImg"]
+                Vcorr[np.ix_(yrange, xrange)] = settings["Vcorr"]
+                max_proj[np.ix_(yrange, xrange)] = settings["max_proj"]
+                if settings["nchannels"] > 1:
+                    if "meanImg_chan2" in settings:
+                        meanImg_chan2[np.ix_(yrange, xrange)] = settings["meanImg_chan2"]
                 for j in np.nonzero(
                         np.array([stat[n]["iplane"] == k for n in range(len(stat))
                                  ]))[0]:
-                    stat[j]["xpix"] += ops["dx"]
-                    stat[j]["ypix"] += ops["dy"]
-                    stat[j]["med"][0] += ops["dy"]
-                    stat[j]["med"][1] += ops["dx"]
-            ops["Vcorr"] = Vcorr
-            ops["max_proj"] = max_proj
-            ops["meanImg"] = meanImg
-            if "meanImg_chan2" in ops:
-                ops["meanImg_chan2"] = meanImg_chan2
-            ops["Ly"], ops["Lx"] = LY, LX
-            ops["yrange"] = [0, LY]
-            ops["xrange"] = [0, LX]
-    return stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell
+                    stat[j]["xpix"] += settings["dx"]
+                    stat[j]["ypix"] += settings["dy"]
+                    stat[j]["med"][0] += settings["dy"]
+                    stat[j]["med"][1] += settings["dx"]
+            settings["Vcorr"] = Vcorr
+            settings["max_proj"] = max_proj
+            settings["meanImg"] = meanImg
+            if "meanImg_chan2" in settings:
+                settings["meanImg_chan2"] = meanImg_chan2
+            settings["Ly"], settings["Lx"] = LY, LX
+            settings["yrange"] = [0, LY]
+            settings["xrange"] = [0, LX]
+    return stat, settings, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 
 def save_nwb(save_folder):
@@ -296,20 +296,20 @@ def save_nwb(save_folder):
         for f in os.scandir(save_folder)
         if f.is_dir() and f.name[:5] == "plane"
     ])
-    ops1 = [
-        np.load(f.joinpath("ops.npy"), allow_pickle=True).item() for f in plane_folders
+    settings1 = [
+        np.load(f.joinpath("settings.npy"), allow_pickle=True).item() for f in plane_folders
     ]
-    nchannels = min([ops["nchannels"] for ops in ops1])
+    nchannels = min([settings["nchannels"] for settings in settings1])
 
-    if NWB and not ops1[0]["mesoscan"]:
-        if len(ops1) > 1:
+    if NWB and not settings1[0]["mesoscan"]:
+        if len(settings1) > 1:
             multiplane = True
         else:
             multiplane = False
 
-        ops = ops1[0]
-        if "date_proc" in ops:
-            session_start_time = ops["date_proc"]
+        settings = settings1[0]
+        if "date_proc" in settings:
+            session_start_time = settings["date_proc"]
             if not session_start_time.tzinfo:
                 session_start_time = session_start_time.astimezone()
         else:
@@ -318,10 +318,10 @@ def save_nwb(save_folder):
         # INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description="suite2p_proc",
-            identifier=str(ops["data_path"][0]),
+            identifier=str(settings["data_path"][0]),
             session_start_time=session_start_time,
         )
-        print(nwbfile)
+        logger.info(nwbfile)
 
         device = nwbfile.create_device(
             name="Microscope",
@@ -337,7 +337,7 @@ def save_nwb(save_folder):
         imaging_plane = nwbfile.create_imaging_plane(
             name="ImagingPlane",
             optical_channel=optical_channel,
-            imaging_rate=ops["fs"],
+            imaging_rate=settings["fs"],
             description="standard",
             device=device,
             excitation_lambda=600.0,
@@ -347,16 +347,16 @@ def save_nwb(save_folder):
             grid_spacing_unit="microns",
         )
         # link to external data
-        external_data = ops["filelist"] if "filelist" in ops else [""]
+        external_data = settings["filelist"] if "filelist" in settings else [""]
         image_series = TwoPhotonSeries(
             name="TwoPhotonSeries",
-            dimension=[ops["Ly"], ops["Lx"]],
+            dimension=[settings["Ly"], settings["Lx"]],
             external_file=external_data,
             imaging_plane=imaging_plane,
             starting_frame=[0 for i in range(len(external_data))],
             format="external",
             starting_time=0.0,
-            rate=ops["fs"] * ops["nplanes"],
+            rate=settings["fs"] * settings["nplanes"],
         )
         nwbfile.add_acquisition(image_series)
 
@@ -375,13 +375,13 @@ def save_nwb(save_folder):
         file_strs = ["F.npy", "Fneu.npy", "spks.npy"]
         file_strs_chan2 = ["F_chan2.npy", "Fneu_chan2.npy"]
         traces, traces_chan2 = [], []
-        ncells = np.zeros(len(ops1), dtype=np.int_)
-        Nfr = np.array([ops["nframes"] for ops in ops1]).max()
-        for iplane, ops in enumerate(ops1):
+        ncells = np.zeros(len(settings1), dtype=np.int_)
+        Nfr = np.array([settings["nframes"] for settings in settings1]).max()
+        for iplane, settings in enumerate(settings1):
             if iplane == 0:
-                iscell = np.load(os.path.join(ops["save_path"], "iscell.npy"))
+                iscell = np.load(os.path.join(settings["save_path"], "iscell.npy"))
                 for fstr in file_strs:
-                    traces.append(np.load(os.path.join(ops["save_path"], fstr)))
+                    traces.append(np.load(os.path.join(settings["save_path"], fstr)))
                 if nchannels > 1:
                     for fstr in file_strs_chan2:
                         traces_chan2.append(
@@ -390,11 +390,11 @@ def save_nwb(save_folder):
             else:
                 iscell = np.append(
                     iscell,
-                    np.load(os.path.join(ops["save_path"], "iscell.npy")),
+                    np.load(os.path.join(settings["save_path"], "iscell.npy")),
                     axis=0,
                 )
                 for i, fstr in enumerate(file_strs):
-                    trace = np.load(os.path.join(ops["save_path"], fstr))
+                    trace = np.load(os.path.join(settings["save_path"], fstr))
                     if trace.shape[1] < Nfr:
                         fcat = np.zeros((trace.shape[0], Nfr - trace.shape[1]),
                                         "float32")
@@ -410,7 +410,7 @@ def save_nwb(save_folder):
                 PlaneCellsIdx = np.append(
                     PlaneCellsIdx, iplane * np.ones(len(iscell) - len(PlaneCellsIdx)))
 
-            stat = np.load(os.path.join(ops["save_path"], "stat.npy"),
+            stat = np.load(os.path.join(settings["save_path"], "stat.npy"),
                            allow_pickle=True)
             ncells[iplane] = len(stat)
             for n in range(ncells[iplane]):
@@ -430,7 +430,7 @@ def save_nwb(save_folder):
         ps.add_column("iscell", "two columns - iscell & probcell", iscell)
 
         rt_region = []
-        for iplane, ops in enumerate(ops1):
+        for iplane, settings in enumerate(settings1):
             if iplane == 0:
                 rt_region.append(
                     ps.create_roi_table_region(
@@ -453,13 +453,13 @@ def save_nwb(save_folder):
         name_strs_chan2 = ["Fluorescence_chan2", "Neuropil_chan2"]
 
         for i, (fstr, nstr) in enumerate(zip(file_strs, name_strs)):
-            for iplane, ops in enumerate(ops1):
+            for iplane, settings in enumerate(settings1):
                 roi_resp_series = RoiResponseSeries(
                     name=f"plane{int(iplane)}",
                     data=np.transpose(traces[i][PlaneCellsIdx == iplane]),
                     rois=rt_region[iplane],
                     unit="lumens",
-                    rate=ops["fs"],
+                    rate=settings["fs"],
                 )
                 if iplane == 0:
                     fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
@@ -469,13 +469,13 @@ def save_nwb(save_folder):
 
         if nchannels > 1:
             for i, (fstr, nstr) in enumerate(zip(file_strs_chan2, name_strs_chan2)):
-                for iplane, ops in enumerate(ops1):
+                for iplane, settings in enumerate(settings1):
                     roi_resp_series = RoiResponseSeries(
                         name=f"plane{int(iplane)}",
                         data=np.transpose(traces_chan2[i][PlaneCellsIdx == iplane]),
                         rois=rt_region[iplane],
                         unit="lumens",
-                        rate=ops["fs"],
+                        rate=settings["fs"],
                     )
 
                     if iplane == 0:
@@ -489,18 +489,18 @@ def save_nwb(save_folder):
         # BACKGROUNDS
         # (meanImg, Vcorr and max_proj are REQUIRED)
         bg_strs = ["meanImg", "Vcorr", "max_proj", "meanImg_chan2"]
-        for iplane, ops in enumerate(ops1):
+        for iplane, settings in enumerate(settings1):
             images = Images("Backgrounds_%d" % iplane)
             for bstr in bg_strs:
-                if bstr in ops:
+                if bstr in settings:
                     if bstr == "Vcorr" or bstr == "max_proj":
-                        img = np.zeros((ops["Ly"], ops["Lx"]), np.float32)
+                        img = np.zeros((settings["Ly"], settings["Lx"]), np.float32)
                         img[
-                            ops["yrange"][0]:ops["yrange"][-1],
-                            ops["xrange"][0]:ops["xrange"][-1],
-                        ] = ops[bstr]
+                            settings["yrange"][0]:settings["yrange"][-1],
+                            settings["xrange"][0]:settings["xrange"][-1],
+                        ] = settings[bstr]
                     else:
-                        img = ops[bstr]
+                        img = settings[bstr]
                     images.add_image(GrayscaleImage(name=bstr, data=img))
 
             ophys_module.add(images)
@@ -508,4 +508,4 @@ def save_nwb(save_folder):
         with NWBHDF5IO(os.path.join(save_folder, "ophys.nwb"), "w") as fio:
             fio.write(nwbfile)
     else:
-        print("pip install pynwb OR don't use mesoscope recording")
+        logger.info("pip install pynwb OR don't use mesoscope recording")

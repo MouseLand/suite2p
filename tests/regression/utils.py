@@ -36,12 +36,12 @@ def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> I
 
 class FullPipelineTestUtils:
     """
-    Utility functions specific to test_full_pipeline.py. Mostly contains ops initialization
+    Utility functions specific to test_full_pipeline.py. Mostly contains settings initialization
     functions that can be used by both test_full_pipeline.py and generate_test_data.py.
-    This is to ensure both the generation script and the tests use the same ops.
+    This is to ensure both the generation script and the tests use the same settings.
     """
-    def initialize_ops_test1plane_1chan_with_batches(ops):
-        ops.update({
+    def initialize_settings_test1plane_1chan_with_batches(settings):
+        settings.update({
             'tiff_list': ['input_1500.tif'],
             'do_regmetrics': True,
             'save_NWB': True,
@@ -49,19 +49,19 @@ class FullPipelineTestUtils:
             'keep_movie_raw': True,
             'delete_bin': True,
         })
-        return ops
+        return settings
 
-    def initialize_ops_test_1plane_2chan_sourcery(ops):
-        ops.update({
+    def initialize_settings_test_1plane_2chan_sourcery(settings):
+        settings.update({
             'nchannels': 2,
             'sparse_mode': 0,
             'tiff_list': ['input.tif'],
             'keep_movie_raw': True
         })
-        return ops
+        return settings
 
-    def initialize_ops_test2plane_2chan_with_batches(ops):
-        ops.update({
+    def initialize_settings_test2plane_2chan_with_batches(settings):
+        settings.update({
             'tiff_list': ['input_1500.tif'],
             'batch_size': 200,
             'nplanes': 2,
@@ -71,26 +71,26 @@ class FullPipelineTestUtils:
             'save_mat': True,
             'delete_bin': True,
         })
-        return ops 
+        return settings 
 
-    def initialize_ops_test_mesoscan_2plane_2z(ops):
-        mesoscan_dir = Path(ops['data_path'][0]).joinpath('mesoscan')
-        with open(mesoscan_dir.joinpath('ops.json')) as f:
-            meso_ops = json.load(f)
-        ops['data_path'] = [mesoscan_dir]
-        for key in meso_ops.keys():
+    def initialize_settings_test_mesoscan_2plane_2z(settings):
+        mesoscan_dir = Path(settings['data_path'][0]).joinpath('mesoscan')
+        with open(mesoscan_dir.joinpath('settings.json')) as f:
+            meso_settings = json.load(f)
+        settings['data_path'] = [mesoscan_dir]
+        for key in meso_settings.keys():
             if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
-                ops[key] = meso_ops[key]
-        ops['delete_bin'] = True
-        return ops
+                settings[key] = meso_settings[key]
+        settings['delete_bin'] = True
+        return settings
 
 class DetectionTestUtils:
     def prepare(op, input_file_name_list, dimensions):
         """
-        Prepares for detection by filling out necessary ops parameters. Removes dependence on
+        Prepares for detection by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
-        # Set appropriate ops parameters
+        # Set appropriate settings parameters
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -99,7 +99,7 @@ class DetectionTestUtils:
             'xrange': [2, 402],
             'yrange': [2, 358],
         })
-        ops = []
+        settings = []
         for plane in range(op['nplanes']):
             curr_op = op.copy()
             plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
@@ -118,14 +118,14 @@ class DetectionTestUtils:
                 BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
                 curr_op['reg_file_chan2'] = bin2_path
             curr_op['save_path'] = plane_dir
-            curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-            ops.append(curr_op)
-        return ops
+            curr_op['settings_path'] = plane_dir.joinpath('settings.npy')
+            settings.append(curr_op)
+        return settings
 
 class ExtractionTestUtils:
     def prepare(op, input_file_name_list, dimensions):
         """
-        Prepares for extraction by filling out necessary ops parameters. Removes dependence on
+        Prepares for extraction by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
         op.update({
@@ -137,7 +137,7 @@ class ExtractionTestUtils:
             'yrange': [2, 358],
         })
 
-        ops = []
+        settings = []
         for plane in range(op['nplanes']):
             curr_op = op.copy()
             plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
@@ -155,6 +155,6 @@ class ExtractionTestUtils:
                 BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
                 curr_op['reg_file_chan2'] = bin2_path
             curr_op['save_path'] = plane_dir
-            curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-            ops.append(curr_op)
-        return ops
+            curr_op['settings_path'] = plane_dir.joinpath('settings.npy')
+            settings.append(curr_op)
+        return settings

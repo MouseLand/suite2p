@@ -9,7 +9,7 @@ Outputs
 
 ``stat.npy``: list of statistics computed for each cell (ROIs by 1)
 
-``ops.npy``: options and intermediate outputs (dictionary)
+``settings.npy``: options and intermediate outputs (dictionary)
 
 ``iscell.npy``: specifies whether an ROI is a cell, first column is 0/1,
 and second column is probability that the ROI is a cell based on the
@@ -25,15 +25,15 @@ All can be loaded in python with numpy
    Fneu = np.load('Fneu.npy', allow_pickle=True)
    spks = np.load('spks.npy', allow_pickle=True)
    stat = np.load('stat.npy', allow_pickle=True)
-   ops =  np.load('ops.npy', allow_pickle=True)
-   ops = ops.item()
+   settings =  np.load('settings.npy', allow_pickle=True)
+   settings = settings.item()
    iscell = np.load('iscell.npy', allow_pickle=True)
 
 MATLAB output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If ``'save_mat'=1``, then a MATLAB file is created ``Fall.mat``. This
-will contain ops, F, Fneu, stat, spks and iscell. The "iscell"
+will contain settings, F, Fneu, stat, spks and iscell. The "iscell"
 assignments are only saved ONCE when the pipeline is finished running.
 If you make changes in the GUI to the cell assignments, ONLY
 ``iscell.npy`` changes. To load a modified ``iscell.npy`` into MATLAB, I
@@ -44,8 +44,8 @@ the iscell again to the ``Fall.mat`` file.
 NWB Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If ``ops['save_NWB']=1``, then an NWB file is created ``ophys.nwb``. This 
-will contain the fields from ops and stat required to load back into the GUI, along 
+If ``settings['save_NWB']=1``, then an NWB file is created ``ophys.nwb``. This 
+will contain the fields from settings and stat required to load back into the GUI, along 
 with F, Fneu, spks and iscell. If 
 the recording has multiple planes, then they are all saved together like in 
 combined view. See fields below:
@@ -53,7 +53,7 @@ combined view. See fields below:
 stat: stat['ypix'], stat['xpix'] (if multiplane `stat['iplane']`) are saved in 
 'pixel_mask' (called `'voxel_mask'` in multiplane).
 
-ops: 'meanImg', 'max_proj', 'Vcorr' are saved in Images 'Backgrounds_k' where k is the plane 
+settings: 'meanImg', 'max_proj', 'Vcorr' are saved in Images 'Backgrounds_k' where k is the plane 
 number, and have the same names. optionally if two channels, 'meanImg_chan2' is saved.
 
 iscell: saved as an array 'iscell' 
@@ -64,7 +64,7 @@ F,Fneu,spks are saved as roi_response_series 'Fluorescence', 'Neuropil', and 'De
 Multichannel recordings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Cells are detected on the ops['functional_chan'] and the fluorescence
+Cells are detected on the settings['functional_chan'] and the fluorescence
 signals are extracted from both channels. The functional channel signals
 are saved to ``F.npy`` and ``F_neu.npy``, and non-functional channel
 signals are saved to ``F_chan2.npy`` and ``Fneu_chan2.npy``.
@@ -101,9 +101,9 @@ overlapping pixels) is a different "number":
 ::
 
    stat = np.load('stat.npy')
-   ops = np.load('ops.npy').item()
+   settings = np.load('settings.npy').item()
 
-   im = np.zeros((ops['Ly'], ops['Lx']))
+   im = np.zeros((settings['Ly'], settings['Lx']))
 
    for n in range(0,ncells):
        ypix = stat[n]['ypix'][~stat[n]['overlap']]
@@ -120,14 +120,14 @@ a broadcast of all the pairs of ys and xs, which is why ipix = ys +
 indexing into arrays. In Python, the equivalent ipix would be ipix = yx
 + xs \* Lxy.)
 
-.. _opsnpy-fields:
+.. _settingsnpy-fields:
 
-ops.npy fields
+settings.npy fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This will include all of the options you ran the pipeline with,
 including file paths. During the running of the pipeline, some outputs
-are added to ``ops.npy``:
+are added to ``settings.npy``:
 
     -  **reg_file**: location of registered binary file
     -  **Ly**: size of Y dimension of tiffs/h5

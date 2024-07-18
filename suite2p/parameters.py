@@ -18,8 +18,8 @@ import numpy as np
 
 ### recording setup and paths for creating binaries
 
-OPS_FOLDER = Path.home() / ".suite2p" / "ops" 
-OPS_FOLDER.mkdir(exist_ok=True, parents=True)
+SETTINGS_FOLDER = Path.home() / ".suite2p" / "settings" 
+SETTINGS_FOLDER.mkdir(exist_ok=True, parents=True)
 
 DB = {
         "data_path": {
@@ -177,7 +177,7 @@ DB = {
     }
 
 ### options for running the pipeline
-OPS = {
+SETTINGS = {
     "torch_device": {
         "gui_name": "Torch device",
         "type": str,
@@ -209,22 +209,6 @@ OPS = {
         "max": np.inf,
         "default": [12., 12.],
         "description": "ROI diameter in Y and X pixels for sourcery and cellpose detection.",
-    },
-    "classifier_path": {
-        "gui_name": "Classifier path",
-        "type": str,
-        "min": None,
-        "max": None,
-        "default": None,
-        "description": "Path to classifier file for ROIs (default is ~/.suite2p/classifiers/classifier_user.npy).",
-    },
-    "use_builtin_classifier": {
-            "gui_name": "Use built-in classifier",
-            "type": bool,
-            "min": None,
-            "max": None,
-            "default": False,
-            "description": "Use built-in classifier (classifier.npy) instead of user classifier (classifier_user.npy) for ROIs.",
     },  
     "run": {
         "do_registration": {
@@ -292,6 +276,14 @@ OPS = {
             "max": None,
             "default": False,
             "description": "Whether to save output as NWB file.",
+        },
+        "save_ops_orig": {
+            "gui_name": "Save ops orig",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Whether to save db, settings, reg_outputs, detection_outputs into ops.npy.",
         },
         "delete_bin": {
             "gui_name": "Delete binary",
@@ -527,7 +519,7 @@ OPS = {
             "type": float,
             "min": 0.,
             "max": np.inf,
-            "default": 0.25,
+            "default": 0.,
             "description": "Minimum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).",
         },
         "npix_norm_max": {
@@ -535,7 +527,7 @@ OPS = {
             "type": float,
             "min": 0.,
             "max": np.inf,
-            "default": 3.0,
+            "default": 100,
             "description": "Maximum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix).",
         },
         "max_overlap": {
@@ -673,13 +665,39 @@ OPS = {
             },
         },
     },
+    "classification": {
+        "classifier_path": {
+            "gui_name": "Classifier path",
+            "type": str,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "Path to classifier file for ROIs (default is ~/.suite2p/classifiers/classifier_user.npy).",
+        },
+        "use_builtin_classifier": {
+            "gui_name": "Use built-in classifier",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Use built-in classifier (classifier.npy) instead of user classifier (classifier_user.npy) for ROIs.",
+        },
+        "preclassify": {
+            "gui_name": "Pre-classify",
+            "type": float,
+            "min": 0.,
+            "max": 1.,
+            "default": 0.,
+            "description": "Remove ROIs with classifier probability below preclassify before extraction to minimize overlaps",
+        }
+    },
     "extraction": {
         "snr_threshold": {
             "gui_name": "SNR threshold",
             "type": float,
             "min": -np.inf,
             "max": 1.,
-            "default": 0.25,
+            "default": 0.,
             "description": "SNR threshold for ROIs.",
         },
         "batch_size": {
@@ -796,22 +814,22 @@ def default_db():
     """ default options to run pipeline """
     return default_dict(DB)
 
-def default_ops():
+def default_settings():
     """ default options to run pipeline """
-    ops = default_dict(OPS)
-    ops["version"] = version  
-    return ops
+    settings = default_dict(SETTINGS)
+    settings["version"] = version  
+    return settings
 
-def user_ops():
+def user_settings():
     """ user-default options to run pipeline """
-    if (OPS_FOLDER / "ops_user.npy").exists():
-        ops = np.load(OPS_FOLDER / "ops_user.npy", allow_pickle=True).item()
-        ops = {**default_ops(), **ops}
+    if (SETTINGS_FOLDER / "settings_user.npy").exists():
+        settings = np.load(SETTINGS_FOLDER / "settings_user.npy", allow_pickle=True).item()
+        settings = {**default_settings(), **settings}
     else:
-        ops = default_ops()
-    return ops
+        settings = default_settings()
+    return settings
 
-def add_descriptions(d, dstr="ops", k0=None):
+def add_descriptions(d, dstr="settings", k0=None):
     all_params = []
     kstr = "" if k0 is None else k0
     
@@ -841,7 +859,7 @@ def add_descriptions(d, dstr="ops", k0=None):
 
 def print_all_params():
     all_dbs = add_descriptions(DB, dstr="db")
-    all_params = add_descriptions(OPS, dstr="ops")
+    all_params = add_descriptions(SETTINGS, dstr="settings")
 
     n = 0
     print(f"file settings")
@@ -873,34 +891,34 @@ def set_db(db, db_in):
             db[key] = db_in[key]
             del db_in[key]
 
-def set_ops(ops, ops_in):
-    for key in ops.keys():
-        if key in ops_in:
-            if isinstance(ops[key], dict) and len(ops[key].keys()) > 0:
-                set_ops(ops[key], ops_in[key])
-                del ops_in[key]
+def set_settings(settings, settings_in):
+    for key in settings.keys():
+        if key in settings_in:
+            if isinstance(settings[key], dict) and len(settings[key].keys()) > 0:
+                set_settings(settings[key], settings_in[key])
+                del settings_in[key]
             else:
-                ops[key] = ops_in[key]   
-                del ops_in[key]
+                settings[key] = settings_in[key]   
+                del settings_in[key]
 
-def set_ops_orig(ops, ops_in):
+def set_settings_orig(settings, settings_in):
     # also support flattened keys from old suite2p
-    for key in ops.keys():
-        if isinstance(ops[key], dict) and len(ops[key].keys()) > 0:
-            set_ops_orig(ops[key], ops_in)
-        elif key in ops_in:
-            ops[key] = ops_in[key]   
-            del ops_in[key]
+    for key in settings.keys():
+        if isinstance(settings[key], dict) and len(settings[key].keys()) > 0:
+            set_settings_orig(settings[key], settings_in)
+        elif key in settings_in:
+            settings[key] = settings_in[key]   
+            del settings_in[key]
 
-def convert_ops_orig(ops_in, db=default_db(), ops=default_ops()):
-    """ convert ops from old suite2p to new suite2p db and ops format """
-    set_db(db, ops_in)
-    set_ops(ops, ops_in)
-    set_ops_orig(ops, ops_in)
-    if "roidetect" in ops_in:
-        ops["run"]["do_detection"] = ops_in.pop("roidetect")
-    if "spikedetect" in ops_in:
-        ops["run"]["do_deconvolution"] = ops_in.pop("spikedetect")
-    return db, ops, ops_in
+def convert_settings_orig(settings_in, db=default_db(), settings=default_settings()):
+    """ convert settings from old suite2p to new suite2p db and settings format """
+    set_db(db, settings_in)
+    set_settings(settings, settings_in)
+    set_settings_orig(settings, settings_in)
+    if "roidetect" in settings_in:
+        settings["run"]["do_detection"] = settings_in.pop("roidetect")
+    if "spikedetect" in settings_in:
+        settings["run"]["do_deconvolution"] = settings_in.pop("spikedetect")
+    return db, settings, settings_in
 
                 

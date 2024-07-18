@@ -4,6 +4,8 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 from typing import Optional, Tuple, Sequence
 from contextlib import contextmanager
 from tifffile import TiffWriter
+import logging 
+logger = logging.getLogger(__name__)
 
 import os
 
@@ -153,16 +155,16 @@ class BinaryFile:
                   bad_frames: Optional[np.ndarray] = None,
                   reject_threshold: float = 0.5) -> np.ndarray:
         """
-        Returns binned movie that rejects bad_frames (bool array) and crops to (y_range, x_range).
+        Returns binned movie that rejects bad_frames (bool array) and crsettings to (y_range, x_range).
 
         Parameters
         ----------
         bin_size: int
             The size of each bin
         x_range: int, int
-            Crops the data to a minimum and maximum x range.
+            Crsettings the data to a minimum and maximum x range.
         y_range: int, int
-            Crops the data to a minimum and maximum y range.
+            Crsettings the data to a minimum and maximum y range.
         bad_frames: int array
             The indices to *not* include.
         reject_threshold: float
@@ -209,11 +211,11 @@ class BinaryFile:
                 x_range = range_dict['x_range']
             if 'y_range' in range_dict:
                 y_range = range_dict['y_range']
-            print('Frame Range: {}, y_range: {}, x_range{}'.format(frame_range, y_range, x_range))
+            logger.info('Frame Range: {}, y_range: {}, x_range{}'.format(frame_range, y_range, x_range))
             for i in range(frame_range[0], frame_range[1]):
                 curr_frame = np.floor(self.file[i, y_range[0]:y_range[1], x_range[0]:x_range[1]]).astype(np.int16)
                 f.write(curr_frame, contiguous=True)
-        print('Tiff has been saved to {}'.format(fname))
+        logger.info('Tiff has been saved to {}'.format(fname))
 
 def from_slice(s: slice) -> Optional[np.ndarray]:
     """Creates an np.arange() array from a Python slice object.  Helps provide numpy-like slicing interfaces."""

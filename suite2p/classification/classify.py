@@ -5,6 +5,9 @@ import numpy as np
 from pathlib import Path
 from typing import Union, Sequence
 from .classifier import Classifier
+import logging 
+logger = logging.getLogger(__name__)
+
 
 builtin_classfile = Path(__file__).joinpath(
     "../../classifiers/classifier.npy").resolve()
@@ -41,6 +44,6 @@ def classify(
 
     """
     keys = list(set(keys).intersection(set(stat[0])))
-    print(keys)
+    logger.info(f"classifying with stats: {keys}")
     iscell = Classifier(classfile, keys=keys).run(stat)
     return iscell

@@ -5,7 +5,9 @@ import numpy as np
 from tqdm import trange
 from numba import njit, prange
 from scipy.ndimage import maximum_filter1d, minimum_filter1d, gaussian_filter
-
+from ..logger import TqdmToLogger
+import logging 
+logger = logging.getLogger(__name__)
 
 @njit([
     "float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32"
@@ -79,8 +81,9 @@ def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
     F = F.astype(np.float32)
     S = np.zeros((NN, NT), dtype=np.float32)
     n_batches = int(np.ceil(NN / batch_size))
-    print(f"Deconvolving {NN} neurons in {n_batches} batches")
-    for n in trange(n_batches):
+    logger.info(f"Deconvolving {NN} neurons in {n_batches} batches")
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+    for n in trange(n_batches, file=tqdm_out):
         i = n * batch_size
         f = F[i:i + batch_size]
         v = np.zeros((f.shape[0], NT), dtype=np.float32)

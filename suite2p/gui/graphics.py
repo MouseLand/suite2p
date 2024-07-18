@@ -116,11 +116,11 @@ def init_range(parent):
     parent.trange = np.arange(0, parent.Fcell.shape[1])
 
 
-def ROI_index(ops, stat):
+def ROI_index(settings, stat):
     """matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)"""
     ncells = len(stat) - 1
-    Ly = ops["Ly"]
-    Lx = ops["Lx"]
+    Ly = settings["Ly"]
+    Lx = settings["Lx"]
     iROI = -1 * np.ones((Ly, Lx), dtype=np.int32)
     for n in range(ncells):
         ypix = stat[n]["ypix"][~stat[n]["overlap"]]

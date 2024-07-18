@@ -2,6 +2,8 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
+import logging 
+logger = logging.getLogger(__name__)
 
 from .utils import circleMask
 
@@ -138,7 +140,8 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
     stats = stats[keep_rois]
     npix_soma, npix = npix_soma[keep_rois], npix[keep_rois]
     nremove = (~keep_rois).sum()
-    print(f"Removed {nremove} ROIs with npix_norm < {npix_norm_min:.2f} or npix_norm > {npix_norm_max:.2f}")
+    if nremove > 0:
+        logger.info(f"Removed {nremove} ROIs with npix_norm < {npix_norm_min:.2f} or npix_norm > {npix_norm_max:.2f}")
 
     for stat, npix_soma0, npix0 in zip(stats, npix_soma, npix):
         stat["npix_norm"] = npix_soma0
@@ -162,8 +165,8 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
         for stat in stats:
             stat["overlap"] = (overlap[stat["ypix"], stat["xpix"]] > 1).astype("bool")
 
-    nremove = (~keep_rois).sum()
-    print(f"Removed {nremove} ROIs with overlap > {max_overlap}")
+        nremove = (~keep_rois).sum()
+        logger.info(f"Removed {nremove} ROIs with overlap > {max_overlap}")
 
     return stats
 

@@ -15,31 +15,31 @@ except ImportError:
     DCIMG = False
 
 
-def dcimg_to_binary(ops):
+def dcimg_to_binary(settings):
     """finds dcimg files and writes them to binaries
 
     Parameters
     ----------
-    ops: dictionary
+    settings: dictionary
         "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
         "nchannels", "keep_movie_raw", "look_one_level_down"
 
     Returns
     -------
-        ops : dictionary of first plane
-            ops["reg_file"] or ops["raw_file"] is created binary
+        settings : dictionary of first plane
+            settings["reg_file"] or settings["raw_file"] is created binary
             assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
             "nframes", "meanImg", "meanImg_chan2"
     """
 
     t0 = time.time()
-    # copy ops to list where each element is ops for each plane
-    ops1 = utils.init_ops(ops)
+    # copy settings to list where each element is settings for each plane
+    settings1 = utils.init_settings(settings)
 
     # open all binary files for writing
     # look for dcimg in all requested folders
-    ops1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(ops1, False)
-    ops = ops1[0]
+    settings1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(settings1, False)
+    settings = settings1[0]
 
     # loop over all dcimg files
     iall = 0
@@ -53,12 +53,12 @@ def dcimg_to_binary(ops):
         nchannels = 1
         nframes = dcimg_file.shape[0]
 
-        iblocks = np.arange(0, nframes, ops1[0]["batch_size"])
+        iblocks = np.arange(0, nframes, settings1[0]["batch_size"])
         if iblocks[-1] < nframes:
             iblocks = np.append(iblocks, nframes)
 
         if nchannels > 1:
-            nfunc = ops1[0]["functional_chan"] - 1
+            nfunc = settings1[0]["functional_chan"] - 1
         else:
             nfunc = 0
 
@@ -72,39 +72,39 @@ def dcimg_to_binary(ops):
                 im2write = im_p[:]
                 for j in range(0, nplanes):
                     if iall == 0:
-                        ops1[j]["meanImg"] = np.zeros((im_p.shape[1], im_p.shape[2]),
+                        settings1[j]["meanImg"] = np.zeros((im_p.shape[1], im_p.shape[2]),
                                                       np.float32)
                         if nchannels > 1:
-                            ops1[j]["meanImg_chan2"] = np.zeros(
+                            settings1[j]["meanImg_chan2"] = np.zeros(
                                 (im_p.shape[1], im_p.shape[2]), np.float32)
-                        ops1[j]["nframes"] = 0
+                        settings1[j]["nframes"] = 0
                     if ichan == nfunc:
-                        ops1[j]["meanImg"] += np.squeeze(im2mean)
+                        settings1[j]["meanImg"] += np.squeeze(im2mean)
                         reg_file[j].write(
                             bytearray(im2write[:].astype("uint16")))
                     else:
-                        ops1[j]["meanImg_chan2"] += np.squeeze(im2mean)
+                        settings1[j]["meanImg_chan2"] += np.squeeze(im2mean)
                         reg_file_chan2[j].write(
                             bytearray(im2write[:].astype("uint16")))
 
-                    ops1[j]["nframes"] += im2write.shape[0]
+                    settings1[j]["nframes"] += im2write.shape[0]
             ik += nframes
             iall += nframes
 
         dcimg_file.close()
 
-        # write ops files
-    do_registration = ops1[0]["do_registration"]
-    for ops in ops1:
-        ops["Ly"] = dcimg_file.shape[1]
-        ops["Lx"] = dcimg_file.shape[2]
+        # write settings files
+    do_registration = settings1[0]["do_registration"]
+    for settings in settings1:
+        settings["Ly"] = dcimg_file.shape[1]
+        settings["Lx"] = dcimg_file.shape[2]
         if not do_registration:
-            ops["yrange"] = np.array([0, ops["Ly"]])
-            ops["xrange"] = np.array([0, ops["Lx"]])
-        np.save(ops["ops_path"], ops)
-    # close all binary files and write ops files
+            settings["yrange"] = np.array([0, settings["Ly"]])
+            settings["xrange"] = np.array([0, settings["Lx"]])
+        np.save(settings["settings_path"], settings)
+    # close all binary files and write settings files
     for j in range(0, nplanes):
         reg_file[j].close()
         if nchannels > 1:
             reg_file_chan2[j].close()
-    return ops1[0]
+    return settings1[0]

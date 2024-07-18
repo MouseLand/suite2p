@@ -5,11 +5,12 @@ import glob
 import os
 import copy
 from pathlib import Path
-
+import logging
+logger = logging.getLogger(__name__)
 import numpy as np
 from natsort import natsorted
 
-from .. import default_ops
+
 
 EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
         "h5": ["*.h5", "*.hdf5", "*.mesc"],
@@ -18,7 +19,8 @@ EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
         "dcimg": ["*.dcimg"],
         "movie": ["*.mp4", "*.avi"]}
 
-def find_files_open_binaries(ops):
+
+def find_files_open_binaries(settings):
     return None
 
 def list_files(froot, look_one_level_down, exts):
@@ -65,7 +67,7 @@ def get_file_list(db):
             fsall.append(os.path.join(data_path[0], f))
         db["first_files"] = np.zeros((len(fsall),), dtype="bool")
         db["first_files"][0] = True
-        print(f"** Found {len(fsall)} files - converting to binary **")
+        logger.info(f"** Found {len(fsall)} files - converting to binary **")
     else:
         if len(data_path) == 1 and db.get("subfolders", None) is not None:
                 fold_list = []
@@ -82,11 +84,11 @@ def get_file_list(db):
             fsall.extend(fs)
             first_files.extend(list(firsts))
         if len(fsall) == 0:
-            print(f"Could not find any {EXTS[input_format]} files in {data_path}")
+            logger.info(f"Could not find any {EXTS[input_format]} files in {data_path}")
             raise Exception("no files found")
         else:
             first_files = np.array(first_files).astype("bool")
-            print(f"** Found {len(fsall)} files - converting to binary **")
+            logger.info(f"** Found {len(fsall)} files - converting to binary **")
     return fsall, first_files
 
 def init_dbs(db0):
@@ -94,7 +96,7 @@ def init_dbs(db0):
 
     Parameters
     ----------
-    ops : dictionary
+    settings : dictionary
         "nplanes", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw"
         + (if mesoscope) "dy", "dx", "lines"
 
@@ -102,7 +104,7 @@ def init_dbs(db0):
     -------
         db1 : list of dictionaries
             adds fields "save_path0", "reg_file"
-            (depending on ops: "raw_file", "reg_file_chan2", "raw_file_chan2")
+            (depending on settings: "raw_file", "reg_file_chan2", "raw_file_chan2")
 
     """
     nplanes = db0["nplanes"]
@@ -114,7 +116,7 @@ def init_dbs(db0):
         nrois = len(db0["lines"])
         db0["nrois"] = nrois
         nfolders *= nrois
-        print(f"NOTE: nplanes={nplanes}, nrois={nrois} => nfolders = {nfolders}")
+        logger.info(f"NOTE: nplanes={nplanes}, nrois={nrois} => nfolders = {nfolders}")
         # replicate lines across planes if nplanes > 1
         if nplanes > 1:
             lines0, dy0, dx0 = db0["lines"].copy(), db0["dy"].copy(), db0["dx"].copy()
@@ -141,7 +143,7 @@ def init_dbs(db0):
         db["save_path"] = os.path.join(db["save_path0"], db["save_folder"], f"plane{j}")
         fast_disk = os.path.join(db["fast_disk"], "suite2p", f"plane{j}")
         db["fast_disk"] = fast_disk
-        db["ops_path"] = os.path.join(db["save_path"], "ops.npy")
+        db["settings_path"] = os.path.join(db["save_path"], "settings.npy")
         db["db_path"] = os.path.join(db["save_path"], "db.npy")
         db["reg_file"] = os.path.join(fast_disk, "data.bin")
         if keep_movie_raw:
@@ -160,68 +162,68 @@ def init_dbs(db0):
         dbs.append(db)
     return dbs
 
-def init_ops(db, ops):
-    """ initializes ops files for each plane in recording
+def init_settings(db, settings):
+    """ initializes settings files for each plane in recording
 
     Parameters
     ----------
-    ops : dictionary
+    settings : dictionary
         "nplanes", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw"
         + (if mesoscope) "dy", "dx", "lines"
 
     Returns
     -------
-        ops1 : list of dictionaries
+        settings1 : list of dictionaries
             adds fields "save_path0", "reg_file"
-            (depending on ops: "raw_file", "reg_file_chan2", "raw_file_chan2")
+            (depending on settings: "raw_file", "reg_file_chan2", "raw_file_chan2")
 
     """
 
-    nplanes = ops["nplanes"]
-    nchannels = ops["nchannels"]
-    if "lines" in ops:
-        lines = ops["lines"]
-    if "iplane" in ops:
-        iplane = ops["iplane"]
-        #ops["nplanes"] = len(ops["lines"])
-    ops1 = []
+    nplanes = settings["nplanes"]
+    nchannels = settings["nchannels"]
+    if "lines" in settings:
+        lines = settings["lines"]
+    if "iplane" in settings:
+        iplane = settings["iplane"]
+        #settings["nplanes"] = len(settings["lines"])
+    settings1 = []
     if ("fast_disk" not in db) or len(db["fast_disk"]) == 0:
         db["fast_disk"] = db["save_path0"]
-    fast_disk = ops["fast_disk"]
+    fast_disk = settings["fast_disk"]
     # for mesoscope recording FOV locations
-    if "dy" in ops and ops["dy"] != "":
-        dy = ops["dy"]
-        dx = ops["dx"]
-    # compile ops into list across planes
+    if "dy" in settings and settings["dy"] != "":
+        dy = settings["dy"]
+        dx = settings["dx"]
+    # compile settings into list across planes
     for j in range(0, nplanes):
-        if len(ops["save_folder"]) > 0:
-            ops["save_path"] = os.path.join(ops["save_path0"], ops["save_folder"],
+        if len(settings["save_folder"]) > 0:
+            settings["save_path"] = os.path.join(settings["save_path0"], settings["save_folder"],
                                             "plane%d" % j)
         else:
-            ops["save_path"] = os.path.join(ops["save_path0"], "suite2p", "plane%d" % j)
+            settings["save_path"] = os.path.join(settings["save_path0"], "suite2p", "plane%d" % j)
 
-        fast_disk = os.path.join(ops["fast_disk"], "suite2p", "plane%d" % j)
-        ops["ops_path"] = os.path.join(ops["save_path"], "ops.npy")
-        ops["reg_file"] = os.path.join(fast_disk, "data.bin")
-        if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-            ops["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
-        if "lines" in ops:
-            ops["lines"] = lines[j]
-        if "iplane" in ops:
-            ops["iplane"] = iplane[j]
+        fast_disk = os.path.join(settings["fast_disk"], "suite2p", "plane%d" % j)
+        settings["settings_path"] = os.path.join(settings["save_path"], "settings.npy")
+        settings["reg_file"] = os.path.join(fast_disk, "data.bin")
+        if "keep_movie_raw" in settings and settings["keep_movie_raw"]:
+            settings["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
+        if "lines" in settings:
+            settings["lines"] = lines[j]
+        if "iplane" in settings:
+            settings["iplane"] = iplane[j]
         if nchannels > 1:
-            ops["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
-            if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-                ops["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
-        if "dy" in ops and ops["dy"] != "":
-            ops["dy"] = dy[j]
-            ops["dx"] = dx[j]
+            settings["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
+            if "keep_movie_raw" in settings and settings["keep_movie_raw"]:
+                settings["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
+        if "dy" in settings and settings["dy"] != "":
+            settings["dy"] = dy[j]
+            settings["dx"] = dx[j]
         if not os.path.isdir(fast_disk):
             os.makedirs(fast_disk)
-        if not os.path.isdir(ops["save_path"]):
-            os.makedirs(ops["save_path"])
-        ops1.append(ops.copy())
-    return ops1
+        if not os.path.isdir(settings["save_path"]):
+            os.makedirs(settings["save_path"])
+        settings1.append(settings.copy())
+    return settings1
 
 
 def get_suite2p_path(path: Path) -> Path:

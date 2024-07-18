@@ -12,7 +12,12 @@ import numpy as np
 import torch
 from scipy.signal import medfilt
 
-from .. import default_ops
+import logging 
+logger = logging.getLogger(__name__)
+
+
+from .. import default_settings
+from ..logger import TqdmToLogger
 from . import bidiphase as bidi
 from . import utils, rigid, nonrigid
 
@@ -126,7 +131,7 @@ def pick_initial_reference(frames: torch.Tensor):
     refImg = refImg.reshape(Ly, Lx)
     return refImg
     
-def compute_reference(frames, ops=default_ops(), device=torch.device("cuda")):
+def compute_reference(frames, settings=default_settings(), device=torch.device("cuda")):
     """ computes the reference image
 
     picks initial reference then iteratively aligns frames to create reference
@@ -134,7 +139,7 @@ def compute_reference(frames, ops=default_ops(), device=torch.device("cuda")):
     Parameters
     ----------
     
-    ops : dictionary
+    settings : dictionary
         need registration options
 
     frames : 3D array, int16
@@ -150,17 +155,17 @@ def compute_reference(frames, ops=default_ops(), device=torch.device("cuda")):
     refImg = pick_initial_reference(fr_reg)
     
     niter = 8
-    batch_size = ops["batch_size"]
+    batch_size = settings["batch_size"]
     for iter in range(0, niter):
         # rigid registration shifts to reference
-        maskMul, maskOffset, cfRefImg = compute_filters_and_norm(refImg, False, ops["smooth_sigma"],
-                                           ops["spatial_taper"], block_size=None, device=device)[:3]
+        maskMul, maskOffset, cfRefImg = compute_filters_and_norm(refImg, False, settings["smooth_sigma"],
+                                           settings["spatial_taper"], block_size=None, device=device)[:3]
 
         for k in range(0, fr_reg.shape[0], batch_size):
             fr_reg_batch = fr_reg[k:min(k + batch_size, fr_reg.shape[0])].to(device)
             ymax, xmax, cmax = rigid.phasecorr(fr_reg_batch, cfRefImg, maskMul, maskOffset,
-                maxregshift=ops["maxregshift"],
-                smooth_sigma_time=ops["smooth_sigma_time"],
+                maxregshift=settings["maxregshift"],
+                smooth_sigma_time=settings["smooth_sigma_time"],
             )
             
             # shift frames to reference
@@ -303,7 +308,7 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
 
     if isinstance(refImg, list):
         nZ = len(refImg)
-        print(f"List of reference frames len = {nZ}")
+        logger.info(f"List of reference frames len = {nZ}")
 
     refAndMasks = compute_filters_and_norm(refImg, norm_frames=norm_frames, 
                                            spatial_smooth=smooth_sigma,
@@ -318,8 +323,9 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     rigid_offsets, nonrigid_offsets, zpos, cmax_all = [], [], [], []
 
     n_batches = int(np.ceil(n_frames / batch_size))
-    print(f"Registering {n_frames} frames in {n_batches} batches")
-    for n in trange(n_batches, mininterval=10):
+    logger.info(f"Registering {n_frames} frames in {n_batches} batches")
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+    for n in trange(n_batches, mininterval=10, file=tqdm_out):
         tstart, tend = n * batch_size, min((n+1) * batch_size, n_frames)
         frames = f_align_in[tstart : tend]
         if device.type == "cuda":
@@ -384,8 +390,9 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
     mean_img = np.zeros((Ly, Lx), "float32")
     yoff1k, xoff1k = None, None
     n_batches = int(np.ceil(n_frames / batch_size))
-    print(f"Second channel: Shifting {n_frames} frames in {n_batches} batches")
-    for n in trange(n_batches, mininterval=10):
+    logger.info(f"Second channel: Shifting {n_frames} frames in {n_batches} batches")
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)()
+    for n in trange(n_batches, mininterval=10, file=tqdm_out):
         tstart, tend = n * batch_size, min((n+1) * batch_size, n_frames)
         frames = f_alt_in[tstart : tend]
         yoffk, xoffk = yoff[tstart : tend].astype(int), xoff[tstart : tend].astype(int)
@@ -456,7 +463,7 @@ def assign_reg_io(f_reg, f_raw=None, f_reg_chan2=None,
 
 def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                         refImg=None, align_by_chan2=False, save_path=None, aspect=1.,
-                        badframes=None, ops=default_ops(), device=torch.device("cuda")):
+                        badframes=None, settings=default_settings(), device=torch.device("cuda")):
     """Main registration function.
 
     Args:
@@ -467,7 +474,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         refImg (2D array, optional): 2D array of int16, size [Ly x Lx], initial reference image. Defaults to None.
         align_by_chan2 (bool, optional): Whether to align by non-functional channel. Defaults to False.
         save_path (str, optional): Path to save registered tiffs. Defaults to None.
-        ops (dict or list of dicts, optional): Dictionary containing input arguments for suite2p pipeline. Defaults to default_ops().
+        settings (dict or list of dicts, optional): Dictionary containing input arguments for suite2p pipeline. Defaults to default_settings().
 
     Returns:
         tuple: Tuple containing the following:
@@ -485,44 +492,44 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     """
    
     out = assign_reg_io(f_reg, f_raw, f_reg_chan2, f_raw_chan2, align_by_chan2, 
-                        save_path, ops["reg_tif"], ops["reg_tif_chan2"])
+                        save_path, settings["reg_tif"], settings["reg_tif_chan2"])
     f_align_in, f_align_out, f_alt_in, f_alt_out, tif_root_align, tif_root_alt = out
 
     nchannels = 2 if f_alt_in is not None else 1
-    print(f"registering {nchannels} channels")
+    logger.info(f"registering {nchannels} channels")
     
     ### ----- compute reference image and bidiphase shift -------------- ###
     n_frames, Ly, Lx = f_align_in.shape
     badframes0 = np.zeros(n_frames, "bool") if badframes is None else badframes.copy()
 
-    compute_bidi = ops["do_bidiphase"] and ops["bidiphase"] == 0
+    compute_bidi = settings["do_bidiphase"] and settings["bidiphase"] == 0
     # grab frames
     if refImg is None or compute_bidi:
-        ix_frames = np.linspace(0, n_frames, 1 + min(ops["nimg_init"], n_frames), 
+        ix_frames = np.linspace(0, n_frames, 1 + min(settings["nimg_init"], n_frames), 
                                 dtype=int)[:-1]
         frames = f_align_in[ix_frames].copy()
     # compute bidiphase shift
     if compute_bidi:
         bidiphase = bidi.compute(frames)
-        print("Estimated bidiphase offset from data: %d pixels" % bidiphase)
+        logger.info("Estimated bidiphase offset from data: %d pixels" % bidiphase)
         # shift frames for reference image computation
         if bidiphase != 0 and refImg is None:
-            frames = bidi.shift(frames, int(ops["bidiphase"])) 
-        ops["bidiphase"] = bidiphase
+            frames = bidi.shift(frames, int(settings["bidiphase"])) 
+        settings["bidiphase"] = bidiphase
     else:
         bidiphase = 0
 
     if refImg is None:
         t0 = time.time()
-        refImg = compute_reference(frames, ops=ops, device=device)
-        print("Reference frame, %0.2f sec." % (time.time() - t0))
+        refImg = compute_reference(frames, settings=settings, device=device)
+        logger.info("Reference frame, %0.2f sec." % (time.time() - t0))
     refImg_orig = refImg.copy()
     
-    for step in range(1 + (ops["two_step_registration"] and f_raw is not None)):
+    for step in range(1 + (settings["two_step_registration"] and f_raw is not None)):
         if step == 1:
-            print("starting step 2 of two-step registration")
-            print("(making new reference image without badframes)")
-            nsamps = min(n_frames, ops["nimg_init"])
+            logger.info("starting step 2 of two-step registration")
+            logger.info("(making new reference image without badframes)")
+            nsamps = min(n_frames, settings["nimg_init"])
             inds = np.linspace(0, n_frames, 1 + nsamps).astype(np.int64)[:-1]
             inds = inds[~np.isin(inds, np.nonzero(badframes)[0])]
             refImg = f_align_out[inds].astype(np.float32).mean(axis=0)
@@ -531,26 +538,26 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         ### ----- register frames to reference image -------------- ###
         outputs = register_frames(f_align_in, f_align_out=f_align_out, bidiphase=bidiphase,
                                 refImg=refImg, tif_root=tif_root_align, 
-                                batch_size=ops["batch_size"], 
-                                norm_frames=ops["norm_frames"], smooth_sigma=ops["smooth_sigma"], 
-                                spatial_taper=ops["spatial_taper"], block_size=ops["block_size"], 
-                                nonrigid=ops["nonrigid"],
-                                maxregshift=ops["maxregshift"], smooth_sigma_time=ops["smooth_sigma_time"],
-                                    snr_thresh=ops["snr_thresh"], maxregshiftNR=ops["maxregshiftNR"],
+                                batch_size=settings["batch_size"], 
+                                norm_frames=settings["norm_frames"], smooth_sigma=settings["smooth_sigma"], 
+                                spatial_taper=settings["spatial_taper"], block_size=settings["block_size"], 
+                                nonrigid=settings["nonrigid"],
+                                maxregshift=settings["maxregshift"], smooth_sigma_time=settings["smooth_sigma_time"],
+                                    snr_thresh=settings["snr_thresh"], maxregshiftNR=settings["maxregshiftNR"],
                                     device=device)
         rmin, rmax, mean_img, offsets_all, blocks = outputs
         yoff, xoff, corrXY, yoff1, xoff1, corrXY1, zest, cmax_all = offsets_all
 
         # compute valid region and timepoints to exclude
         badframes, yrange, xrange = compute_crop(xoff=xoff, yoff=yoff, corrXY=corrXY,
-                                             th_badframes=ops["th_badframes"],
+                                             th_badframes=settings["th_badframes"],
                                              badframes=badframes0.copy(),
-                                             maxregshift=ops["maxregshift"], Ly=Ly,
+                                             maxregshift=settings["maxregshift"], Ly=Ly,
                                              Lx=Lx)
         
     ### ----- register second channel -------------- ###
     if nchannels > 1:
-        mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, ops["batch_size"], yoff, xoff, yoff1,
+        mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, settings["batch_size"], yoff, xoff, yoff1,
                                               xoff1, blocks=blocks, bidiphase=bidiphase,
                                               tif_root=tif_root_align, device=device)
     else:

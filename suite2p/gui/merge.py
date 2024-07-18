@@ -205,10 +205,10 @@ class MergeWindow(QDialog):
         self.p0 = self.win.addPlot(row=0, col=0)
         self.p0.setMouseEnabled(x=False, y=False)
         self.p0.enableAutoRange(x=True, y=True)
-        # initial ops values
+        # initial settings values
         mkeys = ["corr_thres", "dist_thres"]
         mlabels = ["correlation threshold", "euclidean distance threshold"]
-        self.ops = {"corr_thres": 0.8, "dist_thres": 100.0}
+        self.settings = {"corr_thres": 0.8, "dist_thres": 100.0}
         self.layout.addWidget(QLabel("Press enter in a text box to update params"), 0,
                               0, 1, 2)
         self.layout.addWidget(
@@ -241,7 +241,7 @@ class MergeWindow(QDialog):
             qlabel.setFont(QtGui.QFont("Times", weight=QtGui.QFont.Bold))
             self.layout.addWidget(qlabel, k * 2 + 1, 0, 1, 2)
             qedit = LineEdit(lkey, self)
-            qedit.set_text(self.ops)
+            qedit.set_text(self.settings)
             qedit.setFixedWidth(90)
             qedit.returnPressed.connect(lambda: self.compute_merge_list(parent))
             self.layout.addWidget(qedit, k * 2 + 2, 0, 1, 2)
@@ -281,7 +281,7 @@ class MergeWindow(QDialog):
     def compute_merge_list(self, parent):
         print("computing automated merge suggestions...")
         for k, key in enumerate(self.keylist):
-            self.ops[key] = self.editlist[k].get_text()
+            self.settings[key] = self.editlist[k].get_text()
         goodind = []
         NN = len(parent.stat[parent.iscell])
         notused = np.ones(NN, "bool")  # not in a suggested merge
@@ -289,7 +289,7 @@ class MergeWindow(QDialog):
         for k in range(NN):
             if notused[k]:
                 ilist = [
-                    i for i, x in enumerate(self.CC[k]) if x >= self.ops["corr_thres"]
+                    i for i, x in enumerate(self.CC[k]) if x >= self.settings["corr_thres"]
                 ]
                 ilist.append(k)
                 if len(ilist) > 1:
@@ -302,7 +302,7 @@ class MergeWindow(QDialog):
                     if ilist.size > 1:
                         idist = distance_matrix(parent, ilist)
                         idist = idist.min(axis=1)
-                        ilist = ilist[idist <= self.ops["dist_thres"]]
+                        ilist = ilist[idist <= self.settings["dist_thres"]]
                         if ilist.size > 1:
                             for i in ilist:
                                 notused[parent.iscell[:i].sum()] = False
@@ -367,9 +367,9 @@ class LineEdit(QLineEdit):
         okey = float(self.text())
         return okey
 
-    def set_text(self, ops):
+    def set_text(self, settings):
         key = self.key
-        dstr = str(ops[key])
+        dstr = str(settings[key])
         self.setText(dstr)
 
 

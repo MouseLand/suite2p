@@ -9,6 +9,8 @@ import numpy as np
 from scipy.ndimage import filters
 from scipy.ndimage import gaussian_filter
 from matplotlib.colors import hsv_to_rgb
+import logging 
+logger = logging.getLogger(__name__)
 
 from .stats import fitMVGaus
 from .utils import circleMask
@@ -94,7 +96,7 @@ def create_neuropil_basis(diameter, Ly, Lx):
 
     Parameters
     ----------
-    ops:
+    settings:
         ratio_neuropil, tile_factor, diameter, neuropil_type
     Ly: int
     Lx: int
@@ -317,7 +319,7 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
 
     # initialize
     ypix, xpix, lam = [], [], []
-    print(f"max_iterations = {max_iterations}; will stop when no more peaks above threshold, or max_iterations reached")
+    logger.info(f"max_iterations = {max_iterations}; will stop when no more peaks above threshold, or max_iterations reached")
     for it in range(max_iterations):
         if refine < 0:
             V, us = getVmap(Ucell, sig)
@@ -387,7 +389,7 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
                 ypix[n], xpix[n], Ucell, codes[k, :], refine, change_codes=change_codes)
             k += 1
             if ix.sum() == 0:
-                print("dropped ROI with no pixels")
+                logger.info("dropped ROI with no pixels")
                 del ypix[n], xpix[n], lam[n]
                 continue
             Ucell[ypix[n], xpix[n], :] -= np.outer(lam[n], codes[n, :])
@@ -404,7 +406,7 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
                 LtS[n, :] = lam[n] @ S[ypix[n], xpix[n], :]
         err = (Ucell**2).mean()
         t1 = time.time() - t0
-        print(f"iter {it},\tROIs: {ncells},\terr: {err:0.4f}, \ttime: {t1:0.2f} sec")
+        logger.info(f"iter {it},\tROIs: {ncells},\terr: {err:0.4f}, \ttime: {t1:0.2f} sec")
 
         if refine == 0:
             break
@@ -446,7 +448,7 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
     stat = [s for s in stat if len(s["ypix"]) != 0]
     stat = np.array(stat)
     
-    new_ops = {
+    new_settings = {
         "diameter": diameter,
         "Vmax": 0,
         "ihop": 0,
@@ -455,4 +457,4 @@ def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
         "Vmap": 0,
         "spatscale_pix": 0
     }
-    return new_ops, stat
+    return new_settings, stat

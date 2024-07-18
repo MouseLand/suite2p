@@ -262,16 +262,16 @@ def load_files(name):
                   "(spks.npy)")
             goodfolder = False
         try:
-            ops = np.load(basename + "/ops.npy", allow_pickle=True).item()
+            settings = np.load(basename + "/settings.npy", allow_pickle=True).item()
             try:
                 db = np.load(basename + "/db.npy", allow_pickle=True).item()
                 reg_outputs = np.load(basename + "/reg_outputs.npy", allow_pickle=True).item()
                 detect_outputs = np.load(basename + "/detect_outputs.npy", allow_pickle=True).item()
-                ops = {**db, **ops, **reg_outputs, **detect_outputs}
+                settings = {**db, **settings, **reg_outputs, **detect_outputs}
             except:
                 print("no reg_outputs.npy or detect_outputs.npy found")
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
-            print("ERROR: there is no ops file in this folder (ops.npy)")
+            print("ERROR: there is no settings file in this folder (settings.npy)")
             goodfolder = False
         try:
             iscell = np.load(basename + "/iscell.npy")
@@ -300,7 +300,7 @@ def load_files(name):
         return None
 
     if goodfolder:
-        return stat, ops, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred
+        return stat, settings, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred
     else:
         print("stat.npy found, but other files not in folder")
         return None
@@ -320,10 +320,10 @@ def load_proc(parent):
 
 
 def load_to_GUI(parent, basename, procs):
-    stat, ops, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred = procs
+    stat, settings, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred = procs
     parent.basename = basename
     parent.stat = stat
-    parent.ops = ops
+    parent.ops = settings
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks
@@ -442,7 +442,7 @@ def save_mat(parent):
         matpath, {
             "stat":
                 parent.stat,
-            "ops":
+            "settings":
                 parent.ops,
             "F":
                 parent.Fcell,
@@ -462,7 +462,7 @@ def save_mat(parent):
 
 def save_merge(parent):
     print("saving to NPY")
-    np.save(os.path.join(parent.basename, "ops.npy"), parent.ops)
+    np.save(os.path.join(parent.basename, "settings.npy"), parent.ops)
     np.save(os.path.join(parent.basename, "stat.npy"), parent.stat)
     np.save(os.path.join(parent.basename, "F.npy"), parent.Fcell)
     np.save(os.path.join(parent.basename, "Fneu.npy"), parent.Fneu)

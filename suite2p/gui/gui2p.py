@@ -9,7 +9,7 @@ from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks, utils, rungui
-from .. import run_s2p, default_ops
+from .. import run_s2p, default_settings
 
 
 class MainWindow(QMainWindow):
@@ -59,12 +59,12 @@ class MainWindow(QMainWindow):
             shutil.copy(self.classorig, self.classuser)
         self.classfile = self.classuser
 
-        # check for ops file (for running suite2p)
-        ops_dir = user_dir.joinpath("ops")
-        ops_dir.mkdir(exist_ok=True)
-        self.opsuser = os.fspath(ops_dir.joinpath("ops_user.npy"))
+        # check for settings file (for running suite2p)
+        settings_dir = user_dir.joinpath("settings")
+        settings_dir.mkdir(exist_ok=True)
+        self.opsuser = os.fspath(settings_dir.joinpath("settings_user.npy"))
         if not os.path.isfile(self.opsuser):
-            np.save(self.opsuser, default_ops())
+            np.save(self.opsuser, default_settings())
         self.opsfile = self.opsuser
 
         menus.mainmenu(self)

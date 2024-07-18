@@ -16,9 +16,9 @@ from suite2p.io.utils import get_suite2p_path
 
 
 @pytest.fixture()
-def binfile1500(test_ops):
-    test_ops["tiff_list"] = ["input_1500.tif"]
-    op = io.tiff_to_binary(test_ops)
+def binfile1500(test_settings):
+    test_settings["tiff_list"] = ["input_1500.tif"]
+    op = io.tiff_to_binary(test_settings)
     bin_filename = str(Path(op["save_path0"]).joinpath("suite2p/plane0/data.bin"))
     with io.BinaryFile(
         Ly=op["Ly"], Lx=op["Lx"], filename=bin_filename
@@ -27,9 +27,9 @@ def binfile1500(test_ops):
 
 
 @pytest.fixture(scope="function")
-def replace_ops_save_path_with_local_path(request):
+def replace_settings_save_path_with_local_path(request):
     """
-    This fixture replaces the `save_path` variable in the `ops.npy` file
+    This fixture replaces the `save_path` variable in the `settings.npy` file
     by its local path version
     """
 
@@ -51,10 +51,10 @@ def replace_ops_save_path_with_local_path(request):
     for plane_idx, plane_dir in enumerate(plane_folders):
 
         # Temporarily change the `save_folder` variable in the NumPy file
-        ops1 = np.load(plane_dir.joinpath("ops.npy"), allow_pickle=True)
-        save_path[plane_dir] = ops1.item(0)["save_path"]
-        ops1.item(0)["save_path"] = str(plane_dir.absolute())
-        np.save(plane_dir.joinpath("ops.npy"), ops1)
+        settings1 = np.load(plane_dir.joinpath("settings.npy"), allow_pickle=True)
+        save_path[plane_dir] = settings1.item(0)["save_path"]
+        settings1.item(0)["save_path"] = str(plane_dir.absolute())
+        np.save(plane_dir.joinpath("settings.npy"), settings1)
 
     def concat_npy(name: str) -> np.ndarray:
         """Concatenate arrays from NUmPy files."""
@@ -81,17 +81,17 @@ def replace_ops_save_path_with_local_path(request):
     # Teardown the fixture
     for plane_dir in plane_folders:
         # Undo the changes made in the NumPy file
-        ops1 = np.load(plane_dir.joinpath("ops.npy"), allow_pickle=True)
-        ops1.item(0)["save_path"] = save_path[plane_dir]
-        np.save(plane_dir.joinpath("ops.npy"), ops1)
+        settings1 = np.load(plane_dir.joinpath("settings.npy"), allow_pickle=True)
+        settings1.item(0)["save_path"] = save_path[plane_dir]
+        np.save(plane_dir.joinpath("settings.npy"), settings1)
 
 
-def test_h5_to_binary_produces_nonnegative_output_data(test_ops):
-    test_ops["h5py"] = Path(test_ops["data_path"][0]).joinpath("input.h5")
-    test_ops["nplanes"] = 3
-    test_ops["nchannels"] = 2
-    test_ops["data_path"] = []
-    op = io.h5py_to_binary(test_ops)
+def test_h5_to_binary_produces_nonnegative_output_data(test_settings):
+    test_settings["h5py"] = Path(test_settings["data_path"][0]).joinpath("input.h5")
+    test_settings["nplanes"] = 3
+    test_settings["nchannels"] = 2
+    test_settings["data_path"] = []
+    op = io.h5py_to_binary(test_settings)
     output_data = io.BinaryFile(
         filename=Path(op["save_path0"], "suite2p/plane0/data.bin"),
         Ly=op["Ly"],
@@ -135,7 +135,7 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
         ("bruker"),
     ],
 )
-def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
+def test_nwb_round_trip(replace_settings_save_path_with_local_path, data_folder):
 
     # Get expected data already saved as NumPy files
     (
@@ -144,7 +144,7 @@ def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
         expected_F,
         expected_Fneu,
         expected_spks,
-    ) = replace_ops_save_path_with_local_path
+    ) = replace_settings_save_path_with_local_path
 
     # Save as NWB file
     save_nwb(save_folder)
@@ -176,7 +176,7 @@ def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
         np.testing.assert_array_equal(iscell_nwb, expected_iscell)
 
     # Extract Suite2p info from NWB file
-    stat, ops, F, Fneu, spks, iscell, probcell, redcell, probredcell = read_nwb(
+    stat, settings, F, Fneu, spks, iscell, probcell, redcell, probredcell = read_nwb(
         nwb_path
     )
 
@@ -188,12 +188,12 @@ def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
     np.testing.assert_array_equal(
         np.transpose(np.array([iscell, probcell])), expected_iscell
     )
-    # TODO: assert round trip for `stat` and `ops`
+    # TODO: assert round trip for `stat` and `settings`
     # Probably need to recreate the data files as some fields are missing in the dict
     # expected_stat = np.load(save_folder.joinpath("plane0", "stat.npy"), allow_pickle=True)
-    # expected_ops = np.load(save_folder.joinpath("plane0", "ops.npy"), allow_pickle=True)
+    # expected_settings = np.load(save_folder.joinpath("plane0", "settings.npy"), allow_pickle=True)
     # np.testing.assert_equal(stat, expected_stat)
-    # np.testing.assert_equal(ops, expected_ops)
+    # np.testing.assert_equal(settings, expected_settings)
 
     # Remove NWB file
     nwb_path.unlink()
@@ -208,7 +208,7 @@ def test_nwb_round_trip(replace_ops_save_path_with_local_path, data_folder):
             True,
         ),
         (
-            "/home/bla/kjkcc/jodendopn/suite2p/ops.npy",
+            "/home/bla/kjkcc/jodendopn/suite2p/settings.npy",
             "/home/bla/kjkcc/jodendopn/suite2p",
             True,
         ),

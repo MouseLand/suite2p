@@ -10,15 +10,15 @@ Directory structure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 suite2p looks for all tiffs/hdf5 in the folders listed in
-``ops['data_path']``. If you want suite2p to look in those folders AND
-all their children folders, set ``ops['look_one_level_down']=True``. If
+``settings['data_path']``. If you want suite2p to look in those folders AND
+all their children folders, set ``settings['look_one_level_down']=True``. If
 you want suite2p to only look at some of the folder's children, then set
-``ops['subfolders']`` to those folder names.
+``settings['subfolders']`` to those folder names.
 
 If you want suite2p to only use specific tiffs in ONE folder, then set
 the data path to only have one folder
-(``ops['data_path']=['my_folder_path']``), and name the tiffs you want
-processed in ``ops['tiff_list']``.
+(``settings['data_path']=['my_folder_path']``), and name the tiffs you want
+processed in ``settings['tiff_list']``.
 
 See examples in this `notebook`_.
 
@@ -56,7 +56,7 @@ this array into a numpy array called ``bad_frames.npy``:
    bad_frames = np.array([20,30,40])
    np.save('bad_frames.npy', bad_frames)
 
-Put this file into the first folder in your ops['data_path'] (the first
+Put this file into the first folder in your settings['data_path'] (the first
 folder you choose in the GUI).
 
 .. _inputs-diff-file-types:
@@ -74,7 +74,7 @@ errors.
 
 You can use single-page tiffs. These will work out of the box if they
 end in \*.tif or \*.tiff. If they have a different ending then use the
-flag ``ops['all_files_are_tiffs'] = True`` and the pipeline will assume
+flag ``settings['all_files_are_tiffs'] = True`` and the pipeline will assume
 any files in your folders are tiffs. NOTE that these will be slower to
 load in and create the binary, so if you're planning on using the
 pipeline extensively you may want to change your acquisition output.
@@ -97,7 +97,7 @@ Bruker
 Using Bruker Prairie View system, .RAW files are batch converted to single .ome.tifs.
 Now, you can load the resulting multiple tif files (i.e. one per frame per channel) to suite2p to be converted to binary.
 This looks for files containing 'Ch1', and will assume all additional files are 'Ch2'.
-Select "input_format" as "bruker" in the drop down menu in the GUI or set ``ops['input_format'] = "bruker"``.
+Select "input_format" as "bruker" in the drop down menu in the GUI or set ``settings['input_format'] = "bruker"``.
 
 **Multi Page Tifs**:
 To speed up the processing of input from bruker scopes, we recommend you save your .RAW files as multipage tifs.  This can be done using the Bruker Prairie View system. 
@@ -115,12 +115,12 @@ Mesoscope tiffs
 We have a matlab script
 `here <https://github.com/MouseLand/suite2p/blob/master/helpers/mesoscope_json_from_scanimage.m>`__
 for extracting the parameters from scanimage tiffs collected from the
-Thorlabs mesoscope. The script creates an ``ops.json`` file that you can
-then load into the run GUI using the button "load ops file". This should
+Thorlabs mesoscope. The script creates an ``settings.json`` file that you can
+then load into the run GUI using the button "load settings file". This should
 populate the run GUI with the appropriate parameters. Behind the scenes
-there are ``ops['lines']`` loaded and ``ops['dy'],ops['dx']`` that
+there are ``settings['lines']`` loaded and ``settings['dy'],settings['dx']`` that
 specify which lines in the tiff correspond to each ROI and where in
-space each ROI is respectively. ``ops['nplanes']`` will only be greater
+space each ROI is respectively. ``settings['nplanes']`` will only be greater
 than 1 if you collected in multi-plane mode. Once the pipeline starts
 running, this parameter will change to "nplanes \* nrois" and each
 "plane" is now an ROI from a specific plane. Please open issues if
@@ -147,23 +147,23 @@ files (see blog post
 The H5 loading from the GUI now works the same as it always has for tiffs. Select
 "h5" from the drop-down menu and input the h5 KEY for the data as a string. Now
 choose the folder with your \*.h5 or \*.hdf5 files and the pipeline will use all
-h5 files in that folder. You can use ops['look_one_level_down'] to process all
+h5 files in that folder. You can use settings['look_one_level_down'] to process all
 subfolders of the data_path.
 
 
 sbx binary files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Scanbox binary files (*.sbx) work out of the box if you set ``ops['input_format'] = "sbx"``.
+Scanbox binary files (*.sbx) work out of the box if you set ``settings['input_format'] = "sbx"``.
 
-When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set ``ops['sbx_ndeadcols']``. Set this option to ``-1`` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
+When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set ``settings['sbx_ndeadcols']``. Set this option to ``-1`` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
 Joao Couto (@jcouto) wrote the binary sbx parser.
 
 
 Nikon nd2 files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Suite2p reads nd2 files using the nd2 package and returns a numpy array representing the data with a minimum of two dimensions (Height, Width). The data can also have additional dimensions for Time, Depth, and Channel. If any dimensions are missing, Suite2p adds them in the order of Time, Depth, Channel, Height, and Width, resulting in a 5-dimensional array. To use Suite2p with nd2 files, simply set ``ops['input_format'] = "nd2".``
+Suite2p reads nd2 files using the nd2 package and returns a numpy array representing the data with a minimum of two dimensions (Height, Width). The data can also have additional dimensions for Time, Depth, and Channel. If any dimensions are missing, Suite2p adds them in the order of Time, Depth, Channel, Height, and Width, resulting in a 5-dimensional array. To use Suite2p with nd2 files, simply set ``settings['input_format'] = "nd2".``
 
 
 
@@ -199,7 +199,7 @@ Also, ``BinaryRWFile`` instances can be directly passed to the several wrapper f
 ::
 
    f_reg = suite2p.io.BinaryRWFile(Ly=Ly, Lx=Lx, filename='registered_input.tif')
-   ops, stat = suite2p.detection_wrapper(f_reg=f_reg, ops=ops)
+   settings, stat = suite2p.detection_wrapper(f_reg=f_reg, settings=settings)
 
 .. _repository: https://github.com/dgreenberg/read_patterned_tifdata
 .. _haussmeister: https://github.com/neurodroid/haussmeister

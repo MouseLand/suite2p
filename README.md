@@ -153,13 +153,13 @@ You can add your manual curation to a pre-built classifier by clicking "Add curr
 
 1. From the command line:
 ~~~~
-suite2p --ops <path to ops.npy> --db <path to db.npy>
+suite2p --settings <path to settings.npy> --db <path to db.npy>
 ~~~~
 
 2. From Python/Jupyter
 ~~~~python
 from suite2p.run_s2p import run_s2p
-ops1 = run_s2p(ops, db)
+settings1 = run_s2p(settings, db)
 ~~~~
 
 See our example jupyter notebook [here](https://github.com/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2023.ipynb).
@@ -171,7 +171,7 @@ F.npy: array of fluorescence traces (ROIs by timepoints)
 Fneu.npy: array of neuropil fluorescence traces (ROIs by timepoints)
 spks.npy: array of deconvolved traces (ROIs by timepoints)
 stat.npy: array of statistics computed for each cell (ROIs by 1)
-ops.npy: options and intermediate outputs
+settings.npy: options and intermediate outputs
 iscell.npy: specifies whether an ROI is a cell, first column is 0/1, and second column is probability that the ROI is a cell based on the default classifier
 ~~~~
 

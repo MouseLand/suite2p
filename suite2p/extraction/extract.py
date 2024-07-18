@@ -9,8 +9,13 @@ import numpy as np
 import torch
 from scipy import stats
 
+import logging 
+logger = logging.getLogger(__name__)
+
+
 from .masks import create_masks
-from .. import default_ops
+from .. import default_settings
+from ..logger import TqdmToLogger
 
 def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500, 
                     device = torch.device("cuda")):
@@ -32,7 +37,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
             Size [ROIs x time].
         Fneu : float, 2D array
             Size [ROIs x time].
-        ops : dictionary
+        settings : dictionary
     """
     n_frames, Ly, Lx = f_in.shape
     t0 = time.time()
@@ -63,8 +68,9 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
     batch_size = int(batch_size)
 
     n_batches = int(np.ceil(n_frames / batch_size))
-    print(f"Extracting fluorescence from {n_frames} frames in {n_batches} batches")
-    for n in trange(n_batches, mininterval=10):
+    logger.info(f"Extracting fluorescence from {n_frames} frames in {n_batches} batches")
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+    for n in trange(n_batches, mininterval=10, file=tqdm_out):
         tstart, tend = n * batch_size, min((n+1) * batch_size, n_frames)
         data = torch.from_numpy(f_in[tstart : tend]).to(device)
         data = data.reshape(-1, Ly*Lx).float()
@@ -78,7 +84,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
     return F, Fneu
 
 def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None,
-                       neuropil_masks=None, ops=default_ops()["extraction"],
+                       neuropil_masks=None, settings=default_settings()["extraction"],
                         device = torch.device("cuda")):
     """
     Main fluorescence extraction function.
@@ -96,33 +102,33 @@ def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None,
         F_neu_chan2: neuropil of anatomical channel
     """
     n_frames, Ly, Lx = f_reg.shape
-    batch_size = ops["batch_size"]
+    batch_size = settings["batch_size"]
     if cell_masks is None:
         t10 = time.time()
         cell_masks, neuropil_masks0 = create_masks(stat, Ly, Lx, 
-                                                   lam_percentile=ops["lam_percentile"], 
-                                                allow_overlap=ops["allow_overlap"], 
-                                                neuropil_extract=ops["neuropil_extract"], 
-                                                inner_neuropil_radius=ops["inner_neuropil_radius"],
-                                                min_neuropil_pixels=ops["min_neuropil_pixels"], 
-                                                circular_neuropil=ops["circular_neuropil"])
+                                                   lam_percentile=settings["lam_percentile"], 
+                                                allow_overlap=settings["allow_overlap"], 
+                                                neuropil_extract=settings["neuropil_extract"], 
+                                                inner_neuropil_radius=settings["inner_neuropil_radius"],
+                                                min_neuropil_pixels=settings["min_neuropil_pixels"], 
+                                                circular_neuropil=settings["circular_neuropil"])
         if neuropil_masks is None:
             neuropil_masks = neuropil_masks0
-        print("Masks created, %0.2f sec." % (time.time() - t10))
+        logger.info("Masks created, %0.2f sec." % (time.time() - t10))
 
     t0 = time.time()
     ncells = len(cell_masks)
-    print("functional channel:")
+    logger.info("functional channel:")
     F, Fneu = extract_traces(f_reg, cell_masks, neuropil_masks, 
                              batch_size=batch_size, device=device)
     if f_reg_chan2 is not None:
-        print("anatomical channel:")
+        logger.info("anatomical channel:")
         F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, cell_masks, neuropil_masks,
                                              batch_size=batch_size, device=device)
     else:
-        F_chan2, Fneu_chan2 = [], []
+        F_chan2, Fneu_chan2 = None, None
 
-    print("Extracted fluorescence from %d ROIs in %d frames, %0.2f sec." %
+    logger.info("Extracted fluorescence from %d ROIs in %d frames, %0.2f sec." %
           (ncells, n_frames, time.time() - t0))
 
     

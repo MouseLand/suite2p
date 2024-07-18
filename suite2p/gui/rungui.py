@@ -8,13 +8,17 @@ import numpy as np
 
 from qtpy import QtGui, QtCore 
 from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget, 
-                            QGridLayout, QMainWindow, QComboBox, QTextEdit, 
+                            QGridLayout, QMainWindow, QComboBox, QPlainTextEdit, 
                             QFileDialog, QAction, QToolButton, QStyle,
                             QListWidget, QCheckBox, QScrollArea, QAbstractItemView)
 from superqt import QCollapsible 
 
 from . import io, utils
-from .. import default_ops, user_ops, OPS_FOLDER, default_db, parameters
+from .rungui_utils import Suite2pWorker
+from .. import default_settings, user_settings, SETTINGS_FOLDER, default_db, parameters
+
+import logging 
+logger = logging.getLogger(__name__)
 
 ### ---- this file contains helper functions for GUI and the RUN window ---- ###
 
@@ -62,58 +66,58 @@ class BatchView(QDialog):
     def exit_list(self):
         self.accept()
         
-def create_input(key, OPS, ops_gui, width=160):
-    qlabel = QLabel(OPS[key]["gui_name"])
-    qlabel.setToolTip(OPS[key]["description"])
+def create_input(key, SETTINGS, settings_gui, width=160):
+    qlabel = QLabel(SETTINGS[key]["gui_name"])
+    qlabel.setToolTip(SETTINGS[key]["description"])
     qlabel.setFixedWidth(width)
     qlabel.setAlignment(QtCore.Qt.AlignRight)
-    if OPS[key]["type"] == bool:
-        ops_gui[key] = QCheckBox()
-        ops_gui[key].setChecked(OPS[key]["default"])
+    if SETTINGS[key]["type"] == bool:
+        settings_gui[key] = QCheckBox()
+        settings_gui[key].setChecked(SETTINGS[key]["default"])
     else:
-        ops_gui[key] = QLineEdit()
-        ops_gui[key].setFixedWidth(100)
-        if OPS[key]["default"] is not None:
+        settings_gui[key] = QLineEdit()
+        settings_gui[key].setFixedWidth(100)
+        if SETTINGS[key]["default"] is not None:
             if key in COMBO_KEYS:
-                ops_gui[key] = QComboBox()
-                strs = OPS[key]["description"].split("[")[1].split("]")[0].split(", ")
+                settings_gui[key] = QComboBox()
+                strs = SETTINGS[key]["description"].split("[")[1].split("]")[0].split(", ")
                 strs = [s[1:-1] for s in strs]
-                ops_gui[key].addItems(strs)
-                ops_gui[key].setFixedWidth(100)
-            elif OPS[key]["type"] == list or OPS[key]["type"] == tuple:
-                ops_gui[key].setText(list_to_str(OPS[key]["default"]))
+                settings_gui[key].addItems(strs)
+                settings_gui[key].setFixedWidth(100)
+            elif SETTINGS[key]["type"] == list or SETTINGS[key]["type"] == tuple:
+                settings_gui[key].setText(list_to_str(SETTINGS[key]["default"]))
             else:
-                ops_gui[key].setText(str(OPS[key]["default"]))
-    ops_gui[key].setToolTip(OPS[key]["description"])
+                settings_gui[key].setText(str(SETTINGS[key]["default"]))
+    settings_gui[key].setToolTip(SETTINGS[key]["description"])
     return qlabel 
 
-def get_ops(OPS, ops_gui, ops=None):
-    if ops is None:
-        ops = user_ops()
-    for key in ops_gui.keys():
-        if "gui_name" not in OPS[key]:
-            ops[key] = {}
-            ops[key] = get_ops(OPS[key], ops_gui[key], ops=ops[key])
+def get_settings(SETTINGS, settings_gui, settings=None):
+    if settings is None:
+        settings = user_settings()
+    for key in settings_gui.keys():
+        if "gui_name" not in SETTINGS[key]:
+            settings[key] = {}
+            settings[key] = get_settings(SETTINGS[key], settings_gui[key], settings=settings[key])
         else:
-            if OPS[key]["type"] == bool:
-                ops[key] = ops_gui[key].isChecked()
+            if SETTINGS[key]["type"] == bool:
+                settings[key] = settings_gui[key].isChecked()
             else:
                 if key in COMBO_KEYS:
-                    ops[key] = ops_gui[key].currentText()
-                elif len(ops_gui[key].text()) > 0:
-                    if OPS[key]["type"] == list or OPS[key]["type"] == tuple:
-                        ops[key] = [float(x) for x in ops_gui[key].text().split(",")]
-                    elif OPS[key]["type"] == str:
-                        ops[key] = ops_gui[key].text()
-                    elif OPS[key]["type"] == dict:
+                    settings[key] = settings_gui[key].currentText()
+                elif len(settings_gui[key].text()) > 0:
+                    if SETTINGS[key]["type"] == list or SETTINGS[key]["type"] == tuple:
+                        settings[key] = [float(x) for x in settings_gui[key].text().split(",")]
+                    elif SETTINGS[key]["type"] == str:
+                        settings[key] = settings_gui[key].text()
+                    elif SETTINGS[key]["type"] == dict:
                         # todo : add dict parsing
                         pass
                     else:
                         # convert to int or float
-                        ops[key] = OPS[key]["type"](ops_gui[key].text())
+                        settings[key] = SETTINGS[key]["type"](settings_gui[key].text())
                 else:
-                    ops[key] = None
-    return ops
+                    settings[key] = None
+    return settings
 
 def get_db(DB, db_gui, extra_keys={}):
     db = default_db()
@@ -152,23 +156,23 @@ def get_db(DB, db_gui, extra_keys={}):
         db[key] = extra_keys[key]
     return db
 
-def set_ops(OPS, ops_gui):
-    for key in ops_gui.keys():
-        if "gui_name" not in OPS[key]:
-            set_ops(OPS[key], ops_gui[key])
-        elif OPS[key]["type"] == bool:
-            ops_gui[key].setChecked(OPS[key]["default"])
+def set_settings(SETTINGS, settings_gui):
+    for key in settings_gui.keys():
+        if "gui_name" not in SETTINGS[key]:
+            set_settings(SETTINGS[key], settings_gui[key])
+        elif SETTINGS[key]["type"] == bool:
+            settings_gui[key].setChecked(SETTINGS[key]["default"])
         else:
-            if OPS[key]["default"] is not None:
+            if SETTINGS[key]["default"] is not None:
                 if key in COMBO_KEYS:
-                    all_items = [ops_gui[key].itemText(i) for i in range(ops_gui[key].count())]
-                    ops_gui[key].setCurrentIndex(all_items.index(OPS[key]["default"]))
-                elif OPS[key]["type"] == list or OPS[key]["type"] == tuple:
-                    ops_gui[key].setText(list_to_str(OPS[key]["default"]))
+                    all_items = [settings_gui[key].itemText(i) for i in range(settings_gui[key].count())]
+                    settings_gui[key].setCurrentIndex(all_items.index(SETTINGS[key]["default"]))
+                elif SETTINGS[key]["type"] == list or SETTINGS[key]["type"] == tuple:
+                    settings_gui[key].setText(list_to_str(SETTINGS[key]["default"]))
                 else:
-                    ops_gui[key].setText(str(OPS[key]["default"]))
+                    settings_gui[key].setText(str(SETTINGS[key]["default"]))
             else:
-                ops_gui[key].setText("")
+                settings_gui[key].setText("")
 
 def set_db(DB, db_gui):
     for key in db_gui.keys():
@@ -189,7 +193,6 @@ def set_db(DB, db_gui):
                     all_items = [db_gui[key].itemText(i) for i in range(db_gui[key].count())]
                     db_gui[key].setCurrentIndex(all_items.index(DB[key]["default"]))
                 elif DB[key]["type"] == list or DB[key]["type"] == tuple:
-                    print(key, DB[key]["default"])
                     db_gui[key].setText(list_to_str(DB[key]["default"]))
                 else:
                     db_gui[key].setText(str(DB[key]["default"]))
@@ -201,18 +204,15 @@ def set_default_db(DB, db):
         DB[key]["default"] = db[key]
         del db[key]
 
-def set_default_ops(OPS, ops):
-    for key in OPS.keys():
-        print(key)
-        print(OPS[key])
-        print(ops[key])
-        if "gui_name" not in OPS[key]:
-            set_default_ops(OPS[key], ops[key])
+def set_default_settings(SETTINGS, settings):
+    for key in SETTINGS.keys():
+        if "gui_name" not in SETTINGS[key]:
+            set_default_settings(SETTINGS[key], settings[key])
         else:
-            OPS[key]["default"] = ops[key]   
-            del ops[key]
+            SETTINGS[key]["default"] = settings[key]   
+            del settings[key]
 
-### custom QMainWindow which allows user to fill in ops and run suite2p!
+### custom QMainWindow which allows user to fill in settings and run suite2p!
 class RunWindow(QMainWindow):
 
     def __init__(self, parent=None):
@@ -227,7 +227,7 @@ class RunWindow(QMainWindow):
         self.setCentralWidget(cwidget)
         self.layout.setVerticalSpacing(2)
         self.layout.setHorizontalSpacing(25)
-        # initial ops values
+        # initial settings values
         self.setStyleSheet(utils.stylesheet())
         self.setPalette(utils.DarkPalette())
         self.data_path = []
@@ -240,8 +240,8 @@ class RunWindow(QMainWindow):
         self.create_menu_bar()
 
         self.db = default_db()
-        self.OPS = parameters.OPS
-        parameters.add_descriptions(self.OPS)
+        self.SETTINGS = parameters.SETTINGS
+        parameters.add_descriptions(self.SETTINGS)
         self.DB = parameters.DB
         parameters.add_descriptions(self.DB, dstr="db")
         # remove keys not in GUI
@@ -249,46 +249,48 @@ class RunWindow(QMainWindow):
                            key not in DB_KEYS]
         for key in remove_keys:
             del self.DB[key]
-        set_default_ops(self.OPS, user_ops())
-        self.create_db_ops_inputs()
+        set_default_settings(self.SETTINGS, user_settings())
 
-        #self.load_ops(filename="/media/carsen/ssd2/suite2p_paper/2/ops.json")
+        self.create_db_settings_inputs()
+
+        self.get_folders("data_path", "C:/DATA/exs2p/")
+        #self.load_settings(filename="/media/carsen/ssd2/suite2p_paper/2/settings.json")
 
     def create_menu_bar(self):
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
-        self.loadOps = QAction("&Load ops file")
-        self.loadOps.triggered.connect(lambda: self.load_ops(filename=None))
+        self.loadOps = QAction("&Load settings file")
+        self.loadOps.triggered.connect(lambda: self.load_settings(filename=None))
         self.loadOps.setEnabled(True)
         file_menu.addAction(self.loadOps)
         
-        self.saveDef = QAction("&Save ops as user-default")
-        self.saveDef.triggered.connect(self.save_default_ops)
+        self.saveDef = QAction("&Save settings as user-default")
+        self.saveDef.triggered.connect(self.save_default_settings)
         self.saveDef.setEnabled(True)
         file_menu.addAction(self.saveDef)
         
-        self.revertDef = QAction("Revert default ops to built-in")
-        self.revertDef.triggered.connect(self.revert_default_ops)
+        self.revertDef = QAction("Revert default settings to built-in")
+        self.revertDef.triggered.connect(self.revert_default_settings)
         self.revertDef.setEnabled(True)
         file_menu.addAction(self.revertDef)
 
-        self.saveOps = QAction("Save current ops to file")
-        self.saveOps.triggered.connect(self.save_ops)
+        self.saveOps = QAction("Save current settings to file")
+        self.saveOps.triggered.connect(self.save_settings)
         self.saveOps.setEnabled(True)
         file_menu.addAction(self.saveOps)
 
-        file_submenu = file_menu.addMenu("Load example ops")
+        file_submenu = file_menu.addMenu("Load example settings")
         self.onePOps = QAction("1P imaging")
         self.onePOps.triggered.connect(lambda: 
-            self.load_ops(filename=OPS_FOLDER / "ops_1P.npy"))
+            self.load_settings(filename=SETTINGS_FOLDER / "settings_1P.npy"))
         file_submenu.addAction(self.onePOps)
         self.dendriteOps = QAction("dendrites / axons")
         self.dendriteOps.triggered.connect(lambda: 
-            self.load_ops(filename=OPS_FOLDER / "ops_dendrite.npy"))
+            self.load_settings(filename=SETTINGS_FOLDER / "settings_dendrite.npy"))
         file_submenu.addAction(self.dendriteOps)
 
         batch_menu = main_menu.addMenu("&Batch processing")
-        self.addToBatch = QAction("Save db+ops to batch list")
+        self.addToBatch = QAction("Save db+settings to batch list")
         self.addToBatch.triggered.connect(self.add_batch)
         self.addToBatch.setEnabled(False)
         batch_menu.addAction(self.addToBatch)
@@ -303,36 +305,36 @@ class RunWindow(QMainWindow):
         BV = BatchView(parent)
         result = BV.exec_()
 
-    def load_ops(self, filename=None):
+    def load_settings(self, filename=None):
         if filename is None:
-            name = QFileDialog.getOpenFileName(self, "Open ops file (npy or json)")
+            name = QFileDialog.getOpenFileName(self, "Open settings file (npy or json)")
             filename = name[0]
 
         if filename is None:
-            ops = user_ops() 
-            db, ops_in = None, None
+            settings = user_settings() 
+            db, settings_in = None, None
         else:
             if isinstance(filename, pathlib.Path):
                 filename = str(filename)
             ext = os.path.splitext(filename)[1]
             if ext == ".json":
                 with open(filename, "r") as f:
-                    ops_in = json.load(f)
+                    settings_in = json.load(f)
             else:
-                ops_in = np.load(filename, allow_pickle=True).item()
-            db, ops, ops_in = parameters.convert_ops_orig(ops_in, 
+                settings_in = np.load(filename, allow_pickle=True).item()
+            db, settings, settings_in = parameters.convert_settings_orig(settings_in, 
                                                           db=get_db(self.DB, self.db_gui, self.extra_keys), 
-                                                          ops=get_ops(self.OPS, self.ops_gui))
-        set_default_ops(self.OPS, ops)
-        set_ops(self.OPS, self.ops_gui)
+                                                          settings=get_settings(self.SETTINGS, self.settings_gui))
+        set_default_settings(self.SETTINGS, settings)
+        set_settings(self.SETTINGS, self.settings_gui)
         if db is not None:
-            set_default_db(self.DB, db) # check if any db keys are in ops
+            set_default_db(self.DB, db) # check if any db keys are in settings
             set_db(self.DB, self.db_gui)
 
-        if ops_in is not None:
-            for key in ops_in.keys():
+        if settings_in is not None:
+            for key in settings_in.keys():
                 print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
-                self.extra_keys[key] = ops_in[key]
+                self.extra_keys[key] = settings_in[key]
     
     def load_db(self, filename=None):
         if filename is None:
@@ -355,9 +357,9 @@ class RunWindow(QMainWindow):
             print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
             self.extra_keys[key] = db[key]
 
-    def create_db_ops_inputs(self):
+    def create_db_settings_inputs(self):
         self.db_gui = {}
-        self.ops_gui = {}
+        self.settings_gui = {}
 
         XLfont = "QLabel {font-size: 12pt; font: Arial; font-weight: bold;}"
         bigfont = "QLabel {font-size: 10pt; font: Arial; font-weight: bold;}"
@@ -402,14 +404,22 @@ class RunWindow(QMainWindow):
         self.layout.addWidget(self.stopButton, n0, 1, 1, 1)
         self.stopButton.clicked.connect(self.stop)
         
-        self.textEdit = QTextEdit()
+        self.textEdit = QPlainTextEdit(self)
         self.layout.addWidget(self.textEdit, n0 + 1, 0, 16, cw+2)
-        self.process = QtCore.QProcess(self)
-        self.process.readyReadStandardOutput.connect(self.stdout_write)
-        self.process.readyReadStandardError.connect(self.stderr_write)
+        #self.process = QtCore.QProcess(self)
+        #self.process.readyReadStandardOutput.connect(self.stdout_write)
+        #self.process.readyReadStandardError.connect(self.stderr_write)
         # disable the button when running the s2p process
-        self.process.started.connect(self.started)
-        self.process.finished.connect(self.finished)
+        #self.process.started.connect(self.started)
+        #self.process.finished.connect(self.finished)
+        
+        #self.textEdit = QTextEditLogger(self)
+        #self.textEdit.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        #logging.getLogger().addHandler(self.textEdit)
+        #logging.getLogger().setLevel(logging.DEBUG)
+        #self.verticalLayout_5.addWidget(logTextBox.widget)
+        #self.layout.addWidget(self.textEdit.widget, n0 + 1, 0, 16, cw+2)
+
 
 
         qlabel = QLabel("file settings")
@@ -424,7 +434,7 @@ class RunWindow(QMainWindow):
             b+=1
 
         self.genkeys = [
-            "torch_device", "tau", "fs", "diameter", "classifier_path", "use_builtin_classifier"
+            "torch_device", "tau", "fs", "diameter"
         ]
         qlabel = QLabel("general settings")
         qlabel.setAlignment(QtCore.Qt.AlignCenter)
@@ -432,9 +442,9 @@ class RunWindow(QMainWindow):
         self.layout.addWidget(qlabel, b+1, cw, 1, 2)
         b+=2
         for key in self.genkeys:
-            qlabel = create_input(key, self.OPS, self.ops_gui)
+            qlabel = create_input(key, self.SETTINGS, self.settings_gui)
             self.layout.addWidget(qlabel, b, cw, 1, 1)
-            self.layout.addWidget(self.ops_gui[key], b, cw+1, 1, 1)
+            self.layout.addWidget(self.settings_gui[key], b, cw+1, 1, 1)
             b+=1
 
         scrollArea = QScrollArea()
@@ -448,8 +458,8 @@ class RunWindow(QMainWindow):
         self.layout.addWidget(scrollArea, 0, cw+2, n0+17, 4)
 
 
-        labels = ["run", "io", "registration", "detection", "extraction", 
-                  "dcnv_preprocess"]
+        labels = ["run", "io", "registration", "detection", "classification", 
+                  "extraction", "dcnv_preprocess"]
         b = 0
         for label in labels:
             qbox = QCollapsible(f"{label} settings")
@@ -458,24 +468,24 @@ class RunWindow(QMainWindow):
             _content = QWidget()
             _content.setLayout(qboxG)
             bl = 0
-            self.ops_gui[label] = {}
-            for key in self.OPS[label].keys():
-                if "gui_name" in self.OPS[label][key]:
-                    qlabel = create_input(key, self.OPS[label], self.ops_gui[label])
+            self.settings_gui[label] = {}
+            for key in self.SETTINGS[label].keys():
+                if "gui_name" in self.SETTINGS[label][key]:
+                    qlabel = create_input(key, self.SETTINGS[label], self.settings_gui[label])
                     qboxG.addWidget(qlabel, bl, 0, 1, 1)
-                    qboxG.addWidget(self.ops_gui[label][key], bl, 1, 1, 1)
+                    qboxG.addWidget(self.settings_gui[label][key], bl, 1, 1, 1)
                     bl+=1
                 else:
-                    self.ops_gui[label][key] = {}
+                    self.settings_gui[label][key] = {}
                     qboxA = QCollapsible(key)
                     qboxAG = QGridLayout()
                     _contentA = QWidget()
                     _contentA.setLayout(qboxAG)
                     bl2 = 0
-                    for key2 in self.OPS[label][key].keys():
-                        qlabel = create_input(key2, self.OPS[label][key], self.ops_gui[label][key])
+                    for key2 in self.SETTINGS[label][key].keys():
+                        qlabel = create_input(key2, self.SETTINGS[label][key], self.settings_gui[label][key])
                         qboxAG.addWidget(qlabel, bl2, 0, 1, 1)
-                        qboxAG.addWidget(self.ops_gui[label][key][key2], bl2, 1, 1, 1)
+                        qboxAG.addWidget(self.settings_gui[label][key][key2], bl2, 1, 1, 1)
                         bl2 += 1
                     qboxA.setContent(_contentA)
                     qboxG.addWidget(qboxA, bl, 0, 1, 2)
@@ -488,22 +498,24 @@ class RunWindow(QMainWindow):
             layoutScroll.addWidget(qbox, b, 0, 1, 1)
             b+=1
         layoutScroll.addWidget(QLabel(""), b, 0, 1, 1)
-        layoutScroll.setColumnStretch(0, b)       
+        layoutScroll.setColumnStretch(0, b)      
         
-    def save_db_ops(self):
+         
+        
+    def save_db_settings(self):
         db = get_db(self.DB, self.db_gui, self.extra_keys)
-        ops = get_ops(self.OPS, self.ops_gui)
-        save_path0 = db["save_path0"]
+        settings = get_settings(self.SETTINGS, self.settings_gui)
+        save_path0 = db["save_path0"] if db["save_path0"] is not None else db["data_path"][0]
         self.save_path = os.path.join(save_path0, db["save_folder"])
-        ops_file = os.path.join(self.save_path, "ops.npy")
+        settings_file = os.path.join(self.save_path, "settings.npy")
         db_file = os.path.join(self.save_path, "db.npy")
         if not os.path.isdir(self.save_path):
             os.makedirs(self.save_path)
-        np.save(ops_file, ops)
+        np.save(settings_file, settings)
         np.save(db_file, db)
         
     def add_batch(self):
-        self.save_db_ops()
+        self.save_db_settings()
         self.batch_list.append(self.save_path)
         L = len(self.batch_list)
         
@@ -520,76 +532,91 @@ class RunWindow(QMainWindow):
         self.error = False
         
         if len(self.batch_list) == 0:
-            self.save_db_ops()            
+            self.save_db_settings()            
         else:
             self.save_path = self.batch_list[self.ibatch]
 
-        ops_file = os.path.join(self.save_path, "ops.npy")
+        settings_file = os.path.join(self.save_path, "settings.npy")
         db_file = os.path.join(self.save_path, "db.npy")
-        
 
         print("Running suite2p with command:")
-        cmd = f"-u -W ignore -m suite2p --ops {ops_file} --db {db_file}"
+        cmd = f"-u -W ignore -m suite2p --settings {settings_file} --db {db_file}"
         print("python " + cmd)
-        self.process.start(sys.executable, cmd.split(" "))
 
-        #self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"' %
-        #                   (ops_file, db_file))
+        self.worker = Suite2pWorker(self, db_file=db_file, settings_file=settings_file)
+        log_file = pathlib.Path(self.save_path) / "run.log"
+        try:
+            log_file.unlink()
+        except:
+            print("creating new log file {log_file}")
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
+            handlers=[logging.FileHandler(log_file),self.worker.logHandler])
+        self.worker.logHandler.log.signal.connect(self.write_log)
+        self.worker.finished.connect(self.finished)
+
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
+
+        self.worker.start()
+        #self.process.start(sys.executable, cmd.split(" "))
+
+        #self.process.start('python -u -W ignore -m suite2p --settings "%s" --db "%s"' %
+        #                   (settings_file, db_file))
+
+    # define a new Slot, that receives a string
+    @QtCore.Slot(str)
+    def write_log(self, log_text):
+        self.textEdit.appendPlainText(log_text)
+        self.textEdit.centerCursor()  # scroll to the bottom
 
     def stop(self):
         self.finish = False
-        self.logfile.close()
-        self.process.kill()
+        self.worker.quit()
+        self.worker.terminate()
+        self.finished(msg=None)
 
-    def started(self):
-        self.runButton.setEnabled(False)
-        self.stopButton.setEnabled(True)
-        self.logfile = open(os.path.join(self.save_path, "run.log"), "a")
-        dstring = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        self.logfile.write("\n >>>>> started run at %s" % dstring)
-
-    def finished(self):
-        self.logfile.close()
+    @QtCore.Slot(str)
+    def finished(self, msg=None):
         self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
-        cursor = self.textEdit.textCursor()
-        cursor.movePosition(cursor.End)
-        if self.finish:# and not self.error:
+        print(msg)
+        if msg is None:
+            self.textEdit.appendPlainText("Interrupted by user (not finished)\n")
+        elif msg == "finished":
             if len(self.batch_list) == 0:
                 self.parent.fname = os.path.join(self.save_path,
                                                  "plane0", "stat.npy")
                 if os.path.exists(self.parent.fname):
-                    cursor.insertText("Opening in GUI (can close this window)\n")
+                    self.textEdit.appendPlainText("Opening in GUI (can close this window)\n")
                     io.load_proc(self.parent)
                 else:
-                    cursor.insertText("not opening plane in GUI (no ROIs)\n")
+                    self.textEdit.appendPlainText("not opening plane in GUI (no ROIs)\n")
             else:
-                cursor.insertText("BATCH MODE: %d more recordings remaining \n" %
+                self.textEdit.appendPlainText("BATCH MODE: %d more recordings remaining \n" %
                                   (len(self.batch_list) - self.ibatch - 1))
                 self.ibatch += 1
                 if self.ibatch < len(self.batch_list):
                     self.run_S2P()
-        elif not self.error:
-            cursor.insertText("Interrupted by user (not finished)\n")
-        else:
-            cursor.insertText("Interrupted by error (not finished)\n")
+        elif msg=="error":
+            self.textEdit.appendPlainText("Interrupted by error (not finished)\n")
         
-    def save_ops(self):
+    def save_settings(self):
         name = QFileDialog.getSaveFileName(self, "Ops name (*.npy)")
-        ops = get_ops(self.OPS, self.ops_gui)
+        settings = get_settings(self.SETTINGS, self.settings_gui)
         if name:
-            np.save(name, ops)
+            np.save(name, settings)
             print("saved current settings to %s" % (name))
 
-    def save_default_ops(self):
-        name = OPS_FOLDER / "ops_user.npy"
-        ops = get_ops(self.OPS, self.ops_gui)
-        np.save(name, ops)
-        print("saved current settings in GUI as default user ops")
+    def save_default_settings(self):
+        name = SETTINGS_FOLDER / "settings_user.npy"
+        settings = get_settings(self.SETTINGS, self.settings_gui)
+        np.save(name, settings)
+        print("saved current settings in GUI as default user settings")
 
-    def revert_default_ops(self):
-        shutil.remove(OPS_FOLDER / "ops_user.npy")
-        print("removing default user ops, reverting to built-in")
+    def revert_default_settings(self):
+        shutil.remove(SETTINGS_FOLDER / "settings_user.npy")
+        print("removing default user settings, reverting to built-in")
 
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
@@ -613,8 +640,9 @@ class RunWindow(QMainWindow):
         self.logfile.write(">>>ERROR<<<\n")
         self.logfile.write(output)
 
-    def get_folders(self, ftype="data_path"):
-        name = QFileDialog.getExistingDirectory(self, "choose folder")
+    def get_folders(self, ftype="data_path", name=None):
+        if name is None:
+            name = QFileDialog.getExistingDirectory(self, "choose folder")
         if len(name) > 0:
             print(f"adding {name} to {ftype}")
             if ftype=="data_path":

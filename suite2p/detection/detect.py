@@ -73,7 +73,6 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5
           (mov.shape[0], mov.shape[1], mov.shape[2], time.time() - t0))
     return mov
 
-
 def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=None,
                       yrange=None, xrange=None, badframes=None, mov=None, 
                       preclassify=0., classifier_path=None, 
@@ -225,7 +224,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     else:
         redcell = None
 
-    new_settings["meanImg"] = meanImg
+    new_settings["meanImg_crop"] = meanImg
     new_settings["max_proj"] = max_proj
     new_settings["diameter"] = diameter
 

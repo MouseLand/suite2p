@@ -43,7 +43,7 @@ def main():
         run_s2p(db=db, settings=settings)
     else:
         from suite2p import gui
-        gui.run()
+        gui.run()#statfile="C:/DATA/exs2p/suite2p/plane0/stat.npy")
 
 
 if __name__ == "__main__":

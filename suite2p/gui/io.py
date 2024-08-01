@@ -262,17 +262,23 @@ def load_files(name):
                   "(spks.npy)")
             goodfolder = False
         try:
+            ops = np.load(os.path.join(basename, "ops.npy"), allow_pickle=True).item()
+        except:
+            noops = True
+        try:
             settings = np.load(basename + "/settings.npy", allow_pickle=True).item()
+            db = np.load(basename + "/db.npy", allow_pickle=True).item()
             try:
-                db = np.load(basename + "/db.npy", allow_pickle=True).item()
                 reg_outputs = np.load(basename + "/reg_outputs.npy", allow_pickle=True).item()
                 detect_outputs = np.load(basename + "/detect_outputs.npy", allow_pickle=True).item()
-                settings = {**db, **settings, **reg_outputs, **detect_outputs}
+                ops = {**db, **settings, **reg_outputs, **detect_outputs}
             except:
+                ops = {**db, **settings}
                 print("no reg_outputs.npy or detect_outputs.npy found")
         except (ValueError, OSError, RuntimeError, TypeError, NameError):
-            print("ERROR: there is no settings file in this folder (settings.npy)")
-            goodfolder = False
+            if noops:
+                print("ERROR: there is no settings or db file in this folder (settings.npy / db.npy)")
+                goodfolder = False
         try:
             iscell = np.load(basename + "/iscell.npy")
             probcell = iscell[:, 1]
@@ -300,7 +306,7 @@ def load_files(name):
         return None
 
     if goodfolder:
-        return stat, settings, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred
+        return stat, ops, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred
     else:
         print("stat.npy found, but other files not in folder")
         return None
@@ -320,10 +326,10 @@ def load_proc(parent):
 
 
 def load_to_GUI(parent, basename, procs):
-    stat, settings, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred = procs
+    stat, ops, Fcell, Fneu, Spks, iscell, probcell, redcell, probredcell, hasred = procs
     parent.basename = basename
     parent.stat = stat
-    parent.ops = settings
+    parent.ops = ops
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks

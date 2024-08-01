@@ -595,9 +595,9 @@ class MainWindow(QMainWindow):
                     if event.double():
                         zoom = True
                 if iplot == 1 or iplot == 2:
-                    if event.button() == 2:
+                    if event.button() == QtCore.Qt.RightButton:
                         flip = True
-                    elif event.button() == 1:
+                    elif event.button() == QtCore.Qt.LeftButton:
                         if event.double():
                             zoom = True
                         else:
@@ -642,7 +642,7 @@ class MainWindow(QMainWindow):
                             if btn.isChecked():
                                 btn.setStyleSheet(self.styleUnpressed)
                     self.update_plot()
-                elif event.button() == 2:
+                elif event.button() == QtCore.Qt.RightButton:
                     if iplot == 1:
                         event.acceptedItem = self.p1
                         self.p1.raiseContextMenu(event)

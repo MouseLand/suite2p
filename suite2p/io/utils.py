@@ -27,15 +27,14 @@ def list_files(froot, look_one_level_down, exts):
     """ get list of files with exts in folder froot + one level down maybe
     """
     fs = []
+    first_files = np.zeros(0, "bool")
     for e in exts:
         lpath = os.path.join(froot, e)
         fs.extend(glob.glob(lpath))
     fs = natsorted(set(fs))
     if len(fs) > 0:
-        first_files = np.zeros((len(fs),), "bool")
+        first_files = np.zeros(len(fs), "bool")
         first_files[0] = True
-    else:
-        first_files = np.zeros(0, "bool")
     lfs = len(fs)
     if look_one_level_down:
         fdir = natsorted(glob.glob(os.path.join(froot, "*/")))
@@ -65,8 +64,8 @@ def get_file_list(db):
         fsall = []
         for f in db["file_list"]:
             fsall.append(os.path.join(data_path[0], f))
-        db["first_files"] = np.zeros((len(fsall),), dtype="bool")
-        db["first_files"][0] = True
+        first_files = np.zeros(len(fsall), dtype="bool")
+        first_files[0] = True
         logger.info(f"** Found {len(fsall)} files - converting to binary **")
     else:
         if len(data_path) == 1 and db.get("subfolders", None) is not None:

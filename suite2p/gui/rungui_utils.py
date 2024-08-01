@@ -13,6 +13,9 @@ from qtpy import QtCore
 from suite2p import run_s2p
 
 class MyLog(QtCore.QObject):
+    """
+    solution from https://stackoverflow.com/questions/52479442/running-a-long-python-calculation-in-a-thread-with-logging-to-a-qt-window-cras
+    """
     # create a new Signal
     # - have to be a static element
     # - class  has to inherit from QObject to be able to emit signals
@@ -26,7 +29,6 @@ class MyLog(QtCore.QObject):
 # via signals/slots so they can be used to update the GUI in the main thread
 class ThreadLogger(logging.Handler):
     """
-    
     solution from https://stackoverflow.com/questions/52479442/running-a-long-python-calculation-in-a-thread-with-logging-to-a-qt-window-cras
     """
     def __init__(self):

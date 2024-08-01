@@ -11,30 +11,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def save_mat(settings, stat, F, Fneu, spks, iscell, redcell,
+def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
              F_chan2=None, Fneu_chan2=None):
-    settings_matlab = settings.copy()
-    if settings_matlab.get("date_proc"):
+    ops_matlab = ops.copy()
+    if ops_matlab.get("date_proc"):
         try:
-            settings_matlab["date_proc"] = str(
-                datetime.strftime(settings_matlab["date_proc"], "%Y-%m-%d %H:%M:%S.%f"))
+            ops_matlab["date_proc"] = str(
+                datetime.strftime(ops_matlab["date_proc"], "%Y-%m-%d %H:%M:%S.%f"))
         except:
             pass
-    for k in settings_matlab.keys():
-        if isinstance(settings_matlab[k], (pathlib.WindowsPath, pathlib.PosixPath)):
-            settings_matlab[k] = os.fspath(settings_matlab[k].absolute())
-        elif isinstance(settings_matlab[k], list) and len(settings_matlab[k]) > 0:
-            if isinstance(settings_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
-                settings_matlab[k] = [os.fspath(p.absolute()) for p in settings_matlab[k]]
-                logger.info(k, settings_matlab[k])
+    for k in ops_matlab.keys():
+        if isinstance(ops_matlab[k], (pathlib.WindowsPath, pathlib.PosixPath)):
+            ops_matlab[k] = os.fspath(ops_matlab[k].absolute())
+        elif isinstance(ops_matlab[k], list) and len(ops_matlab[k]) > 0:
+            if isinstance(ops_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
+                ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
+                logger.info(k, ops_matlab[k])
 
     stat = np.array(stat, dtype=object)
 
     if F_chan2 is None:
         scipy.io.savemat(
-            file_name=os.path.join(settings["save_path"], "Fall.mat"), mdict={
+            file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
                 "stat": stat,
-                "settings": settings_matlab,
+                "ops": ops_matlab,
                 "F": F,
                 "Fneu": Fneu,
                 "spks": spks,
@@ -43,9 +43,9 @@ def save_mat(settings, stat, F, Fneu, spks, iscell, redcell,
             })
     else:
         scipy.io.savemat(
-            file_name=os.path.join(settings["save_path"], "Fall.mat"), mdict={
+            file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
                 "stat": stat,
-                "settings": settings_matlab,
+                "ops": ops_matlab,
                 "F": F,
                 "Fneu": Fneu,
                 "spks": spks,
@@ -56,32 +56,32 @@ def save_mat(settings, stat, F, Fneu, spks, iscell, redcell,
             })
 
 
-def compute_dydx(settings1):
-    settings = settings1[0].copy()
-    dx = np.zeros(len(settings1), np.int64)
-    dy = np.zeros(len(settings1), np.int64)
-    if ("dx" not in settings) or ("dy" not in settings):
-        Lx = settings["Lx"]
-        Ly = settings["Ly"]
-        nX = np.ceil(np.sqrt(settings["Ly"] * settings["Lx"] * len(settings1)) / settings["Lx"])
+def compute_dydx(db1):
+    db = db1[0].copy()
+    dx = np.zeros(len(db1), np.int64)
+    dy = np.zeros(len(db1), np.int64)
+    if ("dx" not in db) or ("dy" not in db):
+        Lx = db["Lx"]
+        Ly = db["Ly"]
+        nX = np.ceil(np.sqrt(db["Ly"] * db["Lx"] * len(db1)) / db["Lx"])
         nX = int(nX)
-        for j in range(len(settings1)):
+        for j in range(len(db1)):
             dx[j] = (j % nX) * Lx
             dy[j] = int(j / nX) * Ly
     else:
-        dx = np.array([o["dx"] for o in settings1])
-        dy = np.array([o["dy"] for o in settings1])
+        dx = np.array([o["dx"] for o in db1])
+        dy = np.array([o["dy"] for o in db1])
         unq = np.unique(np.vstack((dy, dx)), axis=1)
         nrois = unq.shape[1]
-        if nrois < len(settings1):
-            nplanes = len(settings1) // nrois
-            Lx = np.array([o["Lx"] for o in settings1])
-            Ly = np.array([o["Ly"] for o in settings1])
+        if nrois < len(db1):
+            nplanes = len(db1) // nrois
+            Lx = np.array([o["Lx"] for o in db1])
+            Ly = np.array([o["Ly"] for o in db1])
             ymax = (dy + Ly).max()
             xmax = (dx + Lx).max()
             nX = np.ceil(np.sqrt(ymax * xmax * nplanes) / xmax)
             nX = int(nX)
-            nY = int(np.ceil(len(settings1) / nX))
+            nY = int(np.ceil(len(db1) / nX))
             for j in range(nplanes):
                 for k in range(nrois):
                     dx[j * nrois + k] += (j % nX) * xmax
@@ -101,49 +101,66 @@ def combined(save_folder, save=True):
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
-    settings1 = [
-        np.load(os.path.join(f, "settings.npy"), allow_pickle=True).item()
+    dbs = [
+        np.load(os.path.join(f, "db.npy"), allow_pickle=True).item()
         for f in plane_folders
     ]
-    dy, dx = compute_dydx(settings1)
-    Ly = np.array([settings["Ly"] for settings in settings1])
-    Lx = np.array([settings["Lx"] for settings in settings1])
+    settings = np.load(os.path.join(plane_folders[0], "settings.npy"), allow_pickle=True).item()
+    if os.path.exists(os.path.join(plane_folders[0], "reg_outputs.npy")):
+        dops =  [
+        np.load(os.path.join(f, "reg_outputs.npy"), allow_pickle=True).item()
+        for f in plane_folders
+        ]
+        dbs = [{**db, **dop} for db, dop in zip(dbs, dops)]
+    
+    if os.path.exists(os.path.join(plane_folders[0], "detect_outputs.npy")):
+        dops =  [
+        np.load(os.path.join(f, "detect_outputs.npy"), allow_pickle=True).item()
+        for f in plane_folders
+        ]
+        dbs = [{**db, **dop} for db, dop in zip(dbs, dops)]
+    
+
+    dy, dx = compute_dydx(dbs)
+    Ly = np.array([db["Ly"] for db in dbs])
+    Lx = np.array([db["Lx"] for db in dbs])
     LY = int(np.amax(dy + Ly))
     LX = int(np.amax(dx + Lx))
     meanImg = np.zeros((LY, LX))
     meanImgE = np.zeros((LY, LX))
-    logger.info(settings1[0]["nchannels"], plane_folders)
-    if settings1[0]["nchannels"] > 1:
+    logger.info(plane_folders)
+    if dbs[0]["nchannels"] > 1:
         meanImg_chan2 = np.zeros((LY, LX))
-    if any(["meanImg_chan2_corrected" in settings for settings in settings1]):
+    if any(["meanImg_chan2_corrected" in db for db in dbs]):
         meanImg_chan2_corrected = np.zeros((LY, LX))
-    if any(["max_proj" in settings for settings in settings1]):
+    if any(["max_proj" in db for db in dbs]):
         max_proj = np.zeros((LY, LX))
 
     Vcorr = np.zeros((LY, LX))
-    Nfr = np.amax(np.array([settings["nframes"] for settings in settings1]))
+    Nfr = np.amax(np.array([db["nframes"] for db in dbs]))
     ii = 0
-    for k, settings in enumerate(settings1):
+    for k, db in enumerate(dbs):
         fpath = plane_folders[k]
         if not os.path.exists(os.path.join(fpath, "stat.npy")):
             continue
         stat0 = np.load(os.path.join(fpath, "stat.npy"), allow_pickle=True)
         xrange = np.arange(dx[k], dx[k] + Lx[k])
         yrange = np.arange(dy[k], dy[k] + Ly[k])
-        meanImg[np.ix_(yrange, xrange)] = settings["meanImg"]
-        meanImgE[np.ix_(yrange, xrange)] = settings["meanImgE"]
-        if settings["nchannels"] > 1:
-            if "meanImg_chan2" in settings:
-                meanImg_chan2[np.ix_(yrange, xrange)] = settings["meanImg_chan2"]
-        if "meanImg_chan2_corrected" in settings:
+        meanImg[np.ix_(yrange, xrange)] = db["meanImg"]
+        if "meanImgE" in db:
+            meanImgE[np.ix_(yrange, xrange)] = db["meanImgE"]
+        if db["nchannels"] > 1:
+            if "meanImg_chan2" in db:
+                meanImg_chan2[np.ix_(yrange, xrange)] = db["meanImg_chan2"]
+        if "meanImg_chan2_corrected" in db:
             meanImg_chan2_corrected[np.ix_(yrange,
-                                           xrange)] = settings["meanImg_chan2_corrected"]
+                                           xrange)] = db["meanImg_chan2_corrected"]
 
-        xrange = np.arange(dx[k] + settings["xrange"][0], dx[k] + settings["xrange"][-1])
-        yrange = np.arange(dy[k] + settings["yrange"][0], dy[k] + settings["yrange"][-1])
-        Vcorr[np.ix_(yrange, xrange)] = settings["Vcorr"]
-        if "max_proj" in settings:
-            max_proj[np.ix_(yrange, xrange)] = settings["max_proj"]
+        xrange = np.arange(dx[k] + db["xrange"][0], dx[k] + db["xrange"][-1])
+        yrange = np.arange(dy[k] + db["yrange"][0], dy[k] + db["yrange"][-1])
+        Vcorr[np.ix_(yrange, xrange)] = db["Vcorr"]
+        if "max_proj" in db:
+            max_proj[np.ix_(yrange, xrange)] = db["max_proj"]
         for j in range(len(stat0)):
             stat0[j]["xpix"] += dx[k]
             stat0[j]["ypix"] += dy[k]
@@ -180,27 +197,27 @@ def combined(save_folder, save=True):
                 redcell = np.concatenate((redcell, redcell0))
         ii += 1
         logger.info("appended plane %d to combined view" % k)
-    logger.info(meanImg_chan2.shape)
-    settings["meanImg"] = meanImg
-    settings["meanImgE"] = meanImgE
-    if settings["nchannels"] > 1:
-        settings["meanImg_chan2"] = meanImg_chan2
-    if "meanImg_chan2_corrected" in settings:
-        settings["meanImg_chan2_corrected"] = meanImg_chan2_corrected
-    if "max_proj" in settings:
-        settings["max_proj"] = max_proj
-    settings["Vcorr"] = Vcorr
-    settings["Ly"] = LY
-    settings["Lx"] = LX
-    settings["xrange"] = [0, settings["Lx"]]
-    settings["yrange"] = [0, settings["Ly"]]
+    
+    db["meanImg"] = meanImg
+    db["meanImgE"] = meanImgE
+    if db["nchannels"] > 1:
+        db["meanImg_chan2"] = meanImg_chan2
+    if "meanImg_chan2_corrected" in db:
+        db["meanImg_chan2_corrected"] = meanImg_chan2_corrected
+    if "max_proj" in db:
+        db["max_proj"] = max_proj
+    db["Vcorr"] = Vcorr
+    db["Ly"] = LY
+    db["Lx"] = LX
+    db["xrange"] = [0, db["Lx"]]
+    db["yrange"] = [0, db["Ly"]]
 
     fpath = os.path.join(save_folder, "combined")
 
     if not os.path.isdir(fpath):
         os.makedirs(fpath)
 
-    settings["save_path"] = fpath
+    db["save_path"] = fpath
 
     # need to save iscell regardless (required for GUI function)
     np.save(os.path.join(fpath, "iscell.npy"), iscell)
@@ -213,14 +230,15 @@ def combined(save_folder, save=True):
         np.save(os.path.join(fpath, "F.npy"), F)
         np.save(os.path.join(fpath, "Fneu.npy"), Fneu)
         np.save(os.path.join(fpath, "spks.npy"), spks)
-        np.save(os.path.join(fpath, "settings.npy"), settings)
+        np.save(os.path.join(fpath, "db.npy"), db)
         np.save(os.path.join(fpath, "stat.npy"), stat)
+        np.save(os.path.join(fpath, "settings.npy"), settings)
 
         # save as matlab file
-        if settings.get("save_mat"):
-            matpath = os.path.join(settings["save_path"], "Fall.mat")
-            save_mat(settings, stat, F, Fneu, spks, iscell, redcell)
+        if settings["io"]["save_mat"]:
+            matpath = os.path.join(db["save_path"], "Fall.mat")
+            save_mat(db, stat, F, Fneu, spks, iscell, redcell)
 
-    return (stat, settings, F, Fneu, spks, 
+    return (stat, db, F, Fneu, spks, 
             iscell[:,0], iscell[:,1], 
             redcell[:,0], redcell[:,1], hasred)

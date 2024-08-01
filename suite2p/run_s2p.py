@@ -201,7 +201,8 @@ def run_plane(db, settings, db_path=None, stat=None):
 
     # save as matlab file
     if settings["io"]["save_mat"]:
-        io.save_mat(db["save_path"], *outputs)
+        ops = {**db, **settings, **reg_outputs, **detect_outputs, **plane_times}
+        io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell, F_chan2, Fneu_chan2)
 
     # save ops orig
     if settings["io"]["save_ops_orig"]:

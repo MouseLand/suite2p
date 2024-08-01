@@ -253,7 +253,6 @@ class RunWindow(QMainWindow):
 
         self.create_db_settings_inputs()
 
-        self.get_folders("data_path", "C:/DATA/exs2p/")
         #self.load_settings(filename="/media/carsen/ssd2/suite2p_paper/2/settings.json")
 
     def create_menu_bar(self):

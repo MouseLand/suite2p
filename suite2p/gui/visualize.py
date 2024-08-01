@@ -441,7 +441,7 @@ class VisWindow(QMainWindow):
         items = self.win.scene().items(event.scenePos())
         for x in items:
             if x == self.p1:
-                if event.button() == 1:
+                if event.button() == QtCore.Qt.LeftButton:
                     if event.double():
                         self.ROI.setPos([-1, -1])
                         self.ROI.setSize([self.sp.shape[1] + 1, self.sp.shape[0] + 1])

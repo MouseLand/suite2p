@@ -47,7 +47,7 @@ def logger_setup(save_path):
     try:
         log_file.unlink()
     except:
-        print("creating new log file {log_file}")
+        print(f"creating new log file {log_file}")
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[logging.FileHandler(log_file),
@@ -155,6 +155,8 @@ def run_plane(db, settings, db_path=None, stat=None):
         # re-save db and settings in new path
         np.save(db["db_path"], db)
         np.save(db["settings_path"], settings)
+
+    logger_setup(db["save_path"])
 
     # check that there are sufficient numbers of frames
     if db["nframes"] < 10: raise ValueError("number of frames should be at least 50")

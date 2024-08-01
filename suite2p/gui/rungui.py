@@ -28,6 +28,7 @@ def list_to_str(l):
 DB_KEYS = [  "input_format", "look_one_level_down",
              "keep_movie_raw", "nplanes", "nchannels",
              "functional_chan", "ignore_flyback", "save_folder",
+             "batch_size",
              "h5py_key", "nwb_series", "force_sktiff"
         ]
 FILE_KEYS = ["data_path", "save_path0", "fast_disk"]
@@ -329,6 +330,9 @@ class RunWindow(QMainWindow):
         if db is not None:
             set_default_db(self.DB, db) # check if any db keys are in settings
             set_db(self.DB, self.db_gui)
+            if len(self.DB["data_path"]) > 0:
+                self.runButton.setEnabled(True)
+                self.addToBatch.setEnabled(True)
 
         if settings_in is not None:
             for key in settings_in.keys():

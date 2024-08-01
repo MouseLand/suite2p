@@ -5,6 +5,7 @@ import numpy as np
 from qtpy import QtCore, QtGui, QtWidgets
 import sys, os
 import logging
+import traceback
 
 import numpy as np
 import torch
@@ -59,4 +60,5 @@ class Suite2pWorker(QtCore.QThread):
             self.finished.emit("finished")
         except Exception as e:
             print("ERROR:", e)
+            traceback.print_exc()
             self.finished.emit("error")

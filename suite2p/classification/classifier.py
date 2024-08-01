@@ -5,6 +5,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import LogisticRegression
 import logging
+logger = logging.getLogger(__name__)
 
 class Classifier:
     """ ROI classifier model that uses logistic regression
@@ -24,7 +25,7 @@ class Classifier:
         # stat are cell stats from currently loaded recording
         # classfile is a previously saved classifier file
         if classfile is not None:
-            logging.info("classifier file: ", classfile)
+            logger.info(f"classifier file: {classfile}")
             self.load(classfile, keys=keys)
         else:
             self.loaded = False

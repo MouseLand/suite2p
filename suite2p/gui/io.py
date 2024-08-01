@@ -261,24 +261,27 @@ def load_files(name):
             print("there are no spike deconvolved traces in this folder "
                   "(spks.npy)")
             goodfolder = False
+        noops = True
         try:
             ops = np.load(os.path.join(basename, "ops.npy"), allow_pickle=True).item()
+            noops = False
         except:
             noops = True
-        try:
-            settings = np.load(basename + "/settings.npy", allow_pickle=True).item()
-            db = np.load(basename + "/db.npy", allow_pickle=True).item()
+        if noops:
             try:
-                reg_outputs = np.load(basename + "/reg_outputs.npy", allow_pickle=True).item()
-                detect_outputs = np.load(basename + "/detect_outputs.npy", allow_pickle=True).item()
-                ops = {**db, **settings, **reg_outputs, **detect_outputs}
-            except:
-                ops = {**db, **settings}
-                print("no reg_outputs.npy or detect_outputs.npy found")
-        except (ValueError, OSError, RuntimeError, TypeError, NameError):
-            if noops:
-                print("ERROR: there is no settings or db file in this folder (settings.npy / db.npy)")
-                goodfolder = False
+                settings = np.load(basename + "/settings.npy", allow_pickle=True).item()
+                db = np.load(basename + "/db.npy", allow_pickle=True).item()
+                try:
+                    reg_outputs = np.load(basename + "/reg_outputs.npy", allow_pickle=True).item()
+                    detect_outputs = np.load(basename + "/detect_outputs.npy", allow_pickle=True).item()
+                    ops = {**db, **settings, **reg_outputs, **detect_outputs}
+                except:
+                    ops = {**db, **settings}
+                    print("no reg_outputs.npy or detect_outputs.npy found")
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                if noops:
+                    print("ERROR: there is no settings or db file in this folder (settings.npy / db.npy)")
+                    goodfolder = False
         try:
             iscell = np.load(basename + "/iscell.npy")
             probcell = iscell[:, 1]

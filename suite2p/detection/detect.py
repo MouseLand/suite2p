@@ -198,7 +198,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
                         npix_norm_max=settings.get("npix_norm_max", 100.),
                         median=settings["algorithm"]=="cellpose")
         iscell = classify(stat=stat, classfile=classifier_path)
-        ic = (iscell[:, 0] > preclassify).flatten().astype("bool")
+        ic = (iscell[:, 1] > preclassify).flatten().astype("bool")
         stat = stat[ic]
         
         if len(stat) == 0:

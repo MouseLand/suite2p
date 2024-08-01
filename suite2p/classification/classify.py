@@ -17,7 +17,7 @@ user_classfile = Path.home().joinpath(".suite2p/classifiers/classifier_user.npy"
 def classify(
         stat: np.ndarray,
         classfile: Union[str, Path],
-        keys: Sequence[str] = ("snr", "npix_norm", "compact"),
+        keys: Sequence[str] = ("skew", "npix_norm", "compact"),
 ):
     """ 
     Main classification function 

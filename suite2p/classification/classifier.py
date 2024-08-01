@@ -4,7 +4,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import LogisticRegression
-
+import logging
 
 class Classifier:
     """ ROI classifier model that uses logistic regression
@@ -24,6 +24,7 @@ class Classifier:
         # stat are cell stats from currently loaded recording
         # classfile is a previously saved classifier file
         if classfile is not None:
+            logging.info("classifier file: ", classfile)
             self.load(classfile, keys=keys)
         else:
             self.loaded = False

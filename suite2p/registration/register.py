@@ -643,6 +643,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                                                     refImg=refImg, ops=ops)
     refImg, rmin, rmax, mean_img, rigid_offsets, nonrigid_offsets, zest = outputs
     yoff, xoff, corrXY = rigid_offsets
+    n_frames = len(yoff)
 
     if ops["nonrigid"]:
         yoff1, xoff1, corrXY1 = nonrigid_offsets

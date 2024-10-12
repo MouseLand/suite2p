@@ -448,12 +448,9 @@ class RunWindow(QDialog):
         self.db = np.load(db_file, allow_pickle=True).item()
         print(self.db)
         print("Running suite2p with command:")
-        cmd = f"-u -W ignore -m suite2p --ops {ops_file} --db {db_file}"
-        print("python " + cmd)
-        self.process.start(sys.executable, cmd.split(" "))
-
-        #self.process.start('python -u -W ignore -m suite2p --ops "%s" --db "%s"' %
-        #                   (ops_file, db_file))
+        cmd = ['-u', '-W', 'ignore', '-m', 'suite2p', '--ops', ops_file, '--db', db_file]
+        print("python " + " ".join(f'"{arg}"' if ' ' in arg else arg for arg in cmd))
+        self.process.start(sys.executable, cmd)
 
     def stop(self):
         self.finish = False

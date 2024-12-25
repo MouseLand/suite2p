@@ -665,18 +665,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         meanImg_chan2 = mean_img
         meanImg = mean_img_alt
 
-    # compute valid region
-    badframes = np.zeros(n_frames, "bool")
-    if "data_path" in ops and len(ops["data_path"]) > 0:
-        badfrfile = path.abspath(path.join(ops["data_path"][0], "bad_frames.npy"))
-        # Check if badframes file exists
-        if path.isfile(badfrfile):
-            print("bad frames file path: %s" % badfrfile)
-            bf_indices = np.load(badfrfile)
-            bf_indices = bf_indices.flatten().astype(int)
-            # Set indices of badframes to true
-            badframes[bf_indices] = True
-            print("number of badframes: %d" % badframes.sum())
+    badframes = load_badframes(n_frames, ops)
 
     # return frames which fall outside range
     badframes, yrange, xrange = compute_crop(
@@ -691,6 +680,22 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     )
 
     return refImg, rmin, rmax, meanImg, rigid_offsets, nonrigid_offsets, zest, meanImg_chan2, badframes, yrange, xrange
+
+def load_badframes(n_frames, ops):
+    # compute valid region
+    badframes = np.zeros(n_frames, "bool")
+    if "data_path" in ops and len(ops["data_path"]) > 0:
+        badfrfile = path.abspath(path.join(ops["data_path"][0], "bad_frames.npy"))
+        # Check if badframes file exists
+        if path.isfile(badfrfile):
+            print("User-specified bad frames file path: %s" % badfrfile)
+            bf_indices = np.load(badfrfile)
+            bf_indices = bf_indices.flatten().astype(int)
+            # Set indices of badframes to true
+            badframes[bf_indices] = True
+            print("number of badframes: %d" % badframes.sum())
+
+    return badframes
 
 
 def save_registration_outputs_to_ops(registration_outputs, ops):

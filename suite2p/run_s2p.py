@@ -152,6 +152,9 @@ def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             nsamp = min(2000 if n_frames < 5000 or Ly > 700 or Lx > 700 else 5000,
                         n_frames)
             inds = np.linspace(0, n_frames - 1, nsamp).astype("int")
+            print("Taking into account user-specified bad frames for registration metrics...")
+            user_bad_frames = registration.load_badframes(n_frames, ops)
+            inds = np.setdiff1d(inds,np.where(user_bad_frames)[0])
             mov = f_reg[inds]
             mov = mov[:, ops["yrange"][0]:ops["yrange"][-1],
                       ops["xrange"][0]:ops["xrange"][-1]]

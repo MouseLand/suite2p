@@ -321,6 +321,8 @@ def find_files_open_binaries(ops1, ish5=False):
         for ops in ops1:
             ops["first_tiffs"] = ops2["first_tiffs"]
             ops["frames_per_folder"] = np.zeros((ops2["first_tiffs"].sum(),), np.int32)
+    # Go through each element of fs and unnest if it is a list
+    fs = [item for sublist in fs for item in (sublist if isinstance(sublist, list) else [sublist])]
     for ops in ops1:
         ops["filelist"] = fs
     return ops1, fs, reg_file, reg_file_chan2

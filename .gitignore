@@ -35,6 +35,10 @@ suite2p/ops/ops_user.npy
 .buildinfo
 doctrees/
 
+# Docs files after make sphinxbuild has been called
+docs/docs
+docs/api
+
 # =========================
 # Operating System Files
 # =========================
@@ -67,4 +71,5 @@ Temporary Items
 .apdisk
 
 # data
-data/test_data
+data
+scripts/test_data

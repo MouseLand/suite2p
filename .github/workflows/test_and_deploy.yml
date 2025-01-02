@@ -66,21 +66,21 @@ jobs:
       # ONLY UNCOMMENT SECTION BELOW FOR DEBUGGING PURPOSES: allows one to ssh into host machine. 
       # Follow instructions in  https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account 
       # to add your ssh keys.
-      - name: Job failed. Activating debugging mode via up-term.
-        if: ${{ failure() }}
-        # As of Dec. 2024, The following action does NOT work for MACOS (https://github.com/lhotari/action-upterm/issues/24)
-        # uses: lhotari/action-upterm@v1
-        # with:
-        #   ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-        #    limit-access-to-actor: true
-        #   ## limits ssh access and adds the ssh public keys of the listed GitHub users
-        #    limit-access-to-users: chriski777 #, carsen-stringera
+      # - name: Job failed. Activating debugging mode via up-term.
+      #   if: ${{ failure() }}
+      #   # As of Dec. 2024, The following action does NOT work for MACOS (https://github.com/lhotari/action-upterm/issues/24)
+      #   # uses: lhotari/action-upterm@v1
+      #   # with:
+      #   #   ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #   #    limit-access-to-actor: true
+      #   #   ## limits ssh access and adds the ssh public keys of the listed GitHub users
+      #   #    limit-access-to-users: chriski777 #, carsen-stringera
         
-        # As of Dec. 2024, use the following for debugging the GitHub Action runners for MacOS
-        uses: owenthereal/action-upterm@v1
-        with:
-           limit-access-to-actor: true
-           limit-access-to-users: chriski777   
+      #   # As of Dec. 2024, use the following for debugging the GitHub Action runners for MacOS
+      #   uses: owenthereal/action-upterm@v1
+      #   with:
+      #      limit-access-to-actor: true
+      #      limit-access-to-users: chriski777   
            
       - name: Coverage
         # Only run coverage once

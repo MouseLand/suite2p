@@ -30,6 +30,16 @@ body:
     render: python
   validations:
     required: true
+
+- type: textarea
+  attributes:
+    label: "Example input dataset used to reproduce the issue:"
+    description: >
+      Please provide a link to a minimal example dataset that can be 
+      used to reproduce the bug. For developers to quickly fix your issue, it's important 
+      that they can reproduce your problem locally.
+    placeholder: |
+      << Dropbox/Google Drive, etc., some link to the dataset >>
   
 - type: textarea
   attributes:

@@ -226,6 +226,7 @@ def get_nd2_list(ops):
         print("** Found %d nd2 files - converting to binary **" % (len(fsall)))
     return fsall, ops
 
+
 def get_dcimg_list(ops):
     """ make list of dcimg files to process
         if ops["look_one_level_down"], then all dcimg"s in all folders + one level down
@@ -246,6 +247,29 @@ def get_dcimg_list(ops):
         ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
         print("** Found %d dcimg files - converting to binary **" % (len(fsall)))
     return fsall, ops
+
+
+def get_isxd_list(ops):
+    """ make list of isxd files to process
+    if ops["look_one_level_down"], then all isxd"s in all folders + one level down
+    """
+    froot = ops["data_path"]
+    fold_list = ops["data_path"]
+    fsall = []
+    nfs = 0
+    first_tiffs = []
+    for k, fld in enumerate(fold_list):
+        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.isxd"])
+        fsall.extend(fs)
+        first_tiffs.extend(list(ftiffs))
+    if len(fs) == 0:
+        print("Could not find any isxd files")
+        raise Exception("no isxds")
+    else:
+        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
+        print("** Found %d isxd files - converting to binary **" % (len(fsall)))
+    return fsall, ops
+
 
 def find_files_open_binaries(ops1, ish5=False):
     """  finds tiffs or h5 files and opens binaries for writing
@@ -295,7 +319,7 @@ def find_files_open_binaries(ops1, ish5=False):
             # find h5"s
             else:
                 raise Exception("No h5 files found")
-        
+
     elif input_format == "sbx":
         # find sbx
         fs, ops2 = get_sbx_list(ops1[0])
@@ -314,6 +338,10 @@ def find_files_open_binaries(ops1, ish5=False):
         # find dcimgs
         fs, ops2 = get_dcimg_list(ops1[0])
         print("DCAM image files:")
+        print("\n".join(fs))
+    elif input_format == "isxd":
+        fs, ops2 = get_isxd_list(ops1[0])
+        print("Inscopix files:")
         print("\n".join(fs))
     else:
         # find tiffs

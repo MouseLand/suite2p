@@ -349,6 +349,8 @@ def save_nwb(save_folder):
         )
         # link to external data
         external_data = ops["filelist"] if "filelist" in ops else [""]
+        if ops["filelist"] != [""] and ".ome.tif" in ops["filelist"][0]:
+            external_data = [ops["filelist"][0]]
         image_series = TwoPhotonSeries(
             name="TwoPhotonSeries",
             dimension=[ops["Ly"], ops["Lx"]],

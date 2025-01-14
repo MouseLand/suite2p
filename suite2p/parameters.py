@@ -316,7 +316,7 @@ SETTINGS = {
             "type": int,
             "min": 0,
             "max": np.inf,
-            "default": 300,
+            "default": 400,
             "description": "Number of subsampled frames for finding reference image - choose more if reference image is poor.",
         },
         "maxregshift": {

@@ -72,7 +72,7 @@ def soma_crop(ypix, xpix, lam, med):
     return crop
     
 def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
-              do_soma_crop=True, npix_norm_min=0.5, npix_norm_max=2.0,
+              do_soma_crop=True, npix_norm_min=-1, npix_norm_max=np.inf,
               median=False):
     """
     Computes statistics of cells found using sourcery.
@@ -97,9 +97,11 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
    
     # approx size of masks for ROI aspect ratio estimation
     dy, dx = diameter[0], diameter[1]
-    d0 = np.array([int(dy), int(dx)])
-
-    rs, dy, dx = circleMask(d0)
+    d0 = np.array([float(dy), float(dx)])
+    
+    dy, dx = np.meshgrid(np.arange(-d0[0]*3, d0[0]*3 + 1) / d0[0], 
+                         np.arange(-d0[1]*3, d0[1]*3 + 1) / d0[1], indexing="ij")
+    rs = (dy**2 + dx**2)**0.5
     dists_disk = np.sort(rs.flatten())
 
     for k, stat in enumerate(stats):
@@ -112,15 +114,15 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
             crop = soma_crop(ypix, xpix, lam, med)
             stat["soma_crop"] = crop
             ypix, xpix, lam = ypix[crop], xpix[crop], lam[crop]
-            med = median_pix(ypix, xpix)
         else:
             stat["soma_crop"] = np.ones(ypix.size, "bool")
         stat["med_soma"], stat["npix_soma"] = med, stat["soma_crop"].sum()  
         
         # compute compactness of ROI
+        med = np.median(ypix), np.median(xpix)
         dists = (((ypix - med[0]) / d0[0])**2 + ((xpix - med[1]) / d0[1])**2)**0.5
         stat["mrs"], stat["mrs0"] = dists.mean(), dists_disk[:ypix.size].mean()
-        stat["compact"] = stat["mrs"] / (1e-10 + stat["mrs0"])
+        stat["compact"] = max(1.0, stat["mrs"] / (1e-10 + stat["mrs0"]))
         
         # compute aspect ratio
         if "radius" not in stat:
@@ -133,8 +135,10 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
     npix_soma = np.array([stat["npix_soma"] for stat in stats], dtype="float32")
     npix = np.array([stat["npix"] for stat in stats], dtype="float32")
     # use median if cellpose, otherwise use best neurons to determine normalizer
-    npix_soma /= np.median(npix_soma) if median else npix_soma[:100].mean()
-    npix /= np.median(npix) if median else npix[:100].mean()
+    norm_npix = np.median(npix_soma) if median else np.median(npix_soma[:100])
+    npix_soma /= norm_npix + 1e-10
+    norm_npix = np.median(npix) if median else np.median(npix[:100])
+    npix /= norm_npix + 1e-10
     
     keep_rois = (npix_norm_min <= npix_soma) * (npix_soma <= npix_norm_max)
     stats = stats[keep_rois]

@@ -43,6 +43,8 @@ files_to_binary = {
 }
 
 def logger_setup(save_path):
+    if not pathlib.Path(save_path).exists():
+        pathlib.Path(save_path).mkdir(parents=True, exist_ok=True)
     log_file = pathlib.Path(save_path) / "run.log"
     try:
         log_file.unlink()

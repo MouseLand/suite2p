@@ -118,10 +118,12 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     xrange = [0, Lx] if xrange is None else xrange
     
     if mov is None:
-        bin_size = int(max(1, np.round(tau * fs)))
+        nbins = settings["nbins"]
+        bin_size = int(max(1, n_frames // nbins, np.round(tau * fs)))
+        #bin_size = int(max(1, np.round(tau * fs)))
         logger.info("Binning movie in chunks of %2.2d frames" % bin_size)
         mov = bin_movie(f_reg, bin_size, yrange=yrange, xrange=xrange,
-                        badframes=badframes, nbins=settings["nbins"])
+                        badframes=badframes, nbins=nbins)
     else:
         if mov.shape[1] != yrange[-1] - yrange[0]:
             raise ValueError("mov.shape[1] is not same size as yrange")
@@ -159,7 +161,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
             
     if settings["algorithm"] != "cellpose" or not anatomical.CELLPOSE_INSTALLED:
         settings["algorithm"] = "sparsery" if settings["algorithm"] == "cellpose" else settings["algorithm"]
-        sdmov = utils.standard_deviation_over_time(mov, batch_size=500)
+        sdmov = utils.standard_deviation_over_time(mov, batch_size=1000)
         if settings["algorithm"] == "sparsery":
             new_settings, stat = sparsedetect.sparsery(
                 mov=mov, sdmov=sdmov,
@@ -197,6 +199,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
                         npix_norm_min=settings.get("npix_norm_min", 0.),
                         npix_norm_max=settings.get("npix_norm_max", 100.),
                         median=settings["algorithm"]=="cellpose")
+        #import pdb; pdb.set_trace()
         iscell = classify(stat=stat, classfile=classifier_path)
         ic = (iscell[:, 1] > preclassify).flatten().astype("bool")
         stat = stat[ic]

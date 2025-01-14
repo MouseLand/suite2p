@@ -391,7 +391,7 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
     yoff1k, xoff1k = None, None
     n_batches = int(np.ceil(n_frames / batch_size))
     logger.info(f"Second channel: Shifting {n_frames} frames in {n_batches} batches")
-    tqdm_out = TqdmToLogger(logger, level=logging.INFO)()
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
     for n in trange(n_batches, mininterval=10, file=tqdm_out):
         tstart, tend = n * batch_size, min((n+1) * batch_size, n_frames)
         frames = f_alt_in[tstart : tend]

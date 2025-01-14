@@ -140,8 +140,8 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
                         dbs[jk]["frames_per_file"] = np.zeros(len(fs), "int")
                         dbs[jk]["frames_per_folder"] = np.zeros(first_files.sum(), "int")
                         dbs[jk]["meanImg"] = np.zeros((Ly, Lx), "float64")
-                    if nchannels > 1:
-                        dbs[jk]["meanImg_chan2"] = np.zeros((Ly, Lx), "float64")
+                        if nchannels > 1:
+                            dbs[jk]["meanImg_chan2"] = np.zeros((Ly, Lx), "float64")
                 i0 = nchannels * ((iplane + j) % nplanes)
                 if nchannels > 1:
                     nfunc = dbs[jk]["functional_chan"] - 1

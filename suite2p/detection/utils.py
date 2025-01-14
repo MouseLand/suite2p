@@ -37,10 +37,10 @@ def circleMask(d0):
     dy:
         indices in rs where the radius is less than d0
     """
-    dx = np.tile(np.arange(-d0[1], d0[1] + 1) / d0[1], (2 * d0[0] + 1, 1))
     dy = np.tile(np.arange(-d0[0], d0[0] + 1) / d0[0], (2 * d0[1] + 1, 1))
     dy = dy.transpose()
-
+    dx = np.tile(np.arange(-d0[1], d0[1] + 1) / d0[1], (2 * d0[0] + 1, 1))
+    
     rs = (dy**2 + dx**2)**0.5
     dx = dx[rs <= 1.]
     dy = dy[rs <= 1.]

@@ -114,7 +114,7 @@ def pclowhigh_torch(mov, nlowhigh, nPC, random_state):
 
 
 def pc_register(pclow, pchigh, smooth_sigma=1.15, block_size=(128, 128),
-                maxregshift=0.1, maxregshiftNR=10, snr_thresh=1.25,
+                maxregshift=0.25, maxregshiftNR=15, snr_thresh=1.25,
                 spatial_taper=3.45):
     """
     register top and bottom of PCs to each other

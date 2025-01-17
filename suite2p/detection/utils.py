@@ -257,7 +257,7 @@ def threshold_reduce(mov: np.ndarray, intensity_threshold: float) -> np.ndarray:
     Parameters
     ----------
     mov: nImg x Ly x Lx
-        The frames to downsample
+        The frames to filter
     intensity_threshold: float
         The threshold to use
 

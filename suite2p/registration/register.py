@@ -179,7 +179,11 @@ def compute_reference(frames, settings=default_settings(), device=torch.device("
         refImg = fr_reg[isort].double().mean(dim=0)
         
         # recenter reference image
-        dy, dx = -torch.round(ymax[isort].double().mean()).int(), -torch.round(xmax[isort].double().mean()).int()
+        if device.type == 'mps':
+            # MPS backend currently can not support float64
+            dy, dx = -torch.round(ymax[isort].to(torch.float32).mean()).int(), -torch.round(xmax[isort].to(torch.float32).mean()).int()
+        else:
+            dy, dx = -torch.round(ymax[isort].double().mean()).int(), -torch.round(xmax[isort].double().mean()).int()
         refImg = torch.roll(refImg, shifts=(-dy, -dx), dims=(0, 1))
         refImg = refImg.numpy().astype("int16")
         
@@ -187,6 +191,10 @@ def compute_reference(frames, settings=default_settings(), device=torch.device("
     if device.type == "cuda":
         torch.cuda.empty_cache()    
         torch.cuda.synchronize()
+
+    if device.type == "mps":
+        torch.mps.empty_cache()
+        torch.mps.synchronize()
 
     return refImg
 
@@ -258,6 +266,10 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
     del fr_reg
     if device.type == "cuda":
         torch.cuda.empty_cache()    
+
+    if device.type == "mps":
+        torch.mps.empty_cache()
+
     return ymax, xmax, cmax, ymax1, xmax1, cmax1, None, None
 
 def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
@@ -266,12 +278,12 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
 
     if yoff1 is not None:
         if isinstance(yoff1, np.ndarray):
-            if fr_torch.device.type != 'cpu':
+            if fr_torch.device.type == "cuda":
                 yoff1 = torch.from_numpy(yoff1).pin_memory().to(device)
                 xoff1 = torch.from_numpy(xoff1).pin_memory().to(device)
             else:
-                yoff1 = torch.from_numpy(yoff1)
-                xoff1 = torch.from_numpy(xoff1)
+                yoff1 = torch.from_numpy(yoff1).to(device)
+                xoff1 = torch.from_numpy(xoff1).to(device)
         fr_torch = nonrigid.transform_data(fr_torch, blocks[2], blocks[1], blocks[0], yoff1, xoff1)
     
     frames_out = np.empty(fr_torch.shape, dtype="int16")
@@ -335,8 +347,7 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         if device.type == "cuda":
             fr_torch = torch.from_numpy(frames).pin_memory().to(device)
         else:
-            fr_torch = torch.from_numpy(frames)
-
+            fr_torch = torch.from_numpy(frames).to(device)
         if bidiphase != 0:
             fr_torch = bidi.shift(fr_torch, bidiphase)
 
@@ -403,10 +414,11 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
         if yoff1 is not None:
             yoff1k, xoff1k = yoff1[tstart : tend], xoff1[tstart : tend]
             
-        if device.type == "cuda":
-            fr_torch = torch.from_numpy(frames).pin_memory().to(device)
+        if device.type == "cpu":
+            fr_torch = torch.from_numpy(frames).to(device)
         else:
-            fr_torch = torch.from_numpy(frames)
+            fr_torch = torch.from_numpy(frames).pin_memory().to(device)
+
         if bidiphase != 0:
             fr_torch = bidi.shift(fr_torch, bidiphase)
         frames = shift_frames(fr_torch, yoffk, xoffk, yoff1k, xoff1k, blocks)
@@ -569,6 +581,9 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
     if device.type == "cuda":
         torch.cuda.empty_cache()
+    
+    if device.type == "mps":
+        torch.mps.empty_cache()
 
     meanImg = mean_img if nchannels == 1 or not align_by_chan2 else mean_img_alt
     if nchannels == 2:

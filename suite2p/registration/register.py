@@ -266,8 +266,12 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
 
     if yoff1 is not None:
         if isinstance(yoff1, np.ndarray):
-            yoff1 = torch.from_numpy(yoff1).pin_memory().to(device)
-            xoff1 = torch.from_numpy(xoff1).pin_memory().to(device)
+            if fr_torch.device.type != 'cpu':
+                yoff1 = torch.from_numpy(yoff1).pin_memory().to(device)
+                xoff1 = torch.from_numpy(xoff1).pin_memory().to(device)
+            else:
+                yoff1 = torch.from_numpy(yoff1)
+                xoff1 = torch.from_numpy(xoff1)
         fr_torch = nonrigid.transform_data(fr_torch, blocks[2], blocks[1], blocks[0], yoff1, xoff1)
     
     frames_out = np.empty(fr_torch.shape, dtype="int16")

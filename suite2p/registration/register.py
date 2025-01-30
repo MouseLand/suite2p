@@ -72,17 +72,19 @@ def compute_crop(xoff: int, yoff: int, corrXY, th_badframes, badframes, maxregsh
     return badframes, yrange, xrange
 
 
-def pick_initial_reference(frames: np.ndarray):
+def pick_initial_reference(frames: np.ndarray, k=20) -> np.ndarray:
     """ computes the initial reference image
 
     the seed frame is the frame with the largest correlations with other frames;
-    the average of the seed frame with its top 20 correlated pairs is the
-    inital reference frame returned
+    the average of the seed frame with its top k correlated pairs is the
+    initial reference frame returned
 
     Parameters
     ----------
     frames : 3D array, int16
         size [frames x Ly x Lx], frames from binary
+    k : int, optional
+        number of top correlations to average, by default 20
 
     Returns
     -------
@@ -91,16 +93,16 @@ def pick_initial_reference(frames: np.ndarray):
 
     """
     nimg, Ly, Lx = frames.shape
-    frames = np.reshape(frames, (nimg, -1)).astype("float32")
-    frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))
-    cc = np.matmul(frames, frames.T)
-    ndiag = np.sqrt(np.diag(cc))
-    cc = cc / np.outer(ndiag, ndiag)
-    CCsort = -np.sort(-cc, axis=1)
-    bestCC = np.mean(CCsort[:, 1:20], axis=1)
+    frames = np.reshape(frames, (nimg, -1)).astype("float32")  # flatten frames
+    frames = frames - np.reshape(frames.mean(axis=1), (nimg, 1))  # subtract mean
+    cc = np.matmul(frames, frames.T)  # correlation matrix (nimg x nimg)
+    ndiag = np.sqrt(np.diag(cc))  # norm of each frame
+    cc = cc / np.outer(ndiag, ndiag)  # normalize by norm of each frame
+    CCpartsort = np.partition(cc, -(k+1), axis=1)[:, -k:-1]  # skip the self-correlation
+    bestCC = np.mean(CCpartsort, axis=1)  # mean of top k-1 correlations for each frame
     imax = np.argmax(bestCC)
-    indsort = np.argsort(-cc[imax, :])
-    refImg = np.mean(frames[indsort[0:20], :], axis=0)
+    indpartsort = np.argpartition(cc[imax, :], -k)[-k:]  # top k correlations for seed frame
+    refImg = np.mean(frames[indpartsort, :], axis=0)
     refImg = np.reshape(refImg, (Ly, Lx))
     return refImg
 

@@ -26,10 +26,6 @@ paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018)
 We make pip installable releases of suite2p, here is the [pypi](https://pypi.org/project/suite2p/). You
 can install it as `pip install suite2p`
 
-* [Module Index](py-modindex.md)
-* [Search Page](search.md)
-* [Index](genindex.md)
-
 # Basics:
 
 * [Installation](installation.md)

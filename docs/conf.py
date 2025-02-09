@@ -30,18 +30,7 @@ release = '0.7.2'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
-    'sphinx.ext.napoleon',
-    'sphinx.ext.coverage',
-    'sphinx-prompt',
-    'sphinxcontrib.apidoc',
-    'sphinx_autodoc_typehints',
-#   'sphinx.ext.autosummary',
-]
+extensions = ["sphinx_markdown_builder"]
 
 
 #autodoc_default_flags = ['members']

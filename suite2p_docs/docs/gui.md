@@ -27,7 +27,7 @@ To turn off ROIs in views 2-4, uncheck *ROIs on*
 
 ### Colors
 
-![image](_static/colorbar.png)
+![image](static/colorbar.png)
 
 Randomly colored ROI view is the default view. The ROIs in the random
 view are colored between purple and yellow, with red reserved for ROIs
@@ -111,7 +111,7 @@ You can select multiple cells by holding down CTRL while left-clicking
 on cells. If you are in ‘cells’ or ‘NOT cells’ view (not ‘both’ view),
 then several buttons for multi-cell selection activate.
 
-![image](_static/multi_select.PNG)
+![image](static/multi_select.PNG)
 
 The *draw selection* button activates a box that you can drag and resize
 to select multiple cells. To delete the box, click the Delete key.
@@ -204,7 +204,7 @@ them again (they won’t change). The plot below shows a mesoscope
 recording sorted by rastermap. You can change between sorting by
 rastermap and by the PCs by using the drop-down menu.
 
-![image](_static/visualize.png)
+![image](static/visualize.png)
 
 The red box allows you to zoom in on specific segments of the recording.
 You can move it by dragging the mouse when in the box, or with the arrow
@@ -214,7 +214,7 @@ box, or by holding down the shift key and using the arrow keys.
 If you click the *show selected cells in GUI* button, then the cells
 surrounded by the red box will show up as white in the GUI.
 
-![image](_static/visualize_selected.png)
+![image](static/visualize_selected.png)
 
 ## Manual adding of ROIs
 
@@ -228,7 +228,7 @@ added to the
 
 .npy files as the first N ROIs (where N is the number that you drew).
 
-![image](_static/manual_roi.png)
+![image](static/manual_roi.png)
 
 ## Merging ROIs
 
@@ -269,11 +269,11 @@ fluorescence plot to go to a specific point in time in the movie. You
 can also seek through the movie by clicking the slide bar. The left and
 right arrow keys will move the slide bar incrementally. The space bar will pause and play the movie.
 
-![image](_static/binary.png)
+![image](static/binary.png)
 
 You can also view all the masks, and go from cell to cell by clicking on them.
 
-![image](_static/binary_masks.png)
+![image](static/binary_masks.png)
 
 ### Z-stack Alignment
 
@@ -310,4 +310,4 @@ The example below shows a movie that has been rigid registered but not
 non-rigid registered. The metrics suggest that non-rigid registration
 should also be performed on this recording.
 
-![image](_static/reg_metrics.png)
+![image](static/reg_metrics.png)

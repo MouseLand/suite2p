@@ -37,7 +37,7 @@ refImg = register.pick_initial_reference(settings)
 Here is an example reference image on the right, compared to just taking
 the average of a random subset of frames (on the left):
 
-![image](_static/badrefimg.png)
+![image](static/badrefimg.png)
 
 If the reference image doesn’t look good, try increasing
 `settings['nimg_init']`.
@@ -72,15 +72,15 @@ the images, which in most cases makes it more robust to noise.
 
 Cross-correlation
 
-![image](_static/rigid_cross.png)
+![image](static/rigid_cross.png)
 
 Phase-correlation
 
-![image](_static/rigid_phase.png)
+![image](static/rigid_phase.png)
 
 Comparison
 
-![image](_static/phase_vs_cross.png)
+![image](static/phase_vs_cross.png)
 
 You can set a maximum shift size using the option
 `settings['maxregshift']`. By default, it is 0.1, which means that the
@@ -121,7 +121,7 @@ The size of the blocks to divide the image into is defined by
 pixels. If Y is the direction of line-scanning for 2p imaging, you may
 want to divide it into smaller blocks in that direction.
 
-![image](_static/overlapping_blocks.png)
+![image](static/overlapping_blocks.png)
 
 Each block is able to shift up to `settings['maxregshiftNR']` pixels in Y
 and X. We recommend to keep this small unless you’re in a very high
@@ -130,11 +130,11 @@ we use Kriging interpolation and run it on each block.
 
 Phase correlation of each block:
 
-![image](_static/block_phasecorr.png)
+![image](static/block_phasecorr.png)
 
 Shift of each block from phase corr:
 
-![image](_static/block_arrows.png)
+![image](static/block_arrows.png)
 
 In a low signal-to-noise ratio regime, there may be blocks which on a
 given frame do not have sufficient information from which to align with
@@ -145,7 +145,7 @@ between these two is defined as the `snr` of that block at that given
 time point. We smooth over high snr blocks and use bilinear interpolation
 to upsample create the final shifts:
 
-![image](_static/block_upsample.png)
+![image](static/block_upsample.png)
 
 We then use bilinear interpolation to warp the frame using these shifts.
 

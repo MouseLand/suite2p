@@ -141,8 +141,9 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     
     """
     batch_size = ops["batch_size"]
+    nframes = ops["nframes"]    
     F_chan2, Fneu_chan2 = [], []
-    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"], filename=ops["reg_file"]) as f:
+    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"], filename=ops["reg_file"], n_frames=nframes) as f:
         F, Fneu = extract_traces(f, cell_masks, neuropil_masks, batch_size=batch_size)
     if "reg_file_chan2" in ops:
         with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],

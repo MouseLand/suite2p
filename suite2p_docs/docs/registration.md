@@ -57,7 +57,7 @@ registration step below.
 
 <a id="rigid-registration"></a>
 
-## 1. Rigid registration
+## Rigid registration
 
 Rigid registration computes the shifts between the frame and the
 reference image using phase-correlation. We have found on simulated data
@@ -108,7 +108,7 @@ aligned_data, yshift, xshift, corrXY, yxnr = register.phasecorr(data, refAndMask
 
 <a id="non-rigid-registration-optional"></a>
 
-## 2. Non-rigid registration (optional)
+## Non-rigid registration (optional)
 
 If you run rigid registration and find that there is still motion in
 your frames, then you should run non-rigid registration. Non-rigid
@@ -190,6 +190,11 @@ non-rigid registration is necessary).
 
 To run the script, use the following command:
 
+```
+$ reg_metrics <INSERT_OPS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
+
+```
+
 Once you run the `reg_metrics` command, registration will be performed for the input file with default
 settings parameters and an output similar to the following will be shown:
 
@@ -205,17 +210,25 @@ For each `nplane`, these statistics (Average and Max) are calculated across PCs 
 If the registration works perfectly and most of the motion is removed from the registered dataset, these scores
 should all be very close to zero.
 
-#### IMPORTANT
-Make sure to also inspect the registered video to check the quality of registration. You can see an example
-of how this is done in the GUI [here](https://youtu.be/M7UjvCUn74Y?t=810).
+!!! IMPORTANT
+    Make sure to also inspect the registered video to check the quality of registration. You can see an example
+    of how this is done in the GUI [here](https://youtu.be/M7UjvCUn74Y?t=810).
 
 You may notice that upon visual inspection, the registered video may look fine/contain little motion even
 if the statistics are not close to zero. You should always visually check the registration output and prioritize
 what your eyes say over what the CLI script reports.
 
-#### NOTE
-All suite2p registration [settings](settings.html#registration) can be modified in this CLI script. Just pass
-the setting with its value as an optional argument. For instance,
+!!! NOTE
+    All suite2p registration [settings](settings.html#registration) can be modified in this CLI script. Just pass
+    the setting with its value as an optional argument. For instance,
 
-runs the script with `settings['nplanes'] = 2` and `settings['smooth_sigma'] = 1.2`.
-You can see all the arguments `reg_metrics` takes with the following command:
+    ```
+    $ reg_metrics path_to_data_tif --nplanes 2 --smooth_sigma 1.2
+    ```
+
+    runs the script with `settings['nplanes'] = 2` and `settings['smooth_sigma'] = 1.2`.
+    You can see all the arguments `reg_metrics` takes with the following command:
+
+    ```
+    $ reg_metrics --help
+    ```

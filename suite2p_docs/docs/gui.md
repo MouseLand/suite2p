@@ -220,13 +220,7 @@ surrounded by the red box will show up as white in the GUI.
 
 You can add ROIs in the File>Manual labelling. You MUST keep the binary file for the
 computing of the mask’s activity across time. When you save and exit the ROIs will be
-added to the 
-
-```
-*
-```
-
-.npy files as the first N ROIs (where N is the number that you drew).
+added to the *.npy files as the first N ROIs (where N is the number that you drew).
 
 ![image](static/manual_roi.png)
 
@@ -234,13 +228,7 @@ added to the
 
 You can merge selected ROIs (multi-select with CTRL) by pressing ALT+ENTER,
 or get suggested merges in the “Merge ROI” menu. The merged ROIs then must
-be saved before you close the GUI to write the new ROIs to the 
-
-```
-*
-```
-
-.npy files.
+be saved before you close the GUI to write the new ROIs to the *.npy files.
 Each merged ROI is appended to the end of the list of ROIs (in stat), and the
 ROIs that were merged to create it are in the key ‘imerge’. Note in the stat file
 and other files the original ROIs (that create the ROI) are NOT removed so that

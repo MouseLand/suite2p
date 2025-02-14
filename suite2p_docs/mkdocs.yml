@@ -9,15 +9,9 @@ nav:
       - Inputs: inputs.md
   - Settings: settings.md
   - Using the GUI: gui.md
-  - Outputs:
-      - MATLAB: outputs.md#matlab-output
-      - NWB: outputs.md#nwb-output
-      - Stat Fields: outputs.md#stat-npy-fields
-  - Multiday Recordings: multiday.md
-  - Developer Docs:
-      - Versioning: developer_doc.md#versioning
-      - Testing: developer_doc.md#testing
-  - FAQ: FAQ.md
+  - Outputs: outputs.md
+  - Multiday recordings: multiday.md
+  - Frequently asked questions: FAQ.md
   - How it Works:
       - Registration: registration.md
       - Cell Detection: celldetection.md
@@ -25,6 +19,7 @@ nav:
       - Spike Deconvolution: deconvolution.md
 
 markdown_extensions:
+  - admonition
   - toc
   - pymdownx.superfences
   - pymdownx.highlight

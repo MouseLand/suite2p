@@ -47,15 +47,15 @@ with F, Fneu, spks and iscell. If
 the recording has multiple planes, then they are all saved together like in
 combined view. See fields below:
 
-stat: stat[‘ypix’], stat[‘xpix’] (if multiplane stat[‘iplane’]) are saved in
-‘pixel_mask’ (called ‘voxel_mask’ in multiplane).
+`stat`: `stat[‘ypix’], stat[‘xpix’]` (if multiplane `stat[‘iplane’]`) are saved in
+`‘pixel_mask’` (called `‘voxel_mask’` in multiplane).
 
-settings: ‘meanImg’, ‘max_proj’, ‘Vcorr’ are saved in Images ‘Backgrounds_k’ where k is the plane
-number, and have the same names. optionally if two channels, ‘meanImg_chan2’ is saved.
+`settings`: `‘meanImg’, ‘max_proj’, ‘Vcorr’` are saved in Images `‘Backgrounds_k’` where k is the plane
+number, and have the same names. optionally if two channels, `‘meanImg_chan2’` is saved.
 
-iscell: saved as an array ‘iscell’
+`iscell`: saved as an array `‘iscell’`
 
-F,Fneu,spks are saved as roi_response_series ‘Fluorescence’, ‘Neuropil’, and ‘Deconvolved’.
+`F,Fneu,spks` are saved as roi_response_series `‘Fluorescence’, ‘Neuropil’, and ‘Deconvolved’`.
 
 ## Multichannel recordings
 
@@ -68,26 +68,26 @@ signals are saved to `F_chan2.npy` and `Fneu_chan2.npy`.
 
 ## stat.npy fields
 
-- ypix: y-pixels of cell
-- xpix: x-pixels of cell
-- med: (y,x) center of cell
-- lam: pixel mask (sum(lam \* frames[ypix,xpix,:]) = fluorescence)
-- npix: number of pixels in ROI
-- npix_norm: number of pixels in ROI normalized by the mean of npix
+- **ypix**: y-pixels of cell
+- **xpix**: x-pixels of cell
+- **med**: (y,x) center of cell
+- **lam**: pixel mask (sum(lam \* frames[ypix,xpix,:]) = fluorescence)
+- **npix**: number of pixels in ROI
+- **npix_norm**: number of pixels in ROI normalized by the mean of npix
   across all ROIs
-- radius: estimated radius of cell from 2D Gaussian fit to mask
-- aspect_ratio: ratio between major and minor axes of a 2D Gaussian fit
+- **radius**: estimated radius of cell from 2D Gaussian fit to mask
+- **aspect_ratio**: ratio between major and minor axes of a 2D Gaussian fit
   to mask
-- compact: how compact the ROI is (1 is a disk, >1 means less compact)
-- footprint: spatial extent of an ROI’s functional signal, including
+- **compact**: how compact the ROI is (1 is a disk, >1 means less compact)
+- **footprint**: spatial extent of an ROI’s functional signal, including
   pixels not assigned to the ROI; a threshold of 1/5 of the max is used
   as a threshold, and the average distance of these pixels from the
   center is defined as the footprint
-- skew: skewness of neuropil-corrected fluorescence trace
-- std: standard deviation of neuropil-corrected fluorescence trace
-- overlap: which pixels overlap with other ROIs (these are excluded
+- **skew**: skewness of neuropil-corrected fluorescence trace
+- **std**: standard deviation of neuropil-corrected fluorescence trace
+- **overlap**: which pixels overlap with other ROIs (these are excluded
   from fluorescence computation)
-- ipix_neuropil: pixels of neuropil mask for this cell
+- **ipix_neuropil**: pixels of neuropil mask for this cell
 
 Here is example code to make an image where each cell (without its
 overlapping pixels) is a different “number”:

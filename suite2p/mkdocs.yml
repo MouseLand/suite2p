@@ -17,6 +17,17 @@ nav:
       - Cell Detection: celldetection.md
       - Signal Extraction: roiextraction.md
       - Spike Deconvolution: deconvolution.md
+  - API: 
+      - something: api.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            heading_level: 2
 
 markdown_extensions:
   - admonition

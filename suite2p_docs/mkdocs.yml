@@ -6,25 +6,9 @@ nav:
   - Home: index.md
   - Basics:
       - Installation: installation.md
-      - Inputs:
-          - Input Format: inputs.md
-          - Directory Structure: inputs.md#directory-structure
-          - Frame Ordering: inputs.md#frame-ordering
-          - Photostim Artifacts: inputs.md#recordings-with-photostim-other-artifacts
-      - Different File Types:
-          - Tiffs: inputs.md#tiffs
-          - Bruker: inputs.md#bruker
-          - Mesoscope Tiffs: inputs.md#mesoscope-tiffs
-          - Thorlabs: inputs.md#thorlabs-raw-files
-          - HDF5: inputs.md#hdf5-files-and-sbx
-          - sbx Binary: inputs.md#sbx-binary-files
-          - Nikon ND2: inputs.md#nikon-nd2-files
+      - Inputs: inputs.md
   - Settings: settings.md
-  - GUI:
-      - Overview: gui.md
-      - Views & Colors: gui.md#different-views-and-colors-for-roi-panels
-      - Trace View: gui.md#trace-view-bottom-row
-      - Manual ROI Addition: gui.md#manual-adding-of-rois
+  - Using the GUI: gui.md
   - Outputs:
       - MATLAB: outputs.md#matlab-output
       - NWB: outputs.md#nwb-output

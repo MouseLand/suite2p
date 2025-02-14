@@ -78,13 +78,7 @@ an OME-TIFF in FIJI: “File->save as->OME-TIFF->compression type
 uncompressed” in FIJI (thanks @kylemxm! see issue [here](https://github.com/MouseLand/suite2p/issues/149#issuecomment-473862374)).
 
 If you have old Scanimage tiffs (version <5) that are larger than 2GB,
-then most tiff readers will not work. @elhananby has recommended this [repository](https://github.com/dgreenberg/read_patterned_tifdata) for reading the data into matlab (see issue 
-
-```
-`here`_
-```
-
-).
+then most tiff readers will not work. @elhananby has recommended this [repository](https://github.com/dgreenberg/read_patterned_tifdata) for reading the data into matlab.
 After reading it into matlab, you can re-save the tiff in a format that
 imageJ and suite2p can recognize (see matlab tiff writing
 [here](https://www.mathworks.com/help/matlab/ref/tiff.write.html)).
@@ -146,13 +140,7 @@ subfolders of the data_path.
 
 ### sbx binary files
 
-Scanbox binary files (
-
-```
-*
-```
-
-.sbx) work out of the box if you set `settings['input_format'] = "sbx"`.
+Scanbox binary files (*.sbx) work out of the box if you set `settings['input_format'] = "sbx"`.
 
 When recording in bidirectional mode some columns might have every other line saturated; to trim these during loading set `settings['sbx_ndeadcols']`. Set this option to `-1` to let suite2p compute the number of columns automatically, a positive integer to specify the number of columns to trim.
 Joao Couto (@jcouto) wrote the binary sbx parser.

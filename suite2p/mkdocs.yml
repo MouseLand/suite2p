@@ -1,7 +1,7 @@
 site_name: Suite2p Documentation
 theme:
   name: readthedocs  # You can also use 'readthedocs' or other themes
-
+    
 nav:
   - Home: index.md
   - Basics:
@@ -11,6 +11,7 @@ nav:
   - Using the GUI: gui.md
   - Outputs: outputs.md
   - Multiday recordings: multiday.md
+  - Developer Doc: developer_doc.md
   - Frequently asked questions: FAQ.md
   - How it Works:
       - Registration: registration.md

@@ -50,33 +50,28 @@ def oasis_matrix(F, v, w, t, l, s, tau, fs):
 
 
 def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
-    """ computes non-negative deconvolution
+    """
+    Computes non-negative deconvolution.
 
-    no sparsity constraints
-    
+    No sparsity constraints.
+
     Parameters
-    ----------------
-
-    F : float, 2D array
-        size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
-
+    ----------
+    F : ndarray
+        Size [neurons x time], in pipeline uses neuropil-subtracted fluorescence.
     batch_size : int
-        number of frames processed per batch
-
+        Number of frames processed per batch.
     tau : float
-        timescale of the sensor, used for the deconvolution kernel
-
+        Timescale of the sensor, used for the deconvolution kernel.
     fs : float
-        sampling rate per plane
-
+        Sampling rate per plane.
 
     Returns
-    ----------------
-
-    S : float, 2D array
-        size [neurons x time], deconvolved fluorescence
-
+    -------
+    S : ndarray
+        Size [neurons x time], deconvolved fluorescence.
     """
+
     NN, NT = F.shape
     F = F.astype(np.float32)
     S = np.zeros((NN, NT), dtype=np.float32)

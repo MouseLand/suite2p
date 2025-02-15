@@ -17,8 +17,13 @@ nav:
       - Cell Detection: celldetection.md
       - Signal Extraction: roiextraction.md
       - Spike Deconvolution: deconvolution.md
-  - API: 
-      - something: api.md
+  - API:
+      - IO: api/io.md
+      - Registration: api/registration.md 
+      - Detection: api/detection.md
+      - Extraction: api/extraction.md
+      - Classification: api/classification.md
+      - GUI: api/gui.md
 
 plugins:
   - search
@@ -26,8 +31,16 @@ plugins:
       handlers:
         python:
           options:
-            show_source: false
-            heading_level: 2
+            show_source: true
+            separate_signature: true
+            show_if_no_docstring: false
+            show_docstring_sections: true
+            docstring_style: numpy
+            members_order: alphabetical
+            
+extra_css:
+  - css/API.css # Necessary for API documentation
+
 
 markdown_extensions:
   - admonition
@@ -37,4 +50,6 @@ markdown_extensions:
   - pymdownx.emoji
   - pymdownx.tabbed
   - pymdownx.details
-
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - pymdownx.extra

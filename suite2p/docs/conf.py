@@ -30,7 +30,10 @@ release = '0.7.2'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx_markdown_builder"]
+extensions = [
+    "sphinx_markdown_builder",
+    'sphinx.ext.napoleon',  # Enables NumPy and Google docstrings
+]
 
 
 #autodoc_default_flags = ['members']

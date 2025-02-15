@@ -192,7 +192,8 @@ def masks_to_stats(masks, weights):
 def select_rois(mean_img, max_proj, settings: Dict[str, Any], 
                 diameter=[12., 12.],
                 device=torch.device("cuda")):
-    """ find ROIs in static frames
+    """ 
+    find ROIs in static frames
     
     Parameters:
 
@@ -202,8 +203,9 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any],
         mov: ndarray t x Lyc x Lxc, binned movie
     
     Returns:
+
         stats: list of dicts
-    
+
     """
     Lyc, Lxc = mean_img.shape
     if settings["img"] == 'max_proj / meanImg':

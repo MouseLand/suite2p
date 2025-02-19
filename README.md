@@ -1,9 +1,9 @@
 # suite2p (Custom Fork)
 
 **This is a fork of the [official suite2p repository](https://github.com/MouseLand/suite2p).  
-Maintained by [Your Name / Lab / Organization].**
+Maintained by Ahmed Jamali / Yaksi- Lab / Kavli Institute for Systems Neuroscience / Norwegian University of Science and Technology.**
 
-This fork contains modifications and/or extra code snippets for specialized use cases.  
+This fork contains modifications and extra code snippets to handle the processing of SciScan raw files and other specialized use cases.  
 It retains the [GPL v3 license](./LICENSE) from the original authors.  
 
 > **For the official Suite2p code, issues, or documentation, please visit the  
@@ -81,9 +81,9 @@ For full documentation, please see the [official Suite2p docs](https://suite2p.r
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.9`.
-4. To activate this new environment, run `conda activate suite2p`
-	(Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`.
-	(Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
+4. To activate this new environment, run `conda activate suite2p`. 
+	a) (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`. 
+	b) (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
 5. Now run `python -m suite2p` and you're all set.
 6. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
@@ -202,5 +202,5 @@ Copyright (C) 2023 Howard Hughes Medical Institute Janelia Research Campus, the 
 ### Logo
 Logo was designed by Shelby Stringer and [Chris Czaja](http://chrisczaja.com/).
 
-NOTE: For questions related to this custom fork or its modifications, please contact Ahemd Jamali / Yaksi- Lab / Kavli Institute for Systems Neuroscience / Norwegian University of Science and Technology.
+NOTE: For questions related to this custom fork or its modifications, please contact Ahmed Jamali / Yaksi- Lab / Kavli Institute for Systems Neuroscience / Norwegian University of Science and Technology.
 For official Suite2p help or issues, go to the official Suite2p repo.

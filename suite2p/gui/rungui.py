@@ -643,12 +643,30 @@ class RunWindow(QDialog):
         else:
             self.h5_key = "data"
 
+    # --------------------------------------------- Added by Ahmed Jamali ------------------------------
+    def getSciDim(self):
+        TC_sci = SciRawTextChooser(self)
+        result = TC_sci.exec_()
+        if result:
+            self.ops['Ly'] = int(TC_sci.Ly)
+            self.ops['Lx'] = int(TC_sci.Lx)
+        else:
+            # Handle the case where the user canceled the dialog
+            error_box = QMessageBox()
+            error_box.setIcon(QMessageBox.Warning)
+            error_box.setWindowTitle("Error")
+            error_box.setText("Dimensions are needed. Please enter Ly and Lx.")
+            error_box.exec_()   
+    # ---------------------------------------------------------------------------------------------------
+    
     def parse_inputformat(self):
         inputformat = self.inputformat.currentText()
         print("Input format: " + inputformat)
         if inputformat == "h5":
             # replace functionality of "old" button
             self.get_h5py()
+        elif inputformat == "sci_raw":  # ----------------------- added by Ahmed
+            self.getSciDim()            # ----------------------- added by Ahmed
         else:
             pass
 
@@ -761,3 +779,35 @@ class VerticalLabel(QWidget):
         if self.text:
             painter.drawText(0, 0, self.text)
         painter.end()
+
+
+# --------------------------------------------------------------------------- Added by Ahmed Jamali: asks for frame dimensions
+class SciRawTextChooser(QDialog):
+    def __init__(self, parent=None):
+        super(SciRawTextChooser, self).__init__(parent)
+        self.setGeometry(300, 300, 180, 150)  # Adjusted height to accommodate two additional inputs
+        self.setWindowTitle("Frame Dimensions")
+
+        layout = QGridLayout()
+        self.setLayout(layout)
+
+        # Ly input
+        self.ly_edit = QLineEdit()
+        layout.addWidget(QLabel("Enter Ly:"), 0, 0)
+        layout.addWidget(self.ly_edit, 0, 1)
+
+        # Lx input
+        self.lx_edit = QLineEdit()
+        layout.addWidget(QLabel("Enter Lx:"), 1, 0)
+        layout.addWidget(self.lx_edit, 1, 1)
+
+        done = QPushButton("OK")
+        done.clicked.connect(self.exit_list)
+        layout.addWidget(done, 2, 1)
+
+    def exit_list(self):
+        self.Ly = self.ly_edit.text()
+        self.Lx = self.lx_edit.text()
+        self.accept()
+
+# ----------------------------------------------------------------------- 

@@ -108,7 +108,7 @@ The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less we
 
 The simplest way is
 ~~~
-pip install git+https://github.com/MouseLand/suite2p.git
+pip install git+https://github.com/AhmedJamali/suite2pR.git
 ~~~
 
 If you want to download and edit the code, and use that version,

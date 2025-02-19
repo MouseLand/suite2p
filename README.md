@@ -82,10 +82,10 @@ For full documentation, please see the [official Suite2p docs](https://suite2p.r
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.9`.
 4. To activate this new environment, run `conda activate suite2p`. 
-	a) (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`. 
-	b) (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
-5. Now run `python -m suite2p` and you're all set.
-6. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
+5. (Option 1) You can install the minimal version of suite2p, run `python -m pip install suite2p`. 
+6. (Option 2) You can install the GUI version with `python -m pip install suite2p[gui]`. If you're on a zsh server, you may need to use `' '` around the suite2p[gui] call: `python -m pip install 'suite2p[gui]'`. This also installs the NWB dependencies.
+7. Now run `python -m suite2p` and you're all set.
+8. Running the command `suite2p --version` in the terminal will print the install version of suite2p.
 
 For additional dependencies, like h5py, NWB, Scanbox, and server job support, use the command `python -m pip install suite2p[io]`.
 

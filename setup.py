@@ -89,7 +89,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     # Name changed to avoid conflicts with the official suite2p package on PyPI.
-    name="suite2p-custom",  
+    name="suite2p",  
     # Include both original and your info. 
     author="Marius Pachitariu, Carsen Stringer (Original Authors); Fork Maintainer: Ahmed Jamali",
     author_email="Ahmedj@ntnu.no",  # Replace with your contact if desired

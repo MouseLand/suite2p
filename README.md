@@ -93,11 +93,6 @@ If you have an older `suite2p` environment you can remove it with `conda env rem
 
 Note you will always have to run **conda activate suite2p** before you run suite2p. Conda ensures mkl_fft and numba run correctly and quickly on your machine. If you want to run jupyter notebooks in this environment, then also `conda install jupyter`.
 
-To **upgrade** the suite2p (package [here](https://pypi.org/project/suite2p/)), run the following in the environment:
-~~~~
-pip install --upgrade suite2p
-~~~~
-
 ### Dependencies
 
 This package relies on the awesomeness of [pyqtgraph](http://pyqtgraph.org/), [PyQt6](http://pyqt.sourceforge.net/Docs/PyQt6/), [torch](http://pytorch.org), [numpy](http://www.numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scanimage-tiff-reader](https://vidriotech.gitlab.io/scanimagetiffreader-python/), [scipy](https://www.scipy.org/), [scikit-learn](http://scikit-learn.org/stable/), [tifffile](https://pypi.org/project/tifffile/), [natsort](https://natsort.readthedocs.io/en/master/), and our neural visualization tool [rastermap](https://github.com/MouseLand/rastermap). You can pip install or conda install all of these packages. If having issues with PyQt6, then try to install within it conda install pyqt. On Ubuntu you may need to `sudo apt-get install libegl1` to support PyQt6. Alternatively, you can use PyQt5 by running `pip uninstall PyQt6` and `pip install PyQt5`. If you already have a PyQt version installed, suite2p will not install a new one.

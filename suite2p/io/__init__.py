@@ -12,3 +12,4 @@ from .nd2 import nd2_to_binary
 from .dcam import dcimg_to_binary
 from .binary import BinaryFile, BinaryFileCombined
 from .server import send_jobs
+from .sci_raw import AJ_sci_raw_to_binary  ################ Added by Ahmed

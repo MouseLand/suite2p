@@ -315,6 +315,13 @@ def find_files_open_binaries(ops1, ish5=False):
         fs, ops2 = get_dcimg_list(ops1[0])
         print("DCAM image files:")
         print("\n".join(fs))
+    elif input_format == "sci_raw": # ----------------------------------------- Added by Ahmed to handle sciscan raw binary files
+        fs, ops2 = AJ_get_raw_list(ops1[0]) # -------------------------------- Added by Ahmed to handle sciscan raw binary files
+        for ops in ops1:
+            ops["first_raws"] = ops2["first_raws"]
+            ops["frames_per_folder"] = np.zeros((ops2["first_raws"].sum(),), np.int32)
+        print("Raw files:") # --------------------------------------------- Added by Ahmed to handle raw binary files
+        print("\n".join(fs)) # -------------------------------------------- Added by Ahmed to handle raw binary files
     else:
         # find tiffs
         fs, ops2 = get_tif_list(ops1[0])
@@ -409,3 +416,29 @@ def get_suite2p_path(path: Path) -> Path:
     else:
         raise FileNotFoundError("The `suite2p` folder was not found in path")
     return new_path
+
+
+
+# ----------------------------------------- Added by Ahmed to handle SciScan raw binary files
+def AJ_get_raw_list(ops):
+    """ make list of raw files to process
+    if ops["look_one_level_down"], then all raws in all folders + one level down
+    """
+    fold_list = ops["data_path"]
+    fsall = []
+    first_raws = [] 
+    print (fold_list) ##
+    for k, fld in enumerate(fold_list):
+        print (k, fld, fold_list) ##
+        fs, fraws = list_files(fld, ops["look_one_level_down"], ['*.raw'])
+        fsall.extend(fs)
+        first_raws.extend(list(fraws))
+        
+    if len(fs) == 0:
+        print("Could not find any raw files")
+        raise Exception("no raws")
+    else:
+        ops["first_raws"] = np.array(first_raws).astype("bool")
+        print("** Found %d raw files - converting to binary **" % (len(fsall)))
+    return fsall, ops
+# ---------------------------------------------------------------------------------------------

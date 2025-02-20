@@ -1,6 +1,5 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
-Modified for Windows 11 styling enhancements.
 """
 import numpy as np
 import pyqtgraph as pg
@@ -11,10 +10,9 @@ from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
 
 from . import masks
 
-# Define a global border color that matches your Windows 11 style palette
-BORDER_COLOR = "#555555"  # Adjust this to match your chosen Windows 11 style
 
 class TraceBox(pg.PlotItem):
+
     def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True,
                  invertY=False, enableMenu=True, name=None, invertX=False):
         super(TraceBox, self).__init__()
@@ -28,14 +26,15 @@ class TraceBox(pg.PlotItem):
         self.setYRange(self.parent.fmin, self.parent.fmax)
         self.parent.show()
 
+
 class ViewBox(pg.ViewBox):
+
     def __init__(self, parent=None, border=None, lockAspect=False, enableMouse=True,
                  invertY=False, enableMenu=True, name=None, invertX=False):
+        #pg.ViewBox.__init__(self, border, lockAspect, enableMouse,
+        #invertY, enableMenu, name, invertX)
         super(ViewBox, self).__init__()
-        # Use the provided border or fallback to our global BORDER_COLOR
-        if border is None:
-            border = BORDER_COLOR
-        self.border = fn.mkPen(border, width=1)
+        self.border = fn.mkPen(border)
         if enableMenu:
             self.menu = ViewBoxMenu(self)
         self.name = name
@@ -44,7 +43,7 @@ class ViewBox(pg.ViewBox):
             self.setXLink(parent.p1)
             self.setYLink(parent.p1)
 
-        # Set internal state flags
+        # set state
         self.state["enableMenu"] = enableMenu
         self.state["yInverted"] = invertY
 
@@ -57,7 +56,10 @@ class ViewBox(pg.ViewBox):
             pos = self.mapSceneToView(ev.scenePos())
             posy = int(pos.x())
             posx = int(pos.y())
-            iplot = 0 if self.name == "plot1" else 1
+            if self.name == "plot1":
+                iplot = 0
+            else:
+                iplot = 1
             if posy >= 0 and posx >= 0 and posy <= self.parent.Lx and posx <= self.parent.Ly:
                 ichosen = int(self.parent.rois["iROI"][iplot, 0, posx, posy])
                 if ichosen < 0:
@@ -72,13 +74,16 @@ class ViewBox(pg.ViewBox):
                         masks.flip_plot(self.parent)
                     else:
                         merged = False
-                        if ev.modifiers() == QtCore.Qt.ShiftModifier or ev.modifiers() == QtCore.Qt.ControlModifier:
-                            if self.parent.iscell[self.parent.imerge[0]] == self.parent.iscell[ichosen]:
+                        if ev.modifiers() == QtCore.Qt.ShiftModifier or ev.modifiers(
+                        ) == QtCore.Qt.ControlModifier:
+                            if self.parent.iscell[self.parent.imerge[
+                                    0]] == self.parent.iscell[ichosen]:
                                 if ichosen not in self.parent.imerge:
                                     self.parent.imerge.append(ichosen)
                                     self.parent.ichosen = ichosen
                                     merged = True
-                                elif ichosen in self.parent.imerge and len(self.parent.imerge) > 1:
+                                elif ichosen in self.parent.imerge and len(
+                                        self.parent.imerge) > 1:
                                     self.parent.imerge.remove(ichosen)
                                     self.parent.ichosen = self.parent.imerge[0]
                                     merged = True
@@ -101,6 +106,7 @@ class ViewBox(pg.ViewBox):
         self.parent.p2.setYLink(self.parent.p1)
         self.parent.show()
 
+
 def init_range(parent):
     parent.p1.setXRange(0, parent.ops["Lx"])
     parent.p1.setYRange(0, parent.ops["Ly"])
@@ -109,8 +115,9 @@ def init_range(parent):
     parent.p3.setLimits(xMin=0, xMax=parent.Fcell.shape[1])
     parent.trange = np.arange(0, parent.Fcell.shape[1])
 
+
 def ROI_index(ops, stat):
-    """Generate a matrix (Ly x Lx) where each pixel contains the ROI index (-1 if no ROI is present)."""
+    """matrix Ly x Lx where each pixel is an ROI index (-1 if no ROI present)"""
     ncells = len(stat) - 1
     Ly = ops["Ly"]
     Lx = ops["Lx"]

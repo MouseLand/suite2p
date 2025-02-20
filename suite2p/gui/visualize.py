@@ -32,6 +32,7 @@ class VerticalLabel(QWidget):
         if self.text:
             painter.drawText(0, 0, self.text)
         painter.end()
+    
 
 
 class RangeSlider(QSlider):
@@ -60,16 +61,17 @@ class RangeSlider(QSlider):
 
         self.setOrientation(QtCore.Qt.Vertical)
         self.setTickPosition(QSlider.TicksRight)
-        self.setStyleSheet(\
-                "QSlider::handle:horizontal {\
-                background-color: white;\
-                border: 1px solid #5c5c5c;\
-                border-radius: 0px;\
-                border-color: black;\
-                height: 8px;\
-                width: 6px;\
-                margin: -8px 2; \
-                }"                                                                        )
+        # self.setStyleSheet(
+        #     "QSlider::handle:vertical {\
+        #     background-color: white;\
+        #     border: 1px solid #5c5c5c;\
+        #     border-radius: 0px;\
+        #     border-color: black;\
+        #     height: 8px;\
+        #     width: 6px;\
+        #     margin: -8px 2; \
+        #     }"
+        # )
         # 0 for the low, 1 for the high, -1 for both
         self.active_slider = 0
         self.parent = parent
@@ -95,6 +97,30 @@ class RangeSlider(QSlider):
         # based on http://qt.gitorious.org/qt/qt/blobs/master/src/gui/widgets/qslider.cpp
         painter = QtGui.QPainter(self)
         style = QApplication.style()
+
+        # Draw the groove & tickmarks *once* at the position of _low
+        # so we see the track in the background
+        opt = QStyleOptionSlider()
+        self.initStyleOption(opt)
+        opt.orientation = self.orientation()
+        # draw the groove (track) and tickmarks
+        opt.subControls = QStyle.SC_SliderGroove | QStyle.SC_SliderTickmarks
+        # pick one handle position so the groove gets drawn
+        opt.sliderPosition = self._low
+        opt.sliderValue = self._low
+        style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
+
+        # Now draw the first handle (low)
+        opt.subControls = QStyle.SC_SliderHandle
+        opt.sliderPosition = self._low
+        opt.sliderValue = self._low
+        style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
+
+        # Draw the second handle (high)
+        opt.sliderPosition = self._high
+        opt.sliderValue = self._high
+        style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
+        
         for i, value in enumerate([self._low, self._high]):
             opt = QStyleOptionSlider()
             self.initStyleOption(opt)
@@ -174,8 +200,26 @@ class RangeSlider(QSlider):
         self.click_offset = new_pos
         self.update()
 
+    #def mouseReleaseEvent(self, event):
+        # Call level_change method when the mouse button is released
+        #self.level_change()
+
     def mouseReleaseEvent(self, event):
+        self.setSliderDown(False)
+        self.pressed_control = QStyle.SC_None
+        self.active_slider = -1
         self.level_change()
+        self.update()
+        super(RangeSlider, self).mouseReleaseEvent(event)
+
+    # def leaveEvent(self, event):
+    #     if self.sliderDown():
+    #         self.setSliderDown(False)
+    #         self.pressed_control = QStyle.SC_None
+    #         self.active_slider = -1
+    #         self.level_change()
+    #         self.update()
+    #     super(RangeSlider, self).leaveEvent(event)
 
     def __pick(self, pt):
         if self.orientation() == QtCore.Qt.Horizontal:

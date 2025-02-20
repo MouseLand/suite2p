@@ -863,30 +863,57 @@ class MainWindow(QMainWindow):
         self.show()
 
 
+# def run(statfile=None):
+#     """
+#     Entry point for the GUI. This initializes QApplication,
+#     applies the Windows 11–inspired style, and starts the main event loop.
+#     """
+#     warnings.filterwarnings("ignore")
+#     app = QApplication(sys.argv)
+    
+#     # Set our Windows 11–inspired style and palette.
+#     set_app_style(app)
+#     # Optionally, use the Fusion style for a more modern look.
+#     #app.setStyle("Fusion")
+    
+#     import suite2p
+#     s2ppath = os.path.dirname(os.path.realpath(suite2p.__file__))
+#     icon_path = os.path.join(s2ppath, "logo", "logo.png")
+#     app_icon = QtGui.QIcon()
+#     for size in [16, 24, 32, 48, 64, 256]:
+#         app_icon.addFile(icon_path, QtCore.QSize(size, size))
+#     app.setWindowIcon(app_icon)
+    
+#     GUI = MainWindow(statfile=statfile)
+#     ret = app.exec_()
+#     sys.exit(ret)
+
+
 def run(statfile=None):
-    """
-    Entry point for the GUI. This initializes QApplication,
-    applies the Windows 11–inspired style, and starts the main event loop.
-    """
+    # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QApplication(sys.argv)
-    
+
     # Set our Windows 11–inspired style and palette.
-    set_app_style(app)
-    # Optionally, use the Fusion style for a more modern look.
-    #app.setStyle("Fusion")
-    
+    #set_app_style(app)
+    app.setStyle("Fusion")
+
     import suite2p
     s2ppath = os.path.dirname(os.path.realpath(suite2p.__file__))
     icon_path = os.path.join(s2ppath, "logo", "logo.png")
     app_icon = QtGui.QIcon()
-    for size in [16, 24, 32, 48, 64, 256]:
-        app_icon.addFile(icon_path, QtCore.QSize(size, size))
+    app_icon.addFile(icon_path, QtCore.QSize(16, 16))
+    app_icon.addFile(icon_path, QtCore.QSize(24, 24))
+    app_icon.addFile(icon_path, QtCore.QSize(32, 32))
+    app_icon.addFile(icon_path, QtCore.QSize(48, 48))
+    app_icon.addFile(icon_path, QtCore.QSize(64, 64))
+    app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
-    
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
+    # GUI.save_gui_data()
     sys.exit(ret)
+
 
 # To run the GUI directly, uncomment the following lines:
 # if __name__ == "__main__":

@@ -26,6 +26,9 @@ nav:
       - Classification: api/classification.md
       - GUI: api/gui.md
 
+hooks:
+  - generate_settings_docs.py # Necessary for Settings.md generation
+
 plugins:
   - search
   - mkdocstrings:

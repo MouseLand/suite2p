@@ -34,7 +34,8 @@ def compute_masks_ref_smooth_fft(refImg, maskSlope, smooth_sigma) -> Tuple[np.nd
     cfRefImg = ref_smooth_fft(refImg=refImg, smooth_sigma=smooth_sigma)
     return maskMul, maskOffset, cfRefImg
 
-def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_time):
+def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_time, 
+              return_cc=False):
     device = frames.device
     data = (frames.float() * maskMul + maskOffset).type(torch.complex64)
     min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed
@@ -52,7 +53,13 @@ def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_t
     cmax = cc[torch.arange(len(cc)), ymax, xmax]
     ymax, xmax = ymax - lcorr, xmax - lcorr
     
-    del data, cc
+    del data
+    if return_cc: 
+        cc = cc.cpu().numpy()
+    else:
+        del cc
+        cc = None
     if device.type == "cuda":
        torch.cuda.empty_cache()
-    return ymax, xmax, cmax
+    
+    return ymax, xmax, cmax, cc

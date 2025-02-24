@@ -145,7 +145,7 @@ def pc_register(pclow, pchigh, smooth_sigma=1.15, block_size=(128, 128),
     # registration settings
     nPC, Ly, Lx = pclow.shape
 
-    X = np.zeros((nPC, 3))
+    X = np.zeros((nPC, 4))
     for i in range(nPC):
         refImg = pclow[i].cpu().numpy().copy()
         Img = pchigh[i][np.newaxis, :, :]
@@ -162,6 +162,7 @@ def pc_register(pclow, pchigh, smooth_sigma=1.15, block_size=(128, 128),
         X[i, 0] = ((ymax[0]**2 + xmax[0]**2)**.5).mean().cpu().numpy()
         X[i, 1] = ((ymax1**2 + xmax1**2)**.5).mean().cpu().numpy()
         X[i, 2] = ((ymax1**2 + xmax1**2)**.5).max().cpu().numpy()
+        X[i, 3] = (((ymax[0] + ymax1)**2 + (xmax[0] + xmax1)**2)**0.5).mean().cpu().numpy()
     return X
 
 def get_pc_metrics(f_reg, yrange=None, xrange=None, settings=default_settings()["registration"], 

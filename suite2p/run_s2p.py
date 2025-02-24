@@ -274,14 +274,16 @@ def run_s2p(db={}, settings=default_settings(), server={}, logging=True):
         files_found_flag = False
 
     if files_found_flag:
-        logger.info(f"FOUND BINARIES AND DBS AND SETTINGS IN {db_paths}")
+        logger.info(f"FOUND BINARIES AND DBS IN {db_paths}")
         logger.info("removing previous detection and extraction files, if present")
+        logger.info(f"will update settings.npy but not db.npy")
         files_to_remove = [
             "detect_outputs.npy", "stat.npy", 
             "F.npy", "Fneu.npy", "F_chan2.npy", "Fneu_chan2.npy", 
             "spks.npy", "iscell.npy", "redcell.npy"
         ]
         for f in plane_folders:
+            np.save(os.path.join(f, "settings.npy"), settings)
             for fname in files_to_remove:
                 if os.path.exists(os.path.join(f, fname)):
                     os.remove(os.path.join(f, fname))

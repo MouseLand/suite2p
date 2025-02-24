@@ -165,8 +165,7 @@ def compute_reference(frames, settings=default_settings(), device=torch.device("
             fr_reg_batch = fr_reg[k:min(k + batch_size, fr_reg.shape[0])].to(device)
             ymax, xmax, cmax = rigid.phasecorr(fr_reg_batch, cfRefImg, maskMul, maskOffset,
                 maxregshift=settings["maxregshift"],
-                smooth_sigma_time=settings["smooth_sigma_time"],
-            )
+                smooth_sigma_time=settings["smooth_sigma_time"])[:3]
             
             # shift frames to reference
             fr_reg_batch = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
@@ -242,7 +241,7 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
 
     # rigid registration
     ymax, xmax, cmax = rigid.phasecorr(fr_reg, cfRefImg, maskMul, maskOffset, 
-                                       maxregshift, smooth_sigma_time)
+                                       maxregshift, smooth_sigma_time)[:3]
         
     # non-rigid registration
     if maskMulNR is not None:
@@ -251,7 +250,7 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
                               for frame, dy, dx in zip(fr_reg, ymax, xmax)], axis=0)
         ymax1, xmax1, cmax1 = nonrigid.phasecorr(fr_reg, blocks, 
                                                  maskMulNR, maskOffsetNR, cfRefImgNR, 
-                                                snr_thresh, maxregshiftNR)
+                                                snr_thresh, maxregshiftNR)[:3]
     else:    
         ymax1, xmax1, cmax1 = None, None, None
 

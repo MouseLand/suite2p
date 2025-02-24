@@ -141,12 +141,10 @@ def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
     cc1 = cc.copy()
     for c1, ymax, xmax in zip(
             cc1,
-            *np.unravel_index(np.argmax(cc0, axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):
+            *np.unravel_index(cc0.argmax(axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):
         c1[ymax:ymax + 2 * lpad, xmax:xmax + 2 * lpad] = 0
-
-    snr = np.max(cc0, axis=1) / np.maximum(
-        1e-10, np.max(cc1.reshape(cc.shape[0], -1),
-                       axis=1))  # ensure positivity for outlier cases
+    
+    snr = cc0.max(axis=1) / np.maximum(1e-10, cc1.max(axis=(1, 2)))
     return snr
 
 def phasecorr(data: np.ndarray, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
@@ -258,7 +256,7 @@ def phasecorr(data: np.ndarray, blocks, maskMul, maskOffset, cfRefImg, snr_thres
     ymax1 = (ymax1 - mdpt) / subpixel + torch.from_numpy(ymax).to(device) - lcorr
     xmax1 = (xmax1 - mdpt) / subpixel + torch.from_numpy(xmax).to(device) - lcorr
     
-    return ymax1.T.float(), xmax1.T.float(), cmax1.T
+    return ymax1.T.float(), xmax1.T.float(), cmax1.T, ccsm, ccb
 
 def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     """

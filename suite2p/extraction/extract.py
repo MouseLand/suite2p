@@ -44,6 +44,11 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
     batch_size = min(batch_size, 1000)
     ncells = len(cell_masks)
 
+    # Check if mps and force to be on the CPU so that extraction can be run
+    # TODO: Once, sparse_coo_tensor works on sparseMPS backend, we should remove this check
+    if device.type == 'mps':
+        device = torch.device('cpu')
+
     npix_neuropil = torch.Tensor([len(nm) for nm in neuropil_masks]).to(device)
     # create coo tensor of neuropil and cell masks 
     ccol_indices = [m for nm in neuropil_masks for m in nm]

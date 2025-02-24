@@ -302,6 +302,21 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     yxup *= 2 
     yxup -= 1
     yxup = yxup.permute(0, 2, 3, 1)
-    fr_shift = F.grid_sample(data.float().unsqueeze(1), yxup[:,:,:,[1,0]], 
+    if device.type == "mps":
+        # Manually pad the input tensor with the border values
+        data_padded = F.pad(data.float().unsqueeze(1), (1, 1, 1, 1), mode="replicate")
+        height, width = data.shape[-2:]  # Get the height and width of the original data tensor
+        # Adjust the grid to account for the padding
+        adjusted_yxup = yxup + torch.tensor([[[[1 / width, 1 / height]]]]).to(yxup.device)  # Adjust grid
+        # Perform grid sampling on the padded tensor
+        fr_shift = F.grid_sample(
+            data_padded,
+            adjusted_yxup[:, :, :, [1, 0]],
+            mode="bilinear",
+            padding_mode="zeros",  # Default or any supported mode
+            align_corners=True
+        )
+    else:
+        fr_shift = F.grid_sample(data.float().unsqueeze(1), yxup[:,:,:,[1,0]], 
                              mode="bilinear", padding_mode="border", align_corners=True)
     return fr_shift.squeeze().short()#.cpu().numpy()

@@ -1,7 +1,7 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import argparse
+import argparse, os, platform
 import numpy as np
 from suite2p import default_settings, default_db, version
 from suite2p.run_s2p import run_plane, run_s2p
@@ -42,6 +42,15 @@ def main():
     elif args.settings and args.db:
         run_s2p(db=db, settings=settings)
     else:
+        # Check if the OS is macOS and the machine is Apple Silicon (ARM-based)
+        if platform.system() == "Darwin" and 'arm' in platform.processor().lower():
+            # Set the number of threads for OpenMP and OpenBLAS
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["OPENBLAS_NUM_THREADS"] = "1"
+            print("Environment set to use 1 thread for OpenMP and OpenBLAS (Apple Silicon macOS).")
+        else:
+            print("Not macOS on Apple Silicon, proceeding without limiting threads.")
+            
         from suite2p import gui
         gui.run()#statfile="C:/DATA/exs2p/suite2p/plane0/stat.npy")
 

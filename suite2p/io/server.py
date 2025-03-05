@@ -42,12 +42,12 @@ def ssh_connect(host, username, password, verbose=True):
     return ssh
 
 def send_jobs(save_folder, host=None, username=None, password=None, server_root=None,
-              local_root=None, n_cores=8):
-    """ send each plane to compute on server separately
+              local_root=None, n_cores=8, conda_env_name='suite2p',
+              mem_request_multiplier=2, lsfargs=''):
+    """Send each plane to compute on server separately
 
-    add your own host, username, password and path on server 
-    for where to save the data
-
+    Add your own host, username, password and path on server 
+    for where to save the data.
     """
     if not HAS_PARAMIKO:
         raise ImportError("paramiko required, please 'pip install paramiko'")
@@ -71,10 +71,9 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
     with open(run_script, "w", newline="", encoding="utf-8") as f:
         f.write("#!/bin/bash\n")
         # server specific commands to activate python
-        f.write("source ~/add_anaconda.sh\n")
-        f.write("eval $(~/anaconda4/bin/conda shell.bash hook)\n")
+        f.write('eval $(conda shell.bash hook)\n')
         # activate suite2p environment
-        f.write("source activate suite2p\n")
+        f.write(f"source activate {conda_env_name}\n")
         # run suite2p single plane command with ops as argument
         f.write('python -m suite2p --single_plane --ops "$@"')
 
@@ -134,9 +133,14 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
             print("copying ops")
             ftp_client.put(ops_path_orig, op["ops_path"])
 
+        # check size of binary file
+        bin_size = os.path.getsize(fast_disk_orig / 'data_raw.bin') / 1e6  # in MB
+        print('Binary size: %.2f GB'%(bin_size / 1e3))
+
         # run plane (server-specific command)
-        run_command = '''bsub -n %d -J test_s2p%d -R"select[avx512]" -o out%d.txt "~/run_script.sh "%s" > log%d.txt''' % (
-            n_cores, ipl, ipl, op["ops_path"], ipl)
+        run_command = f"bsub -n {n_cores} -J test_s2p{ipl} " \
+            f"-o out{ipl}.txt -M {int(mem_request_multiplier * bin_size)} " \
+            f'''{lsfargs} "~/run_script.sh '{op['ops_path']}' > log{ipl}.txt"'''
         stdin, stdout, stderr = ssh.exec_command(run_command)
         print(stdout.readlines()[0])
 

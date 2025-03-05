@@ -67,9 +67,8 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
 
     # create bash file in home directory to run
     run_script = Path.home().joinpath(".suite2p/run_script.sh")
-    if run_script.exists():
-        os.remove(run_script)
-    with open(run_script, "x", newline="") as f:
+    # removing & recreating the file may inhibit parallel runs
+    with open(run_script, "w", newline="", encoding="utf-8") as f:
         f.write("#!/bin/bash\n")
         # server specific commands to activate python
         f.write("source ~/add_anaconda.sh\n")

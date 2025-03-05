@@ -66,21 +66,25 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
     ssh = ssh_connect(host, username, password)
 
     # create bash file in home directory to run
-    run_script = Path.home().joinpath(".suite2p/run_script.sh")
+    run_script_dir = Path.home().joinpath('.suite2p')
+    run_script_path = run_script_dir.joinpath('run_script.sh')
+
+    os.makedirs(run_script_dir, exist_ok=True)  # make dir ~/.suite2p if doesn't exist
     # removing & recreating the file may inhibit parallel runs
-    with open(run_script, "w", newline="", encoding="utf-8") as f:
+    with open(run_script_path, "w", newline="", encoding="utf-8") as f:
         f.write("#!/bin/bash\n")
         # server specific commands to activate python
         f.write('eval $(conda shell.bash hook)\n')
+        f.write('conda init bash\n')
         # activate suite2p environment
         f.write(f"source activate {conda_env_name}\n")
+        f.write('echo "Running suite2p on server"\n')
         # run suite2p single plane command with ops as argument
         f.write('python -m suite2p --single_plane --ops "$@"')
 
-    ssh.exec_command("rm ~/run_script.sh")
     ssh.exec_command("chmod 777 ~/")
     ftp_client = ssh.open_sftp()
-    ftp_client.put(run_script, "run_script.sh")
+    ftp_client.put(run_script_path, "run_script.sh")
     ssh.exec_command("chmod 777 run_script.sh")
 
     pdirs = natsorted(glob.glob(save_folder + "/*/"))
@@ -134,13 +138,15 @@ def send_jobs(save_folder, host=None, username=None, password=None, server_root=
             ftp_client.put(ops_path_orig, op["ops_path"])
 
         # check size of binary file
-        bin_size = os.path.getsize(fast_disk_orig / 'data_raw.bin') / 1e6  # in MB
+        bin_size = os.path.getsize(Path(op['fast_disk']) / 'data_raw.bin') / 1e6  # in MB
         print('Binary size: %.2f GB'%(bin_size / 1e3))
 
         # run plane (server-specific command)
+        remote_home = ssh.exec_command('echo $HOME')[1].read().strip().decode('utf-8')
         run_command = f"bsub -n {n_cores} -J test_s2p{ipl} " \
-            f"-o out{ipl}.txt -M {int(mem_request_multiplier * bin_size)} " \
-            f'''{lsfargs} "~/run_script.sh '{op['ops_path']}' > log{ipl}.txt"'''
+            f"-o out{ipl}.txt -e error{ipl}.log " \
+            f"-M {int(mem_request_multiplier * bin_size)} {lsfargs} " \
+            f'''"{remote_home}/run_script.sh '{op['ops_path']}' > log{ipl}.txt"'''
         stdin, stdout, stderr = ssh.exec_command(run_command)
         print(stdout.readlines()[0])
 

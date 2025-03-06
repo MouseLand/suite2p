@@ -41,7 +41,7 @@ the most reliable responses to stimuli (as measured by signal variance).
 
 See this figure from our [review paper](https://www.sciencedirect.com/science/article/pii/S0959438818300977) for reference:
 
-![image](static/fig4_review.png)
+![image](_static/fig4_review.png)
 
 Long answer (mostly from #267):
 
@@ -91,7 +91,7 @@ and compute the z-position of the recording across time.
 
 Scanimage now can do z-correction ONLINE for you!
 
-![image](static/scanimage.png)
+![image](_static/scanimage.png)
 
 ## No signals in manually selected ROIs
 

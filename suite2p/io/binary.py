@@ -270,7 +270,7 @@ class BinaryFileCombined:
             for (ly, lx, read_filename) in zip(self.Ly, self.Lx, self.read_filenames)
         ]
         n_frames = np.zeros(len(self.read_files))
-        for rf in self.read_files:
+        for i, rf in enumerate(self.read_files):
             n_frames[i] = rf.n_frames
         assert (n_frames == n_frames[0]).sum() == len(self.read_files)
         self._index = 0
@@ -286,8 +286,8 @@ class BinaryFileCombined:
         """
         Closes the file.
         """
-        for n in range(len(self.read_files)):
-            self.read_files[n].close()
+        for f in self.read_files:
+            f.close()
 
     @property
     def nbytes(self):
@@ -302,13 +302,29 @@ class BinaryFileCombined:
         """total number of fraames in the read_file."""
         return self.read_files[0].n_frames
 
+    @property
+    def shape(self) -> Tuple[int, int, int]:
+        """
+        The dimensions of the data in the file
+
+        Returns
+        -------
+        n_frames: int
+            The number of frames
+        Ly: int
+            The height of each frame
+        Lx: int
+            The width of each frame
+        """
+        return self.n_frames, self.Ly, self.Lx
+
     def __getitem__(self, *items):
         indices, *crop = items
         data0 = self.read_files[0][indices]
         data_all = np.zeros((data0.shape[0], self.LY, self.LX), "int16")
         for n, read_file in enumerate(self.read_files):
             if n > 0:
-                data0 = self.read_file[indices]
+                data0 = read_file[indices]
             data_all[:, self.dy[n]:self.dy[n] + self.Ly[n],
                      self.dx[n]:self.dx[n] + self.Lx[n]] = data0
 

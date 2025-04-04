@@ -9,7 +9,6 @@
 [![Python version](https://img.shields.io/pypi/pyversions/suite2p)](https://pypistats.org/packages/suite2p)
 [![Licence: GPL v3](https://img.shields.io/github/license/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors-anon/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/graphs/contributors)
-[![website](https://img.shields.io/website?url=https%3A%2F%2Fwww.suite2p.org)](https://www.suite2p.org)
 [![repo size](https://img.shields.io/github/repo-size/MouseLand/suite2p)](https://github.com/MouseLand/suite2p/)
 [![GitHub stars](https://img.shields.io/github/stars/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
 [![GitHub forks](https://img.shields.io/github/forks/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
@@ -95,7 +94,7 @@ If you want to download and edit the code, and use that version,
 2. Run `conda create --name suite2p python=3.9`
 3. To activate this new environment, run `conda activate suite2p` (you will have to activate every time you want to run suite2p)
 4. Install the local version of suite2p into this environment in develop mode with the command `pip install -e .[all]`
-5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://www.suite2p.org/static/test_data/test_inputs.zip) and [test_outputs](https://www.suite2p.org/static/test_data/test_outputs.zip).
+5. Run tests: `python setup.py test` or `pytest -vs`, this will automatically download the test data into your `suite2p` folder. The test data is split into two parts: test inputs and expected test outputs which will be downloaded in `data/test_inputs` and `data/test_outputs` respectively. The .zip files for these two parts can be downloaded from these links: [test_inputs](https://osf.io/download/67f0087b1ec6658af9b25a70/) and [test_outputs](https://osf.io/download/67f007dba7eb86d7808b8832/).
 
 ## Examples
 
@@ -123,7 +122,7 @@ Then:
 
 ### Using the GUI
 
-<img src="https://www.suite2p.org/static/images/multiselect.gif" width="800" alt="selecting multiple ROIs in suite2p with Ctrl"/>
+<img src="https://github.com/MouseLand/MouseLand.github.io/releases/download/v0.1/multiselect.gif" width="800" alt="selecting multiple ROIs in suite2p with Ctrl"/>
 
 
 The suite2p output goes to a folder called "suite2p" inside your save_path, which by default is the same as the data_path. If you ran suite2p in the GUI, it loads the results automatically. Otherwise, you can load the results with File -> Load results or by dragging and dropping the stat.npy file into the GUI.

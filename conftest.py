@@ -18,7 +18,7 @@ def data_dir():
     data_path.mkdir(exist_ok=True)
     download_cached_inputs(data_path)
     cached_outputs = data_path.joinpath('test_outputs')
-    cached_outputs_url = 'https://www.suite2p.org/static/test_data/test_outputs.zip'
+    cached_outputs_url = 'https://osf.io/download/67f007dba7eb86d7808b8832/'
     if not os.path.exists(cached_outputs):
         extract_zip(data_path.joinpath('test_outputs.zip'), cached_outputs_url, data_path)
     return data_path
@@ -32,7 +32,7 @@ def test_ops(tmpdir, data_dir):
 def download_cached_inputs(data_path):
     """ Downloads test_input data if not present on machine. This function was created so it can also be used by scripts/generate_test_data.py."""
     cached_inputs = data_path.joinpath('test_inputs')
-    cached_inputs_url = 'https://www.suite2p.org/static/test_data/test_inputs.zip'
+    cached_inputs_url = 'https://osf.io/download/67f0087b1ec6658af9b25a70/'
     if not os.path.exists(cached_inputs):
         extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
 

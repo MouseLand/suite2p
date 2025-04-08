@@ -1,0 +1,225 @@
+# Defines the build system used for the project. For pure-python projects, uses the hatchling build system, which is
+# used internally by scikit-build for our C-extension projects. Therefore, there is clear continuity between our
+# c-extension and pure-python projects.
+[build-system]
+requires = ["hatchling>=1,<2"]
+build-backend = "hatchling.build"
+
+# Project metdata section. Provides the genral ID information about the project.
+[project]
+name = "sl-suite2p"
+version = "1.0.0"
+description = "Modified suite2p implementation refactored to work with Sun (NeuroAI) lab's data processing pipeline."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Kushaan Gupta", email = "kg574@cornell.edu" },
+    { name = "Ivan Kondratyev", email = "ik278@cornell.edu" },
+]
+maintainers = [
+    { name = "Ivan Kondratyev", email = "ik278@cornell.edu" },
+]
+
+keywords = ["suite2p", "sunlab", "mesoscope"]
+
+classifiers = [
+    # Development status
+    "Development Status :: 5 - Production/Stable",
+    # Intended audience and project topic
+    "Intended Audience :: Developers",
+    # License
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    # Supported Python Versions
+    "Programming Language :: Python :: 3.12",
+    # "Programming Language :: Python :: 3.13",
+    # Supported OS systems
+    "Operating System :: OS Independent",
+]
+
+# Runtime project dependencies. This overlaps with the 'condarun' optional list.
+dependencies = [
+    "natsort>=8,<9",
+    "rastermap>=1,<2",
+    "tifffile>=2025,<2026",
+    "imagecodecs>=2025,<2026",
+    "numpy>=2,<3",
+    "numba>=0.57,<1",
+    "scipy>=1.9,<2",
+    "matplotlib>=3,<4",
+    "cellpose>=3,<4",
+    "scikit-learn>=1,<2",
+    "scanimage-tiff-reader>=1.4.1,<2",
+    "qtpy>=2,<3",
+    "pyqt5>=5,<6",
+    "pyqtgraph>=0,<1",
+    "paramiko>=3.5.1,<4",
+    "nd2>=0,<1",
+    "sbxreader>=0,<1",
+    "h5py>=3,<4",
+    "opencv-python-headless>=4,<5",
+    "xmltodict>=0,<1",
+    "dcimg>=0,<1",
+    "pynwb>=3,<4",
+]
+
+[project.urls]
+Homepage = "https://github.com/Sun-Lab-NBB/suite2p"
+Documentation = "https://suite2p.readthedocs.io/en/latest/"
+
+# Specifies additional dependencies that can be installed alongside the main library. Also, this is the section that
+# stores conda, condarun, and noconda lists that facilitate setting up dependencies via conda where possible.
+[project.optional-dependencies]
+
+# Runtime dependencies known to be installable with conda for all development platforms
+# (OSX ARM64, WIN AMD64, LIN AMD64). This specification is used by ataraxis-automation to resolve as many
+# project dependencies with conda over pip as possible.
+condarun = [
+    "natsort>=8,<9",
+    "tifffile>=2025,<2026",
+    "numpy>=2,<3",
+    "numba>=0.57,<1",
+    "scipy>=1.9,<2",
+    "matplotlib>=3,<4",
+    "scikit-learn>=1,<2",
+    "qtpy>=2,<3",
+    "pyqtgraph>=0,<1",
+    "paramiko>=3.5.1,<4",
+    "nd2>=0,<1",
+    "h5py>=3,<4",
+    "opencv-python-headless>=4,<5",
+    "xmltodict>=0,<1",
+    "pynwb>=3,<4",
+]
+
+# Dependencies known to be installable with conda for all development platforms (OSX ARM64, WIN AMD64, LIN AMD64).
+conda = [
+    # Linting and Stub-generation
+    "mypy>=1,<2",
+    "ruff>=0,<1",
+
+    # Building
+    "hatchling>=1,<2",
+
+    # Distribution
+    "twine>=6,<7",
+    "grayskull>=2,<3",
+
+    # Types:
+    "scipy-stubs>=1,<2",
+]
+
+# Dependencies known to not be installable with conda for at least one supported development platform
+# (OSX ARM64, WIN AMD64, LIN AMD64).
+noconda = [
+    # Tox
+    "tox>=4,<5",
+    "tox-uv>=1,<2",
+    "uv>=0,<1",
+
+    # Building
+    "build>=1,<2",
+
+    # Automation
+    "ataraxis-automation>=4,<5",
+]
+
+# A shorthand specification that installs tox and all packages required for development tasks. This specification can
+# be used by developers to quickly install all necessary components for working on this project. Has to be installed
+# from pip.
+dev = [
+    "sl-suite2p[conda]",
+    "sl-suite2p[noconda]"
+]
+
+# Currently, the library is intended to be interfaced with more or less exclusively through the CLI commands exported
+# below.
+[project.scripts]
+reg_metrics = "suite2p.benchmarks.registration_metrics:main"
+suite2p = "suite2p.__main__:main"
+
+# Specifies files that should not be included in the source-code distribution but are also not part of gitignore.
+[tool.hatch.build.targets.sdist]
+exclude = [".github", "recipe"]
+
+# Specifies the library structure.
+[tool.hatch.build.targets.wheel]
+packages = ["src/suite2p", "examples"]
+
+# Ruff Configuration.
+[tool.ruff]
+line-length = 120         # The maximum column length is set to 120 for this project.
+indent-width = 4          # Same as black, indents are 4 spaces
+target-version = "py311"  # Targets the lowest supported version of python
+src = ["src"]             # The name of the source directory
+
+# Excludes 'service' .py files, such as the sphinx configuration file, from linting.
+extend-exclude = ["conf.py"]
+
+# Checks for all potential violations and uses the exclusions below to target-disable specific ones.
+lint.select = ["ALL"]
+
+# General ignore directives
+lint.ignore = [
+    "COM812", # Conflicts with the formatter
+    "ISC001", # Conflicts with the formatter
+    "PT001", # https://github.com/astral-sh/ruff/issues/8796#issuecomment-182590771
+    "PT023", # https://github.com/astral-sh/ruff/issues/8796#issuecomment-1825907715
+    "D107", # Project-specific, __init__ is documented inside the main class docstring where applicable
+    "D205", # Bugs out for file descriptions
+    "PLW0603", # While global statement usage is not ideal, it greatly streamlines certain development patterns
+]
+
+# Additional formatting configurations
+[tool.ruff.format]
+quote-style = "double"             # Uses double quotes for strings
+indent-style = "space"             # Uses space for indents
+skip-magic-trailing-comma = false  # Like black, ignores trailing commas
+line-ending = "auto"               # Automatically detects and standardizes line ending character
+
+# Docstrings and comments' line length
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120  # Maximum documentation line length, the same as code
+
+# Docstrings style
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# Additional, file-specific 'ignore' directives
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = [
+    "F401", # Imported but unused
+    "F403", # Wildcard imports
+]
+
+[tool.ruff.lint.isort]
+case-sensitive = true              # Takes case into account when sorting imports
+combine-as-imports = true          # Combines multiple "as" imports for the same package
+force-wrap-aliases = true          # Wraps "as" imports so that each uses a separate line (after combining for package)
+force-sort-within-sections = true  # Forces "as" and "from" imports for the same package to be close
+length-sort = true                 # Places shorter imports first
+
+# MyPy configuration section.
+[tool.mypy]
+disallow_untyped_defs = true # Enforces function annotation
+warn_unused_ignores = true   # Warns against using 'type: ignore' for packages that have type stubs available.
+exclude = [
+    "suite2p-\\d+", # Ignores temporary folder created by setuptools when building the sdist
+    "venv.*/",            # Ignores virtual environments
+    "build/",             # Ignores the sdist directory
+    "dist/",              # Ignores the wheel directory
+    "docs/",              # Ignores the sphinx / doxygen directory
+    "stubs/",             # Ignores stubs directory (stubgen output target)
+    "recipe/",            # Ignores recipe directory (grayskull output target)
+    "tests/",             # Ignores the test directory.
+]
+
+# This is used by the 'test' tox tasks to aggregate coverage data produced during pytest runtimes.
+[tool.coverage.paths]
+
+# Maps coverage measured in site-packages to source files in src
+source = ["src/", ".tox/*/lib/python*/site-packages/"]
+
+# Same as above, specifies the output directory for the coverage .html report
+[tool.coverage.html]
+directory = "reports/coverage_html"

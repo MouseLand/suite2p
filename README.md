@@ -16,7 +16,7 @@
 
 
 Pipeline for processing two-photon calcium imaging data.
-Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus
+Copyright (C) 2018 Howard Hughes Medical Institute Janelia Research Campus
 
 suite2p includes the following modules:
 
@@ -157,8 +157,10 @@ suite2p --ops <path to ops.npy> --db <path to db.npy>
 ~~~~
 
 2. From Python/Jupyter
+
 ~~~~python
-from suite2p.run_s2p import run_s2p
+from src.suite2p import run_s2p
+
 ops1 = run_s2p(ops, db)
 ~~~~
 

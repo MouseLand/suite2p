@@ -29,8 +29,8 @@ __pycache__/
 dist/
 suite2p.egg-info/
 build/
-suite2p/classifiers/classifier_user.npy
-suite2p/ops/ops_user.npy
+src/suite2p/classifiers/classifier_user.npy
+src/suite2p/ops/ops_user.npy
 *.ipynb
 .buildinfo
 doctrees/
@@ -68,3 +68,15 @@ Temporary Items
 
 # data
 data/test_data
+
+# Project files that are part of the general Sun Lab C-Python project architecture that should not be uploaded to and
+# from Github
+/cmake-build-debug/
+/reports/
+/docs/source/doxygen/
+/docs/build/
+/stubs/
+/.pypirc
+
+# Project: Add any project-specific exclusions here
+/temp

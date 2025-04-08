@@ -56,7 +56,7 @@ class ROI:
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()),
+    rsort: np.ndarray = field(default_factory=lambda: np.sort(distance_kernel(radius=30).flatten()),
                               repr=False)
 
     def __post_init__(self):

@@ -168,7 +168,6 @@ def get_tif_list(ops):
     if ops["look_one_level_down"], then all tiffs in all folders + one level down
     if ops["tiff_list"], then ops["data_path"][0] / ops["tiff_list"] ONLY
     """
-    print(f"ops == {ops}")
 
     froot = ops["data_path"]
     # use a user-specified list of tiffs

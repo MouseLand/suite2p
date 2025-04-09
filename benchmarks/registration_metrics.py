@@ -1,8 +1,9 @@
 import argparse
-from src import suite2p
+import suite2p
 import numpy as np
 from typing import NamedTuple
-from src.suite2p.__main__ import add_args, parse_args
+from pathlib import Path
+from suite2p.__main__ import add_args, parse_args
 
 
 class RegMetricResult(NamedTuple):

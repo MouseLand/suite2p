@@ -16,6 +16,8 @@ requires-python = ">=3.11"
 authors = [
     { name = "Kushaan Gupta", email = "kg574@cornell.edu" },
     { name = "Ivan Kondratyev", email = "ik278@cornell.edu" },
+    { name = "Marius Pachitariu" },
+    { name = "Carsen Stringer"},
 ]
 maintainers = [
     { name = "Ivan Kondratyev", email = "ik278@cornell.edu" },
@@ -135,7 +137,7 @@ dev = [
 # Currently, the library is intended to be interfaced with more or less exclusively through the CLI commands exported
 # below.
 [project.scripts]
-reg_metrics = "suite2p.benchmarks.registration_metrics:main"
+reg_metrics = "benchmarks.registration_metrics:main"
 suite2p = "suite2p.__main__:main"
 
 # Specifies files that should not be included in the source-code distribution but are also not part of gitignore.
@@ -144,7 +146,7 @@ exclude = [".github", "recipe"]
 
 # Specifies the library structure.
 [tool.hatch.build.targets.wheel]
-packages = ["src/suite2p", "examples"]
+packages = ["src/suite2p", "benchmarks"]
 
 # Ruff Configuration.
 [tool.ruff]

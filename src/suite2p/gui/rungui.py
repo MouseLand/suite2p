@@ -9,7 +9,7 @@ import numpy as np
 from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QWidget, QGridLayout, QButtonGroup, QComboBox, QTextEdit, QFileDialog
 
-from cellpose.models import model_path
+from cellpose.models import get_user_models, model_path, MODEL_NAMES
 
 from . import io
 from .. import default_ops

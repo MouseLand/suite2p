@@ -1,12 +1,13 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
+from qtpy import QtGui
 from qtpy.QtWidgets import QAction, QMenu
 from pkg_resources import iter_entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
-from src.suite2p.io.nwb import save_nwb
-from src.suite2p.io.utils import get_suite2p_path
+from suite2p.io.nwb import save_nwb
+from suite2p.io.utils import get_suite2p_path
 
 
 def mainmenu(parent):

@@ -11,9 +11,10 @@ import numpy as np
 import scipy
 from natsort import natsorted
 
+from .. import run_s2p
 from ..detection.stats import roi_stats
 from . import utils
-from .. import default_ops
+from .. import run_s2p, default_ops
 
 try:
     from pynwb import NWBHDF5IO, NWBFile

@@ -6,6 +6,8 @@ import shutil
 import time
 from natsort import natsorted
 from datetime import datetime
+from getpass import getpass
+import pathlib
 import contextlib
 import numpy as np
 #from scipy.io import savemat
@@ -49,6 +51,7 @@ except ImportError:
     HAS_DCIMG = False
 
 from functools import partial
+from pathlib import Path
 
 print = partial(print, flush=True)
 
@@ -517,15 +520,15 @@ def run_s2p(ops={}, db={}, server={}):
                 server["fnc"](save_folder, server)
             else:
                 # if user puts in server settings
-                src.suite2p.io.server.send_jobs(save_folder, host=server["host"],
-                                                username=server["username"],
-                                                password=server["password"],
-                                                server_root=server["server_root"],
-                                                local_root=server["local_root"],
-                                                n_cores=server["n_cores"])
+                io.server.send_jobs(save_folder, host=server["host"],
+                                    username=server["username"],
+                                    password=server["password"],
+                                    server_root=server["server_root"],
+                                    local_root=server["local_root"],
+                                    n_cores=server["n_cores"])
         else:
             # otherwise use settings modified in io/server.py
-            src.suite2p.io.server.send_jobs(save_folder)
+            io.server.send_jobs(save_folder)
         return None
     else:
         for ipl, ops_path in enumerate(ops_paths):

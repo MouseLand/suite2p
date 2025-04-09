@@ -13,6 +13,7 @@ import cv2
 import os
 
 from . import utils
+from .stats import roi_stats
 
 
 def mask_centers(masks):

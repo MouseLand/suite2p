@@ -10,7 +10,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.interpolate import RectBivariateSpline
-from scipy.ndimage import maximum_filter, uniform_filter
+from scipy.ndimage import maximum_filter, gaussian_filter, uniform_filter
 from scipy.stats import mode
 
 from . import utils

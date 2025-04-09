@@ -9,7 +9,7 @@ from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
 from matplotlib.colors import hsv_to_rgb
 
-import src.suite2p.gui.merge
+import suite2p.gui.merge
 from . import io
 
 
@@ -67,7 +67,7 @@ def make_buttons(parent, b0):
     parent.probedit.setText("0.5")
     parent.probedit.setFixedWidth(iwid)
     parent.probedit.setAlignment(QtCore.Qt.AlignRight)
-    parent.probedit.returnPressed.connect(lambda: src.suite2p.gui.merge.apply(parent))
+    parent.probedit.returnPressed.connect(lambda: suite2p.gui.merge.apply(parent))
     parent.l0.addWidget(parent.probedit, nv + b - 3, 1, 1, 1)
 
     parent.binedit = QLineEdit(parent)

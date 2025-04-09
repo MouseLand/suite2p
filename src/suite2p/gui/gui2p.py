@@ -9,7 +9,7 @@ from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from .. import default_ops
+from .. import run_s2p, default_ops
 
 
 class MainWindow(QMainWindow):
@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
 
         self.setGeometry(50, 50, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
-        from ... import suite2p
+        import suite2p
         s2p_dir = pathlib.Path(suite2p.__file__).parent
         icon_path = os.fspath(s2p_dir.joinpath("logo", "logo.png"))
 
@@ -698,7 +698,7 @@ def run(statfile=None):
     # Always start by initializing Qt (only once per application)
     warnings.filterwarnings("ignore")
     app = QApplication(sys.argv)
-    from ... import suite2p
+    import suite2p
     s2ppath = os.path.dirname(os.path.realpath(suite2p.__file__))
     icon_path = os.path.join(s2ppath, "logo", "logo.png")
     app_icon = QtGui.QIcon()

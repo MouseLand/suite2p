@@ -3,6 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 # heavily modified script from a pyqt4 release
 import os
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -14,7 +15,7 @@ from natsort import natsorted
 from tifffile import imread
 import json
 
-from . import masks, utils
+from . import masks, views, graphics, traces, classgui, utils
 from .. import registration
 from ..io.save import compute_dydx
 

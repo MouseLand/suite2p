@@ -16,6 +16,7 @@ except ImportError:
     HAS_CV2 = False
 
 from . import rigid, nonrigid, utils, bidiphase
+from .. import io
 
 
 def pclowhigh(mov, nlowhigh, nPC, random_state):

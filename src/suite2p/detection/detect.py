@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Any
 
-from . import sourcery, sparsedetect, chan2detect
+from . import sourcery, sparsedetect, chan2detect, utils
 from .stats import roi_stats
 from .denoise import pca_denoise
 from ..io.binary import BinaryFile

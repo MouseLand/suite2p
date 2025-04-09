@@ -4,6 +4,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtCore
+from pyqtgraph import Point
 from pyqtgraph import functions as fn
 from pyqtgraph.graphicsItems.ViewBox.ViewBoxMenu import ViewBoxMenu
 

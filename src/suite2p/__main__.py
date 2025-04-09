@@ -3,7 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import argparse
 import numpy as np
-from src.suite2p import default_ops, version
+from suite2p import default_ops, version
 
 
 def add_args(parser: argparse.ArgumentParser):
@@ -68,15 +68,15 @@ def main():
     if args.version:
         print("suite2p v{}".format(version))
     elif args.single_plane and args.ops:
-        from src.suite2p.run_s2p import run_plane
+        from suite2p.run_s2p import run_plane
         # run single plane (does registration)
         run_plane(ops, ops_path=args.ops)
     elif len(args.db) > 0:
         db = np.load(args.db, allow_pickle=True).item()
-        from src.suite2p import run_s2p
+        from suite2p import run_s2p
         run_s2p(ops, db)
     else:
-        from src.suite2p import gui
+        from suite2p import gui
         gui.run()
 
 

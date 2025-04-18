@@ -7,6 +7,7 @@ from typing import Tuple, Optional, NamedTuple, Sequence, List, Dict, Any
 from dataclasses import dataclass, field
 from warnings import warn
 
+import sys
 import numpy as np
 from numpy.linalg import norm
 from scipy.spatial import ConvexHull
@@ -25,7 +26,6 @@ def median_pix(ypix, xpix):
     xmed = xpix[imin]
     ymed = ypix[imin]
     return [ymed, xmed]
-
 
 class EllipseData(NamedTuple):
     mu: float
@@ -47,17 +47,22 @@ class EllipseData(NamedTuple):
     def aspect_ratio(self) -> float:
         ry, rx = self.radii
         return aspect_ratio(width=ry, height=rx)
-
+    
+def default_rsort():
+    return np.sort(distance_kernel(radius=30).flatten())
 
 @dataclass(frozen=True)
 class ROI:
+    # To avoid the ValueError caused by using a mutable default value in your dataclass, you should use the default_factory argument of the field function. 
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()),
-                              repr=False)
+    if sys.version_info >= (3, 11):
+        rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
+    else:
+        rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
 
     def __post_init__(self):
         """Validate inputs."""

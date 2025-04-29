@@ -80,7 +80,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="suite2p",
+    name="suite2p_mbo",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
     description="Pipeline for calcium imaging",

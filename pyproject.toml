@@ -1,0 +1,62 @@
+[build-system]
+# use setuptools ≥61 (for PEP 621 support) and setuptools_scm for git‐based versioning
+requires = [
+  "setuptools>=61.0.0",
+  "wheel",
+  "setuptools_scm[toml]>=6.3"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# strip off any +<commit> local tag so PyPI will accept the version
+local_scheme = "no-local-version"
+
+[project]
+name = "suite2p_mbo"
+version = "1.0.0"
+description = "Pipeline for calcium imaging"
+readme = "README.md"
+license = { file = "LICENSE" }
+# authors
+authors = [
+  { name = "Marius Pachitariu", email = "marius10p@gmail.com" },
+  { name = "Carsen Stringer" }
+]
+requires-python = ">=3.11, <3.13""
+dependencies = [
+  "importlib-metadata",
+  "natsort",
+  "rastermap>=0.9.0",
+  "tifffile",
+  "torch>=1.13.1",
+  "numpy>=1.24.3",
+  "numba>=0.57.0",
+  "matplotlib",
+  "scipy>=1.9.0",
+  "scikit-learn",
+  "cellpose",
+  "scanimage-tiff-reader>=1.4.1",
+  "qtpy",
+  "pyqt6",
+  "pyqt6.sip",
+  "pyqtgraph",
+  "paramiko",
+  "h5py",
+  "opencv-python-headless",
+  "xmltodict",
+  "dcimg",
+]
+
+[project.urls]
+Homepage = "https://github.com/MouseLand/suite2p"
+
+# console_scripts entry points
+[project.scripts]
+suite2p        = "suite2p.__main__:main"
+reg_metrics    = "benchmarks.registration_metrics:main"
+tiff2scanimage = "scripts.make_tiff_scanimage_compatible:main"
+
+# tell setuptools which packages to include
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["suite2p*", "benchmarks*", "helpers*", "jupyter*", "scripts*"]

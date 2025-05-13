@@ -830,7 +830,7 @@ class BinaryPlayer(QMainWindow):
             self.playButton.setEnabled(False)
             self.pauseButton.setEnabled(True)
             self.frameSlider.setEnabled(False)
-            self.updateTimer.start(self.time_step)
+            self.updateTimer.start(int(self.time_step))
 
     def pause(self):
         self.updateTimer.stop()

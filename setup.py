@@ -10,7 +10,7 @@ install_deps = ["importlib-metadata",
         "matplotlib",
         "scipy>=1.9.0",
         "scikit-learn",
-        "cellpose",
+        "cellpose<=3.1.1.2",
         "scanimage-tiff-reader>=1.4.1"
         ]
 

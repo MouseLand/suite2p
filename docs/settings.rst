@@ -226,8 +226,10 @@ ROI detection settings
 
 - **spatial_scale**: (*int, default: 0*), what the optimal scale of the
   recording is in pixels. if set to 0, then the algorithm determines it
-  automatically (recommend this on the first try). If it seems off, set it yourself to the following values:
+  automatically (recommend this on the first try).
+  If it seems off, set it yourself to the following values:
   1 (=6 pixels), 2 (=12 pixels), 3 (=24 pixels), or 4 (=48 pixels).
+  Only used when ``sparse_mode = True``.
 
 - **connected**: (*bool, default: True*) whether or not to require ROIs
   to be fully connected (set to *0* for dendrites/boutons)
@@ -238,7 +240,9 @@ ROI detection settings
   fewer ROIs will be detected, and if you set it lower, more ROIs will
   be detected.
 
-- **spatial_hp_detect**: (*int, default: 25*) window for spatial high-pass filtering for neuropil subtracation before ROI detection takes place.
+- **spatial_hp_detect**: (*int, default: 25*) window size in pixel 
+  for spatial high-pass filtering for neuropil subtracation 
+  before ROI detection takes place.
 
 - **max_overlap**: (*float, default: 0.75*) we allow overlapping ROIs
   during cell detection. After detection, ROIs with more than
@@ -258,6 +262,8 @@ ROI detection settings
 - **max_iterations**: (*int, default: 20*) how many iterations over
   which to extract cells - at most ops['max_iterations'], but usually
   stops before due to ops['threshold_scaling'] criterion.
+  For ``sparse_mode = True``, this determines the maximum number of ROIs
+  to be extracted: ``250 * max_iterations``.
 
 - **nbinned**: (*int, default: 5000*) maximum number of binned frames
   to use for ROI detection.

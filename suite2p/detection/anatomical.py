@@ -4,10 +4,12 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 from typing import Any, Dict
 from scipy.ndimage import find_objects, gaussian_filter
-from cellpose.models import CellposeModel, Cellpose
-from cellpose import transforms, dynamics
-from cellpose.utils import fill_holes_and_remove_small_masks
+from cellpose import models as _cpm
+CellposeModel = _cpm.CellposeModel
+Cellpose = CellposeModel
+from cellpose import transforms, dynamics, utils
 from cellpose.transforms import normalize99
+from cellpose.utils import fill_holes_and_remove_small_masks
 import time
 import cv2
 import os

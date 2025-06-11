@@ -25,10 +25,10 @@ jobs:
         python-version: [3.8, 3.9]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           
@@ -36,9 +36,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wheel setuptools tox tox-gh-actions
-          pip install pydrive2 py # Added py due to pytest tox issues requiring py module.
-
+          pip install tox tox-gh-actions
+          
       - name: Test with tox
         run: tox
         env:

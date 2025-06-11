@@ -73,7 +73,7 @@ jobs:
       - name: Coverage
         # Only run coverage once
         if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
 
   deploy:
     # this will run when you have tagged a commit, starting with "v*"

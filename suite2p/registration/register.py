@@ -203,8 +203,11 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
     if isinstance(refImg, list):
         refAndMasks_all = []
         for rimg in refImg:
-            refAndMasks = compute_filters_and_norm(rimg, norm_frames, spatial_smooth, 
-                                                   spatial_taper, block_size, device)
+            refAndMasks = compute_filters_and_norm(rimg, norm_frames=norm_frames, 
+                                                   spatial_smooth=spatial_smooth, 
+                                                   spatial_taper=spatial_taper, 
+                                                   lpad=lpad, subpixel=subpixel, 
+                                                   block_size=block_size, device=device)
             refAndMasks_all.append(refAndMasks)
         return refAndMasks_all
     else:

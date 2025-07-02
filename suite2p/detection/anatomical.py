@@ -103,8 +103,8 @@ def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
                pretrained_model=None):
     if diameter == 0:
         diameter = None
-    pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
-    model = CellposeModel()
+    pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
+    model = CellposeModel(pretrained_model=pretrained_model)
     masks = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]

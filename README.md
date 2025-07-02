@@ -50,6 +50,8 @@ Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandin
 
 ## Local installation
 
+If you are using a GPU, make sure its drivers and the cuda libraries are correctly installed.
+
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.8** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name suite2p python=3.9`.
@@ -76,7 +78,27 @@ This package relies on the awesomeness of [pyqtgraph](http://pyqtgraph.org/), [P
 
 The software has been heavily tested on Windows 10 and Ubuntu 18.04, and less well tested on Mac OS. Please post an [issue](https://github.com/MouseLand/suite2p/issues) if you have installation problems. 
 
+### GPU version (CUDA) on Windows or Linux
+
+If you plan on running Cellpose-SAM (anatomical ROI detection), you may want to install a GPU version of *torch*. To use your NVIDIA GPU with python, you will need to make sure the NVIDIA driver for your GPU is installed, check out this [website](https://www.nvidia.com/Download/index.aspx?lang=en-us) to download it. You can also install the CUDA toolkit, or use the pytorch cudatoolkit (installed below with conda). If you have trouble with the below install, we recommend installing the CUDA toolkit yourself, choosing one of the 11.x releases [here](https://developer.nvidia.com/cuda-toolkit-archive).
+
+With the latest versions of pytorch on Linux, as long as the NVIDIA drivers are installed, the GPU version is installed by default with pip. You can check if the GPU support is working by opening the GUI. If the GPU is working then the `GPU` box will be checked and the `CUDA` version will be displayed in the command line. 
+
+If it's not working, we will need to remove the CPU version of torch:
+~~~
+pip uninstall torch
+~~~
+
+To install the GPU version of torch, follow the instructions [here](https://pytorch.org/get-started/locally/). The pip or conda installs should work across platforms, you will need torch and torchvision, e.g. for windows + cuda 12.6 the command is
+~~~
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+~~~
+
+Info on how to install several older versions is available [here](https://pytorch.org/get-started/previous-versions/). After install you can check `conda list` for `pytorch`, and its version info should have `cuXX.X`, not `cpu`.
+
 ### Installing the latest github version of the code
+
+If you are using a GPU, make sure its drivers and the cuda libraries are correctly installed.
 
 The simplest way is
 ~~~
@@ -89,6 +111,8 @@ If you want to download and edit the code, and use that version,
 
 
 ### Installation for developers
+
+If you are using a GPU, make sure its drivers and the cuda libraries are correctly installed.
 
 1. Clone the repository and `cd suite2p` in an anaconda prompt / command prompt with `conda` for **python 3** in the path
 2. Run `conda create --name suite2p python=3.9`

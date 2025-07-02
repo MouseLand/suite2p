@@ -4,8 +4,8 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 from typing import Any, Dict
 from scipy.ndimage import find_objects, gaussian_filter
-from cellpose.models import CellposeModel, Cellpose
-from cellpose import transforms, dynamics
+from cellpose.models import CellposeModel
+from cellpose import transforms, dynamics, core
 from cellpose.utils import fill_holes_and_remove_small_masks
 from cellpose.transforms import normalize99
 import time
@@ -34,7 +34,7 @@ def patch_detect(patches, diam):
     print("refining masks using cellpose")
     npatches = len(patches)
     ly = patches[0].shape[0]
-    model = Cellpose()
+    model = CellposeModel(gpu=True if core.use_gpu() else False)
     imgs = np.zeros((npatches, ly, ly, 2), np.float32)
     for i, m in enumerate(patches):
         imgs[i, :, :, 0] = transforms.normalize99(m)
@@ -46,7 +46,7 @@ def patch_detect(patches, diam):
     batch_size = 8 * 224 // ly
     tic = time.time()
     for j in np.arange(0, npatches, batch_size):
-        y = model.cp.network(imgs[j:j + batch_size])[0]
+        y = model.net(imgs[j:j + batch_size])[0]
         y = y[:, :, ysub[0]:ysub[-1] + 1, xsub[0]:xsub[-1] + 1]
         y = y.asnumpy()
         for i, yi in enumerate(y):
@@ -99,14 +99,13 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     return stats
 
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
+def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
                pretrained_model=None):
-    pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
-    if not os.path.exists(pretrained_model):
-        model = Cellpose(model_type=pretrained_model)
-    else:
-        model = CellposeModel(pretrained_model=pretrained_model)
-    masks = model.eval(mproj, channels=[0, 0], diameter=diameter,
+    if diameter == 0:
+        diameter = None
+    pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
+    model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
+    masks = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]
     shape = masks.shape

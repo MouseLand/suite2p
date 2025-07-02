@@ -5,7 +5,7 @@ import numpy as np
 from typing import Any, Dict
 from scipy.ndimage import find_objects, gaussian_filter
 from cellpose.models import CellposeModel
-from cellpose import transforms, dynamics
+from cellpose import transforms, dynamics, core
 from cellpose.utils import fill_holes_and_remove_small_masks
 from cellpose.transforms import normalize99
 import time
@@ -34,7 +34,7 @@ def patch_detect(patches, diam):
     print("refining masks using cellpose")
     npatches = len(patches)
     ly = patches[0].shape[0]
-    model = CellposeModel()
+    model = CellposeModel(gpu=True if core.use_gpu() else False)
     imgs = np.zeros((npatches, ly, ly, 2), np.float32)
     for i, m in enumerate(patches):
         imgs[i, :, :, 0] = transforms.normalize99(m)
@@ -104,7 +104,7 @@ def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
     if diameter == 0:
         diameter = None
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
-    model = CellposeModel(pretrained_model=pretrained_model)
+    model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
     masks = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]

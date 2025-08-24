@@ -283,7 +283,7 @@ These settings are only used if ``ops['anatomical_only']`` is set to an integer 
 
 - **spatial_hp_cp**: (*int, default: 0*) Window for spatial high-pass filtering of image to be used for cellpose. 
 
-- **pretrained_model**: (*str, default: 'cyto'*) Path to pretrained model or string for model type (can be user's model ).
+- **pretrained_model**: (*str, default: 'cpsam'*) Path to pretrained model or string for model type (can be user's model ).
 
 Signal extraction settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

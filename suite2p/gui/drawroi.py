@@ -252,42 +252,71 @@ class ROIDraw(QMainWindow):
         print("Num cells", self.nROIs)
 
         # Append new stat file with old and save
-        print("Saving new stat")
-        stat_all = self.new_stat.copy()
-        for n in range(len(self.parent.stat)):
-            stat_all.append(self.parent.stat[n])
-        np.save(os.path.join(self.parent.basename, "stat.npy"), stat_all)
-        iscell_prob = np.concatenate(
-            (self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]),
-            axis=1)
+        # print("Saving new stat")
+        # stat_all = self.new_stat.copy()
+        # for n in range(len(self.parent.stat)):
+        #     stat_all.append(self.parent.stat[n])
+        # np.save(os.path.join(self.parent.basename, "stat.npy"), stat_all)
 
-        new_iscell = np.ones((self.nROIs, 2))
-        new_iscell = np.concatenate((new_iscell, iscell_prob), axis=0)
-        np.save(os.path.join(self.parent.basename, "iscell.npy"), new_iscell)
+        # Append new ROI at the end for stat, iscell, F and spks
+        old_stat = self.parent.stat.copy()        # copy existing list of dicts
+        new_stat = list(self.new_stat.copy())
+        stat_all = np.empty(len(old_stat) + len(new_stat), dtype=object)             
+        stat_all[:len(old_stat)] = list(old_stat)
+        stat_all[len(old_stat):] = new_stat      # append new ROIs at the end
+        np.save(os.path.join(self.parent.basename, "stat.npy"), stat_all)
+        
+        # iscell_prob = np.concatenate(
+        #     (self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]),
+        #     axis=1)
+
+        # new_iscell = np.ones((self.nROIs, 2))
+        # new_iscell = np.concatenate((new_iscell, iscell_prob), axis=0)
+        # np.save(os.path.join(self.parent.basename, "iscell.npy"), new_iscell)
+        iscell_prob = np.column_stack((self.parent.iscell, self.parent.probcell))
+        new_iscell = np.ones((self.nROIs, 2), dtype=iscell_prob.dtype)
+        iscell_all = np.vstack((iscell_prob, new_iscell))
+        np.save(os.path.join(self.parent.basename, "iscell.npy"), iscell_all)
 
         # Save fluorescence traces
-        Fcell = np.concatenate((self.Fcell, self.parent.Fcell), axis=0)
-        Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
-        Spks = np.concatenate(
-            (self.Spks, self.parent.Spks), axis=0
-        )  # For now convert spikes to 0 for the new ROIS and then fix it later
+        # Fcell = np.concatenate((self.Fcell, self.parent.Fcell), axis=0)
+        # Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
+        # Spks = np.concatenate(
+        #     (self.Spks, self.parent.Spks), axis=0
+        # )  # For now convert spikes to 0 for the new ROIS and then fix it later
+        # np.save(os.path.join(self.parent.basename, "F.npy"), Fcell)
+        # np.save(os.path.join(self.parent.basename, "Fneu.npy"), Fneu)
+        # np.save(os.path.join(self.parent.basename, "spks.npy"), Spks)
+        Fcell = np.concatenate((self.parent.Fcell, self.Fcell), axis=0)
+        Fneu = np.concatenate((self.parent.Fneu, self.Fneu), axis=0)
+        Spks = np.concatenate((self.parent.Spks, self.Spks), axis=0)
         np.save(os.path.join(self.parent.basename, "F.npy"), Fcell)
         np.save(os.path.join(self.parent.basename, "Fneu.npy"), Fneu)
-        np.save(os.path.join(self.parent.basename, "spks.npy"), Spks)
+        np.save(os.path.join(self.parent.basename, "spks.npy"), Spks)        
 
         if "reg_file_chan2" in self.parent.ops:
-            F_chan2 = np.load(os.path.join(self.parent.basename, "F_chan2.npy"))
-            Fneu_chan2 = np.load(os.path.join(self.parent.basename, "Fneu_chan2.npy"))
-            redorig = np.load(os.path.join(self.parent.basename, "redcell.npy"))
-            F_chan2 = np.concatenate((self.F_chan2, F_chan2), axis=0)
-            Fneu_chan2 = np.concatenate((self.Fneu_chan2, Fneu_chan2), axis=0)
-            Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
-            new_redcell = np.zeros((self.nROIs, 2))
-            new_redcell = np.concatenate((new_redcell, redorig), axis=0)
-            np.save(os.path.join(self.parent.basename, "F_chan2.npy"), F_chan2)
-            np.save(os.path.join(self.parent.basename, "Fneu_chan2.npy"), Fneu_chan2)
-            np.save(os.path.join(self.parent.basename, "redcell.npy"), new_redcell)
-
+            # F_chan2 = np.load(os.path.join(self.parent.basename, "F_chan2.npy"))
+            # Fneu_chan2 = np.load(os.path.join(self.parent.basename, "Fneu_chan2.npy"))
+            # redorig = np.load(os.path.join(self.parent.basename, "redcell.npy"))
+            # F_chan2 = np.concatenate((self.F_chan2, F_chan2), axis=0)
+            # Fneu_chan2 = np.concatenate((self.Fneu_chan2, Fneu_chan2), axis=0)
+            # Fneu = np.concatenate((self.Fneu, self.parent.Fneu), axis=0)
+            # new_redcell = np.zeros((self.nROIs, 2))
+            # new_redcell = np.concatenate((new_redcell, redorig), axis=0)
+            # np.save(os.path.join(self.parent.basename, "F_chan2.npy"), F_chan2)
+            # np.save(os.path.join(self.parent.basename, "Fneu_chan2.npy"), Fneu_chan2)
+            # np.save(os.path.join(self.parent.basename, "redcell.npy"), new_redcell)
+            F_chan2_old = np.load(os.path.join(self.parent.basename, "F_chan2.npy"))
+            Fneu_chan2_old = np.load(os.path.join(self.parent.basename, "Fneu_chan2.npy"))
+            red_old = np.load(os.path.join(self.parent.basename, "redcell.npy"))
+            F_chan2_all = np.concatenate((F_chan2_old, self.F_chan2), axis=0)
+            Fneu_chan2_all = np.concatenate((Fneu_chan2_old, self.Fneu_chan2), axis=0)
+            red_new = np.zeros((self.nROIs, 2), dtype=red_old.dtype)
+            red_all = np.vstack((red_old, red_new))
+            np.save(os.path.join(self.parent.basename, "F_chan2.npy"), F_chan2_all)
+            np.save(os.path.join(self.parent.basename, "Fneu_chan2.npy"), Fneu_chan2_all)
+            np.save(os.path.join(self.parent.basename, "redcell.npy"), red_all)
+            
         print(np.shape(Fcell), np.shape(Fneu), np.shape(Spks), np.shape(new_iscell),
               np.shape(stat_all))
 

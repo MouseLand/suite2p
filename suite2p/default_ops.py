@@ -130,10 +130,10 @@ def default_ops():
             0,  # run cellpose to get masks on 1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj
         "diameter": 0,  # use diameter for cellpose, if 0 estimate diameter
         "cellprob_threshold": 0.0,  # cellprob_threshold for cellpose
-        "flow_threshold": 1.5,  # flow_threshold for cellpose
+        "flow_threshold": 0.4,  # flow_threshold for cellpose
         "spatial_hp_cp": 0,  # high-pass image spatially by a multiple of the diameter
         "pretrained_model":
-            "cyto",  # path to pretrained model or model type string in Cellpose (can be user model)
+            "cpsam",  # path to pretrained model or model type string in Cellpose (can be user model)
 
         # classification parameters
         "soma_crop":

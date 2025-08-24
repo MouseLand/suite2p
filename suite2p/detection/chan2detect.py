@@ -5,6 +5,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from ..extraction import masks
 from . import utils
+import traceback
 """
 identify cells with channel 2 brightness (aka red cells)
 
@@ -90,7 +91,10 @@ def cellpose_overlap(stats, mimg2):
         ypix0, xpix0 = stats[i]["ypix"], stats[i]["xpix"]
         smask[ypix0, xpix0] = 1
         ious = utils.mask_ious(masks, smask)[0]
-        iou = ious.max()
+        if ious.size > 0:
+            iou = ious.max()
+        else:
+            iou = 0.0
         redstats[
             i,
         ] = np.array([iou > 0.25, iou])  #this had the wrong dimension
@@ -112,10 +116,11 @@ def detect(ops, stats):
         try:
             print(">>>> CELLPOSE estimating masks in anatomical channel")
             redstats, masks = cellpose_overlap(stats, mimg2)
-        except:
+        except Exception as e:
             print(
                 "ERROR importing or running cellpose, continuing without anatomical estimates"
             )
+            traceback.print_exc()
 
     if redstats is None:
         redstats = intensity_ratio(ops, stats)

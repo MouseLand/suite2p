@@ -141,12 +141,13 @@ def extract_traces_from_masks(ops, cell_masks, neuropil_masks):
     
     """
     batch_size = ops["batch_size"]
+    nframes = ops["nframes"]    
     F_chan2, Fneu_chan2 = [], []
-    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"], filename=ops["reg_file"]) as f:
+    with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"], filename=ops["reg_file"], n_frames=nframes) as f:
         F, Fneu = extract_traces(f, cell_masks, neuropil_masks, batch_size=batch_size)
     if "reg_file_chan2" in ops:
         with BinaryFile(Ly=ops["Ly"], Lx=ops["Lx"],
-                        filename=ops["reg_file_chan2"]) as f:
+                        filename=ops["reg_file_chan2"], n_frames=nframes) as f:
             F_chan2, Fneu_chan2 = extract_traces(f, cell_masks, neuropil_masks,
                                                  batch_size=batch_size)
     return F, Fneu, F_chan2, Fneu_chan2
@@ -250,10 +251,11 @@ def create_masks_and_extract(ops, stat, cell_masks=None, neuropil_masks=None):
 
     # create cell and neuropil masks
     Ly, Lx = ops["Ly"], ops["Lx"]
+    nframes = ops["nframes"]
     reg_file = ops["reg_file"]
     reg_file_alt = ops.get("reg_file_chan2", ops["reg_file"])
-    with BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file) as f_in,\
-         BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_alt) as f_in_chan2:
+    with BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file, n_frames=nframes) as f_in,\
+         BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_alt, n_frames=nframes) as f_in_chan2:
         if ops["nchannels"] == 1:
             f_in_chan2.close()
             f_in_chan2 = None

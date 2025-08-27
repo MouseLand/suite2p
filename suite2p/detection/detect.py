@@ -35,13 +35,13 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5
     tstarts = np.arange(0, n_frames, batch_size)
     n_batches = min(nbins // (batch_size // bin_size), len(tstarts))
     tstarts = tstarts[np.linspace(0, len(tstarts) - 1, n_batches, dtype="int")]
-
+    
     tqdm_out = TqdmToLogger(logger, level=logging.INFO)
     for n in trange(n_batches, mininterval=10, file=tqdm_out):
         tstart = tstarts[n]
         tend = min(tstart + batch_size, n_frames)
         data = f_reg[tstart : tend]
-
+        
         # exclude badframes
         good_indices = good_frames[tstart : tend]
         if good_indices.mean() > 0.5:
@@ -113,6 +113,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
 
 
 	"""
+    
     n_frames, Ly, Lx = f_reg.shape
     yrange = [0, Ly] if yrange is None else yrange
     xrange = [0, Lx] if xrange is None else xrange

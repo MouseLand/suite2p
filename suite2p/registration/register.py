@@ -203,11 +203,13 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
     if isinstance(refImg, list):
         refAndMasks_all = []
         for rimg in refImg:
+
             refAndMasks = compute_filters_and_norm(rimg, norm_frames=norm_frames, 
                                                    spatial_smooth=spatial_smooth, 
                                                    spatial_taper=spatial_taper, 
                                                    lpad=lpad, subpixel=subpixel, 
                                                    block_size=block_size, device=device)
+
             refAndMasks_all.append(refAndMasks)
         return refAndMasks_all
     else:
@@ -242,35 +244,60 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
                 rmin, rmax)
 
 def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
-                   snr_thresh=1.2, maxregshiftNR=5):
-    
-    (maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, 
-     blocks, rmin, rmax) = refAndMasks
-    device = fr_reg.device
+                   snr_thresh=1.2, maxregshiftNR=5, nZ=1):
+    n_fr = fr_reg.shape[0]
+    if nZ > 1:
+        # find best plane
+        offsets_all = []
+        for z in range(nZ):
+            fr_reg0 = fr_reg.clone()
+            offsets0 = compute_shifts(refAndMasks[z], fr_reg0, maxregshift, 
+                                      smooth_sigma_time, snr_thresh, 
+                                      maxregshiftNR, nZ=1)
+            offsets_all.append(offsets0)
+        cmax_all = np.array([offsets[2].cpu().numpy() for offsets in offsets_all]).T
+        zest = cmax_all.argmax(axis=1)
 
-    fr_reg = torch.clip(fr_reg, rmin, rmax) if rmin > -np.inf else fr_reg
-
-    # rigid registration
-    ymax, xmax, cmax = rigid.phasecorr(fr_reg, cfRefImg, maskMul, maskOffset, 
-                                       maxregshift, smooth_sigma_time)[:3]
+        nb = refAndMasks[0][3].shape[0]
+        device = fr_reg.device
+        shapes = [(n_fr,), (n_fr,), (n_fr,), (n_fr, nb), (n_fr, nb), (n_fr, nb)]
+        offsets_best = [torch.zeros(shapes[i], device=device, 
+                                    dtype=torch.float32 if i > 1 else torch.long) 
+                        for i in range(6)]
+        for z in range(nZ):
+            iz = np.nonzero(zest == z)[0]
+            if len(iz) > 0:
+                for i, offsets in enumerate(offsets_all[z][:6]):
+                    offsets_best[i][iz] = offsets[iz]
         
-    # non-rigid registration
-    if maskMulNR is not None:
-        # shift torch frames to reference
-        fr_reg = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
-                              for frame, dy, dx in zip(fr_reg, ymax, xmax)], axis=0)
-        ymax1, xmax1, cmax1 = nonrigid.phasecorr(fr_reg, blocks, 
-                                                 maskMulNR, maskOffsetNR, cfRefImgNR, 
-                                                snr_thresh, maxregshiftNR)[:3]
-    else:    
-        ymax1, xmax1, cmax1 = None, None, None
+        return *offsets_best[:6], zest, cmax_all
+            
+    else:
+        (maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, cfRefImgNR, 
+        blocks, rmin, rmax) = refAndMasks
+        device = fr_reg.device
 
-    del fr_reg
-    if device.type == "cuda":
-        torch.cuda.empty_cache()    
+        # rigid registration
+        ymax, xmax, cmax = rigid.phasecorr(fr_reg, cfRefImg, maskMul, maskOffset, 
+                                        maxregshift, smooth_sigma_time)[:3]
+            
+        # non-rigid registration
+        if maskMulNR is not None and maxregshiftNR > 0:     
+            # shift torch frames to reference
+            fr_reg = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
+                                for frame, dy, dx in zip(fr_reg, ymax, xmax)], axis=0)
+            ymax1, xmax1, cmax1 = nonrigid.phasecorr(fr_reg, blocks, 
+                                                    maskMulNR, maskOffsetNR, cfRefImgNR, 
+                                                    snr_thresh, maxregshiftNR)[:3]
+        else:    
+            ymax1, xmax1, cmax1 = None, None, None
 
-    if device.type == "mps":
-        torch.mps.empty_cache()
+        del fr_reg
+        if device.type == "cuda":
+            torch.cuda.empty_cache()    
+
+        if device.type == "mps":
+            torch.mps.empty_cache()
 
     return ymax, xmax, cmax, ymax1, xmax1, cmax1, None, None
 
@@ -294,18 +321,9 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
     return frames_out
 
 def normalize_reference_image(refImg):
-    if isinstance(refImg, list):
-        rmins = []
-        rmaxs = []
-        for rimg in refImg:
-            rimg[:], rmin, rmax = normalize_reference_image(rimg)
-            rmins.append(rmin)
-            rmaxs.append(rmax)
-        return refImg, rmins, rmaxs
-    else:
-        rmin, rmax = np.percentile(refImg, [1, 99]).astype(np.int16)
-        refImg = np.clip(refImg, rmin, rmax)
-        return refImg, rmin, rmax
+    rmin, rmax = np.percentile(refImg, [1, 99]).astype(np.int16)
+    refImg = np.clip(refImg, rmin, rmax)
+    return refImg, rmin, rmax
 
 
 def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100, 
@@ -327,19 +345,21 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     if isinstance(refImg, list):
         nZ = len(refImg)
         logger.info(f"List of reference frames len = {nZ}")
+    else:
+        nZ = 1
 
     refAndMasks = compute_filters_and_norm(refImg, norm_frames=norm_frames, 
                                            spatial_smooth=smooth_sigma,
                                            spatial_taper=spatial_taper, 
                                            block_size=block_size if nonrigid else None, 
                                            device=device)
-    (maskMul, maskOffset, cfRefImg, maskMulNR, maskOffsetNR, 
-        cfRefImgNR, blocks, rmin, rmax) = refAndMasks
+    blocks = refAndMasks[-3] if nZ==1 else refAndMasks[0][-3]
+    rmin = refAndMasks[-2] if nZ==1 else [refAndMasks[z][-2] for z in range(nZ)]
+    rmax = refAndMasks[-1] if nZ==1 else [refAndMasks[z][-1] for z in range(nZ)]
     ### ------------- register frames to reference image ------------ ###
 
     mean_img = np.zeros((Ly, Lx), "float32")
-    rigid_offsets, nonrigid_offsets, zpos, cmax_all = [], [], [], []
-
+    
     n_batches = int(np.ceil(n_frames / batch_size))
     logger.info(f"Registering {n_frames} frames in {n_batches} batches")
     tqdm_out = TqdmToLogger(logger, level=logging.INFO)
@@ -356,7 +376,8 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         fr_reg = fr_torch.clone()
         offsets = compute_shifts(refAndMasks, fr_reg, maxregshift=maxregshift, 
                                  smooth_sigma_time=smooth_sigma_time, 
-                                 snr_thresh=snr_thresh, maxregshiftNR=maxregshiftNR)
+                                 snr_thresh=snr_thresh, maxregshiftNR=maxregshiftNR, 
+                                 nZ=nZ)
         ymax, xmax, cmax, ymax1, xmax1, cmax1, zest, cmax_all = offsets
         frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks)
         

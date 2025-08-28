@@ -1059,7 +1059,8 @@ class PCViewer(QMainWindow):
                 self.nums[j].setText("%s: %1.3f" % (ptitle[j], self.DX[iPC, j]))
             self.scatter = pg.ScatterPlotItem()
             self.p3.addItem(self.scatter)
-            self.scatter.setData([iPC + 1, iPC + 1, iPC + 1], self.DX[iPC, :].tolist(),
+            #print(self.DX.shape)
+            self.scatter.setData([iPC + 1, iPC + 1, iPC + 1], self.DX[iPC, :3].tolist(),
                                  size=10, brush=pg.mkBrush(255, 255, 255))
             self.p3.setLabel("left", "pixel shift")
             self.p3.setLabel("bottom", "PC #")

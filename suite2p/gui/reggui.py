@@ -563,7 +563,7 @@ class BinaryPlayer(QMainWindow):
         self.vside.setAspectLocked(lock=True, ratio=self.xyrat)
 
         self.nframes = ops["nframes"]
-        self.time_step = 1. / ops["fs"] * 1000 / 5  # 5x real-time
+        self.time_step = int(1. / ops["fs"] * 1000 / 5)  # 5x real-time (make sure it's casted)
         self.frameDelta = int(np.maximum(5, self.nframes / 200))
         self.frameSlider.setSingleStep(self.frameDelta)
         self.currentMovieDirectory = QtCore.QFileInfo(self.filename).path()

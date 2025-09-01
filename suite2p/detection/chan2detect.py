@@ -92,7 +92,10 @@ def cellpose_overlap(stats, mimg2, chan2_threshold=0.25, device=torch.device("cu
         ypix0, xpix0 = stats[i]["ypix"], stats[i]["xpix"]
         smask[ypix0, xpix0] = 1
         ious = utils.mask_ious(masks, smask)[0]
-        iou = ious.max()
+        if ious.size > 0:
+            iou = ious.max()
+        else:
+            iou = 0.0
         redstats[
             i,
         ] = np.array([iou > chan2_threshold, iou])  #this had the wrong dimension

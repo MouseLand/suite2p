@@ -475,7 +475,7 @@ settings["detection"]["sourcery_settings"]["smooth_masks"]
                 
 settings["detection"]["cellpose_settings"]["cellpose_model"]
 	Cellpose model name or model path to use for cell detection (cyto, nuclei, etc).
-                    Default value: cyto ;   
+                    Default value: cpsam ;   
                     Min, max: (None, None) ; 
                     Type: str
                 

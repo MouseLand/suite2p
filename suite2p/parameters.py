@@ -620,7 +620,7 @@ SETTINGS = {
                 "type": str,
                 "min": None,
                 "max": None,
-                "default": "cyto",
+                "default": "cpsam",
                 "description": "Cellpose model name or model path to use for cell detection (cyto, nuclei, etc).",
             },
             "img": {

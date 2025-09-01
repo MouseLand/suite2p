@@ -189,15 +189,15 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
     
     """
     Lyc, Lxc = mean_img.shape
-    if settings["anatomical_only"] == 1:
+    if settings["img"] == 'max_proj / mean_img':
         img = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
         weights = max_proj
-    elif settings["anatomical_only"] == 2:
+    elif settings["img"] == 'mean_img':
         img = mean_img
         weights = 0.1 + np.clip(
             (mean_img - np.percentile(mean_img, 1)) /
             (np.percentile(mean_img, 99) - np.percentile(mean_img, 1)), 0, 1)
-    elif settings["anatomical_only"] == 3:
+    elif settings["img"] == 'enhanced_mean_img':
         if "meanImgE" in settings:
             img = settings["meanImgE"][yrange[0] : yrange[1],
                                   xrange[0] : xrange[1]]
@@ -219,14 +219,14 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
     logger.info("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
                 diameter[1])
 
-    if settings.get("spatial_hp_cp", 0):
+    if settings.get("highpass_spatial", 0):
         img = np.clip(normalize99(img), 0, 1)
-        img -= gaussian_filter(img, diameter[1] * settings["spatial_hp_cp"])
+        img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
         img, diameter=diameter[1], flow_threshold=settings["flow_threshold"],
-        cellprob_threshold=settings["cellprob_threshold"],
-        pretrained_model=settings["pretrained_model"], device=device)
+        cellprob_threshold=settings['cellprob_threshold'],
+        pretrained_model=settings['cellpose_model'], device=device)
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
         img = cv2.resize(img, (Lxc, Lyc))

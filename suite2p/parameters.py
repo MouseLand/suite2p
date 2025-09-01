@@ -647,6 +647,22 @@ SETTINGS = {
                 "default": None,
                 "description": "Parameters for cellpose, provided as a dict.",
             },
+            "flow_threshold": {
+                "gui_name": "Flow threshold",
+                "type": float,
+                "min": 0.,
+                "max": 1.,
+                "default": 0.4,
+                "description": "Flow threshold for cellpose.",
+            },
+            'cellprob_threshold': {
+                "gui_name": "Cellprob threshold",
+                "type": float,
+                "min": 0.,
+                "max": 1.,
+                "default": 0.0,
+                "description": "Cell probability threshold for cellpose.",
+            },
             "model_chan2": {
                 "gui_name": "Cellpose model chan2",
                 "type": str,

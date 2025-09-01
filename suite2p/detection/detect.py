@@ -17,7 +17,7 @@ from ..classification import classify, user_classfile
 from .. import default_settings 
 from ..logger import TqdmToLogger
 
-cellpose_options_num = {'max_proj / meanImg': 1, 'meanImg':2, 'enhanced_meanImg': 3 ,'max_proj': 4}
+cellpose_options_num = {'max_proj / meanImg': 1, 'meanImg':2, 'enhanced_mean_img': 3 ,'max_proj': 4}
 
 def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5000):
     """ bin registered movie """
@@ -151,7 +151,9 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     t0 = time.time()
     if settings["algorithm"] == "cellpose":
         if anatomical.CELLPOSE_INSTALLED:
-            logger.info(f">>>> CELLPOSE finding masks in {settings['cellpose_settings']['img']}")
+            logger.info(">>>> CELLPOSE finding masks in " +
+                  ["max_proj / mean_img", "mean_img", "enhanced_mean_img", "max_proj"][
+                      int(cellpose_options_num[settings["cellpose_settings"]["img"]]) - 1])
             new_settings, stat = anatomical.select_rois(meanImg, max_proj, settings=settings["cellpose_settings"],
                                           diameter=diameter, 
                                           device=device)

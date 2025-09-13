@@ -14,8 +14,8 @@ you want suite2p to only look at some of the folder’s children, then set
 
 If you want suite2p to only use specific tiffs in ONE folder, then set
 the data path to only have one folder
-(`settings['data_path']=['my_folder_path']`), and name the tiffs you want
-processed in `settings['tiff_list']`.
+(`db['data_path']=['my_folder_path']`), and name the tiffs you want
+processed in `db['file_list']`.
 
 See examples in this [notebook](https://github.com/MouseLand/suite2p/blob/master/jupyter/run_pipeline_tiffs_or_batch.ipynb).
 

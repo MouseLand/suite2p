@@ -51,6 +51,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Test Data
+data/
+scripts/test_data/
+
 # Translations
 *.mo
 *.pot
@@ -68,8 +72,8 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
+# Markdown documentation
+suite2p/docs/_static/
 
 # PyBuilder
 target/

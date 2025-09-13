@@ -437,10 +437,10 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
         if yoff1 is not None:
             yoff1k, xoff1k = yoff1[tstart : tend], xoff1[tstart : tend]
             
-        if device.type == "cpu":
-            fr_torch = torch.from_numpy(frames).to(device)
-        else:
+        if device.type == "cuda":
             fr_torch = torch.from_numpy(frames).pin_memory().to(device)
+        else:
+            fr_torch = torch.from_numpy(frames).to(device)
 
         if bidiphase != 0:
             fr_torch = bidi.shift(fr_torch, bidiphase)

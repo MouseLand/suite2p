@@ -239,6 +239,6 @@ def combined(save_folder, save=True):
             matpath = os.path.join(db["save_path"], "Fall.mat")
             save_mat(db, stat, F, Fneu, spks, iscell, redcell)
 
-    return (stat, db, F, Fneu, spks, 
+    return (stat, db, settings, F, Fneu, spks, 
             iscell[:,0], iscell[:,1], 
             redcell[:,0], redcell[:,1], hasred)

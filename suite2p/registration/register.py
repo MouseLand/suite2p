@@ -610,7 +610,12 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     else:
         meanImg_chan2 = None
 
-    reg_outputs = registration_outputs_to_dict(refImg_orig, rmin, rmax, meanImg, (yoff, xoff, corrXY), (yoff1, xoff1, corrXY1), (zest, cmax_all), meanImg_chan2, badframes, yrange, xrange)
+    reg_outputs = registration_outputs_to_dict(refImg_orig, rmin, rmax, meanImg, 
+                                               (yoff, xoff, corrXY), 
+                                               (yoff1, xoff1, corrXY1), 
+                                               (zest, cmax_all), meanImg_chan2, 
+                                               badframes, badframes0, 
+                                               yrange, xrange)
     
     # add enhanced mean image
     meanImgE = utils.highpass_mean_image(meanImg.astype("float32"), aspect=aspect)
@@ -619,7 +624,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
 def registration_outputs_to_dict(refImg, rmin, rmax, meanImg, rigid_offsets, 
                                  nonrigid_offsets, zest, meanImg_chan2, 
-                                 badframes, yrange, xrange):
+                                 badframes, badframes0, yrange, xrange):
     reg_outputs = {}
     # assign reference image and normalizers
     reg_outputs["refImg"] = refImg
@@ -634,7 +639,8 @@ def registration_outputs_to_dict(refImg, rmin, rmax, meanImg, rigid_offsets,
     if meanImg_chan2 is not None:
         reg_outputs["meanImg_chan2"] = meanImg_chan2
     # assign crop computation and badframes
-    reg_outputs["badframes"], reg_outputs["yrange"], reg_outputs["xrange"] = badframes, yrange, xrange
+    reg_outputs["badframes"], reg_outputs["badframes0"] = badframes, badframes0
+    reg_outputs["yrange"], reg_outputs["xrange"] = yrange, xrange
     if zest[0] is not None:
         reg_outputs["zpos_registration"] = np.array(zest[0])
         reg_outputs["cmax_registration"] = np.array(zest[1])

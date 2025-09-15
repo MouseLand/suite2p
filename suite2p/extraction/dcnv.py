@@ -120,7 +120,7 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float, sig_baseline: 
         sampling rate per plane
 
     prctile_baseline : float
-        percentile of trace to use as baseline if using `constant_prctile` for baseline
+        percentile of trace to use as baseline if using `prctile` for baseline
     
     Returns
     ----------------
@@ -137,7 +137,7 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float, sig_baseline: 
     elif baseline == "constant":
         Flow = gaussian_filter(F, [0., sig_baseline])
         Flow = np.amin(Flow)
-    elif baseline == "constant_prctile":
+    elif baseline == "prctile":
         Flow = np.percentile(F, prctile_baseline, axis=1)
         Flow = np.expand_dims(Flow, axis=1)
     else:

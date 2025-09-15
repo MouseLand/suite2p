@@ -111,7 +111,7 @@ def init_dbs(db0):
     keep_movie_raw = db0["keep_movie_raw"]
     nfolders = nplanes
     iplane = db0.get("iplane", np.arange(0, nplanes))
-    if "lines" in db0:
+    if "lines" in db0 and db0["lines"] is not None and len(db0["lines"]) > 0:
         nrois = len(db0["lines"])
         db0["nrois"] = nrois
         nfolders *= nrois
@@ -147,7 +147,7 @@ def init_dbs(db0):
         db["reg_file"] = os.path.join(fast_disk, "data.bin")
         if keep_movie_raw:
             db["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
-        if "lines" in db:
+        if "lines" in db and db["lines"] is not None and len(db["lines"]) > 0:
             db["lines"], db["dy"], db["dx"] = lines[j], dy[j], dx[j]
             db["iroi"] = iroi[j]
         db["iplane"] = iplane[j]

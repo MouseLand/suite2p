@@ -16,12 +16,16 @@ class MainWindow(QMainWindow):
 
     def __init__(self, statfile=None):
         super(MainWindow, self).__init__()
+        import suite2p
+        s2p_dir = pathlib.Path(suite2p.__file__).parent
+        ### first time running, need to check for user files
+        user_dir = pathlib.Path.home().joinpath(".suite2p")
+        user_dir.mkdir(exist_ok=True)
+
         pg.setConfigOptions(imageAxisOrder="row-major")
 
         self.setGeometry(50, 50, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
-        import suite2p
-        s2p_dir = pathlib.Path(suite2p.__file__).parent
         icon_path = os.fspath(s2p_dir.joinpath("logo", "logo.png"))
 
         app_icon = QtGui.QIcon()
@@ -46,10 +50,7 @@ class MainWindow(QMainWindow):
         self.loaded = False
         self.ops_plot = []
 
-        ### first time running, need to check for user files
-        user_dir = pathlib.Path.home().joinpath(".suite2p")
-        user_dir.mkdir(exist_ok=True)
-
+        
         # check for classifier file
         class_dir = user_dir.joinpath("classifiers")
         class_dir.mkdir(exist_ok=True)

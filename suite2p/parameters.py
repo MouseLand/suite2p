@@ -62,6 +62,14 @@ DB = {
             "default": 1,
             "description": "Each tiff / file has this many planes in sequence.",
         },
+        "nrois": {
+            "gui_name": "Number of ScanImage ROIs",
+            "type": int,
+            "min": 1,
+            "max": 100,
+            "default": 1,
+            "description": "Each tiff / file has this many different ROIs.",
+        },
         "nchannels": {
             "gui_name": "Number of channels",
             "type": int,
@@ -77,6 +85,14 @@ DB = {
             "max": 2,
             "default": 1,
             "description": "This channel is used to extract functional ROIs (1-based).",
+        },
+        "lines": {
+            "gui_name": "Lines for each Scanimage ROI",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "Line numbers for each ScanImage ROI.",
         },
         "ignore_flyback": {
             "gui_name": "Ignore flyback",
@@ -282,7 +298,7 @@ SETTINGS = {
             "type": bool,
             "min": None,
             "max": None,
-            "default": False,
+            "default": True,
             "description": "Whether to save db, settings, reg_outputs, detection_outputs into ops.npy.",
         },
         "delete_bin": {
@@ -793,17 +809,17 @@ SETTINGS = {
         "win_baseline": {
             "gui_name": "Baseline window",
             "type": float,
-            "min": 0.,
+            "min": 1.,
             "max": np.inf,
-            "default": 1.,
+            "default": 60.,
             "description": "Window (in seconds) for max filter.",
         },
         "sig_baseline": {
             "gui_name": "Baseline sigma",
             "type": float,
-            "min": 0.,
+            "min": 1.,
             "max": np.inf,
-            "default": 1.,
+            "default": 10.,
             "description": "Width of Gaussian filter in frames (applied to find constant or before maximin filter).",
         },
         "prctile_baseline": {
@@ -812,7 +828,7 @@ SETTINGS = {
             "min": 0.,
             "max": 100.,
             "default": 8.,
-            "description": "Percentile of trace to use as baseline if using 'constant_prctile' for baseline.",
+            "description": "Percentile of trace to use as baseline if using 'prctile' for baseline.",
         },
     },  
 }

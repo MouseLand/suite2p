@@ -4,7 +4,8 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import argparse, os, platform
 import numpy as np
 from suite2p import default_settings, default_db, version
-from suite2p.run_s2p import run_plane, run_s2p
+from suite2p.run_s2p import logger_setup, run_plane, run_s2p, get_save_folder
+import logging
 
 def add_args(parser: argparse.ArgumentParser):
     """
@@ -15,6 +16,7 @@ def add_args(parser: argparse.ArgumentParser):
     parser.add_argument("--settings", default=[], type=str, help="options")
     parser.add_argument("--db", default=[], type=str, help="options")
     parser.add_argument("--version", action="store_true", help="print version number.")
+    parser.add_argument("--verbose", action="store_true", help="print more info during processing.")
     return parser
 
 
@@ -36,11 +38,19 @@ def main():
         add_args(argparse.ArgumentParser(description="Suite2p settings/db paths")))
     if args.version:
         print("suite2p v{}".format(version))
-    elif args.single_plane and args.settings and args.db:
-        # run single plane (does registration)
-        run_plane(db=db, settings=settings, db_path=args.db)
     elif args.settings and args.db:
-        run_s2p(db=db, settings=settings)
+        if args.verbose:
+            save_folder = db['save_path'] if args.single_plane else get_save_folder(db)
+            logger_setup(save_folder)
+        try:
+            if args.single_plane:
+                run_plane(db=db, settings=settings, db_path=args.db)
+            else:
+                run_s2p(db=db, settings=settings)
+        except Exception as e:
+            logging.exception(f'fatal error in {"run_plane" if args.single_plane else "run_s2p"}:')
+            raise
+
     else:
         # Check if the OS is macOS and the machine is Apple Silicon (ARM-based)
         if platform.system() == "Darwin" and 'arm' in platform.processor().lower():

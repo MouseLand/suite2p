@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (QDialog, QLineEdit, QLabel, QPushButton, QWidget,
 from superqt import QCollapsible 
 
 from . import io, utils
-from .rungui_utils import Suite2pWorker
+from .rungui_utils import Suite2pWorker, XStream
 from .. import default_settings, user_settings, SETTINGS_FOLDER, default_db, parameters
 
 import logging 
@@ -254,7 +254,7 @@ class RunWindow(QMainWindow):
 
         self.create_db_settings_inputs()
 
-        #self.load_settings(filename="/media/carsen/ssd2/suite2p_paper/2/settings.json")
+        # self.load_settings(filename=".../suite2p/db.npy")
 
     def create_menu_bar(self):
         main_menu = self.menuBar()
@@ -409,21 +409,9 @@ class RunWindow(QMainWindow):
         
         self.textEdit = QPlainTextEdit(self)
         self.layout.addWidget(self.textEdit, n0 + 1, 0, 16, cw+2)
-        #self.process = QtCore.QProcess(self)
-        #self.process.readyReadStandardOutput.connect(self.stdout_write)
-        #self.process.readyReadStandardError.connect(self.stderr_write)
-        # disable the button when running the s2p process
-        #self.process.started.connect(self.started)
-        #self.process.finished.connect(self.finished)
-        
-        #self.textEdit = QTextEditLogger(self)
-        #self.textEdit.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        #logging.getLogger().addHandler(self.textEdit)
-        #logging.getLogger().setLevel(logging.DEBUG)
-        #self.verticalLayout_5.addWidget(logTextBox.widget)
-        #self.layout.addWidget(self.textEdit.widget, n0 + 1, 0, 16, cw+2)
 
-
+        XStream.stdout().messageWritten.connect(self.update_text)
+        XStream.stderr().messageWritten.connect(self.update_text)
 
         qlabel = QLabel("file settings")
         qlabel.setStyleSheet(bigfont)
@@ -543,35 +531,27 @@ class RunWindow(QMainWindow):
         db_file = os.path.join(self.save_path, "db.npy")
 
         print("Running suite2p with command:")
-        cmd = f"-u -W ignore -m suite2p --settings {settings_file} --db {db_file}"
+        cmd = f"-m suite2p --settings {settings_file} --db {db_file} --verbose"
         print("python " + cmd)
 
         self.worker = Suite2pWorker(self, db_file=db_file, settings_file=settings_file)
-        log_file = pathlib.Path(self.save_path) / "run.log"
-        try:
-            log_file.unlink()
-        except:
-            print("creating new log file {log_file}")
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
-            handlers=[logging.FileHandler(log_file),self.worker.logHandler])
-        self.worker.logHandler.log.signal.connect(self.write_log)
         self.worker.finished.connect(self.finished)
 
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(True)
 
         self.worker.start()
-        #self.process.start(sys.executable, cmd.split(" "))
-
-        #self.process.start('python -u -W ignore -m suite2p --settings "%s" --db "%s"' %
-        #                   (settings_file, db_file))
+        
 
     # define a new Slot, that receives a string
     @QtCore.Slot(str)
-    def write_log(self, log_text):
-        self.textEdit.appendPlainText(log_text)
-        self.textEdit.centerCursor()  # scroll to the bottom
+    def update_text(self, log_text):
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertText(log_text)
+        #self.textEdit.moveCursor(QtGui.QTextCursor.End)
+        #self.textEdit.appendPlainText(log_text)
+        self.textEdit.ensureCursorVisible()
 
     def stop(self):
         self.finish = False

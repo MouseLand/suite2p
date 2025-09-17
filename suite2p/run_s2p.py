@@ -13,6 +13,7 @@ import numpy as np
 from scipy.stats import skew
 import torch
 import logging 
+
 logger = logging.getLogger(__name__)
 
 from . import io, default_settings, default_db, pipeline, version_str
@@ -42,19 +43,51 @@ files_to_binary = {
         io.dcimg_to_binary,
 }
 
-def logger_setup(save_path):
-    if not pathlib.Path(save_path).exists():
-        pathlib.Path(save_path).mkdir(parents=True, exist_ok=True)
-    log_file = pathlib.Path(save_path) / "run.log"
-    try:
-        log_file.unlink()
-    except:
-        print(f"creating new log file {log_file}")
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(log_file),
-                  logging.StreamHandler(sys.stdout)])
+def get_save_folder(db):
+    if db["save_path0"] is None or len(db["save_path0"])==0:
+        db["save_path0"] = db["data_path"][0]
+
+    if db["save_folder"] is None or len(db["save_folder"]) == 0:
+        db["save_folder"] = "suite2p"
+    save_folder = os.path.join(db["save_path0"], db["save_folder"])
+    return save_folder
+
+def logger_setup(save_path=None):
+    """ Configure logging for the whole suite2p package.
     
+    based on code from code from https://github.com/MouseLand/Kilosort/blob/a961f07f38593b44562ede1d041b3ff1a39973ac/kilosort/run_kilosort.py#L442
+    
+    """
+    if save_path is not None and not pathlib.Path(save_path).exists():
+        pathlib.Path(save_path).mkdir(parents=True, exist_ok=True)
+    s2p_logger = logging.getLogger('suite2p')
+    s2p_logger.setLevel(logging.DEBUG)
+    
+    # Skip this if the handlers were already added, like when running multiple
+    # times in a single session.
+    if not s2p_logger.handlers:
+        # Add console handler at info level with shorter messages,
+        # unless verbose is requested.
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        console.setFormatter(file_formatter)
+        s2p_logger.addHandler(console)
+
+
+    if save_path is not None:
+        log_file = pathlib.Path(save_path) / "run.log"
+        try:
+            log_file.unlink()
+        except:
+            pass
+        print(f"creating log file {log_file}")
+        file = logging.FileHandler(log_file, mode='w')
+        file.setLevel(logging.DEBUG)
+        log_file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        file.setFormatter(log_file_formatter)
+        s2p_logger.addHandler(file)
+
 
 def _assign_torch_device(str_device):
     """
@@ -158,8 +191,6 @@ def run_plane(db, settings, db_path=None, stat=None):
         np.save(db["db_path"], db)
         np.save(db["settings_path"], settings)
 
-    logger_setup(db["save_path"])
-
     # check that there are sufficient numbers of frames
     if db["nframes"] < 10: raise ValueError("number of frames should be at least 50")
     elif db["nframes"] < 200:
@@ -229,7 +260,7 @@ def run_plane(db, settings, db_path=None, stat=None):
     return outputs
 
 
-def run_s2p(db={}, settings=default_settings(), server={}, logging=True):
+def run_s2p(db={}, settings=default_settings(), server={}):
     """Run suite2p pipeline.
 
     Args:
@@ -245,13 +276,9 @@ def run_s2p(db={}, settings=default_settings(), server={}, logging=True):
             
     settings = {**default_settings(), **settings}
     db = {**default_db(), **db}
-    if db["save_path0"] is None or len(db["save_path0"])==0:
-        db["save_path0"] = db["data_path"][0]
 
-    # check if there are binaries already made
-    if db["save_folder"] is None or len(db["save_folder"]) == 0:
-        db["save_folder"] = "suite2p"
-    save_folder = os.path.join(db["save_path0"], db["save_folder"])
+    save_folder = get_save_folder(db)
+    
     if os.path.exists(save_folder):
         plane_folders = natsorted([
             f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
@@ -259,9 +286,6 @@ def run_s2p(db={}, settings=default_settings(), server={}, logging=True):
     else:
         plane_folders = []
 
-    if logging:
-        logger_setup(save_folder)
-    
     logger.info(version_str)
     logger.info(f"data_path: {db['data_path']}")
     

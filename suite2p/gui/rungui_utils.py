@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from qtpy import QtCore
 
-from suite2p import run_s2p
+from suite2p.run_s2p import logger_setup, run_s2p, get_save_folder
 
 class MyLog(QtCore.QObject):
     """
@@ -41,7 +41,7 @@ class ThreadLogger(logging.Handler):
         msg = self.format(record)
         self.log.signal.emit(msg)
 
-class Suite2pWorker(QtCore.QThread):
+class Suite2pWorker2(QtCore.QThread):
     finished = QtCore.Signal(str)
     
     def __init__(self, parent, db_file, settings_file):
@@ -56,7 +56,81 @@ class Suite2pWorker(QtCore.QThread):
         settings = np.load(self.settings_file, allow_pickle=True).item()
         
         try:
-            run_s2p(db=db, settings=settings, logging=False)
+            logger_setup(db['save_path'])
+            run_s2p(db=db, settings=settings)
+            self.finished.emit("finished")
+        except Exception as e:
+            print("ERROR:", e)
+            traceback.print_exc()
+            self.finished.emit("error")
+
+
+class QtHandler(logging.Handler):
+    def __init__(self):
+        logging.Handler.__init__(self)
+
+    def emit(self, record):
+        record = self.format(record)
+        if record:
+            XStream.stdout().write(f"{record}")
+
+
+class XStream(QtCore.QObject):
+    _stdout = None
+    _stderr = None
+    messageWritten = QtCore.Signal(str)
+
+    def flush(self):
+        pass
+
+    def fileno(self):
+        return -1
+
+    def write(self, msg):
+        if not self.signalsBlocked():
+            self.messageWritten.emit(msg)
+
+    @staticmethod
+    def stdout():
+        if not XStream._stdout:
+            XStream._stdout = XStream()
+            sys.stdout = XStream._stdout
+        return XStream._stdout
+
+    @staticmethod
+    def stderr():
+        if not XStream._stderr:
+            XStream._stderr = XStream()
+            sys.stderr = XStream._stderr
+        return XStream._stderr
+
+
+def setup_logger(name):
+    logger = logging.getLogger(name)
+    handler = QtHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+
+class Suite2pWorker(QtCore.QThread):
+    finished = QtCore.Signal(str)
+    
+    def __init__(self, parent, db_file, settings_file):
+        super(Suite2pWorker, self).__init__()
+        self.db_file = db_file
+        self.settings_file = settings_file
+        self.parent = parent
+        # self.logHandler = ThreadLogger()
+        
+    def run(self):
+        db = np.load(self.db_file, allow_pickle=True).item()
+        settings = np.load(self.settings_file, allow_pickle=True).item()
+        
+        try:
+            logger_setup(get_save_folder(db))
+            run_s2p(db=db, settings=settings)
             self.finished.emit("finished")
         except Exception as e:
             print("ERROR:", e)

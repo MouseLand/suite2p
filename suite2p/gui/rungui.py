@@ -259,7 +259,7 @@ class RunWindow(QMainWindow):
     def create_menu_bar(self):
         main_menu = self.menuBar()
         file_menu = main_menu.addMenu("&File")
-        self.loadOps = QAction("&Load settings file")
+        self.loadOps = QAction("&Load db or settings or ops file")
         self.loadOps.triggered.connect(lambda: self.load_settings(filename=None))
         self.loadOps.setEnabled(True)
         file_menu.addAction(self.loadOps)
@@ -307,7 +307,7 @@ class RunWindow(QMainWindow):
 
     def load_settings(self, filename=None):
         if filename is None:
-            name = QFileDialog.getOpenFileName(self, "Open settings file (npy or json)")
+            name = QFileDialog.getOpenFileName(self, "Open settings/db/ops file (npy or json)")
             filename = name[0]
 
         if filename is None:
@@ -585,11 +585,12 @@ class RunWindow(QMainWindow):
             self.textEdit.appendPlainText("Interrupted by error (not finished)\n")
         
     def save_settings(self):
-        name = QFileDialog.getSaveFileName(self, "Ops name (*.npy)")
+        name = QFileDialog.getSaveFileName(self, "Settings name (*.npy)")
         settings = get_settings(self.SETTINGS, self.settings_gui)
-        if name:
+        if len(name) > 0 and name[0] is not None:
+            name = name[0]
             np.save(name, settings)
-            print("saved current settings to %s" % (name))
+            print(f'saved current settings to {name}')
 
     def save_default_settings(self):
         name = SETTINGS_FOLDER / "settings_user.npy"
@@ -598,9 +599,10 @@ class RunWindow(QMainWindow):
         print("saved current settings in GUI as default user settings")
 
     def revert_default_settings(self):
-        shutil.remove(SETTINGS_FOLDER / "settings_user.npy")
-        print("removing default user settings, reverting to built-in")
-
+        if (SETTINGS_FOLDER / "settings_user.npy").exists():
+            os.remove(SETTINGS_FOLDER / "settings_user.npy")
+        print("removing default user settings, reverting to built-in defaults")
+        
     def stdout_write(self):
         cursor = self.textEdit.textCursor()
         cursor.movePosition(cursor.End)

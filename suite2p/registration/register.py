@@ -404,7 +404,7 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         # save aligned frames to tiffs
         if tif_root:
             fname = os.path.join(tif_root, f"file{n : 05d}.tif")
-            io.save_tiff(mov=frames, fname=fname)
+            save_tiff(mov=frames, fname=fname)
 
     return rmin, rmax, mean_img, offsets_all, blocks
 
@@ -455,7 +455,7 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
         # save aligned frames to tiffs
         if tif_root:
             fname = os.path.join(tif_root, f"file{n : 05d}.tif")
-            io.save_tiff(mov=frames, fname=fname)
+            save_tiff(mov=frames, fname=fname)
 
     return mean_img
 

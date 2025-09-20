@@ -78,11 +78,11 @@ class FullPipelineTestUtils:
 
     def initialize_settings_test_mesoscan_2plane_2z(db, settings):
         mesoscan_dir = Path(db['data_path'][0]).joinpath('mesoscan')
-        with open(mesoscan_dir.joinpath('settings.json')) as f:
+        with open(mesoscan_dir.joinpath('ops.json')) as f:
             meso_settings = json.load(f)
         db['data_path'] = [mesoscan_dir]
         # Separate db and settings parameters from meso_settings
-        db_keys = ['data_path', 'save_path0', 'nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
+        db_keys = ['nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
         settings_keys = ['do_registration', 'roidetect']
         for key in meso_settings.keys():
             if key in db_keys:

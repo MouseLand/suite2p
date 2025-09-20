@@ -846,7 +846,39 @@ SETTINGS = {
             "default": 8.,
             "description": "Percentile of trace to use as baseline if using 'prctile' for baseline.",
         },
-    },  
+    },
+    "mesoscan": {
+        "gui_name": "Mesoscan mode",
+        "type": int,
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "description": "Enable mesoscan mode for processing multiple FOVs.",
+    },
+    "dx": {
+        "gui_name": "X offsets",
+        "type": list,
+        "min": None,
+        "max": None,
+        "default": [],
+        "description": "X offsets for mesoscan FOVs.",
+    },
+    "dy": {
+        "gui_name": "Y offsets",
+        "type": list,
+        "min": None,
+        "max": None,
+        "default": [],
+        "description": "Y offsets for mesoscan FOVs.",
+    },
+    "lines": {
+        "gui_name": "Line assignments",
+        "type": list,
+        "min": None,
+        "max": None,
+        "default": [],
+        "description": "Line assignments for mesoscan FOVs.",
+    },
 }
 
 def default_dict(d):

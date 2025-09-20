@@ -301,7 +301,7 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
 
     return ymax, xmax, cmax, ymax1, xmax1, cmax1, None, None
 
-def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None):
+def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None, device=torch.device("cuda")):
     fr_torch = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
                                for frame, dy, dx in zip(fr_torch, yoff, xoff)], axis=0)
 
@@ -379,7 +379,7 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
                                  snr_thresh=snr_thresh, maxregshiftNR=maxregshiftNR, 
                                  nZ=nZ)
         ymax, xmax, cmax, ymax1, xmax1, cmax1, zest, cmax_all = offsets
-        frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks)
+        frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks, device)
         
         # convert to numpy and concatenate offsets
         ymax, xmax, cmax = ymax.cpu().numpy(), xmax.cpu().numpy(), cmax.cpu().numpy()
@@ -444,7 +444,7 @@ def shift_frames_and_write(f_alt_in, f_alt_out=None, batch_size=100, yoff=None, 
 
         if bidiphase != 0:
             fr_torch = bidi.shift(fr_torch, bidiphase)
-        frames = shift_frames(fr_torch, yoffk, xoffk, yoff1k, xoff1k, blocks)
+        frames = shift_frames(fr_torch, yoffk, xoffk, yoff1k, xoff1k, blocks, device=device)
         mean_img += frames.sum(axis=0) / n_frames
 
         if f_alt_out is None:
@@ -529,8 +529,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             yrange (list): Valid ranges for registration along y-axis of frames.
             xrange (list): Valid ranges for registration along x-axis of frames.
     """
-   
-    out = assign_reg_io(f_reg, f_raw, f_reg_chan2, f_raw_chan2, align_by_chan2, 
+    out = assign_reg_io(f_reg, f_raw, f_reg_chan2, f_raw_chan2, align_by_chan2,
                         save_path, settings["reg_tif"], settings["reg_tif_chan2"])
     f_align_in, f_align_out, f_alt_in, f_alt_out, tif_root_align, tif_root_alt = out
 

@@ -258,7 +258,7 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
         cmax_all = np.array([offsets[2].cpu().numpy() for offsets in offsets_all]).T
         zest = cmax_all.argmax(axis=1)
 
-        nb = refAndMasks[0][3].shape[0]
+        nb = refAndMasks[0][3].shape[0] if refAndMasks[0][3] is not None else 0
         device = fr_reg.device
         shapes = [(n_fr,), (n_fr,), (n_fr,), (n_fr, nb), (n_fr, nb), (n_fr, nb)]
         offsets_best = [torch.zeros(shapes[i], device=device, 
@@ -268,7 +268,7 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
             iz = np.nonzero(zest == z)[0]
             if len(iz) > 0:
                 for i, offsets in enumerate(offsets_all[z][:6]):
-                    offsets_best[i][iz] = offsets[iz]
+                    offsets_best[i][iz] = offsets[iz] if offsets is not None else 0
         
         return *offsets_best[:6], zest, cmax_all
             

@@ -40,17 +40,19 @@ def download_cached_inputs(data_path):
 def initialize_settings(tmpdir, data_dir):
     """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accomodate creation of settings for both pytest and non-pytest settings."""
     settings = suite2p.default_settings()
+    db = {
+        'data_path': [Path(data_dir).joinpath('test_inputs')],
+    }
     settings.update(
         {
             'use_builtin_classifier': True,
-            'data_path': [Path(data_dir).joinpath('test_inputs')],
             'save_path0': str(tmpdir),
             'norm_frames': False,
             'denoise': False,
             'soma_crop': False
         }
     )
-    return settings
+    return db, settings
 
 def extract_zip(cached_file, url, data_path):
     download_url_to_file(url, cached_file)        

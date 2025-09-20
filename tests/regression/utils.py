@@ -40,49 +40,61 @@ class FullPipelineTestUtils:
     functions that can be used by both test_full_pipeline.py and generate_test_data.py.
     This is to ensure both the generation script and the tests use the same settings.
     """
-    def initialize_settings_test1plane_1chan_with_batches(settings):
-        settings.update({
-            'tiff_list': ['input_1500.tif'],
-            'do_regmetrics': True,
-            'save_NWB': True,
-            'save_mat': True,
+    def initialize_settings_test1plane_1chan_with_batches(db, settings):
+        db.update({
+            "file_list": ["input_1500.tif"], 
+            "input_format": "tif",
+            "nplanes": 1, 
+            "nchannels": 1,
             'keep_movie_raw': True,
-            'delete_bin': True,
         })
-        return settings
+        settings["run"]['do_regmetrics'] = True
+        settings["io"]['save_nwb'] = True
+        settings["io"]["save_mat"] = True
+        settings["io"]["delete_bin"] = True
+        return db, settings
 
-    def initialize_settings_test_1plane_2chan_sourcery(settings):
-        settings.update({
+    def initialize_settings_test_1plane_2chan_sourcery(db, settings):
+        db.update({
             'nchannels': 2,
-            'sparse_mode': 0,
-            'tiff_list': ['input.tif'],
+            'file_list': ['input.tif'],
             'keep_movie_raw': True
         })
-        return settings
+        settings["detection"]["sparsery_settings"]["spatial_scale"] = 0
+        return db, settings
 
-    def initialize_settings_test2plane_2chan_with_batches(settings):
-        settings.update({
-            'tiff_list': ['input_1500.tif'],
+    def initialize_settings_test2plane_2chan_with_batches(db, settings):
+        db.update({
+            'file_list': ['input_1500.tif'],
             'batch_size': 200,
             'nplanes': 2,
             'nchannels': 2,
-            'reg_tif': True,
-            'reg_tif_chan2': True,
-            'save_mat': True,
-            'delete_bin': True,
         })
-        return settings 
+        settings["registration"]["reg_tif"] = True
+        settings["registration"]["reg_tif_chan2"] = True
+        settings["io"]["save_mat"] = True
+        settings["io"]["delete_bin"] = True
+        return db, settings 
 
-    def initialize_settings_test_mesoscan_2plane_2z(settings):
-        mesoscan_dir = Path(settings['data_path'][0]).joinpath('mesoscan')
+    def initialize_settings_test_mesoscan_2plane_2z(db, settings):
+        mesoscan_dir = Path(db['data_path'][0]).joinpath('mesoscan')
         with open(mesoscan_dir.joinpath('settings.json')) as f:
             meso_settings = json.load(f)
-        settings['data_path'] = [mesoscan_dir]
+        db['data_path'] = [mesoscan_dir]
+        # Separate db and settings parameters from meso_settings
+        db_keys = ['data_path', 'save_path0', 'nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
+        settings_keys = ['do_registration', 'roidetect']
         for key in meso_settings.keys():
-            if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
+            if key in db_keys:
+                db[key] = meso_settings[key]
+            elif key == 'do_registration':
+                settings["run"]["do_registration"] = meso_settings[key]
+            elif key == 'roidetect':
+                settings["run"]["do_detection"] = meso_settings[key]
+            elif key not in settings_keys:  # Other parameters go to top-level settings for compatibility
                 settings[key] = meso_settings[key]
-        settings['delete_bin'] = True
-        return settings
+        settings["io"]["delete_bin"] = True
+        return db, settings
 
 class DetectionTestUtils:
     def prepare(op, input_file_name_list, dimensions):

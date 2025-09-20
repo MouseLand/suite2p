@@ -37,6 +37,19 @@ def download_cached_inputs(data_path):
         print('Cached inputs not found. Downloading now...')
         extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
 
+def get_device():
+    """Detect the appropriate device for suite2p processing."""
+    import torch
+    import platform
+
+    if platform.system() == 'Darwin':  # macOS
+        if torch.backends.mps.is_available():
+            return 'mps'
+    elif torch.cuda.is_available():
+        return 'cuda'
+
+    return 'cpu'
+
 def initialize_settings(tmpdir, data_dir):
     """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accomodate creation of settings for both pytest and non-pytest settings."""
     settings = suite2p.default_settings()
@@ -50,7 +63,8 @@ def initialize_settings(tmpdir, data_dir):
             'use_builtin_classifier': True,
             'norm_frames': False,
             'denoise': False,
-            'soma_crop': False
+            'soma_crop': False,
+            'torch_device': get_device()
         }
     )
     return db, settings

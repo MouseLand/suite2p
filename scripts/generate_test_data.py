@@ -72,38 +72,48 @@ test_data_dir_path = current_dir.joinpath('test_data')
 
 class GenerateFullPipelineTestData:
 	# Full Pipeline Tests
+	@staticmethod
+	def _generate_test_data(db, ops, initialize_func, config_key):
+		"""Generic function to generate test data for full pipeline tests."""
+		db, test_ops = initialize_func(db.copy(), ops.copy())
+		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
+		suite2p.run_s2p(settings=test_ops, db=db)
+		rename_output_dir(TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
+
 	def generate_1p1c1500_expected_data(db, ops):
 		"""
 		Generates expected output for test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format
 		for test_full_pipeline.py
 		"""
-		db, test_ops = FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches(db.copy(), ops.copy())
-		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['1plane1chan1500']['output_dir'])
-		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir(TestDataConfigs.FULL_PIPELINE['1plane1chan1500']['output_dir'])
+		GenerateFullPipelineTestData._generate_test_data(
+			db, ops,
+			FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches,
+			'1plane1chan1500'
+		)
 
 	def generate_2p2c1500_expected_data(db, ops):
 		"""
 		Generates expected output for test_2plane_2chan_with_batches of test_full_pipeline.py.
 		"""
-		db, test_ops = FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), ops.copy())
-		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['2plane2chan1500']['output_dir'])
-		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir(TestDataConfigs.FULL_PIPELINE['2plane2chan1500']['output_dir'])
+		GenerateFullPipelineTestData._generate_test_data(
+			db, ops,
+			FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches,
+			'2plane2chan1500'
+		)
 
 	def generate_2p2zmesoscan_expected_data(db, ops):
 		"""
 		Generates expected output for test_mesoscan_2plane_2z of test_full_pipeline.py.
 		"""
-		db, test_ops = FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z(db.copy(), ops.copy())
-		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['mesoscan']['output_dir'])
-		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir(TestDataConfigs.FULL_PIPELINE['mesoscan']['output_dir'])
+		GenerateFullPipelineTestData._generate_test_data(
+			db, ops,
+			FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z,
+			'mesoscan'
+		)
 
 	def generate_all_data(full_db, full_ops):
 		# Expected Data for test_full_pipeline.py
 		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_ops)
-		# generate_1p2c_expected_data(ops)
 		#GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_ops)
 		#GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_ops)
 

@@ -9,17 +9,66 @@ from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, Ex
 from suite2p.extraction import masks
 
 """
-IMPORTANT: When running this script, make sure to use it in the scripts directory 
-(e.g., suite2p/scripts). The generated test data will be placed in the directory 
-suite2p/scripts/test_data. Take the directories in this folder and replace the directories 
-with the same name in suite2p/data/test_data (e.g.,replace suite2p/data/test_data/1plane1chan1500 with suite2p/scripts/test_data/1plane1chan1500). 
+IMPORTANT: When running this script, make sure to use it in the scripts directory
+(e.g., suite2p/scripts). The generated test data will be placed in the directory
+suite2p/scripts/test_data. Take the directories in this folder and replace the directories
+with the same name in suite2p/data/test_data (e.g.,replace suite2p/data/test_data/1plane1chan1500 with suite2p/scripts/test_data/1plane1chan1500).
 """
+
+# =============================================================================
+# Configuration Constants
+# =============================================================================
+
+class TestDataConfigs:
+    """Test data generation configurations."""
+
+    # Full Pipeline Test Configurations
+    FULL_PIPELINE = {
+        '1plane1chan1500': {
+            'name': '1plane1chan1500',
+            'output_dir': '1plane1chan1500',
+            'description': 'Single plane, single channel, 1500 frames test data'
+        },
+        '2plane2chan1500': {
+            'name': '2plane2chan1500',
+            'output_dir': '2plane2chan1500',
+            'description': 'Two planes, two channels, 1500 frames test data'
+        },
+        'mesoscan': {
+            'name': 'mesoscan',
+            'output_dir': 'mesoscan',
+            'description': 'Mesoscan two planes, two ROIs test data'
+        }
+    }
+
+    # Detection Test Configurations
+    DETECTION = {
+        'output_dir': 'detection',
+        'expected_files': [
+            'expected_detect_output_1p1c0.npy',
+            'expected_detect_output_2p2c0.npy',
+            'expected_detect_output_2p2c1.npy'
+        ]
+    }
+
+    # Classification Test Configurations
+    CLASSIFICATION = {
+        'output_dir': 'classification',
+        'expected_files': ['expected_classify_output_1p1c0.npy']
+    }
+
+    # Extraction Test Configurations
+    EXTRACTION = {
+        'output_dir': 'extraction',
+        'baseline_methods': ['maximin', 'constant', 'constant_prctile'],
+        'subdirs': ['1plane1chan', '2plane2chan']
+    }
 
 current_dir = Path(os.getcwd())
 # Assumes the input file has already been downloaded
 test_input_dir_path = current_dir.parent.joinpath('data')
 # Output directory where suite2p results are kept
-test_data_dir_path =  current_dir.joinpath('test_data')
+test_data_dir_path = current_dir.joinpath('test_data')
 
 class GenerateFullPipelineTestData:
 	# Full Pipeline Tests
@@ -30,7 +79,7 @@ class GenerateFullPipelineTestData:
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches(db.copy(), ops.copy())
 		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir('1plane1chan1500')
+		rename_output_dir(TestDataConfigs.FULL_PIPELINE['1plane1chan1500']['output_dir'])
 
 	def generate_2p2c1500_expected_data(db, ops):
 		"""
@@ -38,7 +87,7 @@ class GenerateFullPipelineTestData:
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), ops.copy())
 		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir('2plane2chan1500')
+		rename_output_dir(TestDataConfigs.FULL_PIPELINE['2plane2chan1500']['output_dir'])
 
 	def generate_2p2zmesoscan_expected_data(db, ops):
 		"""
@@ -46,7 +95,7 @@ class GenerateFullPipelineTestData:
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z(db.copy(), ops.copy())
 		suite2p.run_s2p(settings=test_ops, db=db)
-		rename_output_dir('mesoscan')
+		rename_output_dir(TestDataConfigs.FULL_PIPELINE['mesoscan']['output_dir'])
 
 	def generate_all_data(full_db, full_ops):
 		# Expected Data for test_full_pipeline.py
@@ -128,39 +177,43 @@ class GenerateDetectionTestData:
 	def generate_all_data(db, ops):
 		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(db, ops)
 		GenerateDetectionTestData.generate_detection_2plane2chan_test_data(db, ops)
-		rename_output_dir('detection')
+		rename_output_dir(TestDataConfigs.DETECTION['output_dir'])
 		# Move over expected outputs into detection
-		shutil.move('expected_detect_output_1p1c0.npy', test_data_dir_path.joinpath('detection'))
-		shutil.move('expected_detect_output_2p2c0.npy', test_data_dir_path.joinpath('detection'))
-		shutil.move('expected_detect_output_2p2c1.npy', test_data_dir_path.joinpath('detection'))
+		detection_dir = test_data_dir_path.joinpath(TestDataConfigs.DETECTION['output_dir'])
+		for expected_file in TestDataConfigs.DETECTION['expected_files']:
+			if os.path.exists(expected_file):
+				shutil.move(expected_file, detection_dir)
 
 class GenerateClassificationTestData:
 	# Classification Tests
 	def generate_classification_test_data(db, ops):
 		stat = np.load(test_input_dir_path.joinpath('test_inputs/classification/pre_stat.npy'), allow_pickle=True)
 		iscell = suite2p.classification.classify(stat, classfile=suite2p.classification.builtin_classfile)
-		np.save(str(test_data_dir_path.joinpath('classification').joinpath('expected_classify_output_1p1c0.npy')), iscell)
+		output_dir = test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir'])
+		output_file = output_dir.joinpath(TestDataConfigs.CLASSIFICATION['expected_files'][0])
+		np.save(str(output_file), iscell)
 
 	def generate_all_data(db, ops):
-		make_new_dir(test_data_dir_path.joinpath('classification'))
+		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir']))
 		GenerateClassificationTestData.generate_classification_test_data(db, ops)
 
 class GenerateExtractionTestData:
 	# Extraction Tests
 	def generate_preprocess_baseline_test_data(db, ops):
 		# Relies on full pipeline test data generation being completed
-		f = np.load(test_data_dir_path.joinpath('1plane1chan1500/suite2p/plane0/F.npy'))
-		baseline_vals = ['maximin', 'constant', 'constant_prctile']
-		for bv in baseline_vals:
+		pipeline_config = TestDataConfigs.FULL_PIPELINE['1plane1chan1500']
+		f = np.load(test_data_dir_path.joinpath(f"{pipeline_config['output_dir']}/suite2p/plane0/F.npy"))
+		extraction_dir = test_data_dir_path.joinpath(TestDataConfigs.EXTRACTION['output_dir'])
+		for bv in TestDataConfigs.EXTRACTION['baseline_methods']:
 			pre_f = suite2p.extraction.preprocess(
 				F=f,
 				baseline=bv,
-				win_baseline=ops['win_baseline'],
-				sig_baseline=ops['sig_baseline'],
+				win_baseline=ops['dcnv_preprocess']['win_baseline'],
+				sig_baseline=ops['dcnv_preprocess']['sig_baseline'],
 				fs=ops['fs'],
-				prctile_baseline=ops['prctile_baseline']
+				prctile_baseline=ops['dcnv_preprocess']['prctile_baseline']
 			)
-			np.save(str(test_data_dir_path.joinpath('extraction/{}_f.npy'.format(bv))), pre_f)
+			np.save(str(extraction_dir.joinpath(f'{bv}_f.npy')), pre_f)
 
 	def generate_extraction_output_1plane1chan(db, ops):
 		ops.update({
@@ -178,8 +231,10 @@ class GenerateExtractionTestData:
 		)[()]
 		extract_helper(op, extract_input, 0)
 		remove_binary_file(test_data_dir_path, 0, '')
-		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '1plane1chan'))
-		shutil.move(os.path.join(test_data_dir_path, '1plane1chan'), os.path.join(test_data_dir_path, 'extraction'))
+		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][0]  # '1plane1chan'
+		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
+		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, extraction_subdir))
+		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
 
 	def generate_extraction_output_2plane2chan(db, ops):
 		ops.update({
@@ -214,11 +269,13 @@ class GenerateExtractionTestData:
 			# Assumes second channel binary file is present
 			remove_binary_file(test_data_dir_path, i, '')
 			remove_binary_file(test_data_dir_path, i, '_chan2')
-		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, '2plane2chan'))
-		shutil.move(os.path.join(test_data_dir_path, '2plane2chan'), os.path.join(test_data_dir_path, 'extraction'))
+		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][1]  # '2plane2chan'
+		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
+		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, extraction_subdir))
+		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
 
 	def generate_all_data(db, ops):
-		make_new_dir(test_data_dir_path.joinpath('extraction'))
+		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.EXTRACTION['output_dir']))
 		GenerateExtractionTestData.generate_preprocess_baseline_test_data(db, ops)
 		GenerateExtractionTestData.generate_extraction_output_1plane1chan(db, ops)
 		GenerateExtractionTestData.generate_extraction_output_2plane2chan(db, ops)

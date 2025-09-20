@@ -78,6 +78,7 @@ class GenerateFullPipelineTestData:
 		for test_full_pipeline.py
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches(db.copy(), ops.copy())
+		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['1plane1chan1500']['output_dir'])
 		suite2p.run_s2p(settings=test_ops, db=db)
 		rename_output_dir(TestDataConfigs.FULL_PIPELINE['1plane1chan1500']['output_dir'])
 
@@ -86,6 +87,7 @@ class GenerateFullPipelineTestData:
 		Generates expected output for test_2plane_2chan_with_batches of test_full_pipeline.py.
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), ops.copy())
+		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['2plane2chan1500']['output_dir'])
 		suite2p.run_s2p(settings=test_ops, db=db)
 		rename_output_dir(TestDataConfigs.FULL_PIPELINE['2plane2chan1500']['output_dir'])
 
@@ -94,6 +96,7 @@ class GenerateFullPipelineTestData:
 		Generates expected output for test_mesoscan_2plane_2z of test_full_pipeline.py.
 		"""
 		db, test_ops = FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z(db.copy(), ops.copy())
+		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE['mesoscan']['output_dir'])
 		suite2p.run_s2p(settings=test_ops, db=db)
 		rename_output_dir(TestDataConfigs.FULL_PIPELINE['mesoscan']['output_dir'])
 
@@ -101,8 +104,8 @@ class GenerateFullPipelineTestData:
 		# Expected Data for test_full_pipeline.py
 		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_ops)
 		# generate_1p2c_expected_data(ops)
-		#GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_ops)
-		#GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_ops)
+		#GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_ops)
+		#GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_ops)
 
 class GenerateDetectionTestData:
 	# Detection Tests
@@ -111,12 +114,12 @@ class GenerateDetectionTestData:
 		Generates expected output for test_detection_output_1plane1chan of test_detection_pipeline.py.
 		"""
 		# Use only the smaller input tif
-		ops.update({
-			'tiff_list': ['input.tif'],
+		db.update({
+			'file_list': ['input.tif'],
 		})
 		ops = DetectionTestUtils.prepare(
-			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
+			db,
+			[[Path(db['data_path'][0]).joinpath('detection/pre_registered.npy')]],
 			(404, 360)
 		)
 		with suite2p.io.BinaryFile(Ly = ops[0]['Ly'], Lx = ops[0]['Lx'], filename=ops[0]['reg_file']) as f_reg:
@@ -136,16 +139,14 @@ class GenerateDetectionTestData:
 		"""
 		Generates expected output for test_detection_output_2plane2chan of test_detection_pipeline.py.
 		"""
-		ops.update({
-			'tiff_list': ['input.tif'],
-		})
-		ops.update({
+		db.update({
+			'file_list': ['input.tif'],
 			'nchannels': 2,
 			'nplanes': 2,
 		})
-		detection_dir = Path(ops['data_path'][0]).joinpath('detection')
+		detection_dir = Path(db['data_path'][0]).joinpath('detection')
 		two_plane_ops = DetectionTestUtils.prepare(
-			ops,
+			db,
 			[
 				[detection_dir.joinpath('pre_registered01.npy'), detection_dir.joinpath('pre_registered02.npy')],
 				[detection_dir.joinpath('pre_registered11.npy'), detection_dir.joinpath('pre_registered12.npy')]
@@ -321,6 +322,17 @@ def make_new_dir(new_dir_name):
 		os.makedirs(new_dir_name)
 		print('Created test directory at ' + str(new_dir_name))
 
+def prepare_output_directory(test_ops, output_dir_name):
+	"""Set save_path0 and clean any existing suite2p output."""
+	# Set save_path0 to the specific test output directory
+	test_ops['save_path0'] = str(test_data_dir_path.joinpath(output_dir_name))
+
+	# Check for existing suite2p output in the save_path0 directory and delete if present
+	save_path_suite2p = Path(test_ops['save_path0']).joinpath('suite2p')
+	if save_path_suite2p.exists():
+		shutil.rmtree(save_path_suite2p)
+		print(f'Deleted existing suite2p output at {save_path_suite2p}')
+
 def remove_binary_file(dir_path, plane_num, bin_file_suffix):
 	os.remove(os.path.join(dir_path, 'suite2p/plane{}/data{}.bin'.format(plane_num, bin_file_suffix)))
 
@@ -333,12 +345,12 @@ def main():
 	make_new_dir(test_data_dir_path)
 	full_db, full_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
 	GenerateFullPipelineTestData.generate_all_data(full_db, full_ops)
-	det_db, det_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateDetectionTestData.generate_all_data(det_db, det_ops)
-	class_db, class_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateClassificationTestData.generate_all_data(class_db, class_ops)
-	ext_db, ext_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateExtractionTestData.generate_all_data(ext_db, ext_ops)
+	# det_db, det_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateDetectionTestData.generate_all_data(det_db, det_ops)
+	# class_db, class_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateClassificationTestData.generate_all_data(class_db, class_ops)
+	# ext_db, ext_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateExtractionTestData.generate_all_data(ext_db, ext_ops)
 	return
 
 if __name__ == '__main__':

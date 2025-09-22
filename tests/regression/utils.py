@@ -5,6 +5,7 @@ from tifffile import imread
 from pathlib import Path
 from glob import glob
 from suite2p.io import BinaryFile
+from suite2p.parameters import default_settings
 
 import numpy as np
 import json
@@ -40,6 +41,7 @@ class FullPipelineTestUtils:
     functions that can be used by both test_full_pipeline.py and generate_test_data.py.
     This is to ensure both the generation script and the tests use the same settings.
     """
+    @staticmethod
     def initialize_settings_test1plane_1chan_with_batches(db, settings):
         db.update({
             "file_list": ["input_1500.tif"], 
@@ -54,6 +56,7 @@ class FullPipelineTestUtils:
         settings["io"]["delete_bin"] = True
         return db, settings
 
+    @staticmethod
     def initialize_settings_test_1plane_2chan_sourcery(db, settings):
         db.update({
             'nchannels': 2,
@@ -63,6 +66,7 @@ class FullPipelineTestUtils:
         settings["detection"]["sparsery_settings"]["spatial_scale"] = 0
         return db, settings
 
+    @staticmethod
     def initialize_settings_test2plane_2chan_with_batches(db, settings):
         db.update({
             'file_list': ['input_1500.tif'],
@@ -76,6 +80,7 @@ class FullPipelineTestUtils:
         settings["io"]["delete_bin"] = True
         return db, settings 
 
+    @staticmethod
     def initialize_settings_test_mesoscan_2plane_2z(db, settings):
         mesoscan_dir = Path(db['data_path'][0]).joinpath('mesoscan')
         with open(mesoscan_dir.joinpath('ops.json')) as f:
@@ -97,12 +102,14 @@ class FullPipelineTestUtils:
         return db, settings
 
 class DetectionTestUtils:
+    @staticmethod
     def prepare(op, input_file_name_list, dimensions):
         """
         Prepares for detection by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
         # Set appropriate settings parameters
+        detection_defaults = default_settings()['detection']
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -110,6 +117,14 @@ class DetectionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
+            **detection_defaults,
+            # Override detection thresholds for test data
+            'threshold_scaling': 0.5,  # Lower threshold to find more ROIs
+            'sparsery_settings': {
+                **detection_defaults['sparsery_settings'],
+                'spatial_scale': 0,  # Let algorithm auto-determine scale
+                'max_ROIs': 5000,
+            }
         })
         settings = []
         for plane in range(op['nplanes']):
@@ -135,6 +150,7 @@ class DetectionTestUtils:
         return settings
 
 class ExtractionTestUtils:
+    @staticmethod
     def prepare(op, input_file_name_list, dimensions):
         """
         Prepares for extraction by filling out necessary settings parameters. Removes dependence on

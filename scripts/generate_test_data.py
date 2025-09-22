@@ -2,6 +2,8 @@ import os
 import suite2p 
 import shutil
 import numpy as np 
+import copy
+
 
 from pathlib import Path
 from conftest import initialize_settings, download_cached_inputs #Guarantees that tests and this script use the same ops
@@ -75,9 +77,9 @@ class GenerateFullPipelineTestData:
 	@staticmethod
 	def _generate_test_data(db, ops, initialize_func, config_key):
 		"""Generic function to generate test data for full pipeline tests."""
-		db, test_ops = initialize_func(db.copy(), ops.copy())
+		test_db, test_ops = initialize_func(copy.deepcopy(db), copy.deepcopy(ops))
 		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
-		suite2p.run_s2p(settings=test_ops, db=db)
+		suite2p.run_s2p(settings=test_ops, db=test_db)
 		rename_output_dir(TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
 
 	def generate_1p1c1500_expected_data(db, ops):
@@ -114,8 +116,8 @@ class GenerateFullPipelineTestData:
 	def generate_all_data(full_db, full_ops):
 		# Expected Data for test_full_pipeline.py
 		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_ops)
-		#GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_ops)
-		#GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_ops)
+		GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_ops)
+		GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_ops)
 
 class GenerateDetectionTestData:
 	# Detection Tests

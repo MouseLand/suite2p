@@ -15,7 +15,9 @@ import cv2
 import os
 
 from . import utils
-from .stats import roi_stats
+
+import torch
+HAS_CUDA = torch.cuda.is_available()
 
 
 def mask_centers(masks):
@@ -102,12 +104,16 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
 
 
 def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
-               pretrained_model=None):
+               pretrained_model=None, use_gpu = None):
+
+    if use_gpu is not None:
+        use_gpu = HAS_CUDA
+
     pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
     if not os.path.exists(pretrained_model):
-        model = Cellpose(model_type=pretrained_model)
+        model = Cellpose(model_type=pretrained_model, gpu=use_gpu)
     else:
-        model = CellposeModel(pretrained_model=pretrained_model)
+        model = CellposeModel(pretrained_model=pretrained_model, gpu=True)
     masks = model.eval(mproj, channels=[0, 0], diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)[0]

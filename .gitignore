@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 
 # builds
 .eggs
+.egg-info/
 
 # python and jupyter
 jupyter/.ipynb_checkpoints/
@@ -68,3 +69,4 @@ Temporary Items
 
 # data
 data/test_data
+suite2p_mbo.egg-info

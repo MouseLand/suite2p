@@ -104,11 +104,9 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
 
 
 def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=1.5,
-               pretrained_model=None, use_gpu = None):
+               pretrained_model=None, use_gpu=True):
 
-    if use_gpu is not None:
-        use_gpu = HAS_CUDA
-
+    use_gpu = use_gpu and HAS_CUDA
     pretrained_model = "cyto3" if pretrained_model is None else pretrained_model
     if not os.path.exists(pretrained_model):
         model = Cellpose(model_type=pretrained_model, gpu=use_gpu)

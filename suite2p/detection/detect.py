@@ -179,7 +179,6 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, ops=default_ops
             ops=ops,
             mov=mov,
             sparse_mode=ops["sparse_mode"],
-            classfile=classfile,
         )
 
     ymin = int(yrange[0])
@@ -225,8 +224,7 @@ def detection_wrapper(f_reg, mov=None, yrange=None, xrange=None, ops=default_ops
     return ops, stat
 
 
-def select_rois(ops: Dict[str, Any], mov: np.ndarray, sparse_mode: bool = True,
-                classfile: Path = None):
+def select_rois(ops: Dict[str, Any], mov: np.ndarray, sparse_mode: bool = True):
 
     t0 = time.time()
     if sparse_mode:

@@ -3,6 +3,8 @@ import suite2p
 import shutil
 import numpy as np
 import copy
+import torch
+
 
 from pathlib import Path
 from conftest import initialize_settings, download_cached_inputs #Guarantees that tests and this script use the same settings
@@ -253,7 +255,6 @@ class GenerateExtractionTestData:
 	def generate_extraction_output_1plane1chan(db, settings):
 		settings = copy.deepcopy(settings)
 		settings.update({
-			'tiff_list': ['input.tif'],
 			'nplanes': 1,
 			'nchannels': 1,
 			'save_path0': str(test_data_dir_path),
@@ -281,7 +282,6 @@ class GenerateExtractionTestData:
 		settings.update({
 			'nchannels': 2,
 			'nplanes': 2,
-			'tiff_list': ['input.tif'],
 			'save_path0': str(test_data_dir_path),
 		})
 		# Create multiple settings for multiple plane extraction
@@ -328,30 +328,21 @@ def extract_helper(settings, extract_input, plane):
 	print(plane_dir)
 	plane_dir.mkdir(exist_ok=True, parents=True)
 	with suite2p.io.BinaryFile(Ly=settings['Ly'], Lx=settings['Lx'], filename=settings['reg_file']) as f_reg:
-		stat, F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
+		F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
 			extract_input['stat'],
 			f_reg,
 			cell_masks=extract_input['cell_masks'],
 			neuropil_masks=extract_input['neuropil_masks'],
-			settings=settings
+			settings=settings, 
+			device=torch.device(settings['torch_device'])
 		)
-		dF = F - settings['neucoeff'] * Fneu
-		dF = suite2p.extraction.preprocess(
-			F=dF,
-			baseline=settings['baseline'],
-			win_baseline=settings['win_baseline'],
-			sig_baseline=settings['sig_baseline'],
-			fs=settings['fs'],
-			prctile_baseline=settings['prctile_baseline']
-		)
-		spks = suite2p.extraction.oasis(F=dF, batch_size=settings['batch_size'], tau=settings['tau'], fs=settings['fs'])
 		np.save(plane_dir.joinpath('ops.npy'), settings)
-		np.save(plane_dir.joinpath('stat.npy'), stat)
+		#np.save(plane_dir.joinpath('stat.npy'), stat)
 		np.save(plane_dir.joinpath('F.npy'), F)
 		np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
 		np.save(plane_dir.joinpath('F_chan2.npy'), F_chan2)
 		np.save(plane_dir.joinpath('Fneu_chan2.npy'), Fneu_chan2)
-		np.save(plane_dir.joinpath('spks.npy'), spks)
+		#np.save(plane_dir.joinpath('spks.npy'), spks)
 
 def rename_output_dir(new_dir_name):
 	curr_dir_path = os.path.abspath(os.getcwd())
@@ -391,10 +382,10 @@ def main():
 	# GenerateFullPipelineTestData.generate_all_data(full_db, full_settings)
 	# det_db, det_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
 	# GenerateDetectionTestData.generate_all_data(det_db, det_settings)
-	class_db, class_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateClassificationTestData.generate_all_data(class_db, class_settings)
-	# ext_db, ext_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateExtractionTestData.generate_all_data(ext_db, ext_settings)
+	# class_db, class_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateClassificationTestData.generate_all_data(class_db, class_settings)
+	ext_db, ext_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	GenerateExtractionTestData.generate_all_data(ext_db, ext_settings)
 	return
 
 if __name__ == '__main__':

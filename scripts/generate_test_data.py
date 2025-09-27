@@ -5,7 +5,7 @@ import numpy as np
 import copy
 
 from pathlib import Path
-from conftest import initialize_settings, download_cached_inputs #Guarantees that tests and this script use the same ops
+from conftest import initialize_settings, download_cached_inputs #Guarantees that tests and this script use the same settings
 from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks
 
@@ -98,71 +98,71 @@ test_data_dir_path = current_dir.joinpath('test_data')
 class GenerateFullPipelineTestData:
 	# Full Pipeline Tests
 	@staticmethod
-	def _generate_test_data(db, ops, initialize_func, config_key):
+	def _generate_test_data(db, settings, initialize_func, config_key):
 		"""Generic function to generate test data for full pipeline tests."""
-		test_db, test_ops = initialize_func(copy.deepcopy(db), copy.deepcopy(ops))
-		prepare_output_directory(test_ops, TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
-		suite2p.run_s2p(settings=test_ops, db=test_db)
+		test_db, test_settings = initialize_func(copy.deepcopy(db), copy.deepcopy(settings))
+		prepare_output_directory(test_settings, TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
+		suite2p.run_s2p(settings=test_settings, db=test_db)
 		rename_output_dir(TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
 
 	@staticmethod
-	def generate_1p1c1500_expected_data(db, ops):
+	def generate_1p1c1500_expected_data(db, settings):
 		"""
 		Generates expected output for test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format
 		for test_full_pipeline.py
 		"""
 		GenerateFullPipelineTestData._generate_test_data(
-			db, ops,
+			db, settings,
 			FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches,
 			'1plane1chan1500'
 		)
 
 	@staticmethod
-	def generate_2p2c1500_expected_data(db, ops):
+	def generate_2p2c1500_expected_data(db, settings):
 		"""
 		Generates expected output for test_2plane_2chan_with_batches of test_full_pipeline.py.
 		"""
 		GenerateFullPipelineTestData._generate_test_data(
-			db, ops,
+			db, settings,
 			FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches,
 			'2plane2chan1500'
 		)
 
 	@staticmethod
-	def generate_2p2zmesoscan_expected_data(db, ops):
+	def generate_2p2zmesoscan_expected_data(db, settings):
 		"""
 		Generates expected output for test_mesoscan_2plane_2z of test_full_pipeline.py.
 		"""
 		GenerateFullPipelineTestData._generate_test_data(
-			db, ops,
+			db, settings,
 			FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z,
 			'mesoscan'
 		)
 
 	@staticmethod
-	def generate_all_data(full_db, full_ops):
+	def generate_all_data(full_db, full_settings):
 		# Expected Data for test_full_pipeline.py
-		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_ops)
-		GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_ops)
-		GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_ops)
+		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_settings)
+		GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_settings)
+		GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_settings)
 
 class GenerateDetectionTestData:
 	@staticmethod
 	def _run_detection(db, input_files, dimensions, output_filename):
-		ops = DetectionTestUtils.prepare(db, input_files, dimensions)
+		settings = DetectionTestUtils.prepare(db, input_files, dimensions)
 
-		if len(ops) == 1:
-			with suite2p.io.BinaryFile(Ly=ops[0]['Ly'], Lx=ops[0]['Lx'], filename=ops[0]['reg_file']) as f_reg:
-				ops[0]['neuropil_extract'] = True
-				_, stat, _ = suite2p.detection.detection_wrapper(f_reg, settings=ops[0])
-				cell_masks, neuropil_masks = masks.create_masks(stat, ops[0]['Ly'], ops[0]['Lx'], neuropil_extract=True)
+		if len(settings) == 1:
+			with suite2p.io.BinaryFile(Ly=settings[0]['Ly'], Lx=settings[0]['Lx'], filename=settings[0]['reg_file']) as f_reg:
+				settings[0]['neuropil_extract'] = True
+				_, stat, _ = suite2p.detection.detection_wrapper(f_reg, settings=settings[0])
+				cell_masks, neuropil_masks = masks.create_masks(stat, settings[0]['Ly'], settings[0]['Lx'], neuropil_extract=True)
 				np.save(output_filename, {'stat': stat, 'cell_masks': cell_masks, 'neuropil_masks': neuropil_masks})
 		else:
 			detection_dir = Path(db['data_path'][0]).joinpath('detection')
-			ops[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
-			ops[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
+			settings[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
+			settings[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
 
-			for i, op in enumerate(ops):
+			for i, op in enumerate(settings):
 				with suite2p.io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], filename=op['reg_file']) as f_reg:
 					op['neuropil_extract'] = True
 					_, stat, _ = suite2p.detection.detection_wrapper(f_reg, settings=op)
@@ -170,7 +170,7 @@ class GenerateDetectionTestData:
 					np.save(output_filename % (db['nchannels'], db['nplanes'], i),
 						   {'stat': stat, 'cell_masks': cell_masks, 'neuropil_masks': neuropil_masks})
 
-			for plane_num in range(len(ops)):
+			for plane_num in range(len(settings)):
 				for suffix in ['', '_chan2']:
 					try:
 						remove_binary_file(test_data_dir_path, plane_num, suffix)
@@ -181,7 +181,7 @@ class GenerateDetectionTestData:
 			shutil.rmtree(test_data_dir_path / 'suite2p')
 
 	@staticmethod
-	def generate_detection_1plane1chan_test_data(db, ops):
+	def generate_detection_1plane1chan_test_data(db, settings):
 		db = copy.deepcopy(db)
 		db.update({'file_list': ['input.tif']})
 		GenerateDetectionTestData._run_detection(
@@ -190,7 +190,7 @@ class GenerateDetectionTestData:
 		)
 
 	@staticmethod
-	def generate_detection_2plane2chan_test_data(db, ops):
+	def generate_detection_2plane2chan_test_data(db, settings):
 		db = copy.deepcopy(db)
 		db.update({'file_list': ['input.tif'], 'nchannels': 2, 'nplanes': 2})
 		detection_dir = Path(db['data_path'][0]).joinpath('detection')
@@ -202,9 +202,9 @@ class GenerateDetectionTestData:
 		)
 
 	@staticmethod
-	def generate_all_data(db, ops):
-		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(db, ops)
-		GenerateDetectionTestData.generate_detection_2plane2chan_test_data(db, ops)
+	def generate_all_data(db, settings):
+		GenerateDetectionTestData.generate_detection_1plane1chan_test_data(db, settings)
+		GenerateDetectionTestData.generate_detection_2plane2chan_test_data(db, settings)
 
 		detection_dir = test_data_dir_path.joinpath(TestDataConfigs.DETECTION['output_dir'])
 		detection_dir.mkdir(exist_ok=True)
@@ -218,7 +218,7 @@ class GenerateDetectionTestData:
 class GenerateClassificationTestData:
 	# Classification Tests
 	@staticmethod
-	def generate_classification_test_data(db, ops):
+	def generate_classification_test_data(db, settings):
 		stat = np.load(test_input_dir_path.joinpath('test_inputs/classification/pre_stat.npy'), allow_pickle=True)
 		iscell = suite2p.classification.classify(stat, classfile=suite2p.classification.builtin_classfile)
 		output_dir = test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir'])
@@ -226,14 +226,14 @@ class GenerateClassificationTestData:
 		np.save(str(output_file), iscell)
 
 	@staticmethod
-	def generate_all_data(db, ops):
+	def generate_all_data(db, settings):
 		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir']))
-		GenerateClassificationTestData.generate_classification_test_data(db, ops)
+		GenerateClassificationTestData.generate_classification_test_data(db, settings)
 
 class GenerateExtractionTestData:
 	# Extraction Tests
 	@staticmethod
-	def generate_preprocess_baseline_test_data(db, ops):
+	def generate_preprocess_baseline_test_data(db, settings):
 		# Relies on full pipeline test data generation being completed
 		pipeline_config = TestDataConfigs.FULL_PIPELINE['1plane1chan1500']
 		f = np.load(test_data_dir_path.joinpath(f"{pipeline_config['output_dir']}/suite2p/plane0/F.npy"))
@@ -242,24 +242,28 @@ class GenerateExtractionTestData:
 			pre_f = suite2p.extraction.preprocess(
 				F=f,
 				baseline=bv,
-				win_baseline=ops['dcnv_preprocess']['win_baseline'],
-				sig_baseline=ops['dcnv_preprocess']['sig_baseline'],
-				fs=ops['fs'],
-				prctile_baseline=ops['dcnv_preprocess']['prctile_baseline']
+				win_baseline=settings['dcnv_preprocess']['win_baseline'],
+				sig_baseline=settings['dcnv_preprocess']['sig_baseline'],
+				fs=settings['fs'],
+				prctile_baseline=settings['dcnv_preprocess']['prctile_baseline']
 			)
 			np.save(str(extraction_dir.joinpath(f'{bv}_f.npy')), pre_f)
 
 	@staticmethod
-	def generate_extraction_output_1plane1chan(db, ops):
-		ops.update({
+	def generate_extraction_output_1plane1chan(db, settings):
+		settings = copy.deepcopy(settings)
+		settings.update({
 			'tiff_list': ['input.tif'],
+			'nplanes': 1,
+			'nchannels': 1,
+			'save_path0': str(test_data_dir_path),
 		})
-		ops = ExtractionTestUtils.prepare(
-			ops,
-			[[Path(ops['data_path'][0]).joinpath('detection/pre_registered.npy')]],
+		settings = ExtractionTestUtils.prepare(
+			settings,
+			[[Path(db['data_path'][0]).joinpath('detection/pre_registered.npy')]],
 			(404, 360)
 		)
-		op = ops[0]
+		op = settings[0]
 		extract_input = np.load(
 			str(test_data_dir_path.joinpath('detection/expected_detect_output_1p1c0.npy')),
 			allow_pickle=True
@@ -272,25 +276,27 @@ class GenerateExtractionTestData:
 		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
 
 	@staticmethod
-	def generate_extraction_output_2plane2chan(db, ops):
-		ops.update({
+	def generate_extraction_output_2plane2chan(db, settings):
+		settings = copy.deepcopy(settings)
+		settings.update({
 			'nchannels': 2,
 			'nplanes': 2,
 			'tiff_list': ['input.tif'],
+			'save_path0': str(test_data_dir_path),
 		})
-		# Create multiple ops for multiple plane extraction
-		ops = ExtractionTestUtils.prepare(
-			ops,
+		# Create multiple settings for multiple plane extraction
+		settings = ExtractionTestUtils.prepare(
+			settings,
 			[
-				[Path(ops['data_path'][0]).joinpath('detection/pre_registered01.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection/pre_registered02.npy')],
-				[Path(ops['data_path'][0]).joinpath('detection/pre_registered11.npy'), 
-				Path(ops['data_path'][0]).joinpath('detection/pre_registered12.npy')]
+				[Path(db['data_path'][0]).joinpath('detection/pre_registered01.npy'),
+				Path(db['data_path'][0]).joinpath('detection/pre_registered02.npy')],
+				[Path(db['data_path'][0]).joinpath('detection/pre_registered11.npy'),
+				Path(db['data_path'][0]).joinpath('detection/pre_registered12.npy')]
 			]
 			, (404, 360),
 		)
-		ops[0]['meanImg_chan2'] = np.load(Path(ops[0]['data_path'][0]).joinpath('detection/meanImg_chan2p0.npy'))
-		ops[1]['meanImg_chan2'] = np.load(Path(ops[1]['data_path'][0]).joinpath('detection/meanImg_chan2p1.npy'))
+		settings[0]['meanImg_chan2'] = np.load(Path(db['data_path'][0]).joinpath('detection/meanImg_chan2p0.npy'))
+		settings[1]['meanImg_chan2'] = np.load(Path(db['data_path'][0]).joinpath('detection/meanImg_chan2p1.npy'))
 		# 2 separate inputs for each plane (but use outputs of detection generate function)
 		extract_inputs = [
 			np.load(
@@ -300,8 +306,8 @@ class GenerateExtractionTestData:
 				str(test_data_dir_path.joinpath('detection/expected_detect_output_2p2c1.npy')),allow_pickle=True
 			)[()],
 		] 
-		for i in range(len(ops)):
-			extract_helper(ops[i], extract_inputs[i], i)
+		for i in range(len(settings)):
+			extract_helper(settings[i], extract_inputs[i], i)
 			# Assumes second channel binary file is present
 			remove_binary_file(test_data_dir_path, i, '')
 			remove_binary_file(test_data_dir_path, i, '_chan2')
@@ -311,35 +317,35 @@ class GenerateExtractionTestData:
 		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
 
 	@staticmethod
-	def generate_all_data(db, ops):
+	def generate_all_data(db, settings):
 		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.EXTRACTION['output_dir']))
-		GenerateExtractionTestData.generate_preprocess_baseline_test_data(db, ops)
-		GenerateExtractionTestData.generate_extraction_output_1plane1chan(db, ops)
-		GenerateExtractionTestData.generate_extraction_output_2plane2chan(db, ops)
+		GenerateExtractionTestData.generate_preprocess_baseline_test_data(db, settings)
+		GenerateExtractionTestData.generate_extraction_output_1plane1chan(db, settings)
+		GenerateExtractionTestData.generate_extraction_output_2plane2chan(db, settings)
 
-def extract_helper(ops, extract_input, plane):
-	plane_dir = Path(ops['save_path0']).joinpath(f'suite2p/plane{plane}')
+def extract_helper(settings, extract_input, plane):
+	plane_dir = Path(settings['save_path0']).joinpath(f'suite2p/plane{plane}')
 	print(plane_dir)
 	plane_dir.mkdir(exist_ok=True, parents=True)
-	with suite2p.io.BinaryFile(Ly=ops['Ly'], Lx=ops['Lx'], filename=ops['reg_file']) as f_reg:
+	with suite2p.io.BinaryFile(Ly=settings['Ly'], Lx=settings['Lx'], filename=settings['reg_file']) as f_reg:
 		stat, F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
 			extract_input['stat'],
 			f_reg,
 			cell_masks=extract_input['cell_masks'],
 			neuropil_masks=extract_input['neuropil_masks'],
-			settings=ops
+			settings=settings
 		)
-		dF = F - ops['neucoeff'] * Fneu
+		dF = F - settings['neucoeff'] * Fneu
 		dF = suite2p.extraction.preprocess(
 			F=dF,
-			baseline=ops['baseline'],
-			win_baseline=ops['win_baseline'],
-			sig_baseline=ops['sig_baseline'],
-			fs=ops['fs'],
-			prctile_baseline=ops['prctile_baseline']
+			baseline=settings['baseline'],
+			win_baseline=settings['win_baseline'],
+			sig_baseline=settings['sig_baseline'],
+			fs=settings['fs'],
+			prctile_baseline=settings['prctile_baseline']
 		)
-		spks = suite2p.extraction.oasis(F=dF, batch_size=ops['batch_size'], tau=ops['tau'], fs=ops['fs'])
-		np.save(plane_dir.joinpath('ops.npy'), ops)
+		spks = suite2p.extraction.oasis(F=dF, batch_size=settings['batch_size'], tau=settings['tau'], fs=settings['fs'])
+		np.save(plane_dir.joinpath('ops.npy'), settings)
 		np.save(plane_dir.joinpath('stat.npy'), stat)
 		np.save(plane_dir.joinpath('F.npy'), F)
 		np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
@@ -360,13 +366,13 @@ def make_new_dir(new_dir_name):
 		os.makedirs(new_dir_name)
 		print('Created test directory at ' + str(new_dir_name))
 
-def prepare_output_directory(test_ops, output_dir_name):
+def prepare_output_directory(test_settings, output_dir_name):
 	"""Set save_path0 and clean any existing suite2p output."""
 	# Set save_path0 to the specific test output directory
-	test_ops['save_path0'] = str(test_data_dir_path.joinpath(output_dir_name))
+	test_settings['save_path0'] = str(test_data_dir_path.joinpath(output_dir_name))
 
 	# Check for existing suite2p output in the save_path0 directory and delete if present
-	save_path_suite2p = Path(test_ops['save_path0']).joinpath('suite2p')
+	save_path_suite2p = Path(test_settings['save_path0']).joinpath('suite2p')
 	if save_path_suite2p.exists():
 		shutil.rmtree(save_path_suite2p)
 		print(f'Deleted existing suite2p output at {save_path_suite2p}')
@@ -381,14 +387,14 @@ def main():
 	download_cached_inputs(test_input_dir_path)
 	#Create test_data directory if necessary
 	make_new_dir(test_data_dir_path)
-	full_db, full_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateFullPipelineTestData.generate_all_data(full_db, full_ops)
-	det_db, det_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	GenerateDetectionTestData.generate_all_data(det_db, det_ops)
-	# class_db, class_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateClassificationTestData.generate_all_data(class_db, class_ops)
-	# ext_db, ext_ops = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateExtractionTestData.generate_all_data(ext_db, ext_ops)
+	# full_db, full_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateFullPipelineTestData.generate_all_data(full_db, full_settings)
+	# det_db, det_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateDetectionTestData.generate_all_data(det_db, det_settings)
+	class_db, class_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	GenerateClassificationTestData.generate_all_data(class_db, class_settings)
+	# ext_db, ext_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	# GenerateExtractionTestData.generate_all_data(ext_db, ext_settings)
 	return
 
 if __name__ == '__main__':

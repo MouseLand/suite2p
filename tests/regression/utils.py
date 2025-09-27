@@ -156,6 +156,9 @@ class ExtractionTestUtils:
         Prepares for extraction by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
+        # Get extraction settings from default_settings
+        extraction_defaults = default_settings()['extraction']
+
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -163,6 +166,7 @@ class ExtractionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
+            **extraction_defaults,
         })
 
         settings = []

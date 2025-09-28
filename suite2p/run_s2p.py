@@ -184,7 +184,7 @@ def run_plane(db, settings, db_path=None, stat=None):
             os.path.exists(os.path.join(db["save_path"], "data_raw.bin"))):
             for key in ["reg_file", "reg_file_chan2", "raw_file", "raw_file_chan2"]:
                 if key in db:
-                    db[key] = os.path.join(db["save_path"], os.path.split(db[key])[1])
+                    db[key] = os.path.join(db["save_path"], os.path.split(db[key])[-1])
         else:
             raise FileNotFoundError("binary file data.bin or data_raw.bin not found in db_path")
         # re-save db and settings in new path
@@ -220,6 +220,9 @@ def run_plane(db, settings, db_path=None, stat=None):
         badframes0[bf_indices] = True
         logger.info(f"badframes file: {badframes_path};\n # of badframes: {badframes0.sum()}")
 
+    logger.info(f"binary output path: {reg_file}")
+    if raw_file is not None:
+        logger.info(f"raw binary path: {raw_file}")
     null = contextlib.nullcontext()
     with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames, write=False) \
             if raw else null as f_raw, \

@@ -273,8 +273,7 @@ class GenerateExtractionTestData:
 		remove_binary_file(test_data_dir_path, 0, '')
 		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][0]  # '1plane1chan'
 		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
-		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, extraction_subdir))
-		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
+		rename_output_dir(os.path.join(extraction_dir, extraction_subdir))
 
 	@staticmethod
 	def generate_extraction_output_2plane2chan(db, settings):
@@ -313,8 +312,7 @@ class GenerateExtractionTestData:
 			remove_binary_file(test_data_dir_path, i, '_chan2')
 		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][1]  # '2plane2chan'
 		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
-		os.rename(os.path.join(test_data_dir_path, 'suite2p'), os.path.join(test_data_dir_path, extraction_subdir))
-		shutil.move(os.path.join(test_data_dir_path, extraction_subdir), os.path.join(test_data_dir_path, extraction_dir))
+		rename_output_dir(os.path.join(extraction_dir, extraction_subdir))
 
 	@staticmethod
 	def generate_all_data(db, settings):
@@ -328,6 +326,7 @@ def extract_helper(settings, extract_input, plane):
 	print(plane_dir)
 	plane_dir.mkdir(exist_ok=True, parents=True)
 	with suite2p.io.BinaryFile(Ly=settings['Ly'], Lx=settings['Lx'], filename=settings['reg_file']) as f_reg:
+		# Compute Fluorescence Extraction 
 		F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
 			extract_input['stat'],
 			f_reg,
@@ -336,20 +335,22 @@ def extract_helper(settings, extract_input, plane):
 			settings=settings, 
 			device=torch.device(settings['torch_device'])
 		)
+		# Deconvolve spikes from fluorescence
+		dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
+		dF = suite2p.extraction.preprocess(F=dF, fs=settings["fs"], **settings["dcnv_preprocess"])
+		spks = suite2p.extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"], tau=settings["tau"], fs=settings["fs"])
 		np.save(plane_dir.joinpath('ops.npy'), settings)
-		#np.save(plane_dir.joinpath('stat.npy'), stat)
 		np.save(plane_dir.joinpath('F.npy'), F)
 		np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
 		np.save(plane_dir.joinpath('F_chan2.npy'), F_chan2)
 		np.save(plane_dir.joinpath('Fneu_chan2.npy'), Fneu_chan2)
-		#np.save(plane_dir.joinpath('spks.npy'), spks)
+		np.save(plane_dir.joinpath('spks.npy'), spks)
 
 def rename_output_dir(new_dir_name):
-	curr_dir_path = os.path.abspath(os.getcwd())
 	new_dir_path = os.path.join(test_data_dir_path, new_dir_name)
 	if os.path.exists(new_dir_path):
 		shutil.rmtree(new_dir_path)
-	os.makedirs(new_dir_path)
+	make_new_dir(new_dir_path)
 	shutil.move(os.path.join(test_data_dir_path, 'suite2p'), new_dir_path)
 
 def make_new_dir(new_dir_name):

@@ -229,6 +229,7 @@ def load_folder(parent):
 
     # create a combined folder to hold iscell and redcell
     output = io.combined(save_folder, save=False)
+    output = list(output)
     output[1] = {**output[1], **output[2]}  # combine db and settings
     del output[2]
     parent.basename = os.path.join(parent.fname, "combined")

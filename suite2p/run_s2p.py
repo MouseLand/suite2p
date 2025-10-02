@@ -188,6 +188,7 @@ def run_plane(db, settings, db_path=None, stat=None):
         else:
             raise FileNotFoundError("binary file data.bin or data_raw.bin not found in db_path")
         # re-save db and settings in new path
+        db["save_path0"] = os.path.split(os.path.split(db["save_path"])[0])[0]
         np.save(db["db_path"], db)
         np.save(db["settings_path"], settings)
 
@@ -212,6 +213,8 @@ def run_plane(db, settings, db_path=None, stat=None):
     
     # get frames to exclude from registration and detection (e.g. photostim frames)
     badframes_path = os.path.join(db["data_path"][0], "bad_frames.npy")
+    if not os.path.exists(badframes_path):
+        badframes_path = os.path.join(db["save_path0"], "bad_frames.npy")
     badframes_path = badframes_path if os.path.exists(badframes_path) else None
     # badframes from file (optional)
     badframes0 = np.zeros(db["nframes"], "bool")

@@ -224,8 +224,8 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
         img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
-        img, diameter=diameter[1], flow_threshold=settings["flow_threshold"],
-        cellprob_threshold=settings['cellprob_threshold'],
+        img, diameter=diameter[1], flow_threshold=settings.get("flow_threshold", 0.4),
+        cellprob_threshold=settings.get("cellprob_threshold", 0.0),
         pretrained_model=settings['cellpose_model'], device=device)
     if rescale != 1.0:
         masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)

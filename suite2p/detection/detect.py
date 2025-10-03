@@ -17,7 +17,7 @@ from ..classification import classify, user_classfile
 from .. import default_settings 
 from ..logger import TqdmToLogger
 
-cellpose_options_num = {'max_proj / meanImg': 1, 'meanImg':2, 'enhanced_mean_img': 3 ,'max_proj': 4}
+cellpose_options_num = {'max_proj / meanImg': 1, 'meanImg':2, 'enhanced_meanImg': 3 ,'max_proj': 4}
 
 def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5000):
     """ bin registered movie """
@@ -151,11 +151,8 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     t0 = time.time()
     if settings["algorithm"] == "cellpose":
         if anatomical.CELLPOSE_INSTALLED:
-            logger.info(">>>> CELLPOSE finding masks in " +
-                  ["max_proj / mean_img", "mean_img", "enhanced_mean_img", "max_proj"][
-                      int(cellpose_options_num[settings["cellpose_settings"]["img"]]) - 1])
+            logger.info(f">>>> CELLPOSE finding masks in {settings['cellpose_settings']['img']}")
             new_settings, stat = anatomical.select_rois(meanImg, max_proj, settings=settings["cellpose_settings"],
-                                          yrange=yrange, xrange=xrange,
                                           diameter=diameter, 
                                           device=device)
         else:
@@ -222,9 +219,10 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
 
     # if second channel, detect bright cells in second channel
     if meanImg_chan2 is not None:
-        redmasks, redcell = chan2detect.detect(meanImg, meanImg_chan2, stat, 
+        redmasks, redcell = chan2detect.detect(meanImg, meanImg_chan2, stat, diameter=diameter,
                                     cellpose_chan2=settings.get("cellpose_chan2", True),
                                     chan2_threshold=settings.get("chan2_threshold", 0.65),
+                                    settings=settings['cellpose_settings'],
                                     device=device)
         new_settings["chan2_masks"] = redmasks
     else:

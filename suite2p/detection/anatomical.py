@@ -124,18 +124,34 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     return stats
 
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
-               pretrained_model=None, device=torch.device("cuda")):
-    if diameter == 0:
-        diameter = None
+def roi_detect(mproj, diameter=None, settings=None,
+               pretrained_model=None, device=torch.device("cuda"), chan2=False):
+    """ detect ROIs in image using cellpose """
+    Lyc, Lxc = mproj.shape
+    diameter = [30., 30. ] if diameter is None else diameter
+    diameter = [diameter, diameter] if np.isscalar(diameter) else diameter
+    
+    rescale = diameter[1] / diameter[0]
+    if rescale != 1.0:
+        img = cv2.resize(img, (Lxc, int(Lyc * rescale)))
+    logger.info("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
+                diameter[1])
+
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
-    masks = model.eval(mproj, diameter=diameter,
-                       cellprob_threshold=cellprob_threshold,
-                       flow_threshold=flow_threshold)[0]
+    params = settings["params"] if not chan2 else settings["chan2_params"]
+    masks = model.eval(mproj, diameter=diameter[1],
+                       cellprob_threshold=settings.get("cellprob_threshold", 0.0),
+                       flow_threshold=settings.get("flow_threshold", 0.4),
+                       **params)[0]
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
+
+    if rescale != 1.0:
+        masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
+        img = cv2.resize(img, (Lxc, Lyc))
+    
     centers, mask_diams = mask_centers(masks)
     median_diam = np.median(mask_diams)
     logger.info(">>>> %d masks detected, median diameter = %0.2f " %
@@ -172,7 +188,7 @@ def masks_to_stats(masks, weights):
     return stats
 
 
-def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange, 
+def select_rois(mean_img, max_proj, settings: Dict[str, Any], 
                 diameter=[12., 12.],
                 device=torch.device("cuda")):
     """ find ROIs in static frames
@@ -180,7 +196,7 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
     Parameters:
 
         settings: dictionary
-            requires keys "high_pass", "anatomical_only", optional "yrange", "xrange"
+            requires keys "high_pass", "anatomical_only"
         
         mov: ndarray t x Lyc x Lxc, binned movie
     
@@ -189,21 +205,11 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
     
     """
     Lyc, Lxc = mean_img.shape
-    if settings["img"] == 'max_proj / mean_img':
+    if settings["img"] == 'max_proj / meanImg':
         img = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
         weights = max_proj
-    elif settings["img"] == 'mean_img':
+    elif settings["img"] == 'meanImg':
         img = mean_img
-        weights = 0.1 + np.clip(
-            (mean_img - np.percentile(mean_img, 1)) /
-            (np.percentile(mean_img, 99) - np.percentile(mean_img, 1)), 0, 1)
-    elif settings["img"] == 'enhanced_mean_img':
-        if "meanImgE" in settings:
-            img = settings["meanImgE"][yrange[0] : yrange[1],
-                                  xrange[0] : xrange[1]]
-        else:
-            img = mean_img
-            logger.info("no enhanced mean image, using mean image instead")
         weights = 0.1 + np.clip(
             (mean_img - np.percentile(mean_img, 1)) /
             (np.percentile(mean_img, 99) - np.percentile(mean_img, 1)), 0, 1)
@@ -213,23 +219,13 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any], yrange, xrange,
 
     t0 = time.time()
 
-    rescale = diameter[1] / diameter[0]
-    if rescale != 1.0:
-        img = cv2.resize(img, (Lxc, int(Lyc * rescale)))
-    logger.info("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
-                diameter[1])
-
     if settings.get("highpass_spatial", 0):
         img = np.clip(normalize99(img), 0, 1)
         img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
-        img, diameter=diameter[1], flow_threshold=settings.get("flow_threshold", 0.4),
-        cellprob_threshold=settings.get("cellprob_threshold", 0.0),
-        pretrained_model=settings['cellpose_model'], device=device)
-    if rescale != 1.0:
-        masks = cv2.resize(masks, (Lxc, Lyc), interpolation=cv2.INTER_NEAREST)
-        img = cv2.resize(img, (Lxc, Lyc))
+        img, diameter=diameter, settings=settings, device=device)
+    
     stats = masks_to_stats(masks, weights)
     logger.info("Detected %d ROIs, %0.2f sec" % (len(stats), time.time() - t0))
 

@@ -695,13 +695,13 @@ SETTINGS = {
                 "default": 0.0,
                 "description": "Cell probability threshold for cellpose.",
             },
-            "model_chan2": {
-                "gui_name": "Cellpose model chan2",
-                "type": str,
+            "params": {
+                "gui_name": "Additional cellpose parameters",
+                "type": dict,
                 "min": None,
                 "max": None,
-                "default": "nuclei",
-                "description": "Cellpose model name or model path to use for channel 2.",
+                "default": None,
+                "description": "Parameters for cellpose, provided as a dict.",
             },
             "params_chan2": {
                 "gui_name": "Additional cellpose parameters for chan2",

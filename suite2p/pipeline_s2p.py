@@ -107,7 +107,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     t11 = time.time()
     if stat is None:
         bad_frames = reg_outputs["badframes"]
-        bad_frames[badframes] = False
+        bad_frames[badframes] = True
+        logger.info(f"Excluding {bad_frames.sum()} bad frames from detection")
         if not isinstance(settings["diameter"], (list, tuple, np.ndarray)):
             settings["diameter"] = np.array([settings["diameter"], settings["diameter"]])
         elif isinstance(settings["diameter"], (list, tuple)):

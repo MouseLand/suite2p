@@ -106,6 +106,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     logger.info("----------- ROI DETECTION")
     t11 = time.time()
     if stat is None:
+        bad_frames = reg_outputs["badframes"]
+        bad_frames[badframes] = False
         if not isinstance(settings["diameter"], (list, tuple, np.ndarray)):
             settings["diameter"] = np.array([settings["diameter"], settings["diameter"]])
         elif isinstance(settings["diameter"], (list, tuple)):
@@ -119,6 +121,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                                                     diameter=settings["diameter"],
                                                 settings=settings["detection"], 
                                                 classifier_path=classfile,
+                                                badframes=bad_frames,
                                                 preclassify=settings["classification"]["preclassify"],
                                                 device=device)
         np.save(os.path.join(save_path, "stat.npy"), stat)

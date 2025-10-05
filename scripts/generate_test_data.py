@@ -379,12 +379,12 @@ def main():
 	download_cached_inputs(test_input_dir_path)
 	#Create test_data directory if necessary
 	make_new_dir(test_data_dir_path)
-	# full_db, full_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateFullPipelineTestData.generate_all_data(full_db, full_settings)
-	# det_db, det_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateDetectionTestData.generate_all_data(det_db, det_settings)
-	# class_db, class_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
-	# GenerateClassificationTestData.generate_all_data(class_db, class_settings)
+	full_db, full_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	GenerateFullPipelineTestData.generate_all_data(full_db, full_settings)
+	det_db, det_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	GenerateDetectionTestData.generate_all_data(det_db, det_settings)
+	class_db, class_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
+	GenerateClassificationTestData.generate_all_data(class_db, class_settings)
 	ext_db, ext_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
 	GenerateExtractionTestData.generate_all_data(ext_db, ext_settings)
 	return

@@ -11,8 +11,10 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `input_format` | Input format | `<class 'str'>` | `tif` | Can be ['tif', 'h5', 'nwb', 'bruker', 'movie', 'dcimg']. |
 | `keep_movie_raw` | Keep movie raw | `<class 'bool'>` | `False` | Whether to keep binary file of non-registered frames. |
 | `nplanes` | Number of planes | `<class 'int'>` | `1` | Each tiff / file has this many planes in sequence. |
+| `nrois` | Number of ScanImage ROIs | `<class 'int'>` | `1` | Each tiff / file has this many different ROIs. |
 | `nchannels` | Number of channels | `<class 'int'>` | `1` | Specify one- or two- channel recording. |
 | `functional_chan` | Functional channel | `<class 'int'>` | `1` | This channel is used to extract functional ROIs (1-based). |
+| `lines` | Line assignments | `<class 'list'>` | `[]` | Line assignments for mesoscan FOVs. |
 | `ignore_flyback` | Ignore flyback | `<class 'list'>` | `None` | List of planes to not process (0-based). |
 | `subfolders` | Subfolders | `<class 'list'>` | `None` | If len(data_path)==1, subfolders of data_path[0] to use when look_one_level_down is set to True. |
 | `file_list` | File list | `<class 'list'>` | `None` | List of files to process (default is all files in data_path, only supported with one data_path folder). |
@@ -29,6 +31,9 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `tau` | Ca timescale | `<class 'float'>` | `1.0` | Timescale for deconvolution and binning in seconds. |
 | `fs` | Sampling frequency | `<class 'float'>` | `10.0` | Sampling rate per plane. |
 | `diameter` | Diameter | `<class 'list'>` | `[12.0, 12.0]` | ROI diameter in Y and X pixels for sourcery and cellpose detection. |
+| `mesoscan` | Mesoscan mode | `<class 'int'>` | `0` | Enable mesoscan mode for processing multiple FOVs. |
+| `dx` | X offsets | `<class 'list'>` | `[]` | X offsets for mesoscan FOVs. |
+| `dy` | Y offsets | `<class 'list'>` | `[]` | Y offsets for mesoscan FOVs. |
 
 ### Run
 
@@ -47,7 +52,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `combined` | Combine planes | `<class 'bool'>` | `True` | Combine multiple planes after processing into a single result / single canvas for GUI. |
 | `save_mat` | Save mat | `<class 'bool'>` | `False` | Whether to save output as matlab file. |
 | `save_NWB` | Save NWB | `<class 'bool'>` | `False` | Whether to save output as NWB file. |
-| `save_ops_orig` | Save ops orig | `<class 'bool'>` | `False` | Whether to save db, settings, reg_outputs, detection_outputs into ops.npy. |
+| `save_ops_orig` | Save ops orig | `<class 'bool'>` | `True` | Whether to save db, settings, reg_outputs, detection_outputs into ops.npy. |
 | `delete_bin` | Delete binary | `<class 'bool'>` | `False` | Whether to delete binary file after processing. |
 | `move_bin` | Move binary | `<class 'bool'>` | `False` | If True, and fast_disk is different than save_path, binary file is moved to save_path. |
 
@@ -122,7 +127,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
 | `baseline` | Baseline type | `<class 'str'>` | `maximin` | Method for baseline estimation ['maximin', 'prctile', 'constant']. |
-| `win_baseline` | Baseline window | `<class 'float'>` | `1.0` | Window (in seconds) for max filter. |
-| `sig_baseline` | Baseline sigma | `<class 'float'>` | `1.0` | Width of Gaussian filter in frames (applied to find constant or before maximin filter). |
-| `prctile_baseline` | Baseline percentile | `<class 'float'>` | `8.0` | Percentile of trace to use as baseline if using 'constant_prctile' for baseline. |
+| `win_baseline` | Baseline window | `<class 'float'>` | `60.0` | Window (in seconds) for max filter. |
+| `sig_baseline` | Baseline sigma | `<class 'float'>` | `10.0` | Width of Gaussian filter in frames (applied to find constant or before maximin filter). |
+| `prctile_baseline` | Baseline percentile | `<class 'float'>` | `8.0` | Percentile of trace to use as baseline if using 'prctile' for baseline. |
 

@@ -247,8 +247,9 @@ def run_plane(db, settings, db_path=None, stat=None):
 
     # save ops orig
     if settings["io"]["save_ops_orig"]:
-        np.save(os.path.join(db["save_path"], "ops.npy"),
-                {**db, **settings, **reg_outputs, **detect_outputs, **plane_times})
+        ops = {**db, **settings, **reg_outputs, **detect_outputs}
+        ops["plane_times"] = plane_times
+        np.save(os.path.join(db["save_path"], "ops.npy"), ops)
     
     if settings["io"]["move_bin"] and db["save_path"] != db["fast_disk"]:
         logger.info("moving binary files to save_path")

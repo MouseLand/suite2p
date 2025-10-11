@@ -153,12 +153,12 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
         if anatomical.CELLPOSE_INSTALLED:
             logger.info(f">>>> CELLPOSE finding masks in {settings['cellpose_settings']['img']}")
             new_settings, stat = anatomical.select_rois(meanImg, max_proj, settings=settings["cellpose_settings"],
-                                          diameter=diameter, 
+                                          diameter=diameter,
                                           device=device)
         else:
             logger.info("Warning: cellpose did not import ", anatomical.cellpose_error)
             logger.info("cannot use anatomical mode, will use functional detection instead")
-            
+
     if settings["algorithm"] != "cellpose" or not anatomical.CELLPOSE_INSTALLED:
         settings["algorithm"] = "sparsery" if settings["algorithm"] == "cellpose" else settings["algorithm"]
         sdmov = utils.standard_deviation_over_time(mov, batch_size=1000)
@@ -219,10 +219,13 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
 
     # if second channel, detect bright cells in second channel
     if meanImg_chan2 is not None:
+        extraction_defaults = default_settings()["extraction"]
         redmasks, redcell = chan2detect.detect(meanImg, meanImg_chan2, stat, diameter=diameter,
                                     cellpose_chan2=settings.get("cellpose_chan2", True),
                                     chan2_threshold=settings.get("chan2_threshold", 0.65),
                                     settings=settings['cellpose_settings'],
+                                    inner_neuropil_radius=extraction_defaults["inner_neuropil_radius"],
+                                    min_neuropil_pixels=extraction_defaults["min_neuropil_pixels"],
                                     device=device)
         new_settings["chan2_masks"] = redmasks
     else:

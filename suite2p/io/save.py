@@ -178,7 +178,6 @@ def combined(save_folder, save=True):
                 redcell = np.concatenate((redcell, redcell0))
         ii += 1
         print("appended plane %d to combined view" % k)
-    print(meanImg_chan2.shape)
     ops["meanImg"] = meanImg
     ops["meanImgE"] = meanImgE
     if ops["nchannels"] > 1:

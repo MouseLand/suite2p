@@ -6,6 +6,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 import sys, os
 import logging
 import traceback
+import io
 
 import numpy as np
 import torch
@@ -84,7 +85,7 @@ class XStream(QtCore.QObject):
         pass
 
     def fileno(self):
-        return -1
+        raise io.UnsupportedOperation("fileno")
 
     def write(self, msg):
         if not self.signalsBlocked():

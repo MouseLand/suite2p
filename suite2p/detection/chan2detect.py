@@ -52,7 +52,8 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     return mimg2
 
 
-def intensity_ratio(mimg2, stats, chan2_threshold=0.65):
+def intensity_ratio(mimg2, stats, chan2_threshold=0.65, inner_neuropil_radius=2,
+                    min_neuropil_pixels=350):
     """ compute pixels in cell and in area around cell (including overlaps)
         (exclude pixels from other cells) """
     Ly, Lx = mimg2.shape
@@ -64,6 +65,8 @@ def intensity_ratio(mimg2, stats, chan2_threshold=0.65):
         ypixs=[stat["ypix"] for stat in stats],
         xpixs=[stat["xpix"] for stat in stats],
         cell_pix=cell_pix,
+        inner_neuropil_radius=inner_neuropil_radius,
+        min_neuropil_pixels=min_neuropil_pixels
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
     neuropil_masks = np.zeros((len(stats), Ly * Lx), np.float32)
@@ -104,11 +107,13 @@ def cellpose_overlap(stats, mimg2, diameter, chan2_threshold=0.25, device=torch.
 
 
 def detect(meanImg, meanImg_chan2, stats, diameter, cellpose_chan2=True, chan2_threshold=0.65,
-           device=torch.device("cuda"), settings=None):
+           device=torch.device("cuda"), settings=None, inner_neuropil_radius=2,
+           min_neuropil_pixels=350):
     mimg = meanImg.copy()
     mimg2 = meanImg_chan2.copy()
 
     redstats = None
+    masks = None
     if cellpose_chan2:
         try:
             logger.info(">>>> CELLPOSE estimating masks in anatomical channel")
@@ -126,6 +131,8 @@ def detect(meanImg, meanImg_chan2, stats, diameter, cellpose_chan2=True, chan2_t
         nblks = 3
         #Ly, Lx = settings["Ly"], settings["Lx"]
         #mimg2_corr = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
-        redstats = intensity_ratio(mimg2, stats, chan2_threshold=chan2_threshold)
-    
+        redstats = intensity_ratio(mimg2, stats, chan2_threshold=chan2_threshold,
+                                  inner_neuropil_radius=inner_neuropil_radius,
+                                  min_neuropil_pixels=min_neuropil_pixels)
+
     return masks, redstats

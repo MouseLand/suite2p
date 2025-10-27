@@ -1,0 +1,59 @@
+site_name: Suite2p Documentation
+theme:
+  name: readthedocs  # You can also use 'readthedocs' or other themes
+    
+nav:
+  - Home: index.md
+  - Basics:
+      - Installation: installation.md
+      - Inputs: inputs.md
+  - Settings: settings.md
+  - Using the GUI: gui.md
+  - Outputs: outputs.md
+  - Multiday recordings: multiday.md
+  - Developer Doc: developer_doc.md
+  - Frequently asked questions: FAQ.md
+  - How it Works:
+      - Registration: registration.md
+      - Cell Detection: celldetection.md
+      - Signal Extraction: roiextraction.md
+      - Spike Deconvolution: deconvolution.md
+  - API:
+      - IO: api/io.md
+      - Registration: api/registration.md 
+      - Detection: api/detection.md
+      - Extraction: api/extraction.md
+      - Classification: api/classification.md
+      - GUI: api/gui.md
+
+hooks:
+  - generate_settings_docs.py # Necessary for Settings.md generation
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            separate_signature: true
+            show_if_no_docstring: false
+            show_docstring_sections: true
+            docstring_style: numpy
+            members_order: alphabetical
+            
+extra_css:
+  - css/API.css # Necessary for API documentation
+
+
+markdown_extensions:
+  - admonition
+  - toc
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.emoji
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - pymdownx.extra

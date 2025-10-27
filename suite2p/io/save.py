@@ -26,9 +26,24 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
         elif isinstance(ops_matlab[k], list) and len(ops_matlab[k]) > 0:
             if isinstance(ops_matlab[k][0], (pathlib.WindowsPath, pathlib.PosixPath)):
                 ops_matlab[k] = [os.fspath(p.absolute()) for p in ops_matlab[k]]
-                logger.info(k, ops_matlab[k])
+                logger.info(f"{k}: {ops_matlab[k]}")
 
     stat = np.array(stat, dtype=object)
+
+
+    # Check for None values in ops_matlab and replace with empty arrays
+    for k, v in ops_matlab.items():
+        if v is None:
+            logger.warning(f"ops_matlab['{k}'] is None, replacing with empty array")
+            ops_matlab[k] = np.array([])
+
+    # Handle None variables by replacing with empty arrays
+    if redcell is None:
+        logger.warning("redcell is None, replacing with empty array")
+        redcell = np.array([])
+    if iscell is None:
+        logger.warning("iscell is None, replacing with empty array")
+        iscell = np.array([])
 
     if F_chan2 is None:
         scipy.io.savemat(

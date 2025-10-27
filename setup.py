@@ -99,10 +99,11 @@ setuptools.setup(
     extras_require={
       "docs": [
         "sphinx>=3.0",
-        "sphinxcontrib-apidoc",
-        "sphinx_rtd_theme",
-        "sphinx-prompt",
-        "sphinx-autodoc-typehints",
+        "mkdocs",
+        "mkdocs-material",
+        "mkdocs-git-revision-date-localized-plugin",
+        "mkdocstrings",
+        "mkdocstrings-python"
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,

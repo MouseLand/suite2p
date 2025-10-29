@@ -94,6 +94,22 @@ DB = {
             "default": None,
             "description": "Line numbers for each ScanImage ROI.",
         },
+        "dy": {
+            "gui_name": "Y position for each Scanimage ROI",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "Y position for each ScanImage ROI.",
+        },
+        "dx": {
+            "gui_name": "X position for each Scanimage ROI",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "X position for each ScanImage ROI.",
+        },
         "ignore_flyback": {
             "gui_name": "Ignore flyback",
             "type": list,

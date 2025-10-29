@@ -140,7 +140,6 @@ def roi_detect(mproj, diameter=None, settings=None,
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
     params = settings["params"] if not chan2 else settings["chan2_params"]
-    params = {} if params is None else params
     masks = model.eval(mproj, diameter=diameter[1],
                        cellprob_threshold=settings.get("cellprob_threshold", 0.0),
                        flow_threshold=settings.get("flow_threshold", 0.4),
@@ -192,7 +191,8 @@ def masks_to_stats(masks, weights):
 def select_rois(mean_img, max_proj, settings: Dict[str, Any], 
                 diameter=[12., 12.],
                 device=torch.device("cuda")):
-    """ find ROIs in static frames
+    """ 
+    find ROIs in static frames
     
     Parameters:
 
@@ -202,8 +202,9 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any],
         mov: ndarray t x Lyc x Lxc, binned movie
     
     Returns:
+
         stats: list of dicts
-    
+
     """
     Lyc, Lxc = mean_img.shape
     if settings["img"] == 'max_proj / meanImg':
@@ -222,6 +223,7 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any],
 
     if settings.get("highpass_spatial", 0):
         img = np.clip(normalize99(img), 0, 1)
+        img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
         img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
 
     masks, centers, median_diam, mask_diams = roi_detect(

@@ -5,6 +5,7 @@ from tifffile import imread
 from pathlib import Path
 from glob import glob
 from suite2p.io import BinaryFile
+from suite2p.parameters import default_settings
 
 import numpy as np
 import json
@@ -40,57 +41,75 @@ class FullPipelineTestUtils:
     functions that can be used by both test_full_pipeline.py and generate_test_data.py.
     This is to ensure both the generation script and the tests use the same settings.
     """
-    def initialize_settings_test1plane_1chan_with_batches(settings):
-        settings.update({
-            'tiff_list': ['input_1500.tif'],
-            'do_regmetrics': True,
-            'save_NWB': True,
-            'save_mat': True,
+    @staticmethod
+    def initialize_settings_test1plane_1chan_with_batches(db, settings):
+        db.update({
+            "file_list": ["input_1500.tif"], 
+            "input_format": "tif",
+            "nplanes": 1, 
+            "nchannels": 1,
             'keep_movie_raw': True,
-            'delete_bin': True,
         })
-        return settings
+        settings["run"]['do_regmetrics'] = True
+        settings["io"]['save_nwb'] = True
+        settings["io"]["save_mat"] = True
+        settings["io"]["delete_bin"] = True
+        return db, settings
 
-    def initialize_settings_test_1plane_2chan_sourcery(settings):
-        settings.update({
+    @staticmethod
+    def initialize_settings_test_1plane_2chan_sourcery(db, settings):
+        db.update({
             'nchannels': 2,
-            'sparse_mode': 0,
-            'tiff_list': ['input.tif'],
+            'file_list': ['input.tif'],
             'keep_movie_raw': True
         })
-        return settings
+        settings["detection"]["sparsery_settings"]["spatial_scale"] = 0
+        return db, settings
 
-    def initialize_settings_test2plane_2chan_with_batches(settings):
-        settings.update({
-            'tiff_list': ['input_1500.tif'],
+    @staticmethod
+    def initialize_settings_test2plane_2chan_with_batches(db, settings):
+        db.update({
+            'file_list': ['input_1500.tif'],
             'batch_size': 200,
             'nplanes': 2,
             'nchannels': 2,
-            'reg_tif': True,
-            'reg_tif_chan2': True,
-            'save_mat': True,
-            'delete_bin': True,
         })
-        return settings 
+        settings["registration"]["reg_tif"] = True
+        settings["registration"]["reg_tif_chan2"] = True
+        settings["io"]["save_mat"] = True
+        settings["io"]["delete_bin"] = True
+        return db, settings 
 
-    def initialize_settings_test_mesoscan_2plane_2z(settings):
-        mesoscan_dir = Path(settings['data_path'][0]).joinpath('mesoscan')
-        with open(mesoscan_dir.joinpath('settings.json')) as f:
+    @staticmethod
+    def initialize_settings_test_mesoscan_2plane_2z(db, settings):
+        mesoscan_dir = Path(db['data_path'][0]).joinpath('mesoscan')
+        with open(mesoscan_dir.joinpath('ops.json')) as f:
             meso_settings = json.load(f)
-        settings['data_path'] = [mesoscan_dir]
+        db['data_path'] = [mesoscan_dir]
+        # Separate db and settings parameters from meso_settings
+        db_keys = ['nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
+        settings_keys = ['do_registration', 'roidetect']
         for key in meso_settings.keys():
-            if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
+            if key in db_keys:
+                db[key] = meso_settings[key]
+            elif key == 'do_registration':
+                settings["run"]["do_registration"] = meso_settings[key]
+            elif key == 'roidetect':
+                settings["run"]["do_detection"] = meso_settings[key]
+            elif key not in settings_keys:  # Other parameters go to top-level settings for compatibility
                 settings[key] = meso_settings[key]
-        settings['delete_bin'] = True
-        return settings
+        settings["io"]["delete_bin"] = True
+        return db, settings
 
 class DetectionTestUtils:
+    @staticmethod
     def prepare(op, input_file_name_list, dimensions):
         """
         Prepares for detection by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
         # Set appropriate settings parameters
+        detection_defaults = default_settings()['detection']
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -98,6 +117,14 @@ class DetectionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
+            **detection_defaults,
+            # Override detection thresholds for test data
+            'threshold_scaling': 0.5,  # Lower threshold to find more ROIs
+            'sparsery_settings': {
+                **detection_defaults['sparsery_settings'],
+                'spatial_scale': 0,  # Let algorithm auto-determine scale
+                'max_ROIs': 5000,
+            }
         })
         settings = []
         for plane in range(op['nplanes']):
@@ -123,11 +150,15 @@ class DetectionTestUtils:
         return settings
 
 class ExtractionTestUtils:
+    @staticmethod
     def prepare(op, input_file_name_list, dimensions):
         """
         Prepares for extraction by filling out necessary settings parameters. Removes dependence on
         other modules. Creates pre_registered binary file.
         """
+        # Get extraction settings from default_settings
+        extraction_defaults = default_settings()['extraction']
+
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -135,6 +166,7 @@ class ExtractionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
+            **extraction_defaults,
         })
 
         settings = []

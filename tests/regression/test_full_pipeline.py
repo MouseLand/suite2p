@@ -13,20 +13,21 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_setti
 	Tests for case with 1 plane and 1 channel with multiple batches. Results are saved to nwb format
 	then checked to see if it contains the necessary parts for use with GUI.
 	"""
-	test_settings = utils.FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches(test_settings)
-	suite2p.run_s2p(settings=test_settings)
-	nplanes = test_settings['nplanes']
+	db, settings = test_settings
+	db, settings = utils.FullPipelineTestUtils.initialize_settings_test1plane_1chan_with_batches(db, settings)
+	suite2p.run_s2p(settings=settings, db=db)
+	nplanes = db['nplanes']
 	outputs_to_check = ['F', 'stat']
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, test_settings['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{test_settings['nchannels']}chan1500/suite2p/plane{i}")),
-			utils.get_list_of_data(outputs_to_check, Path(test_settings['save_path0']).joinpath(f"suite2p/plane{i}")),
+			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
+			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))
 	# Read Nwb data and make sure it's identical to output data
-	stat, settings, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
-		io.read_nwb(str(Path(test_settings['save_path0']).joinpath('suite2p/ophys.nwb')))
-	output_dir = Path(test_settings['save_path0']).joinpath(f"suite2p/plane0")
+	stat, nwb_settings, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
+		io.read_nwb(str(Path(db['save_path0']).joinpath('suite2p/ophys.nwb')))
+	output_dir = Path(db['save_path0']).joinpath(f"suite2p/plane0")
 	output_name_list = ['F', 'stat']
 	data_list_one = utils.get_list_of_data(output_name_list, output_dir)
 	data_list_two = [F, stat]
@@ -47,9 +48,10 @@ def test_2plane_2chan_with_batches(test_settings):
 	Tests for case with 2 planes and 2 channels with multiple batches.  Runs twice to check for consistency.
 	"""
 	for _ in range(2):
-		settings = utils.FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(test_settings)
-		nplanes = settings['nplanes']
-		suite2p.run_s2p(settings=settings)
+		db, settings = test_settings
+		db, settings = utils.FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), settings.copy())
+		nplanes = db['nplanes']
+		suite2p.run_s2p(settings=settings, db=db)
 
 		outputs_to_check = ['F', 'iscell', 'stat']
 		#if settings['nchannels'] == 2:
@@ -57,8 +59,8 @@ def test_2plane_2chan_with_batches(test_settings):
 		for i in range(nplanes):
 			assert all(utils.compare_list_of_outputs(
 				outputs_to_check,
-				utils.get_list_of_data(outputs_to_check, settings['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{settings['nchannels']}chan1500/suite2p/plane{i}")),
-				utils.get_list_of_data(outputs_to_check, Path(settings['save_path0']).joinpath(f"suite2p/plane{i}")),
+				utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
+				utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
 			))
 
 
@@ -87,15 +89,16 @@ def test_mesoscan_2plane_2z(test_settings):
 	"""
 	Tests for case with 2 planes and 2 ROIs for a mesoscan.
 	"""
-	test_settings = utils.FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z(test_settings)
-	suite2p.run_s2p(settings=test_settings)
+	db, settings = test_settings
+	db, settings = utils.FullPipelineTestUtils.initialize_settings_test_mesoscan_2plane_2z(db, settings)
+	suite2p.run_s2p(settings=settings, db=db)
 
-	nplanes = test_settings['nplanes'] * test_settings['nrois']
+	nplanes = db['nplanes'] * db['nrois']
 	outputs_to_check = ['F', 'iscell', 'stat']
 	for i in range(nplanes):
 		assert all(utils.compare_list_of_outputs(
 			outputs_to_check,
-			# Need additional parent for since test_settings['data_path'][0] is data/test_inputs/mesoscan
-			utils.get_list_of_data(outputs_to_check, test_settings['data_path'][0].parent.parent.joinpath(f'test_outputs/mesoscan/suite2p/plane{i}')),
-			utils.get_list_of_data(outputs_to_check, Path(test_settings['save_path0']).joinpath(f"suite2p/plane{i}")),
+			# Need additional parent for since db['data_path'][0] is data/test_inputs/mesoscan
+			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.parent.joinpath(f'test_outputs/mesoscan/suite2p/plane{i}')),
+			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))

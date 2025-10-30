@@ -78,6 +78,14 @@ DB = {
             "default": 1,
             "description": "Specify one- or two- channel recording.",
         },
+        "swap_order": {
+            "gui_name": "Swap the order of channels and planes for multiplexed mesoscope recordings.",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Swap the order of channels and planes for multiplexed mesoscope recordings.",
+        },
         "functional_chan": {
             "gui_name": "Functional channel",
             "type": int,

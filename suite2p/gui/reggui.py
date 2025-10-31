@@ -307,13 +307,11 @@ class BinaryPlayer(QMainWindow):
         self.RGB = -1 * np.ones((self.LY, self.LX, 3), np.int32)
         self.cellpix = -1 * np.ones((self.LY, self.LX), np.int32)
         self.sroi = np.zeros((self.LY, self.LX), np.uint8)
-
         for n in np.nonzero(self.iscell)[0]:
             ypix = self.stat[n]["ypix"].flatten()
             xpix = self.stat[n]["xpix"].flatten()
-            if not self.ops["extraction"]["allow_overlap"]:
-                ypix = ypix[~self.stat[n]["overlap"]]
-                xpix = xpix[~self.stat[n]["overlap"]]
+            ypix = ypix[~self.stat[n]["overlap"]]
+            xpix = xpix[~self.stat[n]["overlap"]]
             yext, xext = utils.boundary(ypix, xpix)
             if len(yext) > 0:
                 goodi = (yext >= 0) & (xext >= 0) & (yext < self.LY) & (xext < self.LX)

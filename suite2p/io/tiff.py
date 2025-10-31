@@ -115,6 +115,7 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
     # loop over all tiffs
     which_folder = -1
     ntotal = 0
+    swap = dbs[0].get("swap_order", False)
     for ifile, file in enumerate(fs):
         # open tiff
         tif, Ltif = open_tiff(file, use_sktiff)
@@ -142,13 +143,21 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
                         dbs[jk]["meanImg"] = np.zeros((Ly, Lx), "float64")
                         if nchannels > 1:
                             dbs[jk]["meanImg_chan2"] = np.zeros((Ly, Lx), "float64")
-                i0 = nchannels * ((iplane + j) % nplanes)
+
+                if not swap:
+                    i0 = nchannels * ((iplane + j) % nplanes)
+                else:
+                    i0 = (iplane + j) % (nplanes*nchannels)
+
                 if nchannels > 1:
                     nfunc = dbs[jk]["functional_chan"] - 1
                 else:
                     nfunc = 0
-                im2write = im[int(i0) + nfunc:nframes:nplanes * nchannels]
 
+                #print(i0, int(i0) + (swap+1)*nfunc)
+
+                im2write = im[int(i0) + (swap+1)*nfunc:nframes:nplanes * nchannels]
+                
                 for k in range(nrois):
                     jk = j*nrois + k
                     if nrois > 1:
@@ -162,7 +171,8 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
                     dbs[jk]["frames_per_folder"][which_folder] += imk.shape[0]
                     
                 if nchannels > 1:
-                    im2write = im[int(i0) + 1 - nfunc:nframes:nplanes * nchannels]
+                    #print(int(i0) + (swap+1)*(1 - nfunc))
+                    im2write = im[int(i0) + (swap+1)*(1 - nfunc):nframes:nplanes * nchannels]
                     for k in range(nrois):
                         jk = j*nrois + k
                         if nrois > 1:
@@ -171,7 +181,10 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
                             imk = im2write
                         reg_file_chan2[jk].write(bytearray(imk))
                         dbs[jk]["meanImg_chan2"] += imk.sum(axis=0).astype("float64")
-            iplane = (iplane - nframes / nchannels) % nplanes
+            if not swap:
+                iplane = (iplane - nframes / nchannels) % nplanes
+            else:
+                iplane = (iplane - nframes) % (nchannels * nplanes)
             ix += nframes
             ntotal += nframes
             if ntotal % (batch_size * 4) == 0:

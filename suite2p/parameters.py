@@ -78,6 +78,14 @@ DB = {
             "default": 1,
             "description": "Specify one- or two- channel recording.",
         },
+        "swap_order": {
+            "gui_name": "Swap the order of channels and planes for multiplexed mesoscope recordings.",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Swap the order of channels and planes for multiplexed mesoscope recordings.",
+        },
         "functional_chan": {
             "gui_name": "Functional channel",
             "type": int,
@@ -93,6 +101,22 @@ DB = {
             "max": None,
             "default": None,
             "description": "Line numbers for each ScanImage ROI.",
+        },
+        "dy": {
+            "gui_name": "Y position for each Scanimage ROI",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "Y position for each ScanImage ROI.",
+        },
+        "dx": {
+            "gui_name": "X position for each Scanimage ROI",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "X position for each ScanImage ROI.",
         },
         "ignore_flyback": {
             "gui_name": "Ignore flyback",

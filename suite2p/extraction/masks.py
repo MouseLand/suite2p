@@ -88,8 +88,8 @@ def create_cell_mask(stat: Dict[str, Any], Ly: int, Lx: int,
     return cell_mask, lam_normed
 
 
-def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius,
-                          min_neuropil_pixels, circular=False):
+def create_neuropil_masks(ypixs, xpixs, cell_pix, inner_neuropil_radius=2,
+                          min_neuropil_pixels=350, circular=False):
     """ creates surround neuropil masks for ROIs in stat by EXTENDING ROI (slower if circular)
 
     Parameters

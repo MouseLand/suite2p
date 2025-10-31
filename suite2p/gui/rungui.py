@@ -26,7 +26,7 @@ def list_to_str(l):
     return ", ".join(str(l0) for l0 in l)
 
 DB_KEYS = [  "input_format", "look_one_level_down",
-             "keep_movie_raw", "nplanes", "nchannels",
+             "keep_movie_raw", "nplanes", "nchannels", "swap_order",
              "functional_chan", "ignore_flyback", "save_folder",
              "batch_size",
              "h5py_key", "nwb_series", "force_sktiff"

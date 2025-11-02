@@ -98,7 +98,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
     if not settings["run"]["do_detection"]:
         logger.warn("WARNING: skipping cell detection (settings['run']['do_detection']=False)")
-        return reg_outputs, None, None, None, None, None, None, None, None, None, None
+        plane_times["total_plane_runtime"] = time.time() - t1
+        return reg_outputs, None, None, None, None, None, None, None, None, None, plane_times
     
     yrange, xrange = reg_outputs["yrange"], reg_outputs["xrange"]
     meanImg_chan2 = reg_outputs.get("meanImg_chan2", None)
@@ -135,7 +136,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
     if len(stat) == 0:
         logger.info("no ROIs found")
-        return reg_outputs, detect_outputs, stat, None, None, None, None, None, None, None, None
+        plane_times["total_plane_runtime"] = time.time() - t1
+        return reg_outputs, detect_outputs, stat, None, None, None, None, None, None, None, plane_times
 
     logger.info("----------- EXTRACTION")
     t11 = time.time()

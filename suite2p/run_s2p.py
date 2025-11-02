@@ -242,12 +242,20 @@ def run_plane(db, settings, db_path=None, stat=None):
 
     # save as matlab file
     if settings["io"]["save_mat"]:
-        ops = {**db, **settings, **reg_outputs, **detect_outputs, **plane_times}
+        if reg_outputs is None:
+            logger.info("No registration outputs to save (registration was skipped)")
+        if detect_outputs is None:
+            logger.info("No detection outputs to save (detection was skipped)")
+        ops = {**db, **settings, **(reg_outputs or {}), **(detect_outputs or {}), **plane_times}
         io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell, F_chan2, Fneu_chan2)
 
     # save ops orig
     if settings["io"]["save_ops_orig"]:
-        ops = {**db, **settings, **reg_outputs, **detect_outputs}
+        if reg_outputs is None:
+            logger.info("No registration outputs in ops.npy (registration was skipped)")
+        if detect_outputs is None:
+            logger.info("No detection outputs in ops.npy (detection was skipped)")
+        ops = {**db, **settings, **(reg_outputs or {}), **(detect_outputs or {})}
         ops["plane_times"] = plane_times
         np.save(os.path.join(db["save_path"], "ops.npy"), ops)
     

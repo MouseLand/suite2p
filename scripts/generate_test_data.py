@@ -326,25 +326,36 @@ def extract_helper(settings, extract_input, plane):
 	print(plane_dir)
 	plane_dir.mkdir(exist_ok=True, parents=True)
 	with suite2p.io.BinaryFile(Ly=settings['Ly'], Lx=settings['Lx'], filename=settings['reg_file']) as f_reg:
-		# Compute Fluorescence Extraction 
-		F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
-			extract_input['stat'],
-			f_reg,
-			cell_masks=extract_input['cell_masks'],
-			neuropil_masks=extract_input['neuropil_masks'],
-			settings=settings, 
-			device=torch.device(settings['torch_device'])
-		)
-		# Deconvolve spikes from fluorescence
-		dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
-		dF = suite2p.extraction.preprocess(F=dF, fs=settings["fs"], **settings["dcnv_preprocess"])
-		spks = suite2p.extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"], tau=settings["tau"], fs=settings["fs"])
-		np.save(plane_dir.joinpath('ops.npy'), settings)
-		np.save(plane_dir.joinpath('F.npy'), F)
-		np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
-		np.save(plane_dir.joinpath('F_chan2.npy'), F_chan2)
-		np.save(plane_dir.joinpath('Fneu_chan2.npy'), Fneu_chan2)
-		np.save(plane_dir.joinpath('spks.npy'), spks)
+		# Open channel 2 file if it exists
+		f_reg_chan2 = None
+		if 'reg_file_chan2' in settings and settings['reg_file_chan2'] is not None:
+			f_reg_chan2 = suite2p.io.BinaryFile(Ly=settings['Ly'], Lx=settings['Lx'], filename=settings['reg_file_chan2'])
+
+		try:
+			# Compute Fluorescence Extraction
+			F, Fneu, F_chan2, Fneu_chan2 = suite2p.extraction.extraction_wrapper(
+				extract_input['stat'],
+				f_reg,
+				f_reg_chan2=f_reg_chan2,
+				cell_masks=extract_input['cell_masks'],
+				neuropil_masks=extract_input['neuropil_masks'],
+				settings=settings,
+				device=torch.device(settings['torch_device'])
+			)
+			# Deconvolve spikes from fluorescence
+			dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
+			dF = suite2p.extraction.preprocess(F=dF, fs=settings["fs"], **settings["dcnv_preprocess"])
+			spks = suite2p.extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"], tau=settings["tau"], fs=settings["fs"])
+			np.save(plane_dir.joinpath('ops.npy'), settings)
+			np.save(plane_dir.joinpath('F.npy'), F)
+			np.save(plane_dir.joinpath('Fneu.npy'), Fneu)
+			np.save(plane_dir.joinpath('F_chan2.npy'), F_chan2)
+			np.save(plane_dir.joinpath('Fneu_chan2.npy'), Fneu_chan2)
+			np.save(plane_dir.joinpath('spks.npy'), spks)
+		finally:
+			# Close channel 2 file if it was opened
+			if f_reg_chan2 is not None:
+				f_reg_chan2.close()
 
 def rename_output_dir(new_dir_name):
 	new_dir_path = os.path.join(test_data_dir_path, new_dir_name)

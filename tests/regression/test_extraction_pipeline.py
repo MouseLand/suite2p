@@ -144,9 +144,9 @@ def test_extraction_output_2plane2chan(test_settings):
         expected_dir = Path(db['data_path'][0]).parent.joinpath(f"test_outputs/extraction/2plane2chan/suite2p/plane{i}")
         expected_F = np.load(expected_dir / 'F.npy')
         expected_Fneu = np.load(expected_dir / 'Fneu.npy')
-        expected_F_chan2 = np.load(expected_dir / 'F_chan2.npy', allow_pickle=True)
-        expected_Fneu_chan2 = np.load(expected_dir / 'Fneu_chan2.npy', allow_pickle=True)
-        expected_spks = np.load(expected_dir / 'spks.npy', allow_pickle=True)
+        expected_F_chan2 = np.load(expected_dir / 'F_chan2.npy')
+        expected_Fneu_chan2 = np.load(expected_dir / 'Fneu_chan2.npy')
+        expected_spks = np.load(expected_dir / 'spks.npy')
 
         assert np.allclose(F, expected_F, rtol=1e-4, atol=5e-2)
         assert np.allclose(Fneu, expected_Fneu, rtol=1e-4, atol=5e-2)

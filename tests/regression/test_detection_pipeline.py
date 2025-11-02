@@ -18,7 +18,7 @@ def test_detection_output_1plane1chan(test_settings):
     db = {**db, **settings}  # Merge for DetectionTestUtils
     db.update({'file_list': ['input.tif']})
 
-    # Prepare settings exactly like generate_test_data.py (line 154)
+    # Prepare settings exactly like generate_test_data.py
     settings = utils.DetectionTestUtils.prepare(
         db,
         [[Path(db['data_path'][0]).joinpath('detection/pre_registered.npy')]],
@@ -26,7 +26,7 @@ def test_detection_output_1plane1chan(test_settings):
     )
 
     op = settings[0]
-    # Run detection exactly like generate_test_data.py (lines 157-161)
+    # Run detection exactly like generate_test_data.py
     with suite2p.io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], filename=op['reg_file']) as f_reg:
         op['neuropil_extract'] = True
         _, stat, _ = suite2p.detection.detection_wrapper(f_reg, settings=op)
@@ -58,7 +58,7 @@ def test_detection_output_2plane2chan(test_settings):
 
     detection_dir = Path(db['data_path'][0]).joinpath('detection')
 
-    # Prepare settings exactly like generate_test_data.py (lines 199-204)
+    # Prepare settings exactly like generate_test_data.py
     settings = utils.DetectionTestUtils.prepare(
         db,
         [
@@ -68,11 +68,11 @@ def test_detection_output_2plane2chan(test_settings):
         (404, 360)
     )
 
-    # Load channel 2 mean images like generate_test_data.py (lines 164-165)
+    # Load channel 2 mean images like generate_test_data.py
     settings[0]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p0.npy'))
     settings[1]['meanImg_chan2'] = np.load(detection_dir.joinpath('meanImg_chan2p1.npy'))
 
-    # Run detection for each plane exactly like generate_test_data.py (lines 167-173)
+    # Run detection for each plane exactly like generate_test_data.py
     for i, op in enumerate(settings):
         with suite2p.io.BinaryFile(Ly=op['Ly'], Lx=op['Lx'], filename=op['reg_file']) as f_reg:
             op['neuropil_extract'] = True

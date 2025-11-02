@@ -17,6 +17,7 @@ EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
         "sbx": ["*.sbx"],
         "nd2": ["*.nd2"],
         "dcimg": ["*.dcimg"],
+        "bruker": ["*.ome.tif", "*.ome.TIF"],
         "movie": ["*.mp4", "*.avi"]}
 
 

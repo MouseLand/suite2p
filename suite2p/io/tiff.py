@@ -206,7 +206,7 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
             reg_file_chan2[jk].close()
     return dbs
 
-def ome_to_binary(settings):
+def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     """
     converts ome.tiff to *.bin file for non-interleaved red channel recordings
     assumes SINGLE-PAGE tiffs where first channel has string "Ch1"
@@ -214,36 +214,43 @@ def ome_to_binary(settings):
 
     Parameters
     ----------
+    dbs : list of dictionaries
+        database configurations for each plane
     settings : dictionary
         keys nplanes, nchannels, data_path, look_one_level_down, reg_file
+    reg_file : list
+        opened binary files for writing
+    reg_file_chan2 : list
+        opened binary files for writing channel 2
 
     Returns
     -------
-    settings : dictionary of first plane
+    dbs : list of dictionaries
         creates binaries settings["reg_file"]
         assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
     """
     t0 = time.time()
 
-    # copy settings to list where each element is settings for each plane
-    settings1 = utils.init_settings(settings)
+    # use the dbs that were passed in
+    settings1 = dbs
     nplanes = settings1[0]["nplanes"]
 
-    # open all binary files for writing and look for tiffs in all requested folders
-    settings1, fs, reg_file, reg_file_chan2 = utils.find_files_open_binaries(settings1, False)
-    settings = settings1[0]
-    batch_size = settings["batch_size"]
+    # get file list from dbs (already populated by run_s2p.py)
+    fs = settings1[0]["file_list"]
+    first_files = settings1[0]["first_files"]
+    db = settings1[0]
+    batch_size = db["batch_size"]
     use_sktiff = not HAS_SCANIMAGE
 
     fs_Ch1, fs_Ch2 = [], []
     for f in fs:
         if f.find("Ch1") > -1:
-            if settings["functional_chan"] == 1:
+            if db["functional_chan"] == 1:
                 fs_Ch1.append(f)
             else:
                 fs_Ch2.append(f)
         else:
-            if settings["functional_chan"] == 1:
+            if db["functional_chan"] == 1:
                 fs_Ch2.append(f)
             else:
                 fs_Ch1.append(f)
@@ -266,13 +273,13 @@ def ome_to_binary(settings):
     
     for settings1_0 in settings1:
         settings1_0["nframes"] = 0
-        settings1_0["frames_per_folder"][0] = 0
+        settings1_0["frames_per_folder"] = np.zeros(first_files.sum(), "int")
         settings1_0["frames_per_file"] = np.ones(len(fs_Ch1), "int") if n_pages==1 else np.zeros(len(fs_Ch1), "int")
         settings1_0["meanImg"] = np.zeros(shape, np.float32)
         if nchannels > 1:
             settings1_0["meanImg_chan2"] = np.zeros(shape, np.float32)
 
-    bruker_bidirectional = settings.get("bruker_bidirectional", False)
+    bruker_bidirectional = db.get("bruker_bidirectional", False)
     iplanes = np.arange(0, nplanes)
     if not bruker_bidirectional:
         iplanes = np.tile(iplanes[np.newaxis, :],
@@ -349,20 +356,13 @@ def ome_to_binary(settings):
                         logger.info("%d frames of binary, time %0.2f sec." % (itot, time.time() - t0))
                     gc.collect()
 
-    # write settings files
-    do_registration = settings["do_registration"]
-    for settings in settings1:
-        settings["Ly"], settings["Lx"] = shape
-        if not do_registration:
-            settings["yrange"] = np.array([0, settings["Ly"]])
-            settings["xrange"] = np.array([0, settings["Lx"]])
-        settings["meanImg"] /= settings["nframes"]
+    # write settings files (follow tiff_to_binary pattern - no do_registration logic needed)
+    for db in settings1:
+        db["Ly"], db["Lx"] = shape
+        db["meanImg"] /= db["nframes"]
         if nchannels > 1:
-            settings["meanImg_chan2"] /= settings["nframes"]
-        np.save(settings["settings_path"], settings)
-    # close all binary files and write settings files
-    for j in range(0, nplanes):
-        reg_file[j].close()
-        if nchannels > 1:
-            reg_file_chan2[j].close()
-    return settings1[0]
+            db["meanImg_chan2"] /= db["nframes"]
+        np.save(db["db_path"], db)
+        np.save(db["settings_path"], settings)
+    # Files are managed by context manager in run_s2p.py, don't close them here
+    return settings1

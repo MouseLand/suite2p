@@ -40,6 +40,11 @@ def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None):
     n_frames = f_reg.shape[0]
     good_frames = ~badframes if badframes is not None else np.ones(n_frames, dtype=bool)
     batch_size = min(good_frames.sum(), 500)
+
+    # Handle case where all frames are bad
+    if batch_size == 0:
+        raise ValueError("All frames are marked as bad frames. Cannot proceed with detection.")
+
     Lyc = yrange[1] - yrange[0]
     Lxc = xrange[1] - xrange[0]
 

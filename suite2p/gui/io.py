@@ -420,31 +420,48 @@ def save_iscell(parent):
     parent.lcell1.setText("%d" % (parent.iscell.size - parent.iscell.sum()))
 
 
+def truncate_field_names(data, max_length=31):
+    """Recursively truncate dictionary keys to max_length characters for MATLAB compatibility."""
+    if isinstance(data, dict):
+        return {k[:max_length]: truncate_field_names(v, max_length) for k, v in data.items()}
+    elif isinstance(data, (list, tuple)):
+        return type(data)(truncate_field_names(item, max_length) for item in data)
+    elif isinstance(data, np.ndarray):
+        # Handle structured arrays (with named fields)
+        if data.dtype.names:
+            # Create new dtype with truncated field names
+            new_dtype = [(name[:max_length], data.dtype.fields[name][0]) for name in data.dtype.names]
+            new_arr = np.empty(data.shape, dtype=new_dtype)
+            for old_name, (new_name, _) in zip(data.dtype.names, new_dtype):
+                new_arr[new_name] = data[old_name]
+            return new_arr
+        # Handle object arrays (like stat which is array of dicts)
+        elif data.dtype == object:
+            return np.array([truncate_field_names(item, max_length) for item in data], dtype=object)
+    return data
+
+
 def save_mat(parent):
     print("saving to mat")
     matpath = os.path.join(parent.basename, "Fall.mat")
     if "date_proc" in parent.ops:
         parent.ops["date_proc"] = []
-    scipy.io.savemat(
-        matpath, {
-            "stat":
-                parent.stat,
-            "ops":
-                parent.ops,
-            "F":
-                parent.Fcell,
-            "Fneu":
-                parent.Fneu,
-            "spks":
-                parent.Spks,
-            "iscell":
-                np.concatenate(
-                    (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
-                    axis=1),
-            "redcell":
-                np.concatenate((np.expand_dims(parent.redcell, axis=1),
-                                np.expand_dims(parent.probredcell, axis=1)), axis=1)
-        })
+
+    # Truncate field names to comply with MATLAB's 31-character limit
+    data_to_save = {
+        "stat": truncate_field_names(parent.stat),
+        "ops": truncate_field_names(parent.ops),
+        "F": parent.Fcell,
+        "Fneu": parent.Fneu,
+        "spks": parent.Spks,
+        "iscell": np.concatenate(
+            (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]),
+            axis=1),
+        "redcell": np.concatenate((np.expand_dims(parent.redcell, axis=1),
+                            np.expand_dims(parent.probredcell, axis=1)), axis=1)
+    }
+
+    scipy.io.savemat(matpath, data_to_save)
 
 
 def save_merge(parent):

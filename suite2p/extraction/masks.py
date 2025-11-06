@@ -50,8 +50,10 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
         lammap[ypix, xpix] = np.maximum(lammap[ypix, xpix], lam)
     radius = np.median(radii)
     if lam_percentile > 0.0:
+        filter_size = int(radius * 5)
+        # Ensure size matches array dimensions for scipy compatibility
         filt = percentile_filter(lammap, percentile=lam_percentile,
-                                 size=int(radius * 5))
+                                 size=(filter_size, filter_size))
         cell_pix = ~np.logical_or(lammap < filt, lammap == 0)
     else:
         cell_pix = lammap > 0.0

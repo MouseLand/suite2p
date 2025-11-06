@@ -422,7 +422,10 @@ def save_iscell(parent):
 
 def truncate_field_names(data, max_length=31):
     """Recursively truncate dictionary keys to max_length characters for MATLAB compatibility."""
-    if isinstance(data, dict):
+    # Handle None values - convert to empty array for MATLAB compatibility
+    if data is None:
+        return np.array([])
+    elif isinstance(data, dict):
         return {k[:max_length]: truncate_field_names(v, max_length) for k, v in data.items()}
     elif isinstance(data, (list, tuple)):
         return type(data)(truncate_field_names(item, max_length) for item in data)

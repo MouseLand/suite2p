@@ -240,7 +240,11 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=No
         for s in stat
     ]
     n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
-    for roi, s in zip(rois, stat):
+
+    # DEBUG: Track radius=0 occurrences
+    zero_radius_count = 0
+
+    for roi_idx, (roi, s) in enumerate(zip(rois, stat)):
         s["mrs"] = roi.mean_r_squared
         s["mrs0"] = roi.mean_r_squared0
         s["compact"] = roi.mean_r_squared_compact
@@ -249,9 +253,23 @@ def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=No
         s["npix_soma"] = roi.npix_soma
         s["soma_crop"] = roi.soma_crop
         s["overlap"] = roi.get_overlap_image(n_overlaps)
+
+        # DEBUG: Check soma crop ratio
+        crop_ratio = roi.npix_soma / roi.n_pixels if roi.n_pixels > 0 else 0
+
         ellipse = roi.fit_ellipse(dy, dx)
         s["radius"] = ellipse.radius
         s["aspect_ratio"] = ellipse.aspect_ratio
+
+        # DEBUG: Report zero radius with context
+        if s["radius"] == 0:
+            zero_radius_count += 1
+            if zero_radius_count <= 5:  # Only print first 5
+                print(f"[roi_stats] ROI {roi_idx}: radius=0, npix={roi.n_pixels}, npix_soma={roi.npix_soma}, crop_ratio={crop_ratio:.2f}")
+
+    # DEBUG: Summary
+    if zero_radius_count > 0:
+        print(f"[roi_stats] SUMMARY: {zero_radius_count}/{len(stat)} ROIs have radius=0 ({100*zero_radius_count/len(stat):.1f}%)")
 
     mrs_normeds = norm_by_average(values=np.array([s["mrs"] for s in stat]),
                                   estimator=np.nanmedian, offset=1e-10, first_n=100)
@@ -301,6 +319,10 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     lam0 : float, array
         weights of each pixel
     """
+    # DEBUG
+    n_input = len(y)
+    lam_range = [lam0.min(), lam0.max()] if len(lam0) > 0 else [0, 0]
+
     y = y / dy
     x = x / dx
 
@@ -308,6 +330,17 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     lam = lam0.copy()
     ix = lam > 0  #lam.max()/5
     y, x, lam = y[ix], x[ix], lam[ix]
+
+    # DEBUG
+    n_valid = len(y)
+    if n_valid == 0:
+        print(f"[fitMVGaus] ERROR: No valid pixels! input={n_input}, lam_range=[{lam_range[0]:.3f},{lam_range[1]:.3f}]")
+        return EllipseData(mu=np.array([0., 0.]), cov=np.zeros((2,2)),
+                          radii=np.array([0., 0.]), ellipse=np.zeros((npts, 2)),
+                          dy=dy, dx=dx)
+    elif n_valid < 3:
+        print(f"[fitMVGaus] WARNING: Only {n_valid} pixels after filter (need 3+)")
+
     lam /= lam.sum()
 
     # mean of gaussian
@@ -318,7 +351,15 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
 
     # radii of major and minor axes
     radii, evec = np.linalg.eig(cov)
+
+    # DEBUG
+    eigenvalues_raw = radii.copy()
+
     radii = thres * np.maximum(0, np.real(radii))**.5
+
+    # DEBUG
+    if radii[0] == 0 or radii[1] == 0:
+        print(f"[fitMVGaus] ZERO RADIUS: n_pix={n_valid}, eigenvalues={eigenvalues_raw}, final_radii={radii}")
 
     # compute pts of ellipse
     theta = np.linspace(0, 2 * np.pi, npts)

@@ -41,16 +41,29 @@ def create_cell_pix(stats: List[Dict[str, Any]], Ly: int, Lx: int,
     """
     cell_pix = np.zeros((Ly, Lx))
     lammap = np.zeros((Ly, Lx))
-    radii = np.zeros(len(stats))
+    radii = []
     for ni, stat in enumerate(stats):
-        radii[ni] = stat["radius"]
+        if "radius" in stat and stat["radius"] > 0:
+            radii.append(stat["radius"])
         ypix = stat["ypix"]
         xpix = stat["xpix"]
         lam = stat["lam"]
         lammap[ypix, xpix] = np.maximum(lammap[ypix, xpix], lam)
-    radius = np.median(radii)
-    if lam_percentile > 0.0:
-        filter_size = int(radius * 5)
+
+    # Use median radius from valid ROIs, fallback to computing from npix if needed
+    if len(radii) > 0:
+        radius = np.median(radii)
+    else:
+        # Fallback: estimate radius from ROI pixel counts
+        npix_values = [stat.get("npix", 0) for stat in stats if "npix" in stat]
+        if npix_values:
+            median_npix = np.median(npix_values)
+            radius = np.sqrt(median_npix / np.pi)
+        else:
+            radius = 5.0  # Default fallback
+
+    if lam_percentile > 0.0 and radius > 0:
+        filter_size = max(1, int(radius * 5))  # Ensure at least 1
         # Use footprint instead of size for better scipy version compatibility
         # This avoids internal size->footprint conversion issues in some scipy versions
         footprint = np.ones((filter_size, filter_size), dtype=bool)

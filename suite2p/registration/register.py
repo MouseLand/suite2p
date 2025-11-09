@@ -331,7 +331,7 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
                     norm_frames=True, smooth_sigma=1.15, spatial_taper=3.45, 
                     block_size=(128,128), nonrigid=True, maxregshift=0.1, 
                     smooth_sigma_time=0, snr_thresh=1.2, maxregshiftNR=5,
-                    device=torch.device("cuda"), tif_root=None):
+                    device=torch.device("cuda"), tif_root=None, apply_shifts=True):
     """ align frames in f_align_in to reference 
     
     if f_align_out is not None, registered frames are written to f_align_out
@@ -379,7 +379,9 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
                                  snr_thresh=snr_thresh, maxregshiftNR=maxregshiftNR, 
                                  nZ=nZ)
         ymax, xmax, cmax, ymax1, xmax1, cmax1, zest, cmax_all = offsets
-        frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks, device)
+
+        if apply_shifts:
+            frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks, device)
         
         # convert to numpy and concatenate offsets
         ymax, xmax, cmax = ymax.cpu().numpy(), xmax.cpu().numpy(), cmax.cpu().numpy()
@@ -396,15 +398,16 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         mean_img += frames.sum(axis=0) / n_frames
 
         # save aligned frames to bin file
-        if f_align_out is not None:
-            f_align_out[tstart : tend] = frames
-        else:
-            f_align_in[tstart : tend] = frames
+        if apply_shifts:
+            if f_align_out is not None:
+                f_align_out[tstart : tend] = frames
+            else:
+                f_align_in[tstart : tend] = frames
 
-        # save aligned frames to tiffs
-        if tif_root:
-            fname = os.path.join(tif_root, f"file{n : 05d}.tif")
-            save_tiff(mov=frames, fname=fname)
+            # save aligned frames to tiffs
+            if tif_root:
+                fname = os.path.join(tif_root, f"file{n : 05d}.tif")
+                save_tiff(mov=frames, fname=fname)
 
     return rmin, rmax, mean_img, offsets_all, blocks
 
@@ -546,17 +549,18 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         ix_frames = np.linspace(0, n_frames, 1 + min(settings["nimg_init"], n_frames), 
                                 dtype=int)[:-1]
         frames = f_align_in[ix_frames].copy()
+    
     # compute bidiphase shift
     if compute_bidi:
         bidiphase = bidi.compute(frames)
         logger.info("Estimated bidiphase offset from data: %d pixels" % bidiphase)
         # shift frames for reference image computation
-        if bidiphase != 0 and refImg is None:
-            frames = bidi.shift(frames, int(settings["bidiphase"])) 
-        settings["bidiphase"] = bidiphase
     else:
-        bidiphase = 0
-
+        bidiphase = settings["bidiphase"]
+    
+    if bidiphase != 0 and refImg is None:
+        frames = bidi.shift(frames, int(settings["bidiphase"])) 
+    
     if refImg is None:
         t0 = time.time()
         refImg = compute_reference(frames, settings=settings, device=device)
@@ -618,7 +622,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                                                (yoff1, xoff1, corrXY1), 
                                                (zest, cmax_all), meanImg_chan2, 
                                                badframes, badframes0, 
-                                               yrange, xrange)
+                                               yrange, xrange, bidiphase)
     
     # add enhanced mean image
     meanImgE = utils.highpass_mean_image(meanImg.astype("float32"), aspect=aspect)
@@ -627,7 +631,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
 def registration_outputs_to_dict(refImg, rmin, rmax, meanImg, rigid_offsets, 
                                  nonrigid_offsets, zest, meanImg_chan2, 
-                                 badframes, badframes0, yrange, xrange):
+                                 badframes, badframes0, yrange, xrange, bidiphase):
     reg_outputs = {}
     # assign reference image and normalizers
     reg_outputs["refImg"] = refImg
@@ -647,4 +651,5 @@ def registration_outputs_to_dict(refImg, rmin, rmax, meanImg, rigid_offsets,
     if zest[0] is not None:
         reg_outputs["zpos_registration"] = np.array(zest[0])
         reg_outputs["cmax_registration"] = np.array(zest[1])
+    reg_outputs["bidiphase"] = bidiphase
     return reg_outputs

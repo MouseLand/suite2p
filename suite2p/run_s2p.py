@@ -11,6 +11,7 @@ import pathlib
 import contextlib
 import numpy as np
 from scipy.stats import skew
+from scipy.io import loadmat
 import torch
 import logging 
 
@@ -223,6 +224,25 @@ def run_plane(db, settings, db_path=None, stat=None):
         badframes0[bf_indices] = True
         logger.info(f"badframes file: {badframes_path};\n # of badframes: {badframes0.sum()}")
 
+    # check for zstack file to align to
+    zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
+    if not os.path.exists(zstack_path):
+        zstack_path = os.path.join(db["save_path0"], 'zstack.mat')
+    zstack_path = zstack_path if os.path.exists(zstack_path) else None
+    Zstack = None
+    if zstack_path is not None:
+        logger.info(f"zstack file: {zstack_path}")
+        data = loadmat(zstack_path)
+        iplane = db.get("iplane", 0)
+        if len(data['Z']) > 1:
+            Zstack = data['Z'][iplane][0].squeeze()
+        else:
+            Zstack = data['Z'][0][iplane].squeeze()
+        if Zstack.ndim > 3:
+            Zstack = Zstack[0]
+        Zstack = Zstack.transpose(2, 0, 1)  # z x y x x
+        logger.info(f"zstack shape: {Zstack.shape}")
+
     logger.info(f"binary output path: {reg_file}")
     if raw_file is not None:
         logger.info(f"raw binary path: {raw_file}")
@@ -237,7 +257,7 @@ def run_plane(db, settings, db_path=None, stat=None):
 
         outputs = pipeline(db["save_path"], f_reg, f_raw, f_reg_chan2, f_raw_chan2, 
                    run_registration, settings, badframes=badframes0, stat=stat,
-                   device=device)
+                   device=device, Zstack=Zstack)
         (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, plane_times) = outputs
 
     # save as matlab file

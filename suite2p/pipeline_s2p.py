@@ -17,10 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 from . import extraction, registration, detection, classification, default_settings, default_db
+from .registration import zalign
 
 def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
              run_registration=True, settings=default_settings(), badframes=None, stat=None,
-             device=torch.device("cuda")):
+             device=torch.device("cuda"), Zstack=None):
     """Run suite2p processing on array or BinaryFile.
 
     Parameters:
@@ -206,7 +207,16 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     plane_times["total_plane_runtime"] = plane_runtime
     # np.save(os.path.join(save_path, "timings.npy"), plane_times)
 
+    if Zstack is not None:
+        logger.info("----------- ZSTACK ALIGN")
+        zcorr = zalign.register_to_zstack(f_reg, list(Zstack), nonrigid=False, 
+                                          settings=settings["registration"],
+                                          bidiphase=reg_outputs.get("bidiphase", 0), device=device)
+    else:
+        zcorr = np.zeros((0,))
+    np.save(os.path.join(save_path, "zcorr.npy"), zcorr)
+
     logger.info(f"Plane processed in {plane_runtime:0.2f} sec (can open in GUI).")
     
     return (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, 
-            spks, iscell, redcell, plane_times)
+            spks, iscell, redcell, zcorr, plane_times)

@@ -240,7 +240,7 @@ def run_plane(db, settings, db_path=None, stat=None):
             Zstack = data['Z'][0][iplane].squeeze()
         if Zstack.ndim > 3:
             Zstack = Zstack[0]
-        Zstack = Zstack.transpose(2, 0, 1)  # z x y x x
+        Zstack = Zstack.transpose(2, 1, 0)
         logger.info(f"zstack shape: {Zstack.shape}")
 
     logger.info(f"binary output path: {reg_file}")
@@ -258,7 +258,7 @@ def run_plane(db, settings, db_path=None, stat=None):
         outputs = pipeline(db["save_path"], f_reg, f_raw, f_reg_chan2, f_raw_chan2, 
                    run_registration, settings, badframes=badframes0, stat=stat,
                    device=device, Zstack=Zstack)
-        (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, plane_times) = outputs
+        (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, zcorr, plane_times) = outputs
 
     # save as matlab file
     if settings["io"]["save_mat"]:

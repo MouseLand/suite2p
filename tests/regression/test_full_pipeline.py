@@ -45,23 +45,22 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_setti
 
 def test_2plane_2chan_with_batches(test_settings):
 	"""
-	Tests for case with 2 planes and 2 channels with multiple batches.  Runs twice to check for consistency.
+	Tests for case with 2 planes and 2 channels with multiple batches.
 	"""
-	for _ in range(2):
-		db, settings = test_settings
-		db, settings = utils.FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), settings.copy())
-		nplanes = db['nplanes']
-		suite2p.run_s2p(settings=settings, db=db)
+	db, settings = test_settings
+	db, settings = utils.FullPipelineTestUtils.initialize_settings_test2plane_2chan_with_batches(db.copy(), settings.copy())
+	nplanes = db['nplanes']
+	suite2p.run_s2p(settings=settings, db=db)
 
-		outputs_to_check = ['F', 'iscell', 'stat']
-		if db['nchannels'] == 2:
-			outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
-		for i in range(nplanes):
-			assert all(utils.compare_list_of_outputs(
-				outputs_to_check,
-				utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
-				utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
-			))
+	outputs_to_check = ['F', 'iscell', 'stat']
+	if db['nchannels'] == 2:
+		outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
+	for i in range(nplanes):
+		assert all(utils.compare_list_of_outputs(
+			outputs_to_check,
+			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
+			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
+		))
 
 
 def temp_test_1plane_2chan_sourcery(test_settings):

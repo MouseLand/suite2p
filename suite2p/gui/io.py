@@ -339,10 +339,20 @@ def load_to_GUI(parent, basename, procs):
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks
-    parent.iscell = iscell.astype("bool")
-    parent.probcell = probcell
-    parent.redcell = redcell.astype("bool")
-    parent.probredcell = probredcell
+    # Handle both 1D and 2D iscell formats
+    if iscell.ndim == 2:
+        parent.iscell = iscell[:, 0].astype("bool")
+        parent.probcell = iscell[:, 1]
+    else:
+        parent.iscell = iscell.astype("bool")
+        parent.probcell = probcell
+    # Handle both 1D and 2D redcell formats
+    if redcell.ndim == 2:
+        parent.redcell = redcell[:, 0].astype("bool")
+        parent.probredcell = redcell[:, 1]
+    else:
+        parent.redcell = redcell.astype("bool")
+        parent.probredcell = probredcell
     parent.hasred = hasred
     parent.notmerged = np.ones_like(parent.iscell).astype("bool")
     for n in range(len(parent.stat)):

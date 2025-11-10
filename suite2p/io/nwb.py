@@ -3,6 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import datetime
 import gc
+import logging
 import os
 import time
 from pathlib import Path
@@ -10,6 +11,8 @@ from pathlib import Path
 import numpy as np
 import scipy
 from natsort import natsorted
+
+logger = logging.getLogger(__name__)
 
 from ..detection.stats import roi_stats
 from . import utils
@@ -204,7 +207,7 @@ def read_nwb(fpath):
             settings["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
             settings1.append(settings.copy())
 
-        stat = roi_stats(stat, settings["Ly"], settings["Lx"], settings["aspect"], settings["diameter"])
+        stat = roi_stats(stat, settings["Ly"], settings["Lx"], diameter=settings["diameter"])
 
         # fluorescence
         ophys = nwbfile.processing["ophys"]
@@ -228,7 +231,7 @@ def read_nwb(fpath):
         F = get_fluo("Fluorescence")
         Fneu = get_fluo("Neuropil")
         spks = get_fluo("Deconvolved")
-        dF = F - settings["neucoeff"] * Fneu
+        dF = F - settings["extraction"]["neuropil_coefficient"] * Fneu
         for n in range(len(stat)):
             stat[n]["skew"] = scipy.stats.skew(dF[n])
 
@@ -239,9 +242,10 @@ def read_nwb(fpath):
         ]
         iscell = np.array(iscell)
         probcell = iscell[:, 1]
-        iscell = iscell[:, 0].astype("bool")
+        iscell_bool = iscell[:, 0].astype("bool")
+        # Create redcell as 2-column array for consistency with iscell format
         redcell = np.zeros_like(iscell)
-        probredcell = np.zeros_like(probcell)
+        probredcell = redcell[:, 1]
 
         if multiplane:
             settings = settings1[0].copy()
@@ -299,7 +303,31 @@ def save_nwb(save_folder):
     settings1 = [
         np.load(f.joinpath("settings.npy"), allow_pickle=True).item() for f in plane_folders
     ]
-    nchannels = min([settings["nchannels"] for settings in settings1])
+    dbs = [
+        np.load(f.joinpath("db.npy"), allow_pickle=True).item() for f in plane_folders
+    ]
+
+    # Load reg_outputs and detect_outputs for background images
+    for i, f in enumerate(plane_folders):
+        # Merge reg_outputs (contains meanImg, yrange, xrange, etc.)
+        reg_path = f.joinpath("reg_outputs.npy")
+        if reg_path.exists():
+            reg_outputs = np.load(reg_path, allow_pickle=True).item()
+            settings1[i] = {**settings1[i], **reg_outputs}
+
+        # Merge detect_outputs (contains Vcorr, max_proj, etc.)
+        detect_path = f.joinpath("detect_outputs.npy")
+        if detect_path.exists():
+            detect_outputs = np.load(detect_path, allow_pickle=True).item()
+            settings1[i] = {**settings1[i], **detect_outputs}
+
+        # Add db keys that might be needed (Ly, Lx)
+        for key in ["Ly", "Lx"]:
+            if key in dbs[i] and key not in settings1[i]:
+                settings1[i][key] = dbs[i][key]
+
+    # Get nchannels from the main db or from plane dbs
+    nchannels = dbs[0].get("nchannels", 1)
 
     if NWB and not settings1[0]["mesoscan"]:
         if len(settings1) > 1:
@@ -318,7 +346,7 @@ def save_nwb(save_folder):
         # INITIALIZE NWB FILE
         nwbfile = NWBFile(
             session_description="suite2p_proc",
-            identifier=str(settings["data_path"][0]),
+            identifier=str(dbs[0]["data_path"][0]),
             session_start_time=session_start_time,
         )
         logger.info(nwbfile)
@@ -350,13 +378,13 @@ def save_nwb(save_folder):
         external_data = settings["filelist"] if "filelist" in settings else [""]
         image_series = TwoPhotonSeries(
             name="TwoPhotonSeries",
-            dimension=[settings["Ly"], settings["Lx"]],
+            dimension=[dbs[0]["Ly"], dbs[0]["Lx"]],
             external_file=external_data,
             imaging_plane=imaging_plane,
             starting_frame=[0 for i in range(len(external_data))],
             format="external",
             starting_time=0.0,
-            rate=settings["fs"] * settings["nplanes"],
+            rate=settings["fs"] * dbs[0]["nplanes"],
         )
         nwbfile.add_acquisition(image_series)
 
@@ -376,12 +404,12 @@ def save_nwb(save_folder):
         file_strs_chan2 = ["F_chan2.npy", "Fneu_chan2.npy"]
         traces, traces_chan2 = [], []
         ncells = np.zeros(len(settings1), dtype=np.int_)
-        Nfr = np.array([settings["nframes"] for settings in settings1]).max()
-        for iplane, settings in enumerate(settings1):
+        Nfr = np.array([db["nframes"] for db in dbs]).max()
+        for iplane, (settings, db) in enumerate(zip(settings1, dbs)):
             if iplane == 0:
-                iscell = np.load(os.path.join(settings["save_path"], "iscell.npy"))
+                iscell = np.load(os.path.join(db["save_path"], "iscell.npy"))
                 for fstr in file_strs:
-                    traces.append(np.load(os.path.join(settings["save_path"], fstr)))
+                    traces.append(np.load(os.path.join(db["save_path"], fstr)))
                 if nchannels > 1:
                     for fstr in file_strs_chan2:
                         traces_chan2.append(
@@ -390,11 +418,11 @@ def save_nwb(save_folder):
             else:
                 iscell = np.append(
                     iscell,
-                    np.load(os.path.join(settings["save_path"], "iscell.npy")),
+                    np.load(os.path.join(db["save_path"], "iscell.npy")),
                     axis=0,
                 )
                 for i, fstr in enumerate(file_strs):
-                    trace = np.load(os.path.join(settings["save_path"], fstr))
+                    trace = np.load(os.path.join(db["save_path"], fstr))
                     if trace.shape[1] < Nfr:
                         fcat = np.zeros((trace.shape[0], Nfr - trace.shape[1]),
                                         "float32")
@@ -410,7 +438,7 @@ def save_nwb(save_folder):
                 PlaneCellsIdx = np.append(
                     PlaneCellsIdx, iplane * np.ones(len(iscell) - len(PlaneCellsIdx)))
 
-            stat = np.load(os.path.join(settings["save_path"], "stat.npy"),
+            stat = np.load(os.path.join(db["save_path"], "stat.npy"),
                            allow_pickle=True)
             ncells[iplane] = len(stat)
             for n in range(ncells[iplane]):

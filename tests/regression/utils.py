@@ -51,7 +51,7 @@ class FullPipelineTestUtils:
             'keep_movie_raw': True,
         })
         settings["run"]['do_regmetrics'] = True
-        settings["io"]['save_nwb'] = True
+        settings["io"]['save_NWB'] = True
         settings["io"]["save_mat"] = True
         settings["io"]["delete_bin"] = True
         return db, settings

@@ -63,27 +63,6 @@ def test_2plane_2chan_with_batches(test_settings):
 		))
 
 
-def temp_test_1plane_2chan_sourcery(test_settings):
-	"""
-	Tests for case with 1 plane and 2 channel.
-	"""
-	test_settings.update({
-		'nchannels': 2,
-		'sparse_mode': 0,
-		'tiff_list': ['input.tif'],
-		'keep_movie_raw': True
-	})
-	suite2p.run_s2p(settings=test_settings)
-	nplanes = test_settings['nplanes']
-	outputs_to_check = ['F', 'iscell', 'stat']
-	for i in range(nplanes):
-		assert all(utils.compare_list_of_outputs(
-			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, test_settings['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{test_settings['nchannels']}chan/suite2p/plane{i}")),
-			utils.get_list_of_data(outputs_to_check, Path(test_settings['save_path0']).joinpath(f"suite2p/plane{i}")),
-		))
-
-
 def test_mesoscan_2plane_2z(test_settings):
 	"""
 	Tests for case with 2 planes and 2 ROIs for a mesoscan.

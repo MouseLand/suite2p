@@ -2,6 +2,7 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import os, time
+import pathlib
 import numpy as np
 import scipy.io
 from scipy.ndimage import gaussian_filter1d
@@ -425,6 +426,9 @@ def truncate_field_names(data, max_length=31):
     # Handle None values - convert to empty array for MATLAB compatibility
     if data is None:
         return np.array([])
+    # Handle pathlib Path objects - convert to strings for MATLAB compatibility
+    elif isinstance(data, (pathlib.WindowsPath, pathlib.PosixPath, pathlib.Path)):
+        return os.fspath(data.absolute())
     elif isinstance(data, dict):
         return {k[:max_length]: truncate_field_names(v, max_length) for k, v in data.items()}
     elif isinstance(data, (list, tuple)):
@@ -464,7 +468,7 @@ def save_mat(parent):
                             np.expand_dims(parent.probredcell, axis=1)), axis=1)
     }
 
-    scipy.io.savemat(matpath, data_to_save)
+    scipy.io.savemat(matpath, data_to_save, oned_as='column')
 
 
 def save_merge(parent):

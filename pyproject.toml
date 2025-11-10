@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "suite2p_mbo"
-version = "1.0.7"
+version = "1.1.0"
 description = "Pipeline for calcium imaging"
 readme = "README.md"
 license = { file = "LICENSE" }

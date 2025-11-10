@@ -38,7 +38,7 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
                 "spks": spks,
                 "iscell": iscell,
                 "redcell": redcell
-            })
+            }, oned_as='column')
     else:
         scipy.io.savemat(
             file_name=os.path.join(ops["save_path"], "Fall.mat"), mdict={
@@ -51,7 +51,7 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
                 "redcell": redcell,
                 "F_chan2": F_chan2,
                 "Fneu_chan2": Fneu_chan2
-            })
+            }, oned_as='column')
 
 
 def compute_dydx(ops1):

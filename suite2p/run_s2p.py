@@ -225,23 +225,34 @@ def run_plane(db, settings, db_path=None, stat=None):
         logger.info(f"badframes file: {badframes_path};\n # of badframes: {badframes0.sum()}")
 
     # check for zstack file to align to
-    zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
-    if not os.path.exists(zstack_path):
-        zstack_path = os.path.join(db["save_path0"], 'zstack.mat')
-    zstack_path = zstack_path if os.path.exists(zstack_path) else None
     Zstack = None
-    if zstack_path is not None:
-        logger.info(f"zstack file: {zstack_path}")
-        data = loadmat(zstack_path)
-        iplane = db.get("iplane", 0)
-        if len(data['Z']) > 1:
-            Zstack = data['Z'][iplane][0].squeeze()
-        else:
-            Zstack = data['Z'][0][iplane].squeeze()
-        if Zstack.ndim > 3:
-            Zstack = Zstack[0]
-        Zstack = Zstack.transpose(2, 1, 0)
-        logger.info(f"zstack shape: {Zstack.shape}")
+    if os.path.exists(os.path.join(db["save_path"], "zcorr.npy")):
+        logger.info("z-correlation already computed")
+    else:
+        zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
+        if not os.path.exists(zstack_path):
+            zstack_path = os.path.join(db["save_path0"], 'zstack.mat')
+        zstack_path = zstack_path if os.path.exists(zstack_path) else None
+        if zstack_path is not None:
+            logger.info(f"zstack file: {zstack_path}")
+            data = loadmat(zstack_path)
+            iplane = db.get("iplane", 0)
+            iroi = db.get("iroi", 0)
+            if iroi > 0:
+                if iroi < len(data['Z']):
+                    Zstack = data['Z'][iroi][0].squeeze()
+                else:
+                    logger.info(f"plane {iplane} roi {iroi} not in zstack file")
+            else:
+                if iplane < len(data['Z'][0]):
+                    Zstack = data['Z'][0][iplane].squeeze()
+                else:
+                    logger.info(f"plane {iplane} not in zstack file")
+        if Zstack is not None:
+            if Zstack.ndim > 3:
+                Zstack = Zstack[0]
+            Zstack = Zstack.transpose(2, 1, 0)
+            logger.info(f"zstack shape: {Zstack.shape}")
 
     logger.info(f"binary output path: {reg_file}")
     if raw_file is not None:

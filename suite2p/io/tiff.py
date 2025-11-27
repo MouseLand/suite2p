@@ -217,47 +217,44 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     dbs : list of dictionaries
         database configurations for each plane
     settings : dictionary
-        keys nplanes, nchannels, data_path, look_one_level_down, reg_file
-    reg_file : list
+        suite2p settings dictionary
+    reg_file : list of file objects
         opened binary files for writing
-    reg_file_chan2 : list
-        opened binary files for writing channel 2
+    reg_file_chan2 : list of file objects
+        opened binary files for writing channel 2 (if nchannels > 1)
 
     Returns
     -------
     dbs : list of dictionaries
-        creates binaries settings["reg_file"]
-        assigns keys: tiffreader, first_tiffs, frames_per_folder, nframes, meanImg, meanImg_chan2
+        updated dbs with "Ly", "Lx", "nframes", etc.
     """
     t0 = time.time()
 
-    # use the dbs that were passed in
-    settings1 = dbs
-    nplanes = settings1[0]["nplanes"]
+    nplanes = dbs[0]["nplanes"]
+    nchannels = dbs[0]["nchannels"]
 
     # get file list from dbs (already populated by run_s2p.py)
-    fs = settings1[0]["file_list"]
-    first_files = settings1[0]["first_files"]
-    db = settings1[0]
-    batch_size = db["batch_size"]
+    fs = dbs[0]["file_list"]
+    first_files = dbs[0]["first_files"]
+    batch_size = dbs[0]["batch_size"]
     use_sktiff = not HAS_SCANIMAGE
 
     fs_Ch1, fs_Ch2 = [], []
     for f in fs:
         if f.find("Ch1") > -1:
-            if db["functional_chan"] == 1:
+            if dbs[0]["functional_chan"] == 1:
                 fs_Ch1.append(f)
             else:
                 fs_Ch2.append(f)
         else:
-            if db["functional_chan"] == 1:
+            if dbs[0]["functional_chan"] == 1:
                 fs_Ch2.append(f)
             else:
                 fs_Ch1.append(f)
 
     if len(fs_Ch2) == 0:
-        settings1[0]["nchannels"] = 1
-    nchannels = settings1[0]["nchannels"]
+        dbs[0]["nchannels"] = 1
+        nchannels = 1
     logger.info(f"nchannels = {nchannels}")
     
     # loop over all tiffs
@@ -270,16 +267,16 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
             n_pages = len(tif.pages)
             im0 = tif.pages[0].asarray()
             shape = im0.shape
-    
-    for settings1_0 in settings1:
-        settings1_0["nframes"] = 0
-        settings1_0["frames_per_folder"] = np.zeros(first_files.sum(), "int")
-        settings1_0["frames_per_file"] = np.ones(len(fs_Ch1), "int") if n_pages==1 else np.zeros(len(fs_Ch1), "int")
-        settings1_0["meanImg"] = np.zeros(shape, np.float32)
-        if nchannels > 1:
-            settings1_0["meanImg_chan2"] = np.zeros(shape, np.float32)
 
-    bruker_bidirectional = db.get("bruker_bidirectional", False)
+    for db in dbs:
+        db["nframes"] = 0
+        db["frames_per_folder"] = np.zeros(first_files.sum(), "int")
+        db["frames_per_file"] = np.ones(len(fs_Ch1), "int") if n_pages==1 else np.zeros(len(fs_Ch1), "int")
+        db["meanImg"] = np.zeros(shape, np.float32)
+        if nchannels > 1:
+            db["meanImg_chan2"] = np.zeros(shape, np.float32)
+
+    bruker_bidirectional = dbs[0].get("bruker_bidirectional", False)
     iplanes = np.arange(0, nplanes)
     if not bruker_bidirectional:
         iplanes = np.tile(iplanes[np.newaxis, :],
@@ -303,9 +300,9 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
             im = im.astype(np.int16)
 
             # write to binary
-            settings1[ip]["nframes"] += 1
-            settings1[ip]["frames_per_folder"][0] += 1
-            settings1[ip]["meanImg"] += im.astype(np.float32)
+            dbs[ip]["nframes"] += 1
+            dbs[ip]["frames_per_folder"][0] += 1
+            dbs[ip]["meanImg"] += im.astype(np.float32)
             reg_file[ip].write(bytearray(im))
             #gc.collect()
         else:
@@ -315,15 +312,15 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
             while 1:
                 im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)
                 if im is None:
-                    break          
+                    break
                 nframes = im.shape[0]
                 ix += nframes
                 itot += nframes
                 reg_file[ip].write(bytearray(im))
-                settings1[ip]["meanImg"] += im.astype(np.float32).sum(axis=0)
-                settings1[ip]["nframes"] += im.shape[0]
-                settings1[ip]["frames_per_file"][ik] += nframes
-                settings1[ip]["frames_per_folder"][0] += nframes
+                dbs[ip]["meanImg"] += im.astype(np.float32).sum(axis=0)
+                dbs[ip]["nframes"] += im.shape[0]
+                dbs[ip]["frames_per_file"][ik] += nframes
+                dbs[ip]["frames_per_folder"][0] += nframes
                 if itot % 1000 == 0:
                     logger.info("%d frames of binary, time %0.2f sec." % (itot, time.time() - t0))
                 gc.collect()            
@@ -338,7 +335,7 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
                 if im.dtype.type == np.uint16:
                     im = (im // 2)
                 im = im.astype(np.int16)
-                settings1[ip]["meanImg_chan2"] += im.astype(np.float32)
+                dbs[ip]["meanImg_chan2"] += im.astype(np.float32)
                 reg_file_chan2[ip].write(bytearray(im))
             else:
                 tif, Ltif = open_tiff(file, not HAS_SCANIMAGE)
@@ -346,23 +343,24 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
                 while 1:
                     im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)
                     if im is None:
-                        break          
+                        break
                     nframes = im.shape[0]
                     ix += nframes
                     itot += nframes
-                    settings1[ip]["meanImg_chan2"] += im.astype(np.float32).sum(axis=0)
+                    dbs[ip]["meanImg_chan2"] += im.astype(np.float32).sum(axis=0)
                     reg_file_chan2[ip].write(bytearray(im))
                     if itot % 1000 == 0:
                         logger.info("%d frames of binary, time %0.2f sec." % (itot, time.time() - t0))
                     gc.collect()
 
-    # write settings files (follow tiff_to_binary pattern - no do_registration logic needed)
-    for db in settings1:
+    # update dbs with image dimensions and mean images
+    for db in dbs:
         db["Ly"], db["Lx"] = shape
         db["meanImg"] /= db["nframes"]
         if nchannels > 1:
             db["meanImg_chan2"] /= db["nframes"]
+        # Save db and settings to each plane folder
         np.save(db["db_path"], db)
         np.save(db["settings_path"], settings)
-    # Files are managed by context manager in run_s2p.py, don't close them here
-    return settings1
+
+    return dbs

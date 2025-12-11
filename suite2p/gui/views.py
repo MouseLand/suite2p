@@ -9,6 +9,48 @@ from qtpy.QtGui import QPainter
 from .. import extraction
 
 
+def create_work_in_progress_image(Ly, Lx):
+    """Create a dummy image that says 'work in progress'
+    
+    For now, creates a simple gradient pattern as a placeholder.
+    In the future, this will be replaced with actual decrosstalk visualization.
+    
+    Parameters
+    ----------
+    Ly : int
+        Height of the image
+    Lx : int
+        Width of the image
+        
+    Returns
+    -------
+    mimg : ndarray
+        Work in progress image (Ly x Lx), values between 0 and 1
+    """
+    # Create a simple diagonal gradient pattern as placeholder
+    mimg = np.zeros((Ly, Lx), np.float32)
+    
+    # Create diagonal stripes to indicate "work in progress"
+    for i in range(Ly):
+        for j in range(Lx):
+            # Diagonal stripe pattern
+            if ((i + j) // 20) % 2 == 0:
+                mimg[i, j] = 0.3
+            else:
+                mimg[i, j] = 0.7
+    
+    # Add text region in center (darker region where text would go)
+    center_y, center_x = Ly // 2, Lx // 2
+    text_height, text_width = min(Ly // 4, 64), min(Lx // 2, 256)
+    y_start = max(0, center_y - text_height // 2)
+    y_end = min(Ly, center_y + text_height // 2)
+    x_start = max(0, center_x - text_width // 2)
+    x_end = min(Lx, center_x + text_width // 2)
+    mimg[y_start:y_end, x_start:x_end] = 0.5
+    
+    return mimg
+
+
 def make_buttons(parent):
     """ view buttons"""
     # view buttons
@@ -20,6 +62,7 @@ def make_buttons(parent):
         "T: max projection",
         "Y: mean img chan2, corr",
         "U: mean img chan2",
+        "C: decrosstalk",
     ]
     b = 0
     parent.viewbtns = QButtonGroup(parent)
@@ -64,13 +107,14 @@ def init_views(parent):
         "T: max projection",
         "Y: mean img chan2, corr",
         "U: mean img chan2",
+        "C: decrosstalk",
 
     assigns parent.views
 
     """
     parent.Ly, parent.Lx = parent.ops["Ly"], parent.ops["Lx"]
-    parent.views = np.zeros((7, parent.Ly, parent.Lx, 3), np.float32)
-    for k in range(7):
+    parent.views = np.zeros((8, parent.Ly, parent.Lx, 3), np.float32)
+    for k in range(8):
         if k == 2:
             if "meanImgE" not in parent.ops:
                 parent.ops = extraction.enhanced_mean_image(parent.ops)
@@ -122,6 +166,9 @@ def init_views(parent):
                 mimg99 = np.percentile(mimg, 99)
                 mimg = (mimg - mimg1) / (mimg99 - mimg1)
                 mimg = np.maximum(0, np.minimum(1, mimg))
+        elif k == 7:
+            # Decrosstalk view - work in progress
+            mimg = create_work_in_progress_image(parent.Ly, parent.Lx)
         else:
             mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
 

@@ -136,6 +136,6 @@ suite2p/
 ## Install
 - uv venv --python 3.8 && uv pip install --python .venv/bin/python -e ".[gui]"
 - uv pip install setuptools
-
+- sudo dnf install xcb-util-cursor
 - source .venv/bin/activate
 - python -m suite2p

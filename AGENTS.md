@@ -139,3 +139,8 @@ suite2p/
 - sudo dnf install xcb-util-cursor
 - source .venv/bin/activate
 - python -m suite2p
+
+
+## test dataset
++ dfb492b9-acc1-4ae7-93c7-508bfe201577, multiplane-ophys_827543_2025-12-11_14-26-35_processed_2025-12-12_13-39-05
++ aws s3 sync s3://aind-open-data/multiplane-ophys_827543_2025-12-11_14-26-35_processed_2025-12-12_13-39-05/ /s3-cache/suite2p-dev/multiplane-ophys_827543_2025-12-11_14-26-35_processed_2025-12-12_13-39-05 --no-sign-request

@@ -11,7 +11,8 @@ install_deps = ["importlib-metadata",
         "scipy>=1.9.0",
         "scikit-learn",
         "cellpose>=4.0.1",
-        "scanimage-tiff-reader>=1.4.1"
+        "scanimage-tiff-reader>=1.4.1",
+        "h5py"
         ]
 
 gui_deps = [

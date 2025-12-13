@@ -10,7 +10,7 @@
 # - Skip datasets that have already been converted
 # - Use the dataset folder name as the output dataset name
 
-set -e  # Exit on error
+#set -e  # Exit on error
 
 # Colors for output
 RED='\033[0;31m'

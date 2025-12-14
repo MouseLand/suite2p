@@ -70,17 +70,17 @@ def make_buttons(parent):
     vlabel.setText("<font color='white'>Background</font>")
     vlabel.setFont(parent.boldfont)
     vlabel.resize(vlabel.minimumSizeHint())
-    parent.l0.addWidget(vlabel, 1, 0, 1, 1)
+    parent.l0.addWidget(vlabel, 2, 0, 1, 1)
     for names in parent.view_names:
         btn = ViewButton(b, "&" + names, parent)
         parent.viewbtns.addButton(btn, b)
         if b > 0:
-            parent.l0.addWidget(btn, b + 2, 0, 1, 1)
+            parent.l0.addWidget(btn, b + 3, 0, 1, 1)
         else:
-            parent.l0.addWidget(btn, b + 2, 0, 1, 1)
+            parent.l0.addWidget(btn, b + 3, 0, 1, 1)
             label = QLabel("sat: ")
             label.setStyleSheet("color: white;")
-            parent.l0.addWidget(label, b + 2, 1, 1, 1)
+            parent.l0.addWidget(label, b + 3, 1, 1, 1)
         btn.setEnabled(False)
         b += 1
     parent.viewbtns.setExclusive(True)
@@ -92,7 +92,7 @@ def make_buttons(parent):
     slider.setTickPosition(QSlider.TicksBelow)
     parent.l0.addWidget(slider, 3, 1, len(parent.view_names) - 2, 1)
 
-    b += 2
+    b += 3
     return b
 
 

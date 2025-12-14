@@ -8,9 +8,44 @@ import pyqtgraph as pg
 from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QPushButton, QButtonGroup, QLabel, QComboBox, QLineEdit
 from matplotlib.colors import hsv_to_rgb
+from scipy.ndimage import binary_erosion
 
 import suite2p.gui.merge
 from . import io
+
+
+def extract_outline(ypix, xpix, Ly, Lx):
+    """Find boundary pixels of a mask."""
+    # Create binary mask
+    mask = np.zeros((Ly, Lx), dtype=bool)
+    mask[ypix, xpix] = True
+    
+    # Erode to find interior
+    eroded = binary_erosion(mask)
+    # Outline is mask minus eroded (boundary pixels)
+    outline_mask = mask & ~eroded
+    
+    outline_y, outline_x = np.where(outline_mask)
+    return outline_y, outline_x
+
+
+def build_neuropil_data(parent):
+    """Extract neuropil masks and create outline coordinates."""
+    parent.neuropil_outlines = []
+    
+    for n in range(len(parent.stat)):
+        if 'neuropil_mask' in parent.stat[n]:
+            npix_indices = parent.stat[n]['neuropil_mask']  # 1D linearized indices
+            # Convert to 2D coordinates
+            ypix_np = npix_indices // parent.ops['Lx']
+            xpix_np = npix_indices % parent.ops['Lx']
+            
+            parent.neuropil_outlines.append({
+                'ypix': ypix_np.astype(np.int32),
+                'xpix': xpix_np.astype(np.int32)
+            })
+        else:
+            parent.neuropil_outlines.append(None)
 
 
 def make_buttons(parent, b0):
@@ -480,6 +515,15 @@ def plot_masks(parent, M):
     #    parent.p1.addItem(txt)
     parent.color1.show()
     parent.color2.show()
+    
+    # Add neuropil masks if enabled
+    if parent.ops_plot.get("neuropil_on", False):
+        NP0, NP1 = draw_neuropil_masks(parent)
+        if NP0 is not None:
+            parent.neuropil1.setImage(NP0, levels=(0., 255.))
+            parent.neuropil2.setImage(NP1, levels=(0., 255.))
+            parent.neuropil1.show()
+            parent.neuropil2.show()
 
 
 def remove_roi(parent, n, i0):
@@ -578,6 +622,52 @@ def flip_roi(parent):
     ypix = parent.stat[n]["ypix"]
     xpix = parent.stat[n]["xpix"]
     redraw_masks(parent, ypix, xpix)
+
+
+def draw_neuropil_masks(parent):
+    """
+    Draw neuropil masks as filled regions with low alpha.
+    Uses same color as parent ROI but darker.
+    Returns NP0 (cells) and NP1 (not cells) as RGBA arrays.
+    """
+    if not parent.ops_plot.get("neuropil_on", False):
+        return None, None
+    
+    if not hasattr(parent, 'neuropil_outlines') or len(parent.neuropil_outlines) == 0:
+        return None, None
+    
+    Ly, Lx = parent.ops['Ly'], parent.ops['Lx']
+    color = parent.ops_plot["color"]
+    
+    # Initialize transparent RGBA arrays
+    NP0 = np.zeros((Ly, Lx, 4), dtype=np.uint8)
+    NP1 = np.zeros((Ly, Lx, 4), dtype=np.uint8)
+    
+    # Use ROI colors but darker (0.6x brightness) and low alpha
+    neuropil_alpha = 180  # Low alpha for filled regions
+    
+    for n in range(len(parent.stat)):
+        if parent.neuropil_outlines[n] is None:
+            continue
+            
+        ypix = parent.neuropil_outlines[n]['ypix']
+        xpix = parent.neuropil_outlines[n]['xpix']
+        
+        # Get ROI color and darken it
+        roi_color = parent.colors['cols'][color, n].copy()
+        neuropil_color = (roi_color * 0.6).astype(np.uint8)
+        
+        # Determine which view (cell vs not cell)
+        view_idx = int(1 - parent.iscell[n])  # 0 = cell, 1 = not cell
+        
+        if view_idx == 0:
+            NP0[ypix, xpix, :3] = neuropil_color
+            NP0[ypix, xpix, 3] = neuropil_alpha
+        else:
+            NP1[ypix, xpix, :3] = neuropil_color
+            NP1[ypix, xpix, 3] = neuropil_alpha
+    
+    return NP0, NP1
 
 
 def draw_colorbar(colormap="hsv"):

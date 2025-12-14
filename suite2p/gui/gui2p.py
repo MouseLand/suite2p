@@ -78,6 +78,7 @@ class MainWindow(QMainWindow):
         # default plot options
         self.ops_plot = {
             "ROIs_on": True,
+            "neuropil_on": False,
             "color": 0,
             "view": 0,
             "opacity": [127, 255],
@@ -147,6 +148,13 @@ class MainWindow(QMainWindow):
         self.checkBox.toggle()
         self.checkBox.stateChanged.connect(self.ROIs_on)
         self.l0.addWidget(self.checkBox, 0, 0, 1, 2)
+        
+        # NEUROPIL CHECKBOX
+        self.checkBoxNP = QCheckBox("NP Masks On [P]")
+        self.checkBoxNP.setStyleSheet("color: white;")
+        self.checkBoxNP.stateChanged.connect(self.neuropil_on)
+        self.checkBoxNP.setEnabled(False)
+        self.l0.addWidget(self.checkBoxNP, 1, 0, 1, 2)
 
         buttons.make_selection(self)
         buttons.make_cellnotcell(self)
@@ -259,6 +267,11 @@ class MainWindow(QMainWindow):
         self.p1.addItem(self.color1)
         self.view1.setLevels([0, 255])
         self.color1.setLevels([0, 255])
+        
+        # Neuropil overlay
+        self.neuropil1 = pg.ImageItem(viewbox=self.p1, parent=self)
+        self.neuropil1.autoDownsample = False
+        self.neuropil1.setLevels([0, 255])
         #self.view1.setImage(np.random.rand(500,500,3))
         #x = np.arange(0,500)
         #img = np.concatenate((np.zeros((500,500,3)), 127*(1+np.tile(np.sin(x/100)[:,np.newaxis,np.newaxis],(1,500,1)))),axis=-1)
@@ -277,6 +290,11 @@ class MainWindow(QMainWindow):
         self.p2.addItem(self.color2)
         self.view2.setLevels([0, 255])
         self.color2.setLevels([0, 255])
+        
+        # Neuropil overlay
+        self.neuropil2 = pg.ImageItem(viewbox=self.p2, parent=self)
+        self.neuropil2.autoDownsample = False
+        self.neuropil2.setLevels([0, 255])
 
         # LINK TWO VIEWS!
         self.p2.setXLink("plot1")
@@ -338,6 +356,8 @@ class MainWindow(QMainWindow):
                 #Agus
                 elif event.key() == QtCore.Qt.Key_N:
                     self.checkBoxd.toggle()
+                elif event.key() == QtCore.Qt.Key_P:
+                    self.checkBoxNP.toggle()
                 elif event.key() == QtCore.Qt.Key_B:
                     self.checkBoxn.toggle()
                 elif event.key() == QtCore.Qt.Key_V:
@@ -562,6 +582,21 @@ class MainWindow(QMainWindow):
             self.ops_plot["ROIs_on"] = False
             self.p1.removeItem(self.color1)
             self.p2.removeItem(self.color2)
+        self.win.show()
+        self.show()
+    
+    def neuropil_on(self, state):
+        """Toggle neuropil mask visibility."""
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
+            self.ops_plot["neuropil_on"] = True
+            self.p1.addItem(self.neuropil1)
+            self.p2.addItem(self.neuropil2)
+        else:
+            self.ops_plot["neuropil_on"] = False
+            self.p1.removeItem(self.neuropil1)
+            self.p2.removeItem(self.neuropil2)
+        if self.loaded:
+            self.update_plot()
         self.win.show()
         self.show()
 

@@ -66,6 +66,9 @@ def make_masks_and_enable_buttons(parent):
     views.init_views(parent)
     # make color arrays for various views
     masks.make_colors(parent)
+    # build neuropil mask data
+    masks.build_neuropil_data(parent)
+    parent.checkBoxNP.setEnabled(True)
 
     if parent.iscell.sum() > 0:
         ich = np.nonzero(parent.iscell)[0][0]

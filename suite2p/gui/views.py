@@ -38,7 +38,7 @@ def create_work_in_progress_image(Ly, Lx):
                 mimg[i, j] = 0.3
             else:
                 mimg[i, j] = 0.7
-    
+
     # Add text region in center (darker region where text would go)
     center_y, center_x = Ly // 2, Lx // 2
     text_height, text_width = min(Ly // 4, 64), min(Lx // 2, 256)
@@ -47,7 +47,7 @@ def create_work_in_progress_image(Ly, Lx):
     x_start = max(0, center_x - text_width // 2)
     x_end = min(Lx, center_x + text_width // 2)
     mimg[y_start:y_end, x_start:x_end] = 0.5
-    
+
     return mimg
 
 

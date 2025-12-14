@@ -181,6 +181,40 @@ class AINDToSuite2pConverter:
         
         return roi_bool
     
+    def unpack_neuropil_coords(self, neuropil_coords: np.ndarray, n_rois: int, 
+                               Lx: int) -> List[np.ndarray]:
+        """
+        Unpack neuropil coordinates and convert to linearized indices.
+        
+        Parameters
+        ----------
+        neuropil_coords : np.ndarray
+            Shape (3, N) where coords[0]=roi_id, coords[1]=y, coords[2]=x
+        n_rois : int
+            Number of ROIs
+        Lx : int
+            Image width (needed to linearize coordinates)
+            
+        Returns
+        -------
+        List[np.ndarray]
+            List of neuropil masks (linearized pixel indices) for each ROI
+        """
+        neuropil_masks = []
+        
+        for roi_id in range(n_rois):
+            # Find neuropil pixels belonging to this ROI
+            mask = neuropil_coords[0] == roi_id
+            y_coords = neuropil_coords[1][mask].astype(np.int32)
+            x_coords = neuropil_coords[2][mask].astype(np.int32)
+            
+            # Convert to linearized indices (same as np.ravel_multi_index)
+            neuropil_indices = y_coords * Lx + x_coords
+            
+            neuropil_masks.append(neuropil_indices.astype(np.int64))
+        
+        return neuropil_masks
+    
     def load_extraction_data(self, plane_path: Path) -> Dict:
         """
         Load extraction H5 file data.
@@ -243,6 +277,8 @@ class AINDToSuite2pConverter:
                 'std': f['traces/std'][:].astype(np.float32),
                 'mrs': f['rois/mrs'][:].astype(np.float32) if 'rois/mrs' in f else None,
                 'mrs0': f['rois/mrs0'][:].astype(np.float32) if 'rois/mrs0' in f else None,
+                'neuropil_rcoef': f['traces/neuropil_rcoef'][:].astype(np.float32) if 'traces/neuropil_rcoef' in f else None,
+                'raw_neuropil_rcoef_mutualinfo': f['traces/raw_neuropil_rcoef_mutualinfo'][:].astype(np.float32) if 'traces/raw_neuropil_rcoef_mutualinfo' in f else None,
             }
             
             # Add unpacked pixel data
@@ -256,6 +292,13 @@ class AINDToSuite2pConverter:
             
             # Get image dimensions
             data['Ly'], data['Lx'] = data['meanImg'].shape
+            
+            # Unpack neuropil masks if available (needs Lx)
+            if 'rois/neuropil_coords' in f:
+                neuropil_coords = f['rois/neuropil_coords'][:]
+                data['neuropil_pixels'] = self.unpack_neuropil_coords(neuropil_coords, n_rois, data['Lx'])
+            else:
+                data['neuropil_pixels'] = None
             
         return data
     
@@ -411,6 +454,14 @@ class AINDToSuite2pConverter:
                 stat_dict['mrs'] = roi_stats['mrs'][i]
             if roi_stats['mrs0'] is not None:
                 stat_dict['mrs0'] = roi_stats['mrs0'][i]
+            if roi_stats['neuropil_rcoef'] is not None:
+                stat_dict['neuropil_rcoef'] = roi_stats['neuropil_rcoef'][i]
+            if roi_stats['raw_neuropil_rcoef_mutualinfo'] is not None:
+                stat_dict['raw_neuropil_rcoef_mutualinfo'] = roi_stats['raw_neuropil_rcoef_mutualinfo'][i]
+            
+            # Add neuropil mask if available
+            if extraction_data.get('neuropil_pixels') is not None:
+                stat_dict['neuropil_mask'] = extraction_data['neuropil_pixels'][i]
             
             stat[i] = stat_dict
         

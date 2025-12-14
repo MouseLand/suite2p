@@ -40,7 +40,7 @@ test_deps = [
       "pytest",
       "tenacity",
       "tqdm",
-      "pynwb>=2.3.2", #this is needed as test_io contains a test with nwb
+      "pynwb>=2.3.2", # this is needed as test_io contains a test with nwb
       "pytest-qt>3.3.0",
 ]
 

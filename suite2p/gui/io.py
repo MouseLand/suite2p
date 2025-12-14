@@ -329,6 +329,22 @@ def load_to_GUI(parent, basename, procs):
     parent.probredcell = probredcell
     parent.hasred = hasred
     parent.notmerged = np.ones_like(parent.iscell).astype("bool")
+    
+    # Load decrosstalk stack if available
+    decrosstalk_path = os.path.join(basename, "decrosstalk.npy")
+    if os.path.exists(decrosstalk_path):
+        try:
+            parent.decrosstalk_stack = np.load(decrosstalk_path)
+            parent.decrosstalk_frame = 0  # Start at first frame
+            print(f"Loaded decrosstalk stack: {parent.decrosstalk_stack.shape}")
+        except Exception as e:
+            print(f"Warning: Could not load decrosstalk.npy: {e}")
+            parent.decrosstalk_stack = None
+            parent.decrosstalk_frame = 0
+    else:
+        parent.decrosstalk_stack = None
+        parent.decrosstalk_frame = 0
+    
     for n in range(len(parent.stat)):
         if parent.hasred:
             parent.stat[n]["chan2_prob"] = parent.probredcell[n]

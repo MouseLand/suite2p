@@ -404,6 +404,45 @@ class AINDToSuite2pConverter:
         
         return data
     
+    def load_decrosstalk_data(self, plane_path: Path, plane_name: str) -> Optional[np.ndarray]:
+        """
+        Load decrosstalk episodic mean FOV H5 file.
+        
+        Parameters
+        ----------
+        plane_path : Path
+            Path to plane folder
+        plane_name : str
+            Name of plane (e.g., VISp_0)
+            
+        Returns
+        -------
+        Optional[np.ndarray]
+            Decrosstalk EMF stack (num_frames, Ly, Lx) or None if not found
+        """
+        h5_path = plane_path / "decrosstalk" / f"{plane_name}_decrosstalk_episodic_mean_fov.h5"
+        
+        if not h5_path.exists():
+            print(f"  Decrosstalk EMF file not found: {h5_path.name} (skipping)")
+            return None
+        
+        print(f"  Loading decrosstalk EMF from {h5_path.name}")
+        
+        try:
+            with h5py.File(h5_path, 'r') as f:
+                if 'data' not in f:
+                    print(f"  Warning: 'data' key not found in {h5_path.name}")
+                    return None
+                
+                # Load stack (shape: num_frames, Ly, Lx)
+                stack = f['data'][:].astype(np.float32)
+                print(f"  Loaded decrosstalk stack: {stack.shape} ({stack.shape[0]} frames)")
+                return stack
+                
+        except Exception as e:
+            print(f"  Warning: Error loading decrosstalk EMF: {e}")
+            return None
+    
     def build_stat_array(self, extraction_data: Dict, plane_idx: int) -> np.ndarray:
         """
         Build stat.npy array from extraction data.
@@ -613,6 +652,7 @@ class AINDToSuite2pConverter:
             classification_data = self.load_classification_data(plane_path)
             motion_data = self.load_motion_correction_data(plane_path)
             events_data = self.load_events_data(plane_path)
+            decrosstalk_data = self.load_decrosstalk_data(plane_path, plane_name)
             
             n_rois = extraction_data['n_rois']
             n_frames = extraction_data['n_frames']
@@ -641,6 +681,11 @@ class AINDToSuite2pConverter:
             print(f"  Building stat.npy")
             stat = self.build_stat_array(extraction_data, plane_idx)
             np.save(output_dir / 'stat.npy', stat, allow_pickle=True)
+            
+            # Save decrosstalk EMF stack if available
+            if decrosstalk_data is not None:
+                print(f"  Saving decrosstalk.npy")
+                np.save(output_dir / 'decrosstalk.npy', decrosstalk_data)
             
             # Build and save ops.npy
             print(f"  Building ops.npy")

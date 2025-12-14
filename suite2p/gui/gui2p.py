@@ -6,7 +6,7 @@ import os, pathlib, shutil, sys, warnings
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtGui, QtCore
-from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
+from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel, QSlider
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
 from .. import run_s2p, default_ops
@@ -159,6 +159,25 @@ class MainWindow(QMainWindow):
         buttons.make_selection(self)
         buttons.make_cellnotcell(self)
         b0 = views.make_buttons(self)  # b0 says how many
+        
+        # Decrosstalk frame slider (hidden by default)
+        self.decrosstalk_slider_label = QLabel("Frame:")
+        self.decrosstalk_slider_label.setStyleSheet("color: white;")
+        self.decrosstalk_slider_label.setVisible(False)
+        self.l0.addWidget(self.decrosstalk_slider_label, b0, 0, 1, 1)
+        
+        self.decrosstalk_slider = QSlider(QtCore.Qt.Horizontal)
+        self.decrosstalk_slider.setMinimum(0)
+        self.decrosstalk_slider.setMaximum(0)  # Will be set when data is loaded
+        self.decrosstalk_slider.setValue(0)
+        self.decrosstalk_slider.setTickPosition(QSlider.TicksBelow)
+        self.decrosstalk_slider.setTickInterval(1)
+        self.decrosstalk_slider.setStyleSheet("QSlider::handle:horizontal { background-color: white; }")
+        self.decrosstalk_slider.setVisible(False)
+        self.decrosstalk_slider.valueChanged.connect(self.decrosstalk_frame_changed)
+        self.l0.addWidget(self.decrosstalk_slider, b0, 1, 1, 1)
+        b0 += 1
+        
         b0 = masks.make_buttons(self, b0)
         masks.make_colorbar(self, b0)
         b0 += 1
@@ -599,6 +618,22 @@ class MainWindow(QMainWindow):
             self.update_plot()
         self.win.show()
         self.show()
+    
+    def decrosstalk_frame_changed(self, value):
+        """Update decrosstalk view when slider changes."""
+        if hasattr(self, 'decrosstalk_stack') and self.decrosstalk_stack is not None:
+            self.decrosstalk_frame = value
+            # Update label with current frame
+            num_frames = self.decrosstalk_stack.shape[0]
+            self.decrosstalk_slider_label.setText(f"Frame: {value+1}/{num_frames}")
+            # Refresh the view if decrosstalk is currently displayed
+            if self.ops_plot["view"] == 7:
+                views.init_views(self)
+                views.plot_views(self)
+                # Redraw masks on top
+                if self.ops_plot["ROIs_on"]:
+                    M = masks.draw_masks(self)
+                    masks.plot_masks(self, M)
 
     def plot_clicked(self, event):
         """left-click chooses a cell, right-click flips cell to other view"""

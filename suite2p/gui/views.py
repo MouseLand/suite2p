@@ -167,8 +167,19 @@ def init_views(parent):
                 mimg = (mimg - mimg1) / (mimg99 - mimg1)
                 mimg = np.maximum(0, np.minimum(1, mimg))
         elif k == 7:
-            # Decrosstalk view - work in progress
-            mimg = create_work_in_progress_image(parent.Ly, parent.Lx)
+            # Decrosstalk episodic mean FOV
+            if hasattr(parent, 'decrosstalk_stack') and parent.decrosstalk_stack is not None:
+                # Use current frame from stack
+                frame_idx = parent.decrosstalk_frame if hasattr(parent, 'decrosstalk_frame') else 0
+                mimg = parent.decrosstalk_stack[frame_idx]
+                # Normalize to 0-1 range
+                mimg1 = np.percentile(mimg, 1)
+                mimg99 = np.percentile(mimg, 99)
+                mimg = (mimg - mimg1) / (mimg99 - mimg1)
+                mimg = np.maximum(0, np.minimum(1, mimg))
+            else:
+                # No decrosstalk data available
+                mimg = create_work_in_progress_image(parent.Ly, parent.Lx)
         else:
             mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
 
@@ -208,6 +219,22 @@ class ViewButton(QPushButton):
                 parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
         self.setStyleSheet(parent.stylePressed)
         parent.ops_plot["view"] = bid
+        
+        # Show/hide decrosstalk slider based on view
+        if hasattr(parent, 'decrosstalk_slider'):
+            if bid == 7 and hasattr(parent, 'decrosstalk_stack') and parent.decrosstalk_stack is not None:
+                # Show slider for decrosstalk view
+                num_frames = parent.decrosstalk_stack.shape[0]
+                parent.decrosstalk_slider.setMaximum(num_frames - 1)
+                parent.decrosstalk_slider.setValue(parent.decrosstalk_frame)
+                parent.decrosstalk_slider_label.setText(f"Frame: {parent.decrosstalk_frame+1}/{num_frames}")
+                parent.decrosstalk_slider.setVisible(True)
+                parent.decrosstalk_slider_label.setVisible(True)
+            else:
+                # Hide slider for other views
+                parent.decrosstalk_slider.setVisible(False)
+                parent.decrosstalk_slider_label.setVisible(False)
+        
         parent.update_plot()
 
 

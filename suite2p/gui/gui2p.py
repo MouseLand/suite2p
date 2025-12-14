@@ -158,13 +158,13 @@ class MainWindow(QMainWindow):
 
         buttons.make_selection(self)
         buttons.make_cellnotcell(self)
-        b0 = views.make_buttons(self)  # b0 says how many
         
-        # Decrosstalk frame slider (hidden by default)
-        self.decrosstalk_slider_label = QLabel("Frame:")
+        # Decrosstalk frame slider (top row, after cell selection buttons)
+        self.decrosstalk_slider_label = QLabel("EMF:")
         self.decrosstalk_slider_label.setStyleSheet("color: white;")
+        self.decrosstalk_slider_label.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.decrosstalk_slider_label.setVisible(False)
-        self.l0.addWidget(self.decrosstalk_slider_label, b0, 0, 1, 1)
+        self.l0.addWidget(self.decrosstalk_slider_label, 0, 22, 1, 1)
         
         self.decrosstalk_slider = QSlider(QtCore.Qt.Horizontal)
         self.decrosstalk_slider.setMinimum(0)
@@ -174,10 +174,11 @@ class MainWindow(QMainWindow):
         self.decrosstalk_slider.setTickInterval(1)
         self.decrosstalk_slider.setStyleSheet("QSlider::handle:horizontal { background-color: white; }")
         self.decrosstalk_slider.setVisible(False)
+        self.decrosstalk_slider.setMaximumWidth(120)
         self.decrosstalk_slider.valueChanged.connect(self.decrosstalk_frame_changed)
-        self.l0.addWidget(self.decrosstalk_slider, b0, 1, 1, 1)
-        b0 += 1
+        self.l0.addWidget(self.decrosstalk_slider, 0, 23, 1, 4)
         
+        b0 = views.make_buttons(self)  # b0 says how many
         b0 = masks.make_buttons(self, b0)
         masks.make_colorbar(self, b0)
         b0 += 1

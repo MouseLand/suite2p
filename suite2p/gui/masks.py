@@ -14,21 +14,6 @@ import suite2p.gui.merge
 from . import io
 
 
-def extract_outline(ypix, xpix, Ly, Lx):
-    """Find boundary pixels of a mask."""
-    # Create binary mask
-    mask = np.zeros((Ly, Lx), dtype=bool)
-    mask[ypix, xpix] = True
-    
-    # Erode to find interior
-    eroded = binary_erosion(mask)
-    # Outline is mask minus eroded (boundary pixels)
-    outline_mask = mask & ~eroded
-    
-    outline_y, outline_x = np.where(outline_mask)
-    return outline_y, outline_x
-
-
 def build_neuropil_data(parent):
     """Extract neuropil masks and create outline coordinates."""
     parent.neuropil_outlines = []

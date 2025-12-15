@@ -279,7 +279,7 @@ For each plane folder:
 
 ### D3: Output structure
 **Format:** `<output_path>/<dataset_name>/VISp_<i>/`
-- PreserHow to handle missing fields?
+- How to handle missing fields?
 **Decision:** 
 - **Required fields**: Error if missing (F, Fneu, stat basics)
 - **Optional fields**: Set to None or skip (Vcorr, meanImgE)

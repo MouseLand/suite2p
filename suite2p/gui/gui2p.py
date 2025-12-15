@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         buttons.make_cellnotcell(self)
         
         # Decrosstalk frame slider (top row, after cell selection buttons)
-        self.decrosstalk_slider_label = QLabel("EMF:")
+        self.decrosstalk_slider_label = QLabel("Decrosstalk Frame:")
         self.decrosstalk_slider_label.setStyleSheet("color: white;")
         self.decrosstalk_slider_label.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.decrosstalk_slider_label.setVisible(False)

@@ -356,23 +356,27 @@ class AINDToSuite2pConverter:
         
         print(f"  Loading motion correction data from {h5_path.name}")
         
-        with h5py.File(h5_path, 'r') as f:
-            data = {
-                'refImg': f['ref_image'][:].astype(np.float32),
-            }
+        try:
+            with h5py.File(h5_path, 'r') as f:
+                data = {
+                    'refImg': f['ref_image'][:].astype(np.float32),
+                }
+                
+                # Load registration metrics if available
+                if 'reg_metrics/regDX' in f:
+                    regDX = f['reg_metrics/regDX'][:]
+                    # regDX shape: (n_chunks, 3) where columns are [y_shift, x_shift, correlation]
+                    data['yoff'] = regDX[:, 0].astype(np.float32)
+                    data['xoff'] = regDX[:, 1].astype(np.float32)
+                    data['corrXY'] = regDX[:, 2].astype(np.float32)
+                
+                if 'reg_metrics/crispness' in f:
+                    data['crispness'] = f['reg_metrics/crispness'][:].astype(np.float64)
             
-            # Load registration metrics if available
-            if 'reg_metrics/regDX' in f:
-                regDX = f['reg_metrics/regDX'][:]
-                # regDX shape: (n_chunks, 3) where columns are [y_shift, x_shift, correlation]
-                data['yoff'] = regDX[:, 0].astype(np.float32)
-                data['xoff'] = regDX[:, 1].astype(np.float32)
-                data['corrXY'] = regDX[:, 2].astype(np.float32)
-            
-            if 'reg_metrics/crispness' in f:
-                data['crispness'] = f['reg_metrics/crispness'][:].astype(np.float64)
-        
-        return data
+            return data
+        except (OSError, RuntimeError) as e:
+            print(f"  Warning: Could not load motion correction file (corrupted/incomplete): {e}")
+            return {}
     
     def load_events_data(self, plane_path: Path) -> Dict:
         """

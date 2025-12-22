@@ -140,6 +140,7 @@ def roi_detect(mproj, diameter=None, settings=None,
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
     params = settings["params"] if not chan2 else settings["chan2_params"]
+    params = {} if params is None else params
     masks = model.eval(mproj, diameter=diameter[1],
                        cellprob_threshold=settings.get("cellprob_threshold", 0.0),
                        flow_threshold=settings.get("flow_threshold", 0.4),

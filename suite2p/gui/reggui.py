@@ -422,13 +422,18 @@ class BinaryPlayer(QMainWindow):
             ext = os.path.splitext(filename)[1]
             db = np.load(filename, allow_pickle=True).item()
             dirname = os.path.dirname(filename)
+            settings = np.load(os.path.join(dirname, "settings.npy"), allow_pickle=True).item()
+            ops = {**db, **settings}
             try:
-                settings = np.load(os.path.join(dirname, "settings.npy"), allow_pickle=True).item()
                 reg_outputs = np.load(os.path.join(dirname, "reg_outputs.npy"), allow_pickle=True).item()
-                ops = {**db, **settings, **reg_outputs}
+                ops = {**ops, **reg_outputs}
             except:
                 print("no reg_outputs.npy found")
-        else:
+            self.ops = ops
+            self.basename = dirname
+            fromgui = False
+
+        if 1:
             ops = self.ops
             self.LY = ops["Ly"]
             self.LX = ops["Lx"]

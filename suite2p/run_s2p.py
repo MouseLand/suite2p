@@ -11,6 +11,7 @@ import pathlib
 import contextlib
 import numpy as np
 from scipy.stats import skew
+from scipy.io import loadmat
 import torch
 import logging 
 
@@ -223,6 +224,39 @@ def run_plane(db, settings, db_path=None, stat=None):
         badframes0[bf_indices] = True
         logger.info(f"badframes file: {badframes_path};\n # of badframes: {badframes0.sum()}")
 
+    # check for zstack file to align to
+    Zstack = None
+    if os.path.exists(os.path.join(db["save_path"], "zcorr.npy")):
+        logger.info("z-correlation already computed")
+    else:
+        zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
+        if not os.path.exists(zstack_path):
+            zstack_path = os.path.join(db["save_path0"], 'zstack.mat')
+        zstack_path = zstack_path if os.path.exists(zstack_path) else None
+        if zstack_path is not None:
+            logger.info(f"zstack file: {zstack_path}")
+            data = loadmat(zstack_path)
+            iplane = db.get("iplane", 0)
+            iroi = db.get("iroi", 0)
+            if len(data['Z']) == 0:
+                Zstack = None
+                logger.info("zstack file is empty")
+            elif iroi > 0:
+                if iroi < len(data['Z']):
+                    Zstack = data['Z'][iroi][0].squeeze()
+                else:
+                    logger.info(f"plane {iplane} roi {iroi} not in zstack file")
+            else:
+                if iplane < len(data['Z'][0]):
+                    Zstack = data['Z'][0][iplane].squeeze()
+                else:
+                    logger.info(f"plane {iplane} not in zstack file")
+        if Zstack is not None:
+            if Zstack.ndim > 3:
+                Zstack = Zstack[0]
+            Zstack = Zstack.transpose(2, 1, 0)
+            logger.info(f"zstack shape: {Zstack.shape}")
+
     logger.info(f"binary output path: {reg_file}")
     if raw_file is not None:
         logger.info(f"raw binary path: {raw_file}")
@@ -237,8 +271,8 @@ def run_plane(db, settings, db_path=None, stat=None):
 
         outputs = pipeline(db["save_path"], f_reg, f_raw, f_reg_chan2, f_raw_chan2, 
                    run_registration, settings, badframes=badframes0, stat=stat,
-                   device=device)
-        (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, plane_times) = outputs
+                   device=device, Zstack=Zstack)
+        (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, zcorr, plane_times) = outputs
 
     # save as matlab file
     if settings["io"]["save_mat"]:
@@ -304,10 +338,7 @@ def run_s2p(db={}, settings=default_settings(), server={}):
     logger.info(version_str)
     logger.info(f"data_path: {db['data_path']}")
     
-    if len(plane_folders) > 0 and (settings.get("input_format") and settings["input_format"]=="binary"):
-        # TODO: fix this
-        settings_paths = [os.path.join(f, "settings.npy") for f in plane_folders]
-    elif len(plane_folders) > 0:
+    if len(plane_folders) > 0:
         files_found_flag, db_paths, settings_paths = _find_existing_binaries(plane_folders)
     else:
         files_found_flag = False

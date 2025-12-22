@@ -17,10 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 from . import extraction, registration, detection, classification, default_settings, default_db
+from .registration import zalign
 
 def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
              run_registration=True, settings=default_settings(), badframes=None, stat=None,
-             device=torch.device("cuda")):
+             device=torch.device("cuda"), Zstack=None):
     """Run suite2p processing on array or BinaryFile.
 
     Parameters:
@@ -99,7 +100,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     if not settings["run"]["do_detection"]:
         logger.warn("WARNING: skipping cell detection (settings['run']['do_detection']=False)")
         plane_times["total_plane_runtime"] = time.time() - t1
-        return reg_outputs, None, None, None, None, None, None, None, None, None, plane_times
+        return reg_outputs, None, None, None, None, None, None, None, None, None, None, plane_times
     
     yrange, xrange = reg_outputs["yrange"], reg_outputs["xrange"]
     meanImg_chan2 = reg_outputs.get("meanImg_chan2", None)
@@ -137,7 +138,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     if len(stat) == 0:
         logger.info("no ROIs found")
         plane_times["total_plane_runtime"] = time.time() - t1
-        return reg_outputs, detect_outputs, stat, None, None, None, None, None, None, None, plane_times
+        return reg_outputs, detect_outputs, stat, None, None, None, None, None, None, None, None, plane_times
 
     logger.info("----------- EXTRACTION")
     t11 = time.time()
@@ -176,8 +177,13 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         logger.info("----------- SPIKE DECONVOLUTION")
         t11 = time.time()
         dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
-        dF = extraction.preprocess(F=dF, fs=settings["fs"],
-                                    **settings["dcnv_preprocess"])
+        if settings["dcnv_preprocess"]["baseline"] == "maximin":
+            dF = extraction.baseline_maximin(dF, win_baseline=settings["dcnv_preprocess"]["win_baseline"], 
+                                             sig_baseline=settings["dcnv_preprocess"]["sig_baseline"], 
+                                             fs=settings["fs"], device=device)
+        else:
+            dF = extraction.preprocess(F=dF, fs=settings["fs"],
+                                        **settings["dcnv_preprocess"])
         spks = extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"],
                                 tau=settings["tau"], fs=settings["fs"])
         plane_times["deconvolution"] = time.time() - t11
@@ -208,7 +214,16 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     plane_times["total_plane_runtime"] = plane_runtime
     # np.save(os.path.join(save_path, "timings.npy"), plane_times)
 
+    if Zstack is not None:
+        logger.info("----------- ZSTACK ALIGN")
+        zcorr = zalign.register_to_zstack(f_reg, list(Zstack), nonrigid=False, 
+                                          settings=settings["registration"],
+                                          bidiphase=reg_outputs.get("bidiphase", 0), device=device)
+    else:
+        zcorr = np.zeros((0,))
+    np.save(os.path.join(save_path, "zcorr.npy"), zcorr)
+
     logger.info(f"Plane processed in {plane_runtime:0.2f} sec (can open in GUI).")
     
     return (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, 
-            spks, iscell, redcell, plane_times)
+            spks, iscell, redcell, zcorr, plane_times)

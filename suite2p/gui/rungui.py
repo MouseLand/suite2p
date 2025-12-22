@@ -175,7 +175,7 @@ def set_settings(SETTINGS, settings_gui):
             else:
                 settings_gui[key].setText("")
 
-def set_db(DB, db_gui):
+def set_db(DB, db_gui, parent=None):
     for key in db_gui.keys():
         if DB[key]["type"] == bool:
             db_gui[key].setChecked(DB[key]["default"])
@@ -184,8 +184,15 @@ def set_db(DB, db_gui):
                 for i in range(9):
                     if i < len(DB[key]["default"]):
                         db_gui[key][i].setText(DB[key]["default"][i])
+                        if parent is not None:
+                            parent.data_path_checkboxes[i].setVisible(True)
                     else:
                         db_gui[key][i].setText("")
+                        if parent is not None:
+                            parent.data_path_checkboxes[i].setVisible(False)
+                # Enable/disable remove button based on whether paths exist
+                if parent is not None and len(DB[key]["default"]) > 0:
+                    parent.remove_path_btn.setEnabled(True)
             else:
                 db_gui[key].setText(DB[key]["default"])
         else:
@@ -329,7 +336,7 @@ class RunWindow(QMainWindow):
         set_settings(self.SETTINGS, self.settings_gui)
         if db is not None:
             set_default_db(self.DB, db) # check if any db keys are in settings
-            set_db(self.DB, self.db_gui)
+            set_db(self.DB, self.db_gui, parent=self)
             if len(self.DB["data_path"]) > 0:
                 self.runButton.setEnabled(True)
                 self.addToBatch.setEnabled(True)
@@ -353,8 +360,8 @@ class RunWindow(QMainWindow):
                     db = json.load(f)
             else:
                 db = np.load(filename, allow_pickle=True).item()
-        set_default_db(self.DB, db) 
-        set_db(self.DB, self.db_gui)
+        set_default_db(self.DB, db)
+        set_db(self.DB, self.db_gui, parent=self)
 
         for key in db.keys():
             print(f"key {key} not in GUI, saved in backend in DB for running pipeline")
@@ -387,14 +394,24 @@ class RunWindow(QMainWindow):
             self.layout.addWidget(self.path_btns[-1], b, 0, 1, cw)
             b += 1
             if key!="data_path":
-                self.db_gui[key] = QLabel("") 
+                self.db_gui[key] = QLabel("")
                 self.layout.addWidget(self.db_gui[key], b, 0, 1, cw)
                 b += 1
             else:
                 self.db_gui[key] = [QLabel("") for _ in range(9)]
+                self.data_path_checkboxes = [QCheckBox() for _ in range(9)]
                 for i in range(9):
-                    self.layout.addWidget(self.db_gui[key][i], b, 0, 1, cw)
+                    self.layout.addWidget(self.data_path_checkboxes[i], b, 0, 1, 1)
+                    self.layout.addWidget(self.db_gui[key][i], b, 1, 1, cw-1)
+                    self.data_path_checkboxes[i].setVisible(False)  # Initially hidden
                     b += 1
+                # Add remove button for selected data paths
+                self.remove_path_btn = QPushButton("remove selected data_paths")
+                self.remove_path_btn.clicked.connect(self.remove_selected_data_paths)
+                self.remove_path_btn.setToolTip("Remove checked data_paths from the list")
+                self.remove_path_btn.setEnabled(False)  # Initially disabled
+                self.layout.addWidget(self.remove_path_btn, b, 0, 1, cw)
+                b += 1
 
         n0 = 17
         self.runButton = QPushButton("RUN SUITE2P")
@@ -512,7 +529,7 @@ class RunWindow(QMainWindow):
         
         # clear db and extra_keys
         set_default_db(self.DB, default_db())
-        set_db(self.DB, self.db_gui)
+        set_db(self.DB, self.db_gui, parent=self)
         self.extra_keys = {}
         
         # and enable the run button
@@ -635,9 +652,43 @@ class RunWindow(QMainWindow):
                     if len(self.db_gui["data_path"][i].text()) == 0:
                         self.db_gui["data_path"][i].setText(name)
                         self.db_gui["data_path"][i].setToolTip(name)
-                        break 
+                        self.data_path_checkboxes[i].setVisible(True)
+                        break
                 self.runButton.setEnabled(True)
                 self.addToBatch.setEnabled(True)
+                self.remove_path_btn.setEnabled(True)
             else:
                 self.db_gui[ftype].setText(name)
                 self.db_gui[ftype].setToolTip(name)
+
+    def remove_selected_data_paths(self):
+        # Collect remaining paths (unchecked ones)
+        remaining_paths = []
+        for i in range(9):
+            if not self.data_path_checkboxes[i].isChecked():
+                path_text = self.db_gui["data_path"][i].text()
+                if len(path_text) > 0:
+                    remaining_paths.append(path_text)
+            else:
+                path_text = self.db_gui["data_path"][i].text()
+                if len(path_text) > 0:
+                    print(f"removing {path_text} from data_path")
+
+        # Clear all fields, checkboxes, and hide them
+        for i in range(9):
+            self.db_gui["data_path"][i].setText("")
+            self.db_gui["data_path"][i].setToolTip("")
+            self.data_path_checkboxes[i].setChecked(False)
+            self.data_path_checkboxes[i].setVisible(False)
+
+        # Repopulate with remaining paths (compacted at top, no gaps)
+        for i, path in enumerate(remaining_paths):
+            self.db_gui["data_path"][i].setText(path)
+            self.db_gui["data_path"][i].setToolTip(path)
+            self.data_path_checkboxes[i].setVisible(True)
+
+        # Disable buttons if no data paths remain
+        if len(remaining_paths) == 0:
+            self.runButton.setEnabled(False)
+            self.addToBatch.setEnabled(False)
+            self.remove_path_btn.setEnabled(False)

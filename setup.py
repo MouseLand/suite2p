@@ -95,7 +95,6 @@ setuptools.setup(
     ],
     use_scm_version=True,
     install_requires=install_deps,
-    tests_require=test_deps,
     extras_require={
       "docs": [
         "sphinx>=3.0",
@@ -108,7 +107,7 @@ setuptools.setup(
       "gui": gui_deps,
       "nwb": nwb_deps,
       "io": io_deps,
-      "tests": test_deps,
+      "test": test_deps,
       "all": all_deps,
     },
     include_package_data=True,
@@ -120,8 +119,6 @@ setuptools.setup(
       entry_points = {
         "console_scripts": [
           "suite2p = suite2p.__main__:main",
-          "reg_metrics = benchmarks.registration_metrics:main",
-          "tiff2scanimage = scripts.make_tiff_scanimage_compatible:main",
         ]
         },
 )

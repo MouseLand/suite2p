@@ -75,7 +75,7 @@ def compute_dydx(db1):
     db = db1[0].copy()
     dx = np.zeros(len(db1), np.int64)
     dy = np.zeros(len(db1), np.int64)
-    if ("dx" not in db) or ("dy" not in db):
+    if ("dx" not in db) or ("dy" not in db) or (db["dx"] is None) or (db["dy"] is None):
         Lx = db["Lx"]
         Ly = db["Ly"]
         nX = np.ceil(np.sqrt(db["Ly"] * db["Lx"] * len(db1)) / db["Lx"])

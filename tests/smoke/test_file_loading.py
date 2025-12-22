@@ -3,7 +3,9 @@ import suite2p
 
 
 def test_bruker(test_settings):
-    test_settings['data_path'] = [Path(test_settings['data_path'][0]).joinpath('bruker')]
-    test_settings['input_format'] = 'bruker'
-    print(test_settings['nchannels'])
-    suite2p.run_s2p(settings=test_settings)
+    db, settings = test_settings  # Unpack the tuple
+    db['data_path'] = [Path(db['data_path'][0]).joinpath('bruker')]
+    db['input_format'] = 'bruker'
+    print(db['nchannels'])
+    settings['detection']['threshold_scaling'] = 0.5  # Lower threshold
+    suite2p.run_s2p(settings=settings, db=db)

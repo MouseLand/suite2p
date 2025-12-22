@@ -5,6 +5,8 @@ import numpy as np
 from tqdm import trange
 from numba import njit, prange
 from scipy.ndimage import maximum_filter1d, minimum_filter1d, gaussian_filter
+import torch
+from torch.nn.functional import conv1d, max_pool1d, pad
 from ..logger import TqdmToLogger
 import logging 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
     F : ndarray
         Size [neurons x time], in pipeline uses neuropil-subtracted fluorescence.
     batch_size : int
-        Number of frames processed per batch.
+        Number of neurons processed per batch.
     tau : float
         Timescale of the sensor, used for the deconvolution kernel.
     fs : float
@@ -141,3 +143,37 @@ def preprocess(F: np.ndarray, baseline: str, win_baseline: float, sig_baseline: 
     F = F - Flow
 
     return F
+
+
+def baseline_maximin(F: np.ndarray, win_baseline: float, sig_baseline: float,
+                     fs: float, batch_size=100, device=torch.device('cuda')) -> np.ndarray:
+
+    win = int(win_baseline * fs)
+    win += 1 if win%2==0 else 0
+    ncells, n_frames = F.shape
+    Flow = np.zeros((ncells, n_frames), 'float32')
+    batch_size = int(batch_size)
+    n_batches = int(np.ceil(ncells / batch_size))
+    gwid = int(np.round(sig_baseline * 3))
+    gaussian = torch.exp(- torch.arange(-gwid, gwid + 1, 1, device=device)**2 /
+                          (2 * sig_baseline**2))
+    gaussian /= gaussian.sum()
+
+    for n in range(n_batches):
+        nstart, nend = n * batch_size, min((n+1) * batch_size, ncells)
+        data = torch.from_numpy(F[nstart : nend]).to(device, dtype=torch.float)      
+
+        data = pad(data, (gwid, gwid), 'replicate')
+        data = conv1d(data.unsqueeze(1), gaussian.unsqueeze(0).unsqueeze(0), padding=0)
+
+        data = pad(data, (win//2, win//2), 'replicate')
+        data = -max_pool1d(-data, kernel_size=win, stride=1, padding= 0)
+
+        data = pad(data, (win//2, win//2), 'replicate')
+        data = max_pool1d(data, kernel_size=win, stride=1, padding= 0)
+
+        Flow[nstart : nend] = data.squeeze().cpu().numpy()
+
+    F = F - Flow
+
+    return F 

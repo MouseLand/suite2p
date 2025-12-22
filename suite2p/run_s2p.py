@@ -238,7 +238,10 @@ def run_plane(db, settings, db_path=None, stat=None):
             data = loadmat(zstack_path)
             iplane = db.get("iplane", 0)
             iroi = db.get("iroi", 0)
-            if iroi > 0:
+            if len(data['Z']) == 0:
+                Zstack = None
+                logger.info("zstack file is empty")
+            elif iroi > 0:
                 if iroi < len(data['Z']):
                     Zstack = data['Z'][iroi][0].squeeze()
                 else:
@@ -327,10 +330,7 @@ def run_s2p(db={}, settings=default_settings(), server={}):
     logger.info(version_str)
     logger.info(f"data_path: {db['data_path']}")
     
-    if len(plane_folders) > 0 and (settings.get("input_format") and settings["input_format"]=="binary"):
-        # TODO: fix this
-        settings_paths = [os.path.join(f, "settings.npy") for f in plane_folders]
-    elif len(plane_folders) > 0:
+    if len(plane_folders) > 0:
         files_found_flag, db_paths, settings_paths = _find_existing_binaries(plane_folders)
     else:
         files_found_flag = False

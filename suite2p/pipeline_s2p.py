@@ -175,8 +175,13 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         logger.info("----------- SPIKE DECONVOLUTION")
         t11 = time.time()
         dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
-        dF = extraction.preprocess(F=dF, fs=settings["fs"],
-                                    **settings["dcnv_preprocess"])
+        if settings["dcnv_preprocess"]["baseline"] == "maximin":
+            dF = extraction.baseline_maximin(dF, win_baseline=settings["dcnv_preprocess"]["win_baseline"], 
+                                             sig_baseline=settings["dcnv_preprocess"]["sig_baseline"], 
+                                             fs=settings["fs"], device=device)
+        else:
+            dF = extraction.preprocess(F=dF, fs=settings["fs"],
+                                        **settings["dcnv_preprocess"])
         spks = extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"],
                                 tau=settings["tau"], fs=settings["fs"])
         plane_times["deconvolution"] = time.time() - t11

@@ -277,6 +277,8 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
         blocks, rmin, rmax) = refAndMasks
         device = fr_reg.device
 
+        fr_reg = torch.clip(fr_reg, rmin, rmax) if rmin > -np.inf else fr_reg
+
         # rigid registration
         ymax, xmax, cmax = rigid.phasecorr(fr_reg, cfRefImg, maskMul, maskOffset, 
                                         maxregshift, smooth_sigma_time)[:3]

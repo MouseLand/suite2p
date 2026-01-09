@@ -16,7 +16,9 @@ install_deps = ["importlib-metadata",
 
 gui_deps = [
         "qtpy",
-        "pyqt6",
+        'pyqt6 ; platform_system != "Linux"',
+        'pyqt6<6.5 ; platform_system == "Linux"',
+        'pyqt6-qt6<6.5 ; platform_system == "Linux"',
         "pyqt6.sip",
         "pyqtgraph",
       ]

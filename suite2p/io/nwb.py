@@ -329,7 +329,7 @@ def save_nwb(save_folder):
     # Get nchannels from the main db or from plane dbs
     nchannels = dbs[0].get("nchannels", 1)
 
-    if NWB and not settings1[0]["mesoscan"]:
+    if NWB and (settings1[0].get("mesoscan") is None):
         if len(settings1) > 1:
             multiplane = True
         else:

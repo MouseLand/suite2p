@@ -178,7 +178,7 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         t11 = time.time()
         dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
         if settings["dcnv_preprocess"]["baseline"] == "maximin":
-            dF = extraction.baseline_maximin(dF, win_baseline=settings["dcnv_preprocess"]["win_baseline"], 
+            dF =  extraction.baseline_maximin(dF, win_baseline=settings["dcnv_preprocess"]["win_baseline"], 
                                              sig_baseline=settings["dcnv_preprocess"]["sig_baseline"], 
                                              fs=settings["fs"], device=device)
         else:

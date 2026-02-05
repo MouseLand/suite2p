@@ -139,6 +139,7 @@ def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
     cc0 = cc[:, lpad:-lpad, lpad:-lpad].reshape(cc.shape[0], -1)
     # set to 0 all pts +-lpad from ymax,xmax
     cc1 = cc.copy()
+    
     for c1, ymax, xmax in zip(
             cc1,
             *np.unravel_index(cc0.argmax(axis=1), (2 * lcorr + 1, 2 * lcorr + 1))):

@@ -116,7 +116,7 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
             ypix, xpix, lam = ypix[crop], xpix[crop], lam[crop]
         else:
             stat["soma_crop"] = np.ones(ypix.size, "bool")
-        stat["med_soma"], stat["npix_soma"] = med, stat["soma_crop"].sum()  
+        stat["npix_soma"] = stat["soma_crop"].sum()  
         
         # compute compactness of ROI
         med = np.median(ypix), np.median(xpix)
@@ -129,7 +129,7 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
             radii = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1], thres=2)[2]
             stat["radius"] = radii[0] * d0.mean()
             stat["aspect_ratio"] = 2 * radii[0] / (.01 + radii[0] + radii[1])
-        stat["footprint"] = 0
+        stat["footprint"] = stat.get("footprint", 0)
 
     ### compute npix_norm (normalized npix) for each ROI
     npix_soma = np.array([stat["npix_soma"] for stat in stats], dtype="float32")

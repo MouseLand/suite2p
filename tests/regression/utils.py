@@ -101,6 +101,24 @@ class FullPipelineTestUtils:
         settings["io"]["delete_bin"] = True
         return db, settings
 
+    @staticmethod
+    def initialize_settings_bruker(db, settings):
+        bruker_dir = Path(db['data_path'][0]).joinpath('bruker')
+        db['data_path'] = [bruker_dir]
+        db.update({
+            'input_format': 'bruker',
+            'nplanes': 1,
+            'nchannels': 2,
+        })
+        # Adjust detection parameters for bruker data (keep ROI count very low for fast NWB test)
+        settings["detection"]["threshold_scaling"] = 0.3  # Moderately lower threshold
+        settings["detection"]["max_iterations"] = 30
+        settings["detection"]["sparsery_settings"]["spatial_scale"] = 0  # Auto-detect scale
+        settings["detection"]["sparsery_settings"]["max_ROIs"] = 15  # Limit to 15 ROIs for fast test
+        settings["io"]["save_mat"] = True
+        settings["io"]["delete_bin"] = True
+        return db, settings
+
 class DetectionTestUtils:
     @staticmethod
     def prepare(op, input_file_name_list, dimensions):

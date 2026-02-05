@@ -34,6 +34,11 @@ class TestDataConfigs:
             'name': 'mesoscan',
             'output_dir': 'mesoscan',
             'description': 'Mesoscan two planes, two ROIs test data'
+        },
+        'bruker': {
+            'name': 'bruker',
+            'output_dir': 'bruker',
+            'description': 'Bruker OME-TIFF format test data'
         }
     }
 
@@ -88,7 +93,7 @@ current_dir = Path(os.getcwd())
 # Assumes the input file has already been downloaded
 test_input_dir_path = current_dir.parent.joinpath('data')
 # Output directory where suite2p results are kept
-test_data_dir_path = current_dir.joinpath('test_data')
+test_data_dir_path = current_dir.parent.joinpath('data/test_outputs')
 
 class GenerateFullPipelineTestData:
 	# Full Pipeline Tests
@@ -135,11 +140,23 @@ class GenerateFullPipelineTestData:
 		)
 
 	@staticmethod
+	def generate_bruker_expected_data(db, settings):
+		"""
+		Generates expected output for test_nwb_round_trip[bruker] of test_io.py.
+		"""
+		GenerateFullPipelineTestData._generate_test_data(
+			db, settings,
+			FullPipelineTestUtils.initialize_settings_bruker,
+			'bruker'
+		)
+
+	@staticmethod
 	def generate_all_data(full_db, full_settings):
 		# Expected Data for test_full_pipeline.py
 		GenerateFullPipelineTestData.generate_1p1c1500_expected_data(full_db, full_settings)
 		GenerateFullPipelineTestData.generate_2p2c1500_expected_data(full_db, full_settings)
 		GenerateFullPipelineTestData.generate_2p2zmesoscan_expected_data(full_db, full_settings)
+		GenerateFullPipelineTestData.generate_bruker_expected_data(full_db, full_settings)
 
 class GenerateDetectionTestData:
 	@staticmethod

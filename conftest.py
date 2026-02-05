@@ -18,7 +18,7 @@ def data_dir():
     data_path.mkdir(exist_ok=True)
     download_cached_inputs(data_path)
     cached_outputs = data_path.joinpath('test_outputs')
-    cached_outputs_url = 'https://osf.io/download/67f007dba7eb86d7808b8832'
+    cached_outputs_url = 'https://osf.io/download/6984d3cd76e713d9de6da324'
     if not os.path.exists(cached_outputs):
         extract_zip(data_path.joinpath('test_outputs.zip'), cached_outputs_url, data_path)
     return data_path

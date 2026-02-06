@@ -1,9 +1,6 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import warnings
-from typing import Tuple
-
 import numpy as np
 from numpy import fft
 from scipy.fftpack import next_fast_len
@@ -12,43 +9,81 @@ import torch.nn.functional as F
 
 from .utils import spatial_taper, gaussian_fft, kernelD2, mat_upsample, convolve, ref_smooth_fft
 
-def calculate_nblocks(L: int, block_size: int = 128) -> Tuple[int, int]:
+def calculate_nblocks(L: int, block_size: int):
     """
     Returns block_size and nblocks from dimension length and desired block size
 
     Parameters
     ----------
     L: int
+        Number of pixels in one dimension in image.
     block_size: int
+        Block size in pixels.
 
     Returns
     -------
     block_size: int
+        min(L, block_size).
     nblocks: int
+        Number of blocks to make along dimension.
     """
     return (L, 1) if block_size >= L else (block_size,
                                            int(np.ceil(1.5 * L / block_size)))
 
-def make_blocks(Ly, Lx, block_size=(128, 128), lpad=3, subpixel=10):
+def make_blocks(Ly, Lx, block_size, lpad=3, subpixel=10):
     """
-    Computes overlapping blocks to split FOV into to register separately
+    Compute overlapping registration blocks covering a 2D field of view.
+    This function splits a full-frame image of size (Ly, Lx) into an array of
+    overlapping rectangular blocks to be processed independently for nonrigid
+    registration. Block start positions are computed so that blocks tile the image
+    with (approximately) equal spacing and specified overlap determined by the
+    requested block_size. The function also computes a spatial smoothing matrix
+    (NRsm) over the block grid and an upsampling convolution matrix (Kmat) used
+    for subpixel shift estimation.
 
     Parameters
     ----------
-    Ly: int
-        Number of pixels in the vertical dimension
-    Lx: int
-        Number of pixels in the horizontal dimension
-    block_size: int, int
-        block size
-
+    Ly : int
+        Number of pixels in the vertical dimension (image height).
+    Lx : int
+        Number of pixels in the horizontal dimension (image width).
+    block_size : tuple[int, int]
+        Block size in pixels as (block_height, block_width).
+    lpad : int, optional
+        Padding in pixels used when constructing the upsampling matrix.
+        Passed to mat_upsample(...). Default is 3.
+    subpixel : int, optional
+        Subpixel upsampling factor. Passed to mat_upsample(...). Default is 10.
+    
     Returns
     -------
-    yblock: float array
-    xblock: float array
-    nblocks: int, int
-    block_size: int, int
-    NRsm: array
+    yblock : list[numpy.ndarray]
+        List of length (ny * nx) giving the vertical (row) slice for each block.
+        Each element is a 1D integer numpy array [y_start, y_end] specifying the
+        inclusive start (y_start) and exclusive end (y_end) indices of the block
+        along the vertical axis. Blocks are ordered row-major by block-grid row
+        (iy) then column (ix): block_idx = iy * nx + ix.
+    xblock : list[numpy.ndarray]
+        List of length (ny * nx) giving the horizontal (column) slice for each
+        block. Each element is a 1D integer numpy array [x_start, x_end]
+        specifying the inclusive start and exclusive end indices along the
+        horizontal axis. Ordering matches yblock (row-major block-grid order).
+    nblocks : list[int, int]
+        Two-element list [ny, nx] with the number of blocks in the vertical and
+        horizontal directions respectively (ny = number of block rows,
+        nx = number of block columns).
+    block_size : tuple[int, int]
+        Effective block size used, min of input block size and frame size.
+    NRsm : numpy.ndarray
+        2D smoothing kernel matrix defined on the block grid. Shape is (ny, nx).
+        This matrix (derived from kernelD2 over block grid coordinates) is
+        used to smooth or regularize blockwise motion estimates spatially.
+    Kmat : numpy.ndarray
+        Upsampling kriging interpolation matrix returned by mat_upsample(lpad, subpixel).
+        This matrix is used for subpixel shift estimation within +/- lpad pixels.
+    nup : int
+        Kmat.shape[-1].
+   
     """
     block_size = (int(block_size[0]), int(block_size[1]))
     block_size_y, ny = calculate_nblocks(L=Ly, block_size=block_size[0])
@@ -74,25 +109,57 @@ def make_blocks(Ly, Lx, block_size=(128, 128), lpad=3, subpixel=10):
     return yblock, xblock, [ny, nx], block_size, NRsm, Kmat, nup
 
 
-def compute_masks_ref_smooth_fft(refImg0: np.ndarray, maskSlope, smooth_sigma,
-                        yblock: np.ndarray, xblock: np.ndarray):
+def compute_masks_ref_smooth_fft(refImg0, maskSlope, smooth_sigma,
+                                 yblock, xblock):
     """
-    Computes taper and fft"ed reference image for phasecorr.
+    Compute per-block taper masks, offsets, and FFT-smoothed reference images for
+    nonrigid phase-correlation registration.
+    This function extracts blocks from a full 2D reference image, applies a
+    spatial taper (window) to each block, computes a per-block constant offset
+    to compensate for masked/background regions, and computes a Gaussian-smoothed
+    version of each block in the frequency domain (complex FFT) for use in
+    phase-correlation based registration.
 
     Parameters
     ----------
-    refImg0: array
-    maskSlope
-    smooth_sigma
-    yblock: float array
-    xblock: float array
-    
+    refImg0 : torch.Tensor
+        2D reference image array of shape (Ly_full, Lx_full). Expected numeric
+        image type (e.g. uint16, float32 or torch tensor). The function will
+        extract sub-blocks using the indices supplied in yblock and xblock.
+    maskSlope : float
+        Scalar parameter controlling the slope of the sigmoid of the spatial taper. 
+        Higher values increase tapered region size.
+    smooth_sigma : float
+        Standard deviation (in pixels) of the Gaussian smoothing applied to each
+        block. Smoothing is performed in the frequency domain (via ref_smooth_fft /
+        gaussian_fft). Typical values are >= 0. A value of 0 should behave as no
+        smoothing (identity).
+    yblock : list[numpy.ndarray]
+        List of length (ny * nx) giving the vertical (row) slice for each block.
+        Each element is a 1D integer numpy array [y_start, y_end] specifying the
+        inclusive start (y_start) and exclusive end (y_end) indices of the block
+        along the vertical axis. Blocks are ordered row-major by block-grid row
+        (iy) then column (ix): block_idx = iy * nx + ix.
+    xblock : list[numpy.ndarray]
+        List of length (ny * nx) giving the horizontal (column) slice for each
+        block. Each element is a 1D integer numpy array [x_start, x_end]
+        specifying the inclusive start and exclusive end indices along the
+        horizontal axis. Ordering matches yblock (row-major block-grid order).
+
     Returns
     -------
-    maskMul
-    maskOffset
-    cfRefImg
-
+    maskMul_block : torch.Tensor
+        Float32 tensor of shape (nb, Ly, Lx). Per-block multiplicative taper
+        masks obtained by multiplying a local block taper.
+    maskOffset_block : torch.Tensor
+        Float32 tensor of shape (nb, Ly, Lx). Per-block additive offset fields
+        computed as block_mean * (1 - maskMul_block) so that masked regions are
+        filled with the local block mean scaled by the complement of the taper.
+    cfRefImg_block : torch.Tensor (complex64)
+        Complex32 tensor of shape (nb, Ly, Lx). Frequency-domain (FFT) representation
+        of the Gaussian-smoothed reference blocks (output of ref_smooth_fft). These
+        are intended for use in phase-correlation registration.
+    
     """
     nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
@@ -120,21 +187,40 @@ def compute_masks_ref_smooth_fft(refImg0: np.ndarray, maskSlope, smooth_sigma,
         
     return maskMul1, maskOffset1, cfRefImg1
 
-def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
+def getSNR(cc, lcorr, lpad):
     """
-    Compute SNR of phase-correlation.
+    Compute the signal-to-noise ratio (SNR) of phase-correlation maps.
+    This function estimates the SNR for one or more phase-correlation maps by
+    (1) locating the peak value within the central search region of each map,
+    (2) zeroing a square neighborhood around that peak in a copy of the full map
+        to exclude the main peak energy, and
+    (3) taking the ratio of the peak value to the maximum remaining value in the
+        map (with a small epsilon to avoid division by zero).
 
     Parameters
     ----------
-    cc: Ly x Lx
-        The frame data to analyze
-    lcorr: int
-    lpad: int
-        border padding width
+    cc : torch.Tensor
+        Array of phase-correlation maps with shape (n_maps, H, W). Each spatial
+        dimension is expected to equal (2 * lcorr + 1) + 2 * lpad, i.e. the
+        central searchable region of size (2*lcorr+1) is padded on all sides by
+        lpad pixels. The first axis indexes independent maps (e.g. frames).
+    lcorr : int
+        Half-size of the central correlation search window. The central region
+        searched for the peak is of size (2 * lcorr + 1) x (2 * lcorr + 1).
+    lpad : int
+        Padding width (in pixels) around the central search region. When masking
+        the peak, a square of side length 2 * lpad is zeroed around the detected
+        peak location in the copy of the map to measure the maximum background
+        response.
 
     Returns
     -------
-    snr: float
+    snr : ndarray
+        Array of SNR values, one per input map, with shape (n_maps,). Each entry
+        is the peak value found inside the central region divided by the maximum
+        value remaining in the map after masking the peak neighborhood. Values
+        are finite due to a small numerical epsilon (1e-10) used in the
+        denominator.
     """
     cc0 = cc[:, lpad:-lpad, lpad:-lpad].reshape(cc.shape[0], -1)
     # set to 0 all pts +-lpad from ymax,xmax
@@ -148,36 +234,62 @@ def getSNR(cc: np.ndarray, lcorr: int, lpad: int) -> float:
     snr = cc0.max(axis=1) / np.maximum(1e-10, cc1.max(axis=(1, 2)))
     return snr
 
-def phasecorr(data: np.ndarray, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
-              maxregshiftNR, subpixel: int = 10, lpad: int = 3):
+def phasecorr(data, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
+              maxregshiftNR, subpixel = 10, lpad = 3):
     """
-    Compute phase correlations for each block
-    
+    Compute per-block shifts using phase correlation.
+    This function performs a Fourier-domain phase-correlation based registration between each frame and each block in
+    `data` and a provided (complex) reference image `cfRefImg`, in blocks. It computes the integer pixel shifts
+    (y, x) that maximize the phase-correlation within a limited search window, defined by `maxregshiftNR`.
+    The phase-correlations are smoothed across blocks, and these smoothed phase-correlations are used if the 
+    block SNR is below `snr_thresh`. A small neighborhood around each peak is then upsampled via Kriging interpolation 
+    using the provided Kmat kernel, and the peak of the upsampled phase-correlation is used to obtain subpixel-level shifts.
+
     Parameters
     ----------
-    data : nimg x Ly x Lx
-    maskMul: ndarray
-        gaussian filter
-    maskOffset: ndarray
-        mask offset
-    cfRefImg
-        FFT of reference image
+    data : torch.Tensor
+        Input image sequence, expected shape (nimg, Ly, Lx) where nimg is the number of frames.
+        The tensor may be on CPU or CUDA; it is converted to float and then to complex for the
+        Fourier-domain operations performed by the helper `convolve`.
+    blocks : tuple
+        Tuple of block descriptors produced by the caller, unpacked in this function as:
+            (yblock, xblock, _, _, NRsm, Kmat, nup)
+    maskMul : torch.Tensor
+        Multiplicative mask applied to `data` per-block before correlation. Broadcasted over frames.
+    maskOffset : torch.Tensor
+        Additive offset applied after `maskMul` per-block. Broadcasted over frames.
+    cfRefImg : torch.Tensor
+        Complex-valued reference of shape (Ly, Lx) in the Fourier domain used to compute 
+        cross-correlation with each frame.
     snr_thresh : float
-        signal to noise ratio threshold
-    NRsm
-    xblock: float array
-    yblock: float array
-    maxregshiftNR: int
-    subpixel: int
-    lpad: int
-        upsample from a square +/- lpad
-
+        SNR threshold used to decide whether to replace a block's raw correlation map with
+        progressively more-smoothed versions computed via NRsm. Lower values make smoothing
+        less likely.
+    maxregshiftNR : int
+        Maximum allowed registration shift (interpreted as pixels and rounded).
+    lpad : int, optional
+        Padding in pixels used when constructing the upsampling matrix. Default is 3.
+    subpixel : int, optional
+        Subpixel upsampling factor. Default is 10.
+    
     Returns
     -------
-    ymax1
-    xmax1
-    cmax1
+    ymax1 : torch.Tensor
+        Tensor of shape (nblocks, N) with the y (row) shift for each frame and block that maximizes the
+        phase-correlation. 
+    xmax1 : torch.LongTensor
+        Tensor of shape (nblocks, N) with the x (row) shift for each frame and block that maximizes the
+        phase-correlation. 
+    cmax1 : torch.Tensor
+        Tensor of shape (nblocks, N) containing the maximum phase-correlation value found for each frame and block.
+    ccsm : numpy.ndarray
+        Phase-correlation maps (potentially smoothed) used for peak selection for each frame and block. Shape:
+            (n_blocks, N, 2*lcorr + 2*lpad + 1, 2*lcorr + 2*lpad + 1)
+    ccb : torch.Tensor
+        Tensor of shape (n_blocks, N, y+x pixels) containing upsampled phase-correlation values for each frame and block.
+
     """
+
 
     yblock, xblock, _, _, NRsm, Kmat, nup = blocks
 
@@ -261,26 +373,32 @@ def phasecorr(data: np.ndarray, blocks, maskMul, maskOffset, cfRefImg, snr_thres
 
 def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     """
-    Piecewise affine transformation of data using block shifts ymax1, xmax1
-    
-    Parameters
-    ----------
+    Apply bilinear interpolation to transform image data using block-wise shifts.
+    This function performs non-rigid image registration by interpolating block-wise 
+    shift values across the image and applying the resulting displacement field via 
+    the `grid_sample` function. It handles both standard GPU and Apple Silicon (MPS) devices.
 
-    data : nimg x Ly x Lx
-    nblocks: (int, int)
-    xblock: float array
-    yblock: float array
-    ymax1 : nimg x nblocks
-        y shifts of blocks
-    xmax1 : nimg x nblocks
-        y shifts of blocks
-    bilinear: bool (optional, default=True)
-        do bilinear interpolation, if False do nearest neighbor
+    data : torch.Tensor
+        Input image data of shape (nimg, Ly, Lx) where nimg is the number of images,
+        Ly is the height, and Lx is the width.
+    nblocks : tuple of int
+        Number of blocks in (y, x) dimensions for the registration grid.
+    xblock : np.ndarray
+        X-coordinates of block boundaries of length nblocks[0]*nblocks[1].
+    yblock : np.ndarray
+        Y-coordinates of block boundaries of length nblocks[0]*nblocks[1].
+    ymax1 : torch.Tensor
+        Tensor of shape (nblocks, N) with the y (row) shift for each frame and block that maximizes the
+        phase-correlation. 
+    xmax1 : torch.Tensor
+        Tensor of shape (nblocks, N) with the x (row) shift for each frame and block that maximizes the
+        phase-correlation. 
 
     Returns
-    -----------
-    Y : float32, nimg x Ly x Lx
-        shifted data
+    -------
+    fr_shift : torch.Tensor
+        Shifted image data of shape (nimg, Ly, Lx) with dtype int16 (short).
+        The input images are warped according to the interpolated displacement field.
     """
     _, Ly, Lx = data.shape
     #device = torch.device("cuda")

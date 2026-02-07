@@ -7,6 +7,8 @@ import torch
 
 
 from pathlib import Path
+import sys
+sys.path.insert(0, '../')
 from conftest import initialize_settings, download_cached_inputs #Guarantees that tests and this script use the same settings
 from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
 from suite2p.extraction import masks

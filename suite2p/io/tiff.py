@@ -7,7 +7,6 @@ import json
 import math
 import os
 import time
-from typing import Union, Tuple, Optional
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +22,26 @@ except ImportError:
     ScanImageTiffReader = None
     HAS_SCANIMAGE = False
 
-def open_tiff(file: str,
-              sktiff: bool) -> Tuple[Union[TiffFile, ScanImageTiffReader], int]:
-    """ Returns image and its length from tiff file with either ScanImageTiffReader or tifffile, based on "sktiff" """
+def open_tiff(file, sktiff):
+    """
+    Open a TIFF file and return the reader object and the number of pages.
+
+    Uses either tifffile or ScanImageTiffReader depending on `sktiff`.
+
+    Parameters
+    ----------
+    file : str
+        Path to the TIFF file.
+    sktiff : bool
+        If True, use tifffile (TiffFile). If False, use ScanImageTiffReader.
+
+    Returns
+    -------
+    tif : TiffFile or ScanImageTiffReader
+        Opened TIFF reader object.
+    Ltif : int
+        Number of pages (frames) in the TIFF file.
+    """
     if sktiff:
         tif = TiffFile(file)
         Ltif = len(tif.pages)
@@ -35,8 +51,26 @@ def open_tiff(file: str,
     return tif, Ltif
 
 
-def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
-    """Returns False if ScanImageTiffReader works on the tiff file, else True (in which case use tifffile)."""
+def use_sktiff_reader(tiff_filename, batch_size):
+    """
+    Test whether ScanImageTiffReader can read a TIFF file.
+
+    Attempts to read a small batch from the file using ScanImageTiffReader. If it
+    succeeds, returns False (use ScanImageTiffReader). If it fails or the package is
+    not installed, returns True (fall back to tifffile).
+
+    Parameters
+    ----------
+    tiff_filename : str
+        Path to the TIFF file to test.
+    batch_size : int
+        Number of frames to attempt reading as a test.
+
+    Returns
+    -------
+    use_sktiff : bool
+        True if tifffile should be used, False if ScanImageTiffReader works.
+    """
     if HAS_SCANIMAGE:
         try:
             with ScanImageTiffReader(tiff_filename) as tif:
@@ -52,9 +86,35 @@ def use_sktiff_reader(tiff_filename, batch_size: Optional[int] = None) -> bool:
     else:
         logger.info("NOTE: ScanImageTiffReader not installed, using tifffile")
         return True
+    
 
 def read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff):
-    # tiff reading
+    """
+    Read a batch of frames from an open TIFF file starting at index `ix`.
+
+    Reads up to `batch_size` frames and converts the data to int16. Returns None
+    if `ix` is past the end of the file.
+
+    Parameters
+    ----------
+    file : str
+        Path to the TIFF file (used by tifffile's `imread` when `use_sktiff` is True).
+    tif : TiffFile or ScanImageTiffReader
+        Already-opened TIFF reader object.
+    Ltif : int
+        Total number of pages (frames) in the TIFF file.
+    ix : int
+        Starting frame index to read from.
+    batch_size : int
+        Maximum number of frames to read in this batch.
+    use_sktiff : bool
+        If True, read with tifffile (`imread`). If False, read with ScanImageTiffReader.
+
+    Returns
+    -------
+    im : numpy.ndarray or None
+        Frames as an int16 array of shape (nfr, Ly, Lx), or None if `ix >= Ltif`.
+    """
     if ix >= Ltif:
         return None
     nfr = min(Ltif - ix, batch_size)
@@ -82,20 +142,34 @@ def read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff):
     return im
 
 def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
-    """  finds tiff files and writes them to binaries
+    """
+    Read TIFF files and write interleaved plane/channel data to binary files.
+
+    Iterates over all TIFF files listed in `dbs[0]["file_list"]`, de-interleaves
+    planes and channels, and writes each plane's frames to the corresponding binary
+    file. Also computes per-plane mean images and frame counts.
 
     Parameters
     ----------
-    settings : dictionary
-        "nplanes", "data_path", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw", "look_one_level_down"
+    dbs : list of dict
+        Database dictionaries for each plane/ROI. Must contain keys "file_list",
+        "first_files", "batch_size", "force_sktiff", "nplanes", "nchannels", and
+        optionally "nrois", "swap_order", "lines". Updated in-place with "Ly", "Lx",
+        "nframes", "frames_per_file", "frames_per_folder", "meanImg", and
+        "meanImg_chan2".
+    settings : dict
+        Suite2p settings dictionary, saved alongside each plane's database.
+    reg_file : list of file objects
+        Opened binary files for writing each plane's functional channel data.
+    reg_file_chan2 : list of file objects
+        Opened binary files for writing each plane's second channel data
+        (used only when nchannels > 1).
 
     Returns
     -------
-        settings : dictionary of first plane
-            settings["reg_file"] or settings["raw_file"] is created binary
-            assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
-            "frames_per_folder", "nframes", "meanImg", "meanImg_chan2"
-
+    dbs : list of dict
+        Updated database dictionaries with image dimensions, frame counts, and
+        mean images populated.
     """
 
     t0 = time.time()
@@ -191,7 +265,7 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
                 logger.info("%d frames of binary, time %0.2f sec." %
                       (ntotal, time.time() - t0))
         gc.collect()
-    # write settings files
+    # write dbs and settings files
     for db in dbs:
         db["meanImg"] /= db["nframes"]
         if nchannels > 1:
@@ -208,25 +282,34 @@ def tiff_to_binary(dbs, settings, reg_file, reg_file_chan2):
 
 def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     """
-    converts ome.tiff to *.bin file for non-interleaved red channel recordings
-    assumes SINGLE-PAGE tiffs where first channel has string "Ch1"
-    and also SINGLE FOLDER
+    Convert non-interleaved OME-TIFF files to binary, splitting channels by filename.
+
+    Designed for recordings where channels are stored in separate TIFF files
+    (distinguished by "Ch1"/"Ch2" in the filename) rather than interleaved pages.
+    Supports both single-page and multi-page TIFFs, and handles bidirectional
+    Bruker plane ordering.
 
     Parameters
     ----------
-    dbs : list of dictionaries
-        database configurations for each plane
-    settings : dictionary
-        suite2p settings dictionary
+    dbs : list of dict
+        Database dictionaries for each plane. Must contain keys "file_list",
+        "first_files", "batch_size", "nplanes", "nchannels", "functional_chan",
+        and optionally "bruker_bidirectional". Updated in-place with "Ly", "Lx",
+        "nframes", "frames_per_file", "frames_per_folder", "meanImg", and
+        "meanImg_chan2".
+    settings : dict
+        Suite2p settings dictionary, saved alongside each plane's database.
     reg_file : list of file objects
-        opened binary files for writing
+        Opened binary files for writing each plane's functional channel data.
     reg_file_chan2 : list of file objects
-        opened binary files for writing channel 2 (if nchannels > 1)
+        Opened binary files for writing each plane's second channel data
+        (used only when nchannels > 1).
 
     Returns
     -------
-    dbs : list of dictionaries
-        updated dbs with "Ly", "Lx", "nframes", etc.
+    dbs : list of dict
+        Updated database dictionaries with image dimensions, frame counts, and
+        mean images populated.
     """
     t0 = time.time()
 

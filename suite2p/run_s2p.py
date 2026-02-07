@@ -34,8 +34,6 @@ files_to_binary = {
         io.sbx_to_binary,
     "nd2":
         io.nd2_to_binary,
-    "raw":
-        io.raw_to_binary,
     "bruker":
         io.ome_to_binary,
     "movie":

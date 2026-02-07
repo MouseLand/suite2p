@@ -3,7 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import numpy as np
 
-from .utils import convolve, complex_fft2, spatial_taper, gaussian_fft, temporal_smooth, ref_smooth_fft
+from .utils import convolve, complex_fft2, spatial_taper, temporal_smooth, ref_smooth_fft
 
 import torch
 
@@ -21,8 +21,7 @@ def compute_masks_ref_smooth_fft(refImg, maskSlope, smooth_sigma):
         values increase tapered region size.
     smooth_sigma : float
         Standard deviation (in pixels) of the Gaussian smoothing applied to each
-        block. Smoothing is performed in the frequency domain (via ref_smooth_fft /
-        gaussian_fft). Typical values are >= 0. A value of 0 should behave as no
+        block. Smoothing is performed in the frequency domain (via ref_smooth_fft). Typical values are >= 0. A value of 0 should behave as no
         smoothing (identity).
 
     Returns

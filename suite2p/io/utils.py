@@ -22,10 +22,44 @@ EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
 
 
 def find_files_open_binaries(settings):
+    """
+    Find input files and open binary files for writing.
+
+    Parameters
+    ----------
+    settings : dict
+        Suite2p settings dictionary.
+
+    Returns
+    -------
+    None
+        No longer used!!
+    """
+    return None
+
+def init_settings(settings):
     return None
 
 def list_files(froot, look_one_level_down, exts):
-    """ get list of files with exts in folder froot + one level down maybe
+    """
+    Collect files matching the given extensions from a folder, optionally including subfolders.
+
+    Parameters
+    ----------
+    froot : str
+        Root directory to search for files.
+    look_one_level_down : bool
+        If True, also search immediate subdirectories of `froot`.
+    exts : list of str
+        Glob patterns to match (e.g. ["*.tif", "*.tiff"]).
+
+    Returns
+    -------
+    fs : list of str
+        Naturally sorted list of matching file paths.
+    first_files : numpy.ndarray
+        Boolean array of length len(fs), where True marks the first file from each
+        folder (used to track folder boundaries).
     """
     fs = []
     first_files = np.zeros(0, "bool")
@@ -53,10 +87,27 @@ def list_files(froot, look_one_level_down, exts):
     return fs, first_files
 
 def get_file_list(db):
-    """ make list of files to process
-    if db["subfolders"], then all files db["data_path"][0] / db["subfolders"] / *.tif
-    if db["look_one_level_down"], then all files in all folders + one level down
-    if db["file_list"], then db["data_path"][0] / db["filst_list"] ONLY
+    """
+    Build the list of input files to process from the database configuration.
+
+    Supports three modes: an explicit file list (db["file_list"]), subfolder-based
+    discovery (db["subfolders"]), or recursive search with optional one-level-down
+    lookup (db["look_one_level_down"]).
+
+    Parameters
+    ----------
+    db : dict
+        Database dictionary. Must contain "data_path" (list of str). Optionally
+        contains "file_list" (list of str), "subfolders" (list of str),
+        "look_one_level_down" (bool), and "input_format" (str, default "tif").
+
+    Returns
+    -------
+    fsall : list of str
+        List of all file paths to process.
+    first_files : numpy.ndarray
+        Boolean array of length len(fsall), where True marks the first file from
+        each folder.
     """
     data_path = db["data_path"]
     input_format = db.get("input_format", "tif")
@@ -92,20 +143,27 @@ def get_file_list(db):
     return fsall, first_files
 
 def init_dbs(db0):
-    """ initializes db files for each plane in recording
+    """
+    Initialize per-plane database dictionaries and create output directories.
+
+    Creates a deep copy of `db0` for each plane (and each ROI for mesoscope recordings),
+    setting up save paths, binary file paths, and fast-disk directories.
 
     Parameters
     ----------
-    settings : dictionary
-        "nplanes", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw"
-        + (if mesoscope) "dy", "dx", "lines"
+    db0 : dict
+        Base database dictionary. Must contain "nplanes", "nchannels",
+        "keep_movie_raw", "save_path0", and "save_folder". Optionally contains
+        "fast_disk", "iplane", "lines", "dy", and "dx" (for mesoscope recordings
+        with multiple ROIs).
 
     Returns
     -------
-        db1 : list of dictionaries
-            adds fields "save_path0", "reg_file"
-            (depending on settings: "raw_file", "reg_file_chan2", "raw_file_chan2")
-
+    dbs : list of dict
+        List of per-plane database dictionaries, each with added keys "save_path",
+        "fast_disk", "settings_path", "db_path", "reg_file", and optionally
+        "raw_file", "reg_file_chan2", "raw_file_chan2", "lines", "dy", "dx",
+        "iroi", "iplane".
     """
     nplanes = db0["nplanes"]
     nchannels = db0["nchannels"]
@@ -164,72 +222,29 @@ def init_dbs(db0):
         dbs.append(db)
     return dbs
 
-def init_settings(db, settings):
-    """ initializes settings files for each plane in recording
+
+def get_suite2p_path(path: Path) -> Path:
+    """
+    Find the root `suite2p` folder within a given path.
+
+    Walks the path components backwards to locate the last occurrence of a folder
+    named "suite2p" and returns the path up to and including that folder.
 
     Parameters
     ----------
-    settings : dictionary
-        "nplanes", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw"
-        + (if mesoscope) "dy", "dx", "lines"
+    path : str or pathlib.Path
+        File or directory path that should contain a "suite2p" folder component.
 
     Returns
     -------
-        settings1 : list of dictionaries
-            adds fields "save_path0", "reg_file"
-            (depending on settings: "raw_file", "reg_file_chan2", "raw_file_chan2")
+    new_path : pathlib.Path
+        Path truncated at the "suite2p" folder.
 
+    Raises
+    ------
+    FileNotFoundError
+        If "suite2p" is not found in any component of `path`.
     """
-
-    nplanes = settings["nplanes"]
-    nchannels = settings["nchannels"]
-    if "lines" in settings:
-        lines = settings["lines"]
-    if "iplane" in settings:
-        iplane = settings["iplane"]
-        #settings["nplanes"] = len(settings["lines"])
-    settings1 = []
-    if ("fast_disk" not in db) or len(db["fast_disk"]) == 0:
-        db["fast_disk"] = db["save_path0"]
-    fast_disk = settings["fast_disk"]
-    # for mesoscope recording FOV locations
-    if "dy" in settings and settings["dy"] != "":
-        dy = settings["dy"]
-        dx = settings["dx"]
-    # compile settings into list across planes
-    for j in range(0, nplanes):
-        if len(settings["save_folder"]) > 0:
-            settings["save_path"] = os.path.join(settings["save_path0"], settings["save_folder"],
-                                            "plane%d" % j)
-        else:
-            settings["save_path"] = os.path.join(settings["save_path0"], "suite2p", "plane%d" % j)
-
-        fast_disk = os.path.join(settings["fast_disk"], "suite2p", "plane%d" % j)
-        settings["settings_path"] = os.path.join(settings["save_path"], "settings.npy")
-        settings["reg_file"] = os.path.join(fast_disk, "data.bin")
-        if "keep_movie_raw" in settings and settings["keep_movie_raw"]:
-            settings["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
-        if "lines" in settings:
-            settings["lines"] = lines[j]
-        if "iplane" in settings:
-            settings["iplane"] = iplane[j]
-        if nchannels > 1:
-            settings["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
-            if "keep_movie_raw" in settings and settings["keep_movie_raw"]:
-                settings["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
-        if "dy" in settings and settings["dy"] != "":
-            settings["dy"] = dy[j]
-            settings["dx"] = dx[j]
-        if not os.path.isdir(fast_disk):
-            os.makedirs(fast_disk)
-        if not os.path.isdir(settings["save_path"]):
-            os.makedirs(settings["save_path"])
-        settings1.append(settings.copy())
-    return settings1
-
-
-def get_suite2p_path(path: Path) -> Path:
-    """Find the root `suite2p` folder in the `path` variable"""
 
     path = Path(path)  # In case `path` is a string
 

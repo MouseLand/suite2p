@@ -7,7 +7,7 @@ from scipy.fftpack import next_fast_len
 import torch
 import torch.nn.functional as F
 
-from .utils import spatial_taper, gaussian_fft, kernelD2, mat_upsample, convolve, ref_smooth_fft
+from .utils import spatial_taper, kernelD2, mat_upsample, convolve, ref_smooth_fft
 
 def calculate_nblocks(L: int, block_size: int):
     """
@@ -131,8 +131,8 @@ def compute_masks_ref_smooth_fft(refImg0, maskSlope, smooth_sigma,
         Higher values increase tapered region size.
     smooth_sigma : float
         Standard deviation (in pixels) of the Gaussian smoothing applied to each
-        block. Smoothing is performed in the frequency domain (via ref_smooth_fft /
-        gaussian_fft). Typical values are >= 0. A value of 0 should behave as no
+        block. Smoothing is performed in the frequency domain (via ref_smooth_fft). 
+        Typical values are >= 0. A value of 0 should behave as no
         smoothing (identity).
     yblock : list[numpy.ndarray]
         List of length (ny * nx) giving the vertical (row) slice for each block.
@@ -164,7 +164,6 @@ def compute_masks_ref_smooth_fft(refImg0, maskSlope, smooth_sigma,
     nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
     cfRef_dims = dims
-    gaussian_filter = gaussian_fft(smooth_sigma, *cfRef_dims[1:])
     cfRefImg1 = torch.zeros(cfRef_dims, dtype=torch.complex64)
 
     maskMul = spatial_taper(maskSlope, *refImg0.shape)

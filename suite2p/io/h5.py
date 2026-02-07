@@ -11,29 +11,37 @@ except:
 import numpy as np
 import os
 
-from .utils import init_settings
 
 
 def h5py_to_binary(dbs, settings, reg_file, reg_file_chan2):
-    """  finds h5 files and writes them to binaries
+    """
+    Read HDF5 files and write interleaved plane/channel data to binary files.
+
+    Iterates over all HDF5 files listed in `dbs[0]["file_list"]`, de-interleaves
+    planes and channels, and writes each plane's frames to the corresponding binary
+    file. Supports 3D, 4D, and 5D HDF5 datasets (higher-dimensional data is
+    flattened to frames x Ly x Lx before de-interleaving).
 
     Parameters
     ----------
-    dbs : list of dictionaries
-        list of db files for each plane
-    settings : dictionary
-        "nplanes", "h5_path", "h5_key", "save_path", "save_folder", "fast_disk",
-        "nchannels", "keep_movie_raw", "look_one_level_down"
+    dbs : list of dict
+        Database dictionaries for each plane. Must contain keys "file_list",
+        "nplanes", "nchannels", "batch_size", "h5py_key", and "functional_chan".
+        Updated in-place with "Ly", "Lx", "nframes", "nframes_per_folder",
+        "meanImg", and "meanImg_chan2".
+    settings : dict
+        Suite2p settings dictionary, saved alongside each plane's database.
     reg_file : list of file objects
-        binary file objects for writing
+        Opened binary files for writing each plane's functional channel data.
     reg_file_chan2 : list of file objects
-        binary file objects for channel 2 (if nchannels > 1)
+        Opened binary files for writing each plane's second channel data
+        (used only when nchannels > 1).
 
     Returns
     -------
-        dbs : list of dictionaries
-            updated dbs with "Ly", "Lx", "nframes", etc.
-
+    dbs : list of dict
+        Updated database dictionaries with image dimensions, frame counts, and
+        mean images populated.
     """
     if not HAS_H5PY:
         raise ImportError("h5py is required for this file type, please 'pip install h5py'")

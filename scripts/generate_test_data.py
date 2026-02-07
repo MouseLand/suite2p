@@ -103,9 +103,23 @@ class GenerateFullPipelineTestData:
 	def _generate_test_data(db, settings, initialize_func, config_key):
 		"""Generic function to generate test data for full pipeline tests."""
 		test_db, test_settings = initialize_func(copy.deepcopy(db), copy.deepcopy(settings))
-		prepare_output_directory(test_settings, TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
+		output_dir = TestDataConfigs.FULL_PIPELINE[config_key]['output_dir']
+
+		# Set save_path0 in both settings and db to the correct final location
+		save_path0 = str(test_data_dir_path.joinpath(output_dir))
+		test_settings['save_path0'] = save_path0
+		test_db['save_path0'] = save_path0
+
+		# Create the output directory if it doesn't exist
+		Path(save_path0).mkdir(parents=True, exist_ok=True)
+
+		# Clean any existing suite2p output
+		save_path_suite2p = Path(save_path0).joinpath('suite2p')
+		if save_path_suite2p.exists():
+			shutil.rmtree(save_path_suite2p)
+			print(f'Deleted existing suite2p output at {save_path_suite2p}')
+
 		suite2p.run_s2p(settings=test_settings, db=test_db)
-		rename_output_dir(TestDataConfigs.FULL_PIPELINE[config_key]['output_dir'])
 
 	@staticmethod
 	def generate_1p1c1500_expected_data(db, settings):
@@ -241,7 +255,8 @@ class GenerateClassificationTestData:
 
 	@staticmethod
 	def generate_all_data(db, settings):
-		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir']))
+		classification_dir = test_data_dir_path.joinpath(TestDataConfigs.CLASSIFICATION['output_dir'])
+		classification_dir.mkdir(parents=True, exist_ok=True)
 		GenerateClassificationTestData.generate_classification_test_data(db, settings)
 
 class GenerateExtractionTestData:
@@ -266,10 +281,17 @@ class GenerateExtractionTestData:
 	@staticmethod
 	def generate_extraction_output_1plane1chan(db, settings):
 		settings = copy.deepcopy(settings)
+		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][0]  # '1plane1chan'
+		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
+		save_path0 = str(test_data_dir_path.joinpath(extraction_dir, extraction_subdir))
+
+		# Create the output directory
+		Path(save_path0).mkdir(parents=True, exist_ok=True)
+
 		settings.update({
 			'nplanes': 1,
 			'nchannels': 1,
-			'save_path0': str(test_data_dir_path),
+			'save_path0': save_path0,
 		})
 		settings = ExtractionTestUtils.prepare(
 			settings,
@@ -282,18 +304,22 @@ class GenerateExtractionTestData:
 			allow_pickle=True
 		)[()]
 		extract_helper(op, extract_input, 0)
-		remove_binary_file(test_data_dir_path, 0, '')
-		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][0]  # '1plane1chan'
-		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
-		rename_output_dir(os.path.join(extraction_dir, extraction_subdir))
+		remove_binary_file(save_path0, 0, '')
 
 	@staticmethod
 	def generate_extraction_output_2plane2chan(db, settings):
 		settings = copy.deepcopy(settings)
+		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][1]  # '2plane2chan'
+		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
+		save_path0 = str(test_data_dir_path.joinpath(extraction_dir, extraction_subdir))
+
+		# Create the output directory
+		Path(save_path0).mkdir(parents=True, exist_ok=True)
+
 		settings.update({
 			'nchannels': 2,
 			'nplanes': 2,
-			'save_path0': str(test_data_dir_path),
+			'save_path0': save_path0,
 		})
 		# Create multiple settings for multiple plane extraction
 		settings = ExtractionTestUtils.prepare(
@@ -316,19 +342,17 @@ class GenerateExtractionTestData:
 			np.load(
 				str(test_data_dir_path.joinpath('detection/expected_detect_output_2p2c1.npy')),allow_pickle=True
 			)[()],
-		] 
+		]
 		for i in range(len(settings)):
 			extract_helper(settings[i], extract_inputs[i], i)
 			# Assumes second channel binary file is present
-			remove_binary_file(test_data_dir_path, i, '')
-			remove_binary_file(test_data_dir_path, i, '_chan2')
-		extraction_subdir = TestDataConfigs.EXTRACTION['subdirs'][1]  # '2plane2chan'
-		extraction_dir = TestDataConfigs.EXTRACTION['output_dir']     # 'extraction'
-		rename_output_dir(os.path.join(extraction_dir, extraction_subdir))
+			remove_binary_file(save_path0, i, '')
+			remove_binary_file(save_path0, i, '_chan2')
 
 	@staticmethod
 	def generate_all_data(db, settings):
-		make_new_dir(test_data_dir_path.joinpath(TestDataConfigs.EXTRACTION['output_dir']))
+		extraction_dir = test_data_dir_path.joinpath(TestDataConfigs.EXTRACTION['output_dir'])
+		extraction_dir.mkdir(parents=True, exist_ok=True)
 		GenerateExtractionTestData.generate_preprocess_baseline_test_data(db, settings)
 		GenerateExtractionTestData.generate_extraction_output_1plane1chan(db, settings)
 		GenerateExtractionTestData.generate_extraction_output_2plane2chan(db, settings)
@@ -369,28 +393,6 @@ def extract_helper(settings, extract_input, plane):
 			if f_reg_chan2 is not None:
 				f_reg_chan2.close()
 
-def rename_output_dir(new_dir_name):
-	new_dir_path = os.path.join(test_data_dir_path, new_dir_name)
-	if os.path.exists(new_dir_path):
-		shutil.rmtree(new_dir_path)
-	make_new_dir(new_dir_path)
-	shutil.move(os.path.join(test_data_dir_path, 'suite2p'), new_dir_path)
-
-def make_new_dir(new_dir_name):
-	if not os.path.exists(new_dir_name):
-		os.makedirs(new_dir_name)
-		print('Created test directory at ' + str(new_dir_name))
-
-def prepare_output_directory(test_settings, output_dir_name):
-	"""Set save_path0 and clean any existing suite2p output."""
-	# Set save_path0 to the specific test output directory
-	test_settings['save_path0'] = str(test_data_dir_path.joinpath(output_dir_name))
-
-	# Check for existing suite2p output in the save_path0 directory and delete if present
-	save_path_suite2p = Path(test_settings['save_path0']).joinpath('suite2p')
-	if save_path_suite2p.exists():
-		shutil.rmtree(save_path_suite2p)
-		print(f'Deleted existing suite2p output at {save_path_suite2p}')
 
 def remove_binary_file(dir_path, plane_num, bin_file_suffix):
 	os.remove(os.path.join(dir_path, 'suite2p/plane{}/data{}.bin'.format(plane_num, bin_file_suffix)))
@@ -400,8 +402,8 @@ def main():
 	test_input_dir_path.mkdir(exist_ok=True)
 	print('Downloading test input data if not present...')
 	download_cached_inputs(test_input_dir_path)
-	#Create test_data directory if necessary
-	make_new_dir(test_data_dir_path)
+	# Create test_data directory if necessary
+	test_data_dir_path.mkdir(parents=True, exist_ok=True)
 	full_db, full_settings = initialize_settings(test_data_dir_path, test_input_dir_path)
 	GenerateFullPipelineTestData.generate_all_data(full_db, full_settings)
 	det_db, det_settings = initialize_settings(test_data_dir_path, test_input_dir_path)

@@ -207,8 +207,6 @@ def read_nwb(fpath):
             settings["fs"] = nwbfile.acquisition["TwoPhotonSeries"].rate
             settings1.append(settings.copy())
 
-        stat = roi_stats(stat, settings["Ly"], settings["Lx"], diameter=settings["diameter"])
-
         # fluorescence
         ophys = nwbfile.processing["ophys"]
 
@@ -231,9 +229,6 @@ def read_nwb(fpath):
         F = get_fluo("Fluorescence")
         Fneu = get_fluo("Neuropil")
         spks = get_fluo("Deconvolved")
-        dF = F - settings["extraction"]["neuropil_coefficient"] * Fneu
-        for n in range(len(stat)):
-            stat[n]["skew"] = scipy.stats.skew(dF[n])
 
         # cell probabilities
         iscell = [
@@ -279,8 +274,6 @@ def read_nwb(fpath):
                                  ]))[0]:
                     stat[j]["xpix"] += settings["dx"]
                     stat[j]["ypix"] += settings["dy"]
-                    stat[j]["med"][0] += settings["dy"]
-                    stat[j]["med"][1] += settings["dx"]
             settings["Vcorr"] = Vcorr
             settings["max_proj"] = max_proj
             settings["meanImg"] = meanImg
@@ -289,6 +282,15 @@ def read_nwb(fpath):
             settings["Ly"], settings["Lx"] = LY, LX
             settings["yrange"] = [0, LY]
             settings["xrange"] = [0, LX]
+
+        # Compute roi_stats after multiplane coordinates have been adjusted
+        stat = roi_stats(stat, settings["Ly"], settings["Lx"], diameter=settings["diameter"])
+
+        # Compute skew after roi_stats (which may filter ROIs)
+        dF = F - settings["extraction"]["neuropil_coefficient"] * Fneu
+        for n in range(len(stat)):
+            stat[n]["skew"] = scipy.stats.skew(dF[n])
+
     return stat, settings, F, Fneu, spks, iscell, probcell, redcell, probredcell
 
 

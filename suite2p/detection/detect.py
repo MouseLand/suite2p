@@ -182,7 +182,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
         mov *= -1
         mov -= mov.min()
 
-    if settings.get("denoise", 1):
+    if settings.get("denoise", False):
         mov = pca_denoise(
             mov, block_size=settings["block_size"],
             n_comps_frac=0.5)

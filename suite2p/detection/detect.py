@@ -20,7 +20,33 @@ from ..logger import TqdmToLogger
 cellpose_options_num = {'max_proj / meanImg': 1, 'meanImg':2, 'enhanced_meanImg': 3 ,'max_proj': 4}
 
 def bin_movie(f_reg, bin_size, yrange=None, xrange=None, badframes=None, nbins=5000):
-    """ bin registered movie """
+    """
+    Temporally bin the registered movie.
+
+    Reads batches of frames, excludes bad frames, crops to the valid
+    region, and averages groups of ``bin_size`` frames to produce a
+    downsampled movie.
+
+    Parameters
+    ----------
+    f_reg : numpy.ndarray or BinaryFile
+        Registered movie of shape (n_frames, Ly, Lx).
+    bin_size : int
+        Number of frames to average per bin.
+    yrange : list of int, optional
+        Two-element list [y_start, y_end] defining the Y crop range.
+    xrange : list of int, optional
+        Two-element list [x_start, x_end] defining the X crop range.
+    badframes : numpy.ndarray, optional
+        Boolean array of shape (n_frames,) where True marks frames to exclude.
+    nbins : int, optional (default 5000)
+        Maximum number of output binned frames.
+
+    Returns
+    -------
+    mov : numpy.ndarray
+        Binned movie of shape (num_binned_frames, Lyc, Lxc), dtype float32.
+    """
     n_frames = f_reg.shape[0]
     good_frames = ~badframes if badframes is not None else np.ones(n_frames, dtype=bool)
     batch_size = min(good_frames.sum(), 500)
@@ -81,40 +107,58 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
                       settings=default_settings()["detection"],
                       device=torch.device("cuda")):
     """
-	Main detection function. 
+    Run the full ROI detection pipeline on a registered movie.
 
-	Identifies ROIs. 
+    Bins the movie in time, optionally denoises and high-pass filters,
+    detects ROIs using the selected algorithm (sparsery, sourcery, or
+    cellpose), computes ROI statistics, and optionally preclassifies and
+    detects red cells in a second channel.
 
-	Parameters
-	----------------
+    Parameters
+    ----------
+    f_reg : numpy.ndarray or BinaryFile
+        Registered movie of shape (n_frames, Ly, Lx).
+    diameter : list of float, optional (default [12., 12.])
+        Expected cell diameter [dy, dx] in pixels.
+    tau : float, optional (default 1.)
+        Timescale of the indicator in seconds, used to set bin size.
+    fs : float, optional (default 30)
+        Sampling rate in Hz, used with tau to set bin size.
+    meanImg_chan2 : numpy.ndarray, optional
+        Mean image of the second channel, shape (Ly, Lx). If provided,
+        red cell detection is performed.
+    yrange : list of int, optional
+        Two-element list [y_start, y_end] defining the Y crop range.
+    xrange : list of int, optional
+        Two-element list [x_start, x_end] defining the X crop range.
+    badframes : numpy.ndarray, optional
+        Boolean array of shape (n_frames,) marking frames to exclude.
+    mov : numpy.ndarray, optional
+        Pre-binned movie of shape (nbinned, Lyc, Lxc). If provided,
+        skips the binning step.
+    preclassify : float, optional (default 0.)
+        If positive, apply a classifier and remove ROIs with probability
+        below this threshold before final statistics.
+    classifier_path : str, optional
+        Path to a saved classifier file. If None and preclassify > 0,
+        uses the default user classifier.
+    settings : dict, optional
+        Detection settings dictionary.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for cellpose-based detection.
 
-	f_reg : np.ndarray or io.BinaryWFile,
-		n_frames x Ly x Lx
-
-	mov : ndarray (t x Lyc x Lxc)
-			binned movie
-
-	yrange : list of length 2
-		Range of pixels along the y-axis of mov the detection module will be run on 
-	
-	xrange : list of length 2
-		Range of pixels along the x-axis of mov the detection module will be run on 
-
-	settings : dictionary or list of dicts
-
-	classfile: string (optional, default None)
-		path to saved classifier
-
-	Returns
-	----------------
-
-	settings : dictionary or list of dicts
-		
-	stat : dictionary "ypix", "xpix", "lam"
-		Dictionary containing statistics for ROIs
-
-
-	"""
+    Returns
+    -------
+    new_settings : dict
+        Dictionary with detection metadata including "meanImg_crop",
+        "max_proj", "diameter", and algorithm-specific keys.
+    stat : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix",
+        "xpix", "lam", "med", and other computed statistics.
+    redcell : numpy.ndarray or None
+        Array of shape (n_cells, 2) with red cell labels and probabilities,
+        or None if no second channel was provided.
+    """
     
     n_frames, Ly, Lx = f_reg.shape
     yrange = [0, Ly] if yrange is None else yrange
@@ -221,7 +265,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     if meanImg_chan2 is not None:
         extraction_defaults = default_settings()["extraction"]
         redmasks, redcell = chan2detect.detect(meanImg, meanImg_chan2, stat, diameter=diameter,
-                                    cellpose_chan2=settings.get("cellpose_chan2", True),
+                                    cellpose_chan2=settings.get("cellpose_chan2", False),
                                     chan2_threshold=settings.get("chan2_threshold", 0.65),
                                     settings=settings['cellpose_settings'],
                                     inner_neuropil_radius=extraction_defaults["inner_neuropil_radius"],

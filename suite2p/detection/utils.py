@@ -3,12 +3,30 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
 from cellpose.metrics import _intersection_over_union, mask_ious
 
 
 def square_mask(mask, ly, yi, xi):
-    """ crop from mask a square of size ly at position yi,xi """
+    """
+    Crop a square patch from a 2D mask centered at a given position.
+
+    Parameters
+    ----------
+    mask : numpy.ndarray
+        2D array to crop from, shape (Lyc, Lxc).
+    ly : int
+        Half-width of the square patch (output is 2*ly x 2*ly).
+    yi : int
+        Y-coordinate of the center.
+    xi : int
+        X-coordinate of the center.
+
+    Returns
+    -------
+    mask0 : numpy.ndarray
+        Cropped square patch of shape (2*ly, 2*ly).
+    """
     Lyc, Lxc = mask.shape
     mask0 = np.zeros((2 * ly, 2 * ly), mask.dtype)
     yinds = [max(0, yi - ly), min(yi + ly, Lyc)]
@@ -21,21 +39,21 @@ def square_mask(mask, ly, yi, xi):
 
 def circleMask(d0):
     """
-    creates array with indices which are the radius of that x,y point
+    Create a normalized distance array and return indices within a unit circle.
 
     Parameters
     ----------
-    d0
-        (patch of (-d0,d0+1) over which radius computed
+    d0 : list of float
+        Two-element list [d0_y, d0_x] giving the radius in each dimension.
 
     Returns
     -------
-    rs:
-        array (2*d0+1,2*d0+1) of radii
-    dx:
-        indices in rs where the radius is less than d0
-    dy:
-        indices in rs where the radius is less than d0
+    rs : numpy.ndarray
+        Normalized distance array of shape (2*d0_y+1, 2*d0_x+1).
+    dx : numpy.ndarray
+        Normalized X-coordinates of pixels within the unit circle.
+    dy : numpy.ndarray
+        Normalized Y-coordinates of pixels within the unit circle.
     """
     d00 = int(np.round(d0[0]))
     d01 = int(np.round(d0[1]))
@@ -50,14 +68,14 @@ def circleMask(d0):
 
 def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """
-    Returns a high-pass-filtered copy of the 3D array "mov" using a gaussian kernel.
+    Returns a high-pass-filtered `mov` by subtracting off the movie smoothed by a gaussian kernel.
 
     Parameters
     ----------
-    mov: nImg x Ly x Lx
-        The frames to filter
+    mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx).
     width: int
-        The kernel width
+        The standard deviation of the Gaussian filter in time
 
     Returns
     -------
@@ -66,26 +84,26 @@ def hp_gaussian_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """
     mov = mov.copy()
     for j in range(mov.shape[1]):
-        mov[:, j, :] -= gaussian_filter(mov[:, j, :], [width, 0])
+        mov[:, j, :] -= gaussian_filter1d(mov[:, j, :], width, axis=0)
     return mov
 
 
 def hp_rolling_mean_filter(mov: np.ndarray, width: int) -> np.ndarray:
     """
-    Returns a high-pass-filtered copy of the 3D array "mov" using a non-overlapping rolling mean kernel over time.
+    Returns high-pass-filtered `mov` by subtracting off the rolling mean in window of `width`.
 
     Parameters
     ----------
-    mov: nImg x Ly x Lx
-        The frames to filter
+    mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx).
     width: int
-        The filter width
+        The filter width in time.
 
     Returns
     -------
-    filtered_mov: nImg x Ly x Lx
-        The filtered frames
-
+    filtered_mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx), high-pass filtered in time.
+    
     """
     mov = mov.copy()
     for i in range(0, mov.shape[0], width):
@@ -99,15 +117,16 @@ def temporal_high_pass_filter(mov: np.ndarray, width: int) -> np.ndarray:
 
     Parameters
     ----------
-    mov: nImg x Ly x Lx
-        The frames to filter
+    mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx).
     width: int
-        The filter width
+        The filter width in time.
 
     Returns
     -------
-    filtered_mov: nImg x Ly x Lx
-        The filtered frames
+    filtered_mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx), high-pass filtered in time.
+        
     """
 
     return hp_gaussian_filter(mov, width) if width < 10 else hp_rolling_mean_filter(
@@ -120,15 +139,15 @@ def standard_deviation_over_time(mov: np.ndarray, batch_size: int) -> np.ndarray
 
     Parameters
     ----------
-    mov: nImg x Ly x Lx
-        The frames to filter
+    mov: numpy.ndarray
+        Movie of shape (nframes, Ly, Lx).
     batch_size: int
-        The batch size
+        The batch size for computing the standard deviation of the difference.
 
     Returns
     -------
-    filtered_mov: Ly x Lx
-        The statistics for each pixel
+    sdmov: Ly x Lx
+        The standard deviation of the difference across time for each pixel.
     """
     nbins, Ly, Lx = mov.shape
     batch_size = min(batch_size, nbins)

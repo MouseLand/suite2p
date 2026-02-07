@@ -6,18 +6,34 @@ import time
 
 from tqdm import trange
 import numpy as np
-from scipy.ndimage import filters
-from scipy.ndimage import gaussian_filter
-from matplotlib.colors import hsv_to_rgb
+from scipy.ndimage import filters, gaussian_filter
 import logging 
 logger = logging.getLogger(__name__)
 
-from .stats import fitMVGaus
 from .utils import circleMask
 
 
 def getSVDdata(mov: np.ndarray, diameter):
+    """
+    Compute SVD spatial components from temporally binned movie data.
 
+    Smooths each frame with a 2D Gaussian filter, computes the temporal covariance
+    matrix, and returns the top SVD spatial components reshaped as images.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Temporally binned movie of shape (nbins, Ly, Lx).
+    diameter : float or list of float
+        Cell diameter used to set the Gaussian smoothing sigma (sigma = diameter / 10).
+
+    Returns
+    -------
+    U : numpy.ndarray
+        Spatial SVD components of shape (Ly, Lx, nsvd).
+    u : numpy.ndarray
+        Temporal SVD components of shape (nbins, nsvd).
+    """
     nbins, Lyc, Lxc = np.shape(mov)
 
     sig = diameter / 10.  # PICK UP
@@ -41,7 +57,28 @@ def getSVDdata(mov: np.ndarray, diameter):
 
 
 def getSVDproj(mov: np.ndarray, u, diameter, smooth_masks=False):
+    """
+    Project temporally binned movie data onto existing SVD temporal components.
 
+    Optionally smooths frames before projection. Used during refinement to
+    recompute spatial components from updated movie data.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Temporally binned movie of shape (nbins, Ly, Lx).
+    u : numpy.ndarray
+        Temporal SVD components of shape (nbins, nsvd).
+    diameter : float or list of float
+        Cell diameter used to set the Gaussian smoothing sigma.
+    smooth_masks : bool, optional (default False)
+        If True, smooth each frame before projection.
+
+    Returns
+    -------
+    U : numpy.ndarray
+        Spatial SVD projections of shape (Ly, Lx, nsvd).
+    """
     nbins, Lyc, Lxc = np.shape(mov)
     if smooth_masks:
         sig = np.maximum([.5, .5], diameter / 20.)
@@ -57,6 +94,25 @@ def getSVDproj(mov: np.ndarray, u, diameter, smooth_masks=False):
 
 
 def getStU(diameter, U):
+    """
+    Compute neuropil basis functions and their covariances with the SVD spatial components.
+
+    Parameters
+    ----------
+    diameter : float or list of float
+        Cell diameter used for neuropil basis construction.
+    U : numpy.ndarray
+        Spatial SVD components of shape (Ly, Lx, nsvd).
+
+    Returns
+    -------
+    S : numpy.ndarray
+        Neuropil basis functions of shape (Ly, Lx, nbasis).
+    StU : numpy.ndarray
+        Cross-covariance of neuropil basis with SVD components, shape (nbasis, nsvd).
+    StS : numpy.ndarray
+        Auto-covariance of neuropil basis, shape (nbasis, nbasis).
+    """
     Lyc, Lxc, nbins = np.shape(U)
     S = create_neuropil_basis(diameter, Lyc, Lxc)
     # compute covariance of neuropil masks with spatial masks
@@ -66,45 +122,26 @@ def getStU(diameter, U):
     return S, StU, StS
 
 
-def drawClusters(stat, Ly, Lx):
-    
-    ncells = len(stat)
-    r = np.random.random((ncells,))
-    iclust = -1 * np.ones((Ly, Lx), np.int32)
-    Lam = np.zeros((Ly, Lx))
-    H = np.zeros((Ly, Lx, 1))
-    for n in range(ncells):
-        isingle = Lam[stat[n]["ypix"], stat[n]["xpix"]] + 1e-4 < stat[n]["lam"]
-        y = stat[n]["ypix"][isingle]
-        x = stat[n]["xpix"][isingle]
-        Lam[y, x] = stat[n]["lam"][isingle]
-        #iclust[ypix,xpix] = n*np.ones(ypix.shape)
-        H[y, x, 0] = r[n] * np.ones(y.shape)
-
-    S = np.ones((Ly, Lx, 1))
-    V = np.maximum(0, np.minimum(1, 0.75 * Lam / Lam[Lam > 1e-10].mean()))
-    V = np.expand_dims(V, axis=2)
-    hsv = np.concatenate((H, S, V), axis=2)
-    rgb = hsv_to_rgb(hsv)
-
-    return rgb
-
-
 def create_neuropil_basis(diameter, Ly, Lx):
     """
-    computes neuropil basis functions
+    Compute Fourier-based neuropil basis functions for the image.
+
+    Creates a set of 2D Fourier basis functions tiled across the image,
+    used to model spatially varying neuropil contamination.
 
     Parameters
     ----------
-    settings:
-        ratio_neuropil, tile_factor, diameter, neuropil_type
-    Ly: int
-    Lx: int
+    diameter : float or list of float
+        Cell diameter used to determine the tiling density.
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
 
     Returns
     -------
-    S:
-        basis functions (pixels x nbasis functions)
+    S : numpy.ndarray
+        Normalized neuropil basis functions of shape (Ly, Lx, nbasis).
     """
 
     ratio_neuropil = 6.
@@ -150,7 +187,24 @@ def create_neuropil_basis(diameter, Ly, Lx):
 
 
 def morphOpen(V, footprint):
-    """ computes the morphological opening of V (correlation map) with circular footprint"""
+    """
+    Compute the morphological opening of a correlation map.
+
+    Applies a minimum filter followed by a maximum filter (negated minimum
+    of negation) using the given footprint to remove small bright features.
+
+    Parameters
+    ----------
+    V : numpy.ndarray
+        2D correlation map of shape (Ly, Lx).
+    footprint : numpy.ndarray
+        2D boolean footprint for the morphological operation.
+
+    Returns
+    -------
+    vrem : numpy.ndarray
+        Morphologically opened image of shape (Ly, Lx).
+    """
     vrem = filters.minimum_filter(V, footprint=footprint)
     vrem = -filters.minimum_filter(-vrem, footprint=footprint)
     return vrem
@@ -158,18 +212,26 @@ def morphOpen(V, footprint):
 
 def localMax(V, footprint, thres):
     """
-    find local maxima of V (correlation map) using a filter with (usually circular) footprint
+    Find local maxima of a correlation map above a threshold.
+
+    Uses a maximum filter with the given footprint to identify pixels that
+    are local maxima and exceed the threshold.
 
     Parameters
     ----------
-    V
-    footprint
-    thres
-
+    V : numpy.ndarray
+        2D correlation map of shape (Ly, Lx).
+    footprint : numpy.ndarray
+        2D boolean footprint for the maximum filter (usually circular).
+    thres : float
+        Minimum value for a local maximum to be included.
 
     Returns
     -------
-    i,j: indices of local max greater than thres
+    i : numpy.ndarray
+        Y-indices of local maxima, dtype int32.
+    j : numpy.ndarray
+        X-indices of local maxima, dtype int32.
     """
     maxV = filters.maximum_filter(V, footprint=footprint, mode="reflect")
     imax = V > np.maximum(thres, maxV - 1e-10)
@@ -179,29 +241,30 @@ def localMax(V, footprint, thres):
     return i, j
 
 
-def localRegion(i, j, dy, dx, Ly, Lx):
-    """ returns valid indices of local region surrounding (i,j) of size (dy.size, dx.size)"""
-    xc = dx + j
-    yc = dy + i
-    goodi = (xc >= 0) & (xc < Lx) & (yc >= 0) & (yc < Ly)
-    xc = xc[goodi]
-    yc = yc[goodi]
-    yc = yc.astype(np.int32)
-    xc = xc.astype(np.int32)
-    return yc, xc, goodi
 
-
-def pairwiseDistance(y, x):
-    dists = ((np.expand_dims(y, axis=-1) - np.expand_dims(y, axis=0))**2 +
-             (np.expand_dims(x, axis=-1) - np.expand_dims(x, axis=0))**2)**0.5
-    return dists
-
-
-def r_squared(yp, xp, ypix, xpix, diam_y, diam_x, estimator=np.median):
-    return np.sqrt(((yp - estimator(ypix)) / diam_y)**2 +
-                   (((xp - estimator(xpix)) / diam_x)**2))
 
 def getVmap(Ucell, sig):
+    """
+    Compute the variance ratio map from SVD spatial components.
+
+    Smooths the spatial components and computes the ratio of smoothed
+    variance to total variance, producing a map that highlights regions
+    with locally correlated activity.
+
+    Parameters
+    ----------
+    Ucell : numpy.ndarray
+        Residual SVD spatial components of shape (Ly, Lx, nsvd).
+    sig : numpy.ndarray or list of float
+        Gaussian smoothing sigma [sy, sx] in pixels.
+
+    Returns
+    -------
+    log_variances : numpy.ndarray
+        Variance ratio map of shape (Ly, Lx), dtype float64.
+    us : numpy.ndarray
+        Smoothed spatial components of shape (Ly, Lx, nsvd).
+    """
     us = gaussian_filter(Ucell, [sig[0], sig[1], 0.], mode="wrap")
     # compute log variance at each location
     log_variances = (us**2).mean(axis=-1) / gaussian_filter(
@@ -209,21 +272,33 @@ def getVmap(Ucell, sig):
     return log_variances.astype("float64"), us
 
 
-def sub2ind(array_shape, rows, cols):
-    return rows * array_shape[1] + cols
 
-
-def minDistance(inputs):
-    y1, x1, y2, x2 = inputs
-    ds = (y1 - np.expand_dims(y2, axis=1))**2 + (x1 - np.expand_dims(x2, axis=1))**2
-    return np.amin(ds)**.5
 
 
 def get_connected(Ly, Lx, stat):
-    """grow i0 until it cannot grow any more
+    """
+    Extract the connected component of an ROI starting from its brightest pixel.
+
+    Grows outward from the pixel with maximum weight, keeping only pixels
+    that are contiguous and have non-zero weight.
+
+    Parameters
+    ----------
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    stat : dict
+        ROI statistics dictionary containing "ypix", "xpix", and "lam".
+        Modified in-place.
+
+    Returns
+    -------
+    stat : dict
+        Updated ROI dictionary with connected pixels only.
     """
     ypix, xpix, lam = stat["ypix"], stat["xpix"], stat["lam"]
-    i0 = np.argmax(lam)
+    i0 = lam.argmax()
     mask = np.zeros((Ly, Lx))
     mask[ypix, xpix] = lam
     ypix, xpix = ypix[i0], xpix[i0]
@@ -241,6 +316,26 @@ def get_connected(Ly, Lx, stat):
 
 
 def connected_region(stat, connected, Ly, Lx):
+    """
+    Optionally restrict each ROI to its largest connected component.
+
+    Parameters
+    ----------
+    stat : list of dict
+        List of ROI statistics dictionaries, each containing "ypix", "xpix",
+        and "lam".
+    connected : bool
+        If True, apply connected component extraction to each ROI.
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+
+    Returns
+    -------
+    stat : list of dict
+        Updated list of ROI dictionaries.
+    """
     if connected:
         for j in range(len(stat)):
             stat[j] = get_connected(Ly, Lx, stat[j])
@@ -248,6 +343,33 @@ def connected_region(stat, connected, Ly, Lx):
 
 
 def extendROI(ypix, xpix, Ly, Lx, niter=1):
+    """
+    Expand an ROI by one pixel in each cardinal direction.
+
+    Adds the 4-connected neighbors of the current pixel set and removes
+    any that fall outside the image boundaries. Repeated for `niter`
+    iterations.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the current ROI pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the current ROI pixels.
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    niter : int, optional (default 1)
+        Number of expansion iterations.
+
+    Returns
+    -------
+    ypix : numpy.ndarray
+        Expanded Y-coordinates.
+    xpix : numpy.ndarray
+        Expanded X-coordinates.
+    """
     for k in range(niter):
         yx = ((ypix, ypix, ypix, ypix - 1, ypix + 1), (xpix, xpix + 1, xpix - 1, xpix,
                                                        xpix))
@@ -260,6 +382,41 @@ def extendROI(ypix, xpix, Ly, Lx, niter=1):
 
 
 def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
+    """
+    Iteratively extend an ROI by projecting onto the SVD code vector.
+
+    Starting from seed pixels, repeatedly expands the region and keeps
+    pixels whose projection onto the code vector exceeds a threshold.
+    Stops when no new pixels are added or the region exceeds 10000 pixels.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray or int
+        Initial Y-coordinates of the ROI seed.
+    xpix : numpy.ndarray or int
+        Initial X-coordinates of the ROI seed.
+    Ucell : numpy.ndarray
+        Residual SVD spatial components of shape (Ly, Lx, nsvd).
+    code : numpy.ndarray
+        SVD code vector for this ROI, shape (nsvd,).
+    refine : int, optional (default -1)
+        Refinement stage indicator. Negative means initial detection.
+    change_codes : bool, optional (default False)
+        If True and refine < 0, update the code vector during extension.
+
+    Returns
+    -------
+    ypix : numpy.ndarray
+        Y-coordinates of the extended ROI.
+    xpix : numpy.ndarray
+        X-coordinates of the extended ROI.
+    lam : numpy.ndarray
+        Normalized pixel weights (projections onto code vector).
+    ix : numpy.ndarray
+        Boolean mask of pixels kept in the final iteration.
+    code : numpy.ndarray
+        Updated code vector, shape (nsvd,).
+    """
     Lyc, Lxc, nsvd = Ucell.shape
     npix = 0
     iter = 0
@@ -290,7 +447,43 @@ def iter_extend(ypix, xpix, Ucell, code, refine=-1, change_codes=False):
 
 def sourcery(mov: np.ndarray, sdmov, diameter, threshold_scaling=1.0,
              connected=True, max_iterations=20, smooth_masks=False):
-    
+    """
+    Detect ROIs using the Sourcery algorithm (SVD-based iterative detection).
+
+    Computes SVD components of the movie, builds neuropil basis functions 
+    and subtracts them, and iteratively detects ROIs by finding local 
+    maxima in the variance ratio map and extending them via similarity 
+    in SVD projection.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Temporally binned movie of shape (nbins, Ly, Lx). Divided by
+        `sdmov` in-place before processing.
+    sdmov : numpy.ndarray
+        Standard deviation of the movie, shape (Ly * Lx,) or (Ly, Lx),
+        used for normalization.
+    diameter : float or list of float
+        Expected cell diameter in pixels.
+    threshold_scaling : float, optional (default 1.0)
+        Scaling factor for the peak detection threshold.
+    connected : bool, optional (default True)
+        If True, restrict each detected ROI to its largest connected component.
+    max_iterations : int, optional (default 20)
+        Maximum number of detection and refinement iterations.
+    smooth_masks : bool, optional (default False)
+        If True, spatially smooth frames before SVD projection during refinement.
+
+    Returns
+    -------
+    new_settings : dict
+        Dictionary with detection metadata including "diameter", "Vcorr",
+        and placeholder keys "Vmax", "ihop", "Vsplit", "Vmap",
+        "spatscale_pix".
+    stat : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix",
+        "xpix", and "lam".
+    """
     mov /= sdmov
     
     change_codes = True

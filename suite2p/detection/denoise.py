@@ -2,7 +2,6 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
-from typing import List
 import time
 from sklearn.decomposition import PCA
 import logging 
@@ -11,7 +10,30 @@ logger = logging.getLogger(__name__)
 from ..registration.nonrigid import make_blocks, spatial_taper
 
 
-def pca_denoise(mov: np.ndarray, block_size: List, n_comps_frac: float):
+def pca_denoise(mov, block_size, n_comps_frac):
+    """
+    Denoise a movie using block-wise PCA reconstruction.
+
+    Splits the movie into spatial blocks, projects each block onto its
+    top PCA components, reconstructs, and blends the blocks with spatial
+    tapering.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Movie of shape (nframes, Ly, Lx). Modified in-place (mean
+        subtracted then restored).
+    block_size : list of int
+        Block size [Lyb, Lxb] for spatial tiling.
+    n_comps_frac : float
+        Fraction of the smaller block dimension used to set the number
+        of PCA components (number of PCs n_comps = min(Lyb, Lxb) * n_comps_frac).
+
+    Returns
+    -------
+    reconstruction : numpy.ndarray
+        Denoised movie of shape (nframes, Ly, Lx).
+    """
     t0 = time.time()
     nframes, Ly, Lx = mov.shape
     yblock, xblock, nb, block_size = make_blocks(Ly, Lx, block_size=block_size)[:4]

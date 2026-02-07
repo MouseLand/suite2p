@@ -592,7 +592,15 @@ SETTINGS = {
             "min": 0.,
             "max": 1.,
             "default": 0.25,
-            "description": "IoU threshold between red ROI and functional ROI to define as 'redcell'",
+            "description": "IoU threshold between anatomical ROI and functional ROI to define as 'redcell'",
+        },
+        "cellpose_chan2": {
+            "gui_name": "Cellpose chan2",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Use Cellpose to detect ROIs in anatomical channel and overlap with functional ROIs",
         },
         "sparsery_settings": {
             "highpass_neuropil": {

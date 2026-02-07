@@ -8,22 +8,61 @@ logger = logging.getLogger(__name__)
 from .utils import circleMask
 
 def median_pix(ypix, xpix):
+    """
+    Find the pixel closest to the median of a set of pixel coordinates.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the pixels.
+
+    Returns
+    -------
+    med : list of float
+        Two-element list [ymed, xmed] of the pixel closest to the median.
+    """
     ymed, xmed = np.median(ypix), np.median(xpix)
-    imin = np.argmin((xpix - xmed)**2 + (ypix - ymed)**2)
+    imin = ((xpix - xmed)**2 + (ypix - ymed)**2).argmin()
     xmed = xpix[imin]
     ymed = ypix[imin]
     return [ymed, xmed]
 
 def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100):
-    """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
+    """
+    Fit a 2D Gaussian to weighted pixel coordinates and return an ellipse.
+
+    Computes the mean and covariance of the pixel distribution weighted by `lam0`,
+    then generates an ellipse at `thres` standard deviations.
+
     Parameters
     ----------
-    y : float, array
-        pixel locations in y
-    x : float, array
-        pixel locations in x
-    lam0 : float, array
-        weights of each pixel
+    y : numpy.ndarray
+        Y-coordinates of the pixels.
+    x : numpy.ndarray
+        X-coordinates of the pixels.
+    lam0 : numpy.ndarray
+        Weights for each pixel (e.g. fluorescence intensity).
+    dy : float
+        Normalization factor for the y-axis (e.g. cell diameter in y).
+    dx : float
+        Normalization factor for the x-axis (e.g. cell diameter in x).
+    thres : float, optional (default 2.5)
+        Number of standard deviations for the ellipse radius.
+    npts : int, optional (default 100)
+        Number of points used to draw the ellipse.
+
+    Returns
+    -------
+    mu : numpy.ndarray
+        Mean of the Gaussian fit, shape (2,).
+    cov : numpy.ndarray
+        Covariance matrix of the Gaussian fit, shape (2, 2).
+    radii : numpy.ndarray
+        Radii of the major and minor axes (sorted descending), shape (2,).
+    ellipse : numpy.ndarray
+        Points on the fitted ellipse, shape (npts, 2).
     """
     y = y / dy
     x = x / dx
@@ -52,6 +91,28 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100):
     return mu, cov, radii, ellipse
 
 def soma_crop(ypix, xpix, lam, med):
+    """
+    Crop dendritic pixels from an ROI by finding the soma boundary.
+
+    Computes cumulative weighted area as a function of distance from the median
+    center, then finds the radius where the area growth drops below a threshold.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the ROI pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the ROI pixels.
+    lam : numpy.ndarray
+        Weights (e.g. fluorescence) for each pixel.
+    med : list of float
+        Two-element list [ymed, xmed] of the ROI center.
+
+    Returns
+    -------
+    crop : numpy.ndarray
+        Boolean array of length len(ypix), True for pixels within the soma.
+    """
     crop = np.ones(ypix.size, "bool")
     if len(ypix) > 10:
         dists = ((ypix - med[0])**2 + (xpix - med[1])**2)**0.5
@@ -75,24 +136,45 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
               do_soma_crop=True, npix_norm_min=-1, npix_norm_max=np.inf,
               median=False):
     """
-    Computes statistics of cells found using sourcery.
+    Compute statistics for detected ROIs, including compactness, aspect ratio, and overlap.
 
-    Args:
-        stats (list): List of dictionaries containing the statistics of cells.
-        Ly (int): Height of the image.
-        Lx (int): Width of the image.
-        diameter (list or np.ndarray, optional): Diameter of the cells. Defaults to None.
-        max_overlap (float, optional): Maximum overlap allowed between cells. Defaults to 0.75.
-        do_soma_crop (bool, optional): Flag indicating whether to crop dendritic pixels for computing compactness and aspect ratio. Defaults to True.
+    For each ROI, computes the median center, soma crop, compactness, and aspect
+    ratio from a 2D Gaussian fit. Normalizes pixel counts across ROIs, removes
+    ROIs outside the normalized pixel range, and optionally removes ROIs with
+    excessive overlap.
 
-    Returns:
-        list: List of dictionaries containing the updated statistics of cells.
+    Parameters
+    ----------
+    stats : numpy.ndarray
+        Array of dictionaries, each containing "ypix", "xpix", and "lam" for
+        one detected ROI.
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    diameter : list of float, optional (default [12., 12.])
+        Expected cell diameter [dy, dx] in pixels, used for normalization.
+    max_overlap : float, optional (default 0.75)
+        Maximum allowed fraction of overlapping pixels. ROIs exceeding this
+        are removed. Set to None or 1.0 to disable.
+    do_soma_crop : bool, optional (default True)
+        If True, crop dendritic pixels before computing compactness and
+        aspect ratio.
+    npix_norm_min : float, optional (default -1)
+        Minimum normalized pixel count. ROIs below this are removed.
+    npix_norm_max : float, optional (default np.inf)
+        Maximum normalized pixel count. ROIs above this are removed.
+    median : bool, optional (default False)
+        If True, use median of all ROIs for normalization. If False, use
+        median of the 100 ROIs extracted first.
 
-    Raises:
-        None
-
-    Examples:
-        stats = roi_stats(stats, Ly, Lx, aspect=1.5, diameter=10, max_overlap=0.8, do_soma_crop=True)
+    Returns
+    -------
+    stats : numpy.ndarray
+        Updated array of ROI statistics dictionaries with added keys "med",
+        "npix", "soma_crop", "npix_soma", "mrs", "mrs0", "compact", "radius",
+        "aspect_ratio", "footprint", "npix_norm", "npix_norm_no_crop", and
+        "overlap".
     """
    
     # approx size of masks for ROI aspect ratio estimation
@@ -175,6 +257,26 @@ def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
     return stats
 
 def assign_overlaps(stats, Ly, Lx):
+    """
+    Assign overlap labels to each ROI based on shared pixels.
+
+    For each ROI, sets an "overlap" boolean mask indicating which of its pixels
+    are shared with at least one other ROI.
+
+    Parameters
+    ----------
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix" and "xpix".
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+
+    Returns
+    -------
+    stats : numpy.ndarray
+        Updated array with "overlap" key added to each ROI dictionary.
+    """
     overlap = np.zeros((Ly, Lx), "int")
     for stat in stats:
         overlap[stat["ypix"], stat["xpix"]] += 1

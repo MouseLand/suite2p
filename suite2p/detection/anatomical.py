@@ -2,7 +2,6 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
-from typing import Any, Dict
 from scipy.ndimage import find_objects, gaussian_filter
 import time
 import cv2
@@ -10,10 +9,6 @@ import os
 import torch
 import logging 
 logger = logging.getLogger(__name__)
-
-
-from . import utils
-from .stats import roi_stats
 
 try:
     from cellpose.models import CellposeModel
@@ -27,13 +22,29 @@ except Exception as e:
 
 
 def mask_stats(mask):
-    """ median and diameter of mask """
+    """
+    Compute the median center and diameter of a single binary mask.
+
+    Parameters
+    ----------
+    mask : numpy.ndarray
+        2D binary mask for a single ROI.
+
+    Returns
+    -------
+    ymed : int
+        Y-coordinate of the pixel closest to the median center.
+    xmed : int
+        X-coordinate of the pixel closest to the median center.
+    diam : float
+        Estimated diameter of the mask, computed from the number of pixels.
+    """
     y, x = np.nonzero(mask)
     y = y.astype(np.int32)
     x = x.astype(np.int32)
     ymed = np.median(y)
     xmed = np.median(x)
-    imin = np.argmin((x - xmed)**2 + (y - ymed)**2)
+    imin = ((x - xmed)**2 + (y - ymed)**2).argmin()
     xmed = x[imin]
     ymed = y[imin]
     diam = len(y)**0.5
@@ -42,6 +53,21 @@ def mask_stats(mask):
     
 
 def mask_centers(masks):
+    """
+    Compute the centers and diameters for all masks in a label image.
+
+    Parameters
+    ----------
+    masks : numpy.ndarray
+        2D integer label image where each unique positive value is an ROI.
+
+    Returns
+    -------
+    centers : numpy.ndarray
+        Median center coordinates of shape (n_masks, 2), as [ymed, xmed].
+    diams : numpy.ndarray
+        Estimated diameters for each mask, shape (n_masks,).
+    """
     centers = np.zeros((masks.max(), 2), np.int32)
     diams = np.zeros(masks.max(), np.float32)
     slices = find_objects(masks)
@@ -54,79 +80,43 @@ def mask_centers(masks):
     return centers, diams
 
 
-def patch_detect(patches, diam):
-    """ anatomical detection of masks from top active frames for putative cell """
-    logger.info("refining masks using cellpose")
-    npatches = len(patches)
-    ly = patches[0].shape[0]
-    model = CellposeModel(gpu=True if core.use_gpu() else False)
-    imgs = np.zeros((npatches, ly, ly, 2), np.float32)
-    for i, m in enumerate(patches):
-        imgs[i, :, :, 0] = transforms.normalize99(m)
-    rsz = 30. / diam
-    imgs = transforms.resize_image(imgs, rsz=rsz).transpose(0, 3, 1, 2)
-    imgs, ysub, xsub = transforms.pad_image_ND(imgs)
-
-    pmasks = np.zeros((npatches, ly, ly), np.uint16)
-    batch_size = 8 * 224 // ly
-    tic = time.time()
-    for j in np.arange(0, npatches, batch_size):
-        y = model.net(imgs[j:j + batch_size])[0]
-        y = y[:, :, ysub[0]:ysub[-1] + 1, xsub[0]:xsub[-1] + 1]
-        y = y.asnumpy()
-        for i, yi in enumerate(y):
-            cellprob = yi[-1]
-            dP = yi[:2]
-            niter = 1 / rsz * 200
-            p = dynamics.follow_flows(-1 * dP * (cellprob > 0) / 5., niter=niter)
-            maski = dynamics.get_masks(p, iscell=(cellprob > 0), flows=dP,
-                                       threshold=1.0)
-            maski = fill_holes_and_remove_small_masks(maski)
-            maski = transforms.resize_image(maski, ly, ly,
-                                            interpolation=cv2.INTER_NEAREST)
-            pmasks[j + i] = maski
-        if j % 5 == 0:
-            logger.info("%d / %d masks created in %0.2fs" %
-                  (j + batch_size, npatches, time.time() - tic))
-    return pmasks
-
-
-def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
-    nmasks = len(patches)
-    patch_masks = patch_detect(patches, diam)
-    ly = patches[0].shape[0] // 2
-    igood = np.zeros(nmasks, "bool")
-    for i, (patch_mask, stat, (yi, xi)) in enumerate(zip(patch_masks, stats, seeds)):
-        mask = np.zeros((Lyc, Lxc), np.float32)
-        ypix0, xpix0 = stat["ypix"], stat["xpix"]
-        mask[ypix0, xpix0] = stat["lam"]
-        func_mask = utils.square_mask(mask, ly, yi, xi)
-        ious = utils.mask_ious(patch_mask.astype(np.uint16), (func_mask
-                                                              > 0).astype(np.uint16))[0]
-        if len(ious) > 0 and ious.max() > 0.45:
-            mask_id = np.argmax(ious) + 1
-            patch_mask = patch_mask[max(0, ly - yi):min(2 * ly, Lyc + ly - yi),
-                                    max(0, ly - xi):min(2 * ly, Lxc + ly - xi)]
-            func_mask = func_mask[max(0, ly - yi):min(2 * ly, Lyc + ly - yi),
-                                  max(0, ly - xi):min(2 * ly, Lxc + ly - xi)]
-            ypix0, xpix0 = np.nonzero(patch_mask == mask_id)
-            lam0 = func_mask[ypix0, xpix0]
-            lam0[lam0 <= 0] = lam0.min()
-            ypix0 = ypix0 + max(0, yi - ly)
-            xpix0 = xpix0 + max(0, xi - ly)
-            igood[i] = True
-            stat["ypix"] = ypix0
-            stat["xpix"] = xpix0
-            stat["lam"] = lam0
-            stat["anatomical"] = True
-        else:
-            stat["anatomical"] = False
-    return stats
-
-
 def roi_detect(mproj, diameter=None, settings=None,
                pretrained_model=None, device=torch.device("cuda"), chan2=False):
-    """ detect ROIs in image using cellpose """
+    """
+    Detect ROIs in an image using Cellpose.
+
+    Runs a Cellpose model on the input image to segment cells. Optionally
+    rescales the image if the diameter aspect ratio is not 1.
+
+    Parameters
+    ----------
+    mproj : numpy.ndarray
+        2D image to segment, shape (Ly, Lx).
+    diameter : float or list of float, optional
+        Expected cell diameter in pixels. If scalar, used for both axes.
+        If list, [dy, dx]. Defaults to [30., 30.].
+    settings : dict, optional
+        Detection settings dictionary. Used to get "params", "chan2_params",
+        "cellprob_threshold", and "flow_threshold" for Cellpose.
+    pretrained_model : str, optional
+        Name of the Cellpose pretrained model. Defaults to "cpsam".
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device, used for GPU cache cleanup after detection.
+    chan2 : bool, optional (default False)
+        If True, use "chan2_params" from settings instead of "params".
+
+    Returns
+    -------
+    masks : numpy.ndarray
+        Integer label image of shape (Ly, Lx), where each ROI has a
+        unique positive integer label.
+    centers : numpy.ndarray
+        Median center coordinates of shape (n_masks, 2).
+    median_diam : float
+        Median diameter across all detected masks.
+    mask_diams : numpy.ndarray
+        Diameters for each detected mask, shape (n_masks,), dtype int32.
+    """
     Lyc, Lxc = mproj.shape
     diameter = [30., 30. ] if diameter is None else diameter
     diameter = [diameter, diameter] if np.isscalar(diameter) else diameter
@@ -166,6 +156,26 @@ def roi_detect(mproj, diameter=None, settings=None,
 
 
 def masks_to_stats(masks, weights):
+    """
+    Convert a label image and weight map into an array of ROI statistics dictionaries.
+
+    For each mask, extracts the pixel coordinates, pixel weights from the weight
+    image, and computes the median center.
+
+    Parameters
+    ----------
+    masks : numpy.ndarray
+        2D integer label image where each unique positive value is an ROI.
+    weights : numpy.ndarray
+        2D weight image of the same shape as `masks` (e.g. max projection),
+        used to assign pixel weights ("lam") to each ROI.
+
+    Returns
+    -------
+    stats : numpy.ndarray
+        Array of dictionaries, one per ROI, each containing "ypix", "xpix",
+        "lam", "med", and "footprint".
+    """
     stats = []
     slices = find_objects(masks)
     for i, si in enumerate(slices):
@@ -189,23 +199,39 @@ def masks_to_stats(masks, weights):
     return stats
 
 
-def select_rois(mean_img, max_proj, settings: Dict[str, Any], 
+def select_rois(mean_img, max_proj, settings, 
                 diameter=[12., 12.],
                 device=torch.device("cuda")):
-    """ 
-    find ROIs in static frames
-    
-    Parameters:
+    """
+    Find ROIs in static images using Cellpose anatomical detection.
 
-        settings: dictionary
-            requires keys "high_pass", "anatomical_only"
-        
-        mov: ndarray t x Lyc x Lxc, binned movie
-    
-    Returns:
+    Prepares an image for segmentation based on the "img" setting (max
+    projection / mean image ratio, mean image, or max projection), optionally
+    applies spatial high-pass filtering, then runs Cellpose to detect ROIs.
 
-        stats: list of dicts
+    Parameters
+    ----------
+    mean_img : numpy.ndarray
+        2D mean image of shape (Ly, Lx).
+    max_proj : numpy.ndarray
+        2D maximum projection image of shape (Ly, Lx).
+    settings : dict
+        Detection settings dictionary. Must contain "img" (str specifying
+        which image to segment) and optionally "highpass_spatial" (float).
+    diameter : list of float, optional (default [12., 12.])
+        Expected cell diameter [dy, dx] in pixels.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for Cellpose and GPU cache cleanup.
 
+    Returns
+    -------
+    new_settings : dict
+        Dictionary with detection metadata including "diameter", "Vcorr",
+        and placeholder keys "Vmax", "ihop", "Vsplit", "Vmap",
+        "spatscale_pix".
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix",
+        "xpix", "lam", "med", and "footprint".
     """
     Lyc, Lxc = mean_img.shape
     if settings["img"] == 'max_proj / meanImg':
@@ -244,25 +270,3 @@ def select_rois(mean_img, max_proj, settings: Dict[str, Any],
     }
 
     return new_settings, stats
-
-
-# def run_assist():
-#     nmasks, diam = 0, None
-#     if anatomical:
-#         try:
-#             logger.info(">>>> CELLPOSE estimating spatial scale and masks as seeds for functional algorithm")
-#             from . import anatomical
-#             mproj = np.log(np.maximum(1e-3, max_proj / np.maximum(1e-3, mean_img)))
-#             masks, centers, diam, mask_diams = anatomical.roi_detect(mproj)
-#             nmasks = masks.max()
-#         except:
-#             logger.info("ERROR importing or running cellpose, continuing without anatomical estimates")
-#         if tj < nmasks:
-#             yi, xi = centers[tj]
-#             ls = mask_diams[tj]
-#             imap = np.ravel_multi_index((yi, xi), (Lyc, Lxc))
-# if nmasks > 0:
-#         stats = anatomical.refine_masks(stats, patches, seeds, diam, Lyc, Lxc)
-#         for stat in stats:
-#             if stat["anatomical"]:
-#                 stat["lam"] *= sdmov[stat["ypix"], stat["xpix"]]

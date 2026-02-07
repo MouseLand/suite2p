@@ -13,6 +13,7 @@ from pynwb import NWBHDF5IO
 from suite2p import io
 from suite2p.io.nwb import read_nwb, save_nwb
 from suite2p.io.utils import get_suite2p_path
+from suite2p.detection.detect import bin_movie
 
 
 @pytest.fixture()
@@ -188,19 +189,24 @@ def test_h5_to_binary_produces_nonnegative_output_data(test_settings):
 
 
 def test_that_bin_movie_without_badframes_results_in_a_same_size_array(binfile1500):
-    mov = binfile1500.bin_movie(bin_size=1)
+    yrange = (0, binfile1500.Ly)
+    xrange = (0, binfile1500.Lx)
+    mov = bin_movie(binfile1500.data, bin_size=1, yrange=yrange, xrange=xrange)
     assert mov.shape == (1500, binfile1500.Ly, binfile1500.Lx)
 
 
 def test_that_bin_movie_with_badframes_results_in_a_smaller_array(binfile1500):
 
     np.random.seed(42)
-    bad_frames = np.random.randint(2, size=binfile1500.n_frames, dtype=bool)
-    mov = binfile1500.bin_movie(bin_size=1, bad_frames=bad_frames, reject_threshold=0)
+    # Create badframes with ~30% bad frames (so batches consistently have >50% good frames)
+    badframes = np.random.random(size=binfile1500.n_frames) < 0.3
+    yrange = (0, binfile1500.Ly)
+    xrange = (0, binfile1500.Lx)
+    mov = bin_movie(binfile1500.data, bin_size=1, yrange=yrange, xrange=xrange, badframes=badframes)
 
     assert len(mov) < binfile1500.n_frames, "bin_movie didn't produce a smaller array."
-    assert len(mov) == len(bad_frames) - sum(
-        bad_frames
+    assert len(mov) == len(badframes) - sum(
+        badframes
     ), "bin_movie didn't produce the right size array."
 
 

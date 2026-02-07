@@ -13,6 +13,35 @@ logger = logging.getLogger(__name__)
 
 def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
              F_chan2=None, Fneu_chan2=None):
+    """
+    Save Suite2p results to a MATLAB .mat file.
+
+    Converts pathlib paths to strings, replaces None values with empty arrays,
+    and writes all results to "Fall.mat" in the save path specified in `ops`.
+
+    Parameters
+    ----------
+    ops : dict
+        Suite2p options dictionary. Must contain "save_path". The "date_proc"
+        field is converted to a string if present.
+    stat : numpy.ndarray
+        Array of ROI statistics dictionaries (one per detected cell).
+    F : numpy.ndarray
+        Fluorescence traces of shape (n_cells, n_frames).
+    Fneu : numpy.ndarray
+        Neuropil fluorescence traces of shape (n_cells, n_frames).
+    spks : numpy.ndarray
+        Deconvolved spike traces of shape (n_cells, n_frames).
+    iscell : numpy.ndarray
+        Cell classification array of shape (n_cells, 2), with columns for
+        binary label and probability.
+    redcell : numpy.ndarray
+        Red channel cell classification array, or None.
+    F_chan2 : numpy.ndarray, optional
+        Second channel fluorescence traces of shape (n_cells, n_frames).
+    Fneu_chan2 : numpy.ndarray, optional
+        Second channel neuropil fluorescence traces of shape (n_cells, n_frames).
+    """
     ops_matlab = ops.copy()
     if ops_matlab.get("date_proc"):
         try:
@@ -72,6 +101,26 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
 
 
 def compute_dydx(db1):
+    """
+    Compute pixel offsets (dy, dx) for tiling multiple planes/ROIs into a combined view.
+
+    If the databases do not contain "dx" and "dy" fields, arranges planes in a
+    grid that best tiles a square. If offsets are present (e.g. mesoscope ROIs),
+    uses the physical offsets and further tiles across planes.
+
+    Parameters
+    ----------
+    db1 : list of dict
+        List of per-plane database dictionaries. Each must contain "Ly" and "Lx".
+        May contain "dx" and "dy" for physical ROI offsets.
+
+    Returns
+    -------
+    dy : numpy.ndarray
+        Y-offsets (in pixels) for each plane, shape (len(db1),).
+    dx : numpy.ndarray
+        X-offsets (in pixels) for each plane, shape (len(db1),).
+    """
     db = db1[0].copy()
     dx = np.zeros(len(db1), np.int64)
     dy = np.zeros(len(db1), np.int64)
@@ -105,13 +154,49 @@ def compute_dydx(db1):
 
 
 def combined(save_folder, save=True):
-    """ Combines all the folders in save_folder into a single result file.
+    """
+    Combine all plane folders in save_folder into a single result file.
 
-    can turn off saving (for gui loading)
+    Loads per-plane results (stat, F, Fneu, spks, iscell, redcell), shifts ROI
+    coordinates by the tiled offsets, and concatenates them into combined arrays.
+    Multi-plane recordings are arranged to best tile a square. Multi-ROI
+    recordings are arranged by their dx, dy physical localization.
 
-    Multi-plane recordings are arranged to best tile a square.
-    Multi-roi recordings are arranged by their dx,dy physical localization.
-    Multi-plane / multi-roi recordings are tiled after using dx,dy.
+    Parameters
+    ----------
+    save_folder : str
+        Path to the suite2p output folder containing plane subdirectories
+        (e.g. "plane0", "plane1", ...).
+    save : bool, optional (default True)
+        If True, save combined results (F.npy, Fneu.npy, spks.npy, stat.npy,
+        db.npy, settings.npy, and optionally Fall.mat) to a "combined"
+        subfolder. If False, only iscell.npy (and redcell.npy) are saved.
+
+    Returns
+    -------
+    stat : numpy.ndarray
+        Concatenated ROI statistics across all planes.
+    db : dict
+        Combined database dictionary with merged mean images and full-frame
+        dimensions.
+    settings : dict
+        Suite2p settings dictionary.
+    F : numpy.ndarray
+        Combined fluorescence traces of shape (n_cells_total, n_frames).
+    Fneu : numpy.ndarray
+        Combined neuropil traces of shape (n_cells_total, n_frames).
+    spks : numpy.ndarray
+        Combined deconvolved spike traces of shape (n_cells_total, n_frames).
+    iscell0 : numpy.ndarray
+        Binary cell classification labels for each ROI.
+    iscell1 : numpy.ndarray
+        Cell classification probabilities for each ROI.
+    redcell0 : numpy.ndarray
+        Binary red-cell labels for each ROI.
+    redcell1 : numpy.ndarray
+        Red-cell probabilities for each ROI.
+    hasred : bool
+        Whether red-cell classification data was found.
     """
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"

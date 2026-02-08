@@ -1,5 +1,7 @@
 # Welcome to suite2p's documentation!
 
+![image](_static/favicon.ico)
+
 suite2p is an imaging processing pipeline written in Python 3 which
 includes the following modules:
 

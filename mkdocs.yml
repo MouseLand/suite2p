@@ -1,6 +1,10 @@
 site_name: Suite2p Documentation
 theme:
   name: material
+  logo: _static/favicon.ico
+  favicon: _static/favicon.ico
+  palette:
+    primary: green
     
 nav:
   - Home: index.md

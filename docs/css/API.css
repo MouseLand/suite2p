@@ -1,12 +1,12 @@
 /* Make function names bold */
 .docstring .highlight pre {
-    background: #eef;
+    background: rgb(238, 255, 238);
     padding: 10px;
     border-radius: 5px;
 }
 
 /* Style the [source] links */
 a.reference.external {
-    color: #2288cc;
+    color: #28cc22;
     font-weight: bold;
 }

@@ -1,6 +1,6 @@
 # Inputs
 
-See all possible input options for `db.npy` [here](parameters.md#db.npy)
+See all possible input options for `db.npy` [here](parameters.md#dbnpy)
 
 ## Input format
 

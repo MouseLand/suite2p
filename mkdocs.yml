@@ -39,7 +39,6 @@ plugins:
             show_source: true
             separate_signature: true
             show_if_no_docstring: false
-            show_docstring_sections: true
             docstring_style: numpy
             members_order: alphabetical
             

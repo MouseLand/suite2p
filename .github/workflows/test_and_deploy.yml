@@ -21,8 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
-        python-version: [3.8]
+        platform: [ubuntu-latest] #, windows-latest]
+        python-version: [3.11]
 
     steps:
       - uses: actions/checkout@v4

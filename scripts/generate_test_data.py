@@ -1,21 +1,4 @@
 import os
-<<<<<<< HEAD
-import suite2p 
-import shutil
-import numpy as np 
-
-from pathlib import Path
-from conftest import initialize_ops, download_cached_inputs #Guarantees that tests and this script use the same ops
-from tests.regression.utils import FullPipelineTestUtils, DetectionTestUtils, ExtractionTestUtils
-from suite2p.extraction import masks
-
-"""
-IMPORTANT: When running this script, make sure to use it in the scripts directory 
-(e.g., suite2p/scripts). The generated test data will be placed in the directory 
-suite2p/scripts/test_data. Take the directories in this folder and replace the directories 
-with the same name in suite2p/data/test_data (e.g.,replace suite2p/data/test_data/1plane1chan1500 with suite2p/scripts/test_data/1plane1chan1500). 
-"""
-=======
 import suite2p
 import shutil
 import numpy as np
@@ -107,7 +90,6 @@ class TestDataConfigs:
         'baseline_methods': ['maximin', 'constant', 'constant_prctile'],
         'subdirs': ['1plane1chan', '2plane2chan']
     }
->>>>>>> suite2p_dev/tomerge
 
 current_dir = Path(os.getcwd())
 # Assumes the input file has already been downloaded

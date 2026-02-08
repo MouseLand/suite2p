@@ -5,10 +5,7 @@ from tifffile import imread
 from pathlib import Path
 from glob import glob
 from suite2p.io import BinaryFile
-<<<<<<< HEAD
-=======
 from suite2p.parameters import default_settings, convert_settings_orig
->>>>>>> suite2p_dev/tomerge
 
 import numpy as np
 import json
@@ -40,63 +37,6 @@ def compare_list_of_outputs(output_name_list, data_list_one, data_list_two) -> I
 
 class FullPipelineTestUtils:
     """
-<<<<<<< HEAD
-    Utility functions specific to test_full_pipeline.py. Mostly contains ops initialization
-    functions that can be used by both test_full_pipeline.py and generate_test_data.py.
-    This is to ensure both the generation script and the tests use the same ops.
-    """
-    def initialize_ops_test1plane_1chan_with_batches(ops):
-        ops.update({
-            'tiff_list': ['input_1500.tif'],
-            'do_regmetrics': True,
-            'save_NWB': True,
-            'save_mat': True,
-            'keep_movie_raw': True,
-            'delete_bin': True,
-        })
-        return ops
-
-    def initialize_ops_test_1plane_2chan_sourcery(ops):
-        ops.update({
-            'nchannels': 2,
-            'sparse_mode': 0,
-            'tiff_list': ['input.tif'],
-            'keep_movie_raw': True
-        })
-        return ops
-
-    def initialize_ops_test2plane_2chan_with_batches(ops):
-        ops.update({
-            'tiff_list': ['input_1500.tif'],
-            'batch_size': 200,
-            'nplanes': 2,
-            'nchannels': 2,
-            'reg_tif': True,
-            'reg_tif_chan2': True,
-            'save_mat': True,
-            'delete_bin': True,
-        })
-        return ops 
-
-    def initialize_ops_test_mesoscan_2plane_2z(ops):
-        mesoscan_dir = Path(ops['data_path'][0]).joinpath('mesoscan')
-        with open(mesoscan_dir.joinpath('ops.json')) as f:
-            meso_ops = json.load(f)
-        ops['data_path'] = [mesoscan_dir]
-        for key in meso_ops.keys():
-            if key not in ['data_path', 'save_path0', 'do_registration', 'roidetect']:
-                ops[key] = meso_ops[key]
-        ops['delete_bin'] = True
-        return ops
-
-class DetectionTestUtils:
-    def prepare(op, input_file_name_list, dimensions):
-        """
-        Prepares for detection by filling out necessary ops parameters. Removes dependence on
-        other modules. Creates pre_registered binary file.
-        """
-        # Set appropriate ops parameters
-=======
     Utility functions specific to test_full_pipeline.py. Mostly contains settings initialization
     functions that can be used by both test_full_pipeline.py and generate_test_data.py.
     This is to ensure both the generation script and the tests use the same settings.
@@ -191,7 +131,6 @@ class DetectionTestUtils:
         """
         # Set appropriate settings parameters
         detection_defaults = default_settings()['detection']
->>>>>>> suite2p_dev/tomerge
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -199,10 +138,6 @@ class DetectionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
-<<<<<<< HEAD
-        })
-        ops = []
-=======
             **detection_defaults,
             # Override detection thresholds for test data
             'threshold_scaling': 0.5,  # Lower threshold to find more ROIs
@@ -213,7 +148,6 @@ class DetectionTestUtils:
             }
         })
         settings = []
->>>>>>> suite2p_dev/tomerge
         for plane in range(op['nplanes']):
             curr_op = op.copy()
             plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
@@ -232,18 +166,6 @@ class DetectionTestUtils:
                 BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
                 curr_op['reg_file_chan2'] = bin2_path
             curr_op['save_path'] = plane_dir
-<<<<<<< HEAD
-            curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-            ops.append(curr_op)
-        return ops
-
-class ExtractionTestUtils:
-    def prepare(op, input_file_name_list, dimensions):
-        """
-        Prepares for extraction by filling out necessary ops parameters. Removes dependence on
-        other modules. Creates pre_registered binary file.
-        """
-=======
             curr_op['settings_path'] = plane_dir.joinpath('settings.npy')
             settings.append(curr_op)
         return settings
@@ -258,7 +180,6 @@ class ExtractionTestUtils:
         # Get extraction settings from default_settings
         extraction_defaults = default_settings()['extraction']
 
->>>>>>> suite2p_dev/tomerge
         op.update({
             'Lx': dimensions[0],
             'Ly': dimensions[1],
@@ -266,16 +187,10 @@ class ExtractionTestUtils:
             'frames_per_file': 500 // op['nplanes'] // op['nchannels'],
             'xrange': [2, 402],
             'yrange': [2, 358],
-<<<<<<< HEAD
-        })
-
-        ops = []
-=======
             **extraction_defaults,
         })
 
         settings = []
->>>>>>> suite2p_dev/tomerge
         for plane in range(op['nplanes']):
             curr_op = op.copy()
             plane_dir = Path(op['save_path0']).joinpath(f'suite2p/plane{plane}')
@@ -293,12 +208,6 @@ class ExtractionTestUtils:
                 BinaryFile.convert_numpy_file_to_suite2p_binary(str(input_file_name_list[plane][1]), bin2_path)
                 curr_op['reg_file_chan2'] = bin2_path
             curr_op['save_path'] = plane_dir
-<<<<<<< HEAD
-            curr_op['ops_path'] = plane_dir.joinpath('ops.npy')
-            ops.append(curr_op)
-        return ops
-=======
             curr_op['settings_path'] = plane_dir.joinpath('settings.npy')
             settings.append(curr_op)
         return settings
->>>>>>> suite2p_dev/tomerge

@@ -1,14 +1,4 @@
 from pathlib import Path
-<<<<<<< HEAD
-import suite2p
-
-
-def test_bruker(test_ops):
-    test_ops['data_path'] = [Path(test_ops['data_path'][0]).joinpath('bruker')]
-    test_ops['input_format'] = 'bruker'
-    print(test_ops['nchannels'])
-    suite2p.run_s2p(ops=test_ops)
-=======
 
 import pytest
 import suite2p
@@ -68,4 +58,3 @@ def test_h5_file_is_processed_end_to_end(test_settings):
     assert (plane_dir / 'ops.npy').exists()
     assert (plane_dir / 'F.npy').exists()
     assert (plane_dir / 'iscell.npy').exists()
->>>>>>> suite2p_dev/tomerge

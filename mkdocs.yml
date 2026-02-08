@@ -1,4 +1,8 @@
 site_name: Suite2p Documentation
+
+repo_name: mouseland/suite2p
+repo_url: https://github.com/mouseland/suite2p
+
 theme:
   name: material
   logo: _static/favicon.ico

@@ -5,7 +5,7 @@ from tifffile import imread
 from pathlib import Path
 from glob import glob
 from suite2p.io import BinaryFile
-from suite2p.parameters import default_settings
+from suite2p.parameters import default_settings, convert_settings_orig
 
 import numpy as np
 import json
@@ -85,19 +85,22 @@ class FullPipelineTestUtils:
         mesoscan_dir = Path(db['data_path'][0]).joinpath('mesoscan')
         with open(mesoscan_dir.joinpath('ops.json')) as f:
             meso_settings = json.load(f)
+        db, settings, settings_in = convert_settings_orig(meso_settings, settings=settings)
         db['data_path'] = [mesoscan_dir]
-        # Separate db and settings parameters from meso_settings
-        db_keys = ['nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
-        settings_keys = ['do_registration', 'roidetect']
-        for key in meso_settings.keys():
-            if key in db_keys:
-                db[key] = meso_settings[key]
-            elif key == 'do_registration':
-                settings["run"]["do_registration"] = meso_settings[key]
-            elif key == 'roidetect':
-                settings["run"]["do_detection"] = meso_settings[key]
-            elif key not in settings_keys:  # Other parameters go to top-level settings for compatibility
-                settings[key] = meso_settings[key]
+        db['save_path0'] = str(mesoscan_dir)
+        settings["run"]["do_detection"] = True
+        # # Separate db and settings parameters from meso_settings
+        # db_keys = ['nplanes', 'nchannels', 'file_list', 'input_format', 'keep_movie_raw']
+        # settings_keys = ['do_registration', 'roidetect']
+        # for key in meso_settings.keys():
+        #     if key in db_keys:
+        #         db[key] = meso_settings[key]
+        #     elif key == 'do_registration':
+        #         settings["run"]["do_registration"] = meso_settings[key]
+        #     elif key == 'roidetect':
+        #         settings["run"]["do_detection"] = meso_settings[key]
+        #     elif key not in settings_keys:  # Other parameters go to top-level settings for compatibility
+        #         settings[key] = meso_settings[key]
         settings["io"]["delete_bin"] = True
         return db, settings
 

@@ -60,10 +60,6 @@ def initialize_settings(tmpdir, data_dir):
     })
     settings.update(
         {
-            'use_builtin_classifier': True,
-            'norm_frames': False,
-            'denoise': False,
-            'soma_crop': False,
             'torch_device': get_device()
         }
     )

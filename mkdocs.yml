@@ -1,6 +1,6 @@
 site_name: Suite2p Documentation
 theme:
-  name: readthedocs  # You can also use 'readthedocs' or other themes
+  name: material
     
 nav:
   - Home: index.md
@@ -27,8 +27,8 @@ nav:
       - Classification: api/classification.md
       - GUI: api/gui.md
 
-hooks:
-  - generate_settings_docs.py # Necessary for parameters.md generation
+#hooks:
+#  - generate_settings_docs.py # Necessary for parameters.md generation
 
 plugins:
   - search

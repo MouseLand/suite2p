@@ -244,7 +244,7 @@ alternative strategies for combining signals.
 Open the “Registration” menu and click “View registered binary”. A
 window will pop up with the binary file loaded (first row) along with
 the registration shifts (second row), and the fluorescence of a selected
-ROI (third row). If settings[‘keep_movie_raw’]=1, then both the unregistered
+ROI (third row). If `db['keep_movie_raw']=True`, then both the unregistered
 and registered binaries will be shown in the first row. You can select
 an ROI by typing in the ROI number in the upper right.
 
@@ -268,23 +268,22 @@ You can also view all the masks, and go from cell to cell by clicking on them.
 You can also now load a Z-stack into this view. You can compute the z-position of the recording across time
 IF you keep the registered binary file. It expects the Z-stack to be a tiff with number of planes
 by number of pixels in Y by number of pixels in X. The results of the correlation between z-stack and each frame are saved in
-settings[‘zcorr’] which is number of planes (in Z) x number of frames. The GUI smooths this matrix across Z and then takes the max
+`zcorr.npy` which is number of frames by number of planes (in Z). The GUI smooths this matrix across Z and then takes the max
 and plots the max across time in the third row.
 
 ## View registration metrics
 
 Open the “Registration” menu and click “View registration metrics”. A
-window will pop up with settings[‘regDX’] and settings[‘regPC’] plotted. The
-settings[‘regPC’]’s are computed by taking the principal components of the
-registered movie. `settings['regPC'][0,0,:,:]` is the average of the top
-500 frames of the 1st PC, `settings['regPC'][1,0,:,:]` is the average of
-the bottom 500 frames of the 1st PC. `settings['regDX']` quantifies the
-movement in each PC (`iPC`) by registering `settings['regPC'][0,iPC,:,:]`
-and `settings['regPC'][1,iPC,:,:]` to the reference images and computing
-the registration shifts.
+window will pop up with `regDX` and `regPC` plotted from `reg_outputs.npy`. The
+`regPC`'s are computed by taking the principal components of the
+registered movie. `regPC[0,0,:,:]` is the average of the top
+500 frames of the 1st PC, `regPC[1,0,:,:]` is the average of
+the bottom 500 frames of the 1st PC. `regDX` quantifies the
+movement in each PC (`iPC`) by registering `regPC[0,iPC,:,:]`
+and `regPC[1,iPC,:,:]` to each other.
 
 The first plot in the upper left shows the magnitude of the shifts (both
-rigid and non-rigid) in the PCs (`settings['regDX']`). The second row of
+rigid and non-rigid) in the PCs (`regDX`). The second row of
 plots are meant to help explore the direction of the PC. The first image
 is the “difference” between the top and the bottom of the PC. The second
 image is the “merged” image of the top and bottom of the PC. The third

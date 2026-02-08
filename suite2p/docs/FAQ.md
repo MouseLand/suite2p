@@ -14,12 +14,12 @@ activity in these regions is unreliable to estimate.
 suite2p determines the region to crop based on the maximum rigid shifts in XY. You can view
 these shifts with the movie in the “View registered binary” window. If these shifts are too large
 and don’t seem to be accurate (low SNR regime), you can decrease the maximum shift that suite2p can
-estimate by setting settings[‘maxregshift’] lower than its default (which is 0.1 = 10% of the size of the FOV).
+estimate by setting `settings['registration']['maxregshift']` lower than its default (which is 0.1 = 10% of the size of the FOV).
 suite2p does exclude some of the large outlier shifts when computing the crop, and determines the threshold
-of what is an “outlier” using the parameter settings[‘th_badframes’]. Set this lower to increase the number of
-“outliers”. These “outliers” are labelled as settings[‘badframes’] and these frames are excluded also from ROI detection.
+of what is an “outlier” using the parameter `settings['registration']['th_badframes']`. Set this lower to increase the number of
+“outliers”. These “outliers” are labelled as `badframes` in the reg_outputs.npy file and these frames are excluded also from ROI detection.
 
-You can add frames to this list of settings[‘badframes’] by creating
+You can add frames to this list of `badframes` by creating
 a numpy array (0-based, the first frame is zero) and save it as bad_frames.npy in the folder
 with your tiffs (if you have multiple folders, save it in the FIRST folder with tiffs,
 or if you have subfolders with ‘look_one_level_down’ it should be in the parent folder).

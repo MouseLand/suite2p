@@ -7,17 +7,18 @@ nav:
   - Basics:
       - Installation: installation.md
       - Inputs: inputs.md
-  - Settings: settings.md
-  - Using the GUI: gui.md
-  - Outputs: outputs.md
-  - Multiday recordings: multiday.md
-  - Developer Doc: developer_doc.md
-  - Frequently asked questions: FAQ.md
+      - Parameters: parameters.md
+      - Using the GUI: gui.md
+      - Outputs: outputs.md
+      - Multiday recordings: multiday.md
+      - Developer Doc: developer_doc.md
+      - Frequently asked questions: FAQ.md
   - How it Works:
       - Registration: registration.md
-      - Cell Detection: celldetection.md
+      - ROI Detection: roidetection.md
       - Signal Extraction: roiextraction.md
       - Spike Deconvolution: deconvolution.md
+      - ROI Classification: classification.md
   - API:
       - IO: api/io.md
       - Registration: api/registration.md 
@@ -27,7 +28,7 @@ nav:
       - GUI: api/gui.md
 
 hooks:
-  - generate_settings_docs.py # Necessary for Settings.md generation
+  - generate_settings_docs.py # Necessary for parameters.md generation
 
 plugins:
   - search

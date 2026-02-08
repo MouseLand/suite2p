@@ -1,74 +1,40 @@
 # Registration
 
-You can register your frames using the first channel of the recording,
-or using the second channel. Say your first channel shows GCaMP and your
-second channel shows td-Tomato, you might want to use the second channel
-for registration if it has higher SNR. If so, set
-`settings['align_by_chan']=2`. Otherwise, leave `settings['align_by_chan']=1`
-(default).
+Suite2p performs motion correction by registering each frame to a reference image using phase-correlation. The settings for registration are in the `registration` dictionary. Frames are processed in batches of `batch_size` frames, which may need to be reduced on GPUs with less memory.
 
-Your registered output for the first channel of the recording will be saved as `data.bin` in the suite2p output folder. If you run the pipeline using more than 2 channels(`settings['nchannels'] = 2`), you will also see a registered output for the second channel’s data saved as `data_chan2.bin`.
+You can register using either the functional or anatomical channel. If your second channel (e.g. td-Tomato) has higher SNR, set `settings['registration']['align_by_chan2']` to True to compute shifts from that channel which will be applied to both channels. During registration, all frames are cumulatively averaged to produce a mean image, saved as `meanImg` (and `meanImg_chan2` if a second channel is present).
 
-## Finding a target reference image
+## Bidirectional phase offset (optional)
 
-To perform registration, we need a reference image to align all the
-frames to. This requires an initial alignment step. Consider we just
-took the average of a subset of frames. Because these frames are not
-motion-corrected, the average will not be crisp - there will be fuzzy
-edges because objects in the image have been moving around across the
-frames. Therefore, we do an initial iterative alignment procedure on a
-random subset of frames in order to get a crisp reference image for
-registration. We first take `settings['nimg_init']` random frames of the
-movie. Then from those frames, we take the top 20 frames that are most
-correlated to each other and take the mean of those frames as our
-initial reference image. Then we refine this reference image iteratively
-by aligning all the random frames to the reference image, and then
-recomputing the reference image as the mean of the best aligned frames.
+If `settings['registration']['do_bidiphase']` is True, the bidirectional phase offset is estimated from a subset of frames of length `settings['registration']['nimg_init']`. The offset is the optimal shift between odd and even scan lines, computed via phase-correlation. Alternatively, a known offset can be specified directly with `settings['registration']['bidiphase']`. The offset is applied to all frames before computing motion shifts and when applying the shifts. The computed value is saved in `reg_outputs.npy` as `bidiphase`.
 
-The function that performs these steps can be run as follows (where settings
-needs the reg_file, Ly, Lx, and nimg_init parameters):
+## Reference image computation
 
-```python
-from suite2p.registration import register
+A subset of frames of length `settings['registration']['nimg_init']` is sampled at equal spacing from the movie. The pairwise correlations between these frames are computed. The frame with the largest correlation to its 20 most-correlated frames is selected, and these 20 frames are averaged as an initial reference image.
 
-refImg = register.pick_initial_reference(settings)
-```
+This reference is then refined iteratively across 8 iterations of rigid phase-correlation alignment. On each iteration, the frames most correlated to the current reference are averaged (after applying estimated shifts) to create a new reference. The number of frames averaged increases with each iteration as `nimg_init * (1 + i) / 16`. The final reference image is saved as `refImg`.
 
-Here is an example reference image on the right, compared to just taking
-the average of a random subset of frames (on the left):
+If the reference image looks blurry, try increasing `nimg_init`.
 
 ![image](_static/badrefimg.png)
 
-If the reference image doesn’t look good, try increasing
-`settings['nimg_init']`.
-
-## Registering the frames to the reference image
-
-Once the reference image is obtained, we align each frame to the
-reference image. The frames are registered in batches of size
-`settings['batch_size']` (default is 500 frames per batch).
-
-We first perform rigid registration (assuming that the whole image
-shifts by some (dy,dx)), and then optionally after that we perform
-non-rigid registration (assuming that subsegments of the image shift by
-separate amounts). To turn on non-rigid registration, set
-`settings['nonrigid']=True`. We will outline the parameters of each
-registration step below.
-
-<a id="rigid-registration"></a>
-
 ## Rigid registration
 
-Rigid registration computes the shifts between the frame and the
-reference image using phase-correlation. We have found on simulated data
-that phase-correlation is more accurate than cross-correlation.
-[Phase-correlation](https://en.wikipedia.org/wiki/Phase_correlation)
-is a well-established method to compute the
-relative movement between two images. Phase-correlation normalizes the
-Fourier spectra of the images before multiplying them (whereas
-cross-correlation would just multiply them). This normalization
-emphasizes the correlation between the higher frequency components of
-the images, which in most cases makes it more robust to noise.
+Rigid registration computes a single (dy, dx) offset between each frame and the reference image using phase-correlation.
+
+### How it works
+
+1. **Intensity clipping**: If `settings['registration']['norm_frames']` is True, both the reference image and each frame are clipped to the 1st and 99th percentile intensity values of the reference (saved as `rmin` and `rmax`).
+
+2. **Whitening and smoothing**: The reference image is transferred to the Fourier domain, whitened, and smoothed by a Gaussian with standard deviation `settings['registration']['smooth_sigma']`.
+
+3. **Spatial tapering**: A sigmoid mask is applied to each frame so that the phase-correlation is focused on the center of the field of view rather than the edges. The slope of the sigmoid is controlled by `settings['registration']['spatial_taper']`.
+
+4. **Phase-correlation**: Each whitened frame is cross-correlated with the whitened reference. The peak of the phase-correlation is found within a range defined by `settings['registration']['maxregshift']` (as a fraction of the frame size). The peak location gives the (dy, dx) offset.
+
+5. **Shift application**: Frames are shifted using the `roll` operation -- this fills edges with opposing edges, but these regions are excluded during ROI detection.
+
+The shifts are saved as `yoff` and `xoff`, and the peak phase-correlation values as `corrXY`.
 
 Cross-correlation
 
@@ -82,51 +48,19 @@ Comparison
 
 ![image](_static/phase_vs_cross.png)
 
-You can set a maximum shift size using the option
-`settings['maxregshift']`. By default, it is 0.1, which means that the
-maximum shift of the frame from the reference in the Y direction is
-`0.1 * settings['Ly']` and in X is `0.1 * settings['Lx']` where Ly and Lx are
-the Y and X sizes of the frame.
-
-After computing the shifts, the frames are shifted in the Fourier domain
-(allowing subpixel shifts of the images). The shifts are saved in
-`settings['yoff']` and `settings['xoff']` for y and x shifts respectively. The
-peak of the phase-correlation of each frame with the reference image is
-saved in `settings['corrXY']`.
-
-You can run this independently from the pipeline, if you have a
-reference image (settings requires the parameters nonrigid=False,
-num_workers, and maxregshift):
-
-```python
-maskMul,maskOffset,cfRefImg = register.prepare_masks(refImg)
-refAndMasks = [maskMul,maskOffset,cfRefImg]
-aligned_data, yshift, xshift, corrXY, yxnr = register.phasecorr(data, refAndMasks, settings)
-```
-
 (see bioRxiv preprint comparing cross/phase [here](https://www.biorxiv.org/content/early/2016/06/30/061507))
 
-<a id="non-rigid-registration-optional"></a>
+## Non-rigid registration
 
-## Non-rigid registration (optional)
+We strongly recommend running non-rigid registration (`settings['registration']['nonrigid']=True`), as it does not add substantially to the runtime. After rigid registration, non-rigid registration computes per-block shifts to correct local deformations.
 
-If you run rigid registration and find that there is still motion in
-your frames, then you should run non-rigid registration. Non-rigid
-registration divides the image into subsections and computes the shift
-of each subsection (called a block) separately. Non-rigid registration
-will approximately double the registration time.
+### How it works
 
-The size of the blocks to divide the image into is defined by
-`settings['block_size'] = [128,128]` which is the size in Y and X in
-pixels. If Y is the direction of line-scanning for 2p imaging, you may
-want to divide it into smaller blocks in that direction.
+1. **Block decomposition**: The frame is divided into overlapping square sub-blocks (overlapping by at least 50% in each dimension), with size defined by `block_size`.
 
 ![image](_static/overlapping_blocks.png)
 
-Each block is able to shift up to `settings['maxregshiftNR']` pixels in Y
-and X. We recommend to keep this small unless you’re in a very high
-signal-to-noise ratio regime and your motion is very large. For subpixel shifts,
-we use Kriging interpolation and run it on each block.
+2. **Per-block phase-correlation**: Each block is spatially tapered, whitened, and phase-correlated with the corresponding reference block. The maximum allowed shift per block is `settings['registration']['maxregshiftNR']` pixels.
 
 Phase correlation of each block:
 
@@ -136,99 +70,52 @@ Shift of each block from phase corr:
 
 ![image](_static/block_arrows.png)
 
-In a low signal-to-noise ratio regime, there may be blocks which on a
-given frame do not have sufficient information from which to align with
-the reference image. We compute a given block’s maximum phase
-correlation with the reference block, and determine how much greater this max is than
-the surrounding phase correlations. The ratio
-between these two is defined as the `snr` of that block at that given
-time point. We smooth over high snr blocks and use bilinear interpolation
-to upsample create the final shifts:
+3. **SNR-adaptive smoothing**: Some blocks on some frames may have low SNR. The SNR is estimated as the ratio between the peak phase-correlation and the maximum outside the peak region (3x3 pixels). If the SNR is below `settings['registration']['snr_thresh']`, the phase-correlation map is replaced with a smoothed version (Gaussian with standard deviation of one block). If still below threshold after one smoothing, a twice-smoothed version is used.
 
 ![image](_static/block_upsample.png)
 
-We then use bilinear interpolation to warp the frame using these shifts.
+4. **Subpixel estimation**: The phase-correlation map is upsampled by a factor of 10 around the peak using Kriging interpolation (Gaussian kernel, sigma = 0.85 pixels) to obtain subpixel shift estimates.
 
-## Metrics for registration quality
+5. **Bilinear interpolation**: Block-wise shifts are interpolated to per-pixel shifts assuming each block shift corresponds to its center pixel. The frame is then warped using bilinear interpolation via `torch.nn.functional.grid_sample`.
 
-The inputs required for PC metrics are the following fields in settings:
-`nframes`, `Ly`, `Lx`, `reg_file`. Your movie must have at least 1500 frames in each plane
-for the metrics to be calculated. You can run on the red channel (settings[‘reg_file_chan2’]) if use_red=True.
-The outputs saved from the PC metrics are `settings['regDX']`, `settings['tPC']` and `settings['regPC']`.
+## Valid region estimation
 
-```default
-from suite2p.registration import metrics
+Because frames shift during registration, edges of the FOV may lack information. These edge regions are excluded from ROI detection.
 
-settings = metrics.get_pc_metrics(settings, use_red=False)
-```
+Bad frames are identified by two criteria:
+- **Motion outliers**: The rigid shifts are median-filtered in time (window of 101 frames). Frames with large deviations from the median, relative to low correlation, are marked bad if the ratio exceeds `100 * th_badframes`.
+- **Extreme shifts**: Frames where the shift exceeds 95% of the maximum allowed rigid shift (`maxregshift`).
 
-`settings['tPC']` are the time courses of each of the principal
-components of the registered movie. Note
-the time-course is not the entire movie, it’s only the subset of frames used to
-compute the PCs (2000-5000 frames equally sampled throughout the movie).
+After excluding bad frames, the maximum absolute shifts in Y and X define the excluded edge widths. The valid region is saved as `yrange` and `xrange`.
 
-`settings['regPC']` are computed from the spatial principal components of the
-registered movie. `settings['regPC'][0,0,:,:]` is the average of the top
-500 frames of the 1st PC, `settings['regPC'][1,0,:,:]` is the average of
-the bottom 500 frames of the 1st PC. `settings['regDX']` quantifies the
-movement in each PC (`iPC`) by registering `settings['regPC'][0,iPC,:,:]`
-and `settings['regPC'][1,iPC,:,:]` to the reference image `settings['refImg']` (if available,
-if not the mean of all the frames is used as the reference image)
-and computing the registration shifts.
+## Two-step registration (optional)
 
-Here’s a twitter [thread](https://twitter.com/marius10p/status/1051494533786193920)
-with multiple examples.
+If `settings['registration']['two_step_registration']` is True and a raw (unregistered) file is available, registration is performed twice: once to build a reference, then again with a refined reference computed from the non-bad frames from the first pass of registration only.
 
-<a id="id3"></a>
+## Registration metrics
 
-### CLI Script
+Registration quality is assessed using PCA on a subset of 2,000-5,000 registered frames (2,000 if the frame size exceeds 700 pixels to avoid memory issues). The frames are cropped to the valid region and the top 30 principal components are computed. For each PC, the 300 frames with the smallest and 300 with the largest weights are averaged separately. These top and bottom mean frames are registered to each other. The resulting shifts quantify residual motion:
 
-Suite2p provides a CLI (Command-Line Interface) script that calculates the registration metrics
-for a given input tif and outputs some statistics on those metrics. You can use this script to
-determine the quality of registration and tune your registration parameters (e.g: determine if
-non-rigid registration is necessary).
+- **Rigid shift distance**: magnitude of the rigid shift between top/bottom PC averages
+- **Mean non-rigid shift**: non-rigid shift distance averaged across blocks
+- **Max non-rigid shift**: maximum non-rigid shift across blocks
+- **Combined shift**: rigid plus non-rigid shift, averaged across blocks
 
-To run the script, use the following command:
+These are saved as `regDX` in `reg_outputs`, along with the PC time courses (`tPC`) and spatial components (`regPC`). The movie must have at least 1500 frames for metrics to be computed.
 
-```
-$ reg_metrics <INSERT_OPS_DATA_PATH> # Add --tiff_list <INSERT_INPUT_TIF_FILENAME_HERE>.tif to select a subset of tifs
+## Key parameters (`registration`)
 
-```
-
-Once you run the `reg_metrics` command, registration will be performed for the input file with default
-settings parameters and an output similar to the following will be shown:
-
-```default
-# Average NR refers to the average nonrigid offsets of the blocks for a PC
-# Max NR refers to the max nonrigid offsets of the blocks for a PC
-Plane 0:
-Avg_Rigid: 0.000000     Avg_Average NR: 0.028889        Avg_Max NR: 0.120000
-Max_Rigid: 0.000000     Max_Average NR: 0.044444        Max_Max NR: 0.200000
-```
-
-For each `nplane`, these statistics (Average and Max) are calculated across PCs on the offsets found in `settings['regDX']`.
-If the registration works perfectly and most of the motion is removed from the registered dataset, these scores
-should all be very close to zero.
-
-!!! IMPORTANT
-    Make sure to also inspect the registered video to check the quality of registration. You can see an example
-    of how this is done in the GUI [here](https://youtu.be/M7UjvCUn74Y?t=810).
-
-You may notice that upon visual inspection, the registered video may look fine/contain little motion even
-if the statistics are not close to zero. You should always visually check the registration output and prioritize
-what your eyes say over what the CLI script reports.
-
-!!! NOTE
-    All suite2p registration [settings](settings.html#registration) can be modified in this CLI script. Just pass
-    the setting with its value as an optional argument. For instance,
-
-    ```
-    $ reg_metrics path_to_data_tif --nplanes 2 --smooth_sigma 1.2
-    ```
-
-    runs the script with `settings['nplanes'] = 2` and `settings['smooth_sigma'] = 1.2`.
-    You can see all the arguments `reg_metrics` takes with the following command:
-
-    ```
-    $ reg_metrics --help
-    ```
+| Parameter | Description |
+|---|---|
+| `batch_size` | Number of frames processed per batch, if the GPU has a lower memory capacity this may need to be reduced (default: 500) |
+| `nimg_init` | Number of frames sampled for reference image initialization and bidiphase estimation, this may need to be increased if the resulting `refImg` is blurry (default: 300) |
+| `nonrigid` | Enable non-rigid registration after rigid registration (default: True) |
+| `maxregshift` | Maximum rigid shift as a fraction of the frame size (default: 0.1) |
+| `smooth_sigma_time` | Standard deviation of Gaussian for temporal smoothing of phase-correlation maps; 0 to disable, only use if data is very low SNR (default: 0) |
+| `spatial_taper` | Slope of the sigmoid spatial taper at frame borders, increase this if there is vignetting on the edge of the image, like in one-photon imaging (default: 3.45) |
+| `block_size` | Block size [Y, X] in pixels for non-rigid registration (default: [128, 128]) |
+| `maxregshiftNR` | Maximum non-rigid shift per block in pixels (default: 5) |
+| `snr_thresh` | SNR threshold below which non-rigid phase-correlation maps are smoothed across blocks, increase to enforce more smoothing if the output is jumping around in areas with low signal (default: 1.2) |
+| `th_badframes` | Threshold multiplier for detecting bad frames from motion/correlation outliers, decrease to remove more frames if the cropped area in detection seems too large (default: 1.0) |
+| `two_step_registration` | Re-register with a refined reference after excluding bad frames (default: False) |
+| `align_by_chan2` | Use the second (anatomical) channel to compute registration shifts (default: False) |

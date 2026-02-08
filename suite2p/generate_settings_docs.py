@@ -1,12 +1,8 @@
 from suite2p.parameters import DB, SETTINGS
 
-def generate_markdown(settings):
+def generate_markdown(settings, heading=True):
     """Generates Markdown with optimized section creation for nested dictionaries."""
-    md_content = "# Settings for Suite2p\n\n"
-    md_content += ("Suite2p can be run with different configurations using the ops dictionary. "
-                   "The ops dictionary will describe the settings used for a particular run of the pipeline. "
-                   "Here is a summary of all the parameters that the pipeline takes and their default values.\n\n")
-
+    md_content = ""
     # Collect non-nested entries for the top table
     flat_entries = []
     nested_entries = {}
@@ -21,7 +17,8 @@ def generate_markdown(settings):
 
     # Generate the top-level table for standalone settings
     if flat_entries:
-        md_content += "## General Settings\n\n"
+        if heading:
+            md_content += "### general settings\n\n"
         md_content += generate_table(flat_entries)
 
     # Function to process nested dictionaries
@@ -30,7 +27,7 @@ def generate_markdown(settings):
         md = ""
 
         for key, value in nested_dict.items():
-            section_title = key.replace("_", " ").capitalize()
+            section_title = key.replace("_", " ") #.capitalize()
 
             # Process each key in the nested dictionary
             if isinstance(value, dict):
@@ -75,9 +72,18 @@ def generate_table_for_nested_dict(nested_dict):
 
 
 # Generate and save markdown
-markdown_output = generate_markdown({**DB, **SETTINGS})
 
-with open("docs/settings.md", "w") as f:
+with open("docs/parameters.md", "w") as f:
+    md_content = "# Db and Settings for Suite2p\n\n"
+    md_content += ("Suite2p can be run with different configurations using the db and settings dictionaries. "
+                   "The db dictionary contains recording specific parameters, and the settings dictionary contains pipeline parameters. "
+                   "Here is a summary of all the parameters that the pipeline takes and their default values.\n\n")
+    f.write(md_content)
+    f.write("## db.npy\n\n")
+    markdown_output = generate_markdown(DB, heading=False)
     f.write(markdown_output)
-
+    f.write("## settings.npy\n\n")
+    markdown_output = generate_markdown(SETTINGS)
+    f.write(markdown_output)
+    
 print("Markdown file generated successfully!")

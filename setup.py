@@ -2,7 +2,6 @@ import setuptools
 
 install_deps = ["importlib-metadata",
         "natsort",
-        "rastermap>=0.9.0",
         "tifffile",
         "torch>=1.13.1",
         "numpy>=1.24.3",
@@ -20,6 +19,7 @@ gui_deps = [
         "pyqt6",
         "pyqt6.sip",
         "pyqtgraph",
+        "rastermap>=0.9.0",
       ]
 
 io_deps = [

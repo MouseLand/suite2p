@@ -1,8 +1,8 @@
-# Settings for Suite2p
+# Db and Settings for Suite2p
 
-Suite2p can be run with different configurations using the ops dictionary. The ops dictionary will describe the settings used for a particular run of the pipeline. Here is a summary of all the parameters that the pipeline takes and their default values.
+Suite2p can be run with different configurations using the db and settings dictionaries. The db dictionary contains recording specific parameters, and the settings dictionary contains pipeline parameters. Here is a summary of all the parameters that the pipeline takes and their default values.
 
-## General Settings
+## db.npy
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -13,8 +13,11 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `nplanes` | Number of planes | `<class 'int'>` | `1` | Each tiff / file has this many planes in sequence. |
 | `nrois` | Number of ScanImage ROIs | `<class 'int'>` | `1` | Each tiff / file has this many different ROIs. |
 | `nchannels` | Number of channels | `<class 'int'>` | `1` | Specify one- or two- channel recording. |
+| `swap_order` | Swap the order of channels and planes for multiplexed mesoscope recordings. | `<class 'bool'>` | `False` | Swap the order of channels and planes for multiplexed mesoscope recordings. |
 | `functional_chan` | Functional channel | `<class 'int'>` | `1` | This channel is used to extract functional ROIs (1-based). |
-| `lines` | Line assignments | `<class 'list'>` | `[]` | Line assignments for mesoscan FOVs. |
+| `lines` | Lines for each Scanimage ROI | `<class 'list'>` | `None` | Line numbers for each ScanImage ROI. |
+| `dy` | Y position for each Scanimage ROI | `<class 'list'>` | `None` | Y position for each ScanImage ROI. |
+| `dx` | X position for each Scanimage ROI | `<class 'list'>` | `None` | X position for each ScanImage ROI. |
 | `ignore_flyback` | Ignore flyback | `<class 'list'>` | `None` | List of planes to not process (0-based). |
 | `subfolders` | Subfolders | `<class 'list'>` | `None` | If len(data_path)==1, subfolders of data_path[0] to use when look_one_level_down is set to True. |
 | `file_list` | File list | `<class 'list'>` | `None` | List of files to process (default is all files in data_path, only supported with one data_path folder). |
@@ -27,15 +30,19 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `force_sktiff` | Force tifffile reader | `<class 'bool'>` | `False` | Use tifffile for tiff reading instead of scanimage-tiff-reader. |
 | `bruker_bidirectional` | Bruker bidirectional | `<class 'bool'>` | `False` | Tiffs in 0, 1, 2, 2, 1, 0 ... order. |
 | `batch_size` | Batch size | `<class 'int'>` | `500` | Number of frames per batch when writing binary files. |
+
+## settings.npy
+
+### general settings
+
+| Key | GUI Name | Type | Default | Description |
+|---|---|---|---|---|
 | `torch_device` | Torch device | `<class 'str'>` | `cuda` | Torch device using GPU ('cuda') or CPU ('cpu'). |
 | `tau` | Ca timescale | `<class 'float'>` | `1.0` | Timescale for deconvolution and binning in seconds. |
 | `fs` | Sampling frequency | `<class 'float'>` | `10.0` | Sampling rate per plane. |
 | `diameter` | Diameter | `<class 'list'>` | `[12.0, 12.0]` | ROI diameter in Y and X pixels for sourcery and cellpose detection. |
-| `mesoscan` | Mesoscan mode | `<class 'int'>` | `0` | Enable mesoscan mode for processing multiple FOVs. |
-| `dx` | X offsets | `<class 'list'>` | `[]` | X offsets for mesoscan FOVs. |
-| `dy` | Y offsets | `<class 'list'>` | `[]` | Y offsets for mesoscan FOVs. |
 
-### Run
+### run
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -45,7 +52,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `do_deconvolution` | Do spike deconvolution | `<class 'bool'>` | `True` | Whether or not to run spike deconvolution. |
 | `multiplane_parallel` | Multiplane parallel | `<class 'bool'>` | `False` | Whether or not to run each plane as a server job. |
 
-### Io
+### io
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -56,7 +63,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `delete_bin` | Delete binary | `<class 'bool'>` | `False` | Whether to delete binary file after processing. |
 | `move_bin` | Move binary | `<class 'bool'>` | `False` | If True, and fast_disk is different than save_path, binary file is moved to save_path. |
 
-### Registration
+### registration
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -80,7 +87,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `reg_tif` | Save registered tiffs | `<class 'bool'>` | `False` | Whether to save registered tiffs. |
 | `reg_tif_chan2` | Save chan2 registered tiffs | `<class 'bool'>` | `False` | Whether to save chan2 registered tiffs. |
 
-### Detection
+### detection
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -95,12 +102,13 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `npix_norm_max` | Max npix norm | `<class 'float'>` | `100` | Maximum npix norm for ROI (npix_norm = per ROI npix normalized by highest variance ROIs' mean npix). |
 | `max_overlap` | Max overlap | `<class 'float'>` | `0.75` | ROIs with more overlap than this fraction with other ROIs are discarded. |
 | `soma_crop` | Soma crop | `<class 'bool'>` | `True` | Crop dendrites from ROI to determine ROI npix_norm and compactness. |
-| `chan2_threshold` | Chan2 threshold | `<class 'float'>` | `0.25` | IoU threshold between red ROI and functional ROI to define as 'redcell' |
+| `chan2_threshold` | Chan2 threshold | `<class 'float'>` | `0.25` | IoU threshold between anatomical ROI and functional ROI to define as 'redcell' |
+| `cellpose_chan2` | Cellpose chan2 | `<class 'bool'>` | `False` | Use Cellpose to detect ROIs in anatomical channel and overlap with functional ROIs |
 | `sparsery_settings` | N/A | `N/A` | `N/A` | N/A |
 | `sourcery_settings` | N/A | `N/A` | `N/A` | N/A |
 | `cellpose_settings` | N/A | `N/A` | `N/A` | N/A |
 
-### Classification
+### classification
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -108,7 +116,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `use_builtin_classifier` | Use built-in classifier | `<class 'bool'>` | `False` | Use built-in classifier (classifier.npy) instead of user classifier (classifier_user.npy) for ROIs. |
 | `preclassify` | Pre-classify | `<class 'float'>` | `0.0` | Remove ROIs with classifier probability below preclassify before extraction to minimize overlaps |
 
-### Extraction
+### extraction
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|
@@ -122,7 +130,7 @@ Suite2p can be run with different configurations using the ops dictionary. The o
 | `allow_overlap` | Allow overlap | `<class 'bool'>` | `False` | Pixels that are overlapping are thrown out (False) or used for both ROIs (True). |
 | `circular_neuropil` | Circular neuropil | `<class 'bool'>` | `False` | Force neuropil_masks to be circular instead of square (slow). |
 
-### Dcnv preprocess
+### dcnv preprocess
 
 | Key | GUI Name | Type | Default | Description |
 |---|---|---|---|---|

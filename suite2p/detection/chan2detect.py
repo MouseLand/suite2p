@@ -2,20 +2,48 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 import numpy as np
+import torch
 from scipy.ndimage import gaussian_filter
+
+import logging 
+logger = logging.getLogger(__name__)
+
 from ..extraction import masks
 from . import utils
-import traceback
 """
 identify cells with channel 2 brightness (aka red cells)
 
 main function is detect
-takes from ops: "meanImg", "meanImg_chan2", "Ly", "Lx"
+takes from settings: "meanImg", "meanImg_chan2", "Ly", "Lx"
 takes from stat: "ypix", "xpix", "lam"
 """
 
 
 def quadrant_mask(Ly, Lx, ny, nx, sT):
+    """
+    Create a smoothed binary mask for a rectangular block of the image.
+
+    Sets a rectangular region to 1 and applies Gaussian smoothing to create
+    soft edges for blending in the bleedthrough correction.
+
+    Parameters
+    ----------
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    ny : numpy.ndarray
+        Y-indices defining the block rows.
+    nx : numpy.ndarray
+        X-indices defining the block columns.
+    sT : float
+        Standard deviation for Gaussian smoothing of the mask.
+
+    Returns
+    -------
+    mask : numpy.ndarray
+        Smoothed mask of shape (Ly, Lx), dtype float32.
+    """
     mask = np.zeros((Ly, Lx), np.float32)
     mask[np.ix_(ny, nx)] = 1
     mask = gaussian_filter(mask, sT)
@@ -23,8 +51,32 @@ def quadrant_mask(Ly, Lx, ny, nx, sT):
 
 
 def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
-    # subtract bleedthrough of green into red channel
-    # non-rigid regression with nblks x nblks pieces
+    """
+    Subtract bleedthrough of the green channel into the red channel.
+
+    Uses non-rigid regression with nblks x nblks spatial blocks to estimate
+    and remove the green-to-red bleedthrough, producing a corrected red
+    channel mean image.
+
+    Parameters
+    ----------
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    nblks : int
+        Number of spatial blocks along each axis for piecewise regression.
+    mimg : numpy.ndarray
+        Green channel mean image of shape (Ly, Lx).
+    mimg2 : numpy.ndarray
+        Red channel mean image of shape (Ly, Lx).
+
+    Returns
+    -------
+    mimg2 : numpy.ndarray
+        Corrected red channel mean image with bleedthrough subtracted,
+        clipped to non-negative values, shape (Ly, Lx).
+    """
     sT = np.round((Ly + Lx) / (nblks * 2) * 0.25)
     mask = np.zeros((Ly, Lx, nblks, nblks), np.float32)
     weights = np.zeros((nblks, nblks), np.float32)
@@ -48,21 +100,47 @@ def correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2):
     return mimg2
 
 
-def intensity_ratio(ops, stats):
-    """ compute pixels in cell and in area around cell (including overlaps)
-        (exclude pixels from other cells) """
-    Ly, Lx = ops["Ly"], ops["Lx"]
-    cell_pix = masks.create_cell_pix(stats, Ly=ops["Ly"], Lx=ops["Lx"])
+def intensity_ratio(mimg2, stats, chan2_threshold=0.65, inner_neuropil_radius=2,
+                    min_neuropil_pixels=350):
+    """
+    Classify cells as red using the intensity ratio of cell to surround.
+
+    Computes the ratio of channel 2 intensity inside each cell mask to the
+    intensity in the surrounding neuropil, excluding other cells. Cells with
+    a ratio above the threshold are classified as red.
+
+    Parameters
+    ----------
+    mimg2 : numpy.ndarray
+        Red channel mean image of shape (Ly, Lx).
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix", "xpix",
+        and "lam".
+    chan2_threshold : float, optional (default 0.65)
+        Threshold on the intensity ratio for red cell classification.
+    inner_neuropil_radius : int, optional (default 2)
+        Radius in pixels of the inner exclusion zone around each cell for
+        neuropil mask creation.
+    min_neuropil_pixels : int, optional (default 350)
+        Minimum number of pixels in each neuropil mask.
+
+    Returns
+    -------
+    redcell : numpy.ndarray
+        Array of shape (n_cells, 2) where column 0 is the binary red cell
+        label and column 1 is the red probability (intensity ratio).
+    """
+    Ly, Lx = mimg2.shape
+    cell_pix = masks.create_cell_pix(stats, Ly=Ly, Lx=Lx)
     cell_masks0 = [
-        masks.create_cell_mask(stat, Ly=ops["Ly"], Lx=ops["Lx"],
-                               allow_overlap=ops["allow_overlap"]) for stat in stats
+        masks.create_cell_mask(stat, Ly=Ly, Lx=Lx, allow_overlap=True) for stat in stats
     ]
     neuropil_ipix = masks.create_neuropil_masks(
         ypixs=[stat["ypix"] for stat in stats],
         xpixs=[stat["xpix"] for stat in stats],
         cell_pix=cell_pix,
-        inner_neuropil_radius=ops["inner_neuropil_radius"],
-        min_neuropil_pixels=ops["min_neuropil_pixels"],
+        inner_neuropil_radius=inner_neuropil_radius,
+        min_neuropil_pixels=min_neuropil_pixels
     )
     cell_masks = np.zeros((len(stats), Ly * Lx), np.float32)
     neuropil_masks = np.zeros((len(stats), Ly * Lx), np.float32)
@@ -71,18 +149,50 @@ def intensity_ratio(ops, stats):
         cell_mask[cell_mask0[0]] = cell_mask0[1]
         neuropil_mask[neuropil_mask0.astype(np.int64)] = 1. / len(neuropil_mask0)
 
-    mimg2 = ops["meanImg_chan2"]
     inpix = cell_masks @ mimg2.flatten()
     extpix = neuropil_masks @ mimg2.flatten()
     inpix = np.maximum(1e-3, inpix)
     redprob = inpix / (inpix + extpix)
-    redcell = redprob > ops["chan2_thres"]
+    redcell = redprob > chan2_threshold
+    
     return np.stack((redcell, redprob), axis=-1)
 
 
-def cellpose_overlap(stats, mimg2):
+def cellpose_overlap(stats, mimg2, diameter, chan2_threshold=0.25, device=torch.device("cuda"),
+                     settings=None):
+    """
+    Classify cells as red by computing overlap with Cellpose-detected masks.
+
+    Runs Cellpose on the red channel mean image to detect anatomical masks,
+    then computes the intersection-over-union (IOU) between each ROI and the
+    Cellpose masks. ROIs with IOU above the threshold are classified as red.
+
+    Parameters
+    ----------
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix" and "xpix".
+    mimg2 : numpy.ndarray
+        Red channel mean image of shape (Ly, Lx).
+    diameter : float or list of float
+        Expected cell diameter in pixels for Cellpose detection.
+    chan2_threshold : float, optional (default 0.25)
+        IOU threshold for red cell classification.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for Cellpose and GPU cache cleanup.
+    settings : dict, optional
+        Detection settings dictionary passed to Cellpose.
+
+    Returns
+    -------
+    redstats : numpy.ndarray
+        Array of shape (n_cells, 2) where column 0 is the binary red cell
+        label and column 1 is the maximum IOU with Cellpose masks.
+    masks : numpy.ndarray
+        Integer label image of Cellpose-detected masks in the red channel,
+        shape (Ly, Lx).
+    """
     from . import anatomical
-    masks = anatomical.roi_detect(mimg2)[0]
+    masks = anatomical.roi_detect(mimg2, diameter=diameter, device=device, settings=settings, chan2=True)[0]
     Ly, Lx = masks.shape
     redstats = np.zeros((len(stats), 2),
                         np.float32)  #changed the size of preallocated space
@@ -97,34 +207,79 @@ def cellpose_overlap(stats, mimg2):
             iou = 0.0
         redstats[
             i,
-        ] = np.array([iou > 0.25, iou])  #this had the wrong dimension
+        ] = np.array([iou > chan2_threshold, iou])  #this had the wrong dimension
     return redstats, masks
 
 
-def detect(ops, stats):
-    mimg = ops["meanImg"].copy()
-    mimg2 = ops["meanImg_chan2"].copy()
+def detect(meanImg, meanImg_chan2, stats, diameter, cellpose_chan2=False, chan2_threshold=0.65,
+           device=torch.device("cuda"), settings=None, inner_neuropil_radius=2,
+           min_neuropil_pixels=350):
+    """
+    Identify red cells using the second channel (e.g. tdTomato).
 
-    # subtract bleedthrough of green into red channel
-    # non-rigid regression with nblks x nblks pieces
-    nblks = 3
-    Ly, Lx = ops["Ly"], ops["Lx"]
-    ops["meanImg_chan2_corrected"] = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
+    Attempts Cellpose-based overlap detection first if ``cellpose_chan2`` is
+    True. Falls back to intensity-ratio detection if Cellpose fails or is
+    disabled.
+
+    Parameters
+    ----------
+    meanImg : numpy.ndarray
+        Green channel mean image of shape (Ly, Lx).
+    meanImg_chan2 : numpy.ndarray
+        Red channel mean image of shape (Ly, Lx).
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix", "xpix",
+        and "lam".
+    diameter : float or list of float
+        Expected cell diameter in pixels for Cellpose detection.
+    cellpose_chan2 : bool, optional (default False)
+        If True, attempt Cellpose-based red cell detection first.
+    chan2_threshold : float, optional (default 0.65)
+        Threshold for red cell classification. Meaning depends on method:
+        IOU threshold for Cellpose, intensity ratio for fallback.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for Cellpose and GPU cache cleanup.
+    settings : dict, optional
+        Detection settings dictionary passed to Cellpose.
+    inner_neuropil_radius : int, optional (default 2)
+        Radius in pixels of the inner exclusion zone for neuropil masks,
+        used in intensity-ratio fallback.
+    min_neuropil_pixels : int, optional (default 350)
+        Minimum number of neuropil pixels, used in intensity-ratio fallback.
+
+    Returns
+    -------
+    masks : numpy.ndarray or None
+        Cellpose-detected masks in the red channel if Cellpose was used,
+        otherwise None.
+    redstats : numpy.ndarray
+        Array of shape (n_cells, 2) where column 0 is the binary red cell
+        label and column 1 is the red probability.
+    """
+    mimg = meanImg.copy()
+    mimg2 = meanImg_chan2.copy()
 
     redstats = None
-    if ops.get("anatomical_red", True):
+    masks = None
+    if cellpose_chan2:
         try:
-            print(">>>> CELLPOSE estimating masks in anatomical channel")
-            redstats, masks = cellpose_overlap(stats, mimg2)
-        except Exception as e:
-            print(
-                "ERROR importing or running cellpose, continuing without anatomical estimates"
+            logger.info(">>>> CELLPOSE estimating masks in anatomical channel")
+            redstats, masks = cellpose_overlap(stats, mimg2, diameter=diameter,
+                                               chan2_threshold=chan2_threshold,
+                                               device=device, settings=settings)
+        except:
+            logger.info(
+                "ERROR importing or running cellpose, continuing with intensity-based anatomical estimates"
             )
-            traceback.print_exc()
 
     if redstats is None:
-        redstats = intensity_ratio(ops, stats)
-    else:
-        ops["chan2_masks"] = masks
+        # subtract bleedthrough of green into red channel
+        # non-rigid regression with nblks x nblks pieces
+        nblks = 3
+        #Ly, Lx = settings["Ly"], settings["Lx"]
+        #mimg2_corr = correct_bleedthrough(Ly, Lx, nblks, mimg, mimg2)
+        redstats = intensity_ratio(mimg2, stats, chan2_threshold=chan2_threshold,
+                                  inner_neuropil_radius=inner_neuropil_radius,
+                                  min_neuropil_pixels=min_neuropil_pixels)
 
-    return ops, redstats
+    return masks, redstats

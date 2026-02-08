@@ -7,7 +7,10 @@ except:
 import numpy as np
 import time
 from typing import Optional, Tuple, Sequence
-from .utils import find_files_open_binaries, init_ops
+import logging 
+logger = logging.getLogger(__name__)
+
+from .utils import find_files_open_binaries, init_settings
 
 class VideoReader:
     """ Uses cv2 to read video files """
@@ -105,55 +108,55 @@ class VideoReader:
                 if ret:
                     im[nk + fc] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 else:
-                    print("img load failed, replacing with prev..")
+                    logger.info("img load failed, replacing with prev..")
                     im[nk + fc] = im[nk + fc - 1]
                 fc += 1
             nk += nt0
         return im
 
-def movie_to_binary(ops):
+def movie_to_binary(settings):
     """  finds movie files and writes them to binaries
 
     Parameters
     ----------
-    ops : dictionary
+    settings : dictionary
         "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
         "nchannels", "keep_movie_raw", "look_one_level_down" (optional: "subfolders")
 
     Returns
     -------
-        ops : dictionary of first plane
-            "Ly", "Lx", ops["reg_file"] or ops["raw_file"] is created binary
+        settings : dictionary of first plane
+            "Ly", "Lx", settings["reg_file"] or settings["raw_file"] is created binary
 
     """
     if not HAS_CV2:
         raise ImportError("cv2 is required for this file type, please 'pip install opencv-python-headless'")
 
-    ops1 = init_ops(ops)
+    settings1 = init_settings(settings)
 
-    nplanes = ops1[0]["nplanes"]
-    nchannels = ops1[0]["nchannels"]
+    nplanes = settings1[0]["nplanes"]
+    nchannels = settings1[0]["nchannels"]
     
     # open all binary files for writing
-    ops1, filenames, reg_file, reg_file_chan2 = find_files_open_binaries(ops1)
+    settings1, filenames, reg_file, reg_file_chan2 = find_files_open_binaries(settings1)
     
     ik = 0
-    for j in range(ops["nplanes"]):
-        ops1[j]["nframes_per_folder"] = np.zeros(len(filenames), np.int32)
+    for j in range(settings["nplanes"]):
+        settings1[j]["nframes_per_folder"] = np.zeros(len(filenames), np.int32)
 
 
     ncp = nplanes * nchannels
-    nbatch = ncp * int(np.ceil(ops1[0]["batch_size"] / ncp))
-    print(filenames)
+    nbatch = ncp * int(np.ceil(settings1[0]["batch_size"] / ncp))
+    logger.info(filenames)
     t0 = time.time()
     with VideoReader(filenames=filenames) as vr:
-        if ops1[0]["fs"]<=0:
-            for ops in ops1:
-                ops["fs"] = vr.fs
+        if settings1[0]["fs"]<=0:
+            for settings in settings1:
+                settings["fs"] = vr.fs
 
         nframes_all = vr.cumframes[-1]
         nbatch = min(nbatch, nframes_all)
-        nfunc = ops["functional_chan"] - 1 if nchannels > 1 else 0
+        nfunc = settings["functional_chan"] - 1 if nchannels > 1 else 0
         # loop over all video frames
         ik = 0
         while 1:
@@ -164,47 +167,47 @@ def movie_to_binary(ops):
             nframes = im.shape[0]
             for j in range(0, nplanes):
                 if ik == 0:
-                    ops1[j]["meanImg"] = np.zeros((im.shape[1], im.shape[2]),
+                    settings1[j]["meanImg"] = np.zeros((im.shape[1], im.shape[2]),
                                                     np.float32)
                     if nchannels > 1:
-                        ops1[j]["meanImg_chan2"] = np.zeros(
+                        settings1[j]["meanImg_chan2"] = np.zeros(
                             (im.shape[1], im.shape[2]), np.float32)
-                    ops1[j]["nframes"] = 0
+                    settings1[j]["nframes"] = 0
                 i0 = nchannels * ((j) % nplanes)
                 im2write = im[np.arange(int(i0) +
                                         nfunc, nframes, ncp), :, :].astype(
                                             np.int16)
                 reg_file[j].write(bytearray(im2write))
-                ops1[j]["meanImg"] += im2write.astype(np.float32).sum(axis=0)
+                settings1[j]["meanImg"] += im2write.astype(np.float32).sum(axis=0)
                 if nchannels > 1:
                     im2write = im[np.arange(int(i0) + 1 -
                                             nfunc, nframes, ncp), :, :].astype(
                                                 np.int16)
                     reg_file_chan2[j].write(bytearray(im2write))
-                    ops1[j]["meanImg_chan2"] += im2write.astype(
+                    settings1[j]["meanImg_chan2"] += im2write.astype(
                         np.float32).sum(axis=0)
-                ops1[j]["nframes"] += im2write.shape[0]
-                #ops1[j]["nframes_per_folder"][ih5] += im2write.shape[0]
+                settings1[j]["nframes"] += im2write.shape[0]
+                #settings1[j]["nframes_per_folder"][ih5] += im2write.shape[0]
             ik += nframes
             if ik % (nbatch * 4) == 0:
-                print("%d frames of binary, time %0.2f sec." %
+                logger.info("%d frames of binary, time %0.2f sec." %
                       (ik, time.time() - t0))
 
-    # write ops files
-    do_registration = ops1[0]["do_registration"]
-    for ops in ops1:
-        ops["Ly"] = im2write.shape[1]
-        ops["Lx"] = im2write.shape[2]
+    # write settings files
+    do_registration = settings1[0]["do_registration"]
+    for settings in settings1:
+        settings["Ly"] = im2write.shape[1]
+        settings["Lx"] = im2write.shape[2]
         if not do_registration:
-            ops["yrange"] = np.array([0, ops["Ly"]])
-            ops["xrange"] = np.array([0, ops["Lx"]])
-        ops["meanImg"] /= ops["nframes"]
+            settings["yrange"] = np.array([0, settings["Ly"]])
+            settings["xrange"] = np.array([0, settings["Lx"]])
+        settings["meanImg"] /= settings["nframes"]
         if nchannels > 1:
-            ops["meanImg_chan2"] /= ops["nframes"]
-        np.save(ops["ops_path"], ops)
-    # close all binary files and write ops files
+            settings["meanImg_chan2"] /= settings["nframes"]
+        np.save(settings["settings_path"], settings)
+    # close all binary files and write settings files
     for j in range(nplanes):
         reg_file[j].close()
         if nchannels > 1:
             reg_file_chan2[j].close()
-    return ops1[0]
+    return settings1[0]

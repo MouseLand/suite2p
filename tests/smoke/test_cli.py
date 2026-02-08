@@ -8,7 +8,11 @@ def test_cli_help_test_appears_when_suite2p_is_called(capfd):
     captured = capfd.readouterr()
     assert 'Suite2p' in captured.out
     assert 'usage' in captured.out
+<<<<<<< HEAD
     assert 'parameters' in captured.out
+=======
+    assert 'options' in captured.out
+>>>>>>> suite2p_dev/tomerge
 
 
 def temp_test_cli_version_test_appears_when_suite2p_is_called_locally(capfd):
@@ -28,6 +32,7 @@ def test_cli_help_test_appears_when_suite2p_is_called_locally(capfd):
     captured = capfd.readouterr()
     assert 'Suite2p' in captured.out
     assert 'usage' in captured.out
+<<<<<<< HEAD
     assert 'parameters' in captured.out
 
 
@@ -43,6 +48,9 @@ def test_cli_reg_metrics_runs_with_output(capfd, tmpdir):
     os.system(f'reg_metrics data/test_data/ --tiff_list input_1500.tif --do_registration 2 --save_path0 {tmpdir}')
     captured = capfd.readouterr()
     assert captured.out
+=======
+    assert 'options' in captured.out
+>>>>>>> suite2p_dev/tomerge
 
 
 def temp_test_cli_suite2p_gui_runs_when_is_called_locally():

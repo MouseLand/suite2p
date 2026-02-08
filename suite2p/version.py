@@ -1,6 +1,19 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-from importlib_metadata import metadata as _metadata
 
-version = _metadata("suite2p")["version"]
+from importlib.metadata import PackageNotFoundError, version
+import sys
+from platform import python_version
+import torch
+
+try:
+    version = version("suite2p")
+except PackageNotFoundError:
+    version = "unknown"
+
+version_str = f"""
+cellpose version: \t{version} 
+platform:       \t{sys.platform} 
+python version: \t{python_version()} 
+torch version:  \t{torch.__version__}"""

@@ -2,7 +2,6 @@ import setuptools
 
 install_deps = ["importlib-metadata",
         "natsort",
-        "rastermap>=0.9.0",
         "tifffile",
         "torch>=1.13.1",
         "numpy>=1.24.3",
@@ -16,9 +15,11 @@ install_deps = ["importlib-metadata",
 
 gui_deps = [
         "qtpy",
+        "superqt",
         "pyqt6",
         "pyqt6.sip",
         "pyqtgraph",
+        "rastermap>=0.9.0",
       ]
 
 io_deps = [
@@ -94,19 +95,19 @@ setuptools.setup(
     ],
     use_scm_version=True,
     install_requires=install_deps,
-    tests_require=test_deps,
     extras_require={
       "docs": [
         "sphinx>=3.0",
-        "sphinxcontrib-apidoc",
-        "sphinx_rtd_theme",
-        "sphinx-prompt",
-        "sphinx-autodoc-typehints",
+        "mkdocs",
+        "mkdocs-material",
+        "mkdocs-git-revision-date-localized-plugin",
+        "mkdocstrings",
+        "mkdocstrings-python"
       ],
       "gui": gui_deps,
       "nwb": nwb_deps,
       "io": io_deps,
-      "tests": test_deps,
+      "test": test_deps,
       "all": all_deps,
     },
     include_package_data=True,
@@ -118,8 +119,6 @@ setuptools.setup(
       entry_points = {
         "console_scripts": [
           "suite2p = suite2p.__main__:main",
-          "reg_metrics = benchmarks.registration_metrics:main",
-          "tiff2scanimage = scripts.make_tiff_scanimage_compatible:main",
         ]
         },
 )

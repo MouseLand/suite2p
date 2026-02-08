@@ -1,23 +1,103 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-from typing import Tuple, Dict, List, Any
 from copy import deepcopy
 from enum import Enum
 from warnings import warn
+import time
+import logging 
+logger = logging.getLogger(__name__)
+
 
 import numpy as np
 from numpy.linalg import norm
 
 from scipy.interpolate import RectBivariateSpline
-from scipy.ndimage import maximum_filter, gaussian_filter, uniform_filter
+from scipy.ndimage import maximum_filter, uniform_filter
 from scipy.stats import mode
 
 from . import utils
 
+def downsample(mov, taper_edge=True):
+    """
+    Downsample a movie by 2x in both spatial dimensions.
 
-def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
-    """Returns movie subtracted by a low-pass filtered version of itself to help ignore neuropil."""
+    Averages adjacent pixels along Y then X. If a dimension has odd size,
+    the last pixel is halved when ``taper_edge`` is True.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Movie of shape (n_frames, Ly, Lx).
+    taper_edge : bool, optional (default True)
+        If True, halve the edge pixel when the dimension is odd.
+
+    Returns
+    -------
+    mov2 : numpy.ndarray
+        Downsampled movie of shape (n_frames, ceil(Ly/2), ceil(Lx/2)).
+    """
+    n_frames, Ly, Lx = mov.shape
+
+    # bin along Y
+    movd = np.zeros((n_frames, int(np.ceil(Ly / 2)), Lx), "float32")
+    movd[:, :Ly // 2, :] = np.mean([mov[:, 0:-1:2, :], mov[:, 1::2, :]], axis=0)
+    if Ly % 2 == 1:
+        movd[:, -1, :] = mov[:, -1, :] / 2 if taper_edge else mov[:, -1, :]
+
+    # bin along X
+    mov2 = np.zeros((n_frames, int(np.ceil(Ly / 2)), int(np.ceil(Lx / 2))), "float32")
+    mov2[:, :, :Lx // 2] = np.mean([movd[:, :, 0:-1:2], movd[:, :, 1::2]], axis=0)
+    if Lx % 2 == 1:
+        mov2[:, :, -1] = movd[:, :, -1] / 2 if taper_edge else movd[:, :, -1]
+
+    return mov2
+
+
+def threshold_reduce(mov, intensity_threshold):
+    """
+    Compute thresholded standard deviation map across frames.
+
+    For each pixel, sums the squared values of frames exceeding
+    the threshold, then takes the square root. Iterates frame-by-frame
+    to reduce memory usage.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Movie of shape (nbinned, Ly, Lx).
+    intensity_threshold : float
+        Only frames where the pixel value exceeds this are included.
+
+    Returns
+    -------
+    Vt : numpy.ndarray
+        Thresholded standard deviation map of shape (Ly, Lx), dtype float32.
+    """
+    nbinned, Lyp, Lxp = mov.shape
+    Vt = np.zeros((Lyp, Lxp), "float32")
+    for t in range(nbinned):
+        Vt += mov[t]**2 * (mov[t] > intensity_threshold)
+    Vt = Vt**.5
+    return Vt
+
+
+def neuropil_subtraction(mov, filter_size):
+    """
+    Subtract a spatially low-pass filtered version of the movie to remove neuropil.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Movie of shape (nbinned, Ly, Lx).
+    filter_size : int
+        Width of the uniform spatial filter in pixels.
+
+    Returns
+    -------
+    movt : numpy.ndarray
+        High-pass filtered movie of shape (nbinned, Ly, Lx).
+    """
     nbinned, Ly, Lx = mov.shape
     c1 = uniform_filter(np.ones((Ly, Lx)), size=filter_size, mode="constant")
     movt = np.zeros_like(mov)
@@ -27,8 +107,22 @@ def neuropil_subtraction(mov: np.ndarray, filter_size: int) -> None:
     return movt
 
 
-def square_convolution_2d(mov: np.ndarray, filter_size: int) -> np.ndarray:
-    """Returns movie convolved by uniform kernel with width "filter_size"."""
+def square_convolution_2d(mov, filter_size):
+    """
+    Convolve each frame with a square uniform kernel.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Movie of shape (nbinned, Ly, Lx).
+    filter_size : int
+        Width of the square uniform kernel in pixels.
+
+    Returns
+    -------
+    movt : numpy.ndarray
+        Convolved movie of shape (nbinned, Ly, Lx), dtype float32.
+    """
     movt = np.zeros_like(mov, dtype=np.float32)
     for frame, framet in zip(mov, movt):
         framet[:] = filter_size * uniform_filter(frame, size=filter_size,
@@ -37,7 +131,35 @@ def square_convolution_2d(mov: np.ndarray, filter_size: int) -> np.ndarray:
 
 
 def multiscale_mask(ypix0, xpix0, lam0, Lyp, Lxp):
-    # given a set of masks on the raw image, this functions returns the downsampled masks for all spatial scales
+    """
+    Downsample a mask to all spatial scales used in sparse detection.
+
+    Given pixel coordinates and weights at the original resolution, creates
+    downsampled versions by successively halving coordinates and accumulating
+    weights, then extends each mask into surrounding pixels.
+
+    Parameters
+    ----------
+    ypix0 : numpy.ndarray
+        Y-coordinates of the mask pixels at full resolution.
+    xpix0 : numpy.ndarray
+        X-coordinates of the mask pixels at full resolution.
+    lam0 : numpy.ndarray
+        Pixel weights at full resolution.
+    Lyp : numpy.ndarray
+        Heights of the downsampled images at each scale, shape (n_scales,).
+    Lxp : numpy.ndarray
+        Widths of the downsampled images at each scale, shape (n_scales,).
+
+    Returns
+    -------
+    ys : list of numpy.ndarray
+        Y-coordinates of the mask at each spatial scale.
+    xs : list of numpy.ndarray
+        X-coordinates of the mask at each spatial scale.
+    lms : list of numpy.ndarray
+        Pixel weights at each spatial scale.
+    """
     xs = [xpix0]
     ys = [ypix0]
     lms = [lam0]
@@ -57,38 +179,30 @@ def multiscale_mask(ypix0, xpix0, lam0, Lyp, Lxp):
 
 
 def add_square(yi, xi, lx, Ly, Lx):
-    """ return square of pixels around peak with norm 1
-    
+    """
+    Create a square mask of pixels around a peak, normalized to unit norm.
+
     Parameters
-    ----------------
-
+    ----------
     yi : int
-        y-center
-
+        Y-coordinate of the center pixel.
     xi : int
-        x-center
-
+        X-coordinate of the center pixel.
     lx : int
-        x-width
-
+        Side length of the square in pixels.
     Ly : int
-        full y frame
-
+        Height of the full image.
     Lx : int
-        full x frame
+        Width of the full image.
 
     Returns
-    ----------------
-
-    y0 : array
-        pixels in y
-    
-    x0 : array
-        pixels in x
-    
-    mask : array
-        pixel weightings
-
+    -------
+    y0 : numpy.ndarray
+        Y-coordinates of the square pixels, flattened.
+    x0 : numpy.ndarray
+        X-coordinates of the square pixels, flattened.
+    mask : numpy.ndarray
+        Pixel weights normalized to unit L2 norm, flattened.
     """
     lhf = int((lx - 1) / 2)
     ipix = np.tile(np.arange(-lhf, -lhf + lx, dtype=np.int32), reps=(lx, 1))
@@ -104,33 +218,36 @@ def add_square(yi, xi, lx, Ly, Lx):
 
 
 def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
-    """ extend mask based on activity of pixels on active frames
-    ACTIVE frames determined by threshold
-    
-    Parameters
-    ----------------
-    
-    ypix : array
-        pixels in y
-    
-    xpix : array
-        pixels in x
-    
-    mov : 2D array
-        binned residual movie [nbinned x Lyc*Lxc]
+    """
+    Iteratively extend a mask based on pixel activity on active frames.
 
-    active_frames : 1D array
-        list of active frames
+    Repeatedly grows the ROI by one pixel on each side, keeping only pixels
+    whose mean activity on active frames exceeds 1/5 of the maximum pixel. 
+    Stops when the mask stops growing or reaches 10000 pixels.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the initial mask pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the initial mask pixels.
+    mov : numpy.ndarray
+        Binned residual movie of shape (nbinned, Lyc * Lxc).
+    Lyc : int
+        Height of the movie frame.
+    Lxc : int
+        Width of the movie frame.
+    active_frames : numpy.ndarray
+        Indices of frames used to compute activity.
 
     Returns
-    ----------------
-    ypix : array
-        extended pixels in y
-    
-    xpix : array
-        extended pixels in x
-    lam : array
-        pixel weighting
+    -------
+    ypix : numpy.ndarray
+        Y-coordinates of the extended mask.
+    xpix : numpy.ndarray
+        X-coordinates of the extended mask.
+    lam : numpy.ndarray
+        Pixel weights normalized to unit L2 norm.
     """
     npix = 0
     iter = 0
@@ -140,7 +257,7 @@ def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
         ypix, xpix = extendROI(ypix, xpix, Lyc, Lxc, 1)
         # activity in proposed ROI on ACTIVE frames
         usub = mov[np.ix_(active_frames, ypix * Lxc + xpix)]
-        lam = np.mean(usub, axis=0)
+        lam = usub.mean(axis=0)
         ix = lam > max(0, lam.max() / 5.0)
         if ix.sum() == 0:
             break
@@ -157,7 +274,29 @@ def iter_extend(ypix, xpix, mov, Lyc, Lxc, active_frames):
 
 
 def extendROI(ypix, xpix, Ly, Lx, niter=1):
-    """ extend ypix and xpix by niter pixel(s) on each side """
+    """
+    Extend ROI pixel coordinates by growing the mask in 4-connected directions.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the mask pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the mask pixels.
+    Ly : int
+        Height of the image.
+    Lx : int
+        Width of the image.
+    niter : int, optional (default 1)
+        Number of dilation iterations.
+
+    Returns
+    -------
+    ypix : numpy.ndarray
+        Extended Y-coordinates.
+    xpix : numpy.ndarray
+        Extended X-coordinates.
+    """
     for k in range(niter):
         yx = ((ypix, ypix, ypix, ypix - 1, ypix + 1), (xpix, xpix + 1, xpix - 1, xpix,
                                                        xpix))
@@ -170,30 +309,31 @@ def extendROI(ypix, xpix, Ly, Lx, niter=1):
 
 
 def two_comps(mpix0, lam, Th2):
-    """ check if splitting ROI increases variance explained
+    """
+    Check if splitting an ROI into two components increases variance explained.
+
+    Projects the ROI movie onto the current mask, then tests whether a
+    two-component split captures more variance. Returns the variance ratio
+    and the better component.
 
     Parameters
-    ----------------
-    
-    mpix0 : 2D array
-        binned movie for pixels in ROI [nbinned x npix]
-
-    lam : array
-        pixel weighting
-
+    ----------
+    mpix0 : numpy.ndarray
+        Binned movie for pixels in the ROI, shape (nbinned, npix).
+    lam : numpy.ndarray
+        Pixel weights for the current ROI.
     Th2 : float
-        intensity threshold
-
+        Intensity threshold for determining active frames.
 
     Returns
-    ----------------
-
-    vrat : array
-        extended pixels in y
-    
+    -------
+    vrat : float
+        Ratio of variance explained by two components to one component.
+        Values above 1.25 suggest the ROI should be split.
     ipick : tuple
-        new ROI
-
+        Tuple of (mu, xproj, goodframe) for the better component, where
+        mu is the pixel weights, xproj is the temporal projection on active
+        frames, and goodframe is the boolean active-frame mask.
     """
     mpix = mpix0.copy()
     xproj = mpix @ lam
@@ -241,7 +381,34 @@ def two_comps(mpix0, lam, Th2):
 
 
 def extend_mask(ypix, xpix, lam, Ly, Lx):
-    """ extend mask into 8 surrrounding pixels """
+    """
+    Extend a mask into the 8 surrounding pixels of each pixel.
+
+    Each pixel spreads its weight equally to itself and its 8 neighbors.
+    Overlapping contributions are summed.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the mask pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the mask pixels.
+    lam : numpy.ndarray
+        Pixel weights.
+    Ly : int
+        Height of the image.
+    Lx : int
+        Width of the image.
+
+    Returns
+    -------
+    ypix1 : numpy.ndarray
+        Y-coordinates of the extended mask.
+    xpix1 : numpy.ndarray
+        X-coordinates of the extended mask.
+    lam1 : numpy.ndarray
+        Accumulated pixel weights for the extended mask.
+    """
     nel = len(xpix)
     yx = ((ypix, ypix, ypix, ypix - 1, ypix - 1, ypix - 1, ypix + 1, ypix + 1,
            ypix + 1), (xpix, xpix + 1, xpix - 1, xpix, xpix + 1, xpix - 1, xpix,
@@ -263,7 +430,23 @@ class EstimateMode(Enum):
     Estimated = "estimated"
 
 
-def estimate_spatial_scale(I: np.ndarray) -> int:
+def estimate_spatial_scale(I):
+    """
+    Estimate the dominant spatial scale from multi-scale correlation maps.
+
+    Finds the scale index that appears most frequently among the top 50
+    brightest local maxima in the max-projected correlation image.
+
+    Parameters
+    ----------
+    I : numpy.ndarray
+        Multi-scale correlation maps of shape (n_scales, Ly, Lx).
+
+    Returns
+    -------
+    im : int
+        Index of the estimated best spatial scale.
+    """
     I0 = I.max(axis=0)
     imap = np.argmax(I, axis=0).flatten()
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
@@ -272,9 +455,29 @@ def estimate_spatial_scale(I: np.ndarray) -> int:
     return im
 
 
-def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMode]:
+def find_best_scale(I, spatial_scale):
     """
-    Returns best scale and estimate method (if the spatial scale was forced (if positive) or estimated (the top peaks).
+    Determine the best spatial scale, either forced or estimated from data.
+
+    If ``spatial_scale`` is positive, clamps it to [1, 4] and returns it as
+    forced. Otherwise estimates the scale from the multi-scale correlation
+    maps.
+
+    Parameters
+    ----------
+    I : numpy.ndarray
+        Multi-scale correlation maps of shape (n_scales, Ly, Lx).
+    spatial_scale : int
+        User-specified spatial scale. If positive, used directly (forced).
+        If zero or negative, the scale is estimated from the data.
+
+    Returns
+    -------
+    scale : int
+        Best spatial scale index.
+    estimate_mode : EstimateMode
+        Whether the scale was ``EstimateMode.Forced`` or
+        ``EstimateMode.Estimated``.
     """
     if spatial_scale > 0:
         return max(1, min(4, spatial_scale)), EstimateMode.Forced
@@ -289,18 +492,50 @@ def find_best_scale(I: np.ndarray, spatial_scale: int) -> Tuple[int, EstimateMod
             return 1, EstimateMode.Forced
 
 
-def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_size: int,
-             spatial_scale: int, threshold_scaling, max_iterations: int,
-             percentile=0) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """Returns stats and ops from "mov" using correlations in time."""
+def sparsery(mov, sdmov, highpass_neuropil,
+             spatial_scale, threshold_scaling, max_ROIs,
+             active_percentile=0):
+    """
+    Detect ROIs in a movie using doubly-sparse matrix decomposition.
 
-    mean_img = mov.mean(axis=0)
-    mov = utils.temporal_high_pass_filter(mov=mov, width=int(high_pass))
-    max_proj = mov.max(axis=0)
-    sdmov = utils.standard_deviation_over_time(mov, batch_size=batch_size)
+    Subtracts neuropil, builds multi-scale correlation maps, then
+    greedily chooses top activity peak, extends mask, optionally splits
+    the ROI, and subtracts the detected signal from the residual movie, then 
+    extracts the highest peak from the residual and continues.
+
+    Parameters
+    ----------
+    mov : numpy.ndarray
+        Binned movie of shape (nbinned, Ly, Lx).
+    sdmov : numpy.ndarray
+        Per-pixel standard deviation of shape (Ly, Lx), used for
+        normalization.
+    highpass_neuropil : int
+        Filter size for spatial high-pass neuropil subtraction.
+    spatial_scale : int
+        Spatial scale setting. If positive, forced; if zero or negative,
+        estimated from the data.
+    threshold_scaling : float
+        Multiplier for the activity threshold used to accept peaks.
+    max_ROIs : int
+        Maximum number of ROIs to detect.
+    active_percentile : float, optional (default 0)
+        If positive, use this percentile of the temporal projection as an
+        alternative activity threshold.
+
+    Returns
+    -------
+    new_settings : dict
+        Dictionary with detection metadata including "Vmax", "ihop",
+        "Vsplit", "Vcorr", "Vmap", and "spatscale_pix".
+    stats : list of dict
+        List of ROI statistics dictionaries, each containing "ypix",
+        "xpix", "lam", "med", and "footprint".
+    """
+
     mov = neuropil_subtraction(
         mov=mov / sdmov,
-        filter_size=neuropil_high_pass)  # subtract low-pass filtered movie
+        filter_size=highpass_neuropil)  # subtract low-pass filtered movie
 
     _, Lyc, Lxc = mov.shape
     LL = np.meshgrid(np.arange(Lxc), np.arange(Lyc))
@@ -312,8 +547,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     Lyp, Lxp = np.zeros(5, "int32"), np.zeros(5, "int32")  # downsampled sizes
     for j in range(5):
         movu0 = square_convolution_2d(dmov, 3)
-        dmov = 2 * utils.downsample(dmov)
-        gxy0 = utils.downsample(gxy[j], False)
+        dmov = 2 * downsample(dmov)
+        gxy0 = downsample(gxy[j], False)
         gxy.append(gxy0)
         _, Lyp[j], Lxp[j] = movu0.shape
         movu.append(movu0)
@@ -328,36 +563,35 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
     v_corr = I.max(axis=0)
 
     scale, estimate_mode = find_best_scale(I=I, spatial_scale=spatial_scale)
-    # TODO: scales from cellpose (?)
-    #    scales = 3 * 2 ** np.arange(5.0)
-    #    scale = np.argmin(np.abs(scales - diam))
-    #    estimate_mode = EstimateMode.Estimated
 
     spatscale_pix = 3 * 2**scale
     mask_window = int(((spatscale_pix * 1.5) // 2) * 2)
     Th2 = threshold_scaling * 5 * max(
         1, scale)  # threshold for accepted peaks (scale it by spatial scale)
     vmultiplier = max(1, mov.shape[0] / 1200)
-    print("NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f " %
+    logger.info("NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f " %
           (estimate_mode.value, spatscale_pix, vmultiplier, vmultiplier * Th2))
 
     # get standard deviation for pixels for all values > Th2
-    v_map = [utils.threshold_reduce(movu0, Th2) for movu0 in movu]
+    v_map = [threshold_reduce(movu0, Th2) for movu0 in movu]
     movu = [movu0.reshape(movu0.shape[0], -1) for movu0 in movu]
 
     mov = np.reshape(mov, (-1, Lyc * Lxc))
     lxs = 3 * 2**np.arange(5)
     nscales = len(lxs)
 
-    v_max = np.zeros(max_iterations)
-    ihop = np.zeros(max_iterations)
-    v_split = np.zeros(max_iterations)
+    v_max = np.zeros(max_ROIs)
+    ihop = np.zeros(max_ROIs)
+    v_split = np.zeros(max_ROIs)
     V1 = deepcopy(v_map)
     stats = []
     patches = []
     seeds = []
     extract_patches = False
-    for tj in range(max_iterations):
+
+    logger.info(f"max_ROIs set to {max_ROIs} - will run for {max_ROIs} ROIs or until no more ROIs above threshold are found.")
+    t0 = time.time()
+    for tj in range(max_ROIs):
         # find peaks in stddev"s
         v0max = np.array([V1[j].max() for j in range(5)])
         imap = np.argmax(v0max)
@@ -381,8 +615,8 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
 
         # project movie into square to get time series
         tproj = (mov[:, ypix0 * Lxc + xpix0] * lam0[0]).sum(axis=-1)
-        if percentile > 0:
-            threshold = min(Th2, np.percentile(tproj, percentile))
+        if active_percentile > 0:
+            threshold = min(Th2, np.percentile(tproj, active_percentile))
         else:
             threshold = Th2
         active_frames = np.nonzero(tproj > threshold)[0]  # frames with activity > Th2
@@ -399,15 +633,16 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             tproj = mov[:, ypix0 * Lxc + xpix0] @ lam0
             active_frames = np.nonzero(tproj > threshold)[0]
             if len(active_frames) < 1:
-                if tj < nmasks:
-                    continue
-                else:
-                    break
-        if len(active_frames) < 1:
-            if tj < nmasks:
-                continue
-            else:
+                #if tj < max_ROIs/2: # TODO: nmasks is undefined
+                #    continue
+                #else:
                 break
+            
+        if len(active_frames) < 1:
+            #if tj < max_ROIs/2:
+            #    continue
+            #else:
+            break
 
         # check if ROI should be split
         v_split[tj], ipack = two_comps(mov[:, ypix0 * Lxc + xpix0], lam0, threshold)
@@ -442,11 +677,12 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
             "footprint": ihop[tj]
         })
 
-        if tj % 1000 == 0:
-            print("%d ROIs, score=%2.2f" % (tj, v_max[tj]))
+        if tj % 500 == 0:
+            t1 = time.time() - t0
+            logger.info(f"ROIs: {tj},\t last score: {v_max[tj]:0.4f}, \t time: {t1:0.2f}sec")
 
-    new_ops = {
-        "max_proj": max_proj,
+
+    new_settings = {
         "Vmax": v_max,
         "ihop": ihop,
         "Vsplit": v_split,
@@ -457,4 +693,4 @@ def sparsery(mov: np.ndarray, high_pass: int, neuropil_high_pass: int, batch_siz
         "spatscale_pix": spatscale_pix,
     }
 
-    return new_ops, stats
+    return new_settings, stats

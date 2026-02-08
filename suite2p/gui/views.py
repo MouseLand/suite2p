@@ -6,7 +6,7 @@ from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QPushButton, QSlider, QButtonGroup, QLabel, QStyle, QStyleOptionSlider, QApplication
 from qtpy.QtGui import QPainter
 
-from .. import extraction
+from .. import registration
 
 
 def make_buttons(parent):
@@ -73,21 +73,30 @@ def init_views(parent):
     for k in range(7):
         if k == 2:
             if "meanImgE" not in parent.ops:
-                parent.ops = extraction.enhanced_mean_image(parent.ops)
+                meanImgE = registration.highpass_mean_image(parent.ops["meanImg"], 
+                                                              parent.ops.get("aspect", 1))
+                parent.ops["meanImgE"] = meanImgE
             mimg = parent.ops["meanImgE"]
         elif k == 1:
-            mimg = parent.ops["meanImg"]
-            mimg1 = np.percentile(mimg, 1)
-            mimg99 = np.percentile(mimg, 99)
-            mimg = (mimg - mimg1) / (mimg99 - mimg1)
-            mimg = np.maximum(0, np.minimum(1, mimg))
+            img = parent.ops["meanImg"]
+            mimg1 = np.percentile(img, 1)
+            mimg99 = np.percentile(img, 99)
+            img = (img - mimg1) / (mimg99 - mimg1)
+            img = np.clip(img, 0, 1)
+            mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
+            if img.shape[0] != parent.Ly or img.shape[1] != parent.Lx:
+                mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
+                     parent.ops["xrange"][0]:parent.ops["xrange"][1]] = img
+            else:
+                mimg = img
         elif k == 3:
             if "Vcorr" in parent.ops:
                 vcorr = parent.ops["Vcorr"]
                 mimg1 = np.percentile(vcorr, 1)
                 mimg99 = np.percentile(vcorr, 99)
                 vcorr = (vcorr - mimg1) / (mimg99 - mimg1)
-                mimg = mimg1 * np.ones((parent.Ly, parent.Lx), np.float32)
+                vcorr = np.clip(vcorr, 0, 1)
+                mimg = np.zeros((parent.Ly, parent.Lx), np.float32)
                 mimg[parent.ops["yrange"][0]:parent.ops["yrange"][1],
                      parent.ops["xrange"][0]:parent.ops["xrange"][1]] = vcorr
                 mimg = np.maximum(0, np.minimum(1, mimg))

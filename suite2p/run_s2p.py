@@ -1,7 +1,7 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import os
+import os, sys
 import shutil
 import time
 from natsort import natsorted
@@ -10,558 +10,462 @@ from getpass import getpass
 import pathlib
 import contextlib
 import numpy as np
-#from scipy.io import savemat
+from scipy.stats import skew
+from scipy.io import loadmat
+import torch
+import logging 
 
-from . import extraction, io, registration, detection, classification, default_ops
+logger = logging.getLogger(__name__)
 
-try:
-    import pynwb
-    HAS_NWB = True
-except ImportError:
-    HAS_NWB = False
-
-try:
-    import nd2
-    HAS_ND2 = True
-except ImportError:
-    HAS_ND2 = False
-
-try:
-    import h5py
-    HAS_H5PY = True
-except ImportError:
-    HAS_H5PY = False
-
-try:
-    import sbxreader
-    HAS_SBX = True
-except ImportError:
-    HAS_SBX = False
-
-try:
-    import cv2
-    HAS_CV2 = True
-except ImportError:
-    HAS_CV2 = False
-
-try:
-    import dcimg
-    HAS_DCIMG = True
-except ImportError:
-    HAS_DCIMG = False
+from . import io, default_settings, default_db, pipeline, version_str
 
 from functools import partial
 from pathlib import Path
 
-print = partial(print, flush=True)
+# copy file format to a binary file
+files_to_binary = {
+    "tif":
+        io.tiff_to_binary,
+    "h5":
+        io.h5py_to_binary,
+    "nwb":
+        io.nwb_to_binary,
+    "sbx":
+        io.sbx_to_binary,
+    "nd2":
+        io.nd2_to_binary,
+    "bruker":
+        io.ome_to_binary,
+    "movie":
+        io.movie_to_binary,
+    "dcimg":
+        io.dcimg_to_binary,
+}
 
-
-def pipeline(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
-             run_registration=True, ops=default_ops(), stat=None):
-    """ run suite2p processing on array or BinaryFile 
-    
-    f_reg: required, registered or unregistered frames
-        n_frames x Ly x Lx
-
-    f_raw: optional, unregistered frames that will not be overwritten during registration
-        n_frames x Ly x Lx
-
-    f_reg_chan2: optional, non-functional frames
-        n_frames x Ly x Lx
-
-    f_raw_chan2: optional, non-functional frames that will not be overwritten during registration
-        n_frames x Ly x Lx
-
-    run_registration: optional, default True
-        run registration
-
-    ops: optional, `dict` of settings
-
-    stat: optional, input predefined masks
-    
+def get_save_folder(db):
     """
-
-    plane_times = {}
-    t1 = time.time()
-
-    # Select file for classification
-    ops_classfile = ops.get("classifier_path")
-    builtin_classfile = classification.builtin_classfile
-    user_classfile = classification.user_classfile
-    if ops_classfile:
-        print(f"NOTE: applying classifier {str(ops_classfile)}")
-        classfile = ops_classfile
-    elif ops["use_builtin_classifier"] or not user_classfile.is_file():
-        print(f"NOTE: Applying builtin classifier at {str(builtin_classfile)}")
-        classfile = builtin_classfile
-    else:
-        print(f"NOTE: applying default {str(user_classfile)}")
-        classfile = user_classfile
-
-    if run_registration:
-        raw = f_raw is not None
-        # if already shifted by bidiphase, do not shift again
-        if not raw and ops["do_bidiphase"] and ops["bidiphase"] != 0:
-            ops["bidi_corrected"] = True
-
-        ######### REGISTRATION #########
-        t11 = time.time()
-        print("----------- REGISTRATION")
-        refImg = ops["refImg"] if "refImg" in ops and ops.get("force_refImg",
-                                                              False) else None
-
-        align_by_chan2 = ops["functional_chan"] != ops["align_by_chan"]
-        registration_outputs = registration.registration_wrapper(
-            f_reg, f_raw=f_raw, f_reg_chan2=f_reg_chan2, f_raw_chan2=f_raw_chan2,
-            refImg=refImg, align_by_chan2=align_by_chan2, ops=ops)
-
-        ops = registration.save_registration_outputs_to_ops(registration_outputs, ops)
-        # add enhanced mean image
-        meanImgE = registration.compute_enhanced_mean_image(
-            ops["meanImg"].astype(np.float32), ops)
-        ops["meanImgE"] = meanImgE
-
-        if ops.get("ops_path"):
-            np.save(ops["ops_path"], ops)
-
-        plane_times["registration"] = time.time() - t11
-        print("----------- Total %0.2f sec" % plane_times["registration"])
-        n_frames, Ly, Lx = f_reg.shape
-
-        if ops["two_step_registration"] and ops["keep_movie_raw"]:
-            print("----------- REGISTRATION STEP 2")
-            print("(making mean image (excluding bad frames)")
-            nsamps = min(n_frames, 1000)
-            inds = np.linspace(0, n_frames, 1 + nsamps).astype(np.int64)[:-1]
-            if align_by_chan2:
-                refImg = f_reg_chan2[inds].astype(np.float32).mean(axis=0)
-            else:
-                refImg = f_reg[inds].astype(np.float32).mean(axis=0)
-            registration_outputs = registration.registration_wrapper(
-                f_reg, f_raw=None, f_reg_chan2=f_reg_chan2, f_raw_chan2=None,
-                refImg=refImg, align_by_chan2=align_by_chan2, ops=ops)
-            if ops.get("ops_path"):
-                np.save(ops["ops_path"], ops)
-            plane_times["two_step_registration"] = time.time() - t11
-            print("----------- Total %0.2f sec" % plane_times["two_step_registration"])
-
-        # compute metrics for registration
-        if ops.get("do_regmetrics", True) and n_frames >= 1500:
-            t0 = time.time()
-            # n frames to pick from full movie
-            nsamp = min(2000 if n_frames < 5000 or Ly > 700 or Lx > 700 else 5000,
-                        n_frames)
-            inds = np.linspace(0, n_frames - 1, nsamp).astype("int")
-            mov = f_reg[inds]
-            mov = mov[:, ops["yrange"][0]:ops["yrange"][-1],
-                      ops["xrange"][0]:ops["xrange"][-1]]
-            ops = registration.get_pc_metrics(mov, ops)
-            plane_times["registration_metrics"] = time.time() - t0
-            print("Registration metrics, %0.2f sec." %
-                  plane_times["registration_metrics"])
-            if ops.get("ops_path"):
-                np.save(ops["ops_path"], ops)
-
-    if ops.get("roidetect", True):
-        n_frames, Ly, Lx = f_reg.shape
-        ######## CELL DETECTION ##############
-        t11 = time.time()
-        print("----------- ROI DETECTION")
-        if stat is None:
-            ops, stat = detection.detection_wrapper(f_reg, ops=ops, classfile=classfile)
-        plane_times["detection"] = time.time() - t11
-        print("----------- Total %0.2f sec." % plane_times["detection"])
-
-        if len(stat) > 0:
-            ######## ROI EXTRACTION ##############
-            t11 = time.time()
-            print("----------- EXTRACTION")
-            stat, F, Fneu, F_chan2, Fneu_chan2 = extraction.extraction_wrapper(
-                stat, f_reg, f_reg_chan2=f_reg_chan2, ops=ops)
-            # save results
-            if ops.get("ops_path"):
-                np.save(ops["ops_path"], ops)
-
-            plane_times["extraction"] = time.time() - t11
-            print("----------- Total %0.2f sec." % plane_times["extraction"])
-
-            ######## ROI CLASSIFICATION ##############
-            t11 = time.time()
-            print("----------- CLASSIFICATION")
-            if len(stat):
-                iscell = classification.classify(stat=stat, classfile=classfile)
-            else:
-                iscell = np.zeros((0, 2))
-            plane_times["classification"] = time.time() - t11
-
-            ######### SPIKE DECONVOLUTION ###############
-            fpath = ops["save_path"]
-            if ops.get("spikedetect", True):
-                t11 = time.time()
-                print("----------- SPIKE DECONVOLUTION")
-                dF = F.copy() - ops["neucoeff"] * Fneu
-                dF = extraction.preprocess(F=dF, baseline=ops["baseline"],
-                                           win_baseline=ops["win_baseline"],
-                                           sig_baseline=ops["sig_baseline"],
-                                           fs=ops["fs"],
-                                           prctile_baseline=ops["prctile_baseline"])
-                spks = extraction.oasis(F=dF, batch_size=ops["batch_size"],
-                                        tau=ops["tau"], fs=ops["fs"])
-                plane_times["deconvolution"] = time.time() - t11
-                print("----------- Total %0.2f sec." % plane_times["deconvolution"])
-            else:
-                print("WARNING: skipping spike detection (ops['spikedetect']=False)")
-                spks = np.zeros_like(F)
-
-            if ops.get("save_path"):
-                fpath = ops["save_path"]
-                np.save(os.path.join(fpath, "stat.npy"), stat)
-                np.save(os.path.join(fpath, "F.npy"), F)
-                np.save(os.path.join(fpath, "Fneu.npy"), Fneu)
-                np.save(os.path.join(fpath, "iscell.npy"), iscell)
-                np.save(os.path.join(ops["save_path"], "spks.npy"), spks)
-                # if second channel, save F_chan2 and Fneu_chan2
-                if "meanImg_chan2" in ops:
-                    np.save(os.path.join(fpath, "F_chan2.npy"), F_chan2)
-                    np.save(os.path.join(fpath, "Fneu_chan2.npy"), Fneu_chan2)
-
-            # save as matlab file
-            if ops.get("save_mat"):
-                stat = np.load(os.path.join(ops["save_path"], "stat.npy"),
-                               allow_pickle=True)
-                iscell = np.load(os.path.join(ops["save_path"], "iscell.npy"))
-                redcell = np.load(os.path.join(
-                    ops["save_path"], "redcell.npy")) if ops["nchannels"] == 2 else []
-                io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
-                            F_chan2, Fneu_chan2)
-        else:
-            print("no ROIs found, only ops.npy file saved")
-    else:
-        print("WARNING: skipping cell detection (ops['roidetect']=False)")
-    ops["timing"] = plane_times.copy()
-    plane_runtime = time.time() - t1
-    ops["timing"]["total_plane_runtime"] = plane_runtime
-    if ops.get("ops_path"):
-        np.save(ops["ops_path"], ops)
-
-    return ops  #, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell
-
-
-def run_plane(ops, ops_path=None, stat=None):
-    """ run suite2p processing on a single binary file
+    Get the save folder path from the database dictionary.
 
     Parameters
-    -----------
-    ops : :obj:`dict` 
-        specify "reg_file", "nchannels", "tau", "fs"
-
-    ops_path: str
-        absolute path to ops file (use if files were moved)
-
-    stat: list of `dict`
-        ROIs
+    ----------
+    db : dict
+        Database dictionary containing "save_path0", "save_folder", and
+        "data_path".
 
     Returns
-    --------
-    ops : :obj:`dict` 
+    -------
+    save_folder : str
+        Full path to the suite2p save folder.
     """
+    if db["save_path0"] is None or len(db["save_path0"])==0:
+        db["save_path0"] = db["data_path"][0]
 
-    ops = {**default_ops(), **ops}
-    ops["date_proc"] = datetime.now().astimezone()
+    if db["save_folder"] is None or len(db["save_folder"]) == 0:
+        db["save_folder"] = "suite2p"
+    save_folder = os.path.join(db["save_path0"], db["save_folder"])
+    return save_folder
 
-    # for running on server or on moved files, specify ops_path
-    if ops_path is not None:
-        ops["save_path"] = os.path.split(ops_path)[0]
-        ops["ops_path"] = ops_path
-        if len(ops["fast_disk"]) == 0 or ops["save_path"] != ops["fast_disk"]:
-            if os.path.exists(os.path.join(ops["save_path"], "data.bin")):
-                ops["reg_file"] = os.path.join(ops["save_path"], "data.bin")
-                if "reg_file_chan2" in ops:
-                    ops["reg_file_chan2"] = os.path.join(ops["save_path"],
-                                                         "data_chan2.bin")
-                if "raw_file" in ops:
-                    ops["raw_file"] = os.path.join(ops["save_path"], "data_raw.bin")
-                if "raw_file_chan2" in ops:
-                    ops["raw_file_chan2"] = os.path.join(ops["save_path"],
-                                                         "data_chan2_raw.bin")
+def logger_setup(save_path=None):
+    """
+    Configure logging for the suite2p package.
 
-    # check that there are sufficient numbers of frames
-    if ops["nframes"] < 50:
-        raise ValueError("the total number of frames should be at least 50.")
-    if ops["nframes"] < 200:
-        print(
-            "WARNING: number of frames is below 200, unpredictable behaviors may occur."
-        )
+    Sets up console and file logging handlers for the suite2p logger.
 
-    # check if registration should be done
-    if ops["do_registration"] > 0:
-        if "refImg" not in ops or "yoff" not in ops or ops["do_registration"] > 1:
-            print(
-                "NOTE: not registered / registration forced with ops['do_registration']>1"
-            )
-            try:
-                del ops["yoff"], ops["xoff"], ops["corrXY"]  # delete previous offsets
-            except KeyError:
-                print("      (no previous offsets to delete)")
+    Parameters
+    ----------
+    save_path : str, optional (default None)
+        Directory to write the log file. If None, only console logging is
+        configured.
+    """
+    if save_path is not None and not pathlib.Path(save_path).exists():
+        pathlib.Path(save_path).mkdir(parents=True, exist_ok=True)
+    s2p_logger = logging.getLogger('suite2p')
+    s2p_logger.setLevel(logging.DEBUG)
+    
+    # Skip this if the handlers were already added, like when running multiple
+    # times in a single session.
+    if not s2p_logger.handlers:
+        # Add console handler at info level with shorter messages,
+        # unless verbose is requested.
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        console.setFormatter(file_formatter)
+        s2p_logger.addHandler(console)
+
+
+    if save_path is not None:
+        log_file = pathlib.Path(save_path) / "run.log"
+        try:
+            log_file.unlink()
+        except:
+            pass
+        print(f"creating log file {log_file}")
+        file = logging.FileHandler(log_file, mode='w')
+        file.setLevel(logging.DEBUG)
+        log_file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        file.setFormatter(log_file_formatter)
+        s2p_logger.addHandler(file)
+
+
+def _assign_torch_device(str_device):
+    """
+    Validate and return a torch device, falling back to CPU if unavailable.
+
+    Parameters
+    ----------
+    str_device : str
+        Device string, e.g. "cuda", "cpu", or "mps".
+
+    Returns
+    -------
+    device : torch.device
+        Validated torch device. Falls back to CPU if the requested device
+        is not available.
+    """
+    if str_device == "cpu":
+        logger.info("** using CPU **")
+        return torch.device(str_device)
+    else:
+        try:
+            device = torch.device(str_device)
+            _ = torch.zeros([1, 2, 3]).to(device)
+            logger.info(f"** torch.device('{str_device}') installed and working. **")
+            return torch.device(str_device)
+        except:
+            logger.info(f"torch.device('{str_device}') not working, using cpu.")
+            return torch.device("cpu")
+
+def _check_run_registration(settings, db):
+    if settings["run"]["do_registration"] > 0:
+        reg_outputs_path = os.path.join(db["save_path"], "reg_outputs.npy")
+        reg_outputs = (np.load(reg_outputs_path, allow_pickle=True).item() 
+                       if os.path.exists(reg_outputs_path) else {})
+        if "yoff" in reg_outputs and settings["run"]["do_registration"] > 1:
+            logger.info("Forced re-run of registration with settings['run']['do_registration']>1")
+            logger.info("(NOTE: final offsets will be relative to previous registration if keep_movie_raw is False)")
+            # delete reg_outputs.npy
+            os.remove(os.path.join(db["save_path"], "reg_outputs.npy"))
             run_registration = True
+        elif "yoff" not in reg_outputs and settings["run"]["do_registration"] > 0:
+            logger.info("Running registration")
+            run_registration = True 
         else:
-            print("NOTE: not running registration, plane already registered")
-            print("binary path: %s" % ops["reg_file"])
+            logger.info("NOTE: not running registration, plane already registered")
+            logger.info("binary path: %s" % db["reg_file"])
             run_registration = False
     else:
-        print("NOTE: not running registration, ops['do_registration']=0")
-        print("binary path: %s" % ops["reg_file"])
+        logger.info("NOTE: not running registration, settings['run']['do_registration']=0")
+        logger.info("binary path: %s" % db["reg_file"])
         run_registration = False
+    return run_registration
 
+def _find_existing_binaries(plane_folders):
+    db_paths = [os.path.join(f, "db.npy") for f in plane_folders]
+    settings_paths = [os.path.join(f, "settings.npy") for f in plane_folders]
+    db_found_flag = all([os.path.isfile(db_path) for db_path in db_paths])
+    settings_found_flag = all([os.path.isfile(settings_path) for settings_path in settings_paths])
+    binaries_found_flag = all([
+        os.path.isfile(os.path.join(f, "data_raw.bin")) or
+        os.path.isfile(os.path.join(f, "data.bin")) for f in plane_folders
+    ])
+    files_found_flag = db_found_flag and settings_found_flag and binaries_found_flag
+    return files_found_flag, db_paths, settings_paths
+
+def run_plane(db, settings, db_path=None, stat=None):
+    """
+    Run suite2p processing on a single plane/ROI.
+
+    Opens binary files, runs the pipeline, and saves outputs including
+    optional .mat and ops.npy files.
+
+    Parameters
+    ----------
+    db : dict
+        Database dictionary for this plane, containing "reg_file",
+        "save_path", "nframes", "Ly", "Lx", and other plane-specific keys.
+    settings : dict
+        Pipeline settings dictionary.
+    db_path : str, optional (default None)
+        Absolute path to db.npy file. If provided and binary files have
+        been moved, paths are updated accordingly.
+    stat : numpy.ndarray, optional (default None)
+        Pre-defined ROI masks. If provided, detection is skipped.
+
+    Returns
+    -------
+    outputs : tuple
+        Pipeline outputs from pipeline(), see pipeline_s2p.pipeline for
+        details.
+    """
+
+    settings = {**default_settings(), **settings}
+    settings["date_proc"] = datetime.now().astimezone()
+    
+    # torch device
+    device = _assign_torch_device(settings["torch_device"])
+
+    # for running on server or on moved files, specify db_path and paths are renamed
+    if (db_path is not None and os.path.exists(db_path) and not
+        (os.path.exists(db["reg_file"]) or (db.get("raw_file", None) is not None and 
+                                            os.path.exists(db.get("raw_file", None))))):
+        db["save_path"] = os.path.split(db_path)[0]
+        db["db_path"] = db_path
+        db["settings_path"] = os.path.join(db["save_path"], "settings.npy")
+        if (os.path.exists(os.path.join(db["save_path"], "data.bin")) or 
+            os.path.exists(os.path.join(db["save_path"], "data_raw.bin"))):
+            for key in ["reg_file", "reg_file_chan2", "raw_file", "raw_file_chan2"]:
+                if key in db:
+                    db[key] = os.path.join(db["save_path"], os.path.split(db[key])[-1])
+        else:
+            raise FileNotFoundError("binary file data.bin or data_raw.bin not found in db_path")
+        # re-save db and settings in new path
+        db["save_path0"] = os.path.split(os.path.split(db["save_path"])[0])[0]
+        np.save(db["db_path"], db)
+        np.save(db["settings_path"], settings)
+
+    # check that there are sufficient numbers of frames
+    if db["nframes"] < 10: raise ValueError("number of frames should be at least 50")
+    elif db["nframes"] < 200:
+        logger.warn("WARNING: number of frames < 200, unpredictable behaviors may occur")
+
+    # check if registration should be done
+    run_registration = _check_run_registration(settings, db)
+    
     # get binary file paths
-    raw = ops.get("keep_movie_raw") and "raw_file" in ops and os.path.isfile(
-        ops["raw_file"])
-    reg_file = ops["reg_file"]
-    raw_file = ops.get("raw_file", 0) if raw else reg_file
-    # get number of frames in binary file to use to initialize files if needed
-    if ops["nchannels"] > 1:
-        reg_file_chan2 = ops["reg_file_chan2"]
-        raw_file_chan2 = ops.get("raw_file_chan2", 0) if raw else reg_file_chan2
-    else:
-        reg_file_chan2 = reg_file
-        raw_file_chan2 = reg_file
+    reg_file = db["reg_file"]
+    raw_file = db.get("raw_file", None)
+    raw = db["keep_movie_raw"] and os.path.isfile(raw_file)
+    twoc = db["nchannels"] > 1
+    reg_file_chan2 = db["reg_file_chan2"] if twoc else None
+    raw_file_chan2 = db.get("raw_file_chan2", None) if twoc else None
 
     # shape of binary files
-    n_frames, Ly, Lx = ops["nframes"], ops["Ly"], ops["Lx"]
+    n_frames, Ly, Lx = db["nframes"], db["Ly"], db["Lx"]
+    
+    # get frames to exclude from registration and detection (e.g. photostim frames)
+    badframes_path = os.path.join(db["data_path"][0], "bad_frames.npy")
+    if not os.path.exists(badframes_path):
+        badframes_path = os.path.join(db["save_path0"], "bad_frames.npy")
+    badframes_path = badframes_path if os.path.exists(badframes_path) else None
+    # badframes from file (optional)
+    badframes0 = np.zeros(db["nframes"], "bool")
+    if badframes_path is not None and os.path.exists(badframes_path):
+        bf_indices = np.load(badframes_path).flatten().astype("int")
+        badframes0[bf_indices] = True
+        logger.info(f"badframes file: {badframes_path};\n # of badframes: {badframes0.sum()}")
 
+    # check for zstack file to align to
+    Zstack = None
+    if os.path.exists(os.path.join(db["save_path"], "zcorr.npy")):
+        logger.info("z-correlation already computed")
+    else:
+        zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
+        if not os.path.exists(zstack_path):
+            zstack_path = os.path.join(db["save_path0"], 'zstack.mat')
+        zstack_path = zstack_path if os.path.exists(zstack_path) else None
+        if zstack_path is not None:
+            logger.info(f"zstack file: {zstack_path}")
+            data = loadmat(zstack_path)
+            iplane = db.get("iplane", 0)
+            iroi = db.get("iroi", 0)
+            if len(data['Z']) == 0:
+                Zstack = None
+                logger.info("zstack file is empty")
+            elif iroi > 0:
+                if iroi < len(data['Z']):
+                    Zstack = data['Z'][iroi][0].squeeze()
+                else:
+                    logger.info(f"plane {iplane} roi {iroi} not in zstack file")
+            else:
+                if iplane < len(data['Z'][0]):
+                    Zstack = data['Z'][0][iplane].squeeze()
+                else:
+                    logger.info(f"plane {iplane} not in zstack file")
+        if Zstack is not None:
+            if Zstack.ndim > 3:
+                Zstack = Zstack[0]
+            Zstack = Zstack.transpose(2, 1, 0)
+            logger.info(f"zstack shape: {Zstack.shape}")
+
+    logger.info(f"binary output path: {reg_file}")
+    if raw_file is not None:
+        logger.info(f"raw binary path: {raw_file}")
     null = contextlib.nullcontext()
-    twoc = ops["nchannels"] > 1
-    with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames) \
+    with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames, write=False) \
             if raw else null as f_raw, \
-         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file, n_frames=n_frames) as f_reg, \
-         io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2, n_frames=n_frames) \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file, n_frames=n_frames, write=True) as f_reg, \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2, n_frames=n_frames, write=False) \
             if raw and twoc else null as f_raw_chan2,\
-         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2, n_frames=n_frames) \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2, n_frames=n_frames, write=True) \
             if twoc else null as f_reg_chan2:
 
-        ops = pipeline(f_reg, f_raw, f_reg_chan2, f_raw_chan2, run_registration, ops,
-                       stat=stat)
+        outputs = pipeline(db["save_path"], f_reg, f_raw, f_reg_chan2, f_raw_chan2, 
+                   run_registration, settings, badframes=badframes0, stat=stat,
+                   device=device, Zstack=Zstack)
+        (reg_outputs, detect_outputs, stat, F, Fneu, F_chan2, Fneu_chan2, spks, iscell, redcell, zcorr, plane_times) = outputs
 
-    if ops.get("move_bin") and ops["save_path"] != ops["fast_disk"]:
-        print("moving binary files to save_path")
-        shutil.move(ops["reg_file"], os.path.join(ops["save_path"], "data.bin"))
-        if ops["nchannels"] > 1:
-            shutil.move(ops["reg_file_chan2"],
-                        os.path.join(ops["save_path"], "data_chan2.bin"))
-        if "raw_file" in ops:
-            shutil.move(ops["raw_file"], os.path.join(ops["save_path"], "data_raw.bin"))
-            if ops["nchannels"] > 1:
-                shutil.move(ops["raw_file_chan2"],
-                            os.path.join(ops["save_path"], "data_chan2_raw.bin"))
-    elif ops.get("delete_bin"):
-        print("deleting binary files")
-        os.remove(ops["reg_file"])
-        if ops["nchannels"] > 1:
-            os.remove(ops["reg_file_chan2"])
-        if "raw_file" in ops:
-            os.remove(ops["raw_file"])
-            if ops["nchannels"] > 1:
-                os.remove(ops["raw_file_chan2"])
-    return ops
+    # save as matlab file
+    if settings["io"]["save_mat"]:
+        if reg_outputs is None:
+            logger.info("No registration outputs to save (registration was skipped)")
+        if detect_outputs is None:
+            logger.info("No detection outputs to save (detection was skipped)")
+        ops = {**db, **settings, **(reg_outputs or {}), **(detect_outputs or {}), **plane_times}
+        io.save_mat(ops, stat, F, Fneu, spks, iscell, redcell, F_chan2, Fneu_chan2)
 
-
-def run_s2p(ops={}, db={}, server={}):
-    """ run suite2p pipeline
-
-        need to provide a "data_path" or "h5py"+"h5py_key" in db or ops
-
-        Parameters
-        ----------
-        ops : :obj:`dict`
-            specify "nplanes", "nchannels", "tau", "fs"
-        db : :obj:`dict`
-            specify "data_path" or "h5py"+"h5py_key" here or in ops
-        server : :obj:`dict`
-            specify "host", "username", "password", "server_root", "local_root", "n_cores" ( for multiplane_parallel )
-
-
-        Returns
-        -------
-            ops : :obj:`dict`
-                ops settings used to run suite2p
-
-    """
-    t0 = time.time()
-    ops = {**default_ops(), **ops, **db}
-    if isinstance(ops["diameter"], list) and len(
-            ops["diameter"]) > 1 and ops["aspect"] == 1.0:
-        ops["aspect"] = ops["diameter"][0] / ops["diameter"][1]
-    print(db)
-    if "save_path0" not in ops or len(ops["save_path0"]) == 0:
-        if ops.get("h5py"):
-            ops["save_path0"] = os.path.split(
-                ops["h5py"][0])[0]  # Use first element in h5py key to find save_path
-        elif ops.get("nwb_file"):
-            ops["save_path0"] = os.path.split(ops["nwb_file"])[0]
-        else:
-            ops["save_path0"] = ops["data_path"][0]
-
-    # check if there are binaries already made
-    if "save_folder" not in ops or len(ops["save_folder"]) == 0:
-        ops["save_folder"] = "suite2p"
-    save_folder = os.path.join(ops["save_path0"], ops["save_folder"])
-    os.makedirs(save_folder, exist_ok=True)
-    plane_folders = natsorted([
-        f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
-    ])
+    # save ops orig
+    if settings["io"]["save_ops_orig"]:
+        if reg_outputs is None:
+            logger.info("No registration outputs in ops.npy (registration was skipped)")
+        if detect_outputs is None:
+            logger.info("No detection outputs in ops.npy (detection was skipped)")
+        ops = {**db, **settings, **(reg_outputs or {}), **(detect_outputs or {})}
+        ops["plane_times"] = plane_times
+        np.save(os.path.join(db["save_path"], "ops.npy"), ops)
     
-    if len(plane_folders) > 0 and (ops.get("input_format") and ops["input_format"]=="binary"):
-        # binary file is already made, will use current ops
-        ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
-        if isinstance(ops["Lys"], int):
-            ops["Lys"] = [ops["Lys"]]
-            ops["Lxs"] = [ops["Lxs"]]
-        for i, (f, opf) in enumerate(zip(plane_folders, ops_paths)):
-            ops["bin_file"] = os.path.join(f, "data.bin")
-            ops["Ly"] = ops["Lys"][i]
-            ops["Lx"] = ops["Lxs"][i]
-            nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
-            ops["nframes"] = os.path.getsize(ops["bin_file"]) // nbytesread
-            np.save(opf, ops)
-        files_found_flag = True
-    elif len(plane_folders) > 0:
-        ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
-        ops_found_flag = all([os.path.isfile(ops_path) for ops_path in ops_paths])
-        binaries_found_flag = all([
-            os.path.isfile(os.path.join(f, "data_raw.bin")) or
-            os.path.isfile(os.path.join(f, "data.bin")) for f in plane_folders
+    if settings["io"]["move_bin"] and db["save_path"] != db["fast_disk"]:
+        logger.info("moving binary files to save_path")
+        for key in ["reg_file", "reg_file_chan2", "raw_file", "raw_file_chan2"]:
+            if key in db:
+                shutil.move(db[key],
+                        os.path.join(db["save_path"], os.path.split(db[key])[1]))
+                
+    elif settings["io"]["delete_bin"]:
+        logger.info("deleting binary files")
+        for key in ["reg_file", "reg_file_chan2", "raw_file", "raw_file_chan2"]:
+            if key in db:
+                os.remove(db[key])
+
+    return outputs
+
+
+def run_s2p(db={}, settings=default_settings(), server={}):
+    """
+    Run the full suite2p pipeline across all planes.
+
+    Converts input files to binary format (if needed), then runs
+    registration, detection, extraction, deconvolution, and classification
+    on each plane sequentially (or dispatches to a server for parallel
+    processing).
+
+    Parameters
+    ----------
+    db : dict
+        Database dictionary specifying "data_path", "nplanes", "nchannels",
+        and other input/output configuration.
+    settings : dict
+        Pipeline settings dictionary, e.g. "fs", "tau", "diameter".
+    server : dict
+        Server configuration for multiplane_parallel mode. Specify "host",
+        "username", "password", "server_root", "local_root", "n_cores".
+
+    Returns
+    -------
+    db_paths : list of str or None
+        Paths to the per-plane db.npy files. None if running in
+        multiplane_parallel server mode.
+    """
+
+    t0 = time.time()
+            
+    settings = {**default_settings(), **settings}
+    db = {**default_db(), **db}
+
+    save_folder = get_save_folder(db)
+    
+    if os.path.exists(save_folder):
+        plane_folders = natsorted([
+            f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
         ])
-        files_found_flag = ops_found_flag and binaries_found_flag
+    else:
+        plane_folders = []
+
+    logger.info(version_str)
+    logger.info(f"data_path: {db['data_path']}")
+    
+    if len(plane_folders) > 0:
+        files_found_flag, db_paths, settings_paths = _find_existing_binaries(plane_folders)
     else:
         files_found_flag = False
 
     if files_found_flag:
-        print(f"FOUND BINARIES AND OPS IN {ops_paths}")
-        print("removing previous detection and extraction files, if present")
+        logger.info(f"FOUND BINARIES AND DBS IN {db_paths}")
+        logger.info("removing previous detection and extraction files, if present")
+        logger.info(f"will update settings.npy but not db.npy")
         files_to_remove = [
-            "stat.npy", "F.npy", "Fneu.npy", "F_chan2.npy", "Fneu_chan2.npy",
-            "iscell.npy", "redcell.npy"
+            "detect_outputs.npy", "stat.npy", 
+            "F.npy", "Fneu.npy", "F_chan2.npy", "Fneu_chan2.npy", 
+            "spks.npy", "iscell.npy", "redcell.npy"
         ]
-        for p in ops_paths:
-            plane_folder = os.path.split(p)[0]
-            for f in files_to_remove:
-                if os.path.exists(os.path.join(plane_folder, f)):
-                    os.remove(os.path.join(plane_folder, f))
+        for f in plane_folders:
+            np.save(os.path.join(f, "settings.npy"), settings)
+            for fname in files_to_remove:
+                if os.path.exists(os.path.join(f, fname)):
+                    os.remove(os.path.join(f, fname))
+
     # if not set up files and copy tiffs/h5py to binary
     else:
-        if len(ops["h5py"]):
-            ops["input_format"] = "h5"
-            if not HAS_H5PY:
-                raise ImportError("h5py not found; pip install h5py")
-            # Overwrite data_path with path provided by h5py.
-            # Use the directory containing the first h5 file
-            ops["data_path"] = [os.path.split(ops["h5py"][0])[0]]
-        elif len(ops["nwb_file"]):
-            ops["input_format"] = "nwb"
-            if not HAS_NWB:
-                raise ImportError("nwb not found; pip install pynwb")
-        elif ops.get("mesoscan"):
-            ops["input_format"] = "mesoscan"
-        elif ops.get("nd2"):
-            ops["input_format"] = "nd2"
-            if not HAS_ND2:
-                raise ImportError("nd2 not found; pip install nd2")
-        elif ops.get("dcimg"):
-            ops["input_format"] = "dcimg"
-            if not HAS_DCIMG:
-                raise ImportError("dcimg not found; pip install dcimg")
-        elif not "input_format" in ops:
-            ops["input_format"] = "tif"
-        elif ops["input_format"] == "movie":
-            if not HAS_CV2:
-                raise ImportError("cv2 not found; pip install opencv-python-headless")
-
-        # copy file format to a binary file
-        convert_funs = {
-            "h5":
-                io.h5py_to_binary,
-            "nwb":
-                io.nwb_to_binary,
-            "sbx":
-                io.sbx_to_binary,
-            "nd2":
-                io.nd2_to_binary,
-            "mesoscan":
-                io.mesoscan_to_binary,
-            "raw":
-                io.raw_to_binary,
-            "bruker":
-                io.ome_to_binary,
-            "movie":
-                io.movie_to_binary,
-            "dcimg":
-                io.dcimg_to_binary,
-        }
-        if ops["input_format"] in convert_funs:
-            ops0 = convert_funs[ops["input_format"]](ops.copy())
-            if isinstance(ops, list):
-                ops0 = ops0[0]
-        else:
-            ops0 = io.tiff_to_binary(ops.copy())
-
-        plane_folders = natsorted([
-            f.path
-            for f in os.scandir(save_folder)
-            if f.is_dir() and f.name[:5] == "plane"
-        ])
-        ops_paths = [os.path.join(f, "ops.npy") for f in plane_folders]
-        print("time {:0.2f} sec. Wrote {} frames per binary for {} planes".format(
-            time.time() - t0, ops0["nframes"], len(plane_folders)))
-
-    if ops.get("multiplane_parallel"):
-        if server:
-            if "fnc" in server.keys():
-                # Call custom function.
-                server["fnc"](save_folder, server)
+        db["input_format"] = db.get("input_format", "tif")
+        
+        # find files
+        fs, first_files = io.get_file_list(db)
+        db["file_list"] = fs 
+        db["first_files"] = first_files
+        
+        # copy dbs to list per plane + create folders
+        dbs = io.init_dbs(db)
+        db_paths = [db["db_path"] for db in dbs]
+        settings_paths = [db["settings_path"] for db in dbs]
+        save_folder = os.path.join(db["save_path0"], db["save_folder"])
+        np.save(os.path.join(save_folder, "db.npy"), db)
+        np.save(os.path.join(save_folder, "settings.npy"), settings)
+        
+        # open all binary files for writing
+        with contextlib.ExitStack() as stack:
+            raw_str = "raw" if db.get("keep_movie_raw", False) else "reg"
+            fnames = [db[f"{raw_str}_file"] for db in dbs]
+            files = [stack.enter_context(open(f, "wb")) for f in fnames]
+            if db["nchannels"] > 1:
+                fnames_chan2 = [db[f"{raw_str}_file_chan2"] for db in dbs]
+                files_chan2 = [stack.enter_context(open(f, "wb")) for f in fnames_chan2]
             else:
-                # if user puts in server settings
-                io.server.send_jobs(save_folder, host=server["host"],
-                                    username=server["username"],
-                                    password=server["password"],
-                                    server_root=server["server_root"],
-                                    local_root=server["local_root"],
-                                    n_cores=server["n_cores"])
-        else:
-            # otherwise use settings modified in io/server.py
+                files_chan2 = None
+            
+            dbs = files_to_binary[db["input_format"]](dbs, settings, files, files_chan2)
+        
+        logger.info("Wrote {} frames per binary, {} folders + {} channels, {:0.2f}sec".format(
+                dbs[0]["nframes"], len(dbs), dbs[0]["nchannels"], time.time() - t0))
+        
+    if settings["run"]["multiplane_parallel"]:
+        if server:  # if user puts in server settings
+            io.server.send_jobs(save_folder, **server)
+        else: # otherwise use settings modified in io/server.py
             io.server.send_jobs(save_folder)
         return None
     else:
-        for ipl, ops_path in enumerate(ops_paths):
-            if ipl in ops["ignore_flyback"]:
-                print(">>>> skipping flyback PLANE", ipl)
-                continue
-            op = np.load(ops_path, allow_pickle=True).item()
-
-            # make sure yrange and xrange are not overwritten
-            for key in default_ops().keys():
-                if key not in [
-                        "data_path", "save_path0", "fast_disk", "save_folder",
-                        "subfolders"
-                ]:
-                    if key in ops:
-                        op[key] = ops[key]
-
-            print(">>>>>>>>>>>>>>>>>>>>> PLANE %d <<<<<<<<<<<<<<<<<<<<<<" % ipl)
-            op = run_plane(op, ops_path=ops_path)
-            print("Plane %d processed in %0.2f sec (can open in GUI)." %
-                  (ipl, op["timing"]["total_plane_runtime"]))
+        for ipl, (settings_path, db_path) in enumerate(zip(settings_paths, db_paths)):
+            if db.get("ignore_flyback", None) is not None:
+                if ipl in db["ignore_flyback"]:
+                    logger.info(">>>> skipping flyback PLANE", ipl)
+                    continue
+            op = np.load(settings_path, allow_pickle=True).item()
+            op = {**op, **settings}
+            db = np.load(db_path, allow_pickle=True).item()
+            logger.info(f">>>>>>>>>>>>>>>>>>>>> PLANE {ipl} <<<<<<<<<<<<<<<<<<<<<<")
+            outputs = run_plane(db=db, settings=settings, db_path=db_path)
         run_time = time.time() - t0
-        print("total = %0.2f sec." % run_time)
+        logger.info("total = %0.2f sec." % run_time)
 
         #### COMBINE PLANES or FIELDS OF VIEW ####
-        if len(ops_paths) > 1 and ops["combined"] and ops.get("roidetect", True):
-            print("Creating combined view")
+        if len(settings_paths) > 1 and settings["io"]["combined"] and settings["run"]["do_detection"]:
+            logger.info("Creating combined view")
             io.combined(save_folder, save=True)
 
         # save to NWB
-        if ops.get("save_NWB"):
-            print("Saving in nwb format")
+        if settings["io"]["save_NWB"]:
+            logger.info("Saving in nwb format")
             io.save_nwb(save_folder)
 
-        print("TOTAL RUNTIME %0.2f sec" % (time.time() - t0))
-        return op
+        logger.info("TOTAL RUNTIME %0.2f sec" % (time.time() - t0))
+        return db_paths

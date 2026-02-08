@@ -18,6 +18,7 @@ import json
 from . import masks, views, graphics, traces, classgui, utils
 from .. import registration
 from ..io.save import compute_dydx
+from ..io import BinaryFile
 
 
 class BinaryPlayer(QMainWindow):
@@ -119,7 +120,7 @@ class BinaryPlayer(QMainWindow):
 
         #self.p2.autoRange(padding=0.01)
         self.win.ci.layout.setRowStretchFactor(0, 12)
-        self.movieLabel = QLabel("No ops chosen")
+        self.movieLabel = QLabel("No settings chosen")
         self.movieLabel.setStyleSheet("color: white;")
         self.movieLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.nframes = 0
@@ -175,20 +176,22 @@ class BinaryPlayer(QMainWindow):
         self.z_on = False
         self.wraw = False
         self.wred = False
-        self.wraw_wred = False
+        self.wraw_red = False
         self.win.scene().sigMouseClicked.connect(self.plot_clicked)
         # if not a combined recording, automatically open binary
         if hasattr(parent, "ops"):
             if parent.ops["save_path"][-8:] != "combined":
-                filename = os.path.abspath(os.path.join(parent.basename, "ops.npy"))
-                print(filename)
                 self.Fcell = parent.Fcell
                 self.stat = parent.stat
                 self.iscell = parent.iscell
+                self.settings = parent.ops
+                self.basename = parent.basename
+                self.ops = parent.ops
                 self.Floaded = True
-                self.openFile(filename, True)
+                self.openFile(True)
 
     def add_masks(self):
+        print(self.allmasks[100:110,100:110])
         if self.loaded:
             if self.maskbox.isChecked():
                 self.vmain.addItem(self.maskmain)
@@ -240,57 +243,44 @@ class BinaryPlayer(QMainWindow):
             self.next_frame()
 
     def next_frame(self):
+        
         # loop after video finishes
         self.cframe += 1
         if self.cframe > self.nframes - 1:
             self.cframe = 0
-            if self.LY > 0:
-                for n in range(len(self.reg_file)):
-                    self.reg_file[n].seek(0, 0)
-            else:
-                self.reg_file.seek(0, 0)
-                if self.wraw:
-                    self.reg_file_raw.seek(0, 0)
-                if self.wred:
-                    self.reg_file_chan2.seek(0, 0)
-                if self.wraw_wred:
-                    self.reg_file_raw_chan2.seek(0, 0)
+            
         self.img = np.zeros((self.LY, self.LX), dtype=np.int16)
         for n in range(len(self.reg_loc)):
-            buff = self.reg_file[n].read(self.nbytesread[n])
-            img = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
-                             (self.Ly[n], self.Lx[n]))
+            img = self.reg_file[n][self.cframe]
+            if self.wred and self.red_on:
+                imgred = self.reg_file_red[n][self.cframe]
+                img =  np.stack((img, imgred, np.zeros(img.shape, dtype=img.dtype)), axis=-1)
             self.img[self.dy[n]:self.dy[n] + self.Ly[n],
-                     self.dx[n]:self.dx[n] + self.Lx[n]] = img
-
-        if self.wred and self.red_on:
-            buff = self.reg_file_chan2.read(self.nbytesread[0])
-            imgred = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
-                                (self.Ly[0], self.Lx[0]))[:, :, np.newaxis]
-            self.img = np.concatenate(
-                (self.img[:, :, np.newaxis], imgred, np.zeros_like(imgred)), axis=-1)
-        if self.wraw and self.raw_on:
-            buff = self.reg_file_raw.read(self.nbytesread[0])
-            self.imgraw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
-                                     (self.Ly[0], self.Lx[0]))
-            if self.wraw_wred:
-                buff = self.reg_file_raw_chan2.read(self.nbytesread[0])
-                imgred_raw = np.reshape(np.frombuffer(buff, dtype=np.int16, offset=0),
-                                        (self.Ly[0], self.Lx[0]))[:, :, np.newaxis]
-                self.imgraw = np.concatenate((self.imgraw[:, :, np.newaxis], imgred_raw,
-                                              np.zeros_like(imgred_raw)), axis=-1)
-            self.iside.setImage(self.imgraw, levels=self.srange)
+                     self.dx[n]:self.dx[n] + self.Lx[n]] = img    
+            self.imain.setImage(self.img, levels=self.srange)
+        
+            if self.wraw and self.raw_on:
+                if n==0:
+                    self.imgraw = np.zeros((self.LY, self.LX), dtype=np.int16)
+                img = self.raw_file[n][self.cframe]
+                if self.wraw_red and self.red_on:
+                    imgred = self.raw_file_red[n][self.cframe]
+                    img =  np.stack((img, imgred, np.zeros(img.shape, dtype=img.dtype)), axis=-1)
+                self.imgraw[self.dy[n]:self.dy[n] + self.Ly[n],
+                        self.dx[n]:self.dx[n] + self.Lx[n]] = img
+                self.iside.setImage(self.imgraw, levels=self.srange)
+    
         if self.zloaded and self.z_on:
             if hasattr(self, "zmax"):
                 self.Zedit.setText(str(self.zmax[self.cframe]))
             self.iside.setImage(self.zstack[int(self.Zedit.text())], levels=self.zrange)
-        #if self.maskbox.isChecked():
-        #    imgmin = self.img.min()
-        #    self.allmasks[:,:,-1] = np.maximum(0, ((self.img - imgmin) / (self.img.max() - imgmin) - 0.5)*2) * 255 * self.mask_bool
-        #    self.maskmain.setImage(self.allmasks, levels=[0, 255])
-        #    self.maskside.setImage(self.allmasks, levels=[0, 255])
+        
+        if self.maskbox.isChecked():
+           #imgmin = self.img.min()
+           #self.allmasks[:,:,-1] = np.maximum(0, ((self.img - imgmin) / (self.img.max() - imgmin) - 0.5)*2) * 255 * self.mask_bool
+           self.maskmain.setImage(self.allmasks, levels=[0, 255])
+           self.maskside.setImage(self.allmasks, levels=[0, 255])
 
-        self.imain.setImage(self.img, levels=self.srange)
         self.frameSlider.setValue(self.cframe)
         self.frameNumber.setText(str(self.cframe))
         self.scatter1.setData([self.cframe, self.cframe],
@@ -317,13 +307,11 @@ class BinaryPlayer(QMainWindow):
         self.RGB = -1 * np.ones((self.LY, self.LX, 3), np.int32)
         self.cellpix = -1 * np.ones((self.LY, self.LX), np.int32)
         self.sroi = np.zeros((self.LY, self.LX), np.uint8)
-
         for n in np.nonzero(self.iscell)[0]:
             ypix = self.stat[n]["ypix"].flatten()
             xpix = self.stat[n]["xpix"].flatten()
-            if not self.ops[0]["allow_overlap"]:
-                ypix = ypix[~self.stat[n]["overlap"]]
-                xpix = xpix[~self.stat[n]["overlap"]]
+            ypix = ypix[~self.stat[n]["overlap"]]
+            xpix = xpix[~self.stat[n]["overlap"]]
             yext, xext = utils.boundary(ypix, xpix)
             if len(yext) > 0:
                 goodi = (yext >= 0) & (xext >= 0) & (yext < self.LY) & (xext < self.LX)
@@ -355,16 +343,16 @@ class BinaryPlayer(QMainWindow):
         self.p2.setLimits(xMin=0, xMax=self.nframes)
 
     def open(self):
-        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file or single-plane ops.json file")
-        # load ops in same folder
+        filename = QFileDialog.getOpenFileName(self, "Open single-plane db.npy file")
+        # load plane npy files in same folder
         if filename:
             print(filename[0])
-            self.openFile(filename[0], False)
+            self.openFile(filename=filename[0], fromgui=False)
 
     def open_combined(self):
         filename = QFileDialog.getExistingDirectory(
             self, "Load binaries for all planes (choose folder with planeX folders)")
-        # load ops in same folder
+        # load settings in same folder
         if filename:
             print(filename)
             self.openCombined(filename)
@@ -376,8 +364,8 @@ class BinaryPlayer(QMainWindow):
                 for f in os.scandir(save_folder)
                 if f.is_dir() and f.name[:5] == "plane"
             ])
-            ops1 = [
-                np.load(os.path.join(f, "ops.npy"), allow_pickle=True).item()
+            settings1 = [
+                np.load(os.path.join(f, "settings.npy"), allow_pickle=True).item()
                 for f in plane_folders
             ]
             self.LY = 0
@@ -392,11 +380,11 @@ class BinaryPlayer(QMainWindow):
             self.wred = False
             self.wraw_wred = False
             # check that all binaries still exist
-            dy, dx = compute_dydx(ops1)
-            for ipl, ops in enumerate(ops1):
-                #if os.path.isfile(ops["reg_file"]):
-                if os.path.isfile(ops["reg_file"]):
-                    reg_file = ops["reg_file"]
+            dy, dx = compute_dydx(settings1)
+            for ipl, settings in enumerate(settings1):
+                #if os.path.isfile(settings["reg_file"]):
+                if os.path.isfile(settings["reg_file"]):
+                    reg_file = settings["reg_file"]
                 else:
                     reg_file = os.path.abspath(
                         os.path.join(os.path.dirname(filename), "plane%d" % ipl,
@@ -404,8 +392,8 @@ class BinaryPlayer(QMainWindow):
                 print(reg_file, os.path.isfile(reg_file))
                 self.reg_loc.append(reg_file)
                 self.reg_file.append(open(self.reg_loc[-1], "rb"))
-                self.Ly.append(ops["Ly"])
-                self.Lx.append(ops["Lx"])
+                self.Ly.append(settings["Ly"])
+                self.Lx.append(settings["Lx"])
                 self.dy.append(dy[ipl])
                 self.dx.append(dx[ipl])
                 self.LY = np.maximum(self.LY, self.Ly[-1] + self.dy[-1])
@@ -425,24 +413,28 @@ class BinaryPlayer(QMainWindow):
                 print("tried to close binaries")
         if good:
             self.filename = save_folder
-            self.ops = ops1
+            self.settings = settings1
             self.setup_views()
 
-    def openFile(self, filename, fromgui):
-        try:
+    def openFile(self, fromgui=True, filename=None):
+        
+        if filename is not None:
             ext = os.path.splitext(filename)[1]
-            if ext == ".npy":
-                ops = np.load(filename, allow_pickle=True).item()
-                dirname = os.path.dirname(filename)
-            elif ext == ".json":
-                with open(filename, "r") as f:
-                    ops = json.load(f)
-                ops["Ly"] = ops["Lys"] if isinstance(ops["Lys"], int) else ops["Lys"][0]
-                ops["Lx"] = ops["Lxs"] if isinstance(ops["Lxs"], int) else ops["Lxs"][0]
-                dirname = os.path.join(os.path.dirname(filename), "suite2p/plane0/")
-                ops["reg_file"] = os.path.join(dirname, "data.bin")
-                nbytesread = np.int64(2 * ops["Ly"] * ops["Lx"])
-                ops["nframes"] = os.path.getsize(ops["reg_file"]) // nbytesread
+            db = np.load(filename, allow_pickle=True).item()
+            dirname = os.path.dirname(filename)
+            settings = np.load(os.path.join(dirname, "settings.npy"), allow_pickle=True).item()
+            ops = {**db, **settings}
+            try:
+                reg_outputs = np.load(os.path.join(dirname, "reg_outputs.npy"), allow_pickle=True).item()
+                ops = {**ops, **reg_outputs}
+            except:
+                print("no reg_outputs.npy found")
+            self.ops = ops
+            self.basename = dirname
+            fromgui = False
+
+        if 1:
+            ops = self.ops
             self.LY = ops["Ly"]
             self.LX = ops["Lx"]
             self.Ly = [ops["Ly"]]
@@ -454,56 +446,22 @@ class BinaryPlayer(QMainWindow):
                 self.reg_loc = [ops["reg_file"]]
             else:
                 self.reg_loc = [
-                    os.path.abspath(os.path.join(dirname, "data.bin"))
+                    os.path.abspath(os.path.join(self.basename, "data.bin"))
                 ]
-            self.reg_file = [open(self.reg_loc[-1], "rb")]
-            self.wraw = False
-            self.wred = False
+            reg_folder = os.path.dirname(self.reg_loc[0])
             self.wraw_wred = False
-            if "reg_file_raw" in ops or "raw_file" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    if "reg_file_raw" in ops:
-                        self.reg_loc_raw = ops["reg_file_raw"]
-                    else:
-                        self.reg_loc_raw = ops["raw_file"]
-                else:
-                    self.reg_loc_raw = os.path.abspath(
-                        os.path.join(os.path.dirname(filename), "data_raw.bin"))
-                try:
-                    self.reg_file_raw = open(self.reg_loc_raw, "rb")
-                    self.wraw = True
-                except:
-                    self.wraw = False
-            if "reg_file_chan2" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    self.reg_loc_red = ops["reg_file_chan2"]
-                else:
-                    self.reg_loc_red = os.path.abspath(
-                        os.path.join(os.path.dirname(filename), "data_chan2.bin"))
-                self.reg_file_chan2 = open(self.reg_loc_red, "rb")
-                self.wred = True
-            if "reg_file_raw_chan2" in ops or "raw_file_chan2" in ops:
-                if self.reg_loc == ops["reg_file"]:
-                    if "reg_file_raw_chan2" in ops:
-                        self.reg_loc_raw_chan2 = ops["reg_file_raw_chan2"]
-                    else:
-                        self.reg_loc_raw_chan2 = ops["raw_file_chan2"]
-                else:
-                    self.reg_loc_raw_chan2 = os.path.abspath(
-                        os.path.join(os.path.dirname(filename), "data_raw_chan2.bin"))
-                try:
-                    self.reg_file_raw_chan2 = open(self.reg_loc_raw_chan2, "rb")
-                    self.wraw_wred = True
-                except:
-                    self.wraw_wred = False
+            self.raw_loc = [os.path.abspath(os.path.join(reg_folder, "data_raw.bin"))]
+            self.wraw = os.path.exists(self.raw_loc[0])
+            self.reg_loc_red = [os.path.abspath(os.path.join(reg_folder, "data_chan2.bin"))]
+            self.wred = os.path.exists(self.reg_loc_red[0])
+            self.raw_loc_red = [os.path.abspath(os.path.join(reg_folder, "data_raw_chan2.bin"))]
+            self.wraw_red = os.path.exists(self.raw_loc_red[0])
+            
+            self.open_binaries()
 
             if not fromgui:
-                if os.path.isfile(
-                        os.path.abspath(os.path.join(os.path.dirname(filename),
-                                                     "F.npy"))):
-                    self.Fcell = np.load(
-                        os.path.abspath(os.path.join(os.path.dirname(filename),
-                                                     "F.npy")))
+                if os.path.isfile(os.path.join(self.basename, "F.npy")):
+                    self.Fcell = np.load(os.path.join(self.basename, "F.npy"))
                     self.stat = np.load(
                         os.path.abspath(
                             os.path.join(os.path.dirname(filename), "stat.npy")),
@@ -517,23 +475,29 @@ class BinaryPlayer(QMainWindow):
                     self.Floaded = False
             else:
                 self.Floaded = True
-            good = True
-            print(self.Floaded)
-            self.filename = filename
-        except Exception as e:
-            print("ERROR: ops.npy incorrect / missing ops['reg_file'] and others")
-            print(e)
-            try:
-                for n in range(len(self.reg_loc)):
-                    self.reg_file[n].close()
-                print("closed binaries")
-            except:
-                print("tried to close binaries")
-            good = False
-        if good:
-            self.filename = filename
-            self.ops = [ops]
-            self.setup_views()
+            
+        print(self.Floaded)
+        self.filename = filename
+        self.setup_views()
+
+        #except Exception as e:
+        #    print("ERROR: db.npy incorrect / missing db['reg_file'] and others")
+        #    print(e)
+            
+    def open_binaries(self):
+        print(self.reg_loc)
+        self.reg_file = [BinaryFile(Ly, Lx, fname, write=False) 
+                            for Ly, Lx, fname in zip(self.Ly, self.Lx, self.reg_loc)]
+        if self.wraw:
+            self.raw_file = [BinaryFile(Ly, Lx, fname, write=False) 
+                                for Ly, Lx, fname in zip(self.Ly, self.Lx, self.raw_loc)]
+        if self.wred:
+            self.reg_file_red = [BinaryFile(Ly, Lx, fname, write=False) 
+                            for Ly, Lx, fname in zip(self.Ly, self.Lx, self.reg_loc_red)]
+            if self.wraw_red:
+                self.raw_file_red = [BinaryFile(Ly, Lx, fname, write=False) 
+                            for Ly, Lx, fname in zip(self.Ly, self.Lx, self.raw_loc_red)]
+            
 
     def setup_views(self):
         self.p1.clear()
@@ -541,42 +505,38 @@ class BinaryPlayer(QMainWindow):
         self.ichosen = 0
         self.ROIedit.setText("0")
         # get scaling from 100 random frames
-        ops = self.ops[-1]
-        frames = subsample_frames(ops, np.minimum(ops["nframes"] - 1, 100),
+        frames = subsample_frames(self.ops, np.minimum(self.ops["nframes"] - 1, 100),
                                   self.reg_loc[-1])
         self.srange = frames.mean() + frames.std() * np.array([-2, 5])
 
         self.movieLabel.setText(self.reg_loc[-1])
-        self.nbytesread = []
-        for n in range(len(self.reg_loc)):
-            self.nbytesread.append(2 * self.Ly[n] * self.Lx[n])
-
+        
         #aspect ratio
-        if "aspect" in ops:
-            self.xyrat = ops["aspect"]
-        elif "diameter" in ops and (type(ops["diameter"]) is not int) and (len(
-                ops["diameter"]) > 1):
-            self.xyrat = ops["diameter"][0] / ops["diameter"][1]
+        if "aspect" in self.ops:
+            self.xyrat = self.ops["aspect"]
+        elif "diameter" in self.ops and (type(self.ops["diameter"]) is not int) and (len(
+                self.ops["diameter"]) > 1):
+            self.xyrat = self.ops["diameter"][0] / self.ops["diameter"][1]
         else:
             self.xyrat = 1.0
         self.vmain.setAspectLocked(lock=True, ratio=self.xyrat)
         self.vside.setAspectLocked(lock=True, ratio=self.xyrat)
 
-        self.nframes = ops["nframes"]
-        self.time_step = int(1. / ops["fs"] * 1000 / 5)  # 5x real-time (make sure it's casted)
+        self.nframes = self.ops["nframes"]
+        self.time_step = max(1, int(np.round(1. / self.ops["fs"] * 1000 / 5)))  # 5x real-time
         self.frameDelta = int(np.maximum(5, self.nframes / 200))
         self.frameSlider.setSingleStep(self.frameDelta)
         self.currentMovieDirectory = QtCore.QFileInfo(self.filename).path()
         if self.nframes > 0:
             self.updateFrameSlider()
             self.updateButtons()
-        # plot ops X-Y offsets
-        if "yoff" in ops:
-            self.yoff = ops["yoff"]
-            self.xoff = ops["xoff"]
+        # plot self.ops X-Y offsets
+        if "yoff" in self.ops:
+            self.yoff = self.ops["yoff"]
+            self.xoff = self.ops["xoff"]
         else:
-            self.yoff = np.zeros((ops["nframes"],))
-            self.xoff = np.zeros((ops["nframes"],))
+            self.yoff = np.zeros((self.ops["nframes"],))
+            self.xoff = np.zeros((self.ops["nframes"],))
         self.p1.plot(self.yoff, pen="g")
         self.p1.plot(self.xoff, pen="y")
         self.p1.setRange(
@@ -636,6 +596,9 @@ class BinaryPlayer(QMainWindow):
 
     def cell_chosen(self):
         if self.Floaded:
+            if self.ichosen >= len(self.stat):
+                self.ichosen = len(self.stat) - 1
+            
             self.cell_mask()
             self.ROIedit.setText(str(self.ichosen))
             rgb = np.array(self.colors[self.ichosen])
@@ -644,9 +607,6 @@ class BinaryPlayer(QMainWindow):
             self.cellscatter_side.setData(self.xext, self.yext, pen=pg.mkPen(list(rgb)),
                                           brush=pg.mkBrush(list(rgb)), size=3)
 
-            if self.ichosen >= len(self.stat):
-                self.ichosen = len(self.stat) - 1
-            self.cell_mask()
             self.ft = self.Fcell[self.ichosen, :]
             self.plot_trace()
             self.p2.setXLink("plot_shift")
@@ -674,7 +634,7 @@ class BinaryPlayer(QMainWindow):
                     posx = pos.x()
                     iplot = 2
                 elif x == self.vmain or x == self.vside:
-                    if event.button() == 1:
+                    if event.button() == QtCore.Qt.LeftButton:
                         if event.double():
                             self.zoom_image()
                         else:
@@ -682,12 +642,13 @@ class BinaryPlayer(QMainWindow):
                                 pos = x.mapSceneToView(event.scenePos())
                                 posy = int(pos.x())
                                 posx = int(pos.y())
+                                print(posy, posx, self.cellpix[posx, posy])
                                 if posy >= 0 and posy < self.LX and posx >= 0 and posx < self.LY:
                                     if self.cellpix[posx, posy] > -1:
                                         self.ichosen = self.cellpix[posx, posy]
                                         self.cell_chosen()
                 if iplot == 1 or iplot == 2:
-                    if event.button() == 1:
+                    if event.button() == QtCore.Qt.LeftButton:
                         if event.double():
                             zoom = True
                         else:
@@ -721,9 +682,9 @@ class BinaryPlayer(QMainWindow):
             self.zbox.setEnabled(True)
             self.zbox.setChecked(True)
             self.zmax = np.zeros(self.nframes, "int")
-            if "zcorr" in self.ops[0]:
-                if self.zstack.shape[0] == self.ops[0]["zcorr"].shape[0]:
-                    zcorr = self.ops[0]["zcorr"]
+            if "zcorr" in self.self.ops:
+                if self.zstack.shape[0] == self.ops["zcorr"].shape[0]:
+                    zcorr = self.ops["zcorr"]
                     self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1),
                                           axis=1)
                     self.plot_zcorr()
@@ -757,8 +718,8 @@ class BinaryPlayer(QMainWindow):
 
     def createButtons(self, parent):
         iconSize = QtCore.QSize(30, 30)
-        openButton = QPushButton("load ops.npy")
-        openButton.setToolTip("Open single-plane ops.npy")
+        openButton = QPushButton("load db.npy")
+        openButton.setToolTip("Open a single-plane db.npy")
         openButton.clicked.connect(self.open)
 
         openButton2 = QPushButton("load folder")
@@ -812,15 +773,6 @@ class BinaryPlayer(QMainWindow):
         if self.playButton.isEnabled():
             self.cframe = np.maximum(0, np.minimum(self.nframes - 1, self.cframe))
             self.cframe = int(self.cframe)
-            # seek to absolute position
-            for n in range(len(self.reg_file)):
-                self.reg_file[n].seek(self.nbytesread[n] * self.cframe, 0)
-            if self.wraw:
-                self.reg_file_raw.seek(self.nbytesread[-1] * self.cframe, 0)
-            if self.wred:
-                self.reg_file_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
-            if self.wraw_wred:
-                self.reg_file_raw_chan2.seek(self.nbytesread[-1] * self.cframe, 0)
             self.cframe -= 1
             self.next_frame()
 
@@ -840,10 +792,10 @@ class BinaryPlayer(QMainWindow):
         print("paused")
 
     def compute_z(self, parent):
-        ops, zcorr = registration.compute_zpos(self.zstack, self.ops[0])
-        parent.ops = ops
+        settings, zcorr = registration.compute_zpos(self.zstack, self.settings[0])
+        parent.ops = settings
         self.zmax = np.argmax(gaussian_filter1d(zcorr.T.copy(), 2, axis=1), axis=1)
-        np.save(self.filename, ops)
+        np.save(self.filename, self.ops)
         self.plot_zcorr()
 
     def plot_zcorr(self):
@@ -964,7 +916,10 @@ class PCViewer(QMainWindow):
         # if not a combined recording, automatically open binary
         if hasattr(parent, "ops"):
             if parent.ops["save_path"][-8:] != "combined":
-                filename = os.path.abspath(os.path.join(parent.basename, "ops.npy"))
+                self.ops = parent.ops
+                self.openFile()
+            else:
+                filename = os.path.abspath(os.path.join(parent.basename, "db.npy"))
                 print(filename)
                 self.openFile(filename)
 
@@ -973,7 +928,7 @@ class PCViewer(QMainWindow):
         openButton = QToolButton()
         openButton.setIcon(self.style().standardIcon(QStyle.SP_DialogOpenButton))
         openButton.setIconSize(iconSize)
-        openButton.setToolTip("Open ops file")
+        openButton.setToolTip("Open ops/reg_outputs file")
         openButton.clicked.connect(self.open)
 
         self.playButton = QToolButton()
@@ -1016,31 +971,34 @@ class PCViewer(QMainWindow):
         self.pauseButton.setEnabled(False)
 
     def open(self):
-        filename = QFileDialog.getOpenFileName(self, "Open single-plane ops.npy file",
-                                               filter="ops*.npy")
+        filename = QFileDialog.getOpenFileName(self, "Open ops.npy or reg_outputs.npy file",
+                                               filter="*.npy")
         # load ops in same folder
         if filename:
             print(filename[0])
             self.openFile(filename[0])
 
-    def openFile(self, filename):
-        try:
-            ops = np.load(filename, allow_pickle=True).item()
-            self.PC = ops["regPC"]
+    def openFile(self, filename=None):
+        if filename is not None:
+            try:
+                ops = np.load(filename, allow_pickle=True).item()
+            except Exception as e:
+                print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
+                print(e)
+                good = False            
+        else:
+            self.PC = self.ops["regPC"]
             self.PC = np.clip(self.PC, np.percentile(self.PC, 1),
                               np.percentile(self.PC, 99))
 
             self.Ly, self.Lx = self.PC.shape[2:]
-            self.DX = ops["regDX"]
-            if "tPC" in ops:
-                self.tPC = ops["tPC"]
+            self.DX = self.ops["regDX"]
+            if "tPC" in self.ops:
+                self.tPC = self.ops["tPC"]
             else:
                 self.tPC = np.zeros((1, self.PC.shape[1]))
             good = True
-        except Exception as e:
-            print("ERROR: ops.npy incorrect / missing ops['regPC'] and ops['regDX']")
-            print(e)
-            good = False
+
         if good:
             self.loaded = True
             self.nPCs = self.PC.shape[1]
@@ -1104,7 +1062,8 @@ class PCViewer(QMainWindow):
                 self.nums[j].setText("%s: %1.3f" % (ptitle[j], self.DX[iPC, j]))
             self.scatter = pg.ScatterPlotItem()
             self.p3.addItem(self.scatter)
-            self.scatter.setData([iPC + 1, iPC + 1, iPC + 1], self.DX[iPC, :].tolist(),
+            #print(self.DX.shape)
+            self.scatter.setData([iPC + 1, iPC + 1, iPC + 1], self.DX[iPC, :3].tolist(),
                                  size=10, brush=pg.mkBrush(255, 255, 255))
             self.p3.setLabel("left", "pixel shift")
             self.p3.setLabel("bottom", "PC #")
@@ -1133,7 +1092,7 @@ class PCViewer(QMainWindow):
         if self.loaded:
             for x in items:
                 if x == self.p0 or x == self.p1 or x == self.p2:
-                    if event.button() == 1:
+                    if event.button() == QtCore.Qt.LeftButton:
                         if event.double():
                             zoom = True
                             self.zoom_plot()

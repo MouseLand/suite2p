@@ -17,7 +17,7 @@ def make_buttons(parent, b0):
     """ color buttons at row b0 """
     # color buttons
     parent.color_names = [
-        "A: random", "S: skew", "D: compact", "F: footprint", "G: aspect_ratio",
+        "A: random", "S: skew", "D: compact", "F: snr", "G: aspect_ratio",
         "H: chan2_prob", "J: classifier, cell prob=", "K: correlations, bin=",
         "L: corr with 1D var, bin=^^^", "M: rastermap / custom"
     ]
@@ -211,10 +211,10 @@ def init_masks(parent):
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
-        ops: mean_image, Vcorr
+        settings: mean_image, Vcorr
         stat: xpix,ypix,xext,yext
         iscell: vector with True if ROI is cell
-        ops_plot: plotROI, view, color, randcols
+        settings_plot: plotROI, view, color, randcols
     outputs:
         M0: ROIs that are True in iscell
         M1: ROIs that are False in iscell
@@ -292,16 +292,16 @@ def rgb_masks(parent, col, c):
         parent.colors["RGB"][i, c, :, :, :3] = H
 
 
-def draw_masks(parent):  #ops, stat, ops_plot, iscell, ichosen):
+def draw_masks(parent):  #settings, stat, settings_plot, iscell, ichosen):
     """
 
     creates RGB masks using stat and puts them in M0 or M1 depending on
     whether or not iscell is True for a given ROI
     args:
-        ops: mean_image, Vcorr
+        settings: mean_image, Vcorr
         stat: xpix,ypix
         iscell: vector with True if ROI is cell
-        ops_plot: plotROI, view, color, randcols
+        settings_plot: plotROI, view, color, randcols
     outputs:
         M0: ROIs that are True in iscell
         M1: ROIs that are False in iscell

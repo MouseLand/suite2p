@@ -8,20 +8,24 @@ import pyqtgraph as pg
 from qtpy import QtGui, QtCore
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
 
-from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks
-from .. import run_s2p, default_ops
+from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks, utils, rungui
+from .. import run_s2p, default_settings
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self, statfile=None):
         super(MainWindow, self).__init__()
+        import suite2p
+        s2p_dir = pathlib.Path(suite2p.__file__).parent
+        ### first time running, need to check for user files
+        user_dir = pathlib.Path.home().joinpath(".suite2p")
+        user_dir.mkdir(exist_ok=True)
+
         pg.setConfigOptions(imageAxisOrder="row-major")
 
         self.setGeometry(50, 50, 1500, 800)
         self.setWindowTitle("suite2p (run pipeline or load stat.npy)")
-        import suite2p
-        s2p_dir = pathlib.Path(suite2p.__file__).parent
         icon_path = os.fspath(s2p_dir.joinpath("logo", "logo.png"))
 
         app_icon = QtGui.QIcon()
@@ -32,7 +36,7 @@ class MainWindow(QMainWindow):
         app_icon.addFile(icon_path, QtCore.QSize(64, 64))
         app_icon.addFile(icon_path, QtCore.QSize(256, 256))
         self.setWindowIcon(app_icon)
-        self.setStyleSheet("QMainWindow {background: 'black';}")
+        #self.setStyleSheet("QMainWindow {background: 'black';}")
         self.stylePressed = ("QPushButton {Text-align: left; "
                              "background-color: rgb(100,50,100); "
                              "color:white;}")
@@ -42,13 +46,11 @@ class MainWindow(QMainWindow):
         self.styleInactive = ("QPushButton {Text-align: left; "
                               "background-color: rgb(50,50,50); "
                               "color:gray;}")
+        self.setStyleSheet(utils.stylesheet())
         self.loaded = False
         self.ops_plot = []
 
-        ### first time running, need to check for user files
-        user_dir = pathlib.Path.home().joinpath(".suite2p")
-        user_dir.mkdir(exist_ok=True)
-
+        
         # check for classifier file
         class_dir = user_dir.joinpath("classifiers")
         class_dir.mkdir(exist_ok=True)
@@ -58,12 +60,12 @@ class MainWindow(QMainWindow):
             shutil.copy(self.classorig, self.classuser)
         self.classfile = self.classuser
 
-        # check for ops file (for running suite2p)
-        ops_dir = user_dir.joinpath("ops")
-        ops_dir.mkdir(exist_ok=True)
-        self.opsuser = os.fspath(ops_dir.joinpath("ops_user.npy"))
+        # check for settings file (for running suite2p)
+        settings_dir = user_dir.joinpath("settings")
+        settings_dir.mkdir(exist_ok=True)
+        self.opsuser = os.fspath(settings_dir.joinpath("settings_user.npy"))
         if not os.path.isfile(self.opsuser):
-            np.save(self.opsuser, default_ops())
+            np.save(self.opsuser, default_settings())
         self.opsfile = self.opsuser
 
         menus.mainmenu(self)
@@ -106,13 +108,8 @@ class MainWindow(QMainWindow):
         model = np.load(self.classorig, allow_pickle=True).item()
         self.default_keys = model["keys"]
 
+        
         # load initial file
-        #statfile = "C:/Users/carse/OneDrive/Documents/suite2p/plane0/stat.npy"
-        #statfile = "D:/grive/cshl_suite2p/GT1/suite2p/plane0/stat.npy"
-        #statfile = "/media/carsen/DATA1/TIFFS/auditory_cortex/suite2p/plane0/stat.npy"
-        #folder = "D:/DATA/GT1/singlechannel_half/suite2p/"
-        #self.fname = folder
-        #io.load_folder(self)
         if statfile is not None:
             self.fname = statfile
             io.load_proc(self)
@@ -120,6 +117,9 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
         self.show()
         self.win.show()
+        
+        #RW = rungui.RunWindow(self)
+        #RW.show()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         # ------ CELL STATS / ROI SELECTION --------
         # which stats
         self.stats_to_show = [
-            "med", "npix", "skew", "compact", "footprint", "aspect_ratio"
+            "med", "npix_norm", "skew", "compact", "snr", "aspect_ratio"
         ]
         lilfont = QtGui.QFont("Arial", 8)
         qlabel = QLabel(self)
@@ -596,9 +596,9 @@ class MainWindow(QMainWindow):
                     if event.double():
                         zoom = True
                 if iplot == 1 or iplot == 2:
-                    if event.button() == 2:
+                    if event.button() == QtCore.Qt.RightButton:
                         flip = True
-                    elif event.button() == 1:
+                    elif event.button() == QtCore.Qt.LeftButton:
                         if event.double():
                             zoom = True
                         else:
@@ -643,7 +643,7 @@ class MainWindow(QMainWindow):
                             if btn.isChecked():
                                 btn.setStyleSheet(self.styleUnpressed)
                     self.update_plot()
-                elif event.button() == 2:
+                elif event.button() == QtCore.Qt.RightButton:
                     if iplot == 1:
                         event.acceptedItem = self.p1
                         self.p1.raiseContextMenu(event)
@@ -656,11 +656,9 @@ class MainWindow(QMainWindow):
         self.ROIedit.setText(str(self.ichosen))
         for k in range(1, len(self.stats_to_show) + 1):
             key = self.stats_to_show[k - 1]
-            ival = self.stat[n][key]
+            ival = self.stat[n][key] if key in self.stat[n] else 0
             if k == 1:
                 self.ROIstats[k].setText(key + ": [%d, %d]" % (ival[0], ival[1]))
-            elif k == 2:
-                self.ROIstats[k].setText(key + ": %d" % (ival))
             else:
                 self.ROIstats[k].setText(key + ": %2.2f" % (ival))
 
@@ -709,8 +707,12 @@ def run(statfile=None):
     app_icon.addFile(icon_path, QtCore.QSize(64, 64))
     app_icon.addFile(icon_path, QtCore.QSize(256, 256))
     app.setWindowIcon(app_icon)
+    app.setStyle("Fusion")
+    app.setPalette(utils.DarkPalette())
+    app.setStyleSheet(utils.stylesheet())
     GUI = MainWindow(statfile=statfile)
     ret = app.exec_()
+    
     # GUI.save_gui_data()
     sys.exit(ret)
 

@@ -13,11 +13,18 @@ def get_stat_iscell(data_dir_path):
     return stat, expected_output
 
 
+<<<<<<< HEAD
 def test_classification_output(test_ops, data_dir):
     """
     Regression test that checks to see if the main_classify function works. Only checks iscell output.
     """
     test_ops['save_path'] = test_ops['save_path0']
+=======
+def test_classification_output(test_settings, data_dir):
+    """
+    Regression test that checks to see if the main_classify function works. Only checks iscell output.
+    """
+>>>>>>> suite2p_dev/tomerge
     stat, expected_output = get_stat_iscell(data_dir)
     iscell = classification.classify(stat, classfile=classification.builtin_classfile)
     assert np.allclose(iscell, expected_output, atol=1e-1)

@@ -10,7 +10,6 @@ def make_selection(parent):
     """ buttons to draw a square on view """
     parent.topbtns = QButtonGroup()
     ql = QLabel("select cells")
-    ql.setStyleSheet("color: white;")
     ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.l0.addWidget(ql, 0, 2, 1, 2)
     pos = [2, 3, 4]
@@ -25,7 +24,6 @@ def make_selection(parent):
     parent.ROIplot = 0
     ql = QLabel("n=")
     ql.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-    ql.setStyleSheet("color: white;")
     ql.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     parent.l0.addWidget(ql, 0, 10, 1, 1)
     parent.topedit = QLineEdit(parent)
@@ -43,11 +41,9 @@ def make_cellnotcell(parent):
     """ buttons for cell / not cell views at top """
     # number of ROIs in each image
     parent.lcell0 = QLabel("")
-    parent.lcell0.setStyleSheet("color: white;")
     parent.lcell0.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
     parent.l0.addWidget(parent.lcell0, 0, 12, 1, 2)
     parent.lcell1 = QLabel("")
-    parent.lcell1.setStyleSheet("color: white;")
     parent.l0.addWidget(parent.lcell1, 0, 20, 1, 2)
 
     parent.sizebtns = QButtonGroup(parent)
@@ -59,7 +55,7 @@ def make_cellnotcell(parent):
         parent.l0.addWidget(btn, 0, 14 + 2 * b, 1, 2)
         btn.setEnabled(False)
         if b == 1:
-            btn.setEnabled(True)
+            btn.setChecked(True)
         b += 1
     parent.sizebtns.setExclusive(True)
 
@@ -87,7 +83,6 @@ class QuadButton(QPushButton):
         super(QuadButton, self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
-        self.setStyleSheet(parent.styleInactive)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.setMaximumWidth(22)
@@ -97,10 +92,6 @@ class QuadButton(QPushButton):
         self.show()
 
     def press(self, parent, bid):
-        for b in range(9):
-            if parent.quadbtns.button(b).isEnabled():
-                parent.quadbtns.button(b).setStyleSheet(parent.styleUnpressed)
-        self.setStyleSheet(parent.stylePressed)
         self.xrange = np.array([self.xpos - .15, self.xpos + 1.15
                                ]) * parent.ops["Lx"] / 3
         self.yrange = np.array([self.ypos - .15, self.ypos + 1.15
@@ -123,7 +114,6 @@ class SizeButton(QPushButton):
         super(SizeButton, self).__init__(parent)
         self.setText(Text)
         self.setCheckable(True)
-        self.setStyleSheet(parent.styleInactive)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent))
@@ -132,9 +122,6 @@ class SizeButton(QPushButton):
 
     def press(self, parent):
         bid = self.bid
-        for b in parent.sizebtns.buttons():
-            b.setStyleSheet(parent.styleUnpressed)
-        self.setStyleSheet(parent.stylePressed)
         ts = 100
         if bid == 0:
             parent.p2.linkView(parent.p2.XAxis, view=None)
@@ -155,16 +142,13 @@ class SizeButton(QPushButton):
         if bid != 1:
             if parent.ops_plot["color"] != 0:
                 for btn in parent.topbtns.buttons():
-                    btn.setStyleSheet(parent.styleUnpressed)
                     btn.setEnabled(True)
             else:
-                parent.topbtns.button(0).setStyleSheet(parent.styleUnpressed)
                 parent.topbtns.button(0).setEnabled(True)
         else:
             parent.ROI_remove()
             for btn in parent.topbtns.buttons():
                 btn.setEnabled(False)
-                btn.setStyleSheet(parent.styleInactive)
         parent.win.show()
         parent.show()
 
@@ -179,7 +163,6 @@ class TopButton(QPushButton):
         self.bid = bid
         self.setText(text[bid])
         self.setCheckable(True)
-        self.setStyleSheet(parent.styleInactive)
         self.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
         self.resize(self.minimumSizeHint())
         self.clicked.connect(lambda: self.press(parent))
@@ -191,16 +174,12 @@ class TopButton(QPushButton):
             if parent.ops_plot["color"] == 0:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(False)
-                    parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
             else:
                 for b in [1, 2]:
                     parent.topbtns.button(b).setEnabled(True)
-                    parent.topbtns.button(b).setStyleSheet(parent.styleUnpressed)
         else:
             for b in range(3):
                 parent.topbtns.button(b).setEnabled(False)
-                parent.topbtns.button(b).setStyleSheet(parent.styleInactive)
-        self.setStyleSheet(parent.stylePressed)
         if bid == 0:
             parent.ROI_selection()
         else:

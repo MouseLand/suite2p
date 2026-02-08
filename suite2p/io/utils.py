@@ -3,122 +3,73 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import glob
 import os
+import copy
 from pathlib import Path
-
+import logging
+logger = logging.getLogger(__name__)
 import numpy as np
 from natsort import natsorted
 
 
-def search_for_ext(rootdir, extension="tif", look_one_level_down=False):
-    filepaths = []
-    if os.path.isdir(rootdir):
-        # search root dir
-        tmp = glob.glob(os.path.join(rootdir, "*." + extension))
-        if len(tmp):
-            filepaths.extend([t for t in natsorted(tmp)])
-        # search one level down
-        if look_one_level_down:
-            dirs = natsorted(os.listdir(rootdir))
-            for d in dirs:
-                if os.path.isdir(os.path.join(rootdir, d)):
-                    tmp = glob.glob(os.path.join(rootdir, d, "*." + extension))
-                    if len(tmp):
-                        filepaths.extend([t for t in natsorted(tmp)])
-    if len(filepaths):
-        return filepaths
-    else:
-        raise OSError("Could not find files, check path [{0}]".format(rootdir))
+
+EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
+        "h5": ["*.h5", "*.hdf5", "*.mesc"],
+        "sbx": ["*.sbx"],
+        "nd2": ["*.nd2"],
+        "dcimg": ["*.dcimg"],
+        "bruker": ["*.ome.tif", "*.ome.TIF"],
+        "movie": ["*.mp4", "*.avi"]}
 
 
-def get_sbx_list(ops):
-    """ make list of scanbox files to process
-    if ops["subfolders"], then all tiffs ops["data_path"][0] / ops["subfolders"] / *.sbx
-    if ops["look_one_level_down"], then all tiffs in all folders + one level down
-    TODO: Implement "tiff_list" functionality
+def find_files_open_binaries(settings):
     """
-    froot = ops["data_path"]
-    # use a user-specified list of tiffs
-    if len(froot) == 1:
-        if "subfolders" in ops and len(ops["subfolders"]) > 0:
-            fold_list = []
-            for folder_down in ops["subfolders"]:
-                fold = os.path.join(froot[0], folder_down)
-                fold_list.append(fold)
-        else:
-            fold_list = ops["data_path"]
-    else:
-        fold_list = froot
-    fsall = []
-    for k, fld in enumerate(fold_list):
-        fs = search_for_ext(fld, extension="sbx",
-                            look_one_level_down=ops["look_one_level_down"])
-        fsall.extend(fs)
-    if len(fsall) == 0:
-        print(fold_list)
-        raise Exception("No files, check path.")
-    else:
-        print("** Found %d sbx - converting to binary **" % (len(fsall)))
-    return fsall, ops
+    Find input files and open binary files for writing.
 
-def get_movie_list(ops):
-    """ make list of movie files to process
-    if ops["subfolders"], then all  ops["data_path"][0] / ops["subfolders"] / *.avi or *.mp4
-    if ops["look_one_level_down"], then all tiffs in all folders + one level down
+    Parameters
+    ----------
+    settings : dict
+        Suite2p settings dictionary.
+
+    Returns
+    -------
+    None
+        No longer used!!
     """
-    froot = ops["data_path"]
-    # use a user-specified list of tiffs
-    if len(froot) == 1:
-        if "subfolders" in ops and len(ops["subfolders"]) > 0:
-            fold_list = []
-            for folder_down in ops["subfolders"]:
-                fold = os.path.join(froot[0], folder_down)
-                fold_list.append(fold)
-        else:
-            fold_list = ops["data_path"]
-    else:
-        fold_list = froot
-    fsall = []
-    for k, fld in enumerate(fold_list):
-        try:
-            fs = search_for_ext(fld, extension="mp4",
-                                look_one_level_down=ops["look_one_level_down"])
-            fsall.extend(fs)
-        except:
-            fs = search_for_ext(fld, extension="avi",
-                                look_one_level_down=ops["look_one_level_down"])
-            fsall.extend(fs)
-    if len(fsall) == 0:
-        print(fold_list)
-        raise Exception("No files, check path.")
-    else:
-        print("** Found %d movies - converting to binary **" % (len(fsall)))
-    return fsall, ops
+    return None
 
-
-
-def list_h5(ops):
-    froot = os.path.dirname(ops["h5py"])
-    lpath = os.path.join(froot, "*.h5")
-    fs = natsorted(glob.glob(lpath))
-    lpath = os.path.join(froot, "*.hdf5")
-    fs2 = natsorted(glob.glob(lpath))
-    fs.extend(fs2)
-    return fs
-
+def init_settings(settings):
+    return None
 
 def list_files(froot, look_one_level_down, exts):
-    """ get list of files with exts in folder froot + one level down maybe
+    """
+    Collect files matching the given extensions from a folder, optionally including subfolders.
+
+    Parameters
+    ----------
+    froot : str
+        Root directory to search for files.
+    look_one_level_down : bool
+        If True, also search immediate subdirectories of `froot`.
+    exts : list of str
+        Glob patterns to match (e.g. ["*.tif", "*.tiff"]).
+
+    Returns
+    -------
+    fs : list of str
+        Naturally sorted list of matching file paths.
+    first_files : numpy.ndarray
+        Boolean array of length len(fs), where True marks the first file from each
+        folder (used to track folder boundaries).
     """
     fs = []
+    first_files = np.zeros(0, "bool")
     for e in exts:
         lpath = os.path.join(froot, e)
         fs.extend(glob.glob(lpath))
     fs = natsorted(set(fs))
     if len(fs) > 0:
-        first_tiffs = np.zeros((len(fs),), "bool")
-        first_tiffs[0] = True
-    else:
-        first_tiffs = np.zeros(0, "bool")
+        first_files = np.zeros(len(fs), "bool")
+        first_files[0] = True
     lfs = len(fs)
     if look_one_level_down:
         fdir = natsorted(glob.glob(os.path.join(froot, "*/")))
@@ -130,270 +81,170 @@ def list_files(froot, look_one_level_down, exts):
             fsnew = natsorted(set(fsnew))
             if len(fsnew) > 0:
                 fs.extend(fsnew)
-                first_tiffs = np.append(first_tiffs, np.zeros((len(fsnew),), "bool"))
-                first_tiffs[lfs] = True
+                first_files = np.append(first_files, np.zeros((len(fsnew),), "bool"))
+                first_files[lfs] = True
                 lfs = len(fs)
-    return fs, first_tiffs
+    return fs, first_files
 
-
-def get_h5_list(ops):
-    """ make list of h5 files to process
-    if ops["look_one_level_down"], then all h5"s in all folders + one level down
+def get_file_list(db):
     """
-    froot = ops["data_path"]
-    fold_list = ops["data_path"]
-    fsall = []
-    nfs = 0
-    first_tiffs = []
-    for k, fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops["look_one_level_down"], 
-                                ["*.h5", "*.hdf5", "*.mesc"])
-        fsall.extend(fs)
-        first_tiffs.extend(list(ftiffs))
-    #if len(fs) > 0 and not isinstance(fs, list):
-    #    fs = [fs]
-    if len(fs) == 0:
-        print("Could not find any h5 files")
-        raise Exception("no h5s")
-    else:
-        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
-        print("** Found %d h5 files - converting to binary **" % (len(fsall)))
-        #print("Found %d tifs"%(len(fsall)))
-    return fsall, ops
+    Build the list of input files to process from the database configuration.
 
+    Supports three modes: an explicit file list (db["file_list"]), subfolder-based
+    discovery (db["subfolders"]), or recursive search with optional one-level-down
+    lookup (db["look_one_level_down"]).
 
-def get_tif_list(ops):
-    """ make list of tiffs to process
-    if ops["subfolders"], then all tiffs ops["data_path"][0] / ops["subfolders"] / *.tif
-    if ops["look_one_level_down"], then all tiffs in all folders + one level down
-    if ops["tiff_list"], then ops["data_path"][0] / ops["tiff_list"] ONLY
+    Parameters
+    ----------
+    db : dict
+        Database dictionary. Must contain "data_path" (list of str). Optionally
+        contains "file_list" (list of str), "subfolders" (list of str),
+        "look_one_level_down" (bool), and "input_format" (str, default "tif").
+
+    Returns
+    -------
+    fsall : list of str
+        List of all file paths to process.
+    first_files : numpy.ndarray
+        Boolean array of length len(fsall), where True marks the first file from
+        each folder.
     """
-    froot = ops["data_path"]
+    data_path = db["data_path"]
+    input_format = db.get("input_format", "tif")
     # use a user-specified list of tiffs
-    if "tiff_list" in ops:
+    if db.get("file_list", None) is not None:
         fsall = []
-        for tif in ops["tiff_list"]:
-            fsall.append(os.path.join(froot[0], tif))
-        ops["first_tiffs"] = np.zeros((len(fsall),), dtype="bool")
-        ops["first_tiffs"][0] = True
-        print("** Found %d tifs - converting to binary **" % (len(fsall)))
+        for f in db["file_list"]:
+            fsall.append(os.path.join(data_path[0], f))
+        first_files = np.zeros(len(fsall), dtype="bool")
+        first_files[0] = True
+        logger.info(f"** Found {len(fsall)} files - converting to binary **")
     else:
-        if len(froot) == 1:
-            if "subfolders" in ops and len(ops["subfolders"]) > 0:
+        if len(data_path) == 1 and db.get("subfolders", None) is not None:
                 fold_list = []
-                for folder_down in ops["subfolders"]:
-                    fold = os.path.join(froot[0], folder_down)
+                for folder_down in db["subfolders"]:
+                    fold = os.path.join(data_path[0], folder_down)
                     fold_list.append(fold)
-            else:
-                fold_list = ops["data_path"]
         else:
-            fold_list = froot
+            fold_list = data_path
         fsall = []
-        nfs = 0
-        first_tiffs = []
+        first_files = []
         for k, fld in enumerate(fold_list):
-            fs, ftiffs = list_files(fld, ops["look_one_level_down"],
-                                    ["*.tif", "*.tiff", "*.TIF", "*.TIFF"])
+            fs, firsts = list_files(fld, db["look_one_level_down"],
+                                    EXTS[input_format])
             fsall.extend(fs)
-            first_tiffs.extend(list(ftiffs))
+            first_files.extend(list(firsts))
         if len(fsall) == 0:
-            print("Could not find any tiffs")
-            raise Exception("no tiffs")
+            logger.info(f"Could not find any {EXTS[input_format]} files in {data_path}")
+            raise Exception("no files found")
         else:
-            ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
-            print("** Found %d tifs - converting to binary **" % (len(fsall)))
-    return fsall, ops
+            first_files = np.array(first_files).astype("bool")
+            logger.info(f"** Found {len(fsall)} files - converting to binary **")
+    return fsall, first_files
 
-
-def get_nd2_list(ops):
-    """ make list of nd2 files to process
-    if ops["look_one_level_down"], then all nd2"s in all folders + one level down
+def init_dbs(db0):
     """
-    froot = ops["data_path"]
-    fold_list = ops["data_path"]
-    fsall = []
-    nfs = 0
-    first_tiffs = []
-    for k, fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.nd2"])
-        fsall.extend(fs)
-        first_tiffs.extend(list(ftiffs))
-    if len(fs) == 0:
-        print("Could not find any nd2 files")
-        raise Exception("no nd2s")
-    else:
-        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
-        print("** Found %d nd2 files - converting to binary **" % (len(fsall)))
-    return fsall, ops
+    Initialize per-plane database dictionaries and create output directories.
 
-def get_dcimg_list(ops):
-    """ make list of dcimg files to process
-        if ops["look_one_level_down"], then all dcimg"s in all folders + one level down
-    """
-    froot = ops["data_path"]
-    fold_list = ops["data_path"]
-    fsall = []
-    nfs = 0
-    first_tiffs = []
-    for k, fld in enumerate(fold_list):
-        fs, ftiffs = list_files(fld, ops["look_one_level_down"], ["*.dcimg"])
-        fsall.extend(fs)
-        first_tiffs.extend(list(ftiffs))
-    if len(fs) == 0:
-        print("Could not find any dcimg files")
-        raise Exception("no dcimg")
-    else:
-        ops["first_tiffs"] = np.array(first_tiffs).astype("bool")
-        print("** Found %d dcimg files - converting to binary **" % (len(fsall)))
-    return fsall, ops
-
-def find_files_open_binaries(ops1, ish5=False):
-    """  finds tiffs or h5 files and opens binaries for writing
+    Creates a deep copy of `db0` for each plane (and each ROI for mesoscope recordings),
+    setting up save paths, binary file paths, and fast-disk directories.
 
     Parameters
     ----------
-    ops1 : list of dictionaries
-        "keep_movie_raw", "data_path", "look_one_level_down", "reg_file"...
+    db0 : dict
+        Base database dictionary. Must contain "nplanes", "nchannels",
+        "keep_movie_raw", "save_path0", and "save_folder". Optionally contains
+        "fast_disk", "iplane", "lines", "dy", and "dx" (for mesoscope recordings
+        with multiple ROIs).
 
     Returns
     -------
-        ops1 : list of dictionaries
-            adds fields "filelist", "first_tiffs", opens binaries
-
+    dbs : list of dict
+        List of per-plane database dictionaries, each with added keys "save_path",
+        "fast_disk", "settings_path", "db_path", "reg_file", and optionally
+        "raw_file", "reg_file_chan2", "raw_file_chan2", "lines", "dy", "dx",
+        "iroi", "iplane".
     """
-
-    reg_file = []
-    reg_file_chan2 = []
-
-    for ops in ops1:
-        nchannels = ops["nchannels"]
-        if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-            reg_file.append(open(ops["raw_file"], "wb"))
-            if nchannels > 1:
-                reg_file_chan2.append(open(ops["raw_file_chan2"], "wb"))
+    nplanes = db0["nplanes"]
+    nchannels = db0["nchannels"]
+    keep_movie_raw = db0["keep_movie_raw"]
+    nfolders = nplanes
+    iplane = db0.get("iplane", np.arange(0, nplanes))
+    has_lines = False
+    if "lines" in db0 and db0["lines"] is not None and len(db0["lines"]) > 0:
+        nrois = len(db0["lines"])
+        db0["nrois"] = nrois
+        nfolders *= nrois
+        logger.info(f"NOTE: nplanes={nplanes}, nrois={nrois} => nfolders = {nfolders}")
+        # replicate lines across planes if nplanes > 1
+        if nplanes > 1:
+            lines0, dy0, dx0 = db0["lines"].copy(), db0["dy"].copy(), db0["dx"].copy()
+            dy0, dx0 = np.array(dy0), np.array(dx0)
+            dy = np.tile(dy0[np.newaxis, :], (nplanes, 1)).flatten()
+            dx = np.tile(dx0[np.newaxis, :], (nplanes, 1)).flatten()
+            lines = []
+            [lines.extend(lines0) for _ in range(nplanes)]
+            iroi = np.tile(np.arange(nrois)[np.newaxis,:], (nplanes, 1)).flatten()
+            iplane = np.tile(np.arange(nplanes)[:, np.newaxis], (1, nrois)).flatten()
         else:
-            reg_file.append(open(ops["reg_file"], "wb"))
-            if nchannels > 1:
-                reg_file_chan2.append(open(ops["reg_file_chan2"], "wb"))
+            lines, dy, dx = db0["lines"].copy(), db0["dy"].copy(), db0["dx"].copy()
+            iroi = np.arange(nrois)
+            iplane = np.zeros(nrois, "int")
+        has_lines = True 
 
-        if "input_format" in ops.keys():
-            input_format = ops["input_format"]
-        else:
-            input_format = "tif"
-    if ish5:
-        input_format = "h5"
-    print(input_format)
-    if input_format == "h5":
-        print(f"OPS1 h5py: {ops1[0]['h5py']}")
-        if ops1[0]["h5py"]:
-            fs = ops1[0]["h5py"]
-            fs = [fs]
-        else:
-            if len(ops1[0]["data_path"]) > 0:
-                fs, ops2 = get_h5_list(ops1[0])
-                print("NOTE: using a list of h5 files:")
-            # find h5"s
-            else:
-                raise Exception("No h5 files found")
-        
-    elif input_format == "sbx":
-        # find sbx
-        fs, ops2 = get_sbx_list(ops1[0])
-        print("Scanbox files:")
-        print("\n".join(fs))
-    elif input_format == "nd2":
-        # find nd2s
-        fs, ops2 = get_nd2_list(ops1[0])
-        print("Nikon files:")
-        print("\n".join(fs))
-    elif input_format == "movie":
-        fs, ops2 = get_movie_list(ops1[0])
-        print("Movie files:")
-        print("\n".join(fs))
-    elif input_format == "dcimg":
-        # find dcimgs
-        fs, ops2 = get_dcimg_list(ops1[0])
-        print("DCAM image files:")
-        print("\n".join(fs))
-    else:
-        # find tiffs
-        fs, ops2 = get_tif_list(ops1[0])
-        for ops in ops1:
-            ops["first_tiffs"] = ops2["first_tiffs"]
-            ops["frames_per_folder"] = np.zeros((ops2["first_tiffs"].sum(),), np.int32)
-    for ops in ops1:
-        ops["filelist"] = fs
-    return ops1, fs, reg_file, reg_file_chan2
-
-
-def init_ops(ops):
-    """ initializes ops files for each plane in recording
-
-    Parameters
-    ----------
-    ops : dictionary
-        "nplanes", "save_path", "save_folder", "fast_disk", "nchannels", "keep_movie_raw"
-        + (if mesoscope) "dy", "dx", "lines"
-
-    Returns
-    -------
-        ops1 : list of dictionaries
-            adds fields "save_path0", "reg_file"
-            (depending on ops: "raw_file", "reg_file_chan2", "raw_file_chan2")
-
-    """
-
-    nplanes = ops["nplanes"]
-    nchannels = ops["nchannels"]
-    if "lines" in ops:
-        lines = ops["lines"]
-    if "iplane" in ops:
-        iplane = ops["iplane"]
-        #ops["nplanes"] = len(ops["lines"])
-    ops1 = []
-    if ("fast_disk" not in ops) or len(ops["fast_disk"]) == 0:
-        ops["fast_disk"] = ops["save_path0"]
-    fast_disk = ops["fast_disk"]
-    # for mesoscope recording FOV locations
-    if "dy" in ops and ops["dy"] != "":
-        dy = ops["dy"]
-        dx = ops["dx"]
-    # compile ops into list across planes
-    for j in range(0, nplanes):
-        if len(ops["save_folder"]) > 0:
-            ops["save_path"] = os.path.join(ops["save_path0"], ops["save_folder"],
-                                            "plane%d" % j)
-        else:
-            ops["save_path"] = os.path.join(ops["save_path0"], "suite2p", "plane%d" % j)
-
-        if ("fast_disk" not in ops) or len(ops["fast_disk"]) == 0:
-            ops["fast_disk"] = ops["save_path0"].copy()
-        fast_disk = os.path.join(ops["fast_disk"], "suite2p", "plane%d" % j)
-        ops["ops_path"] = os.path.join(ops["save_path"], "ops.npy")
-        ops["reg_file"] = os.path.join(fast_disk, "data.bin")
-        if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-            ops["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
-        if "lines" in ops:
-            ops["lines"] = lines[j]
-        if "iplane" in ops:
-            ops["iplane"] = iplane[j]
+    dbs = []
+    if db0.get("fast_disk", None) is None or len(db0["fast_disk"]) == 0:
+        db0["fast_disk"] = db0["save_path0"]
+    fast_disk = db0["fast_disk"]
+    
+    # compile dbs into list across planes
+    for j in range(0, nfolders):
+        db = copy.deepcopy(db0)
+        db["save_path"] = os.path.join(db["save_path0"], db["save_folder"], f"plane{j}")
+        fast_disk = os.path.join(db["fast_disk"], "suite2p", f"plane{j}")
+        db["fast_disk"] = fast_disk
+        db["settings_path"] = os.path.join(db["save_path"], "settings.npy")
+        db["db_path"] = os.path.join(db["save_path"], "db.npy")
+        db["reg_file"] = os.path.join(fast_disk, "data.bin")
+        if keep_movie_raw:
+            db["raw_file"] = os.path.join(fast_disk, "data_raw.bin")
+        if has_lines:
+            db["lines"], db["dy"], db["dx"] = lines[j], dy[j], dx[j]
+            db["iroi"] = iroi[j]
+        db["iplane"] = iplane[j]
         if nchannels > 1:
-            ops["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
-            if "keep_movie_raw" in ops and ops["keep_movie_raw"]:
-                ops["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
-        if "dy" in ops and ops["dy"] != "":
-            ops["dy"] = dy[j]
-            ops["dx"] = dx[j]
-        if not os.path.isdir(fast_disk):
-            os.makedirs(fast_disk)
-        if not os.path.isdir(ops["save_path"]):
-            os.makedirs(ops["save_path"])
-        ops1.append(ops.copy())
-    return ops1
+            db["reg_file_chan2"] = os.path.join(fast_disk, "data_chan2.bin")
+            if keep_movie_raw:
+                db["raw_file_chan2"] = os.path.join(fast_disk, "data_chan2_raw.bin")
+        
+        os.makedirs(db["fast_disk"], exist_ok=True)
+        os.makedirs(db["save_path"], exist_ok=True)
+        dbs.append(db)
+    return dbs
 
 
 def get_suite2p_path(path: Path) -> Path:
-    """Find the root `suite2p` folder in the `path` variable"""
+    """
+    Find the root `suite2p` folder within a given path.
+
+    Walks the path components backwards to locate the last occurrence of a folder
+    named "suite2p" and returns the path up to and including that folder.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        File or directory path that should contain a "suite2p" folder component.
+
+    Returns
+    -------
+    new_path : pathlib.Path
+        Path truncated at the "suite2p" folder.
+
+    Raises
+    ------
+    FileNotFoundError
+        If "suite2p" is not found in any component of `path`.
+    """
 
     path = Path(path)  # In case `path` is a string
 

@@ -1,305 +1,68 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-from __future__ import annotations
-
-from typing import Tuple, Optional, NamedTuple, Sequence, List, Dict, Any
-from dataclasses import dataclass, field
-from warnings import warn
-
-import sys
 import numpy as np
-from numpy.linalg import norm
-from scipy.spatial import ConvexHull
+import logging 
+logger = logging.getLogger(__name__)
 
-
-def distance_kernel(radius: int) -> np.ndarray:
-    """ Returns 2D array containing geometric distance from center, with radius "radius" """
-    d = np.arange(-radius, radius + 1)
-    dists_2d = norm(np.meshgrid(d, d), axis=0)
-    return dists_2d
-
+from .utils import circleMask
 
 def median_pix(ypix, xpix):
+    """
+    Find the pixel closest to the median of a set of pixel coordinates.
+
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the pixels.
+
+    Returns
+    -------
+    med : list of float
+        Two-element list [ymed, xmed] of the pixel closest to the median.
+    """
     ymed, xmed = np.median(ypix), np.median(xpix)
-    imin = np.argmin((xpix - xmed)**2 + (ypix - ymed)**2)
+    imin = ((xpix - xmed)**2 + (ypix - ymed)**2).argmin()
     xmed = xpix[imin]
     ymed = ypix[imin]
     return [ymed, xmed]
 
-class EllipseData(NamedTuple):
-    mu: float
-    cov: float
-    radii: Tuple[float, float]
-    ellipse: np.ndarray
-    dy: int
-    dx: int
-
-    @property
-    def area(self):
-        return (self.radii[0] * self.radii[1])**0.5 * np.pi
-
-    @property
-    def radius(self) -> float:
-        return self.radii[0] * np.mean((self.dx, self.dy))
-
-    @property
-    def aspect_ratio(self) -> float:
-        ry, rx = self.radii
-        return aspect_ratio(width=ry, height=rx)
-    
-def default_rsort():
-    return np.sort(distance_kernel(radius=30).flatten())
-
-@dataclass(frozen=True)
-class ROI:
-    # To avoid the ValueError caused by using a mutable default value in your dataclass, you should use the default_factory argument of the field function. 
-    ypix: np.ndarray
-    xpix: np.ndarray
-    lam: np.ndarray
-    med: np.ndarray
-    do_crop: bool
-    if sys.version_info >= (3, 11):
-        rsort: np.ndarray = field(default_factory=default_rsort, repr=False)
-    else:
-        rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()), repr=False)
-
-    def __post_init__(self):
-        """Validate inputs."""
-        if self.xpix.shape != self.ypix.shape or self.xpix.shape != self.lam.shape:
-            raise TypeError("xpix, ypix, and lam should all be the same size.")
-
-    @classmethod
-    def from_stat_dict(cls, stat: Dict[str, Any], do_crop: bool = True) -> ROI:
-        return cls(ypix=stat["ypix"], xpix=stat["xpix"], lam=stat["lam"],
-                   med=stat["med"], do_crop=do_crop)
-
-    def to_array(self, Ly: int, Lx: int) -> np.ndarray:
-        """Returns a 2D boolean array of shape (Ly x Lx) indicating where the roi is located."""
-        arr = np.zeros((Ly, Lx), dtype=float)
-        arr[self.ypix, self.xpix] = 1
-        return arr
-
-    @classmethod
-    def stats_dicts_to_3d_array(cls, stats: Sequence[Dict[str, Any]], Ly: int, Lx: int,
-                                label_id: bool = False):
-        """
-        Outputs a (roi x Ly x Lx) float array from a sequence of stat dicts.
-        Convenience function that repeatedly calls ROI.from_stat_dict() and ROI.to_array() for all rois.
-
-        Parameters
-        ----------
-        stats : List of dictionary "ypix", "xpix", "lam"
-        Ly : y size of frame
-        Lx : x size of frame
-        label_id : whether array should be an integer value indicating ROI id or just 1 (indicating precence of ROI).
-        """
-        arrays = []
-        for i, stat in enumerate(stats):
-            array = cls.from_stat_dict(stat=stat).to_array(Ly=Ly, Lx=Lx)
-            if label_id:
-                array *= i + 1
-            arrays.append(array)
-        return np.stack(arrays)
-
-    def ravel_indices(self, Ly: int, Lx: int) -> np.ndarray:
-        """Returns a 1-dimensional array of indices from the ypix and xpix coordinates, assuming an image shape Ly x Lx."""
-        return np.ravel_multi_index((self.ypix, self.xpix), (Ly, Lx))
-
-    @classmethod
-    def get_overlap_count_image(cls, rois: Sequence[ROI], Ly: int,
-                                Lx: int) -> np.ndarray:
-        return count_overlaps(Ly=Ly, Lx=Lx, ypixs=[roi.ypix for roi in rois],
-                              xpixs=[roi.xpix for roi in rois])
-
-    @classmethod
-    def filter_overlappers(cls, rois: Sequence[ROI], overlap_image: np.ndarray,
-                           max_overlap: float) -> List[bool]:
-        """returns logical array of rois that remain after removing those that overlap more than fraction max_overlap from overlap_img."""
-        return filter_overlappers(
-            ypixs=[roi.ypix for roi in rois],
-            xpixs=[roi.xpix for roi in rois],
-            overlap_image=overlap_image,
-            max_overlap=max_overlap,
-        )
-
-    def get_overlap_image(self, overlap_count_image: np.ndarray) -> np.ndarray:
-        return overlap_count_image[self.ypix, self.xpix] > 1
-
-    @property
-    def soma_crop(self) -> np.ndarray:
-        if self.do_crop and self.ypix.size > 10:
-            dists = ((self.ypix - self.med[0])**2 + (self.xpix - self.med[1])**2)**0.5
-            radii = np.arange(0, dists.max(), 1)
-            area = np.zeros_like(radii)
-            for k, radius in enumerate(radii):
-                area[k] = self.lam[dists < radius].sum()
-            darea = np.diff(area)
-            radius = radii[-1]
-            threshold = darea.max() / 3
-            if len(np.nonzero(darea > threshold)[0]) > 0:
-                ida = np.nonzero(darea > threshold)[0][0]
-                if len(np.nonzero(darea[ida:] < threshold)[0]):
-                    radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
-            crop = dists < radius
-            if crop.sum() == 0:
-                crop = np.ones(self.ypix.size, "bool")
-            return crop
-        else:
-            return np.ones(self.ypix.size, "bool")
-
-    @property
-    def mean_r_squared(self) -> float:
-        return mean_r_squared(y=self.ypix[self.soma_crop], x=self.xpix[self.soma_crop])
-        #return mean_r_squared(y=self.ypix[self.lam > self.lam.max()/5], x=self.xpix[self.lam > self.lam.max()/5])
-
-    @property
-    def mean_r_squared0(self) -> float:
-        return np.mean(self.rsort[:self.npix_soma])
-        #return np.mean(self.rsort[:self.ypix[self.lam > self.lam.max()/5].size])
-
-    @property
-    def mean_r_squared_compact(self) -> float:
-        return self.mean_r_squared / (1e-10 + self.mean_r_squared0)
-
-    @property
-    def solidity(self) -> float:
-        if self.npix_soma > 10:
-            points = np.stack((self.ypix[self.soma_crop], self.xpix[self.soma_crop]),
-                              axis=1)
-            try:
-                hull = ConvexHull(points)
-                volume = hull.volume
-            except:
-                volume = 10
-        else:
-            volume = 10
-        return self.npix_soma / volume
-
-    @classmethod
-    def get_mean_r_squared_normed_all(cls, rois: Sequence[ROI],
-                                      first_n: int = 100) -> np.ndarray:
-        return norm_by_average([roi.mean_r_squared for roi in rois],
-                               estimator=np.nanmedian, offset=1e-10, first_n=first_n)
-
-    @property
-    def npix_soma(self) -> int:
-        return self.soma_crop.sum()
-
-    @property
-    def n_pixels(self) -> int:
-        return self.xpix.size
-
-    @classmethod
-    def get_n_pixels_normed_all(cls, rois: Sequence[ROI],
-                                first_n: int = 100) -> np.ndarray:
-        return norm_by_average([roi.n_pixels for roi in rois], first_n=first_n)
-
-    def fit_ellipse(self, dy: float, dx: float) -> EllipseData:
-        return fitMVGaus(self.ypix[self.soma_crop], self.xpix[self.soma_crop],
-                         self.lam[self.soma_crop], dy=dy, dx=dx, thres=2)
-
-
-def roi_stats(stat, Ly: int, Lx: int, aspect=None, diameter=None, max_overlap=None,
-              do_crop=True):
+def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100):
     """
-    computes statistics of ROIs
+    Fit a 2D Gaussian to weighted pixel coordinates and return an ellipse.
+
+    Computes the mean and covariance of the pixel distribution weighted by `lam0`,
+    then generates an ellipse at `thres` standard deviations.
+
     Parameters
     ----------
-    stat : dictionary
-        "ypix", "xpix", "lam"
-    
-    FOV size : (Ly, Lx)
+    y : numpy.ndarray
+        Y-coordinates of the pixels.
+    x : numpy.ndarray
+        X-coordinates of the pixels.
+    lam0 : numpy.ndarray
+        Weights for each pixel (e.g. fluorescence intensity).
+    dy : float
+        Normalization factor for the y-axis (e.g. cell diameter in y).
+    dx : float
+        Normalization factor for the x-axis (e.g. cell diameter in x).
+    thres : float, optional (default 2.5)
+        Number of standard deviations for the ellipse radius.
+    npts : int, optional (default 100)
+        Number of points used to draw the ellipse.
 
-    aspect : aspect ratio of recording
-
-    diameter : (dy, dx)    
-    
     Returns
     -------
-    stat : dictionary
-        adds "npix", "npix_norm", "med", "footprint", "compact", "radius", "aspect_ratio"
-    """
-    if "med" not in stat[0]:
-        for s in stat:
-            s["med"] = median_pix(s["ypix"], s["xpix"])
-
-    # approx size of masks for ROI aspect ratio estimation
-    d0 = 10 if diameter is None or (isinstance(diameter, int) and
-                                    diameter == 0) else diameter
-    if aspect is not None:
-        diameter = int(d0[0]) if isinstance(d0, (list, np.ndarray)) else int(d0)
-        dy, dx = int(aspect * diameter), diameter
-    else:
-        dy, dx = (int(d0),
-                  int(d0)) if not isinstance(d0, (list, np.ndarray)) else (int(d0[0]),
-                                                                           int(d0[0]))
-
-    rois = [
-        ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"], do_crop=do_crop)
-        for s in stat
-    ]
-    n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
-    for roi, s in zip(rois, stat):
-        s["mrs"] = roi.mean_r_squared
-        s["mrs0"] = roi.mean_r_squared0
-        s["compact"] = roi.mean_r_squared_compact
-        s["solidity"] = roi.solidity
-        s["npix"] = roi.n_pixels
-        s["npix_soma"] = roi.npix_soma
-        s["soma_crop"] = roi.soma_crop
-        s["overlap"] = roi.get_overlap_image(n_overlaps)
-        ellipse = roi.fit_ellipse(dy, dx)
-        s["radius"] = ellipse.radius
-        s["aspect_ratio"] = ellipse.aspect_ratio
-
-    mrs_normeds = norm_by_average(values=np.array([s["mrs"] for s in stat]),
-                                  estimator=np.nanmedian, offset=1e-10, first_n=100)
-    npix_normeds = norm_by_average(values=np.array([s["npix"] for s in stat]),
-                                   first_n=100)
-    npix_soma_normeds = norm_by_average(values=np.array([s["npix_soma"] for s in stat]),
-                                        first_n=100)
-    for s, mrs_normed, npix_normed, npix_soma_normed in zip(stat, mrs_normeds,
-                                                            npix_normeds,
-                                                            npix_soma_normeds):
-        s["mrs"] = mrs_normed
-        s["npix_norm_no_crop"] = npix_normed
-        s["npix_norm"] = npix_soma_normed
-        s["footprint"] = 0 if "footprint" not in s else s["footprint"]
-
-    if max_overlap is not None and max_overlap < 1.0:
-        keep_rois = ROI.filter_overlappers(rois=rois, overlap_image=n_overlaps,
-                                           max_overlap=max_overlap)
-        stat = stat[keep_rois]
-        n_overlaps = ROI.get_overlap_count_image(rois=rois, Ly=Ly, Lx=Lx)
-        rois = [
-            ROI(ypix=s["ypix"], xpix=s["xpix"], lam=s["lam"], med=s["med"],
-                do_crop=do_crop) for s in stat
-        ]
-        for roi, s in zip(rois, stat):
-            s["overlap"] = roi.get_overlap_image(n_overlaps)
-
-    return stat
-
-
-def mean_r_squared(y: np.ndarray, x: np.ndarray, estimator=np.median) -> float:
-    return np.mean(norm(((y - estimator(y)), (x - estimator(x))), axis=0))
-
-
-def aspect_ratio(width: float, height: float, offset: float = .01) -> float:
-    return 2 * width / (width + height + offset)
-
-
-def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
-    """ computes 2D gaussian fit to data and returns ellipse of radius thres standard deviations.
-    Parameters
-    ----------
-    y : float, array
-        pixel locations in y
-    x : float, array
-        pixel locations in x
-    lam0 : float, array
-        weights of each pixel
+    mu : numpy.ndarray
+        Mean of the Gaussian fit, shape (2,).
+    cov : numpy.ndarray
+        Covariance matrix of the Gaussian fit, shape (2, 2).
+    radii : numpy.ndarray
+        Radii of the major and minor axes (sorted descending), shape (2,).
+    ellipse : numpy.ndarray
+        Points on the fitted ellipse, shape (npts, 2).
     """
     y = y / dy
     x = x / dx
@@ -325,32 +88,198 @@ def fitMVGaus(y, x, lam0, dy, dx, thres=2.5, npts: int = 100) -> EllipseData:
     p = np.stack((np.cos(theta), np.sin(theta)))
     ellipse = (p.T * radii) @ evec.T + mu
     radii = np.sort(radii)[::-1]
-    return EllipseData(mu=mu, cov=cov, radii=radii, ellipse=ellipse, dy=dy, dx=dx)
+    return mu, cov, radii, ellipse
 
+def soma_crop(ypix, xpix, lam, med):
+    """
+    Crop dendritic pixels from an ROI by finding the soma boundary.
 
-def count_overlaps(Ly: int, Lx: int, ypixs, xpixs) -> np.ndarray:
-    overlap = np.zeros((Ly, Lx))
-    for xpix, ypix in zip(xpixs, ypixs):
-        overlap[ypix, xpix] += 1
-    return overlap
+    Computes cumulative weighted area as a function of distance from the median
+    center, then finds the radius where the area growth drops below a threshold.
 
+    Parameters
+    ----------
+    ypix : numpy.ndarray
+        Y-coordinates of the ROI pixels.
+    xpix : numpy.ndarray
+        X-coordinates of the ROI pixels.
+    lam : numpy.ndarray
+        Weights (e.g. fluorescence) for each pixel.
+    med : list of float
+        Two-element list [ymed, xmed] of the ROI center.
 
-def filter_overlappers(ypixs, xpixs, overlap_image: np.ndarray,
-                       max_overlap: float) -> List[bool]:
-    """returns ROI indices that remain after removing those that overlap more than fraction max_overlap from overlap_img."""
-    n_overlaps = overlap_image.copy()
-    keep_rois = []
-    for ypix, xpix in reversed(
-            list(zip(ypixs, xpixs))
-    ):  # todo: is there an ordering effect here that affects which rois will be removed and which will stay?
-        keep_roi = np.mean(n_overlaps[ypix, xpix] > 1) <= max_overlap
-        keep_rois.append(keep_roi)
-        if not keep_roi:
-            n_overlaps[ypix, xpix] -= 1
-    return keep_rois[::-1]
+    Returns
+    -------
+    crop : numpy.ndarray
+        Boolean array of length len(ypix), True for pixels within the soma.
+    """
+    crop = np.ones(ypix.size, "bool")
+    if len(ypix) > 10:
+        dists = ((ypix - med[0])**2 + (xpix - med[1])**2)**0.5
+        radii = np.arange(0, dists.max(), 1)
+        area = np.zeros_like(radii)
+        for k, radius in enumerate(radii):
+            area[k] = lam[dists < radius].sum()
+        darea = np.diff(area)
+        radius = radii[-1]
+        threshold = darea.max() / 3
+        if len(np.nonzero(darea > threshold)[0]) > 0:
+            ida = np.nonzero(darea > threshold)[0][0]
+            if len(np.nonzero(darea[ida:] < threshold)[0]):
+                radius = radii[np.nonzero(darea[ida:] < threshold)[0][0] + ida]
+        crop = dists < radius
+    if crop.sum() == 0:
+        crop = np.ones(ypix.size, "bool")
+    return crop
+    
+def roi_stats(stats, Ly: int, Lx: int, diameter=[12., 12.], max_overlap=0.75,
+              do_soma_crop=True, npix_norm_min=-1, npix_norm_max=np.inf,
+              median=False):
+    """
+    Compute statistics for detected ROIs, including compactness, aspect ratio, and overlap.
 
+    For each ROI, computes the median center, soma crop, compactness, and aspect
+    ratio from a 2D Gaussian fit. Normalizes pixel counts across ROIs, removes
+    ROIs outside the normalized pixel range, and optionally removes ROIs with
+    excessive overlap.
 
-def norm_by_average(values: np.ndarray, estimator=np.mean, first_n: int = 100,
-                    offset: float = 0.) -> np.ndarray:
-    """Returns array divided by the (average of the "first_n" values + offset), calculating the average with "estimator"."""
-    return np.array(values, dtype="float32") / (estimator(values[:first_n]) + offset)
+    Parameters
+    ----------
+    stats : numpy.ndarray
+        Array of dictionaries, each containing "ypix", "xpix", and "lam" for
+        one detected ROI.
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+    diameter : list of float, optional (default [12., 12.])
+        Expected cell diameter [dy, dx] in pixels, used for normalization.
+    max_overlap : float, optional (default 0.75)
+        Maximum allowed fraction of overlapping pixels. ROIs exceeding this
+        are removed. Set to None or 1.0 to disable.
+    do_soma_crop : bool, optional (default True)
+        If True, crop dendritic pixels before computing compactness and
+        aspect ratio.
+    npix_norm_min : float, optional (default -1)
+        Minimum normalized pixel count. ROIs below this are removed.
+    npix_norm_max : float, optional (default np.inf)
+        Maximum normalized pixel count. ROIs above this are removed.
+    median : bool, optional (default False)
+        If True, use median of all ROIs for normalization. If False, use
+        median of the 100 ROIs extracted first.
+
+    Returns
+    -------
+    stats : numpy.ndarray
+        Updated array of ROI statistics dictionaries with added keys "med",
+        "npix", "soma_crop", "npix_soma", "mrs", "mrs0", "compact", "radius",
+        "aspect_ratio", "footprint", "npix_norm", "npix_norm_no_crop", and
+        "overlap".
+    """
+   
+    # approx size of masks for ROI aspect ratio estimation
+    dy, dx = diameter[0], diameter[1]
+    d0 = np.array([float(dy), float(dx)])
+    
+    dy, dx = np.meshgrid(np.arange(-d0[0]*3, d0[0]*3 + 1) / d0[0], 
+                         np.arange(-d0[1]*3, d0[1]*3 + 1) / d0[1], indexing="ij")
+    rs = (dy**2 + dx**2)**0.5
+    dists_disk = np.sort(rs.flatten())
+
+    for k, stat in enumerate(stats):
+        ypix, xpix, lam = stat["ypix"].copy(), stat["xpix"].copy(), stat["lam"].copy()
+        med = stat.get("med", median_pix(ypix, xpix)) # median of pixels
+        stat["med"], stat["npix"] = med, ypix.size
+        
+        # crop dendritic pixels out for computing compactness and aspect ratio
+        if do_soma_crop:
+            crop = soma_crop(ypix, xpix, lam, med)
+            stat["soma_crop"] = crop
+            ypix, xpix, lam = ypix[crop], xpix[crop], lam[crop]
+        else:
+            stat["soma_crop"] = np.ones(ypix.size, "bool")
+        stat["npix_soma"] = stat["soma_crop"].sum()  
+        
+        # compute compactness of ROI
+        med = np.median(ypix), np.median(xpix)
+        dists = (((ypix - med[0]) / d0[0])**2 + ((xpix - med[1]) / d0[1])**2)**0.5
+        stat["mrs"], stat["mrs0"] = dists.mean(), dists_disk[:ypix.size].mean()
+        stat["compact"] = max(1.0, stat["mrs"] / (1e-10 + stat["mrs0"]))
+        
+        # compute aspect ratio
+        if "radius" not in stat:
+            radii = fitMVGaus(ypix, xpix, lam, dy=d0[0], dx=d0[1], thres=2)[2]
+            stat["radius"] = radii[0] * d0.mean()
+            stat["aspect_ratio"] = 2 * radii[0] / (.01 + radii[0] + radii[1])
+        stat["footprint"] = stat.get("footprint", 0)
+
+    ### compute npix_norm (normalized npix) for each ROI
+    npix_soma = np.array([stat["npix_soma"] for stat in stats], dtype="float32")
+    npix = np.array([stat["npix"] for stat in stats], dtype="float32")
+    # use median if cellpose, otherwise use best neurons to determine normalizer
+    norm_npix = np.median(npix_soma) if median else np.median(npix_soma[:100])
+    npix_soma /= norm_npix + 1e-10
+    norm_npix = np.median(npix) if median else np.median(npix[:100])
+    npix /= norm_npix + 1e-10
+    
+    keep_rois = (npix_norm_min <= npix_soma) * (npix_soma <= npix_norm_max)
+    stats = stats[keep_rois]
+    npix_soma, npix = npix_soma[keep_rois], npix[keep_rois]
+    nremove = (~keep_rois).sum()
+    if nremove > 0:
+        logger.info(f"Removed {nremove} ROIs with npix_norm < {npix_norm_min:.2f} or npix_norm > {npix_norm_max:.2f}")
+
+    for stat, npix_soma0, npix0 in zip(stats, npix_soma, npix):
+        stat["npix_norm"] = npix_soma0
+        stat["npix_norm_no_crop"] = npix0       
+    
+    if max_overlap is not None and max_overlap < 1.0:
+        overlap = np.zeros((Ly, Lx), "int")
+        for stat in stats:
+            overlap[stat["ypix"], stat["xpix"]] += 1
+        
+        keep_rois = np.zeros(len(stats), "bool")
+        # remove overlapping ROIs in reversed order, because highest variance ROIs are first
+        for k, stat in enumerate(stats[::-1]): 
+            keep_roi = (overlap[stat["ypix"], stat["xpix"]] > 1).mean() <= max_overlap
+            keep_rois[k] = keep_roi
+            if not keep_roi:
+                overlap[stat["ypix"], stat["xpix"]] -= 1
+        keep_rois = keep_rois[::-1]
+        stats = stats[keep_rois]
+        
+        for stat in stats:
+            stat["overlap"] = (overlap[stat["ypix"], stat["xpix"]] > 1).astype("bool")
+
+        nremove = (~keep_rois).sum()
+        logger.info(f"Removed {nremove} ROIs with overlap > {max_overlap}")
+
+    return stats
+
+def assign_overlaps(stats, Ly, Lx):
+    """
+    Assign overlap labels to each ROI based on shared pixels.
+
+    For each ROI, sets an "overlap" boolean mask indicating which of its pixels
+    are shared with at least one other ROI.
+
+    Parameters
+    ----------
+    stats : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix" and "xpix".
+    Ly : int
+        Height of the image in pixels.
+    Lx : int
+        Width of the image in pixels.
+
+    Returns
+    -------
+    stats : numpy.ndarray
+        Updated array with "overlap" key added to each ROI dictionary.
+    """
+    overlap = np.zeros((Ly, Lx), "int")
+    for stat in stats:
+        overlap[stat["ypix"], stat["xpix"]] += 1
+    for stat in stats:
+        stat["overlap"] = (overlap[stat["ypix"], stat["xpix"]] > 1).astype("bool")
+    return stats

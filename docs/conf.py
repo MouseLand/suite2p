@@ -31,16 +31,8 @@ release = '0.7.2'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
-    'sphinx.ext.napoleon',
-    'sphinx.ext.coverage',
-    'sphinx-prompt',
-    'sphinxcontrib.apidoc',
-    'sphinx_autodoc_typehints',
-#   'sphinx.ext.autosummary',
+    "sphinx_markdown_builder",
+    'sphinx.ext.napoleon',  # Enables NumPy and Google docstrings
 ]
 
 
@@ -66,8 +58,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 # -- Options for HTML output -------------------------------------------------
+<<<<<<< HEAD
 html_logo = '_static/favicon.ico'
 html_favicon = '_static/favicon.ico'
+=======
+html_logo = 'static/favicon.ico'
+html_favicon = 'static/favicon.ico'
+>>>>>>> suite2p_dev/tomerge
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -93,5 +90,9 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
+<<<<<<< HEAD
 html_static_path = ['_static']
+=======
+html_static_path = ['static']
+>>>>>>> suite2p_dev/tomerge
 #html_static_path = []

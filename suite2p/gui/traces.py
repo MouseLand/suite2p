@@ -85,7 +85,7 @@ def plot_trace(parent):
 def make_buttons(parent, b0):
     # combo box to decide what kind of activity to view
     qlabel = QLabel(parent)
-    qlabel.setText("<font color='white'>Activity mode:</font>")
+    qlabel.setText("Activity mode")
     parent.l0.addWidget(qlabel, b0, 0, 1, 1)
     parent.comboBox = QComboBox(parent)
     parent.comboBox.setFixedWidth(100)

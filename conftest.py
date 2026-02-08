@@ -18,38 +18,52 @@ def data_dir():
     data_path.mkdir(exist_ok=True)
     download_cached_inputs(data_path)
     cached_outputs = data_path.joinpath('test_outputs')
-    cached_outputs_url = 'https://osf.io/download/67f007dba7eb86d7808b8832/'
+    cached_outputs_url = 'https://osf.io/download/6984d8cfe14e1c4246442669'
     if not os.path.exists(cached_outputs):
         extract_zip(data_path.joinpath('test_outputs.zip'), cached_outputs_url, data_path)
     return data_path
 
 
 @pytest.fixture()
-def test_ops(tmpdir, data_dir):
-    """Initializes ops to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
-    return initialize_ops(tmpdir, data_dir)
+def test_settings(tmpdir, data_dir):
+    """Initializes settings to be used for tests. Also, uses tmpdir fixture to create a unique temporary dir for each test."""
+    return initialize_settings(tmpdir, data_dir)
 
 def download_cached_inputs(data_path):
     """ Downloads test_input data if not present on machine. This function was created so it can also be used by scripts/generate_test_data.py."""
     cached_inputs = data_path.joinpath('test_inputs')
-    cached_inputs_url = 'https://osf.io/download/67f0087b1ec6658af9b25a70/'
+    cached_inputs_url = 'https://osf.io/download/6984d9ca54398fbd42f5575d'
     if not os.path.exists(cached_inputs):
+        print('Cached inputs not found. Downloading now...')
         extract_zip(data_path.joinpath('test_inputs.zip'), cached_inputs_url, data_path)
 
-def initialize_ops(tmpdir, data_dir):
-    """Initializes ops. Used for both the test_ops function above and for generate_test_data script. This function was made to accomodate creation of ops for both pytest and non-pytest settings."""
-    ops = suite2p.default_ops()
-    ops.update(
+def get_device():
+    """Detect the appropriate device for suite2p processing."""
+    import torch
+    import platform
+
+    if platform.system() == 'Darwin':  # macOS
+        if torch.backends.mps.is_available():
+            return 'mps'
+    elif torch.cuda.is_available():
+        return 'cuda'
+
+    return 'cpu'
+
+def initialize_settings(tmpdir, data_dir):
+    """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accomodate creation of settings for both pytest and non-pytest settings."""
+    settings = suite2p.default_settings()
+    db = suite2p.default_db()
+    db.update({
+        'data_path': [Path(data_dir).joinpath('test_inputs')],
+        'save_path0': str(tmpdir),
+    })
+    settings.update(
         {
-            'use_builtin_classifier': True,
-            'data_path': [Path(data_dir).joinpath('test_inputs')],
-            'save_path0': str(tmpdir),
-            'norm_frames': False,
-            'denoise': False,
-            'soma_crop': False
+            'torch_device': get_device()
         }
     )
-    return ops
+    return db, settings
 
 def extract_zip(cached_file, url, data_path):
     download_url_to_file(url, cached_file)        

@@ -229,6 +229,9 @@ def load_folder(parent):
 
     # create a combined folder to hold iscell and redcell
     output = io.combined(save_folder, save=False)
+    output = list(output)
+    output[1] = {**output[1], **output[2]}  # combine db and settings
+    del output[2]
     parent.basename = os.path.join(parent.fname, "combined")
     load_to_GUI(parent, parent.basename, output)
     parent.loaded = True
@@ -261,11 +264,27 @@ def load_files(name):
             print("there are no spike deconvolved traces in this folder "
                   "(spks.npy)")
             goodfolder = False
+        noops = True
         try:
-            ops = np.load(basename + "/ops.npy", allow_pickle=True).item()
-        except (ValueError, OSError, RuntimeError, TypeError, NameError):
-            print("ERROR: there is no ops file in this folder (ops.npy)")
-            goodfolder = False
+            ops = np.load(os.path.join(basename, "ops.npy"), allow_pickle=True).item()
+            noops = False
+        except:
+            noops = True
+        if noops:
+            try:
+                settings = np.load(basename + "/settings.npy", allow_pickle=True).item()
+                db = np.load(basename + "/db.npy", allow_pickle=True).item()
+                try:
+                    reg_outputs = np.load(basename + "/reg_outputs.npy", allow_pickle=True).item()
+                    detect_outputs = np.load(basename + "/detect_outputs.npy", allow_pickle=True).item()
+                    ops = {**db, **settings, **reg_outputs, **detect_outputs}
+                except:
+                    ops = {**db, **settings}
+                    print("no reg_outputs.npy or detect_outputs.npy found")
+            except (ValueError, OSError, RuntimeError, TypeError, NameError):
+                if noops:
+                    print("ERROR: there is no settings or db file in this folder (settings.npy / db.npy)")
+                    goodfolder = False
         try:
             iscell = np.load(basename + "/iscell.npy")
             probcell = iscell[:, 1]
@@ -320,15 +339,31 @@ def load_to_GUI(parent, basename, procs):
     parent.Fcell = Fcell
     parent.Fneu = Fneu
     parent.Spks = Spks
-    parent.iscell = iscell.astype("bool")
-    parent.probcell = probcell
-    parent.redcell = redcell.astype("bool")
-    parent.probredcell = probredcell
+    # Handle both 1D and 2D iscell formats
+    if iscell.ndim == 2:
+        parent.iscell = iscell[:, 0].astype("bool")
+        parent.probcell = iscell[:, 1]
+    else:
+        parent.iscell = iscell.astype("bool")
+        parent.probcell = probcell
+    # Handle both 1D and 2D redcell formats
+    if redcell.ndim == 2:
+        parent.redcell = redcell[:, 0].astype("bool")
+        parent.probredcell = redcell[:, 1]
+    else:
+        parent.redcell = redcell.astype("bool")
+        parent.probredcell = probredcell
     parent.hasred = hasred
     parent.notmerged = np.ones_like(parent.iscell).astype("bool")
     for n in range(len(parent.stat)):
         if parent.hasred:
             parent.stat[n]["chan2_prob"] = parent.probredcell[n]
+        if "snr" not in parent.stat[0]:
+            dF = Fcell.copy() - 0.7 * Fneu
+            snr = 1 - 0.5 * np.diff(dF, axis=1).var(axis=1) / dF.var(axis=1)        
+            del dF
+            for n in range(len(parent.stat)):
+                parent.stat[n]["snr"] = snr[n]
         parent.stat[n]["inmerge"] = 0
     parent.stat = np.array(parent.stat)
     make_masks_and_enable_buttons(parent)
@@ -429,7 +464,7 @@ def save_mat(parent):
         matpath, {
             "stat":
                 parent.stat,
-            "ops":
+            "settings":
                 parent.ops,
             "F":
                 parent.Fcell,
@@ -449,7 +484,7 @@ def save_mat(parent):
 
 def save_merge(parent):
     print("saving to NPY")
-    np.save(os.path.join(parent.basename, "ops.npy"), parent.ops)
+    np.save(os.path.join(parent.basename, "settings.npy"), parent.ops)
     np.save(os.path.join(parent.basename, "stat.npy"), parent.stat)
     np.save(os.path.join(parent.basename, "F.npy"), parent.Fcell)
     np.save(os.path.join(parent.basename, "Fneu.npy"), parent.Fneu)

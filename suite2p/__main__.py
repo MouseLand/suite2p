@@ -1,83 +1,68 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import argparse
+import argparse, os, platform
 import numpy as np
-from suite2p import default_ops, version
-
+from suite2p import default_settings, default_db, version
+from suite2p.run_s2p import logger_setup, run_plane, run_s2p, get_save_folder
+import logging
 
 def add_args(parser: argparse.ArgumentParser):
     """
-    Adds suite2p ops arguments to parser.
+    Adds suite2p settings arguments to parser.
     """
     parser.add_argument("--single_plane", action="store_true",
-                        help="run single plane ops")
-    parser.add_argument("--ops", default=[], type=str, help="options")
+                        help="run single plane db/settings")
+    parser.add_argument("--settings", default=[], type=str, help="options")
     parser.add_argument("--db", default=[], type=str, help="options")
     parser.add_argument("--version", action="store_true", help="print version number.")
-    ops0 = default_ops()
-    for k in ops0.keys():
-        v = dict(default=ops0[k], help="{0} : {1}".format(k, ops0[k]))
-        if k in ["fast_disk", "save_folder", "save_path0"]:
-            v["default"] = None
-            v["type"] = str
-        if (type(v["default"]) in [np.ndarray, list]) and len(v["default"]):
-            v["nargs"] = "+"
-            v["type"] = type(v["default"][0])
-        parser.add_argument("--" + k, **v)
+    parser.add_argument("--verbose", action="store_true", help="print more info during processing.")
     return parser
 
 
 def parse_args(parser: argparse.ArgumentParser):
     """
-    Parses arguments and returns ops with parameters filled in.
+    Parses arguments and returns settings with parameters filled in.
     """
     args = parser.parse_args()
     dargs = vars(args)
-    ops0 = default_ops()
-    ops = np.load(args.ops, allow_pickle=True).item() if args.ops else {}
-    set_param_msg = "->> Setting {0} to {1}"
-    # options defined in the cli take precedence over the ones in the ops file
-    for k in ops0:
-        default_key = ops0[k]
-        args_key = dargs[k]
-        if k in ["fast_disk", "save_folder", "save_path0"]:
-            if args_key:
-                ops[k] = args_key
-                print(set_param_msg.format(k, ops[k]))
-        elif type(default_key) in [np.ndarray, list]:
-            n = np.array(args_key)
-            if np.any(n != np.array(default_key)):
-                ops[k] = n.astype(type(default_key))
-                print(set_param_msg.format(k, ops[k]))
-        elif isinstance(default_key, bool):
-            args_key = bool(int(args_key))  # bool("0") is true, must convert to int
-            if default_key != args_key:
-                ops[k] = args_key
-                print(set_param_msg.format(k, ops[k]))
-        # checks default param to args param by converting args to same type
-        elif not (default_key == type(default_key)(args_key)):
-            ops[k] = type(default_key)(args_key)
-            print(set_param_msg.format(k, ops[k]))
-    return args, ops
-
+    settings0 = default_settings()
+    settings = np.load(args.settings, allow_pickle=True).item() if args.settings else {}
+    settings = {**settings0, **settings}
+    db = np.load(args.db, allow_pickle=True).item() if args.db else {}
+    db = {**default_db(), **db}
+    return args, db, settings
 
 def main():
-    args, ops = parse_args(
-        add_args(argparse.ArgumentParser(description="Suite2p parameters")))
+    args, db, settings = parse_args(
+        add_args(argparse.ArgumentParser(description="Suite2p settings/db paths")))
     if args.version:
         print("suite2p v{}".format(version))
-    elif args.single_plane and args.ops:
-        from suite2p.run_s2p import run_plane
-        # run single plane (does registration)
-        run_plane(ops, ops_path=args.ops)
-    elif len(args.db) > 0:
-        db = np.load(args.db, allow_pickle=True).item()
-        from suite2p import run_s2p
-        run_s2p(ops, db)
+    elif args.settings and args.db:
+        if args.verbose:
+            save_folder = db['save_path'] if args.single_plane else get_save_folder(db)
+            logger_setup(save_folder)
+        try:
+            if args.single_plane:
+                run_plane(db=db, settings=settings, db_path=args.db)
+            else:
+                run_s2p(db=db, settings=settings)
+        except Exception as e:
+            logging.exception(f'fatal error in {"run_plane" if args.single_plane else "run_s2p"}:')
+            raise
+
     else:
+        # Check if the OS is macOS and the machine is Apple Silicon (ARM-based)
+        if platform.system() == "Darwin" and 'arm' in platform.processor().lower():
+            # Set the number of threads for OpenMP and OpenBLAS
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["OPENBLAS_NUM_THREADS"] = "1"
+            print("Environment set to use 1 thread for OpenMP and OpenBLAS (Apple Silicon macOS).")
+        else:
+            print("Not macOS on Apple Silicon, proceeding without limiting threads.")
+            
         from suite2p import gui
-        gui.run()
+        gui.run()#statfile="C:/DATA/exs2p/suite2p/plane0/stat.npy")
 
 
 if __name__ == "__main__":

@@ -1,133 +1,115 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-from typing import Tuple
-
 import numpy as np
 
-from .utils import convolve, complex_fft2, spatial_taper, addmultiply, gaussian_fft, temporal_smooth
+from .utils import convolve, complex_fft2, spatial_taper, temporal_smooth, ref_smooth_fft
 
 import torch
 
-
-def compute_masks(refImg, maskSlope) -> Tuple[np.ndarray, np.ndarray]:
+def compute_masks_ref_smooth_fft(refImg, maskSlope, smooth_sigma):
     """
-    Returns maskMul and maskOffset from an image and slope parameter
-
+    Compute multiplicative and additive masks used for spatial tapering in rigid registration, 
+    and smooth with Gaussian.
+    
     Parameters
     ----------
-    refImg: Ly x Lx
-        The image
-    maskSlope
+    refImg : torch.Tensor
+        2D reference image of shape (Ly, Lx).
+    maskSlope : float
+        Scalar parameter controlling the slope of the sigmoid of the spatial taper. Higher
+        values increase tapered region size.
+    smooth_sigma : float
+        Standard deviation (in pixels) of the Gaussian smoothing applied to each
+        block. Smoothing is performed in the frequency domain (via ref_smooth_fft). Typical values are >= 0. A value of 0 should behave as no
+        smoothing (identity).
 
     Returns
     -------
-    maskMul: float arrray
-    maskOffset: float array
+    maskMul : torch.Tensor
+        Floating-point multiplicative mask of shape (Ly, Lx), intended to smoothly
+        reduce the influence of border pixels during registration.
+    maskOffset : torch.Tensor
+        Floating-point additive offset mask of shape (Ly, Lx), computed as
+        mean(refImg) * (1.0 - maskMul), setting the border pixels to the mean.
     """
     Ly, Lx = refImg.shape
     maskMul = spatial_taper(maskSlope, Ly, Lx)
-    maskOffset = refImg.mean() * (1. - maskMul)
-    return maskMul.astype("float32"), maskOffset.astype("float32")
+    maskOffset = refImg.float().mean() * (1. - maskMul)
+    cfRefImg = ref_smooth_fft(refImg=refImg, smooth_sigma=smooth_sigma)
+    return maskMul, maskOffset, cfRefImg
 
-
-def apply_masks(data: np.ndarray, maskMul: np.ndarray,
-                maskOffset: np.ndarray) -> np.ndarray:
+def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_time, 
+              return_cc=False):
     """
-    Returns a 3D image "data", multiplied by "maskMul" and then added "maskOffet".
+    Compute rigid-registration shifts using phase correlation with an optional temporal smoothing.
+    This function performs a Fourier-domain phase-correlation based registration between each frame in
+    `frames` and a provided (complex) reference image `cfRefImg`. It computes the integer pixel shifts
+    (y, x) that maximize the phase-correlation within a limited search window, defined by `maxregshift`.
 
     Parameters
     ----------
-    data: nImg x Ly x Lx
-    maskMul
-    maskOffset
-
-    Returns
-    --------
-    maskedData: nImg x Ly x Lx
-    """
-    return addmultiply(data, maskMul, maskOffset)
-
-
-def phasecorr_reference(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
-    """
-    Returns reference image fft"ed and complex conjugate and multiplied by gaussian filter in the fft domain,
-    with standard deviation "smooth_sigma" computes fft"ed reference image for phasecorr.
-
-    Parameters
-    ----------
-    refImg : 2D array, int16
-        reference image
-
-    Returns
-    -------
-    cfRefImg : 2D array, complex64
-    """
-    cfRefImg = complex_fft2(img=refImg)
-    cfRefImg /= (1e-5 + np.absolute(cfRefImg))
-    cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
-    return cfRefImg.astype("complex64")
-
-
-def phasecorr(data, cfRefImg, maxregshift, smooth_sigma_time) -> Tuple[int, int, float]:
-    """ compute phase correlation between data and reference image
-
-    Parameters
-    ----------
-    data : int16
-        array that"s frames x Ly x Lx
+    frames : torch.Tensor
+        Input image sequence, expected shape (N, Ly, Lx) where N is the number of frames.
+        The tensor may be on CPU or CUDA; it is converted to float and then to complex for the
+        Fourier-domain operations performed by the helper `convolve`.
+    cfRefImg : torch.Tensor
+        Complex-valued reference of shape (Ly, Lx) in the Fourier domain used to compute 
+        cross-correlation with each frame
+    maskMul : torch.Tensor
+        Multiplicative mask applied to `frames` before correlation. Broadcasted over frames.
+    maskOffset : torch.Tensor
+        Additive offset applied after `maskMul`. Broadcasted over frames.
     maxregshift : float
-        maximum shift as a fraction of the minimum dimension of data (min(Ly,Lx) * maxregshift)
+        Maximum allowed registration shift expressed as a fraction of the smaller spatial image
+        dimension. The actual integer search half-window `lcorr` is computed as
+        min(round(maxregshift * min(Ly, Lx)), floor(min(Ly, Lx) / 2)).
     smooth_sigma_time : float
-        how many frames to smooth in time
-
+        If > 0, applies temporal smoothing (via helper `temporal_smooth`) to the phase-correlation maps
+        along the time axis with this sigma before finding maxima. If <= 0, no temporal smoothing is used.
+    return_cc : bool, optional (default False)
+        If True, return the computed local phase-correlation maps as a NumPy array on CPU;
+        otherwise the correlation maps are freed to save memory and None is returned in their place.
+    
     Returns
     -------
-    ymax : int
-        shifts in y from cfRefImg to data for each frame
-    xmax : int
-        shifts in x from cfRefImg to data for each frame
-    cmax : float
-        maximum of phase correlation for each frame
-
+    ymax : torch.LongTensor
+        1-D integer tensor of length N with the y (row) shift for each frame that maximizes the
+        phase-correlation. 
+    xmax : torch.LongTensor
+        1-D integer tensor of length N with the x (column) shift for each frame that maximizes the
+        phase-correlation. 
+    cmax : torch.Tensor
+        1-D tensor of length N containing the maximum phase-correlation value found for each frame.
+    cc : numpy.ndarray or None
+        If `return_cc` is True, a NumPy array of shape (N, 2*lcorr+1, 2*lcorr+1) with the real-valued
+        local phase-correlation maps (dtype float32) is returned. If `return_cc` is False, cc is None.
     """
-    min_dim = np.minimum(*data.shape[1:])  # maximum registration shift allowed
+
+    device = frames.device
+    data = (frames.float() * maskMul + maskOffset).type(torch.complex64)
+    min_dim = min(data.shape[1], data.shape[2])  # maximum registration shift allowed
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
 
-    #cc = convolve(data, cfRefImg, lcorr)
     data = convolve(data, cfRefImg)
-    cc = np.real(
-        np.block([[data[:, -lcorr:, -lcorr:], data[:, -lcorr:, :lcorr + 1]],
-                  [data[:, :lcorr + 1, -lcorr:], data[:, :lcorr + 1, :lcorr + 1]]]))
-
+    cc = torch.cat((torch.cat((data[:, -lcorr:, -lcorr:], data[:, -lcorr:, :lcorr + 1]), axis=2),   
+                    torch.cat((data[:, :lcorr + 1, -lcorr:], data[:, :lcorr + 1, :lcorr + 1]), axis=2)), axis=1)
+    cc = torch.real(cc)
+    
     cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc
 
-    ymax, xmax = np.zeros(data.shape[0], np.int32), np.zeros(data.shape[0], np.int32)
-    for t in np.arange(data.shape[0]):
-        ymax[t], xmax[t] = np.unravel_index(np.argmax(cc[t], axis=None),
-                                            (2 * lcorr + 1, 2 * lcorr + 1))
-    cmax = cc[np.arange(len(cc)), ymax, xmax]
+    imax = torch.stack([torch.argmax(cc[t]) for t in range(data.shape[0])], dim=0)
+    ymax, xmax = torch.div(imax, 2 * lcorr + 1, rounding_mode="floor"), imax % (2 * lcorr + 1)
+    cmax = cc[torch.arange(len(cc)), ymax, xmax]
     ymax, xmax = ymax - lcorr, xmax - lcorr
-
-    return ymax, xmax, cmax.astype(np.float32)
-
-
-def shift_frame(frame: np.ndarray, dy: int, dx: int) -> np.ndarray:
-    """
-    Returns frame, shifted by dy and dx
-
-    Parameters
-    ----------
-    frame: Ly x Lx
-    dy: int
-        vertical shift amount
-    dx: int
-        horizontal shift amount
-
-    Returns
-    -------
-    frame_shifted: Ly x Lx
-        The shifted frame
-
-    """
-    return np.roll(frame, (-dy, -dx), axis=(0, 1))
+    
+    del data
+    if return_cc: 
+        cc = cc.cpu().numpy()
+    else:
+        del cc
+        cc = None
+    if device.type == "cuda":
+       torch.cuda.empty_cache()
+    
+    return ymax, xmax, cmax, cc

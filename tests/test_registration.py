@@ -1,4 +1,5 @@
 import numpy as np
+<<<<<<< HEAD
 from suite2p.registration import bidiphase, utils
 
 
@@ -14,6 +15,9 @@ def test_spatial_smooth_has_not_regressed_during_refactor():
          [1.  , 1.  , 0.5 ],
          [0.5 , 0.5 , 0.25]]], dtype=np.float32)
     assert np.allclose(smoothed, expected)
+=======
+from suite2p.registration import bidiphase
+>>>>>>> suite2p_dev/tomerge
 
 
 def test_positive_bidiphase_shift_shifts_every_other_line():

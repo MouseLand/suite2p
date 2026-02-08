@@ -4,44 +4,40 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import LogisticRegression
-
+import logging
+logger = logging.getLogger(__name__)
 
 class Classifier:
-    """ ROI classifier model that uses logistic regression
-    
+    """
+    ROI classifier model that uses a weighted, non-parametric, naive Bayes classifier.
+
     Parameters
     ----------
-
-    classfile: string (optional, default None)
-        path to saved classifier
-
-    keys: list of str (optional, default None)
-        keys of ROI stat to use to classify
-
+    classfile : str, optional (default None)
+        Path to saved classifier.
+    keys : list of str, optional (default None)
+        Keys of ROI stat to use to classify.
     """
 
     def __init__(self, classfile=None, keys=None):
         # stat are cell stats from currently loaded recording
         # classfile is a previously saved classifier file
         if classfile is not None:
+            logger.info(f"classifier file: {classfile}")
             self.load(classfile, keys=keys)
         else:
             self.loaded = False
 
     def load(self, classfile, keys=None):
-        """ data loader
-
-        saved classifier contains stat with classification labels 
+        """
+        Load a saved classifier containing stats with classification labels.
 
         Parameters
         ----------
-        
-        classfile: string 
-            path to saved classifier
-
-        keys: list of str (optional, default None)
-            keys of ROI stat to use to classify
-         
+        classfile : str
+            Path to saved classifier.
+        keys : list of str, optional (default None)
+            Keys of ROI stat to use to classify.
         """
         try:
             model = np.load(classfile, allow_pickle=True).item()
@@ -61,23 +57,40 @@ class Classifier:
             print("ERROR: incorrect classifier file")
             self.loaded = False
 
-    def run(self, stat, p_threshold: float = 0.5) -> np.ndarray:
-        """Returns cell classification thresholded with "p_threshold" and its probability."""
+    def run(self, stat, p_threshold = 0.5):
+        """
+        Return cell classification thresholded with p_threshold and its probability.
+
+        Parameters
+        ----------
+        stat : list of dict
+            List of ROI statistics dictionaries, each containing the keys in self.keys.
+        p_threshold : float, optional (default 0.5)
+            Probability threshold for classifying an ROI as a cell.
+
+        Returns
+        -------
+        iscell : numpy.ndarray
+            Array of shape (n_rois, 2) where column 0 is the binary classification
+            and column 1 is the probability.
+        """
         probcell = self.predict_proba(stat)
         is_cell = probcell > p_threshold
         return np.stack([is_cell, probcell]).T
 
     def predict_proba(self, stat):
-        """ apply logistic regression model and predict probabilities
-
-        model contains stat with classification labels 
+        """
+        Apply classifier and predict probabilities.
 
         Parameters
         ----------
-        
-        stat : list of dicts
-            needs self.keys keys
+        stat : list of dict
+            List of ROI statistics dictionaries, each containing the keys in self.keys.
 
+        Returns
+        -------
+        y_pred : numpy.ndarray
+            Predicted probability of each ROI being a cell, shape (n_rois,).
         """
         test_stats = np.array([stat[j][k] for j in range(len(stat)) for k in self.keys
                               ]).reshape(len(stat), -1)
@@ -85,8 +98,15 @@ class Classifier:
         y_pred = self.model.predict_proba(logp)[:, 1]
         return y_pred
 
-    def save(self, filename: str) -> None:
-        """ save classifier to filename """
+    def save(self, filename):
+        """
+        Save classifier to an .npy file.
+
+        Parameters
+        ----------
+        filename : str
+            Path to save the classifier file.
+        """
         np.save(filename, {
             "stats": self.stats,
             "iscell": self.iscell,
@@ -94,14 +114,18 @@ class Classifier:
         })
 
     def _get_logp(self, stats):
-        """ compute log probability of set of stats
-        
-        Parameters
-        --------------
+        """
+        Compute log probability of a set of stats.
 
-        stats : 2D array
-            size [ncells, nkeys]
-        
+        Parameters
+        ----------
+        stats : numpy.ndarray
+            Statistics array of shape (n_cells, n_keys).
+
+        Returns
+        -------
+        logp : numpy.ndarray
+            Log probability array of shape (n_cells, n_keys).
         """
         logp = np.zeros(stats.shape)
         for n in range(stats.shape[1]):
@@ -115,7 +139,12 @@ class Classifier:
         return logp
 
     def _fit(self):
-        """ fit logistic regression model using stats, keys and iscell """
+        """
+        Fit weighted, non-parametric naive Bayes classifier using self.stats, self.keys, and self.iscell.
+
+        Bins the stats into a non-parametric probability grid, smooths with a
+        Gaussian, and fits a logistic regression on the log probabilities on the grid.
+        """
         nodes = 100
         ncells, nstats = self.stats.shape
         ssort = np.sort(self.stats, axis=0)

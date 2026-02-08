@@ -15,7 +15,28 @@ logger = logging.getLogger(__name__)
     "float32[:], float32[:], float32[:], int64[:], float32[:], float32[:], float32, float32"
 ], cache=True)
 def oasis_trace(F, v, w, t, l, s, tau, fs):
-    """ spike deconvolution on a single neuron """
+    """
+    Spike deconvolution on a single neuron using the OASIS algorithm.
+
+    Parameters
+    ----------
+    F : numpy.ndarray
+        Fluorescence trace, shape (n_frames,).
+    v : numpy.ndarray
+        Pool values buffer, shape (n_frames,).
+    w : numpy.ndarray
+        Pool weights buffer, shape (n_frames,).
+    t : numpy.ndarray
+        Pool start times buffer, shape (n_frames,).
+    l : numpy.ndarray
+        Pool lengths buffer, shape (n_frames,).
+    s : numpy.ndarray
+        Output spike trace, shape (n_frames,). Modified in place.
+    tau : float
+        Timescale of the indicator decay in seconds.
+    fs : float
+        Sampling rate per plane in Hz.
+    """
     NT = F.shape[0]
     g = -1. / (tau * fs)
 
@@ -46,32 +67,54 @@ def oasis_trace(F, v, w, t, l, s, tau, fs):
     "float32[:,:], float32[:,:], float32[:,:], int64[:,:], float32[:,:], float32[:,:], float32, float32"
 ], parallel=True, cache=True)
 def oasis_matrix(F, v, w, t, l, s, tau, fs):
-    """ spike deconvolution on many neurons parallelized with prange  """
+    """
+    Spike deconvolution on many neurons parallelized with prange.
+
+    Parameters
+    ----------
+    F : numpy.ndarray
+        Fluorescence traces, shape (n_neurons, n_frames).
+    v : numpy.ndarray
+        Pool values buffer, shape (n_neurons, n_frames).
+    w : numpy.ndarray
+        Pool weights buffer, shape (n_neurons, n_frames).
+    t : numpy.ndarray
+        Pool start times buffer, shape (n_neurons, n_frames).
+    l : numpy.ndarray
+        Pool lengths buffer, shape (n_neurons, n_frames).
+    s : numpy.ndarray
+        Output spike traces, shape (n_neurons, n_frames). Modified in place.
+    tau : float
+        Timescale of the indicator decay in seconds.
+    fs : float
+        Sampling rate per plane in Hz.
+    """
     for n in prange(F.shape[0]):
         oasis_trace(F[n], v[n], w[n], t[n], l[n], s[n], tau, fs)
 
 
-def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
+def oasis(F, batch_size, tau, fs):
     """
-    Computes non-negative deconvolution.
+    Compute non-negative deconvolution with no sparsity constraints.
 
-    No sparsity constraints.
+    Uses OASIS algorithm (Friedrich, Zhou & Paninski, 2017).
 
     Parameters
     ----------
-    F : ndarray
-        Size [neurons x time], in pipeline uses neuropil-subtracted fluorescence.
+    F : numpy.ndarray
+        Fluorescence traces, shape (n_neurons, n_frames). In the pipeline,
+        uses neuropil-subtracted and baselined fluorescence.
     batch_size : int
         Number of neurons processed per batch.
     tau : float
-        Timescale of the sensor, used for the deconvolution kernel.
+        Timescale of the indicator decay in seconds.
     fs : float
-        Sampling rate per plane.
+        Sampling rate per plane in Hz.
 
     Returns
     -------
-    S : ndarray
-        Size [neurons x time], deconvolved fluorescence.
+    S : numpy.ndarray
+        Deconvolved fluorescence, shape (n_neurons, n_frames).
     """
 
     NN, NT = F.shape
@@ -92,62 +135,86 @@ def oasis(F: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
         S[i:i + batch_size] = s
     return S
 
-def preprocess(F: np.ndarray, baseline: str, win_baseline: float, sig_baseline: float,
-               fs: float, prctile_baseline: float = 8) -> np.ndarray:
-    """ preprocesses fluorescence traces for spike deconvolution
+def preprocess(F, baseline, win_baseline, sig_baseline,
+               fs, prctile_baseline=8, batch_size=100, 
+               device=torch.device('cuda')):
+    """
+    Preprocess fluorescence traces for spike deconvolution.
 
-    baseline-subtraction with window "win_baseline"
-    
+    Subtracts a baseline estimated with a rolling maximin filter, constant
+    minimum, or percentile, depending on the baseline setting.
+
     Parameters
-    ----------------
-
-    F : float, 2D array
-        size [neurons x time], in pipeline uses neuropil-subtracted fluorescence
-
+    ----------
+    F : numpy.ndarray
+        Fluorescence traces, shape (n_neurons, n_frames). In the pipeline,
+        uses neuropil-subtracted fluorescence.
     baseline : str
-        setting that describes how to compute the baseline of each trace
-
+        Method for computing the baseline of each trace. One of "maximin",
+        "constant", or "prctile".
     win_baseline : float
-        window (in seconds) for max filter
-
+        Window in seconds for the max/min filters.
     sig_baseline : float
-        width of Gaussian filter in frames
-
+        Standard deviation of the Gaussian filter in frames.
     fs : float
-        sampling rate per plane
+        Sampling rate per plane in Hz.
+    prctile_baseline : float, optional (default 8)
+        Percentile of trace to use as baseline when baseline is "prctile".
 
-    prctile_baseline : float
-        percentile of trace to use as baseline if using `prctile` for baseline
-    
     Returns
-    ----------------
-
-    F : float, 2D array
-        size [neurons x time], baseline-corrected fluorescence
-
+    -------
+    F : numpy.ndarray
+        Baseline-corrected fluorescence, shape (n_neurons, n_frames).
     """
     win = int(win_baseline * fs)
     if baseline == "maximin":
-        Flow = gaussian_filter(F, [0., sig_baseline])
-        Flow = minimum_filter1d(Flow, win)
-        Flow = maximum_filter1d(Flow, win)
+        # Flow = gaussian_filter(F, [0., sig_baseline])
+        # Flow = minimum_filter1d(Flow, win)
+        # Flow = maximum_filter1d(Flow, win)
+        F = baseline_maximin(F, win_baseline, sig_baseline, fs, 
+                             batch_size=batch_size, device=device)
     elif baseline == "constant":
         Flow = gaussian_filter(F, [0., sig_baseline])
         Flow = np.amin(Flow)
+        F -= Flow
     elif baseline == "prctile":
         Flow = np.percentile(F, prctile_baseline, axis=1)
         Flow = np.expand_dims(Flow, axis=1)
+        F -= Flow
     else:
         Flow = 0.
-
-    F = F - Flow
-
+    
     return F
 
 
-def baseline_maximin(F: np.ndarray, win_baseline: float, sig_baseline: float,
-                     fs: float, batch_size=100, device=torch.device('cuda')) -> np.ndarray:
+def baseline_maximin(F, win_baseline, sig_baseline,
+                     fs, batch_size=100, device=torch.device('cuda')):
+    """
+    Compute maximin baseline using GPU-accelerated max/min pooling.
 
+    Smooths traces with a Gaussian filter, then applies a rolling minimum
+    followed by a rolling maximum to estimate the baseline.
+
+    Parameters
+    ----------
+    F : numpy.ndarray
+        Fluorescence traces, shape (n_neurons, n_frames).
+    win_baseline : float
+        Window in seconds for the max/min filters.
+    sig_baseline : float
+        Standard deviation of the Gaussian filter in frames.
+    fs : float
+        Sampling rate per plane in Hz.
+    batch_size : int, optional (default 100)
+        Number of neurons processed per batch.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for performing operations.
+
+    Returns
+    -------
+    F : numpy.ndarray
+        Baseline-corrected fluorescence, shape (n_neurons, n_frames).
+    """
     win = int(win_baseline * fs)
     win += 1 if win%2==0 else 0
     ncells, n_frames = F.shape

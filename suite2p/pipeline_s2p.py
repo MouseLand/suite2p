@@ -22,33 +22,68 @@ from .registration import zalign
 def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
              run_registration=True, settings=default_settings(), badframes=None, stat=None,
              device=torch.device("cuda"), Zstack=None):
-    """Run suite2p processing on array or BinaryFile.
+    """
+    Run suite2p processing pipeline on an array or BinaryFile.
 
-    Parameters:
-        save_path (str): Path to save results.
-        f_reg (ndarray): Required. Registered or unregistered frames. Shape: (n_frames, Ly, Lx).
-        f_raw (ndarray, optional): Unregistered frames that will not be overwritten during registration. Shape: (n_frames, Ly, Lx).
-        f_reg_chan2 (ndarray, optional): Non-functional registered or unregistered frames. Shape: (n_frames, Ly, Lx).
-        f_raw_chan2 (ndarray, optional): Non-functional unregistered frames that will not be overwritten during registration. Shape: (n_frames, Ly, Lx).
-        run_registration (bool, optional): Whether to run registration. Default is True.
-        settings (dict, optional): Dictionary of settings. Default is default_settings().
-        badframes (ndarray, optional): Array of bad frames (e.g. photostim times). Shape: (n_frames,).
-        stat (ndarray, optional): Input predefined masks.
-        device (torch.device, optional): Device to use for processing. Default is torch.device("cpu").
+    Runs registration, ROI detection, signal extraction, spike deconvolution,
+    and classification sequentially on a single plane.
 
-    Returns:
-        tuple: A tuple containing the following elements:
-            - reg_outputs (dict): Registration outputs.
-            - detect_outputs (ndarray): Detection outputs.
-            - stat (ndarray): Detected masks.
-            - F (ndarray): Extracted fluorescence signals.
-            - Fneu (ndarray): Neuropil fluorescence signals.
-            - F_chan2 (ndarray): Extracted fluorescence signals for channel 2.
-            - Fneu_chan2 (ndarray): Neuropil fluorescence signals for channel 2.
-            - spks (ndarray): Spike deconvolution results.
-            - iscell (ndarray): Classification results.
-            - redcell (ndarray): ROIs with overlap with red channel cells.
-            - plane_times (dict): Timing information for each step of the pipeline.
+    Parameters
+    ----------
+    save_path : str
+        Path to save results.
+    f_reg : numpy.ndarray or BinaryFile
+        Registered or unregistered frames, shape (n_frames, Ly, Lx).
+    f_raw : numpy.ndarray or BinaryFile, optional (default None)
+        Unregistered frames that will not be overwritten during registration,
+        shape (n_frames, Ly, Lx).
+    f_reg_chan2 : numpy.ndarray or BinaryFile, optional (default None)
+        Non-functional registered or unregistered frames,
+        shape (n_frames, Ly, Lx).
+    f_raw_chan2 : numpy.ndarray or BinaryFile, optional (default None)
+        Non-functional unregistered frames that will not be overwritten
+        during registration, shape (n_frames, Ly, Lx).
+    run_registration : bool, optional (default True)
+        Whether to run registration.
+    settings : dict, optional
+        Dictionary of pipeline settings from default_settings().
+    badframes : numpy.ndarray, optional (default None)
+        Boolean array of bad frames (e.g. photostim times),
+        shape (n_frames,).
+    stat : numpy.ndarray, optional (default None)
+        Pre-defined ROI masks. If provided, detection is skipped.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for performing operations.
+    Zstack : list, optional (default None)
+        Dense Z-stack used for Z-position estimation, via 
+        correlation with f_reg per frame.
+
+    Returns
+    -------
+    reg_outputs : dict
+        Registration outputs including shifts and reference images.
+    detect_outputs : numpy.ndarray or None
+        Detection outputs including correlation and projection maps.
+    stat : numpy.ndarray or None
+        Array of ROI statistics dictionaries.
+    F : numpy.ndarray or None
+        ROI fluorescence traces, shape (n_rois, n_frames).
+    Fneu : numpy.ndarray or None
+        Neuropil fluorescence traces, shape (n_rois, n_frames).
+    F_chan2 : numpy.ndarray or None
+        ROI fluorescence traces for anatomical channel.
+    Fneu_chan2 : numpy.ndarray or None
+        Neuropil fluorescence traces for anatomical channel.
+    spks : numpy.ndarray or None
+        Deconvolved spike traces, shape (n_rois, n_frames).
+    iscell : numpy.ndarray or None
+        Classification results, shape (n_rois, 2).
+    redcell : numpy.ndarray or None
+        Red channel cell overlap scores.
+    zcorr : numpy.ndarray
+        Correlations of f_reg with Z-stack (n_frames, nZ).
+    plane_times : dict
+        Timing information for each step of the pipeline.
     """
 
     plane_times = {}
@@ -177,13 +212,8 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         logger.info("----------- SPIKE DECONVOLUTION")
         t11 = time.time()
         dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
-        if settings["dcnv_preprocess"]["baseline"] == "maximin":
-            dF =  extraction.baseline_maximin(dF, win_baseline=settings["dcnv_preprocess"]["win_baseline"], 
-                                             sig_baseline=settings["dcnv_preprocess"]["sig_baseline"], 
-                                             fs=settings["fs"], device=device)
-        else:
-            dF = extraction.preprocess(F=dF, fs=settings["fs"],
-                                        **settings["dcnv_preprocess"])
+        dF = extraction.preprocess(F=dF, fs=settings["fs"], batch_size=settings["extraction"]["batch_size"],
+                                   device=device, **settings["dcnv_preprocess"])
         spks = extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"],
                                 tau=settings["tau"], fs=settings["fs"])
         plane_times["deconvolution"] = time.time() - t11

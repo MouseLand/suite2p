@@ -24,6 +24,15 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_setti
 			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
 			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
 		))
+		# ogts = utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}"))
+		# otests = utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}"))
+		# for j, (ogt, otest) in enumerate(zip(ogts, otests)):
+		# 	if j<2:
+		# 		print(((ogt - otest)**2).sum())
+		# 	else:
+		# 		for k in range(len(ogt)):
+		# 			print(((ogt[k]['ypix'] - otest[k]['ypix'])**2).sum())
+
 	# Read Nwb data and make sure it's identical to output data
 	stat, nwb_settings, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
 		io.read_nwb(str(Path(db['save_path0']).joinpath('suite2p/ophys.nwb')))

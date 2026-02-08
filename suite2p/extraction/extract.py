@@ -20,24 +20,32 @@ from ..logger import TqdmToLogger
 def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500, 
                     device = torch.device("cuda")):
     """
-    Extracts activity from f_in using cell_masks and neuropil_masks.
+    Extract fluorescence traces using cell and neuropil masks.
 
-    Parameters:
-        f_in : np.ndarray or io.BinaryFile object
-            Size n_frames, Ly, Lx.
-        cell_masks : list
-            List of tuples where the first element is cell pixels (flattened) and the second element is pixel weights normalized to sum 1 (lam).
-        neuropil_masks : list
-            List of neuropil pixels in (Ly*Lx) coordinates.
-        batch_size : int
-            Maximum batch size (default: 1000).
+    Performs sparse matrix multiplication on the GPU to extract ROI and
+    neuropil traces from registered frames.
 
-    Returns:
-        F : float, 2D array
-            Size [ROIs x time].
-        Fneu : float, 2D array
-            Size [ROIs x time].
-        settings : dictionary
+    Parameters
+    ----------
+    f_in : numpy.ndarray or BinaryFile
+        Registered frames, shape (n_frames, Ly, Lx).
+    cell_masks : list of tuple
+        Each element is a tuple (pixel_indices, weights) for one ROI, where
+        pixel_indices are flattened and weights are normalized to sum to 1.
+    neuropil_masks : list of numpy.ndarray
+        Each element is an array of flattened pixel indices for the neuropil
+        mask of one ROI.
+    batch_size : int, optional (default 500)
+        Number of frames processed per batch.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for performing operations.
+
+    Returns
+    -------
+    F : numpy.ndarray
+        ROI fluorescence traces, shape (n_rois, n_frames).
+    Fneu : numpy.ndarray
+        Neuropil fluorescence traces, shape (n_rois, n_frames).
     """
     n_frames, Ly, Lx = f_in.shape
     t0 = time.time()
@@ -94,17 +102,39 @@ def extraction_wrapper(stat, f_reg, f_reg_chan2=None, cell_masks=None,
     """
     Main fluorescence extraction function.
 
-    Parameters:
-        stat: array of dicts
-        f_reg: array of functional frames, np.ndarray or io.BinaryFile
-        f_reg_chan2: array of anatomical frames, np.ndarray or io.BinaryFile
+    Creates cell and neuropil masks (if not provided) and extracts
+    fluorescence traces for both functional and anatomical channels.
 
-    Returns:
-        stat: list of dictionaries with added keys "skew" and "std"
-        F: fluorescence of functional channel
-        F_neu: neuropil of functional channel
-        F_chan2: fluorescence of anatomical channel
-        F_neu_chan2: neuropil of anatomical channel
+    Parameters
+    ----------
+    stat : numpy.ndarray
+        Array of ROI statistics dictionaries, each containing "ypix", "xpix",
+        "lam", "radius", and "overlap".
+    f_reg : numpy.ndarray or BinaryFile
+        Registered functional frames, shape (n_frames, Ly, Lx).
+    f_reg_chan2 : numpy.ndarray or BinaryFile, optional (default None)
+        Registered anatomical channel frames, shape (n_frames, Ly, Lx).
+    cell_masks : list of tuple, optional (default None)
+        Pre-computed cell masks. If None, masks are created from stat.
+    neuropil_masks : list of numpy.ndarray, optional (default None)
+        Pre-computed neuropil masks. If None, masks are created from stat.
+    settings : dict
+        Extraction settings dictionary.
+    device : torch.device, optional (default torch.device("cuda"))
+        Torch device for performing operations.
+
+    Returns
+    -------
+    F : numpy.ndarray
+        ROI fluorescence traces for functional channel, shape (n_rois, n_frames).
+    Fneu : numpy.ndarray
+        Neuropil fluorescence traces for functional channel, shape (n_rois, n_frames).
+    F_chan2 : numpy.ndarray or None
+        ROI fluorescence traces for anatomical channel, or None if f_reg_chan2
+        is not provided.
+    Fneu_chan2 : numpy.ndarray or None
+        Neuropil fluorescence traces for anatomical channel, or None if
+        f_reg_chan2 is not provided.
     """
     n_frames, Ly, Lx = f_reg.shape
     batch_size = settings["batch_size"]

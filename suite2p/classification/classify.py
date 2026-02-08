@@ -1,9 +1,7 @@
 """
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
-import numpy as np
 from pathlib import Path
-from typing import Union, Sequence
 from .classifier import Classifier
 import logging 
 logger = logging.getLogger(__name__)
@@ -14,34 +12,24 @@ builtin_classfile = Path(__file__).joinpath(
 user_classfile = Path.home().joinpath(".suite2p/classifiers/classifier_user.npy")
 
 
-def classify(
-        stat: np.ndarray,
-        classfile: Union[str, Path],
-        keys: Sequence[str] = ("skew", "npix_norm", "compact"),
-):
-    """ 
-    Main classification function 
-    
-    Returns array of classifier output from classification process
+def classify(stat, classfile, keys = ("skew", "npix_norm", "compact")):
+    """
+    Classify ROIs as cells or not cells using a saved classifier.
 
     Parameters
-    ----------------
-
-    stat: dictionary "ypix", "xpix", "lam"
-        Dictionary containing statistics for ROIs
-
-    classfile: string (optional, default None)
-        path to saved classifier
-
-    keys: list of str (optional, default None)
-        keys of ROI stat to use to classify
+    ----------
+    stat : numpy.ndarray
+        Array of dictionaries, each containing ROI statistics, including the `keys`
+    classfile : str or pathlib.Path
+        Path to saved classifier.
+    keys : sequence of str, optional (default ("skew", "npix_norm", "compact"))
+        Keys of ROI stat to use to classify.
 
     Returns
-    ----------------
-
-    iscell : np.ndarray
-        Array in which each i-th element specifies whether i-th ROI is a cell or not.
-
+    -------
+    iscell : numpy.ndarray
+        Array of shape (n_rois, 2) where column 0 is the binary classification
+        and column 1 is the probability.
     """
     keys = list(set(keys).intersection(set(stat[0])))
     logger.info(f"classifying with stats: {keys}")

@@ -274,7 +274,8 @@ class GenerateExtractionTestData:
 				win_baseline=settings['dcnv_preprocess']['win_baseline'],
 				sig_baseline=settings['dcnv_preprocess']['sig_baseline'],
 				fs=settings['fs'],
-				prctile_baseline=settings['dcnv_preprocess']['prctile_baseline']
+				prctile_baseline=settings['dcnv_preprocess']['prctile_baseline'],
+				device=torch.device(settings['torch_device'])
 			)
 			np.save(str(extraction_dir.joinpath(f'{bv}_f.npy')), pre_f)
 
@@ -380,7 +381,8 @@ def extract_helper(settings, extract_input, plane):
 			)
 			# Deconvolve spikes from fluorescence
 			dF = F.copy() - settings["extraction"]["neuropil_coefficient"] * Fneu
-			dF = suite2p.extraction.preprocess(F=dF, fs=settings["fs"], **settings["dcnv_preprocess"])
+			dF = suite2p.extraction.preprocess(F=dF, fs=settings["fs"], device=torch.device(settings['torch_device']), 
+									  		   **settings["dcnv_preprocess"])
 			spks = suite2p.extraction.oasis(F=dF, batch_size=settings["extraction"]["batch_size"], tau=settings["tau"], fs=settings["fs"])
 			np.save(plane_dir.joinpath('ops.npy'), settings)
 			np.save(plane_dir.joinpath('F.npy'), F)

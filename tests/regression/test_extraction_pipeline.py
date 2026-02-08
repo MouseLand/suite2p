@@ -17,7 +17,7 @@ def test_pre_process_baseline(test_settings):
     """
     db, settings = test_settings  # Unpack the tuple
     op = {**db, **settings}  # Merge for legacy test utilities
-
+    
     # Load F from full pipeline output
     f = np.load(op['data_path'][0].parent.joinpath('test_outputs/1plane1chan1500/suite2p/plane0/F.npy'))
 
@@ -30,7 +30,8 @@ def test_pre_process_baseline(test_settings):
             win_baseline=op['dcnv_preprocess']['win_baseline'],
             sig_baseline=op['dcnv_preprocess']['sig_baseline'],
             fs=op['fs'],
-            prctile_baseline=op['dcnv_preprocess']['prctile_baseline']
+            prctile_baseline=op['dcnv_preprocess']['prctile_baseline'],
+            device=torch.device(op['torch_device'])
         )
         expected_f = np.load(op['data_path'][0].parent.joinpath(f'test_outputs/extraction/{bv}_f.npy'))
         assert np.allclose(pre_f, expected_f, rtol=1e-4, atol=5e-2)
@@ -72,7 +73,7 @@ def test_extraction_output_1plane1chan(test_settings):
         )
         # Deconvolve spikes from fluorescence
         dF = F.copy() - op["extraction"]["neuropil_coefficient"] * Fneu
-        dF = extraction.preprocess(F=dF, fs=op["fs"], **op["dcnv_preprocess"])
+        dF = extraction.preprocess(F=dF, fs=op["fs"], **op["dcnv_preprocess"], device=torch.device(op['torch_device']))
         spks = extraction.oasis(F=dF, batch_size=op["extraction"]["batch_size"], tau=op["tau"], fs=op["fs"])
 
     # Compare outputs with expected
@@ -137,7 +138,7 @@ def test_extraction_output_2plane2chan(test_settings):
                 )
                 # Deconvolve spikes from fluorescence
                 dF = F.copy() - op["extraction"]["neuropil_coefficient"] * Fneu
-                dF = extraction.preprocess(F=dF, fs=op["fs"], **op["dcnv_preprocess"])
+                dF = extraction.preprocess(F=dF, fs=op["fs"], device=torch.device(op['torch_device']), **op["dcnv_preprocess"])
                 spks = extraction.oasis(F=dF, batch_size=op["extraction"]["batch_size"], tau=op["tau"], fs=op["fs"])
 
         # Compare outputs with expected

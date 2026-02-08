@@ -43,6 +43,20 @@ files_to_binary = {
 }
 
 def get_save_folder(db):
+    """
+    Get the save folder path from the database dictionary.
+
+    Parameters
+    ----------
+    db : dict
+        Database dictionary containing "save_path0", "save_folder", and
+        "data_path".
+
+    Returns
+    -------
+    save_folder : str
+        Full path to the suite2p save folder.
+    """
     if db["save_path0"] is None or len(db["save_path0"])==0:
         db["save_path0"] = db["data_path"][0]
 
@@ -52,10 +66,16 @@ def get_save_folder(db):
     return save_folder
 
 def logger_setup(save_path=None):
-    """ Configure logging for the whole suite2p package.
-    
-    based on code from code from https://github.com/MouseLand/Kilosort/blob/a961f07f38593b44562ede1d041b3ff1a39973ac/kilosort/run_kilosort.py#L442
-    
+    """
+    Configure logging for the suite2p package.
+
+    Sets up console and file logging handlers for the suite2p logger.
+
+    Parameters
+    ----------
+    save_path : str, optional (default None)
+        Directory to write the log file. If None, only console logging is
+        configured.
     """
     if save_path is not None and not pathlib.Path(save_path).exists():
         pathlib.Path(save_path).mkdir(parents=True, exist_ok=True)
@@ -90,13 +110,18 @@ def logger_setup(save_path=None):
 
 def _assign_torch_device(str_device):
     """
-    Checks if CUDA is available and working with PyTorch.
+    Validate and return a torch device, falling back to CPU if unavailable.
 
-    Args:
-        gpu_number (int): The GPU device number to use (default is 0).
+    Parameters
+    ----------
+    str_device : str
+        Device string, e.g. "cuda", "cpu", or "mps".
 
-    Returns:
-        bool: True if CUDA is available and working, False otherwise.
+    Returns
+    -------
+    device : torch.device
+        Validated torch device. Falls back to CPU if the requested device
+        is not available.
     """
     if str_device == "cpu":
         logger.info("** using CPU **")
@@ -148,22 +173,30 @@ def _find_existing_binaries(plane_folders):
     return files_found_flag, db_paths, settings_paths
 
 def run_plane(db, settings, db_path=None, stat=None):
-    """ run suite2p processing on a single binary file
+    """
+    Run suite2p processing on a single plane/ROI.
+
+    Opens binary files, runs the pipeline, and saves outputs including
+    optional .mat and ops.npy files.
 
     Parameters
-    -----------
-    settings : :obj:`dict` 
-        specify "reg_file", "nchannels", "tau", "fs"
-
-    settings_path: str
-        absolute path to settings file (use if files were moved)
-
-    stat: list of `dict`
-        ROIs
+    ----------
+    db : dict
+        Database dictionary for this plane, containing "reg_file",
+        "save_path", "nframes", "Ly", "Lx", and other plane-specific keys.
+    settings : dict
+        Pipeline settings dictionary.
+    db_path : str, optional (default None)
+        Absolute path to db.npy file. If provided and binary files have
+        been moved, paths are updated accordingly.
+    stat : numpy.ndarray, optional (default None)
+        Pre-defined ROI masks. If provided, detection is skipped.
 
     Returns
-    --------
-    settings : :obj:`dict` 
+    -------
+    outputs : tuple
+        Pipeline outputs from pipeline(), see pipeline_s2p.pipeline for
+        details.
     """
 
     settings = {**default_settings(), **settings}
@@ -308,15 +341,30 @@ def run_plane(db, settings, db_path=None, stat=None):
 
 
 def run_s2p(db={}, settings=default_settings(), server={}):
-    """Run suite2p pipeline.
+    """
+    Run the full suite2p pipeline across all planes.
 
-    Args:
-        db (dict): Specify "data_path", "nplanes", "nchannels", etc. for making binaries.
-        settings (dict): Specify settings for running, e.g. "fs" sampling, "tau" timescale etc.
-        server (dict): Specify "host", "username", "password", "server_root", "local_root", "n_cores" (for multiplane_parallel).
+    Converts input files to binary format (if needed), then runs
+    registration, detection, extraction, deconvolution, and classification
+    on each plane sequentially (or dispatches to a server for parallel
+    processing).
 
-    Returns:
-        list: Paths to db files.
+    Parameters
+    ----------
+    db : dict
+        Database dictionary specifying "data_path", "nplanes", "nchannels",
+        and other input/output configuration.
+    settings : dict
+        Pipeline settings dictionary, e.g. "fs", "tau", "diameter".
+    server : dict
+        Server configuration for multiplane_parallel mode. Specify "host",
+        "username", "password", "server_root", "local_root", "n_cores".
+
+    Returns
+    -------
+    db_paths : list of str or None
+        Paths to the per-plane db.npy files. None if running in
+        multiplane_parallel server mode.
     """
 
     t0 = time.time()

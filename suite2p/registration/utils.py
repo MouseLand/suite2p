@@ -65,14 +65,14 @@ def spatial_taper(sig, Ly, Lx):
         Floating-point multiplicative mask of shape (Ly, Lx), with values near 1.0
         in the center and smoothly decaying to 0.0 at the edges.
     """
-    y = torch.arange(0, Ly, dtype=torch.float)
-    x = torch.arange(0, Lx, dtype=torch.float)
+    y = torch.arange(0, Ly, dtype=torch.double)
+    x = torch.arange(0, Lx, dtype=torch.double)
     x = (x - x.mean()).abs()
     y = (y - y.mean()).abs()
     mY = ((Ly - 1) / 2) - 2 * sig
     mX = ((Lx - 1) / 2) - 2 * sig
-    maskY = 1. / (1. + np.exp((y - mY) / sig))
-    maskX = 1. / (1. + np.exp((x - mX) / sig))
+    maskY = 1. / (1. + torch.exp((y - mY) / sig))
+    maskX = 1. / (1. + torch.exp((x - mX) / sig))
     maskMul = maskY[:,None] * maskX
     return maskMul
 

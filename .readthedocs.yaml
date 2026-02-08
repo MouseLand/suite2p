@@ -10,6 +10,6 @@ build:
       - pip install mkdocs-material
       - pip install mkdocstrings
       - pip install mkdocstrings-python
-
+      
 mkdocs:
   configuration: mkdocs.yml

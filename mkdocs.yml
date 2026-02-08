@@ -5,6 +5,8 @@ theme:
   favicon: _static/favicon.ico
   palette:
     primary: green
+  features:
+    - navigation.expand
     
 nav:
   - Home: index.md
@@ -30,7 +32,7 @@ nav:
       - Extraction: api/extraction.md
       - Classification: api/classification.md
       - GUI: api/gui.md
-
+  
 #hooks:
 #  - generate_settings_docs.py # Necessary for parameters.md generation
 
@@ -52,7 +54,6 @@ extra_css:
 
 markdown_extensions:
   - admonition
-  - toc
   - pymdownx.superfences
   - pymdownx.highlight
   - pymdownx.emoji
@@ -61,3 +62,8 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.inlinehilite
   - pymdownx.extra
+  - toc:
+      permalink: "#"
+      permalink_title: Anchor link to this section for reference
+
+  

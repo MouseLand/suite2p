@@ -5,6 +5,7 @@ import datetime
 import gc
 import logging
 import os
+import pickle
 import time
 from pathlib import Path
 
@@ -13,6 +14,26 @@ import scipy
 from natsort import natsorted
 
 logger = logging.getLogger(__name__)
+
+
+class _CrossPlatformUnpickler(pickle.Unpickler):
+    """Unpickler that handles PosixPath/WindowsPath across platforms."""
+
+    def find_class(self, module, name):
+        if name == "PosixPath" or name == "WindowsPath":
+            return Path
+        return super().find_class(module, name)
+
+def _load_npy_cross_platform(path):
+    """Load a .npy file that may contain Path objects from a different OS."""
+    with open(path, "rb") as f:
+        major, _ = np.lib.format.read_magic(f)
+        read_header = (np.lib.format.read_array_header_1_0 if major == 1
+                       else np.lib.format.read_array_header_2_0)
+        shape, fortran, dtype = read_header(f)
+        if dtype.hasobject:
+            return _CrossPlatformUnpickler(f).load()
+    return np.load(path, allow_pickle=False)
 
 from ..detection.stats import roi_stats
 from . import utils
@@ -306,7 +327,7 @@ def save_nwb(save_folder):
         np.load(f.joinpath("settings.npy"), allow_pickle=True).item() for f in plane_folders
     ]
     dbs = [
-        np.load(f.joinpath("db.npy"), allow_pickle=True).item() for f in plane_folders
+        _load_npy_cross_platform(f.joinpath("db.npy")).item() for f in plane_folders
     ]
 
     # Load reg_outputs and detect_outputs for background images

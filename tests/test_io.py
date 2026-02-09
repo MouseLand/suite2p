@@ -250,6 +250,7 @@ def test_nwb_round_trip(data_folder):
         ("/etc/bla/kjkcc/jodendopn/", "", False),
     ],
 )
+
 def test_get_suite2p_path(input_path, expected_path, success):
     if success:
         res_path = get_suite2p_path(input_path)

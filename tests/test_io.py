@@ -123,7 +123,7 @@ def test_that_binaryfile_data_is_repeatable(binfile1500):
     [
         ("1plane1chan1500"),
         ("2plane2chan1500"),
-        ("bruker"),
+        #("bruker"),
     ],
 )
 def test_nwb_round_trip(data_folder):

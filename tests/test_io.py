@@ -131,6 +131,7 @@ def test_nwb_round_trip(data_folder):
 
     # Define the path to the suite2p folder
     save_folder = Path("data").joinpath("test_outputs", data_folder, "suite2p")
+    print(save_folder)
 
     # Load expected data from plane folders
     plane_folders = natsorted([

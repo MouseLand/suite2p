@@ -409,9 +409,9 @@ def save_nwb(save_folder):
         Nfr = np.array([db["nframes"] for db in dbs]).max()
         for iplane, (settings, db) in enumerate(zip(settings1, dbs)):
             if iplane == 0:
-                iscell = np.load(os.path.join(db["save_path"], "iscell.npy"))
+                iscell = np.load(os.path.join(plane_folders[iplane], "iscell.npy"))
                 for fstr in file_strs:
-                    traces.append(np.load(os.path.join(db["save_path"], fstr)))
+                    traces.append(np.load(os.path.join(plane_folders[iplane], fstr)))
                 if nchannels > 1:
                     for fstr in file_strs_chan2:
                         traces_chan2.append(
@@ -420,11 +420,11 @@ def save_nwb(save_folder):
             else:
                 iscell = np.append(
                     iscell,
-                    np.load(os.path.join(db["save_path"], "iscell.npy")),
+                    np.load(os.path.join(plane_folders[iplane], "iscell.npy")),
                     axis=0,
                 )
                 for i, fstr in enumerate(file_strs):
-                    trace = np.load(os.path.join(db["save_path"], fstr))
+                    trace = np.load(os.path.join(plane_folders[iplane], fstr))
                     if trace.shape[1] < Nfr:
                         fcat = np.zeros((trace.shape[0], Nfr - trace.shape[1]),
                                         "float32")
@@ -440,7 +440,7 @@ def save_nwb(save_folder):
                 PlaneCellsIdx = np.append(
                     PlaneCellsIdx, iplane * np.ones(len(iscell) - len(PlaneCellsIdx)))
 
-            stat = np.load(os.path.join(db["save_path"], "stat.npy"),
+            stat = np.load(os.path.join(plane_folders[iplane], "stat.npy"),
                            allow_pickle=True)
             ncells[iplane] = len(stat)
             for n in range(ncells[iplane]):

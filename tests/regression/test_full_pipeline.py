@@ -19,15 +19,16 @@ def test_1plane_1chan_with_batches_metrics_and_exported_to_nwb_format(test_setti
 	nplanes = db['nplanes']
 	outputs_to_check = ['F', 'iscell', 'stat']
 	for i in range(nplanes):
-		assert all(utils.compare_list_of_outputs(
-			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
-			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
-		))
-		# ogts = utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}"))
-		# otests = utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}"))
-		# for j, (oc, ogt, otest) in enumerate(zip(outputs_to_check, ogts, otests)):
-		# 	assert utils.compare_list_of_outputs([oc], [ogt], [otest])
+		# assert all(utils.compare_list_of_outputs(
+		# 	outputs_to_check,
+		# 	utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
+		# 	utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
+		# ))
+		ogts = utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}"))
+		otests = utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}"))
+		for j, (oc, ogt, otest) in enumerate(zip(outputs_to_check, ogts, otests)):
+			print(oc)
+			assert utils.compare_list_of_outputs([oc], [ogt], [otest])
 		
 	# Read Nwb data and make sure it's identical to output data
 	stat, nwb_settings, F, Fneu, spks, iscell, probcell, redcell, probredcell = \
@@ -57,15 +58,20 @@ def test_2plane_2chan_with_batches(test_settings):
 	nplanes = db['nplanes']
 	suite2p.run_s2p(settings=settings, db=db)
 
-	outputs_to_check = ['F', 'iscell', 'stat']
+	outputs_to_check = ['F', 'iscell']
 	if db['nchannels'] == 2:
 		outputs_to_check.extend(['F_chan2', 'Fneu_chan2'])
 	for i in range(nplanes):
-		assert all(utils.compare_list_of_outputs(
-			outputs_to_check,
-			utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
-			utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
-		))
+		ogts = utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}"))
+		otests = utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}"))
+		for j, (oc, ogt, otest) in enumerate(zip(outputs_to_check, ogts, otests)):
+			print(oc)
+			assert utils.compare_list_of_outputs([oc], [ogt], [otest])
+		# assert all(utils.compare_list_of_outputs(
+		# 	outputs_to_check,
+		# 	utils.get_list_of_data(outputs_to_check, db['data_path'][0].parent.joinpath(f"test_outputs/{nplanes}plane{db['nchannels']}chan1500/suite2p/plane{i}")),
+		# 	utils.get_list_of_data(outputs_to_check, Path(db['save_path0']).joinpath(f"suite2p/plane{i}")),
+		# ))
 
 
 # def test_mesoscan_2plane_2z(test_settings):

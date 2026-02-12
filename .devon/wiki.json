@@ -1,0 +1,138 @@
+{
+  "repo_notes": [
+    {
+      "content": "Suite2p is a complete processing pipeline for neural imaging",
+      "author": "Carsen Stringer & Marius Pachitariu"
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "High-level overview of suite2p's imaging pipeline and how db, settings etc interact"
+    },
+    {
+      "title": "Installation and Setup",
+      "purpose": "How to install suite2p and configure the environment",
+      "parent": "Overview"
+    },
+    {
+      "title": "Core Concepts",
+      "purpose": "Foundational concepts including pipeline architecture, configuration, and data formats"
+    },
+    {
+      "title": "Pipeline Architecture",
+      "purpose": "How the processing stages connect: registration, detection, extraction, deconvolution, classification",
+      "parent": "Core Concepts"
+    },
+    {
+      "title": "Configuration (db and settings)",
+      "purpose": "The db dictionary and settings dictionary, and all configurable parameters for controlling pipeline behavior",
+      "parent": "Core Concepts"
+    },
+    {
+      "title": "Data Structures and File Formats",
+      "purpose": "Input file formats (tiff, h5, sbx, etc.) and output files (stat.npy, F.npy, iscell.npy, etc.)",
+      "parent": "Core Concepts"
+    },
+    {
+      "title": "Processing Pipeline",
+      "purpose": "Detailed documentation of each processing stage in the suite2p pipeline"
+    },
+    {
+      "title": "Data Input and Conversion",
+      "purpose": "How raw imaging data is loaded, converted to binary format, and prepared for processing",
+      "parent": "Processing Pipeline"
+    },
+    {
+      "title": "Registration (Motion Correction)",
+      "purpose": "Rigid and nonrigid registration methods for correcting motion artifacts in imaging data",
+      "parent": "Processing Pipeline"
+    },
+    {
+      "title": "ROI Detection",
+      "purpose": "How regions of interest (neurons) are detected using sparse decomposition and clustering",
+      "parent": "Processing Pipeline"
+    },
+    {
+      "title": "Signal Extraction and Deconvolution",
+      "purpose": "Extracting fluorescence traces from ROIs, neuropil subtraction, and spike deconvolution via OASIS",
+      "parent": "Processing Pipeline"
+    },
+    {
+      "title": "Cell Classification",
+      "purpose": "Classifier that distinguishes cells from non-cell ROIs using shape and activity features",
+      "parent": "Processing Pipeline"
+    },
+    {
+      "title": "User Interfaces",
+      "purpose": "The different ways to run and interact with suite2p"
+    },
+    {
+      "title": "Command-Line Interface",
+      "purpose": "Running suite2p from the command line with arguments and config files",
+      "parent": "User Interfaces"
+    },
+    {
+      "title": "Python API",
+      "purpose": "Using suite2p programmatically in Python scripts and notebooks",
+      "parent": "User Interfaces"
+    },
+    {
+      "title": "Graphical User Interface",
+      "purpose": "The PyQt-based GUI for running suite2p and visualizing results",
+      "parent": "User Interfaces"
+    },
+    {
+      "title": "Main Visualization GUI",
+      "purpose": "Visualizing ROIs, traces, and registration results in the main GUI window",
+      "parent": "Graphical User Interface"
+    },
+    {
+      "title": "Run Configuration Window",
+      "purpose": "Setting parameters and file paths through the GUI run dialog",
+      "parent": "Graphical User Interface"
+    },
+    {
+      "title": "Advanced Topics",
+      "purpose": "Multi-plane recordings, distributed processing, and data format integrations"
+    },
+    {
+      "title": "Multi-Plane and Multi-Channel Processing",
+      "purpose": "Handling multi-plane (volumetric) and multi-channel imaging sessions, including multi-day alignment",
+      "parent": "Advanced Topics"
+    },
+    {
+      "title": "Distributed Processing",
+      "purpose": "Running suite2p across multiple machines or in parallel for large datasets",
+      "parent": "Advanced Topics"
+    },
+    {
+      "title": "NWB Integration",
+      "purpose": "Reading and writing Neurodata Without Borders (NWB) format files",
+      "parent": "Advanced Topics"
+    },
+    {
+      "title": "Development",
+      "purpose": "Contributing to suite2p, package structure, and testing"
+    },
+    {
+      "title": "Package Structure",
+      "purpose": "Organization of the suite2p codebase: modules, subpackages, and their responsibilities",
+      "parent": "Development"
+    },
+    {
+      "title": "Testing Framework",
+      "purpose": "How tests are structured, regression tests, and how to run the test suite",
+      "parent": "Development"
+    },
+    {
+      "title": "Contributing Guidelines",
+      "purpose": "How to contribute code, report issues, and follow project conventions",
+      "parent": "Development"
+    },
+    {
+      "title": "API Reference",
+      "purpose": "Auto-generated API docs from Python docstrings for all suite2p subpackages",
+    }
+  ]
+}

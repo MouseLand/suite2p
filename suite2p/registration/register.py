@@ -580,8 +580,8 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     if upsample_meanImg:
         if not isinstance(upsample_meanImg, (np.ndarray, list, tuple)):
             upsample_meanImg = [upsample_meanImg, upsample_meanImg]
-        mean_img_ups = torch.zeros((Ly*upsample_meanImg[0], Lx*upsample_meanImg[1]), dtype=torch.double, device=device)
-        counts_ups = torch.zeros((Ly*upsample_meanImg[0], Lx*upsample_meanImg[1]), dtype=torch.int, device=device)
+        mean_img_ups = torch.zeros((int(Ly*upsample_meanImg[0]), int(Lx*upsample_meanImg[1])), dtype=torch.double, device=device)
+        counts_ups = torch.zeros((int(Ly*upsample_meanImg[0]), int(Lx*upsample_meanImg[1])), dtype=torch.int, device=device)
     else:
         mean_img_ups, counts_ups, meanImg_ups = None, None, None
     

@@ -15,8 +15,7 @@ includes the following modules:
 For examples of how the output looks and how the GUI works, check out
 this twitter [thread](https://twitter.com/marius10p/status/1032804776633880583).
 
-This code was written by Carsen Stringer and Marius Pachitariu. For
-support, please open an [issue](https://github.com/MouseLand/suite2p/issues).
+For software support, please open an [issue](https://github.com/MouseLand/suite2p/issues). For general questions, please use [forum.image.sc](https://forum.image.sc)
 
 The reference paper is [here](https://www.biorxiv.org/content/10.64898/2026.02.04.703741v1). The deconvolution algorithm is based on
 [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this

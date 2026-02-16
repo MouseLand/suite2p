@@ -495,7 +495,15 @@ SETTINGS = {
             "default": False,
             "description": "Whether to save chan2 registered tiffs.",
         },
-        
+        "upsample_meanImg": {
+            "gui_name": "Upsample meanImg",
+            "type": list,
+            "min": None,
+            "max": None,
+            "default": None,
+            "description": "Upsampling factor for super-resolution meanImg computation. If 0 or None, no upsampling is performed.",
+        },
+
     },
     "detection": {
         "algorithm": {

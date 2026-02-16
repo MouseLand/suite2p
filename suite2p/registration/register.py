@@ -11,6 +11,7 @@ from tqdm import trange
 import numpy as np
 import torch
 from scipy.signal import medfilt
+from scipy.ndimage import gaussian_filter
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -402,7 +403,8 @@ def compute_shifts(refAndMasks, fr_reg, maxregshift=0.1, smooth_sigma_time=0,
 
     return ymax, xmax, cmax, ymax1, xmax1, cmax1, None, None
 
-def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None, device=torch.device("cuda")):
+def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None, 
+                 mean_img_ups=None, counts_ups=None, device=torch.device("cuda")):
     """
     Apply rigid and optionally nonrigid shifts to frames and return as numpy int16.
 
@@ -432,7 +434,7 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None, devi
     """
     fr_torch = torch.stack([torch.roll(frame, shifts=(-dy, -dx), dims=(0, 1))
                                for frame, dy, dx in zip(fr_torch, yoff, xoff)], axis=0)
-
+    
     if yoff1 is not None:
         if isinstance(yoff1, np.ndarray):
             if fr_torch.device.type == "cuda":
@@ -441,7 +443,9 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None, devi
             else:
                 yoff1 = torch.from_numpy(yoff1).to(device)
                 xoff1 = torch.from_numpy(xoff1).to(device)
-        fr_torch = nonrigid.transform_data(fr_torch, blocks[2], blocks[1], blocks[0], yoff1, xoff1)
+    
+        fr_torch = nonrigid.transform_data(fr_torch, blocks[2], blocks[1], blocks[0], 
+                                           yoff1, xoff1, data_ups=mean_img_ups, counts_ups=counts_ups)
     
     frames_out = np.empty(fr_torch.shape, dtype="int16")
     frames_out = fr_torch.cpu().numpy()
@@ -472,11 +476,11 @@ def normalize_reference_image(refImg):
 
 
 def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100, 
-                    bidiphase=0, 
-                    norm_frames=True, smooth_sigma=1.15, spatial_taper=3.45, 
+                    bidiphase=0, norm_frames=True, smooth_sigma=1.15, spatial_taper=3.45, 
                     block_size=(128,128), nonrigid=True, maxregshift=0.1, 
                     smooth_sigma_time=0, snr_thresh=1.2, maxregshiftNR=5,
-                    device=torch.device("cuda"), tif_root=None, apply_shifts=True):
+                    device=torch.device("cuda"), tif_root=None, apply_shifts=True,
+                    upsample_meanImg=False):
     """
     Register frames to a reference image using rigid and optionally nonrigid shifts.
 
@@ -523,6 +527,12 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         If provided, save registered frames as tiffs in this directory.
     apply_shifts : bool
         If True, apply computed shifts to frames. If False, only compute shifts.
+    upsample_meanImg : bool, int, list, or tuple
+        Upsampling factor for super-resolution mean image computation.
+        If False or None, no upsampling is performed. If int, same factor is used
+        for both Y and X. If list/tuple of length 2, specifies [Y_factor, X_factor].
+        The mean image is computed by accumulating registered frames at subpixel
+        locations and normalizing by pixel counts.
 
     Returns
     -------
@@ -537,6 +547,15 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         concatenated across all batches.
     blocks : list
         Block definitions from nonrigid.make_blocks.
+    mean_img_ups : torch.Tensor or None
+        Raw upsampled mean image tensor of shape (Ly*upsample[0], Lx*upsample[1])
+        before normalization. None if upsample_meanImg is False.
+    counts_ups : torch.Tensor or None
+        Pixel counts tensor of shape (Ly*upsample[0], Lx*upsample[1]) indicating
+        how many frames contributed to each upsampled pixel. None if upsample_meanImg is False.
+    meanImg_ups : np.ndarray or None
+        Super-resolution mean image of shape (Ly*upsample[0], Lx*upsample[1])
+        after Gaussian smoothing and normalization by counts. None if upsample_meanImg is False.
     """
 
     n_frames, Ly, Lx = f_align_in.shape
@@ -558,6 +577,13 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     ### ------------- register frames to reference image ------------ ###
 
     mean_img = np.zeros((Ly, Lx), "float32")
+    if upsample_meanImg:
+        if not isinstance(upsample_meanImg, (np.ndarray, list, tuple)):
+            upsample_meanImg = [upsample_meanImg, upsample_meanImg]
+        mean_img_ups = torch.zeros((Ly*upsample_meanImg[0], Lx*upsample_meanImg[1]), dtype=torch.double, device=device)
+        counts_ups = torch.zeros((Ly*upsample_meanImg[0], Lx*upsample_meanImg[1]), dtype=torch.int, device=device)
+    else:
+        mean_img_ups, counts_ups, meanImg_ups = None, None, None
     
     n_batches = int(np.ceil(n_frames / batch_size))
     logger.info(f"Registering {n_frames} frames in {n_batches} batches")
@@ -580,8 +606,9 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
         ymax, xmax, cmax, ymax1, xmax1, cmax1, zest, cmax_all = offsets
 
         if apply_shifts:
-            frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks, device)
-        
+            frames = shift_frames(fr_torch, ymax, xmax, ymax1, xmax1, blocks, 
+                                  mean_img_ups=mean_img_ups, counts_ups=counts_ups, device=device)
+            
         # convert to numpy and concatenate offsets
         ymax, xmax, cmax = ymax.cpu().numpy(), xmax.cpu().numpy(), cmax.cpu().numpy()
         if ymax1 is not None:
@@ -608,7 +635,16 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
                 fname = os.path.join(tif_root, f"file{n : 05d}.tif")
                 save_tiff(mov=frames, fname=fname)
 
-    return rmin, rmax, mean_img, offsets_all, blocks
+    if upsample_meanImg:
+        # apply Gaussian smoothing and normalize by counts
+        mimg = mean_img_ups.cpu().numpy()
+        cimg = counts_ups.cpu().numpy()
+        sig = 1 
+        mimg = gaussian_filter(mimg, sig)
+        cimg = gaussian_filter(cimg, sig)
+        meanImg_ups = mimg / cimg
+
+    return rmin, rmax, mean_img, offsets_all, blocks, mean_img_ups, counts_ups, meanImg_ups
 
 def check_offsets(yoff, xoff, yoff1, xoff1, n_frames):
     """
@@ -844,8 +880,9 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         Dictionary containing registration results with keys: "refImg", "rmin",
         "rmax", "meanImg", "yoff", "xoff", "corrXY", "yoff1", "xoff1",
         "corrXY1", "meanImg_chan2", "badframes", "badframes0", "yrange",
-        "xrange", "bidiphase", "meanImgE", and optionally "zpos_registration"
-        and "cmax_registration".
+        "xrange", "bidiphase", "meanImgE", and optionally "zpos_registration",
+        "cmax_registration", "meanImg_upsample", "mean_img_ups", 
+        and "counts_ups".
     """
     out = assign_reg_io(f_reg, f_raw, f_reg_chan2, f_raw_chan2, align_by_chan2,
                         save_path, settings["reg_tif"], settings["reg_tif_chan2"])
@@ -894,15 +931,15 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
             
         ### ----- register frames to reference image -------------- ###
         outputs = register_frames(f_align_in, f_align_out=f_align_out, bidiphase=bidiphase,
-                                refImg=refImg, tif_root=tif_root_align, 
-                                batch_size=settings["batch_size"], 
-                                norm_frames=settings["norm_frames"], smooth_sigma=settings["smooth_sigma"], 
-                                spatial_taper=settings["spatial_taper"], block_size=settings["block_size"], 
+                                refImg=refImg, tif_root=tif_root_align,
+                                batch_size=settings["batch_size"],
+                                norm_frames=settings["norm_frames"], smooth_sigma=settings["smooth_sigma"],
+                                spatial_taper=settings["spatial_taper"], block_size=settings["block_size"],
                                 nonrigid=settings["nonrigid"],
                                 maxregshift=settings["maxregshift"], smooth_sigma_time=settings["smooth_sigma_time"],
                                     snr_thresh=settings["snr_thresh"], maxregshiftNR=settings["maxregshiftNR"],
-                                    device=device)
-        rmin, rmax, mean_img, offsets_all, blocks = outputs
+                                    device=device, upsample_meanImg=settings.get("upsample_meanImg", False))
+        rmin, rmax, mean_img, offsets_all, blocks, mean_img_ups, counts_ups, meanImg_ups = outputs
         yoff, xoff, corrXY, yoff1, xoff1, corrXY1, zest, cmax_all = offsets_all
 
         # compute valid region and timepoints to exclude
@@ -932,16 +969,24 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     else:
         meanImg_chan2 = None
 
-    reg_outputs = registration_outputs_to_dict(refImg_orig, rmin, rmax, meanImg, 
-                                               (yoff, xoff, corrXY), 
-                                               (yoff1, xoff1, corrXY1), 
-                                               (zest, cmax_all), meanImg_chan2, 
-                                               badframes, badframes0, 
-                                               yrange, xrange, bidiphase)
-    
+    reg_outputs = registration_outputs_to_dict(refImg_orig, rmin, rmax, meanImg,
+                                               (yoff, xoff, corrXY),
+                                               (yoff1, xoff1, corrXY1),
+                                               (zest, cmax_all), meanImg_chan2,
+                                               badframes, badframes0,
+                                               yrange, xrange, bidiphase, 
+                                               )
+
     # add enhanced mean image
     meanImgE = utils.highpass_mean_image(meanImg.astype("float32"), aspect=aspect)
     reg_outputs["meanImgE"] = meanImgE
+
+    # add upsampled mean image if computed
+    if mean_img_ups is not None and counts_ups is not None:
+        reg_outputs["meanImg_upsample"] = meanImg_ups
+        reg_outputs["mean_img_ups"] = mean_img_ups.cpu().numpy()
+        reg_outputs["counts_ups"] = counts_ups.cpu().numpy()
+
     return reg_outputs
 
 def registration_outputs_to_dict(refImg, rmin, rmax, meanImg, rigid_offsets,

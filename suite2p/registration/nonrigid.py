@@ -370,7 +370,8 @@ def phasecorr(data, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
     
     return ymax1.T.float(), xmax1.T.float(), cmax1.T, ccsm, ccb
 
-def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
+def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1, 
+                   data_ups=None, counts_ups=None):
     """
     Apply bilinear interpolation to transform image data using block-wise shifts.
     This function performs non-rigid image registration by interpolating block-wise 
@@ -399,7 +400,7 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
         Shifted image data of shape (nimg, Ly, Lx) with dtype int16 (short).
         The input images are warped according to the interpolated displacement field.
     """
-    _, Ly, Lx = data.shape
+    n_frames, Ly, Lx = data.shape
     #device = torch.device("cuda")
     #data = torch.from_numpy(data).to(device).float()
     device = data.device
@@ -414,12 +415,33 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
                          size=(Lyc, Lxc), mode="bilinear", align_corners=True)
     yxup = F.pad(yxup, (int(xb.min()), Lx - int(xb.max()), 
                         int(yb.min()), Ly - int(yb.max())), mode="replicate")
+    
+    if data_ups is not None and counts_ups is not None:
+        ups = torch.Tensor([data_ups.shape[0] // Ly, data_ups.shape[1] // Lx]).to(device)
+        yxup_round = -1*yxup.clone() + torch.stack((mshy, mshx), dim=0)
+        yxup_round = torch.floor(0.5 + (yxup_round * ups.unsqueeze(-1).unsqueeze(-1))).long()
+        yxup_round[:,0] = torch.clamp(yxup_round[:,0], min=0, max=Ly*ups[0] - 1)
+        yxup_round[:,1] = torch.clamp(yxup_round[:,1], min=0, max=Lx*ups[1] - 1)
+        for t in range(n_frames):
+            mat = torch.sparse_coo_tensor(indices=yxup_round[t].reshape(2, -1), values=data[t].flatten(), 
+                                            size=(int(Ly*ups[0]), int(Lx*ups[1]))).to_dense()
+            data_ups += mat 
+            mat = torch.sparse_coo_tensor(indices=yxup_round[t].reshape(2, -1), 
+                                          values=torch.ones(data[t].numel(), device=device, dtype=torch.long), 
+                                          size=(int(Ly*ups[0]), int(Lx*ups[1]))).to_dense()
+            counts_ups += mat
+            
+            # data_ups[yxup_round[t,0], yxup_round[t,1]] += data[t]
+            # counts_ups[yxup_round[t,0], yxup_round[t,1]] += 1
+
+    # rescale for grid_sample
     yxup[:,0] += mshy
     yxup[:,1] += mshx
     yxup /= torch.Tensor([Ly-1, Lx-1]).to(device).unsqueeze(-1).unsqueeze(-1)
     yxup *= 2 
     yxup -= 1
     yxup = yxup.permute(0, 2, 3, 1)
+
     if device.type == "mps":
         # Manually pad the input tensor with the border values
         data_padded = F.pad(data.float().unsqueeze(1), (1, 1, 1, 1), mode="replicate")
@@ -437,4 +459,6 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1):
     else:
         fr_shift = F.grid_sample(data.float().unsqueeze(1), yxup[:,:,:,[1,0]], 
                              mode="bilinear", padding_mode="border", align_corners=True)
+        
+    
     return fr_shift.squeeze().short()#.cpu().numpy()

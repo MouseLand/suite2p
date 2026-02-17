@@ -911,7 +911,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         bidiphase = settings["bidiphase"]
     
     if bidiphase != 0 and refImg is None:
-        frames = bidi.shift(frames, int(settings["bidiphase"])) 
+        frames = bidi.shift(frames, bidiphase) 
     
     if refImg is None:
         t0 = time.time()

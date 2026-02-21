@@ -452,7 +452,7 @@ def estimate_spatial_scale(I):
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
     im, _ = mode(imap[ipk][isort[:50]], keepdims=True)
-    return im
+    return im.item()
 
 
 def find_best_scale(I, spatial_scale):

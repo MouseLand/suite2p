@@ -30,7 +30,7 @@ suite2p includes the following modules:
 
 For software support, please open an [issue](https://github.com/MouseLand/suite2p/issues). The reference paper is [here](https://www.biorxiv.org/content/10.64898/2026.02.04.703741v1). The deconvolution algorithm is based on [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423), with settings based on [this paper](http://www.jneurosci.org/content/early/2018/08/06/JNEUROSCI.3339-17.2018).
 
-See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations. The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs. Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb).
+See this **twitter [thread](https://twitter.com/marius10p/status/1032804776633880583)** for GUI demonstrations. The matlab version is available [here](https://github.com/cortex-lab/Suite2P). Note that the algorithm is older and will not work as well on non-circular ROIs. Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb). Example notebook on how to use suite2p can be found here: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MouseLand/suite2p/blob/main/notebooks/example_run_suite2p_2026.ipynb)
 
 For more general usage questions, please use **[forum.image.sc](https://forum.image.sc/)**. Also, apologies, we had github discussions open but completely forgot about it - if there was any info there that was lost let us know and we'll move it to our FAQ. 
 

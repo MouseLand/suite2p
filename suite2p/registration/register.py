@@ -275,6 +275,10 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
         maskMul, maskOffset, cfRefImg = rigid.compute_masks_ref_smooth_fft(refImg=rimg, maskSlope=spatial_taper,
                                                                  smooth_sigma=spatial_smooth)
         Ly, Lx = refImg.shape
+        # MPS backend does not support float64, convert to float32
+        if device.type == "mps":
+            maskMul, maskOffset = maskMul.to(torch.float32), maskOffset.to(torch.float32)
+            cfRefImg = cfRefImg.to(torch.complex64)
         maskMul, maskOffset = maskMul.to(device), maskOffset.to(device)
         cfRefImg = cfRefImg.to(device)
         blocks = []
@@ -282,9 +286,13 @@ def compute_filters_and_norm(refImg, norm_frames=True, spatial_smooth=1.15, spat
             blocks = nonrigid.make_blocks(Ly=Ly, Lx=Lx, block_size=block_size,
                                           lpad=lpad, subpixel=subpixel)
             maskMulNR, maskOffsetNR, cfRefImgNR = nonrigid.compute_masks_ref_smooth_fft(
-                refImg0=rimg, maskSlope=spatial_taper, smooth_sigma=spatial_smooth, 
+                refImg0=rimg, maskSlope=spatial_taper, smooth_sigma=spatial_smooth,
                 yblock=blocks[0], xblock=blocks[1],
             )
+            # MPS backend does not support float64, convert to float32
+            if device.type == "mps":
+                maskMulNR, maskOffsetNR = maskMulNR.to(torch.float32), maskOffsetNR.to(torch.float32)
+                cfRefImgNR = cfRefImgNR.to(torch.complex64)
             maskMulNR, maskOffsetNR = maskMulNR.to(device), maskOffsetNR.to(device)
             cfRefImgNR = cfRefImgNR.to(device)
 
@@ -440,6 +448,10 @@ def shift_frames(fr_torch, yoff, xoff, yoff1=None, xoff1=None, blocks=None,
             if fr_torch.device.type == "cuda":
                 yoff1 = torch.from_numpy(yoff1).pin_memory().to(device)
                 xoff1 = torch.from_numpy(xoff1).pin_memory().to(device)
+            elif device.type == "mps":
+                # MPS backend does not support float64
+                yoff1 = torch.from_numpy(yoff1).to(torch.float32).to(device)
+                xoff1 = torch.from_numpy(xoff1).to(torch.float32).to(device)
             else:
                 yoff1 = torch.from_numpy(yoff1).to(device)
                 xoff1 = torch.from_numpy(xoff1).to(device)
@@ -580,7 +592,9 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     if upsample_meanImg:
         if not isinstance(upsample_meanImg, (np.ndarray, list, tuple)):
             upsample_meanImg = [upsample_meanImg, upsample_meanImg]
-        mean_img_ups = torch.zeros((int(Ly*upsample_meanImg[0]), int(Lx*upsample_meanImg[1])), dtype=torch.double, device=device)
+        # MPS backend does not support float64
+        ups_dtype = torch.float32 if device.type == "mps" else torch.double
+        mean_img_ups = torch.zeros((int(Ly*upsample_meanImg[0]), int(Lx*upsample_meanImg[1])), dtype=ups_dtype, device=device)
         counts_ups = torch.zeros((int(Ly*upsample_meanImg[0]), int(Lx*upsample_meanImg[1])), dtype=torch.int, device=device)
     else:
         mean_img_ups, counts_ups, meanImg_ups = None, None, None

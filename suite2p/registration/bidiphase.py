@@ -62,6 +62,6 @@ def shift(frames: np.ndarray, bidiphase: int) -> None:
     """
     if bidiphase > 0:
         frames[:, 1::2, bidiphase:] = frames[:, 1::2, :-bidiphase]
-    else:
+    elif bidiphase < 0:
         frames[:, 1::2, :bidiphase] = frames[:, 1::2, -bidiphase:]
     return frames

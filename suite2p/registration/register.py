@@ -904,7 +904,10 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
 
     nchannels = 2 if f_alt_in is not None else 1
     logger.info(f"registering {nchannels} channels")
-    
+    if device.type == "mps":
+        logger.warning("MPS device does not support float64, using float32 for registration. "
+                       "If you encounter registration issues, try using cuda or cpu instead.")
+
     ### ----- compute reference image and bidiphase shift -------------- ###
     n_frames, Ly, Lx = f_align_in.shape
     badframes0 = np.zeros(n_frames, "bool") if badframes is None else badframes.copy()

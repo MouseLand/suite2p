@@ -337,10 +337,10 @@ def run_plane(ops, ops_path=None, stat=None):
 
     null = contextlib.nullcontext()
     twoc = ops["nchannels"] > 1
-    with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames) \
+    with io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file, n_frames=n_frames, write=True) \
             if raw else null as f_raw, \
          io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file, n_frames=n_frames) as f_reg, \
-         io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2, n_frames=n_frames) \
+         io.BinaryFile(Ly=Ly, Lx=Lx, filename=raw_file_chan2, n_frames=n_frames, write=True) \
             if raw and twoc else null as f_raw_chan2,\
          io.BinaryFile(Ly=Ly, Lx=Lx, filename=reg_file_chan2, n_frames=n_frames) \
             if twoc else null as f_reg_chan2:

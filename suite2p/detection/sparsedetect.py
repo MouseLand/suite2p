@@ -452,7 +452,7 @@ def estimate_spatial_scale(I):
     ipk = np.abs(I0 - maximum_filter(I0, size=(11, 11))).flatten() < 1e-4
     isort = np.argsort(I0.flatten()[ipk])[::-1]
     im, _ = mode(imap[ipk][isort[:50]], keepdims=True)
-    return im.item()
+    return im
 
 
 def find_best_scale(I, spatial_scale):
@@ -565,12 +565,13 @@ def sparsery(mov, sdmov, highpass_neuropil,
     scale, estimate_mode = find_best_scale(I=I, spatial_scale=spatial_scale)
 
     spatscale_pix = 3 * 2**scale
-    mask_window = int(((spatscale_pix * 1.5) // 2) * 2)
+    print(np.size(spatscale_pix))
+    mask_window = int(((float(np.asarray(spatscale_pix).item()) * 1.5) // 2) * 2)
     Th2 = threshold_scaling * 5 * max(
         1, scale)  # threshold for accepted peaks (scale it by spatial scale)
     vmultiplier = max(1, mov.shape[0] / 1200)
     logger.info("NOTE: %s spatial scale ~%d pixels, time epochs %2.2f, threshold %2.2f " %
-          (estimate_mode.value, spatscale_pix, vmultiplier, vmultiplier * Th2))
+          (estimate_mode.value, np.asarray(spatscale_pix).item(), vmultiplier, vmultiplier * Th2))
 
     # get standard deviation for pixels for all values > Th2
     v_map = [threshold_reduce(movu0, Th2) for movu0 in movu]

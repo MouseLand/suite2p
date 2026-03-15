@@ -115,25 +115,67 @@ def setup_logger(name):
     return logger
 
 
-class Suite2pWorker(QtCore.QThread):
+class Suite2pWorker(QtCore.QObject):
+    """Worker that runs suite2p in a separate process to avoid QThread stack limitations on macOS."""
     finished = QtCore.Signal(str)
-    
+
     def __init__(self, parent, db_file, settings_file):
         super(Suite2pWorker, self).__init__()
         self.db_file = db_file
         self.settings_file = settings_file
         self.parent = parent
-        # self.logHandler = ThreadLogger()
-        
-    def run(self):
-        db = np.load(self.db_file, allow_pickle=True).item()
-        settings = np.load(self.settings_file, allow_pickle=True).item()
-        
-        try:
-            logger_setup(get_save_folder(db))
-            run_s2p(db=db, settings=settings)
+        self.process = None
+
+    def start(self):
+        """Start suite2p in a separate process using QProcess."""
+        self.process = QtCore.QProcess()
+        self.process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        self.process.readyReadStandardOutput.connect(self._on_output)
+        self.process.finished.connect(self._on_finished)
+
+        # Create a Python script to run suite2p
+        script = f'''
+import numpy as np
+from suite2p.run_s2p import logger_setup, run_s2p, get_save_folder
+
+db = np.load("{self.db_file}", allow_pickle=True).item()
+settings = np.load("{self.settings_file}", allow_pickle=True).item()
+
+logger_setup(get_save_folder(db))
+run_s2p(db=db, settings=settings)
+'''
+        self.process.start(sys.executable, ["-c", script])
+
+    def _on_output(self):
+        """Handle output from the subprocess."""
+        if self.process:
+            data = self.process.readAllStandardOutput()
+            text = bytes(data).decode("utf-8", errors="replace")
+            print(text, end="")
+
+    def _on_finished(self, exit_code, exit_status):
+        """Handle process completion."""
+        if exit_code == 0:
             self.finished.emit("finished")
-        except Exception as e:
-            print("ERROR:", e)
-            traceback.print_exc()
+        else:
             self.finished.emit("error")
+
+    def terminate(self):
+        """Terminate the subprocess if running."""
+        if self.process and self.process.state() != QtCore.QProcess.NotRunning:
+            self.process.terminate()
+
+    def quit(self):
+        """Stop the subprocess (alias for terminate, for QThread compatibility)."""
+        self.terminate()
+
+    def wait(self):
+        """Wait for the process to finish (for compatibility)."""
+        if self.process:
+            self.process.waitForFinished(-1)
+
+    def isRunning(self):
+        """Check if the process is still running (for QThread compatibility)."""
+        if self.process:
+            return self.process.state() == QtCore.QProcess.Running
+        return False

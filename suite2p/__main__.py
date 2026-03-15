@@ -51,16 +51,7 @@ def main():
             logging.exception(f'fatal error in {"run_plane" if args.single_plane else "run_s2p"}:')
             raise
 
-    else:
-        # Check if the OS is macOS and the machine is Apple Silicon (ARM-based)
-        if platform.system() == "Darwin" and 'arm' in platform.processor().lower():
-            # Set the number of threads for OpenMP and OpenBLAS
-            os.environ["OMP_NUM_THREADS"] = "1"
-            os.environ["OPENBLAS_NUM_THREADS"] = "1"
-            print("Environment set to use 1 thread for OpenMP and OpenBLAS (Apple Silicon macOS).")
-        else:
-            print("Not macOS on Apple Silicon, proceeding without limiting threads.")
-            
+    else:   
         from suite2p import gui
         gui.run()#statfile="C:/DATA/exs2p/suite2p/plane0/stat.npy")
 

@@ -3,7 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 from qtpy import QtGui
 from qtpy.QtWidgets import QAction, QMenu
-from pkg_resources import iter_entry_points
+from importlib.metadata import entry_points
 
 from . import reggui, drawroi, merge, io, rungui, visualize, classgui
 from suite2p.io.nwb import save_nwb
@@ -166,7 +166,13 @@ def plugins(parent):
     main_menu = parent.menuBar()
     parent.plugins = {}
     plugin_menu = main_menu.addMenu("&Plugins")
-    for entry_pt in iter_entry_points(group="suite2p.plugin", name=None):
+    try:
+        # Works for python 3.12+
+        suite2p_plugins = entry_points(group="suite2p.plugin")
+    except TypeError:
+        # works for Python 3.9-3.11
+        suite2p_plugins = entry_points().get("suite2p.plugin", [])
+    for entry_pt in suite2p_plugins:
         plugin_obj = entry_pt.load()  # load the advertised class from entry_points
         parent.plugins[entry_pt.name] = plugin_obj(
             parent

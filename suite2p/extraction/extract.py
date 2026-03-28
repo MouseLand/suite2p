@@ -57,21 +57,22 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
     if device.type == 'mps':
         device = torch.device('cpu')
 
-    npix_neuropil = torch.Tensor([len(nm) for nm in neuropil_masks]).to(device)
-    # create coo tensor of neuropil and cell masks 
-    ccol_indices = [m for nm in neuropil_masks for m in nm]
-    row_indices = [k for k in range(len(neuropil_masks)) for m in neuropil_masks[k]]
-    inds = torch.Tensor([ccol_indices, row_indices]).to(device)
-    # convert to csc (tried creating csc directly but it was slow)
-    nmasks = torch.sparse_coo_tensor(inds, torch.ones(len(row_indices), device=device), 
-                                     size=(Ly*Lx, ncells))
-    nmasks = nmasks.to_sparse_csc()
+    if neuropil_masks is not None:
+        npix_neuropil = torch.Tensor([len(nm) for nm in neuropil_masks]).to(device)
+        # create coo tensor of neuropil masks
+        ccol_indices = [m for nm in neuropil_masks for m in nm]
+        row_indices = [k for k in range(len(neuropil_masks)) for m in neuropil_masks[k]]
+        inds = torch.Tensor([ccol_indices, row_indices]).to(device)
+        # convert to csc (tried creating csc directly but it was slow)
+        nmasks = torch.sparse_coo_tensor(inds, torch.ones(len(row_indices), device=device),
+                                         size=(Ly*Lx, ncells))
+        nmasks = nmasks.to_sparse_csc()
 
     ccol_indices = [m for cm in cell_masks for m in cm[0]]
     row_indices = [k for k in range(len(cell_masks)) for m in cell_masks[k][0]]
     cell_lam = torch.Tensor([l for cm in cell_masks for l in cm[1]]).to(device)
     inds = torch.Tensor([ccol_indices, row_indices]).to(device)
-    cmasks = torch.sparse_coo_tensor(inds, cell_lam, 
+    cmasks = torch.sparse_coo_tensor(inds, cell_lam,
                                      size=(Ly*Lx, ncells))
     cmasks = cmasks.to_sparse_csc()
 
@@ -87,11 +88,12 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
         tstart, tend = n * batch_size, min((n+1) * batch_size, n_frames)
         data = torch.from_numpy(f_in[tstart : tend]).to(device)
         data = data.reshape(-1, Ly*Lx).float()
-        
-        Fneu_batch = (data @ nmasks) / npix_neuropil
-        Fneu[:, tstart : tend] = Fneu_batch.T.cpu().numpy()
-        
-        F_batch = data @ cmasks 
+
+        if neuropil_masks is not None:
+            Fneu_batch = (data @ nmasks) / npix_neuropil
+            Fneu[:, tstart : tend] = Fneu_batch.T.cpu().numpy()
+
+        F_batch = data @ cmasks
         F[:, tstart : tend] = F_batch.T.cpu().numpy()
         
     return F, Fneu

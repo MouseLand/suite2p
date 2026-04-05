@@ -38,6 +38,7 @@ def do_merge(parent):
         merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
         parent.update_plot()
+        io.save_merge(parent)
         print(parent.merged)
         print("merged ROIs")
 
@@ -125,10 +126,11 @@ def merge_activity_masks(parent):
     if parent.hasred:
         F_chan2 = F_chan2.mean(axis=0)
         Fneu_chan2 = Fneu_chan2.mean(axis=0)
-    dF = F - parent.ops["neucoeff"] * Fneu
+    dF = F - parent.ops["extraction"]["neuropil_coefficient"] * Fneu
     # activity stats
     stat0["skew"] = stats.skew(dF)
     stat0["std"] = dF.std()
+    stat0["snr"] = 1 - 0.5 * np.diff(dF).var() / dF.var()
 
     spks = oasis(F=dF[np.newaxis, :], batch_size=parent.ops["batch_size"],
                  tau=parent.ops["tau"], fs=parent.ops["fs"])
@@ -151,9 +153,9 @@ def merge_activity_masks(parent):
     # add cell to structs
     parent.stat = np.concatenate((parent.stat, np.array([stat0])), axis=0)
     parent.stat = roi_stats(parent.stat, parent.Ly, parent.Lx,
-                            aspect=parent.ops.get("aspect", None),
-                            diameter=parent.ops.get("diameter", None),
-                            do_crop=parent.ops.get("soma_crop", 1))
+                            diameter=parent.ops["diameter"],
+                            do_soma_crop=parent.ops["detection"]["soma_crop"],
+                            max_overlap=None)
     parent.stat[-1]["lam"] = parent.stat[-1]["lam"] * merged_cells.size
     parent.Fcell = np.concatenate((parent.Fcell, F[np.newaxis, :]), axis=0)
     parent.Fneu = np.concatenate((parent.Fneu, Fneu[np.newaxis, :]), axis=0)
@@ -182,8 +184,10 @@ def merge_activity_masks(parent):
     # recompute binned F
     parent.mode_change(parent.activityMode)
 
+    # Remove the maskes for the previous cells that were merged.
     for n in merged_cells:
         parent.stat[n]["inmerge"] = len(parent.stat) - 1
+        parent.iscell[n] = False
         masks.remove_roi(parent, n, i0)
     masks.add_roi(parent, len(parent.stat) - 1, i0)
     masks.redraw_masks(parent, ypix, xpix)
@@ -262,6 +266,7 @@ class MergeWindow(QDialog):
         merge_activity_masks(parent)
         parent.merged.append(parent.imerge)
         parent.update_plot()
+        io.save_merge(parent)
 
         self.cc_row = np.matmul(parent.Fbin[parent.iscell],
                                 parent.Fbin[-1].T) / parent.Fbin.shape[-1]

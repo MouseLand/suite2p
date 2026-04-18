@@ -829,8 +829,8 @@ def assign_reg_io(f_reg, f_raw=None, f_reg_chan2=None,
         if f_align_in.shape[0] != f_alt_in.shape[0]:
             raise ValueError("number of frames in f_align_in and f_alt_in must match")
         
+    tif_root_align, tif_root_alt = None, None
     if save_path:
-        tif_root_align, tif_root_alt = None, None
         if reg_tif:
             tifroot = os.path.join(save_path, "reg_tif")
             os.makedirs(tifroot, exist_ok=True)

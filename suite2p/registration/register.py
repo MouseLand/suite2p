@@ -487,11 +487,11 @@ def normalize_reference_image(refImg):
     return refImg, rmin, rmax
 
 
-def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100, 
-                    bidiphase=0, norm_frames=True, smooth_sigma=1.15, spatial_taper=3.45, 
-                    block_size=(128,128), nonrigid=True, maxregshift=0.1, 
+def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
+                    bidiphase=0, norm_frames=True, smooth_sigma=1.15, spatial_taper=3.45,
+                    block_size=(128,128), nonrigid=True, maxregshift=0.1,
                     smooth_sigma_time=0, snr_thresh=1.2, maxregshiftNR=5,
-                    device=torch.device("cuda"), tif_root=None, apply_shifts=True,
+                    subpixel=10, device=torch.device("cuda"), tif_root=None, apply_shifts=True,
                     upsample_meanImg=False):
     """
     Register frames to a reference image using rigid and optionally nonrigid shifts.
@@ -578,11 +578,11 @@ def register_frames(f_align_in, refImg, f_align_out=None, batch_size=100,
     else:
         nZ = 1
 
-    refAndMasks = compute_filters_and_norm(refImg, norm_frames=norm_frames, 
+    refAndMasks = compute_filters_and_norm(refImg, norm_frames=norm_frames,
                                            spatial_smooth=smooth_sigma,
-                                           spatial_taper=spatial_taper, 
-                                           block_size=block_size if nonrigid else None, 
-                                           device=device)
+                                           spatial_taper=spatial_taper,
+                                           block_size=block_size if nonrigid else None,
+                                           subpixel=subpixel, device=device)
     blocks = refAndMasks[-3] if nZ==1 else refAndMasks[0][-3]
     rmin = refAndMasks[-2] if nZ==1 else [refAndMasks[z][-2] for z in range(nZ)]
     rmax = refAndMasks[-1] if nZ==1 else [refAndMasks[z][-1] for z in range(nZ)]
@@ -954,8 +954,9 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
                                 spatial_taper=settings["spatial_taper"], block_size=settings["block_size"],
                                 nonrigid=settings["nonrigid"],
                                 maxregshift=settings["maxregshift"], smooth_sigma_time=settings["smooth_sigma_time"],
-                                    snr_thresh=settings["snr_thresh"], maxregshiftNR=settings["maxregshiftNR"],
-                                    device=device, upsample_meanImg=settings.get("upsample_meanImg", False))
+                                snr_thresh=settings["snr_thresh"], maxregshiftNR=settings["maxregshiftNR"],
+                                subpixel=settings["subpixel"],
+                                device=device, upsample_meanImg=settings.get("upsample_meanImg", False))
         rmin, rmax, mean_img, offsets_all, blocks, mean_img_ups, counts_ups, meanImg_ups = outputs
         yoff, xoff, corrXY, yoff1, xoff1, corrXY1, zest, cmax_all = offsets_all
 

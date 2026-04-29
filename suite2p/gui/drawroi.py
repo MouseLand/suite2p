@@ -574,13 +574,13 @@ class sROI():
         parent.win.show()
         parent.show()
 
-    def rotate_ROI(self, parent, ellipse, xrange, yrange, posx, posy):
+    def rotate_ROI(self, parent, ellipse, xrange, yrange, center_x, center_y):
         #Rotates ROI depending on Rotatehandle degree
         ellipse = rotate(ellipse, angle=math.floor(self.ROI.angle()), order=0)
         ellipse = np.flip(ellipse, axis=0)
-        xrange = (np.arange(-1 * int(ellipse.shape[1] - 1), 1) + int(posx)).astype(np.int32)
-        yrange = (np.arange(-1 * int(ellipse.shape[0] - 1), 1) + int(posy)).astype(np.int32)
-        yrange += int(np.floor(ellipse.shape[0] / 2)) + 1
+        w, h = ellipse.shape[1], ellipse.shape[0]
+        xrange = (np.arange(-(w // 2), w - w // 2) + int(center_x)).astype(np.int32)
+        yrange = (np.arange(-(h // 2), h - h // 2) + int(center_y)).astype(np.int32)
         return ellipse, xrange, yrange
 
     def position(self, parent):
@@ -596,13 +596,16 @@ class sROI():
         yrange = (np.arange(-1 * int(sizey), 1) + int(posy)).astype(np.int32)
         yrange += int(np.floor(sizey / 2)) + 1
         # what is ellipse circling?
-        br = self.ROI.boundingRect()
         ellipse = np.zeros((yrange.size, xrange.size), "bool")
         x, y = np.meshgrid(np.arange(0, xrange.size, 1), np.arange(0, yrange.size, 1))
         ellipse = ((y - br.center().y())**2 / (br.height() / 2)**2 +
                    (x - br.center().x())**2 / (br.width() / 2)**2) <= 1
+        center_scene = self.ROI.mapToScene(br.center())
+        center_view = parent.p0.mapSceneToView(center_scene)
+        center_x = center_view.x()
+        center_y = center_view.y()
         if self.ROI.angle() not in (0, 180, -180):
-            ellipse, xrange, yrange = self.rotate_ROI(parent, ellipse, xrange, yrange, posx, posy)
+            ellipse, xrange, yrange = self.rotate_ROI(parent, ellipse, xrange, yrange, center_x, center_y)
         #ensures that ROI is not placed outside of movie coordinates
         ellipse = ellipse[:, np.logical_and(xrange >= 0, xrange < parent.Lx)]
         xrange = xrange[np.logical_and(xrange >= 0, xrange < parent.Lx)]

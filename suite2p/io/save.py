@@ -60,11 +60,15 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
     stat = np.array(stat, dtype=object)
 
 
-    # Check for None values in ops_matlab and replace with empty arrays
-    for k, v in ops_matlab.items():
-        if v is None:
-            logger.warning(f"ops_matlab['{k}'] is None, replacing with empty array")
-            ops_matlab[k] = np.array([])
+    # Check for None values in ops_matlab and replace with empty arrays in recursive manner
+    def replace_none(d):
+        for k, v in d.items():
+            if v is None:
+                logger.warning(f"'{k}' is None, replacing with empty array")
+                d[k] = np.array([])
+            elif isinstance(v, dict):
+                replace_none(v)
+    replace_none(ops_matlab)
 
     # Handle None variables by replacing with empty arrays
     if redcell is None:

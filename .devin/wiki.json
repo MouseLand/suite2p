@@ -1,0 +1,303 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce the suite2p repository, summarizing its purpose as a calcium imaging processing pipeline, its main capabilities, supported platforms, and how to navigate the documentation",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Installation and Setup",
+      "purpose": "Cover all installation methods including pip, conda, and editable dev install. Document optional dependency groups (gui, io, nwb, test, all), environment setup, and platform-specific notes",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Core Concepts",
+      "purpose": "Define the key vocabulary and mental model needed to understand suite2p: planes, channels, ROIs, neuropil, binary files, db/settings dicts, and the sequential pipeline model",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Pipeline Architecture",
+      "purpose": "Describe the overall architecture: run_s2p as orchestrator, the sequential stages it calls (registration, detection, extraction, classification, deconvolution), and the pipeline function in pipeline_s2p.py",
+      "parent": "Core Concepts",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Configuration System",
+      "purpose": "Document the db/settings dictionary system, default_db and default_settings functions, every major parameter category",
+      "parent": "Core Concepts",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Structures and File Formats",
+      "purpose": "Describe every key output file and data structure: F.npy, Fneu.npy, spks.npy, stat.npy, iscell.npy, detect_outputs.npy, reg_outputs.npy, the stat ROI dictionary schema, and the classifier.npy format",
+      "parent": "Core Concepts",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Binary File System",
+      "purpose": "Explain the BinaryFile and BinaryRWFile classes, how raw imaging data is stored in the .bin format, memory-mapped access patterns, and why fast_disk matters for performance",
+      "parent": "Core Concepts",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Processing Pipeline",
+      "purpose": "Top-level section introduction summarizing the end-to-end flow from raw files to output .npy files, the role of run_s2p and run_plane, and links to each stage sub-page",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Input and Conversion",
+      "purpose": "Document how raw data is ingested: the files_to_binary dispatch table, each supported format (TIFF, HDF5, NWB, ND2, SBX, Bruker, DCIMG), multi-plane de-interleaving, and the bad_frames.npy mechanism",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Registration (Motion Correction)",
+      "purpose": "Overview of the registration subsystem: its role in correcting motion artifacts, the registration_wrapper entry point, key parameters, and what reg_outputs contains",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Rigid Registration",
+      "purpose": "Detail the rigid registration algorithm: phase correlation via rigid.phasecorr, reference image computation, batch frame processing, subpixel upsampling, and smooth_sigma filtering",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Non-Rigid Registration",
+      "purpose": "Detail the non-rigid registration algorithm: block decomposition, nonrigid.phasecorr, block_size and maxregshiftNR parameters, and how block shifts are computed and applied",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Multi-Plane Registration",
+      "purpose": "Cover Z-stack registration via zalign, bidirectional phase correction, and registration quality metrics computed via PCA using get_pc_metrics",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "ROI Detection",
+      "purpose": "Overview of the detection stage: detection_wrapper, movie binning, the sparse_mode flag that selects the detection algorithm, and how detection settings control the output stat array",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Detection Algorithms",
+      "purpose": "Describe all three detection algorithms in detail: sparsery (doubly-sparse decomposition), sourcery (SVD-based iterative detection), and Cellpose anatomical detection via select_rois",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "ROI Statistics and Filtering",
+      "purpose": "Document the roi_stats function: how compactness, aspect ratio, overlap fraction, and npix_norm are computed, the max_overlap filter, soma cropping, and second-channel red cell detection",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Signal Extraction and Deconvolution",
+      "purpose": "Overview of fluorescence extraction and deconvolution: how extraction_wrapper takes stat and registered frames and produces F, Fneu, F_chan2, Fneu_chan2, and spks",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trace Extraction",
+      "purpose": "Detail how cell and neuropil masks are created, how extract_traces uses sparse torch operations for efficient trace computation, and the inner_neuropil_radius and lam_percentile parameters",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Spike Deconvolution",
+      "purpose": "Document the OASIS deconvolution algorithm, the preprocess function and its three baseline methods (maximin, constant, prctile), the tau and fs parameters, and the neucoeff neuropil coefficient",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Cell Classification",
+      "purpose": "Explain the ROI classification system: the Classifier class, how it uses skew/npix_norm/compact features, the built-in classifier.npy, user-trainable classifiers, and the iscell.npy output format",
+      "parent": "Processing Pipeline",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "User Interfaces",
+      "purpose": "Introduce the three interaction modes for suite2p (CLI, Python API, GUI), when to use each, and how they all converge on the same run_s2p pipeline function",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Command-Line Interface",
+      "purpose": "Document the suite2p CLI entry point, all command-line arguments (--settings, --db, --single_plane, --version, --verbose), example invocations, and the __main__.py dispatch logic",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Python API",
+      "purpose": "Document run_s2p and run_plane function signatures, the db and settings parameter dictionaries, return values, how to load results programmatically, and Jupyter notebook usage patterns",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Graphical User Interface",
+      "purpose": "Overview of the suite2p GUI: how to launch it, its two main windows (RunWindow and MainWindow), the overall layout, and navigation between sections",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Run Configuration Window",
+      "purpose": "Document RunWindow: all configuration fields, batch mode workflow, settings save/load/revert, and the Suite2pWorker background thread",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Main Visualization GUI",
+      "purpose": "Document MainWindow: loading stat.npy and reg_outputs.npy and detect_outputs.npy, ROI display modes, color schemes, trace plotting, keyboard shortcuts, and drag-and-drop file loading",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Registration Viewer",
+      "purpose": "Document the BinaryPlayer window for inspecting raw and registered movie frames and the PCViewer for examining registration quality metrics from within the GUI",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "ROI Manipulation and Merging",
+      "purpose": "Document manual ROI drawing via ROIDraw, the ROI merge workflow including correlation-based suggestions and save_merge, and the VisWindow activity visualization with RangeSlider controls and Rastermap integration",
+      "parent": "User Interfaces",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Advanced Topics",
+      "purpose": "Cover specialized use cases and advanced configuration options beyond the standard single-plane workflow",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Multi-Plane and Multi-Channel Processing",
+      "purpose": "Explain how suite2p handles multi-plane Z-stacks and dual-channel recordings including plane de-interleaving, per-plane run_plane calls, functional_chan selection, combined view output, and mesoscan acquisition modes",
+      "parent": "Advanced Topics",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}

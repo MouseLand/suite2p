@@ -461,4 +461,4 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1,
                              mode="bilinear", padding_mode="border", align_corners=True)
         
     
-    return fr_shift.squeeze().short()#.cpu().numpy()
+    return fr_shift.squeeze().to(dtype=data.dtype)

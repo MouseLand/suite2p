@@ -205,6 +205,12 @@ def combined(save_folder, save=True):
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
+    top_db_path = os.path.join(save_folder, "db.npy")
+    if os.path.exists(top_db_path):
+        top_db = np.load(top_db_path, allow_pickle=True).item()
+        ignore_flyback = set(top_db.get("ignore_flyback") or [])
+        if ignore_flyback:
+            plane_folders = [f for i, f in enumerate(plane_folders) if i not in ignore_flyback]
     dbs = [
         np.load(os.path.join(f, "db.npy"), allow_pickle=True).item()
         for f in plane_folders

@@ -565,6 +565,8 @@ def sparsery(mov, sdmov, highpass_neuropil,
     scale, estimate_mode = find_best_scale(I=I, spatial_scale=spatial_scale)
 
     spatscale_pix = 3 * 2**scale
+    if isinstance(spatscale_pix, np.ndarray):
+        spatscale_pix = spatscale_pix.item()
     mask_window = int(((spatscale_pix * 1.5) // 2) * 2)
     Th2 = threshold_scaling * 5 * max(
         1, scale)  # threshold for accepted peaks (scale it by spatial scale)

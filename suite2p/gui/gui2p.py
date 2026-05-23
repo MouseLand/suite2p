@@ -205,6 +205,17 @@ class MainWindow(QMainWindow):
         self.checkBoxN.setEnabled(False)
         self.l0.addWidget(self.checkBoxN, b0, 18, 1, 2)
 
+        self.checkBoxSync = QCheckBox("sync views")
+        self.checkBoxSync.setStyleSheet("color: white;")
+        self.checkBoxSync.setToolTip(
+            "Synchronize panning and zooming between cell and not-cell views"
+        )
+        self.syncviews = False
+        self._syncing_roi_views = False
+        self._roi_view_sync_connected = False
+        self.checkBoxSync.stateChanged.connect(self.sync_views)
+        self.l0.addWidget(self.checkBoxSync, b0, 21, 1, 3)
+
         return b0
 
     def roi_text(self, state):
@@ -237,6 +248,57 @@ class MainWindow(QMainWindow):
             else:
                 self.zoomtocell = False
             self.update_plot()
+
+    def sync_views(self, state):
+        self.syncviews = QtCore.Qt.CheckState(state) == QtCore.Qt.Checked
+        if self.loaded:
+            self.update_roi_view_sync()
+
+    def _mirror_roi_view_range(self, src, dst, force=False):
+        if self._syncing_roi_views:
+            return
+        if not force and not self.syncviews:
+            return
+
+        self._syncing_roi_views = True
+        try:
+            x_range, y_range = src.viewRange()
+            dst.setRange(xRange=x_range, yRange=y_range, padding=0)
+        finally:
+            self._syncing_roi_views = False
+
+    def update_roi_view_sync(self, source_view=None):
+        if not hasattr(self, "p1") or not hasattr(self, "p2"):
+            return
+        if source_view is None:
+            source_view = self.p1
+
+        self.p1.linkView(self.p1.XAxis, view=None)
+        self.p1.linkView(self.p1.YAxis, view=None)
+        self.p2.linkView(self.p2.XAxis, view=None)
+        self.p2.linkView(self.p2.YAxis, view=None)
+
+        if not self._roi_view_sync_connected:
+            self.p1.sigRangeChanged.connect(
+                lambda *_: self._mirror_roi_view_range(self.p1, self.p2)
+            )
+            self.p2.sigRangeChanged.connect(
+                lambda *_: self._mirror_roi_view_range(self.p2, self.p1)
+            )
+            self._roi_view_sync_connected = True
+
+        if not self.syncviews:
+            self.win.show()
+            self.show()
+            return
+
+        if source_view is self.p2:
+            self._mirror_roi_view_range(self.p2, self.p1, force=True)
+        else:
+            self._mirror_roi_view_range(self.p1, self.p2, force=True)
+
+        self.win.show()
+        self.show()
 
     def make_graphics(self, b0):
         ##### -------- MAIN PLOTTING AREA ---------- ####################

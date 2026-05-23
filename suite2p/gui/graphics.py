@@ -39,9 +39,6 @@ class ViewBox(pg.ViewBox):
             self.menu = ViewBoxMenu(self)
         self.name = name
         self.parent = parent
-        if self.name == "plot2":
-            self.setXLink(parent.p1)
-            self.setYLink(parent.p1)
 
         # set state
         self.state["enableMenu"] = enableMenu
@@ -102,8 +99,7 @@ class ViewBox(pg.ViewBox):
     def zoom_plot(self):
         self.setXRange(0, self.parent.ops["Lx"])
         self.setYRange(0, self.parent.ops["Ly"])
-        self.parent.p2.setXLink(self.parent.p1)
-        self.parent.p2.setYLink(self.parent.p1)
+        self.parent.update_roi_view_sync(source_view=self)
         self.parent.show()
 
 

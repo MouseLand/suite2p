@@ -326,13 +326,25 @@ def draw_masks(parent):  #settings, stat, settings_plot, iscell, ichosen):
 
     if view == 0:
         for n in parent.imerge:
+            wplot = int(1 - parent.iscell[n])
             ypix = parent.stat[n]["ypix"].flatten()
             xpix = parent.stat[n]["xpix"].flatten()
             v = (parent.rois["iROI"][wplot][:, ypix, xpix] > -1).sum(axis=0) - 1
             v = 1 - v / 3
             M[wplot] = make_chosen_ROI(M[wplot], ypix, xpix, v)
+            opposite_plot = 1 - wplot
+            ycirc = parent.stat[n]["ycirc"]
+            xcirc = parent.stat[n]["xcirc"]
+            M[opposite_plot] = make_chosen_circle(
+                M[opposite_plot],
+                ycirc,
+                xcirc,
+                np.array([255, 0, 0], dtype=np.uint8),
+                1,
+            )
     else:
         for n in parent.imerge:
+            wplot = int(1 - parent.iscell[n])
             ycirc = parent.stat[n]["ycirc"]
             xcirc = parent.stat[n]["xcirc"]
             ypix = parent.stat[n]["ypix"].flatten()
@@ -341,6 +353,14 @@ def draw_masks(parent):  #settings, stat, settings_plot, iscell, ichosen):
             col = parent.colors["cols"][color, n]
             sat = 1
             M[wplot] = make_chosen_circle(M[wplot], ycirc, xcirc, col, sat)
+            opposite_plot = 1 - wplot
+            M[opposite_plot] = make_chosen_circle(
+                M[opposite_plot],
+                ycirc,
+                xcirc,
+                np.array([255, 0, 0], dtype=np.uint8),
+                1,
+            )
 
     return M[0], M[1]
 

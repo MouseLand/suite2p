@@ -65,10 +65,12 @@ class ViewBox(pg.ViewBox):
                     return
                 else:
                     if ev.button() == QtCore.Qt.RightButton:
-                        if ichosen not in self.parent.imerge:
-                            self.parent.imerge = [ichosen]
-                            self.parent.ichosen = ichosen
+                        self.parent.imerge = [ichosen]
+                        self.parent.ichosen = ichosen
                         masks.flip_plot(self.parent)
+                        self.parent.imerge = []
+                        self.parent.ichosen = -1
+                        self.parent.update_plot()
                     else:
                         merged = False
                         if ev.modifiers() == QtCore.Qt.ShiftModifier or ev.modifiers(

@@ -501,6 +501,8 @@ def save_merge(parent):
         (parent.iscell[:, np.newaxis], parent.probcell[:, np.newaxis]), axis=1)
     np.save(os.path.join(parent.basename, "iscell.npy"), iscell)
 
+    parent.lcell0.setText("%d" % (parent.iscell.sum()))
+    parent.lcell1.setText("%d" % (parent.iscell.size - parent.iscell.sum()))
     parent.notmerged = np.ones(parent.iscell.size, "bool")
 
 

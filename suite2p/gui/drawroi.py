@@ -18,6 +18,10 @@ from ..extraction import masks
 from ..detection.stats import roi_stats
 from ..extraction import preprocess
 from ..extraction.dcnv import oasis
+from ..extraction.extract import extract_traces
+from ..io.binary import BinaryFile
+from ..parameters import default_settings
+from ..run_s2p import _assign_torch_device
 
 
 def masks_and_traces(settings, stat_manual, stat_orig):
@@ -27,6 +31,8 @@ def masks_and_traces(settings, stat_manual, stat_orig):
         returns: F (ROIs x time), Fneu (ROIs x time), F_chan2, Fneu_chan2, settings, stat
         F_chan2 and Fneu_chan2 will be empty if no second channel
     """
+    # Merge with defaults to ensure all required keys are present
+    settings = {**default_settings(), **settings}
 
     t0 = time.time()
     
@@ -35,11 +41,12 @@ def masks_and_traces(settings, stat_manual, stat_orig):
     for n in range(len(stat_orig)):
         stat_all.append(stat_orig[n])
 
-    stat_all = roi_stats(stat_all, settings["Ly"], settings["Lx"], aspect=settings.get("aspect", None),
+    stat_all = np.array(stat_all)
+    stat_all = roi_stats(stat_all, settings["Ly"], settings["Lx"],
                          diameter=settings["diameter"])
     cell_masks = [
         masks.create_cell_mask(stat, Ly=settings["Ly"], Lx=settings["Lx"],
-                               allow_overlap=settings["allow_overlap"]) for stat in stat_all
+                               allow_overlap=settings["extraction"]["allow_overlap"]) for stat in stat_all
     ]
     cell_pix = masks.create_cell_pix(stat_all, Ly=settings["Ly"], Lx=settings["Lx"])
     manual_roi_stats = stat_all[:len(stat_manual)]
@@ -48,13 +55,26 @@ def masks_and_traces(settings, stat_manual, stat_orig):
         ypixs=[stat["ypix"] for stat in manual_roi_stats],
         xpixs=[stat["xpix"] for stat in manual_roi_stats],
         cell_pix=cell_pix,
-        inner_neuropil_radius=settings["inner_neuropil_radius"],
-        min_neuropil_pixels=settings["min_neuropil_pixels"],
+        inner_neuropil_radius=settings["extraction"]["inner_neuropil_radius"],
+        min_neuropil_pixels=settings["extraction"]["min_neuropil_pixels"],
     )
     print("Masks made in %0.2f sec." % (time.time() - t0))
 
-    F, Fneu, F_chan2, Fneu_chan2 = extract_traces_from_masks(settings, manual_cell_masks,
-                                                             manual_neuropil_masks)
+    # Extract traces from binary file
+    Ly, Lx = settings["Ly"], settings["Lx"]
+    batch_size = settings["extraction"]["batch_size"]
+    device = _assign_torch_device(settings["torch_device"])
+    f_reg = BinaryFile(Ly, Lx, settings["reg_file"])
+    F, Fneu = extract_traces(f_reg, manual_cell_masks, manual_neuropil_masks, batch_size=batch_size, device=device)
+    f_reg.close()
+
+    # Handle chan2 if present
+    if "reg_file_chan2" in settings and settings["reg_file_chan2"]:
+        f_reg_chan2 = BinaryFile(Ly, Lx, settings["reg_file_chan2"])
+        F_chan2, Fneu_chan2 = extract_traces(f_reg_chan2, manual_cell_masks, manual_neuropil_masks, batch_size=batch_size, device=device)
+        f_reg_chan2.close()
+    else:
+        F_chan2, Fneu_chan2 = None, None
 
     # compute activity statistics for classifier
     npix = np.array([stat_orig[n]["npix"] for n in range(len(stat_orig))
@@ -69,7 +89,7 @@ def masks_and_traces(settings, stat_manual, stat_orig):
             manual_roi_stats[n]["iplane"] = stat_orig[0]["iplane"]
 
     # subtract neuropil and compute skew, std from F
-    dF = F - settings["neucoeff"] * Fneu
+    dF = F - settings["extraction"]["neuropil_coefficient"] * Fneu
     sk = stats.skew(dF, axis=1)
     sd = np.std(dF, axis=1)
 
@@ -81,10 +101,10 @@ def masks_and_traces(settings, stat_manual, stat_orig):
             np.mean(manual_roi_stats[n]["xpix"])
         ]
 
-    dF = preprocess(F=dF, baseline=settings["baseline"], win_baseline=settings["win_baseline"],
-                    sig_baseline=settings["sig_baseline"], fs=settings["fs"],
-                    prctile_baseline=settings["prctile_baseline"])
-    spks = oasis(F=dF, batch_size=settings["batch_size"], tau=settings["tau"], fs=settings["fs"])
+    dF = preprocess(F=dF, baseline=settings["dcnv_preprocess"]["baseline"], win_baseline=settings["dcnv_preprocess"]["win_baseline"],
+                    sig_baseline=settings["dcnv_preprocess"]["sig_baseline"], fs=settings["fs"],
+                    prctile_baseline=settings["dcnv_preprocess"]["prctile_baseline"], device=device)
+    spks = oasis(F=dF, batch_size=settings["extraction"]["batch_size"], tau=settings["tau"], fs=settings["fs"])
 
     return F, Fneu, F_chan2, Fneu_chan2, spks, settings, manual_roi_stats
 
@@ -187,7 +207,7 @@ class ROIDraw(QMainWindow):
         self.saveGUI = False
         self.closeGUI = QPushButton("Save and Quit")
         self.closeGUI.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.closeGUI.clicked.connect(self.close_GUI)
+        self.closeGUI.clicked.connect(lambda: self.close_GUI())
         self.closeGUI.setEnabled(False)
         self.closeGUI.setFixedWidth(100)
         self.closeGUI.setStyleSheet(self.styleUnpressed)
@@ -247,9 +267,7 @@ class ROIDraw(QMainWindow):
 
         # Append new stat file with old and save
         print("Saving new stat")
-        stat_all = self.new_stat.copy()
-        for n in range(len(self.parent.stat)):
-            stat_all.append(self.parent.stat[n])
+        stat_all = np.concatenate((self.new_stat, self.parent.stat))
         np.save(os.path.join(self.parent.basename, "stat.npy"), stat_all)
         iscell_prob = np.concatenate(
             (self.parent.iscell[:, np.newaxis], self.parent.probcell[:, np.newaxis]),
@@ -297,30 +315,26 @@ class ROIDraw(QMainWindow):
             if i == 0:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.
-                     settings["xrange"][1]] = self.parent.ops["meanImg"][
+                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["meanImg"][
                          self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
                          self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
 
             elif i == 1:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.
-                     settings["xrange"][1]] = self.parent.ops["meanImgE"][
+                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["meanImgE"][
                          self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
                          self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
             elif i == 2:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.
-                     settings["xrange"][1]] = self.parent.ops["Vcorr"]
+                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["Vcorr"]
 
             else:
                 mimg = np.zeros((self.Ly, self.Lx), np.float32)
                 if "max_proj" in self.parent.ops:
                     mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                         self.parent.ops["xrange"][0]:self.parent.
-                         settings["xrange"][1]] = self.parent.ops["max_proj"]
+                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["max_proj"]
 
             mimg1 = np.percentile(mimg, 1)
             mimg99 = np.percentile(mimg, 99)

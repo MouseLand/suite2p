@@ -8,7 +8,7 @@ import math
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtGui, QtCore
-from qtpy.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget
+from qtpy.QtWidgets import QPushButton, QLabel, QLineEdit, QMainWindow, QGridLayout, QButtonGroup, QMessageBox, QWidget, QVBoxLayout
 from matplotlib.colors import hsv_to_rgb
 from scipy import stats
 from scipy.ndimage import rotate
@@ -121,8 +121,10 @@ class ViewButton(QPushButton):
         self.show()
 
     def press(self, parent, bid):
+        for b in range(len(parent.views)):
+            parent.viewbtns.button(b).setStyleSheet(parent.styleUnpressed)
+        parent.viewbtns.button(bid).setStyleSheet(parent.stylePressed)
         parent.img0.setImage(parent.masked_images[:, :, :, bid])
-
         parent.win.show()
         parent.show()
 
@@ -141,7 +143,7 @@ class ROIDraw(QMainWindow):
         # layout = QtGui.QFormLayout()
         self.cwidget.setLayout(self.l0)
         self.stylePressed = ("QPushButton {Text-align: left; "
-                             "background-color: rgb(100,50,100); "
+                             "background-color: rgb(100,100,100); "
                              "color:white;}")
         self.styleUnpressed = ("QPushButton {Text-align: left; "
                                "background-color: rgb(50,50,50); "
@@ -218,17 +220,28 @@ class ROIDraw(QMainWindow):
             "W: mean img", "E: mean img (enhanced)", "R: correlation map",
             "T: max projection"
         ]
+        self.has_chan2 = "meanImg_chan2" in parent.ops
+        if self.has_chan2:
+            self.views.append("Y: mean img chan2")
         b = 0
         self.viewbtns = QButtonGroup(self)
+        view_container = QWidget()
+        view_vbox = QVBoxLayout()
+        view_vbox.setContentsMargins(0, 0, 0, 0)
+        view_vbox.setSpacing(4)
+        view_container.setLayout(view_vbox)
         for names in self.views:
             btn = ViewButton(b, "&" + names, self)
             self.viewbtns.addButton(btn, b)
-            self.l0.addWidget(btn, b, 4, 1, 1)
+            view_vbox.addWidget(btn)
             btn.setEnabled(True)
             b += 1
-        b = 0
-        self.viewbtns.button(b).setChecked(True)
-        self.viewbtns.button(b).setStyleSheet(self.stylePressed)
+        view_vbox.addStretch()
+        self.l0.addWidget(view_container, 0, 4, 3, 1)
+        for b in range(len(self.views)):
+            self.viewbtns.button(b).setStyleSheet(self.styleUnpressed)
+        self.viewbtns.button(0).setChecked(True)
+        self.viewbtns.button(0).setStyleSheet(self.stylePressed)
 
         self.l0.addWidget(QLabel("neuropil"), 13, 13, 1, 1)
 
@@ -309,37 +322,38 @@ class ROIDraw(QMainWindow):
         self.close()
 
     def normalize_img_add_masks(self):
-        masked_image = np.zeros(
-            ((self.Ly, self.Lx, 3, 4)))  # 3 for RGB and 4 for buttons
-        for i in np.arange(4):  # 4 because 4 buttons
+        nviews = len(self.views)
+        masked_image = np.zeros((self.Ly, self.Lx, 3, nviews))
+        yr = slice(self.parent.ops["yrange"][0], self.parent.ops["yrange"][1])
+        xr = slice(self.parent.ops["xrange"][0], self.parent.ops["xrange"][1])
+        for i in np.arange(nviews):
             if i == 0:
-                mimg = np.zeros((self.Ly, self.Lx), np.float32)
-                mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["meanImg"][
-                         self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
-
+                src = self.parent.ops["meanImg"]
             elif i == 1:
-                mimg = np.zeros((self.Ly, self.Lx), np.float32)
-                mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["meanImgE"][
-                         self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]]
+                src = self.parent.ops["meanImgE"]
             elif i == 2:
-                mimg = np.zeros((self.Ly, self.Lx), np.float32)
-                mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                     self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["Vcorr"]
-
+                src = self.parent.ops["Vcorr"]
+            elif i == 3:
+                src = self.parent.ops.get("max_proj", None)
+            elif i == 4 and self.has_chan2:
+                src = self.parent.ops["meanImg_chan2"]
             else:
-                mimg = np.zeros((self.Ly, self.Lx), np.float32)
-                if "max_proj" in self.parent.ops:
-                    mimg[self.parent.ops["yrange"][0]:self.parent.ops["yrange"][1],
-                         self.parent.ops["xrange"][0]:self.parent.ops["xrange"][1]] = self.parent.ops["max_proj"]
+                src = None
 
-            mimg1 = np.percentile(mimg, 1)
-            mimg99 = np.percentile(mimg, 99)
-            mimg = (mimg - mimg1) / (mimg99 - mimg1)
-            mimg = np.maximum(0, np.minimum(1, mimg))
+            mimg = np.zeros((self.Ly, self.Lx), np.float32)
+            if src is not None:
+                mimg1 = np.percentile(src, 1)
+                mimg99 = np.percentile(src, 99)
+                if mimg99 > mimg1:
+                    src = (src - mimg1) / (mimg99 - mimg1)
+                else:
+                    src = np.zeros_like(src)
+                src = np.clip(src, 0, 1).astype(np.float32)
+                if src.shape[0] == self.Ly and src.shape[1] == self.Lx:
+                    mimg = src
+                else:
+                    mimg[yr, xr] = src
+
             masked_image[:, :, :, i] = self.create_masks_of_cells(mimg)
 
         return masked_image
@@ -387,6 +401,9 @@ class ROIDraw(QMainWindow):
             elif event.key() == QtCore.Qt.Key_T:
                 self.viewbtns.button(3).setChecked(True)
                 self.viewbtns.button(3).press(self, 3)
+            elif event.key() == QtCore.Qt.Key_Y and self.has_chan2:
+                self.viewbtns.button(4).setChecked(True)
+                self.viewbtns.button(4).press(self, 4)
 
     def add_ROI(self, pos=None):
         self.iROI = len(self.ROIs)
@@ -557,13 +574,13 @@ class sROI():
         parent.win.show()
         parent.show()
 
-    def rotate_ROI(self, parent, ellipse, xrange, yrange, posx, posy):
+    def rotate_ROI(self, parent, ellipse, xrange, yrange, center_x, center_y):
         #Rotates ROI depending on Rotatehandle degree
         ellipse = rotate(ellipse, angle=math.floor(self.ROI.angle()), order=0)
         ellipse = np.flip(ellipse, axis=0)
-        xrange = (np.arange(-1 * int(ellipse.shape[1] - 1), 1) + int(posx)).astype(np.int32)
-        yrange = (np.arange(-1 * int(ellipse.shape[0] - 1), 1) + int(posy)).astype(np.int32)
-        yrange += int(np.floor(ellipse.shape[0] / 2)) + 1
+        w, h = ellipse.shape[1], ellipse.shape[0]
+        xrange = (np.arange(-(w // 2), w - w // 2) + int(center_x)).astype(np.int32)
+        yrange = (np.arange(-(h // 2), h - h // 2) + int(center_y)).astype(np.int32)
         return ellipse, xrange, yrange
 
     def position(self, parent):
@@ -579,13 +596,16 @@ class sROI():
         yrange = (np.arange(-1 * int(sizey), 1) + int(posy)).astype(np.int32)
         yrange += int(np.floor(sizey / 2)) + 1
         # what is ellipse circling?
-        br = self.ROI.boundingRect()
         ellipse = np.zeros((yrange.size, xrange.size), "bool")
         x, y = np.meshgrid(np.arange(0, xrange.size, 1), np.arange(0, yrange.size, 1))
         ellipse = ((y - br.center().y())**2 / (br.height() / 2)**2 +
                    (x - br.center().x())**2 / (br.width() / 2)**2) <= 1
+        center_scene = self.ROI.mapToScene(br.center())
+        center_view = parent.p0.mapSceneToView(center_scene)
+        center_x = center_view.x()
+        center_y = center_view.y()
         if self.ROI.angle() not in (0, 180, -180):
-            ellipse, xrange, yrange = self.rotate_ROI(parent, ellipse, xrange, yrange, posx, posy)
+            ellipse, xrange, yrange = self.rotate_ROI(parent, ellipse, xrange, yrange, center_x, center_y)
         #ensures that ROI is not placed outside of movie coordinates
         ellipse = ellipse[:, np.logical_and(xrange >= 0, xrange < parent.Lx)]
         xrange = xrange[np.logical_and(xrange >= 0, xrange < parent.Lx)]

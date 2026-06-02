@@ -378,6 +378,9 @@ def run_s2p(db={}, settings=default_settings(), server={}):
         plane_folders = natsorted([
             f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
         ])
+        ignore_flyback = set(db.get("ignore_flyback") or [])
+        if ignore_flyback:
+            plane_folders = [f for i, f in enumerate(plane_folders) if i not in ignore_flyback]
     else:
         plane_folders = []
 

@@ -544,7 +544,7 @@ SETTINGS = {
             "min": 1,
             "max": np.inf,
             "default": None,
-            "description": "Size of bins for cell detection (default is tau * fs).",
+            "description": "Size of bins for cell detection. If None, computed as max(1, nframes // nbins, round(tau * fs)), where nframes is the total number of frames in the registered movie.",
         },
         "highpass_time": {
             "gui_name": "Highpass time",

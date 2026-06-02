@@ -82,7 +82,7 @@ def h5py_to_binary(dbs, settings, reg_file, reg_file_chan2):
                     else:
                         irange = np.arange(
                             ik / ncp, min(ik / ncp + nbatch / ncp, nframes_all / ncp),
-                            1)
+                            1).astype(int)
                         if irange.size == 0:
                             break
                         im = f[key][irange, ...]

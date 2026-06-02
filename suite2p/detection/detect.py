@@ -166,8 +166,7 @@ def detection_wrapper(f_reg, diameter=[12., 12.], tau=1., fs=30, meanImg_chan2=N
     
     if mov is None:
         nbins = settings["nbins"]
-        bin_size = int(max(1, n_frames // nbins, np.round(tau * fs)))
-        #bin_size = int(max(1, np.round(tau * fs)))
+        bin_size = settings.get("bin_size") or int(max(1, n_frames // nbins, np.round(tau * fs)))
         logger.info("Binning movie in chunks of %2.2d frames" % bin_size)
         mov = bin_movie(f_reg, bin_size, yrange=yrange, xrange=xrange,
                         badframes=badframes, nbins=nbins)

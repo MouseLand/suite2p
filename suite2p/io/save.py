@@ -60,11 +60,15 @@ def save_mat(ops, stat, F, Fneu, spks, iscell, redcell,
     stat = np.array(stat, dtype=object)
 
 
-    # Check for None values in ops_matlab and replace with empty arrays
-    for k, v in ops_matlab.items():
-        if v is None:
-            logger.warning(f"ops_matlab['{k}'] is None, replacing with empty array")
-            ops_matlab[k] = np.array([])
+    # Check for None values in ops_matlab and replace with empty arrays in recursive manner
+    def replace_none(d):
+        for k, v in d.items():
+            if v is None:
+                logger.warning(f"'{k}' is None, replacing with empty array")
+                d[k] = np.array([])
+            elif isinstance(v, dict):
+                replace_none(v)
+    replace_none(ops_matlab)
 
     # Handle None variables by replacing with empty arrays
     if redcell is None:
@@ -201,6 +205,12 @@ def combined(save_folder, save=True):
     plane_folders = natsorted([
         f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5] == "plane"
     ])
+    top_db_path = os.path.join(save_folder, "db.npy")
+    if os.path.exists(top_db_path):
+        top_db = np.load(top_db_path, allow_pickle=True).item()
+        ignore_flyback = set(top_db.get("ignore_flyback") or [])
+        if ignore_flyback:
+            plane_folders = [f for i, f in enumerate(plane_folders) if i not in ignore_flyback]
     dbs = [
         np.load(os.path.join(f, "db.npy"), allow_pickle=True).item()
         for f in plane_folders

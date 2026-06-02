@@ -443,11 +443,19 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1,
     yxup = yxup.permute(0, 2, 3, 1)
 
     if device.type == "mps":
-        # Manually pad the input tensor with the border values
+        # Manually pad the input tensor with the border values.
         data_padded = F.pad(data.float().unsqueeze(1), (1, 1, 1, 1), mode="replicate")
-        height, width = data.shape[-2:]  # Get the height and width of the original data tensor
-        # Adjust the grid to account for the padding
-        adjusted_yxup = yxup + torch.tensor([[[[1 / width, 1 / height]]]]).to(yxup.device)  # Adjust grid
+        # Get the height and width of the original data tensor
+        height, width = data.shape[-2:] 
+        # Scale the grid to account for the padding. Padded data is now of shape (width + 2) x (height + 2). 
+        # Scale_x and scale_y adjust so we exclude the padding. Align_corner is set to true so original image width is width -1. Same for the height.
+        scale_x = (width - 1) / (width + 1) 
+        scale_y = (height - 1) / (height + 1)
+        # Scale the padded image to be within the right coordinates for sampling
+        adjusted_yxup = yxup * torch.tensor([[[[scale_x, scale_y]]]]).to(yxup.device)
+        # Clamp the grid before subsampling as all coordinate values must lie between [-1,1]. 
+        # Sampling should always be along the image (not include padding coordinates, which will exceed [-1,1] range).
+        adjusted_yxup = torch.clamp(adjusted_yxup, -1, 1)
         # Perform grid sampling on the padded tensor
         fr_shift = F.grid_sample(
             data_padded,
@@ -460,5 +468,5 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1,
         fr_shift = F.grid_sample(data.float().unsqueeze(1), yxup[:,:,:,[1,0]], 
                              mode="bilinear", padding_mode="border", align_corners=True)
         
-    
+
     return fr_shift.squeeze().short()#.cpu().numpy()

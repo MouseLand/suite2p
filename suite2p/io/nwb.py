@@ -54,6 +54,8 @@ try:
     NWB = True
 except ModuleNotFoundError:
     NWB = False
+    logger.warning("pynwb not installed, save_nwb, read_nwb, and nwb_to_binary "
+                   "will not work. Install with: pip install pynwb")
 
 
 def nwb_to_binary(settings):

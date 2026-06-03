@@ -2,9 +2,10 @@
 Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
 """
 from .version import version
+from typing import Dict, Any
 
 
-def default_ops():
+def _default_ops():
     """ default options to run pipeline """
     return {
         # Suite2p version
@@ -163,3 +164,11 @@ def default_ops():
         "prctile_baseline": 8.,  # optional (whether to use a percentile baseline)
         "neucoeff": 0.7,  # neuropil coefficient
     }
+
+def default_ops() -> Dict[str, Any]:
+    """ default options to run pipeline, spoofs the 
+     old default_ops dict but merges it in with `default_settings`
+     where there are shared keys """
+    from suite2p import default_settings
+
+    return {**_default_ops(), **default_settings()}

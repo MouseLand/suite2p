@@ -815,15 +815,15 @@ def assign_reg_io(f_reg, f_raw=None, f_reg_chan2=None,
         Tiff output directory for the alternate channel.
     """
     if f_reg_chan2 is None or not align_by_chan2:
-        f_align_in = f_reg if not f_raw else f_raw
-        f_alt_in = f_reg_chan2 if not f_raw_chan2 else f_raw_chan2
-        f_align_out = f_reg if f_raw else None
-        f_alt_out = f_reg_chan2 if f_raw_chan2 else None
+        f_align_in = f_reg if f_raw is None else f_raw
+        f_alt_in = f_reg_chan2 if f_raw_chan2 is None else f_raw_chan2
+        f_align_out = f_reg if f_raw is not None else None
+        f_alt_out = f_reg_chan2 if f_raw_chan2 is not None else None
     else:
-        f_align_in = f_reg_chan2 if not f_raw_chan2 else f_raw_chan2
-        f_alt_in = f_reg if not f_raw else f_raw
-        f_align_out  = f_reg_chan2 if f_raw_chan2 else None
-        f_alt_out = f_reg if f_raw else None
+        f_align_in = f_reg_chan2 if f_raw_chan2 is None else f_raw_chan2
+        f_alt_in = f_reg if f_raw is None else f_raw
+        f_align_out = f_reg_chan2 if f_raw_chan2 is not None else None
+        f_alt_out = f_reg if f_raw is not None else None
 
     if f_alt_in is not None:
         if f_align_in.shape[0] != f_alt_in.shape[0]:

@@ -6,7 +6,7 @@ import os, pathlib, shutil, sys, warnings
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtGui, QtCore
-from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel
+from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QCheckBox, QLineEdit, QLabel, QHBoxLayout, QComboBox
 
 from . import menus, io, merge, views, buttons, classgui, traces, graphics, masks, utils, rungui
 from .. import run_s2p, default_settings
@@ -92,6 +92,9 @@ class MainWindow(QMainWindow):
         # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QWidget()
         self.l0 = QGridLayout()
+        self.l0.setColumnStretch(0, 0)
+        self.l0.setColumnStretch(1, 0)
+        self.l0.setColumnStretch(2, 1)
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
 
@@ -157,6 +160,64 @@ class MainWindow(QMainWindow):
         b0 = classgui.make_buttons(self, b0)
         b0 += 1
 
+        # --- Human-in-the-Loop Filter Controls ---
+        self.filter_checkbox = QCheckBox("Filter by Range")
+        self.filter_checkbox.setStyleSheet("color: white; font-weight: bold;")
+        self.filter_checkbox.stateChanged.connect(self.filter_changed)
+        self.l0.addWidget(self.filter_checkbox, b0, 0, 1, 2)
+        b0 += 1
+
+        self.filter_label = QLabel("<font color='white'>Prob Range:</font>")
+        self.filter_label.setFont(QtGui.QFont("Arial", 8))
+        self.l0.addWidget(self.filter_label, b0, 0, 1, 1)
+
+        prob_widget = QWidget()
+        prob_layout = QHBoxLayout()
+        prob_layout.setContentsMargins(0, 0, 0, 0)
+        prob_layout.setSpacing(2)
+        prob_widget.setLayout(prob_layout)
+
+        self.filter_min_prob = QLineEdit("0.3")
+        self.filter_min_prob.setFixedWidth(35)
+        self.filter_min_prob.setFont(QtGui.QFont("Arial", 8))
+        self.filter_min_prob.setAlignment(QtCore.Qt.AlignRight)
+        self.filter_min_prob.textChanged.connect(self.filter_changed)
+
+        dash_label = QLabel("-")
+        dash_label.setStyleSheet("color: white;")
+        dash_label.setFont(QtGui.QFont("Arial", 8))
+
+        self.filter_max_prob = QLineEdit("0.7")
+        self.filter_max_prob.setFixedWidth(35)
+        self.filter_max_prob.setFont(QtGui.QFont("Arial", 8))
+        self.filter_max_prob.setAlignment(QtCore.Qt.AlignRight)
+        self.filter_max_prob.textChanged.connect(self.filter_changed)
+
+        prob_layout.addWidget(self.filter_min_prob)
+        prob_layout.addWidget(dash_label)
+        prob_layout.addWidget(self.filter_max_prob)
+        prob_widget.setFixedWidth(80)
+        self.l0.addWidget(prob_widget, b0, 1, 1, 1)
+        b0 += 1
+
+        self.filter_class_label = QLabel("<font color='white'>Class:</font>")
+        self.filter_class_label.setFont(QtGui.QFont("Arial", 8))
+        self.l0.addWidget(self.filter_class_label, b0, 0, 1, 1)
+
+        self.filter_class_combo = QComboBox()
+        self.filter_class_combo.addItems(["All", "Cells", "Non-Cells"])
+        self.filter_class_combo.setCurrentIndex(0)
+        self.filter_class_combo.setFont(QtGui.QFont("Arial", 8))
+        self.filter_class_combo.setFixedWidth(75)
+        self.filter_class_combo.currentIndexChanged.connect(self.filter_changed)
+        self.l0.addWidget(self.filter_class_combo, b0, 1, 1, 1)
+        b0 += 1
+
+        self.filter_counter_label = QLabel("<font color='#a0a0a0'>0 / 0 ROIs</font>")
+        self.filter_counter_label.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
+        self.l0.addWidget(self.filter_counter_label, b0, 0, 1, 2)
+        b0 += 2 # leave extra row spacing
+
         # ------ CELL STATS / ROI SELECTION --------
         # which stats
         self.stats_to_show = [
@@ -174,6 +235,12 @@ class MainWindow(QMainWindow):
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
         self.l0.addWidget(self.ROIedit, b0, 1, 1, 1)
+        b0 += 1
+        self.ROIprob = QLabel(self)
+        self.ROIprob.setFont(lilfont)
+        self.ROIprob.setStyleSheet("color: white;")
+        self.ROIprob.setText("classifier prob: 0.0000")
+        self.l0.addWidget(self.ROIprob, b0, 0, 1, 2)
         b0 += 1
         self.ROIstats = []
         self.ROIstats.append(qlabel)
@@ -209,26 +276,19 @@ class MainWindow(QMainWindow):
 
     def roi_text(self, state):
         if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
-            for n in range(len(self.roi_text_labels)):
-                if self.iscell[n] == 1:
-                    self.p1.addItem(self.roi_text_labels[n])
-                else:
-                    self.p2.addItem(self.roi_text_labels[n])
             self.roitext = True
         else:
-            for n in range(len(self.roi_text_labels)):
-                if self.iscell[n] == 1:
-                    try:
-                        self.p1.removeItem(self.roi_text_labels[n])
-                    except:
-                        pass
-                else:
-                    try:
-                        self.p2.removeItem(self.roi_text_labels[n])
-                    except:
-                        pass
-
             self.roitext = False
+            for n in range(len(self.roi_text_labels)):
+                try:
+                    self.p1.removeItem(self.roi_text_labels[n])
+                except:
+                    pass
+                try:
+                    self.p2.removeItem(self.roi_text_labels[n])
+                except:
+                    pass
+        self.update_plot()
 
     def zoom_cell(self, state):
         if self.loaded:
@@ -378,22 +438,37 @@ class MainWindow(QMainWindow):
                         self.colorbtns.button(9).press(self, 9)
                 elif event.key() == QtCore.Qt.Key_Left:
                     ctype = self.iscell[self.ichosen]
-                    while -1:
-                        self.ichosen = (self.ichosen - 1) % len(self.stat)
-                        if self.iscell[self.ichosen] is ctype:
-                            break
+                    matching = self.get_matching_rois()
+                    # Only search matching ones of same type (cell vs non-cell)
+                    matching_of_type = [i for i in range(len(self.stat)) if self.iscell[i] == ctype and matching[i]]
+                    if len(matching_of_type) > 0:
+                        idx = self.ichosen
+                        while True:
+                            idx = (idx - 1) % len(self.stat)
+                            if self.iscell[idx] == ctype and matching[idx]:
+                                self.ichosen = idx
+                                break
+                            if idx == self.ichosen:
+                                break
                     self.imerge = [self.ichosen]
                     self.ROI_remove()
                     self.update_plot()
 
                 elif event.key() == QtCore.Qt.Key_Right:
-                    ##Agus
                     self.ROI_remove()
                     ctype = self.iscell[self.ichosen]
-                    while 1:
-                        self.ichosen = (self.ichosen + 1) % len(self.stat)
-                        if self.iscell[self.ichosen] is ctype:
-                            break
+                    matching = self.get_matching_rois()
+                    # Only search matching ones of same type (cell vs non-cell)
+                    matching_of_type = [i for i in range(len(self.stat)) if self.iscell[i] == ctype and matching[i]]
+                    if len(matching_of_type) > 0:
+                        idx = self.ichosen
+                        while True:
+                            idx = (idx + 1) % len(self.stat)
+                            if self.iscell[idx] == ctype and matching[idx]:
+                                self.ichosen = idx
+                                break
+                            if idx == self.ichosen:
+                                break
                     self.imerge = [self.ichosen]
                     self.update_plot()
                     self.show()
@@ -403,6 +478,7 @@ class MainWindow(QMainWindow):
                     self.ROI_remove()
 
     def update_plot(self):
+        self.update_filter_ui()
         if self.ops_plot["color"] == 7:
             masks.corr_masks(self)
         masks.plot_colorbar(self)
@@ -413,6 +489,33 @@ class MainWindow(QMainWindow):
         traces.plot_trace(self)
         if self.zoomtocell:
             self.zoom_to_cell()
+
+        # Update text labels (ROI numbers) based on filter
+        if hasattr(self, 'roitext') and self.roitext:
+            matching = self.get_matching_rois()
+            for n in range(len(self.roi_text_labels)):
+                label = self.roi_text_labels[n]
+                if self.iscell[n] == 1:
+                    if matching[n]:
+                        if label.scene() is None:
+                            self.p1.addItem(label)
+                    else:
+                        if label.scene() is not None:
+                            try:
+                                self.p1.removeItem(label)
+                            except:
+                                pass
+                else:
+                    if matching[n]:
+                        if label.scene() is None:
+                            self.p2.addItem(label)
+                    else:
+                        if label.scene() is not None:
+                            try:
+                                self.p2.removeItem(label)
+                            except:
+                                pass
+
         self.p1.show()
         self.p2.show()
         self.win.show()
@@ -654,6 +757,10 @@ class MainWindow(QMainWindow):
     def ichosen_stats(self):
         n = self.ichosen
         self.ROIedit.setText(str(self.ichosen))
+        if hasattr(self, 'probcell') and self.probcell is not None and len(self.probcell) > n:
+            self.ROIprob.setText("classifier prob: %2.4f" % (self.probcell[n]))
+        else:
+            self.ROIprob.setText("classifier prob: 0.0000")
         for k in range(1, len(self.stats_to_show) + 1):
             key = self.stats_to_show[k - 1]
             ival = self.stat[n][key] if key in self.stat[n] else 0
@@ -690,6 +797,57 @@ class MainWindow(QMainWindow):
         self.p2.setXRange(imin[1], imax[1])
         self.win.show()
         self.show()
+
+    def get_matching_rois(self):
+        if not hasattr(self, 'stat') or self.stat is None:
+            return np.ones(0, dtype=bool)
+
+        # If the filter checkbox is off or the GUI is not fully loaded,
+        # the feature is disabled (all ROIs match)
+        if not self.loaded or not hasattr(self, 'filter_checkbox') or not self.filter_checkbox.isChecked():
+            return np.ones(len(self.stat), dtype=bool)
+
+        try:
+            p_min = float(self.filter_min_prob.text())
+        except ValueError:
+            p_min = 0.0
+
+        try:
+            p_max = float(self.filter_max_prob.text())
+        except ValueError:
+            p_max = 1.0
+
+        class_filter = self.filter_class_combo.currentText()
+
+        probs = self.probcell
+        prob_match = (probs >= p_min) & (probs <= p_max)
+
+        if class_filter == "Cells":
+            class_match = (self.iscell == 1)
+        elif class_filter == "Non-Cells":
+            class_match = (self.iscell == 0)
+        else: # "All"
+            class_match = np.ones(len(self.stat), dtype=bool)
+
+        return prob_match & class_match
+
+    def update_filter_ui(self):
+        if not self.loaded:
+            if hasattr(self, 'filter_counter_label'):
+                self.filter_counter_label.setText("0 / 0 ROIs")
+            return
+
+        matching = self.get_matching_rois()
+        n_matching = matching.sum()
+        n_total = len(self.stat)
+
+        if hasattr(self, 'filter_counter_label'):
+            self.filter_counter_label.setText(f"{n_matching} / {n_total} ROIs")
+
+    def filter_changed(self):
+        self.update_filter_ui()
+        if self.loaded:
+            self.update_plot()
 
 
 def run(statfile=None):

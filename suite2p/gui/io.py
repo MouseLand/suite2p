@@ -100,6 +100,8 @@ def make_masks_and_enable_buttons(parent):
     #parent.p2.setXLink(parent.p1)
     #parent.p2.setYLink(parent.p1)
     parent.loaded = True
+    if hasattr(parent, 'update_filter_ui'):
+        parent.update_filter_ui()
     parent.mode_change(2)
     parent.show()
     # no classifier loaded

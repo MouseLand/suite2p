@@ -103,9 +103,15 @@ def pipeline(save_path, f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
         t11 = time.time()
         logger.info("----------- REGISTRATION")
         align_by_chan2 = settings["registration"]["align_by_chan2"]
+        align_to_zstack = settings["registration"].get("align_to_zstack", False)
+        if align_to_zstack and Zstack is not None: 
+            logger.info("Aligning to zstack reference image")
+            refImg = Zstack[len(Zstack) // 2]  # use middle plane of zstack as reference
+        else:
+            refImg = None # compute reference image
         reg_outputs = registration.registration_wrapper(
             f_reg, f_raw=f_raw, f_reg_chan2=f_reg_chan2, f_raw_chan2=f_raw_chan2,
-            align_by_chan2=align_by_chan2, save_path=save_path,
+            align_by_chan2=align_by_chan2, save_path=save_path, refImg=refImg,
             badframes=badframes, settings=settings["registration"], device=device)
         np.save(os.path.join(save_path, "reg_outputs.npy"), reg_outputs)
         plane_times["registration"] = time.time() - t11

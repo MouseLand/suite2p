@@ -3,7 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import argparse, os, platform
 import numpy as np
-from suite2p import default_settings, default_db, version
+from suite2p import default_settings, default_db, merge_dicts, version
 from suite2p.run_s2p import logger_setup, run_plane, run_s2p, get_save_folder
 import logging
 
@@ -28,7 +28,8 @@ def parse_args(parser: argparse.ArgumentParser):
     dargs = vars(args)
     settings0 = default_settings()
     settings = np.load(args.settings, allow_pickle=True).item() if args.settings else {}
-    settings = {**settings0, **settings}
+    # settings = {**settings0, **settings}
+    settings = merge_dicts(settings0, settings)
     db = np.load(args.db, allow_pickle=True).item() if args.db else {}
     db = {**default_db(), **db}
     return args, db, settings

@@ -257,7 +257,8 @@ class RunWindow(QMainWindow):
                            key not in DB_KEYS]
         for key in remove_keys:
             del self.DB[key]
-        set_default_settings(self.SETTINGS, user_settings())
+        settings = user_settings()
+        set_default_settings(self.SETTINGS, settings)
 
         self.create_db_settings_inputs()
 

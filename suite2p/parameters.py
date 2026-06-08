@@ -415,6 +415,14 @@ SETTINGS = {
             "default": (128, 128),
             "description": "Block size for non-rigid registration (** keep this a multiple of 2, 3, and/or 5 **).",
         },
+        "align_to_zstack": {
+            "gui_name": "Align to Z-stack",
+            "type": bool,
+            "min": None,
+            "max": None,
+            "default": False,
+            "description": "Whether to use the center plane of the Z-stack as the reference image.",
+        },
         "smooth_sigma_time": {
             "gui_name": "Time smoothing",
             "type": float,
@@ -908,11 +916,21 @@ def default_settings():
     settings["version"] = version  
     return settings
 
+def merge_dicts(dict1, dict2):
+    """Recursively overwrite dict1 with dict2."""
+    for key in dict1:
+        if key in dict2 and isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+            merge_dicts(dict1[key], dict2[key])
+        elif key not in dict2:
+            dict2[key] = dict1[key]
+    return dict2
+
 def user_settings():
     """ user-default options to run pipeline """
     if (SETTINGS_FOLDER / "settings_user.npy").exists():
         settings = np.load(SETTINGS_FOLDER / "settings_user.npy", allow_pickle=True).item()
-        settings = {**default_settings(), **settings}
+        # settings = {**default_settings(), **settings}
+        settings = merge_dicts(default_settings(), settings)
     else:
         settings = default_settings()
     return settings

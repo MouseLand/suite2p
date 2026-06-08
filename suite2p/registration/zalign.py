@@ -52,7 +52,7 @@ def register_to_zstack(f_align_in, refImgs, nonrigid=False, settings=default_set
                             maxregshift=settings["maxregshift"], smooth_sigma_time=settings["smooth_sigma_time"],
                                 snr_thresh=settings["snr_thresh"], maxregshiftNR=settings["maxregshiftNR"],
                                 device=device, apply_shifts=False)
-    rmin, rmax, mean_img, offsets_all, blocks = outputs
+    rmin, rmax, mean_img, offsets_all, blocks = outputs[:5]
     yoff, xoff, corrXY, yoff1, xoff1, corrXY1, zest, cmax_all = offsets_all
 
     return cmax_all

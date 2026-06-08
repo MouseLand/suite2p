@@ -17,7 +17,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from . import io, default_settings, default_db, pipeline, version_str
+from . import io, default_settings, default_db, merge_dicts, pipeline, version_str
 
 from functools import partial
 from pathlib import Path
@@ -257,7 +257,7 @@ def run_plane(db, settings, db_path=None, stat=None):
 
     # check for zstack file to align to
     Zstack = None
-    if os.path.exists(os.path.join(db["save_path"], "zcorr.npy")):
+    if os.path.exists(os.path.join(db["save_path"], "zcorr.npy")) and settings["run"]["do_registration"] != 2:
         logger.info("z-correlation already computed")
     else:
         zstack_path = os.path.join(db["data_path"][0], "zstack.npy")
@@ -369,7 +369,8 @@ def run_s2p(db={}, settings=default_settings(), server={}):
 
     t0 = time.time()
             
-    settings = {**default_settings(), **settings}
+    # settings = {**default_settings(), **settings}
+    settings = merge_dicts(default_settings(), settings)
     db = {**default_db(), **db}
 
     save_folder = get_save_folder(db)

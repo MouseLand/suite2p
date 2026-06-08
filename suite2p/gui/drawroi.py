@@ -20,7 +20,7 @@ from ..extraction import preprocess
 from ..extraction.dcnv import oasis
 from ..extraction.extract import extract_traces
 from ..io.binary import BinaryFile
-from ..parameters import default_settings
+from ..parameters import default_settings, merge_dicts
 from ..run_s2p import _assign_torch_device
 
 
@@ -32,7 +32,8 @@ def masks_and_traces(settings, stat_manual, stat_orig):
         F_chan2 and Fneu_chan2 will be empty if no second channel
     """
     # Merge with defaults to ensure all required keys are present
-    settings = {**default_settings(), **settings}
+    # settings = {**default_settings(), **settings}
+    settings = merge_dicts(default_settings(), settings)
 
     t0 = time.time()
     

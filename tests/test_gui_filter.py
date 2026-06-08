@@ -65,6 +65,10 @@ def test_gui_filter():
     # Assert that the new chosen cell matches the filter and is cell
     assert gui.iscell[gui.ichosen] == 1
     assert matching[gui.ichosen]
+
+    # Assert that the classifier prob label displays the correct value
+    expected_prob_str = "%2.4f" % (gui.probcell[gui.ichosen])
+    assert expected_prob_str in gui.ROIprob.text()
     
     # 5. Disable filter and assert reset
     gui.filter_checkbox.setChecked(False)

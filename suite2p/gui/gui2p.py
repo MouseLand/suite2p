@@ -92,6 +92,9 @@ class MainWindow(QMainWindow):
         # --------- MAIN WIDGET LAYOUT ---------------------
         cwidget = QWidget()
         self.l0 = QGridLayout()
+        self.l0.setColumnStretch(0, 0)
+        self.l0.setColumnStretch(1, 0)
+        self.l0.setColumnStretch(2, 1)
         cwidget.setLayout(self.l0)
         self.setCentralWidget(cwidget)
 
@@ -193,6 +196,7 @@ class MainWindow(QMainWindow):
         prob_layout.addWidget(self.filter_min_prob)
         prob_layout.addWidget(dash_label)
         prob_layout.addWidget(self.filter_max_prob)
+        prob_widget.setFixedWidth(80)
         self.l0.addWidget(prob_widget, b0, 1, 1, 1)
         b0 += 1
 
@@ -204,6 +208,7 @@ class MainWindow(QMainWindow):
         self.filter_class_combo.addItems(["All", "Cells", "Non-Cells"])
         self.filter_class_combo.setCurrentIndex(0)
         self.filter_class_combo.setFont(QtGui.QFont("Arial", 8))
+        self.filter_class_combo.setFixedWidth(75)
         self.filter_class_combo.currentIndexChanged.connect(self.filter_changed)
         self.l0.addWidget(self.filter_class_combo, b0, 1, 1, 1)
         b0 += 1
@@ -230,6 +235,12 @@ class MainWindow(QMainWindow):
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
         self.l0.addWidget(self.ROIedit, b0, 1, 1, 1)
+        b0 += 1
+        self.ROIprob = QLabel(self)
+        self.ROIprob.setFont(lilfont)
+        self.ROIprob.setStyleSheet("color: white;")
+        self.ROIprob.setText("classifier prob: 0.0000")
+        self.l0.addWidget(self.ROIprob, b0, 0, 1, 2)
         b0 += 1
         self.ROIstats = []
         self.ROIstats.append(qlabel)
@@ -746,6 +757,10 @@ class MainWindow(QMainWindow):
     def ichosen_stats(self):
         n = self.ichosen
         self.ROIedit.setText(str(self.ichosen))
+        if hasattr(self, 'probcell') and self.probcell is not None and len(self.probcell) > n:
+            self.ROIprob.setText("classifier prob: %2.4f" % (self.probcell[n]))
+        else:
+            self.ROIprob.setText("classifier prob: 0.0000")
         for k in range(1, len(self.stats_to_show) + 1):
             key = self.stats_to_show[k - 1]
             ival = self.stat[n][key] if key in self.stat[n] else 0

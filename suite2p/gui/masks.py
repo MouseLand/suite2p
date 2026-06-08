@@ -314,11 +314,23 @@ def draw_masks(parent):  #settings, stat, settings_plot, iscell, ichosen):
     opacity = parent.ops_plot["opacity"]
 
     wplot = int(1 - parent.iscell[parent.ichosen])
+    
+    # Get matching ROIs filter
+    matching = parent.get_matching_rois() if hasattr(parent, 'get_matching_rois') else np.ones(ncells, dtype=bool)
+    matching_map = np.ones(ncells + 1, dtype=bool)
+    matching_map[:-1] = matching
+    matching_map[-1] = True
+    
     # reset transparency
     for i in range(2):
+        alpha = (opacity[view == 0] * parent.rois["Sroi"][i] *
+                 parent.rois["LamNorm"][i])
+        # Mask out non-matching cell pixels
+        cell_indices = parent.rois["iROI"][i, 0]
+        alpha[~matching_map[cell_indices]] = 0
+        
         parent.colors["RGB"][i, color, :, :,
-                             3] = (opacity[view == 0] * parent.rois["Sroi"][i] *
-                                   parent.rois["LamNorm"][i]).astype(np.uint8)
+                             3] = alpha.astype(np.uint8)
     M = [
         np.array(parent.colors["RGB"][0, color]),
         np.array(parent.colors["RGB"][1, color])

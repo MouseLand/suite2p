@@ -3,7 +3,8 @@ import numpy as np
 import pytest
 from qtpy import QtWidgets, QtCore, QtGui
 
-def test_gui_filter():
+@pytest.fixture(scope="module")
+def gui():
     app = QtWidgets.QApplication.instance()
     if not app:
         app = QtWidgets.QApplication([])
@@ -11,38 +12,61 @@ def test_gui_filter():
     from suite2p.gui.gui2p import MainWindow
     
     statfile = '/mnt/other_ubunthu/mnt/data/1-ordered/Stav1/stat.npy'
-    # Check if the test file exists before running, otherwise skip
     if not os.path.exists(statfile):
         pytest.skip(f"Test dataset {statfile} not found")
         
-    gui = MainWindow(statfile=statfile)
+    gui_instance = MainWindow(statfile=statfile)
     app.processEvents()
-    
-    # Assert initial counter matches total ROIs (3289)
+    yield gui_instance
+    gui_instance.close()
+
+def test_gui_initial_state(gui):
+    # Verify the initial counter matches total ROIs (3289)
     assert "3289 / 3289 ROIs" in gui.filter_counter_label.text()
+    assert not gui.filter_checkbox.isChecked()
+
+def test_gui_filter_by_range_all(gui):
+    app = QtWidgets.QApplication.instance()
+    # Reset filter state first
+    gui.filter_class_combo.setCurrentText("All")
+    gui.filter_min_prob.setText("0.3")
+    gui.filter_max_prob.setText("0.7")
     
-    # 1. Enable filter
+    # Enable filter
     gui.filter_checkbox.setChecked(True)
     app.processEvents()
     
-    # Check matching count
     probs = gui.probcell
     expected_matching_all = ((probs >= 0.3) & (probs <= 0.7)).sum()
     assert f"{expected_matching_all} / 3289" in gui.filter_counter_label.text()
-    
-    # 2. Change Class to Cells
+
+def test_gui_filter_by_range_cells(gui):
+    app = QtWidgets.QApplication.instance()
+    gui.filter_checkbox.setChecked(True)
+    gui.filter_min_prob.setText("0.3")
+    gui.filter_max_prob.setText("0.7")
     gui.filter_class_combo.setCurrentText("Cells")
     app.processEvents()
+    
+    probs = gui.probcell
     expected_matching_cells = (((probs >= 0.3) & (probs <= 0.7)) & (gui.iscell == 1)).sum()
     assert f"{expected_matching_cells} / 3289" in gui.filter_counter_label.text()
-    
-    # 3. Change Class to Non-Cells
+
+def test_gui_filter_by_range_noncells(gui):
+    app = QtWidgets.QApplication.instance()
+    gui.filter_checkbox.setChecked(True)
+    gui.filter_min_prob.setText("0.3")
+    gui.filter_max_prob.setText("0.7")
     gui.filter_class_combo.setCurrentText("Non-Cells")
     app.processEvents()
+    
+    probs = gui.probcell
     expected_matching_noncells = (((probs >= 0.3) & (probs <= 0.7)) & (gui.iscell == 0)).sum()
     assert f"{expected_matching_noncells} / 3289" in gui.filter_counter_label.text()
-    
-    # 4. Test Keyboard Navigation with active filter
+
+def test_gui_keyboard_navigation(gui):
+    app = QtWidgets.QApplication.instance()
+    gui.filter_checkbox.setChecked(True)
     gui.filter_class_combo.setCurrentText("Cells")
     gui.filter_min_prob.setText("0.8")
     gui.filter_max_prob.setText("0.95")
@@ -69,10 +93,10 @@ def test_gui_filter():
     # Assert that the classifier prob label displays the correct value
     expected_prob_str = "%2.4f" % (gui.probcell[gui.ichosen])
     assert expected_prob_str in gui.ROIprob.text()
-    
-    # 5. Disable filter and assert reset
+
+def test_gui_filter_disable(gui):
+    app = QtWidgets.QApplication.instance()
+    # Disable filter and assert reset
     gui.filter_checkbox.setChecked(False)
     app.processEvents()
     assert "3289 / 3289" in gui.filter_counter_label.text()
-    
-    gui.close()

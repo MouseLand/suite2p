@@ -123,4 +123,8 @@ def sbx_to_binary(dbs, settings, reg_file, reg_file_chan2):
                     dbs[j]["frames_per_file"][ifile] += nframes_chunk
             iall += im.shape[0]
 
+    for db in dbs:
+        np.save(db["db_path"], db)
+        np.save(db["settings_path"], settings)
+
     return dbs

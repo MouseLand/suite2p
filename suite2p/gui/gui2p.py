@@ -278,6 +278,17 @@ class MainWindow(QMainWindow):
         return b0
 
     def roi_text(self, state):
+        """
+        Slot triggered when the ROI numbers checkbox is toggled. Toggles the visibility
+        of text labels (ROI numbers) on the plots.
+
+        When checked:
+            Sets `self.roitext` to True. The subsequent call to `update_plot()` will
+            render text labels for matching ROIs under the active curation filter.
+        When unchecked:
+            Sets `self.roitext` to False and explicitly removes all text labels from
+            the plot scenes (p1 and p2).
+        """
         if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self.roitext = True
         else:

@@ -161,12 +161,14 @@ class MainWindow(QMainWindow):
         b0 += 1
 
         # --- Human-in-the-Loop Filter Controls ---
+        # A checkbox to toggle the range and class filter status on/off
         self.filter_checkbox = QCheckBox("Filter by Range")
         self.filter_checkbox.setStyleSheet("color: white; font-weight: bold;")
         self.filter_checkbox.stateChanged.connect(self.filter_changed)
         self.l0.addWidget(self.filter_checkbox, b0, 0, 1, 2)
         b0 += 1
 
+        # Label for the probability bounds input fields
         self.filter_label = QLabel("<font color='white'>Prob Range:</font>")
         self.filter_label.setFont(QtGui.QFont("Arial", 8))
         self.l0.addWidget(self.filter_label, b0, 0, 1, 1)
@@ -236,6 +238,7 @@ class MainWindow(QMainWindow):
         self.ROIedit.returnPressed.connect(self.number_chosen)
         self.l0.addWidget(self.ROIedit, b0, 1, 1, 1)
         b0 += 1
+        # Dedicated label displaying the classifier probability for the selected ROI
         self.ROIprob = QLabel(self)
         self.ROIprob.setFont(lilfont)
         self.ROIprob.setStyleSheet("color: white;")
@@ -437,6 +440,8 @@ class MainWindow(QMainWindow):
                         self.colorbtns.button(9).setChecked(True)
                         self.colorbtns.button(9).press(self, 9)
                 elif event.key() == QtCore.Qt.Key_Left:
+                    # Navigation left: cycle to previous ROI of same category (cell vs non-cell).
+                    # If the curation filter is active, skip any non-matching ROIs.
                     ctype = self.iscell[self.ichosen]
                     matching = self.get_matching_rois()
                     # Only search matching ones of same type (cell vs non-cell)
@@ -455,6 +460,8 @@ class MainWindow(QMainWindow):
                     self.update_plot()
 
                 elif event.key() == QtCore.Qt.Key_Right:
+                    # Navigation right: cycle to next ROI of same category (cell vs non-cell).
+                    # If the curation filter is active, skip any non-matching ROIs.
                     self.ROI_remove()
                     ctype = self.iscell[self.ichosen]
                     matching = self.get_matching_rois()
@@ -490,7 +497,8 @@ class MainWindow(QMainWindow):
         if self.zoomtocell:
             self.zoom_to_cell()
 
-        # Update text labels (ROI numbers) based on filter
+        # Update text labels (ROI numbers) based on active curation filter.
+        # This dynamically shows/removes text labels on the plots when filter changes.
         if hasattr(self, 'roitext') and self.roitext:
             matching = self.get_matching_rois()
             for n in range(len(self.roi_text_labels)):
@@ -799,6 +807,18 @@ class MainWindow(QMainWindow):
         self.show()
 
     def get_matching_rois(self):
+        """
+        Computes a boolean mask indicating which ROIs match the current curation filter settings.
+
+        The filter evaluates:
+        1. Whether filtering is enabled (Filter by Range checkbox is checked).
+        2. Whether the ROI's classifier probability falls within the [min, max] range.
+        3. Whether the ROI's category (cell vs. non-cell) matches the selected class filter dropdown.
+
+        Returns:
+            np.ndarray[bool]: Boolean mask of length `ncells` where True indicates the ROI matches.
+                              Returns all True if filtering is disabled or dataset is not yet loaded.
+        """
         if not hasattr(self, 'stat') or self.stat is None:
             return np.ones(0, dtype=bool)
 
@@ -832,6 +852,10 @@ class MainWindow(QMainWindow):
         return prob_match & class_match
 
     def update_filter_ui(self):
+        """
+        Updates the label text of `filter_counter_label` with the count of currently matching ROIs
+        versus the total number of ROIs in the dataset (e.g., "124 / 542 ROIs").
+        """
         if not self.loaded:
             if hasattr(self, 'filter_counter_label'):
                 self.filter_counter_label.setText("0 / 0 ROIs")
@@ -845,6 +869,10 @@ class MainWindow(QMainWindow):
             self.filter_counter_label.setText(f"{n_matching} / {n_total} ROIs")
 
     def filter_changed(self):
+        """
+        Slot triggered when any filter control (checkbox, min/max prob text boxes, or class dropdown)
+        is modified. Updates the counter label and triggers a GUI replot to refresh masks and labels.
+        """
         self.update_filter_ui()
         if self.loaded:
             self.update_plot()

@@ -99,7 +99,7 @@ vice versa this will overwrite the rastermap colors.
 - O = turn of ROIs in non-ROI view
 - Q-U = different views (can change saturation with slider)
 - A-M = different color maps
-- Left and right keys = cycle between cells of same panel
+- Left and right keys = cycle between cells of same panel (skips non-matching ROIs if the curation filter is active)
 - Up Key = flip selected cell to other panel
 - Alt+Enter = merge selected ROIs
 
@@ -160,9 +160,9 @@ probabilities are shown as the colors in the *classifier* view. You can
 then further manually curate this data (flipping cells left and right
 depending on your criteria).
 
-### Adding data to a classifier
+When an ROI is selected, its exact classifier probability is displayed in the left panel as `classifier prob: X.XXXX`.
 
-You can add this manually curated data to an already built classifier:
+### Adding data to a classifier
 
 1. Load a classifier by going to the “Classifier” menu and clicking
    “Load”. Choose the *default* classifier, or load another classifier
@@ -191,6 +191,23 @@ their previous category and the `iscell.npy` file will not be updated.
 If you want to apply this new classifier to the ROIs category and update
 the `iscell.npy` file, then click the classifier probability box, enter
 your threshold, and press enter.
+
+### ROI Curation Filtering
+
+To streamline the manual curation of large datasets, the GUI provides an interactive, real-time ROI curation filter panel in the left-hand settings sidebar.
+
+- **Enable Filter**: Check the **filter** checkbox to activate filtering.
+- **Probability Range**: Enter minimum and maximum probability thresholds in the two text boxes (e.g., `0.3` and `0.7`). Only ROIs whose classifier probabilities fall within this range will be displayed. This allows you to quickly isolate and review borderline or low-confidence cells (e.g. around `0.5`).
+- **Class Filter**: Select from the class dropdown menu:
+  - **All**: Shows both cells and non-cells matching the probability range.
+  - **Cells**: Shows only ROIs currently categorized as cells (left-hand side).
+  - **Non-Cells**: Shows only ROIs currently categorized as non-cells (right-hand side).
+- **Matching Counter**: The label below the dropdown updates dynamically to show how many ROIs match your filter criteria out of the total (e.g. `124 / 542 ROIs`).
+
+When the curation filter is active, all non-matching ROIs are visually hidden from the main view masks, and their number/text labels are removed. 
+
+Furthermore, keyboard navigation respects this active filter:
+- **Left and Right Arrow Keys**: Pressing the left or right arrow keys will automatically skip any non-matching ROIs, cycling only through the subset of ROIs that match your filter criteria. This facilitates extremely fast keyboard-driven curation of ambiguous cell classifications.
 
 ## Visualizing activity
 

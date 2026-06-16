@@ -161,26 +161,19 @@ class MainWindow(QMainWindow):
         b0 += 1
 
         # --- Human-in-the-Loop Filter Controls ---
-        # A checkbox to toggle the range and class filter status on/off
-        self.filter_checkbox = QCheckBox("Filter by Range")
+        # A widget grouping the checkbox and min/max inputs in a single horizontal layout to save row space
+        filter_widget = QWidget()
+        filter_layout = QHBoxLayout()
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_layout.setSpacing(1) # Packed extremely tightly
+        filter_widget.setLayout(filter_layout)
+
+        self.filter_checkbox = QCheckBox("filter prob range:")
         self.filter_checkbox.setStyleSheet("color: white; font-weight: bold;")
         self.filter_checkbox.stateChanged.connect(self.filter_changed)
-        self.l0.addWidget(self.filter_checkbox, b0, 0, 1, 2)
-        b0 += 1
-
-        # Label for the probability bounds input fields
-        self.filter_label = QLabel("<font color='white'>Prob Range:</font>")
-        self.filter_label.setFont(QtGui.QFont("Arial", 8))
-        self.l0.addWidget(self.filter_label, b0, 0, 1, 1)
-
-        prob_widget = QWidget()
-        prob_layout = QHBoxLayout()
-        prob_layout.setContentsMargins(0, 0, 0, 0)
-        prob_layout.setSpacing(2)
-        prob_widget.setLayout(prob_layout)
 
         self.filter_min_prob = QLineEdit("0.3")
-        self.filter_min_prob.setFixedWidth(35)
+        self.filter_min_prob.setFixedWidth(28)
         self.filter_min_prob.setFont(QtGui.QFont("Arial", 8))
         self.filter_min_prob.setAlignment(QtCore.Qt.AlignRight)
         self.filter_min_prob.textChanged.connect(self.filter_changed)
@@ -190,61 +183,81 @@ class MainWindow(QMainWindow):
         dash_label.setFont(QtGui.QFont("Arial", 8))
 
         self.filter_max_prob = QLineEdit("0.7")
-        self.filter_max_prob.setFixedWidth(35)
+        self.filter_max_prob.setFixedWidth(28)
         self.filter_max_prob.setFont(QtGui.QFont("Arial", 8))
         self.filter_max_prob.setAlignment(QtCore.Qt.AlignRight)
         self.filter_max_prob.textChanged.connect(self.filter_changed)
 
-        prob_layout.addWidget(self.filter_min_prob)
-        prob_layout.addWidget(dash_label)
-        prob_layout.addWidget(self.filter_max_prob)
-        prob_widget.setFixedWidth(80)
-        self.l0.addWidget(prob_widget, b0, 1, 1, 1)
+        filter_layout.addWidget(self.filter_checkbox)
+        filter_layout.addWidget(self.filter_min_prob)
+        filter_layout.addWidget(dash_label)
+        filter_layout.addWidget(self.filter_max_prob)
+        filter_layout.addStretch(1) # Pushes everything to the left side
+        self.l0.addWidget(filter_widget, b0, 0, 1, 2)
         b0 += 1
 
-        self.filter_class_label = QLabel("<font color='white'>Class:</font>")
-        self.filter_class_label.setFont(QtGui.QFont("Arial", 8))
-        self.l0.addWidget(self.filter_class_label, b0, 0, 1, 1)
+        # A widget grouping the class filter dropdown and the matching counter label side-by-side
+        class_widget = QWidget()
+        class_layout = QHBoxLayout()
+        class_layout.setContentsMargins(0, 0, 0, 0)
+        class_layout.setSpacing(4)
+        class_widget.setLayout(class_layout)
 
         self.filter_class_combo = QComboBox()
         self.filter_class_combo.addItems(["All", "Cells", "Non-Cells"])
         self.filter_class_combo.setCurrentIndex(0)
         self.filter_class_combo.setFont(QtGui.QFont("Arial", 8))
-        self.filter_class_combo.setFixedWidth(75)
+        self.filter_class_combo.setFixedWidth(65)
         self.filter_class_combo.currentIndexChanged.connect(self.filter_changed)
-        self.l0.addWidget(self.filter_class_combo, b0, 1, 1, 1)
-        b0 += 1
 
-        self.filter_counter_label = QLabel("<font color='#a0a0a0'>0 / 0 ROIs</font>")
+        self.filter_counter_label = QLabel("0/0 ROIs")
         self.filter_counter_label.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-        self.l0.addWidget(self.filter_counter_label, b0, 0, 1, 2)
-        b0 += 2 # leave extra row spacing
+        self.filter_counter_label.setStyleSheet("color: #a0a0a0;")
+        self.filter_counter_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        class_layout.addWidget(self.filter_class_combo)
+        class_layout.addWidget(self.filter_counter_label)
+        self.l0.addWidget(class_widget, b0, 0, 1, 2)
+        b0 += 2 # leave a bit of spacing
 
         # ------ CELL STATS / ROI SELECTION --------
-        # which stats
         self.stats_to_show = [
             "med", "npix_norm", "skew", "compact", "snr", "aspect_ratio"
         ]
         lilfont = QtGui.QFont("Arial", 8)
+        
+        # Selected ROI label and edit combined in a single horizontal layout
+        roi_sel_widget = QWidget()
+        roi_sel_layout = QHBoxLayout()
+        roi_sel_layout.setContentsMargins(0, 0, 0, 0)
+        roi_sel_layout.setSpacing(1) # Packed extremely tightly
+        roi_sel_widget.setLayout(roi_sel_layout)
+
         qlabel = QLabel(self)
         qlabel.setFont(self.boldfont)
-        qlabel.setText("<font color='white'>Selected ROI:</font>")
-        self.l0.addWidget(qlabel, b0, 0, 1, 1)
+        qlabel.setText("<font color='white'>ROI:</font>")
+        
         self.ROIedit = QLineEdit(self)
         self.ROIedit.setValidator(QtGui.QIntValidator(0, 10000))
         self.ROIedit.setText("0")
-        self.ROIedit.setFixedWidth(45)
+        self.ROIedit.setFixedWidth(40)
         self.ROIedit.setAlignment(QtCore.Qt.AlignRight)
         self.ROIedit.returnPressed.connect(self.number_chosen)
-        self.l0.addWidget(self.ROIedit, b0, 1, 1, 1)
-        b0 += 1
+        
+        roi_sel_layout.addWidget(qlabel)
+        roi_sel_layout.addWidget(self.ROIedit)
+        roi_sel_layout.addStretch(1) # Pushes the inputs to the left side
+        self.l0.addWidget(roi_sel_widget, b0, 0, 1, 1)
+
         # Dedicated label displaying the classifier probability for the selected ROI
         self.ROIprob = QLabel(self)
         self.ROIprob.setFont(lilfont)
         self.ROIprob.setStyleSheet("color: white;")
-        self.ROIprob.setText("classifier prob: 0.0000")
-        self.l0.addWidget(self.ROIprob, b0, 0, 1, 2)
+        self.ROIprob.setText("prob: 0.0000")
+        self.ROIprob.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.l0.addWidget(self.ROIprob, b0, 1, 1, 1)
         b0 += 1
+
         self.ROIstats = []
         self.ROIstats.append(qlabel)
         for k in range(1, len(self.stats_to_show) + 1):
@@ -253,8 +266,13 @@ class MainWindow(QMainWindow):
             self.ROIstats[k].setFont(lilfont)
             self.ROIstats[k].setStyleSheet("color: white;")
             self.ROIstats[k].resize(self.ROIstats[k].minimumSizeHint())
-            self.l0.addWidget(self.ROIstats[k], b0, 0, 1, 2)
-            b0 += 1
+            
+            # Place stats in 2 columns to save vertical space
+            col = (k - 1) % 2
+            self.l0.addWidget(self.ROIstats[k], b0, col, 1, 1)
+            if col == 1 or k == len(self.stats_to_show):
+                b0 += 1
+                
         self.l0.addWidget(QLabel(""), b0, 0, 1, 2)
         self.l0.setRowStretch(b0, 1)
         b0 += 2
@@ -777,9 +795,9 @@ class MainWindow(QMainWindow):
         n = self.ichosen
         self.ROIedit.setText(str(self.ichosen))
         if hasattr(self, 'probcell') and self.probcell is not None and len(self.probcell) > n:
-            self.ROIprob.setText("classifier prob: %2.4f" % (self.probcell[n]))
+            self.ROIprob.setText("prob: %2.4f" % (self.probcell[n]))
         else:
-            self.ROIprob.setText("classifier prob: 0.0000")
+            self.ROIprob.setText("prob: 0.0000")
         for k in range(1, len(self.stats_to_show) + 1):
             key = self.stats_to_show[k - 1]
             ival = self.stat[n][key] if key in self.stat[n] else 0

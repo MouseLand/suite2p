@@ -2,10 +2,11 @@
 Copyright © 2023 Yoav Livneh Lab, Authored by Yael Prilutski.
 """
 
+import os
 import numpy as np
 
-from os import makedirs, listdir
-from os.path import isdir, isfile, getsize, join
+from os import listdir
+from os.path import isfile, getsize, join
 
 try:
     from xmltodict import parse
@@ -16,169 +17,101 @@ except (ModuleNotFoundError, ImportError):
 EXTENSION = 'raw'
 
 
-def raw_to_binary(ops, use_recorded_defaults=True):
-
-    """ Finds RAW files and writes them to binaries
+def raw_to_binary(dbs, settings, reg_file, reg_file_chan2):
+    """Finds RAW files and writes them to binaries.
 
     Parameters
     ----------
-    ops : dictionary
-        "data_path"
-
-    use_recorded_defaults : bool
-        Recorded session parameters are used when 'True',
-        otherwise |ops| is expected to contain the following (additional) keys:
-          "nplanes",
-          "nchannels",
-          "fs"
+    dbs : list of dict
+        Per-plane database dictionaries. Must contain "file_list", "nplanes",
+        "nchannels", "batch_size", "functional_chan". Updated in-place with
+        "Ly", "Lx", "nframes", "frames_per_folder", "meanImg", and "meanImg_chan2".
+    settings : dict
+        Suite2p settings dictionary.
+    reg_file : list of file objects
+        Opened binary files for writing each plane's functional channel data.
+    reg_file_chan2 : list of file objects
+        Opened binary files for writing each plane's second channel data
+        (used only when nchannels > 1).
 
     Returns
     -------
-        ops : dictionary of first plane
-
+    dbs : list of dict
+        Updated database dictionaries.
     """
-
     if not HAS_XML:
         raise ImportError("xmltodict is required for RAW file support (pip install xmltodict)")
 
-    # Load raw file configurations
-    raw_file_configurations = [_RawFile(path) for path in ops['data_path']]
+    rawlist = dbs[0]["file_list"]
+    nplanes = dbs[0]["nplanes"]
+    nchannels = dbs[0]["nchannels"]
+    nfunc = dbs[0]["functional_chan"] - 1 if nchannels > 1 else 0
+    frames_in_chunk = int(dbs[0]["batch_size"])
 
-    # Split ops by captured planes
-    ops_paths = _initialize_destination_files(ops, raw_file_configurations, use_recorded_defaults=use_recorded_defaults)
+    for j in range(nplanes):
+        dbs[j]["nframes"] = 0
+        dbs[j]["frames_per_folder"] = np.zeros(len(rawlist), np.int32)
 
-    # Convert all runs in order
-    for path in ops['data_path']:
-        print(f'Converting raw to binary: `{path}`')
-        ops_loaded = [np.load(i, allow_pickle=True)[()] for i in ops_paths]
-        _raw2bin(ops_loaded, _RawFile(path))
+    iall = 0
+    for ifile, raw_path in enumerate(rawlist):
+        cfg = _RawFile(raw_path)
+        chunk_bytes = frames_in_chunk * cfg.xpx * cfg.ypx * cfg.channel * cfg.recorded_planes * 2
 
-    # Reload edited ops
-    ops_loaded = [np.load(i, allow_pickle=True)[()] for i in ops_paths]
-
-    # Create a mean image with the final number of frames
-    _update_mean(ops_loaded)
-
-    # Load & return all ops
-    return ops_loaded[0]
-
-
-def _initialize_destination_files(ops, raw_file_configurations, use_recorded_defaults=True):
-
-    """ Prepares raw2bin conversion environment (files & folders) """
-
-    configurations = [
-        [cfg.channel, cfg.zplanes, cfg.xpx, cfg.ypx, cfg.frame_rate, cfg.xsize, cfg.ysize]
-        for cfg in raw_file_configurations
-    ]
-
-    # Make sure all ops match each other
-    assert all(conf == configurations[0] for conf in configurations), \
-        f'Data attributes do not match. Can not concatenate shapes: {[conf for conf in configurations]}'
-
-    # Load configuration from first file in paths
-    cfg = raw_file_configurations[0]
-
-    # Expand configuration from defaults when necessary
-    if use_recorded_defaults:
-        ops['nplanes'] = cfg.zplanes
-        if cfg.channel > 1:
-            ops['nchannels'] = 2
-        ops['fs'] = cfg.frame_rate
-
-    # Prepare conversion environment for all files
-    ops_paths = []
-    nplanes = ops['nplanes']
-    nchannels = ops['nchannels']
-    second_plane = False
-    for i in range(0, nplanes):
-        ops['save_path'] = join(ops['save_path0'], 'suite2p', f'plane{i}')
-
-        if ('fast_disk' not in ops) or len(ops['fast_disk']) == 0 or second_plane:
-            ops['fast_disk'] = ops['save_path']
-            second_plane = True
-        else:
-            ops['fast_disk'] = join(ops['fast_disk'], 'suite2p', f'plane{i}')
-
-        ops['ops_path'] = join(ops['save_path'], 'ops.npy')
-        ops['reg_file'] = join(ops['fast_disk'], 'data.bin')
-        isdir(ops['fast_disk']) or makedirs(ops['fast_disk'])
-        isdir(ops['save_path']) or makedirs(ops['save_path'])
-        open(ops['reg_file'], 'wb').close()
-        if nchannels > 1:
-            ops['reg_file_chan2'] = join(ops['fast_disk'], 'data_chan2.bin')
-            open(ops['reg_file_chan2'], 'wb').close()
-
-        ops['meanImg'] = np.zeros((cfg.xpx, cfg.ypx), np.float32)
-        ops['nframes'] = 0
-        ops['frames_per_run'] = []
-        if nchannels > 1:
-            ops['meanImg_chan2'] = np.zeros((cfg.xpx, cfg.ypx), np.float32)
-
-        # write ops files
-        do_registration = ops['do_registration']
-        ops['Ly'] = cfg.xpx
-        ops['Lx'] = cfg.ypx
-        if not do_registration:
-            ops['yrange'] = np.array([0, ops['Ly']])
-            ops['xrange'] = np.array([0, ops['Lx']])
-
-        ops_paths.append(ops['ops_path'])
-        np.save(ops['ops_path'], ops)
-
-    # Environment ready;
-    return ops_paths
-
-
-def _raw2bin(all_ops, cfg):
-
-    """ Converts a single RAW file to BIN format """
-
-    frames_in_chunk = int(all_ops[0]['batch_size'])
-
-    with open(cfg.path, 'rb') as raw_file:
-        chunk = frames_in_chunk * cfg.xpx * cfg.ypx * cfg.channel * cfg.recorded_planes * 2
-        raw_data_chunk = raw_file.read(chunk)
-        while raw_data_chunk:
-            data = np.frombuffer(raw_data_chunk, dtype=np.int16)
-            current_frames = int(len(data) / cfg.xpx / cfg.ypx / cfg.recorded_planes)
-
-            if cfg.channel > 1:
-                channel_a, channel_b = _split_into_2_channels(data.reshape(
-                    current_frames * cfg.recorded_planes, cfg.xpx, cfg.ypx))
-                reshaped_data = []
-                for i in range(cfg.recorded_planes):
-                    channel_a_plane = channel_a[i::cfg.recorded_planes]
-                    channel_b_plane = channel_b[i::cfg.recorded_planes]
-                    reshaped_data.append([channel_a_plane, channel_b_plane])
-
-            else:
-                reshaped_data = data.reshape(cfg.recorded_planes, current_frames, cfg.xpx, cfg.ypx)
-
-            for plane in range(0, cfg.zplanes):
-                ops = all_ops[plane]
-                plane_data = reshaped_data[plane]
+        with open(cfg.path, 'rb') as f:
+            raw_chunk = f.read(chunk_bytes)
+            while raw_chunk:
+                data = np.frombuffer(raw_chunk, dtype=np.int16)
+                current_frames = int(len(data) / cfg.xpx / cfg.ypx / cfg.recorded_planes)
 
                 if cfg.channel > 1:
-                    with open(ops['reg_file'], 'ab') as bin_file:
-                        bin_file.write(bytearray(plane_data[0].astype(np.int16)))
-                    with open(ops['reg_file_chan2'], 'ab') as bin_file2:
-                        bin_file2.write(bytearray(plane_data[1].astype(np.int16)))
-                    ops['meanImg'] += plane_data[0].astype(np.float32).sum(axis=0)
-                    ops['meanImg_chan2'] = ops['meanImg_chan2'] + plane_data[1].astype(np.float32).sum(axis=0)
-
+                    channel_a, channel_b = _split_into_2_channels(
+                        data.reshape(current_frames * cfg.recorded_planes, cfg.xpx, cfg.ypx))
+                    reshaped = [[channel_a[i::cfg.recorded_planes],
+                                 channel_b[i::cfg.recorded_planes]]
+                                for i in range(cfg.recorded_planes)]
                 else:
-                    with open(ops['reg_file'], 'ab') as bin_file:
-                        bin_file.write(bytearray(plane_data.astype(np.int16)))
-                    ops['meanImg'] = ops['meanImg'] + plane_data.astype(np.float32).sum(axis=0)
+                    reshaped = data.reshape(cfg.recorded_planes, current_frames, cfg.xpx, cfg.ypx)
 
-            raw_data_chunk = raw_file.read(chunk)
+                for j in range(nplanes):
+                    if iall == 0:
+                        dbs[j]["Ly"] = cfg.xpx
+                        dbs[j]["Lx"] = cfg.ypx
+                        dbs[j]["meanImg"] = np.zeros((cfg.xpx, cfg.ypx), np.float32)
+                        if nchannels > 1:
+                            dbs[j]["meanImg_chan2"] = np.zeros((cfg.xpx, cfg.ypx), np.float32)
 
-    for ops in all_ops:
-        total_frames = int(cfg.size / cfg.xpx / cfg.ypx / cfg.recorded_planes / cfg.channel / 2)
-        ops['frames_per_run'].append(total_frames)
-        ops['nframes'] += total_frames
-        np.save(ops['ops_path'], ops)
+                    if cfg.channel > 1:
+                        ch_func = reshaped[j][nfunc].astype(np.int16)
+                        ch_other = reshaped[j][1 - nfunc].astype(np.int16)
+                        reg_file[j].write(bytearray(ch_func))
+                        reg_file_chan2[j].write(bytearray(ch_other))
+                        dbs[j]["meanImg"] += ch_func.astype(np.float32).sum(axis=0)
+                        dbs[j]["meanImg_chan2"] += ch_other.astype(np.float32).sum(axis=0)
+                        nframes_chunk = ch_func.shape[0]
+                    else:
+                        plane_data = reshaped[j].astype(np.int16)
+                        reg_file[j].write(bytearray(plane_data))
+                        dbs[j]["meanImg"] += plane_data.astype(np.float32).sum(axis=0)
+                        nframes_chunk = plane_data.shape[0]
+
+                    dbs[j]["nframes"] += nframes_chunk
+                    dbs[j]["frames_per_folder"][ifile] += nframes_chunk
+
+                iall += current_frames
+                raw_chunk = f.read(chunk_bytes)
+
+    do_registration = settings["run"]["do_registration"]
+    for db in dbs:
+        db["meanImg"] /= db["nframes"]
+        if nchannels > 1:
+            db["meanImg_chan2"] /= db["nframes"]
+        if not do_registration:
+            db["yrange"] = np.array([0, db["Ly"]])
+            db["xrange"] = np.array([0, db["Lx"]])
+        np.save(db["db_path"], db)
+        np.save(db["settings_path"], settings)
+
+    return dbs
 
 
 def _split_into_2_channels(data):
@@ -189,15 +122,6 @@ def _split_into_2_channels(data):
     channel_a_index = list(filter(lambda x: x % 2 == 0, range(frames)))
     channel_b_index = list(filter(lambda x: x % 2 != 0, range(frames)))
     return data[channel_a_index], data[channel_b_index]
-
-
-def _update_mean(ops_loaded):
-
-    """ Adjusts all "meanImg" values at the end of raw-to-binary conversion. """
-
-    for ops in ops_loaded:
-        ops['meanImg'] /= ops['nframes']
-        np.save(ops['ops_path'], ops)
 
 
 class _RawConfig:
@@ -284,22 +208,25 @@ class _RawFile(_RawConfig):
 
     """ These objects represents all recording parameters per single Thorlabs RAW file """
 
-    _MAIN_FILE_SUFFIX = f'001.{EXTENSION}'
+    def __init__(self, path):
+        # Accept either a .raw file path or a session directory
+        if os.path.isfile(path):
+            self._raw_file_path = path
+            self._dirname = os.path.dirname(path)
+        else:
+            self._dirname = path
+            filenames = listdir(path)
+            raw_files = [fn for fn in filenames if fn.lower().endswith(f'.{EXTENSION}')]
+            assert 1 == len(raw_files), f'Expected one .raw file in "{path}", found {len(raw_files)}'
+            self._raw_file_path = join(path, raw_files[0])
 
-    def __init__(self, dir_name):
-        self._dirname = dir_name
-        filenames = listdir(dir_name)
-
-        # Find main raw file
-        main_files = [fn for fn in filenames if fn.lower().endswith(self._MAIN_FILE_SUFFIX)]
-        assert 1 == len(main_files), f'Corrupted directory structure: "{dir_name}"'
-        self._raw_file_path = join(dir_name, main_files[0])
         self._raw_file_size = getsize(self._raw_file_path)
 
-        # Load XML config
+        # Load XML config from the same directory
+        filenames = listdir(self._dirname)
         xml_files = [fn for fn in filenames if fn.lower().endswith('.xml')]
-        assert 1 == len(xml_files), f'Missing required XML configuration file from dir="{dir_name}"'
-        _RawConfig.__init__(self, self._raw_file_size, join(dir_name, xml_files[0]))
+        assert 1 == len(xml_files), f'Missing required XML configuration file from dir="{self._dirname}"'
+        _RawConfig.__init__(self, self._raw_file_size, join(self._dirname, xml_files[0]))
 
     @property
     def path(self): return self._raw_file_path

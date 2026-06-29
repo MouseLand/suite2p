@@ -18,7 +18,8 @@ EXTS = {"tif": ["*.tif", "*.tiff", "*.TIF", "*.TIFF"],
         "nd2": ["*.nd2"],
         "dcimg": ["*.dcimg"],
         "bruker": ["*.ome.tif", "*.ome.TIF"],
-        "movie": ["*.mp4", "*.avi"]}
+        "movie": ["*.mp4", "*.avi"],
+        "raw": ["*.raw"]}
 
 
 def find_files_open_binaries(settings):

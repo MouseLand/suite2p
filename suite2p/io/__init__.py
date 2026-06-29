@@ -10,5 +10,6 @@ from .movie import movie_to_binary
 from .tiff import ome_to_binary, tiff_to_binary
 from .nd2 import nd2_to_binary
 from .dcam import dcimg_to_binary
+from .raw import raw_to_binary
 from .binary import BinaryFile, BinaryFileCombined
 from .server import send_jobs

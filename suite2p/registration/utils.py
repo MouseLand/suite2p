@@ -4,8 +4,9 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 import numpy as np
 import cv2 
 from cellpose import transforms
-from scipy.ndimage import gaussian_filter1d
+from scipy.signal.windows import gaussian
 import torch
+from torch.nn.functional import conv1d, pad
 
 try:
     # pytorch > 1.7
@@ -77,25 +78,40 @@ def spatial_taper(sig, Ly, Lx):
     return maskMul
 
 
-def temporal_smooth(data: np.ndarray, sigma: float) -> np.ndarray:
+def temporal_smooth(data: torch.Tensor, sigma: float) -> torch.Tensor:
     """
     Apply 1D Gaussian smoothing along the time (first) axis of a 3D array.
 
-    TODO: convert to torch
-
     Parameters
     ----------
-    data : numpy.ndarray
+    data : torch.Tensor
         Input data of shape (nimg, Ly, Lx) to be smoothed along axis 0.
     sigma : float
         Standard deviation of the Gaussian kernel used for temporal smoothing.
 
     Returns
     -------
-    smoothed_data : numpy.ndarray
+    smoothed_data : torch.Tensor
         Temporally smoothed data of shape (nimg, Ly, Lx).
     """
-    return gaussian_filter1d(data, sigma=sigma, axis=0)
+    # use default scipy formula of 4 * sigma for the radius
+    radius = round(4 * sigma)
+    kern_size = 2 * radius + 1
+
+    # make Gaussian window
+    kernel = torch.tensor(gaussian(kern_size, std=sigma), dtype=data.dtype, device=data.device)
+    kernel /= sum(kernel)
+    # add singleton dimensions to use conv1d
+    kernel = kernel.reshape(1, 1, -1)
+    
+    # reshape data to (Ly*Lx, 1, nimg) to use conv1d
+    nimg, Ly, Lx = data.shape
+    data_flat = data.reshape(nimg, Ly*Lx).T.unsqueeze(1)
+    # pad in time
+    data_padded = pad(data_flat, (radius, radius), mode="reflect")
+
+    smoothed = conv1d(data_padded, kernel)
+    return smoothed.squeeze(1).T.reshape(nimg, Ly, Lx)
 
 
 def complex_fft2(img):

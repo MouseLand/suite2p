@@ -60,7 +60,7 @@ def raw_to_binary(dbs, settings, reg_file, reg_file_chan2):
         with open(cfg.path, 'rb') as f:
             raw_chunk = f.read(chunk_bytes)
             while raw_chunk:
-                data = np.frombuffer(raw_chunk, dtype=np.int16)
+                data = (np.frombuffer(raw_chunk, dtype=np.uint16) // 2).astype(np.int16)
                 current_frames = int(len(data) / cfg.xpx / cfg.ypx / cfg.recorded_planes)
 
                 if cfg.channel > 1:

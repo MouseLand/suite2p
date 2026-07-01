@@ -40,6 +40,8 @@ files_to_binary = {
         io.movie_to_binary,
     "dcimg":
         io.dcimg_to_binary,
+    "raw":
+        io.raw_to_binary,
 }
 
 def get_save_folder(db):

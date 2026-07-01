@@ -44,7 +44,7 @@ DB = {
             "min": None,
             "max": None,
             "default": "tif",
-            "description": "Can be ['tif', 'h5', 'nwb', 'bruker', 'movie', 'dcimg'].",
+            "description": "Can be ['tif', 'h5', 'nwb', 'sbx', 'nd2', 'bruker', 'movie', 'dcimg', 'raw'].",
         },
         "keep_movie_raw": {
             "gui_name": "Keep movie raw",

@@ -70,7 +70,7 @@ def raw_to_binary(dbs, settings, reg_file, reg_file_chan2):
                                  channel_b[i::cfg.recorded_planes]]
                                 for i in range(cfg.recorded_planes)]
                 else:
-                    reshaped = data.reshape(cfg.recorded_planes, current_frames, cfg.xpx, cfg.ypx)
+                    reshaped = data.reshape(current_frames, cfg.recorded_planes, cfg.xpx, cfg.ypx)
 
                 for j in range(nplanes):
                     if iall == 0:
@@ -89,7 +89,7 @@ def raw_to_binary(dbs, settings, reg_file, reg_file_chan2):
                         dbs[j]["meanImg_chan2"] += ch_other.astype(np.float32).sum(axis=0)
                         nframes_chunk = ch_func.shape[0]
                     else:
-                        plane_data = reshaped[j].astype(np.int16)
+                        plane_data = reshaped[:, j, :, :].astype(np.int16)
                         reg_file[j].write(bytearray(plane_data))
                         dbs[j]["meanImg"] += plane_data.astype(np.float32).sum(axis=0)
                         nframes_chunk = plane_data.shape[0]

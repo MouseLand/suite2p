@@ -9,37 +9,42 @@ import torch
 
 try:
     # pytorch > 1.7
-    from torch.fft import fft, fft2, ifft, ifft2, fftshift, ifftshift
+    from torch.fft import (fft, fft2, ifft, ifft2, rfft2, irfft2, fftshift,
+                           ifftshift)
 except:
     # pytorch <= 1.7
     raise ImportError("pytorch version > 1.7 required")
 
-eps = torch.complex(torch.tensor(1e-5), torch.tensor(0.0))
 
 def convolve(mov: np.ndarray, img: np.ndarray) -> np.ndarray:
     """
     Convolve a 3D frame sequence by a 2D image in the Fourier domain using phase-correlation.
 
     Applies FFT to each frame, normalizes by magnitude, multiplies by `img`, and returns the
-    inverse FFT (real part).
+    inverse FFT.
+
+    `mov` is real-valued, so the real-input FFT is used throughout: the spectrum is
+    Hermitian and the redundant half carries no information. `img` must therefore be a
+    half-spectrum kernel (see `ref_smooth_fft`).
 
     Parameters
     ----------
     mov : torch.Tensor
-        Input frames of shape (nImg, Ly, Lx).
+        Real-valued input frames of shape (..., Ly, Lx).
     img : torch.Tensor
-        2D complex-valued convolution kernel of shape (Ly, Lx), typically a conjugate FFT
-        of a reference image.
+        Complex-valued half-spectrum convolution kernel of shape (..., Ly, Lx // 2 + 1),
+        typically the conjugate FFT of a reference image.
 
     Returns
     -------
     convolved_data : torch.Tensor
-        Real-valued convolution result of shape (nImg, Ly, Lx).
+        Real-valued convolution result of shape (..., Ly, Lx).
     """
-    mov = fft2(mov)
-    mov /= (eps + torch.abs(mov))
+    Ly, Lx = mov.shape[-2], mov.shape[-1]
+    mov = rfft2(mov)
+    mov /= (1e-5 + torch.abs(mov))
     mov *= img
-    mov = torch.real(ifft2(mov))
+    mov = irfft2(mov, s=(Ly, Lx))
     return mov
 
 def spatial_taper(sig, Ly, Lx):
@@ -62,11 +67,11 @@ def spatial_taper(sig, Ly, Lx):
     Returns
     -------
     maskMul : torch.Tensor
-        Floating-point multiplicative mask of shape (Ly, Lx), with values near 1.0
+        Float32 multiplicative mask of shape (Ly, Lx), with values near 1.0
         in the center and smoothly decaying to 0.0 at the edges.
     """
-    y = torch.arange(0, Ly, dtype=torch.double)
-    x = torch.arange(0, Lx, dtype=torch.double)
+    y = torch.arange(0, Ly, dtype=torch.float32)
+    x = torch.arange(0, Lx, dtype=torch.float32)
     x = (x - x.mean()).abs()
     y = (y - y.mean()).abs()
     mY = ((Ly - 1) / 2) - 2 * sig
@@ -186,13 +191,15 @@ def ref_smooth_fft(refImg: np.ndarray, smooth_sigma=None) -> np.ndarray:
     Returns
     -------
     cfRefImg : torch.Tensor
-        Complex64 tensor of shape (Ly, Lx) containing the smoothed, whitened
-        complex-conjugate FFT of the reference image.
+        Complex64 tensor of shape (Ly, Lx // 2 + 1) containing the smoothed, whitened
+        complex-conjugate FFT of the reference image. Only the non-redundant half of
+        the spectrum is returned, matching the real-input FFT used by `convolve`.
     """
-    cfRefImg = complex_fft2(img=refImg)
+    Ly, Lx = refImg.shape[-2], refImg.shape[-1]
+    cfRefImg = torch.conj(rfft2(refImg.float()))
     cfRefImg /= (1e-5 + torch.abs(cfRefImg))
     if smooth_sigma is not None:
-        cfRefImg *= gaussian_fft(smooth_sigma, cfRefImg.shape[0], cfRefImg.shape[1])
+        cfRefImg *= gaussian_fft(smooth_sigma, Ly, Lx)[:, :Lx // 2 + 1]
     return cfRefImg.type(torch.complex64)
 
 def kernelD(xs: np.ndarray, ys: np.ndarray, sigL: float = 0.85) -> np.ndarray:

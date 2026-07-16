@@ -75,3 +75,66 @@ def test_transform_data_mps_cpu_consistency():
 
     assert correlation > 0.99, f"Correlation: {correlation}"
     assert max_diff < 2, f"Max diff: {max_diff}"
+
+def test_convolve_matches_full_spectrum_reference():
+    """convolve uses a real-input FFT; check it against a full complex-FFT reference.
+
+    The phase-correlation spectrum of two real images is Hermitian, so the half
+    spectrum carries the same information. This pins that equivalence.
+    """
+    from suite2p.registration.utils import convolve, ref_smooth_fft
+
+    np.random.seed(0)
+    Ly, Lx = 64, 64
+    mov = torch.from_numpy(np.random.rand(4, Ly, Lx).astype(np.float32))
+    ref = torch.from_numpy(np.random.rand(Ly, Lx).astype(np.float32))
+
+    got = convolve(mov.clone(), ref_smooth_fft(ref, smooth_sigma=1.15))
+
+    # reference: full complex spectrum, as suite2p computed it before
+    cf_full = torch.conj(torch.fft.fft2(ref))
+    cf_full /= (1e-5 + torch.abs(cf_full))
+    from suite2p.registration.utils import gaussian_fft
+    cf_full *= gaussian_fft(1.15, Ly, Lx)
+    m = torch.fft.fft2(mov.clone().type(torch.complex64))
+    m /= (1e-5 + torch.abs(m))
+    m *= cf_full.type(torch.complex64)
+    expected = torch.real(torch.fft.ifft2(m))
+
+    assert got.shape == expected.shape
+    assert got.dtype == torch.float32
+    assert torch.allclose(got, expected, atol=1e-5)
+
+
+def test_ref_smooth_fft_returns_half_spectrum():
+    from suite2p.registration.utils import ref_smooth_fft
+
+    ref = torch.from_numpy(np.random.rand(64, 48).astype(np.float32))
+    cf = ref_smooth_fft(ref, smooth_sigma=1.15)
+    assert cf.shape == (64, 48 // 2 + 1)
+    assert cf.dtype == torch.complex64
+
+
+def test_rigid_phasecorr_recovers_known_shifts():
+    from suite2p.registration import rigid
+
+    np.random.seed(0)
+    Ly = Lx = 128
+    ref = np.random.rand(Ly, Lx).astype(np.float32) * 500
+    shifts = [(0, 0), (3, -2), (-5, 4)]
+    frames = np.stack([np.roll(ref, s, (0, 1)) for s in shifts])
+
+    maskMul, maskOffset, cfRefImg = rigid.compute_masks_ref_smooth_fft(
+        torch.from_numpy(ref), maskSlope=3.45, smooth_sigma=1.15)
+    ymax, xmax, cmax, _ = rigid.phasecorr(
+        torch.from_numpy(frames), cfRefImg, maskMul, maskOffset,
+        maxregshift=0.1, smooth_sigma_time=0)
+
+    assert [(int(y), int(x)) for y, x in zip(ymax, xmax)] == shifts
+
+
+def test_spatial_taper_is_float32():
+    """maskMul must stay float32: a float64 mask would upcast the FFT to complex128."""
+    from suite2p.registration.utils import spatial_taper
+
+    assert spatial_taper(3.45, 64, 64).dtype == torch.float32

@@ -156,14 +156,16 @@ def compute_masks_ref_smooth_fft(refImg0, maskSlope, smooth_sigma,
         computed as block_mean * (1 - maskMul_block) so that masked regions are
         filled with the local block mean scaled by the complement of the taper.
     cfRefImg_block : torch.Tensor (complex64)
-        Complex32 tensor of shape (nb, Ly, Lx). Frequency-domain (FFT) representation
-        of the Gaussian-smoothed reference blocks (output of ref_smooth_fft). These
+        Complex64 tensor of shape (nb, Ly, Lx // 2 + 1). Frequency-domain (FFT)
+        representation of the Gaussian-smoothed reference blocks (output of
+        ref_smooth_fft), holding only the non-redundant half of the spectrum. These
         are intended for use in phase-correlation registration.
     
     """
     nb, Ly, Lx = len(yblock), yblock[0][1] - yblock[0][0], xblock[0][1] - xblock[0][0]
     dims = (nb, Ly, Lx)
-    cfRef_dims = dims
+    # cfRefImg holds only the non-redundant half of the spectrum (real-input FFT)
+    cfRef_dims = (nb, Ly, Lx // 2 + 1)
     cfRefImg1 = torch.zeros(cfRef_dims, dtype=torch.complex64)
 
     maskMul = spatial_taper(maskSlope, *refImg0.shape)
@@ -295,7 +297,8 @@ def phasecorr(data, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
     device = data.device
     
     nimg = data.shape[0]
-    ly, lx = cfRefImg.shape[-2:]
+    # from maskMul, not cfRefImg: the latter holds a half-width spectrum
+    ly, lx = maskMul.shape[-2:]
 
     # maximum registration shift allowed
     lcorr = int(
@@ -308,7 +311,7 @@ def phasecorr(data, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
     for n in range(nb):
         yind, xind = yblock[n], xblock[n]
         Y[:, n] = data[:, yind[0]:yind[-1], xind[0]:xind[-1]]
-    Y = (Y.float() * maskMul + maskOffset).type(torch.complex64)
+    Y = Y.float() * maskMul + maskOffset
     batch = min(64, Y.shape[1])  #16
     for n in np.arange(0, nb, batch):
         nend = min(Y.shape[1], n + batch)
@@ -316,9 +319,8 @@ def phasecorr(data, blocks, maskMul, maskOffset, cfRefImg, snr_thresh,
     
     # calculate ccsm
     lhalf = lcorr + lpad
-    cc0 = torch.cat((torch.cat((Y[..., -lhalf:, -lhalf:], Y[..., -lhalf:, :lhalf + 1]), axis=-1),   
+    cc0 = torch.cat((torch.cat((Y[..., -lhalf:, -lhalf:], Y[..., -lhalf:, :lhalf + 1]), axis=-1),
                     torch.cat((Y[..., :lhalf + 1, -lhalf:], Y[..., :lhalf + 1, :lhalf + 1]), axis=-1)), axis=-2)
-    cc0 = torch.real(cc0)
     cc0 = cc0.permute(1, 0, 2, 3)
     cc0 = cc0.reshape(cc0.shape[0], -1)
     cc0 = cc0.cpu().numpy()

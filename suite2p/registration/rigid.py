@@ -51,11 +51,11 @@ def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_t
     ----------
     frames : torch.Tensor
         Input image sequence, expected shape (N, Ly, Lx) where N is the number of frames.
-        The tensor may be on CPU or CUDA; it is converted to float and then to complex for the
-        Fourier-domain operations performed by the helper `convolve`.
+        The tensor may be on CPU or CUDA; it is converted to float for the Fourier-domain
+        operations performed by the helper `convolve`.
     cfRefImg : torch.Tensor
-        Complex-valued reference of shape (Ly, Lx) in the Fourier domain used to compute 
-        cross-correlation with each frame
+        Complex-valued half-spectrum reference of shape (Ly, Lx // 2 + 1) in the Fourier
+        domain used to compute cross-correlation with each frame
     maskMul : torch.Tensor
         Multiplicative mask applied to `frames` before correlation. Broadcasted over frames.
     maskOffset : torch.Tensor
@@ -87,15 +87,14 @@ def phasecorr(frames, cfRefImg, maskMul, maskOffset, maxregshift, smooth_sigma_t
     """
 
     device = frames.device
-    data = (frames.float() * maskMul + maskOffset).type(torch.complex64)
+    data = frames.float() * maskMul + maskOffset
     min_dim = min(data.shape[1], data.shape[2])  # maximum registration shift allowed
     lcorr = int(np.minimum(np.round(maxregshift * min_dim), min_dim // 2))
 
     data = convolve(data, cfRefImg)
-    cc = torch.cat((torch.cat((data[:, -lcorr:, -lcorr:], data[:, -lcorr:, :lcorr + 1]), axis=2),   
+    cc = torch.cat((torch.cat((data[:, -lcorr:, -lcorr:], data[:, -lcorr:, :lcorr + 1]), axis=2),
                     torch.cat((data[:, :lcorr + 1, -lcorr:], data[:, :lcorr + 1, :lcorr + 1]), axis=2)), axis=1)
-    cc = torch.real(cc)
-    
+
     cc = temporal_smooth(cc, smooth_sigma_time) if smooth_sigma_time > 0 else cc
 
     imax = torch.stack([torch.argmax(cc[t]) for t in range(data.shape[0])], dim=0)

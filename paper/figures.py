@@ -778,7 +778,8 @@ def registration_fig(frand, freg, refImg, cc_ex, yoff, xoff, yblock, xblock, nbl
     ax.set_position([pos[0]+0.02, pos[1], pos[2], pos[3]])
     from suite2p.registration.utils import ref_smooth_fft
     import torch
-    ref_img_w = torch.real(torch.fft.ifft2(ref_smooth_fft(torch.from_numpy(ref_img), smooth_sigma=0.85))).numpy()
+    ref_img_w = torch.fft.irfft2(ref_smooth_fft(torch.from_numpy(ref_img), smooth_sigma=0.85),
+                                 s=ref_img.shape[-2:]).numpy()
     ref_img_w = ref_img_w[::-1][:,::-1]
     # ref_img_w = np.fft.fft2(ref_img)
     # ref_img_w /= np.abs(ref_img_w)

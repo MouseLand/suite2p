@@ -51,7 +51,7 @@ def get_device():
     return 'cpu'
 
 def initialize_settings(tmpdir, data_dir):
-    """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accomodate creation of settings for both pytest and non-pytest settings."""
+    """Initializes settings. Used for both the test_settings function above and for generate_test_data script. This function was made to accommodate creation of settings for both pytest and non-pytest settings."""
     settings = suite2p.default_settings()
     db = suite2p.default_db()
     db.update({

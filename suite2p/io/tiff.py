@@ -294,9 +294,9 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     dbs : list of dict
         Database dictionaries for each plane. Must contain keys "file_list",
         "first_files", "batch_size", "nplanes", "nchannels", "functional_chan",
-        and optionally "bruker_bidirectional". Updated in-place with "Ly", "Lx",
-        "nframes", "frames_per_file", "frames_per_folder", "meanImg", and
-        "meanImg_chan2".
+        and optionally "force_sktiff" and "bruker_bidirectional". Updated in-place
+        with "Ly", "Lx", "nframes", "frames_per_file", "frames_per_folder",
+        "meanImg", and "meanImg_chan2".
     settings : dict
         Suite2p settings dictionary, saved alongside each plane's database.
     reg_file : list of file objects
@@ -320,7 +320,7 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     fs = dbs[0]["file_list"]
     first_files = dbs[0]["first_files"]
     batch_size = dbs[0]["batch_size"]
-    use_sktiff = not HAS_SCANIMAGE
+    use_sktiff = True if dbs[0].get("force_sktiff", False) else not HAS_SCANIMAGE
 
     fs_Ch1, fs_Ch2 = [], []
     for f in fs:
@@ -341,9 +341,9 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
     logger.info(f"nchannels = {nchannels}")
     
     # loop over all tiffs
-    TiffReader = ScanImageTiffReader if HAS_SCANIMAGE else TiffFile
+    TiffReader = TiffFile if use_sktiff else ScanImageTiffReader
     with TiffReader(fs_Ch1[0]) as tif:
-        if HAS_SCANIMAGE:
+        if not use_sktiff:
             n_pages = tif.shape()[0] if len(tif.shape()) > 2 else 1
             shape = tif.shape()[-2:]
         else:
@@ -377,7 +377,7 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
         # read tiff
         if n_pages==1:    
             with TiffReader(file) as tif:
-                im = tif.data()  if HAS_SCANIMAGE else tif.pages[0].asarray()
+                im = tif.pages[0].asarray() if use_sktiff else tif.data()
             if im.dtype.type == np.uint16:
                 im = (im // 2)
             im = im.astype(np.int16)
@@ -389,7 +389,7 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
             reg_file[ip].write(bytearray(im))
             #gc.collect()
         else:
-            tif, Ltif = open_tiff(file, not HAS_SCANIMAGE)
+            tif, Ltif = open_tiff(file, use_sktiff)
             # keep track of the plane identity of the first frame (channel identity is assumed always 0)
             ix = 0
             while 1:
@@ -414,14 +414,14 @@ def ome_to_binary(dbs, settings, reg_file, reg_file_chan2):
             ip = iplanes[ik]
             if n_pages==1:
                 with TiffReader(file) as tif:
-                    im = tif.data() if HAS_SCANIMAGE else tif.pages[0].asarray()
+                    im = tif.pages[0].asarray() if use_sktiff else tif.data()
                 if im.dtype.type == np.uint16:
                     im = (im // 2)
                 im = im.astype(np.int16)
                 dbs[ip]["meanImg_chan2"] += im.astype(np.float32)
                 reg_file_chan2[ip].write(bytearray(im))
             else:
-                tif, Ltif = open_tiff(file, not HAS_SCANIMAGE)
+                tif, Ltif = open_tiff(file, use_sktiff)
                 ix = 0
                 while 1:
                     im = read_tiff(file, tif, Ltif, ix, batch_size, use_sktiff)

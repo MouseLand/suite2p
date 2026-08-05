@@ -258,3 +258,76 @@ def test_get_suite2p_path(input_path, expected_path, success):
     else:
         with pytest.raises(FileNotFoundError):
             get_suite2p_path(Path(input_path))
+
+
+class _ExplodingScanImageTiffReader:
+    """Stand-in for ScanImageTiffReader that fails loudly if it is ever used."""
+
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("ScanImageTiffReader was used")
+
+
+def _write_ome_ch1_tiffs(tmp_path, frames):
+    from tifffile import imwrite
+
+    files = []
+    for i, frame in enumerate(frames):
+        path = tmp_path / f"scan_Ch1_{i:04d}.ome.tif"
+        imwrite(str(path), frame)
+        files.append(str(path))
+    return files
+
+
+def _ome_db(tmp_path, files, force_sktiff):
+    save_path = tmp_path / "plane0"
+    save_path.mkdir(exist_ok=True)
+    return {
+        "nplanes": 1,
+        "nchannels": 1,
+        "functional_chan": 1,
+        "file_list": files,
+        "first_files": np.array([i == 0 for i in range(len(files))]),
+        "batch_size": 10,
+        "force_sktiff": force_sktiff,
+        "db_path": str(save_path / "db.npy"),
+        "settings_path": str(save_path / "settings.npy"),
+    }, save_path
+
+
+def test_ome_to_binary_honors_force_sktiff(tmp_path, monkeypatch):
+    """force_sktiff must select the tifffile reader, as it already does in
+    tiff_to_binary. See issue #1250."""
+    from suite2p.io import tiff as tiff_io
+
+    frames = [np.arange(4 * 5, dtype=np.int16).reshape(4, 5) + i for i in range(2)]
+    files = _write_ome_ch1_tiffs(tmp_path, frames)
+
+    monkeypatch.setattr(tiff_io, "HAS_SCANIMAGE", True)
+    monkeypatch.setattr(tiff_io, "ScanImageTiffReader", _ExplodingScanImageTiffReader)
+
+    db, save_path = _ome_db(tmp_path, files, force_sktiff=True)
+    reg_path = save_path / "data.bin"
+    with open(reg_path, "wb") as reg_file:
+        dbs = tiff_io.ome_to_binary([db], {}, [reg_file], [None])
+
+    assert dbs[0]["nframes"] == len(frames)
+    assert (dbs[0]["Ly"], dbs[0]["Lx"]) == frames[0].shape
+    written = np.fromfile(reg_path, np.int16).reshape(len(frames), *frames[0].shape)
+    np.testing.assert_array_equal(written, np.stack(frames))
+
+
+def test_ome_to_binary_defaults_to_scanimage(tmp_path, monkeypatch):
+    """Without force_sktiff, ome_to_binary still prefers ScanImageTiffReader when
+    it is installed."""
+    from suite2p.io import tiff as tiff_io
+
+    frames = [np.zeros((4, 5), dtype=np.int16)]
+    files = _write_ome_ch1_tiffs(tmp_path, frames)
+
+    monkeypatch.setattr(tiff_io, "HAS_SCANIMAGE", True)
+    monkeypatch.setattr(tiff_io, "ScanImageTiffReader", _ExplodingScanImageTiffReader)
+
+    db, save_path = _ome_db(tmp_path, files, force_sktiff=False)
+    with open(save_path / "data.bin", "wb") as reg_file:
+        with pytest.raises(RuntimeError, match="ScanImageTiffReader was used"):
+            tiff_io.ome_to_binary([db], {}, [reg_file], [None])

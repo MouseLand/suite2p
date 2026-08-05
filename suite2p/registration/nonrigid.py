@@ -410,11 +410,17 @@ def transform_data(data, nblocks, xblock, yblock, ymax1, xmax1,
                          torch.arange(Lx, dtype=torch.float, device=device), indexing="ij")
     yb = np.array(yblock[::nblocks[1]]).mean(axis=1).astype("int")
     xb = np.array(xblock[:nblocks[1]]).mean(axis=1).astype("int")
-    Lyc, Lxc = int(yb.max() - yb.min()), int(xb.max() - xb.min())
-    yxup = F.interpolate(torch.stack((ymax1, xmax1), dim=1), 
+    # with a single block along a dimension all block centres coincide, so the span
+    # between the first and last centre is zero and interpolate would be asked for an
+    # empty output. Interpolate onto one pixel instead and let the replicate padding
+    # below broadcast that single shift across the whole dimension.
+    Lyc = max(1, int(yb.max() - yb.min()))
+    Lxc = max(1, int(xb.max() - xb.min()))
+    pad_top, pad_left = int(yb.min()), int(xb.min())
+    yxup = F.interpolate(torch.stack((ymax1, xmax1), dim=1),
                          size=(Lyc, Lxc), mode="bilinear", align_corners=True)
-    yxup = F.pad(yxup, (int(xb.min()), Lx - int(xb.max()), 
-                        int(yb.min()), Ly - int(yb.max())), mode="replicate")
+    yxup = F.pad(yxup, (pad_left, Lx - Lxc - pad_left,
+                        pad_top, Ly - Lyc - pad_top), mode="replicate")
     
     if data_ups is not None and counts_ups is not None:
         ups = torch.Tensor([data_ups.shape[0] // Ly, data_ups.shape[1] // Lx]).to(device)

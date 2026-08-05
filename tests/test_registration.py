@@ -47,6 +47,51 @@ def test_negative_bidiphase_shift_shifts_every_other_line():
     assert np.allclose(shifted, expected)
 
 
+@pytest.mark.parametrize("block_size", [(64, 256), (128, 64), (128, 256)])
+def test_transform_data_with_a_single_block_along_a_dimension(block_size):
+    """A block_size that spans a full dimension gives one block there (issue #1211)."""
+    from suite2p.registration.nonrigid import make_blocks
+
+    torch.manual_seed(0)
+    Ly, Lx, n_frames = 128, 256, 3
+    yblock, xblock, nblocks, *_ = make_blocks(Ly, Lx, block_size)
+    assert 1 in nblocks, f"expected a single block along a dimension, got {nblocks}"
+
+    data = torch.rand(n_frames, Ly, Lx) * 100
+    n_blocks_total = nblocks[0] * nblocks[1]
+    ymax1 = torch.randn(n_blocks_total, n_frames)
+    xmax1 = torch.randn(n_blocks_total, n_frames)
+
+    result = transform_data(data, nblocks, xblock, yblock, ymax1, xmax1)
+
+    assert result.shape == (n_frames, Ly, Lx)
+    assert torch.isfinite(result.float()).all()
+
+
+def test_transform_data_single_block_matches_multi_block_for_uniform_shift():
+    """One block and several blocks must agree when every block shifts by the same amount."""
+    from suite2p.registration.nonrigid import make_blocks
+
+    torch.manual_seed(1)
+    Ly, Lx, n_frames = 128, 256, 4
+    data = torch.rand(n_frames, Ly, Lx) * 100
+    shift_y, shift_x = 2.0, -3.0
+
+    results = []
+    for block_size in [(64, Lx), (64, 200)]:
+        yblock, xblock, nblocks, *_ = make_blocks(Ly, Lx, block_size)
+        n_blocks_total = nblocks[0] * nblocks[1]
+        results.append(
+            transform_data(
+                data.clone(), nblocks, xblock, yblock,
+                torch.full((n_blocks_total, n_frames), shift_y),
+                torch.full((n_blocks_total, n_frames), shift_x),
+            )
+        )
+
+    assert torch.equal(results[0], results[1])
+
+
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
 def test_transform_data_mps_cpu_consistency():
     """Test that MPS and CPU code paths in transform_data produce similar results."""

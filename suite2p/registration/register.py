@@ -971,7 +971,7 @@ def registration_wrapper(f_reg, f_raw=None, f_reg_chan2=None, f_raw_chan2=None,
     if nchannels > 1:
         mean_img_alt = shift_frames_and_write(f_alt_in, f_alt_out, settings["batch_size"], yoff, xoff, yoff1,
                                               xoff1, blocks=blocks, bidiphase=bidiphase,
-                                              tif_root=tif_root_align, device=device)
+                                              tif_root=tif_root_alt, device=device)
     else:
         mean_img_alt = None
 

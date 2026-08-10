@@ -99,7 +99,7 @@ def roi_detect(mproj, diameter=None, settings=None,
         Detection settings dictionary. Used to get "params", "chan2_params",
         "cellprob_threshold", and "flow_threshold" for Cellpose.
     pretrained_model : str, optional
-        Name of the Cellpose pretrained model. Defaults to "cpsam".
+        Name of the Cellpose pretrained model. Defaults to "cpsam_v2".
     device : torch.device, optional (default torch.device("cuda"))
         Torch device, used for GPU cache cleanup after detection.
     chan2 : bool, optional (default False)
@@ -127,7 +127,7 @@ def roi_detect(mproj, diameter=None, settings=None,
     logger.info("!NOTE! diameter set to %0.2f for cell detection with cellpose" %
                 diameter[1])
 
-    pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
+    pretrained_model = "cpsam_v2" if pretrained_model is None else pretrained_model
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
     params = settings["params"] if not chan2 else settings["chan2_params"]
     params = {} if params is None else params

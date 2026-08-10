@@ -30,7 +30,7 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
         snr = snr[igood]
 
         # correlate activity traces
-        cc = (zscore(dF_gt, axis=1) @ zscore(dF, axis=1).T) / dF.shape[1]
+        # cc = (zscore(dF_gt, axis=1) @ zscore(dF, axis=1).T) / dF.shape[1]
 
         # find overlapping ROIs
         matched = np.zeros((len(stat_gt), len(stat)), 'float32')
@@ -69,14 +69,14 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
                     matched[j, i] = (intersection / mac.sum() > 0.5) * (intersection / mfc.sum() > 0.5)
                     iou[j, i] = intersection / (mac.sum() + mfc.sum() - intersection)
 
-        cc_filt = cc.copy() 
-        #cc_filt *= (matched > 0.5)
-        cc_filt *= iou > 0.5
+        # cc_filt = cc.copy() 
+        # cc_filt *= (matched > 0.5)
+        # cc_filt *= iou > 0.5
         
         # print((cc_filt.max(axis=1) > 0.5).sum(), len(np.unique(cc_filt[cc_filt.max(axis=1)>0.5].argmax(axis=1))))
 
-        imatch_gt = cc_filt.max(axis=1) > 0.5
-        imatch_uq = len(np.unique(cc_filt[imatch_gt].argmax(axis=1)))
+        imatch_gt = iou.max(axis=1) > 0.5
+        imatch_uq = len(np.unique(iou[imatch_gt].argmax(axis=1)))
         print(imatch_uq, imatch_gt.sum() / igood_gt.sum())
 
         tp = imatch_uq

@@ -174,7 +174,7 @@ def make_neuropil(root, n_planes=4, iplane=1, device=torch.device('cuda')):
 
 
 def hybrid_gt(root, n_planes=4, iplane=1, ds=2, n_ell=2000, neu_coeff=5,
-                poisson_coeff=50, test=False, device=torch.device('cuda')):
+                poisson_coeff=50, test=False, device=torch.device('cuda'), save_output=False):
 
     if n_ell > 0:
         stat_ell, F_ell = make_dendrites(root, n_planes=n_planes, iplane=iplane, ds=ds, n_ell=n_ell)
@@ -455,9 +455,9 @@ def create_gt(root=Path('/media/carsen/ssd2/suite2p_paper/VG1/3/')):
 from suite2p import detection, extraction
 from suite2p.run_s2p import logger_setup 
 
-def hybrid_gt_run(root, n_planes=4, iplane=1, ds=2, 
-                  n_ell=2000, neu_coeff=0.4, poisson_coeff=20,
-                  threshold_scaling=0.7):
+def hybrid_gt_run(root, n_planes=4, iplane=1, ds=2, alg='sparsery',
+                  n_ell=2000, neu_coeff=0.4, poisson_coeff=20, nt=0,
+                  threshold_scaling=0.7, save_output=False):
 
     torch.manual_seed(0)
     torch.cuda.manual_seed_all(0)
@@ -489,12 +489,17 @@ def hybrid_gt_run(root, n_planes=4, iplane=1, ds=2,
     settings['detection']['sparsery_settings']['max_ROIs'] = 10000
     settings['detection']['sparsery_settings']['highpass_neuropil'] = 25
     settings['tau'] = 0.25
+    settings['diameter'] = np.array([8, 8])
+    settings['detection']['algorithm'] = alg
 
     # data_bin = root / 'sims' / f'data_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}.bin'
     
 
     with BinaryFile(Ly=Ly, Lx=Lx, 
                         filename=reg_file) as f_reg:
+        if nt > 0:
+            f_reg = f_reg[:nt]
+        print(f_reg.shape)
         detect_outputs, stat, _ = detection.detection_wrapper(f_reg, diameter=settings['diameter'],
                                     tau=settings['tau'], fs=settings['fs'], 
                                     settings=settings['detection'],
@@ -506,18 +511,25 @@ def hybrid_gt_run(root, n_planes=4, iplane=1, ds=2,
     dF = F.copy() - 0.7 * Fneu
 
     th = threshold_scaling
-    np.save(root / 'sims' / f'stat_s2p_{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', stat)
-    np.save(root / 'sims' / f'F_s2p_{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', F)
-    np.save(root / 'sims' / f'Fneu_s2p_{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', Fneu)
+
+    algstr = '' if alg == 'sparsery' else 'sourcery_'
+    if save_output:
+        np.save(root / 'sims' / f'stat_s2p_{algstr}{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', stat)
+        np.save(root / 'sims' / f'F_s2p_{algstr}{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', F)
+        np.save(root / 'sims' / f'Fneu_s2p_{algstr}{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy', Fneu)
     
     stat_gt = np.load(root / 'benchmarks' / f'stat_gt_plane{iplane}.npy', allow_pickle=True)
     F_gt = np.load(root / 'benchmarks' / f'F_gt_plane{iplane}.npy', allow_pickle=True)
     Fneu_gt = np.load(root / 'benchmarks' / f'Fneu_gt_plane{iplane}.npy', allow_pickle=True)
     dF_gt = F_gt.copy() - 0.7 * Fneu_gt
-    
+    if nt > 0:
+        dF_gt = dF_gt[:, :nt]
+
+    ### SNR
     tp, fp, fn, f1 = detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=Ly, Lx=Lx, snr_threshold=0.25)
 
-    np.save(root / 'sims' / f'results_s2p_{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}.npy',
+    ntstr = '' if nt==0 else f'_nt_{nt}'
+    np.save(root / 'sims' / f'results_s2p_{algstr}{th:.1f}_neu_{neu_coeff:.2f}_ell_{n_ell}_poisson_{poisson_coeff}_plane{iplane}{ntstr}.npy',
             np.array([tp, fp, fn, f1]))
 
 
@@ -528,12 +540,19 @@ if __name__ == '__main__':
     # argparse 
     arg_parser = argparse.ArgumentParser(description='Run hybrid ground-truth generation and Suite2p detection/extraction.')
     arg_parser.add_argument('--root', type=str, default='')
+    arg_parser.add_argument('--alg', type=str, default='sparsery')
+    arg_parser.add_argument('--save_output', action='store_true',
+                            help='Save outputs of run: stat, F and Fneu.')
     arg_parser.add_argument('--sweep', action='store_true',
                             help='Run a sweep of hybrid ground-truth generation with different parameters.')
+    arg_parser.add_argument('--all_planes', action='store_true',
+                            help='Run all planes.')
     arg_parser.add_argument('--param_sweep', action='store_true',
                             help='Run a parameter sweep over threshold scaling for the middle sim.')
     arg_parser.add_argument('--threshold_scaling', type=float, default=0.7,
                             help='threshold_scaling param for ROI detection in suite2p.')
+    arg_parser.add_argument('--nt', type=int, default=0,
+                            help='Number of timepoints to use for detection.')
     arg_parser.add_argument('--n_ell', type=int, default=2000,
                             help='Number of dendritic ellipses to generate.')
     arg_parser.add_argument('--neu_coeff', type=float, default=0.4,
@@ -549,89 +568,86 @@ if __name__ == '__main__':
     if len(args.root) > 0 and not args.sweep and not args.param_sweep:
         root = Path(args.root)
         (root / 'sims').mkdir(parents=True, exist_ok=True)
-        hybrid_gt_run(root, n_planes=4, iplane=args.iplane, ds=2, 
+        hybrid_gt_run(root, n_planes=4, iplane=args.iplane, ds=2, alg=args.alg, nt=args.nt,
                       n_ell=args.n_ell, neu_coeff=args.neu_coeff, poisson_coeff=args.poisson_coeff,
-                      threshold_scaling=args.threshold_scaling)        
-    elif args.param_sweep:
-        root = Path(args.root)
-        (root / 'sims').mkdir(parents=True, exist_ok=True)
-        (root / 'logs').mkdir(parents=True, exist_ok=True)
-        neu_coeff = 0.4
-        poisson_coeff = 20
-        n_ell = 2000
-        for th in np.arange(0.6, 1.5, 0.1):
-            bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
-                f'-J {root}/logs/hybrid_gt_th_{th:.1f} ' \
-                f'-o {root}/logs/hybrid_gt_th_{th:.1f}.out ' \
-                f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} ' \
-                f'--iplane {args.iplane} --threshold_scaling {th:.1f} ' \
-                f' > {root}/logs/hybrid_gt_th_{th:.1f}.log"'
-            print(bsub)
-            os.system(bsub)
+                      threshold_scaling=args.threshold_scaling, save_output=args.save_output)        
+    else:
+        if args.param_sweep:
+            root = Path(args.root)
+            (root / 'sims').mkdir(parents=True, exist_ok=True)
+            (root / 'logs').mkdir(parents=True, exist_ok=True)
+            neu_coeff = 0.4
+            poisson_coeff = 20
+            n_ell = 2000
+            alg = args.alg
+            iplanes = [args.iplane] if not args.all_planes else np.arange(4)
+            for iplane in iplanes:
+                for th in np.arange(0.6, 1.5, 0.1):
+                    bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
+                        f'-J {root}/logs/hybrid_gt_th_{th:.1f} ' \
+                        f'-o {root}/logs/hybrid_gt_th_{th:.1f}.out ' \
+                        f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
+                        f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} ' \
+                        f'--iplane {iplane} --threshold_scaling {th:.1f} --alg {alg} ' \
+                        f' > {root}/logs/hybrid_gt_th_{th:.1f}.log"'
+                    print(bsub)
+                    os.system(bsub)
         
-    elif args.sweep:
-        root = Path(args.root)
-        (root / 'sims').mkdir(parents=True, exist_ok=True)
-        (root / 'logs').mkdir(parents=True, exist_ok=True)
-        root = args.root
-        th = args.threshold_scaling
-        iplane = args.iplane
-
-        # n_ell = 0 
-        # neu_coeff = 0
-        # poisson_coeff = 0
-        # bsub = f'bsub -n 8 -gpu "num=1" -q gpu_l4 ' \
-        #         f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
-        #         f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.out ' \
-        #         f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-        #         f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --iplane {iplane} ' \
-        #         f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.log"'
-        # print(bsub)
-        # os.system(bsub)
-
-
-        for n_ell in np.arange(0, 4001, 500):
-            neu_coeff = 0.4
-            poisson_coeff = 20
-            bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
-                f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
-                f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.out ' \
-                f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} ' \
-                f'--iplane {args.iplane} --threshold_scaling {th:.1f} ' \
-                f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.log"'
-            print(bsub)
-            os.system(bsub)
-
-        for neu_coeff in np.arange(0, 0.81, 0.1):
-            n_ell = 2000
-            poisson_coeff = 20
-            if neu_coeff == 0.4:
-                continue # in loop above
-            bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
-                f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
-                f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.out ' \
-                f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --iplane {iplane} ' \
-                f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.log"'
-            print(bsub)
-            os.system(bsub)
+        elif args.sweep:
+            root = Path(args.root)
+            (root / 'sims').mkdir(parents=True, exist_ok=True)
+            (root / 'logs').mkdir(parents=True, exist_ok=True)
+            root = args.root
+            th = args.threshold_scaling
+            alg = args.alg
+            nt = args.nt
+            iplanes = [args.iplane] if not args.all_planes else np.arange(4)
+            for iplane in iplanes:
+            
+                for n_ell in []:#np.arange(0, 4001, 500):
+                    neu_coeff = 0.4
+                    poisson_coeff = 20
+                    save_str = '--save_output' if n_ell == 2000 else ''
+                    bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
+                        f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
+                        f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.out ' \
+                        f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
+                        f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --alg {alg} --nt {nt} ' \
+                        f'--iplane {iplane} --threshold_scaling {th:.1f} {save_str}' \
+                        f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.log"'
+                    print(bsub)
+                    os.system(bsub)
+            
+                for neu_coeff in [0.9]:#np.arange(0, 0.91, 0.1):
+                    n_ell = 2000
+                    poisson_coeff = 20
+                    if neu_coeff == 0.4:
+                        continue # in loop above
+                    bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
+                        f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
+                        f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.out ' \
+                        f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
+                        f'--neu_coeff {neu_coeff:.2f} --threshold_scaling {th:.1f} ' \
+                        f'--poisson_coeff {poisson_coeff} --alg {alg} --nt {nt} --iplane {iplane} ' \
+                        f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.log"'
+                    print(bsub)
+                    os.system(bsub)
 
 
-        for poisson_coeff in [0, 5, 10, 20, 50, 100, 200]:
-            n_ell = 2000
-            neu_coeff = 0.4
-            if poisson_coeff == 20:
-                continue # in loop above
-            bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
-                f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
-                f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.out ' \
-                f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --iplane {iplane} ' \
-                f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.log"'
-            print(bsub)
-            os.system(bsub)
+                for poisson_coeff in [400]: #[0, 5, 10, 20, 50, 100, 200, 400]:
+                    n_ell = 2000
+                    neu_coeff = 0.4
+                    if poisson_coeff == 20:
+                        continue # in loop above
+                    bsub = f'bsub -n 8 -gpu "num=1" -q gpu_a100 ' \
+                        f'-J {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
+                        f'-o {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.out ' \
+                        f'"~/miniforge3/envs/s2p/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
+                        f'--neu_coeff {neu_coeff:.2f} --threshold_scaling {th:.1f} ' \
+                        f'--poisson_coeff {poisson_coeff} --alg {alg} --nt {nt} --iplane {iplane} ' \
+                        f' > {root}/logs/hybrid_gt_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_{alg}.log"'
+                    print(bsub)
+                    os.system(bsub)
 
             
 

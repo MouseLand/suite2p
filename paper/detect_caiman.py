@@ -74,7 +74,7 @@ data_params = {
 def hybrid_detect(root, iplane=1, neu_coeff=0.4, n_ell=2000, poisson_coeff=20,
                   num_processors_to_use=45, K=10, 
                   p=1, gnb=2, gSig0=5, rf=15,
-                  tiff_file=None, filename=None, delete=True):
+                  tiff_file=None, filename=None, delete=True, save_output=False):
 
     if isinstance(K, int):
         K = [K]
@@ -205,12 +205,13 @@ def hybrid_detect(root, iplane=1, neu_coeff=0.4, n_ell=2000, poisson_coeff=20,
             
         stat_caiman = np.array(stat_caiman)
 
-        np.save(root / 'sims' / f"F_{run_name0}.npy", cnmf_refit.estimates.F_dff)
-        np.save(root / 'sims' / f"stat_{run_name0}.npy", stat_caiman)
-        np.save(root / 'sims' / f"C_{run_name0}.npy", cnmf_refit.estimates.C)
-        np.save(root / 'sims' / f"YrA_{run_name0}.npy", cnmf_refit.estimates.YrA)
-        np.save(root / 'sims' / f"r_{run_name0}.npy", cnmf_refit.estimates.r_values)
-        np.save(root / 'sims' / f"S_{run_name0}.npy", cnmf_refit.estimates.S)
+        if save_output:
+            np.save(root / 'sims' / f"F_{run_name0}.npy", cnmf_refit.estimates.F_dff)
+            np.save(root / 'sims' / f"stat_{run_name0}.npy", stat_caiman)
+            np.save(root / 'sims' / f"C_{run_name0}.npy", cnmf_refit.estimates.C)
+            np.save(root / 'sims' / f"YrA_{run_name0}.npy", cnmf_refit.estimates.YrA)
+            np.save(root / 'sims' / f"r_{run_name0}.npy", cnmf_refit.estimates.r_values)
+            np.save(root / 'sims' / f"S_{run_name0}.npy", cnmf_refit.estimates.S)
         
         dF = cnmf_refit.estimates.F_dff.copy()
             
@@ -250,6 +251,8 @@ if __name__ == '__main__':
     # argparse 
     arg_parser = argparse.ArgumentParser(description='Run hybrid ground-truth generation and Suite2p detection/extraction.')
     arg_parser.add_argument('--root', type=str, default='')
+    arg_parser.add_argument('--save_output', action='store_true',
+                            help='Save outputs of run.')
     arg_parser.add_argument('--param_sweep', action='store_true',
                             help='sweep number of components.')
     arg_parser.add_argument('--param_sweep_grid', action='store_true',
@@ -262,7 +265,7 @@ if __name__ == '__main__':
                             help='Number of dendritic ellipses to generate.')
     arg_parser.add_argument('--Ksweep', action='store_true',
                             help='Run a sweep over K param in caiman.')
-    arg_parser.add_argument('--K', type=int, default=8,
+    arg_parser.add_argument('--K', type=int, default=9,
                             help='Number of components for caiman.')
     arg_parser.add_argument('--p', type=int, default=1,
                             help='Autoregressive order for caiman.')
@@ -298,7 +301,8 @@ if __name__ == '__main__':
         hybrid_detect(root, iplane=args.iplane, K=K, p=args.p, gnb=args.gnb, gSig0=args.gSig0, rf=args.rf,
                       n_ell=args.n_ell, neu_coeff=args.neu_coeff, poisson_coeff=args.poisson_coeff, 
                       num_processors_to_use=args.n_processors, 
-                      tiff_file=args.tiff_file, filename=args.filename, delete=(not args.no_delete))
+                      tiff_file=args.tiff_file, filename=args.filename, delete=(not args.no_delete),
+                      save_output=args.save_output)
     elif args.param_sweep:
         root = Path(args.root)
         (root / 'sims').mkdir(parents=True, exist_ok=True)
@@ -374,14 +378,15 @@ if __name__ == '__main__':
         # print(bsub)
         # os.system(bsub)            
 
-        for n_ell in np.arange(0, 4001, 500):
+        for n_ell in []: #np.arange(0, 4001, 500):
             neu_coeff = 0.4
             poisson_coeff = 20
+            save_str = '--save_output' if n_ell == 2000 else ''
             bsub = f'bsub -n 16 ' \
                 f'-J {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_plane{iplane} ' \
                 f'-o {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_plane{iplane}.out ' \
                 f'"source ~/add_mini.sh; source activate cm; ~/miniforge3/envs/cm/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --K 9 ' \
+                f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} --K 9 {save_str}' \
                 f'--iplane {iplane} ' \
                 f' > {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}_plane{iplane}.log"'
             print(bsub)
@@ -389,7 +394,7 @@ if __name__ == '__main__':
             #time.sleep(15)
             
         
-        for neu_coeff in np.arange(0, 0.81, 0.1):
+        for neu_coeff in [0.9]: #np.arange(0, 0.81, 0.1):
             n_ell = 2000
             poisson_coeff = 20
             if neu_coeff == 0.4:
@@ -405,7 +410,7 @@ if __name__ == '__main__':
             os.system(bsub)
 
 
-        for poisson_coeff in [0, 5, 10, 20, 50, 100, 200]:
+        for poisson_coeff in [400]: #[0, 5, 10, 20, 50, 100, 200]:
             n_ell = 2000
             neu_coeff = 0.4
             if poisson_coeff == 20:

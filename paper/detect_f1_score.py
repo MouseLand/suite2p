@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import zscore
+from scipy.stats import zscore, skew
 from tqdm import trange
 from pathlib import Path
 
@@ -14,9 +14,7 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
     # filter ground-truth and predicted ROIs
     min_size = np.percentile(npix_gt, 5)
     max_size = np.percentile(npix_gt, 95)
-    # snr_threshold = 0.4
     igood_gt = (snr_gt > snr_threshold) * (npix_gt > min_size) * (npix_gt < max_size)
-    # snr_threshold = 0.25
     igood = (snr > snr_threshold) * (npix > min_size) * (npix < max_size)
     print(igood_gt.sum(), igood.sum())
 

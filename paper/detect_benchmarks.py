@@ -604,7 +604,7 @@ if __name__ == '__main__':
             iplanes = [args.iplane] if not args.all_planes else np.arange(4)
             for iplane in iplanes:
             
-                for n_ell in []:#np.arange(0, 4001, 500):
+                for n_ell in np.arange(0, 4001, 500):
                     neu_coeff = 0.4
                     poisson_coeff = 20
                     save_str = '--save_output' if n_ell == 2000 else ''
@@ -618,7 +618,7 @@ if __name__ == '__main__':
                     print(bsub)
                     os.system(bsub)
             
-                for neu_coeff in [0.9]:#np.arange(0, 0.91, 0.1):
+                for neu_coeff in np.arange(0, 0.91, 0.1):
                     n_ell = 2000
                     poisson_coeff = 20
                     if neu_coeff == 0.4:
@@ -634,7 +634,7 @@ if __name__ == '__main__':
                     os.system(bsub)
 
 
-                for poisson_coeff in [400]: #[0, 5, 10, 20, 50, 100, 200, 400]:
+                for poisson_coeff in [0, 5, 10, 20, 50, 100, 200, 400]:
                     n_ell = 2000
                     neu_coeff = 0.4
                     if poisson_coeff == 20:

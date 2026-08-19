@@ -364,21 +364,7 @@ if __name__ == '__main__':
         
         iplane = args.iplane
 
-        # # run original data
-        # n_ell = 0 
-        # neu_coeff = 0 
-        # poisson_coeff = 0
-        # bsub = f'bsub -n 16 ' \
-        #     f'-J {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff} ' \
-        #     f'-o {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.out ' \
-        #     f'"source ~/add_mini.sh; source activate cm; ~/miniforge3/envs/cm/bin/python {__file__} --root {root} --n_ell {n_ell} ' \
-        #     f'--neu_coeff {neu_coeff:.2f} --poisson_coeff {poisson_coeff} ' \
-        #     f'--iplane {iplane} ' \
-        #     f' > {root}/logs/caiman_{n_ell}_{neu_coeff:.2f}_{poisson_coeff}.log"'
-        # print(bsub)
-        # os.system(bsub)            
-
-        for n_ell in []: #np.arange(0, 4001, 500):
+        for n_ell in np.arange(0, 4001, 500):
             neu_coeff = 0.4
             poisson_coeff = 20
             save_str = '--save_output' if n_ell == 2000 else ''
@@ -394,7 +380,7 @@ if __name__ == '__main__':
             #time.sleep(15)
             
         
-        for neu_coeff in [0.9]: #np.arange(0, 0.81, 0.1):
+        for neu_coeff in np.arange(0, 0.81, 0.1):
             n_ell = 2000
             poisson_coeff = 20
             if neu_coeff == 0.4:
@@ -410,7 +396,7 @@ if __name__ == '__main__':
             os.system(bsub)
 
 
-        for poisson_coeff in [400]: #[0, 5, 10, 20, 50, 100, 200]:
+        for poisson_coeff in [0, 5, 10, 20, 50, 100, 200]:
             n_ell = 2000
             neu_coeff = 0.4
             if poisson_coeff == 20:

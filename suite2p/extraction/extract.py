@@ -62,7 +62,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
         # create coo tensor of neuropil masks
         ccol_indices = [m for nm in neuropil_masks for m in nm]
         row_indices = [k for k in range(len(neuropil_masks)) for m in neuropil_masks[k]]
-        inds = torch.Tensor([ccol_indices, row_indices]).to(device)
+        inds = torch.tensor([ccol_indices, row_indices], dtype=torch.long, device=device)
         # convert to csc (tried creating csc directly but it was slow)
         nmasks = torch.sparse_coo_tensor(inds, torch.ones(len(row_indices), device=device),
                                          size=(Ly*Lx, ncells))
@@ -71,7 +71,7 @@ def extract_traces(f_in, cell_masks, neuropil_masks, batch_size=500,
     ccol_indices = [m for cm in cell_masks for m in cm[0]]
     row_indices = [k for k in range(len(cell_masks)) for m in cell_masks[k][0]]
     cell_lam = torch.Tensor([l for cm in cell_masks for l in cm[1]]).to(device)
-    inds = torch.Tensor([ccol_indices, row_indices]).to(device)
+    inds = torch.tensor([ccol_indices, row_indices], dtype=torch.long, device=device)
     cmasks = torch.sparse_coo_tensor(inds, cell_lam,
                                      size=(Ly*Lx, ncells))
     cmasks = cmasks.to_sparse_csc()

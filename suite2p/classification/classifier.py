@@ -133,7 +133,11 @@ class Classifier:
             x[x < self.grid[0, n]] = self.grid[0, n]
             x[x > self.grid[-1, n]] = self.grid[-1, n]
             x[np.isnan(x)] = self.grid[0, n]
+            # np.digitize(..., right=True) returns 0 for x == grid[0], which after
+            # the -1 would index the *last* bin; clip so values at (or clamped to)
+            # the minimum use the first bin and values at the maximum the last.
             ibin = np.digitize(x, self.grid[:, n], right=True) - 1
+            ibin = np.clip(ibin, 0, self.p.shape[0] - 1)
             logp[:, n] = np.log(self.p[ibin, n] + 1e-6) - np.log(1 - self.p[ibin, n] +
                                                                  1e-6)
         return logp

@@ -3,6 +3,7 @@ Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer a
 """
 import numpy as np
 from numpy import fft
+import torch
 
 
 def compute(frames: np.ndarray) -> int:
@@ -60,8 +61,16 @@ def shift(frames: np.ndarray, bidiphase: int) -> None:
     frames : np.ndarray
         The input frames with odd lines shifted.
     """
+    # The source and destination slices overlap. numpy makes a temporary copy
+    # for overlapping assignments, but torch.Tensor.copy_ does not, so on a
+    # torch tensor the in-place assignment reads already-overwritten pixels
+    # and corrupts the odd lines. Copy the source first for both array types.
     if bidiphase > 0:
-        frames[:, 1::2, bidiphase:] = frames[:, 1::2, :-bidiphase]
+        src = frames[:, 1::2, :-bidiphase]
+        src = src.clone() if isinstance(frames, torch.Tensor) else src.copy()
+        frames[:, 1::2, bidiphase:] = src
     elif bidiphase < 0:
-        frames[:, 1::2, :bidiphase] = frames[:, 1::2, -bidiphase:]
+        src = frames[:, 1::2, -bidiphase:]
+        src = src.clone() if isinstance(frames, torch.Tensor) else src.copy()
+        frames[:, 1::2, :bidiphase] = src
     return frames

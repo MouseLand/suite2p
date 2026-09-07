@@ -1,21 +1,22 @@
 from fig_utils import *
 from scipy.stats import wilcoxon, ttest_rel
 import os 
-from matplotlib.patches import Ellipse, Rectangle
+from matplotlib.patches import Ellipse, Rectangle, ConnectionPatch
 from matplotlib.lines import Line2D
-from scipy.stats import zscore
+from scipy.stats import zscore, mannwhitneyu
 import cv2
 import fastremap 
-from cellpose import transforms
+from cellpose import transforms, utils
 
 def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, iperm, colors, masks, 
                  F, Fneu, masks_all, max_proj_all, Xemb, 
-                 corr_starts, corr_ends, istims, running, isort):
+                 corr_starts, corr_ends, istims, running, isort, 
+                 ex_tuns, csig, cc01s):
     il = 0
-    fig = plt.figure(figsize=(14,7), dpi=150)
-    yratio = 14./7
-    grid = plt.GridSpec(5, 6, wspace=0.3, hspace=0.4, figure=fig, 
-                            bottom=0.0, top=0.99, left=0.03, right=0.99)
+    fig = plt.figure(figsize=(14,9), dpi=150)
+    yratio = 14./9
+    grid = plt.GridSpec(7, 6, wspace=0.3, hspace=0.4, figure=fig, 
+                            bottom=0.02, top=0.99, left=0.03, right=0.99)
     
     by = 30
     n, ly, lx = raw_ex.shape
@@ -103,9 +104,9 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     il = plot_label(ltr, il, ax, transl)        
     
 
-    ax = plt.subplot(grid[-3:, :2])
+    ax = plt.subplot(grid[2:5, :2])
     pos = ax.get_position().bounds
-    ax.set_position([pos[0]-0.01, pos[1]+0.05, pos[2], pos[3]])
+    ax.set_position([pos[0]-0.01, pos[1]+0.0, pos[2], pos[3]])
     ax.imshow(gui_img)
     ax.axis('off')
     ax.set_title('GUI for results visualization', fontstyle='italic',
@@ -113,19 +114,17 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     transl = mtransforms.ScaledTranslation(-17/72, 3/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl)        
 
-    
-
-    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=grid[-3:, 2:4],
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=grid[2:5, 2:4],
                                                                 wspace=0.2, hspace=0.2)
     ax = plt.subplot(grid1[0, 0])
     pos = ax.get_position().bounds
     px = 0.03
-    ax.set_position([pos[0]-px, pos[1]+0.2*pos[3], pos[2], pos[3]*0.8])
+    ax.set_position([pos[0]-px, pos[1]+0.2*pos[3]-0.02, pos[2], pos[3]*0.8])
     ax.imshow(planes_img)
     ax.set_title('> 100,000 neurons in 7 planes (@ 1.87 Hz)', fontstyle='italic',
-                        loc='left')
+                        loc='left', y=1.05)
     ax.axis('off')
-    transl = mtransforms.ScaledTranslation(-17/72, 3/72, fig.dpi_scale_trans)
+    transl = mtransforms.ScaledTranslation(-17/72, 8/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl)        
 
     i = 0
@@ -147,7 +146,7 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     
     ax = plt.subplot(grid1[:, 1])
     pos1 = ax.get_position().bounds
-    ax.set_position([pos1[0] - px, *pos1[1:]])
+    ax.set_position([pos1[0] - px, pos1[1]-0.01, pos1[2], pos1[3]])
     ax.imshow(masks0[y0:y0+dy, x0:x0+dx], cmap='hsv', alpha=1, vmin=1, vmax=ncells+1)
     ax.spines['right'].set_visible(True)
     ax.spines['top'].set_visible(True)
@@ -166,13 +165,11 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
     ax.axis('off')
+
     
-
-    #ax.text(1.1, 0.5, '...', fontsize='xx-large', transform=ax.transAxes)
-
-    ax = plt.subplot(grid[-3:, -2:])
+    ax = plt.subplot(grid[2:5, -2:])
     pos = ax.get_position().bounds
-    ax.set_position([pos[0]-0.0, pos[1]+0.08*pos[3], pos[2], pos[3]*0.84])
+    ax.set_position([pos[0]-0.0, pos[1]+0.05*pos[3], pos[2], pos[3]*0.84])
     nn = Xemb.shape[0]
     #nt = 1350 - 1180
     xmin = 6300
@@ -212,7 +209,7 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     axin.axis('off')
     axin.text(0.0, -0.05, '10 sec.', transform=axin.transAxes, ha='left', va='top')
 
-    ax = fig.add_axes([pos[0]-0.0, pos[1]+0.93*pos[3], pos[2], pos[3]*0.08])
+    ax = fig.add_axes([pos[0]-0.0, pos[1]+0.9*pos[3], pos[2], pos[3]*0.08])
     ax.set_title('  Rastermap of activity - 6 corridor virtual reality', loc='left', fontsize='medium')
     ax.fill_between(np.arange(nt), np.maximum(0, running[xmin:xmax]), 
                     color=0.7*np.ones(3))
@@ -223,15 +220,56 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     transl = mtransforms.ScaledTranslation(-14/72, 3/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl)        
 
-
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 6, subplot_spec=grid[-2:, :-1],
+                                                                    wspace=0.2, hspace=0.2)
+    ncorr = len(ex_tuns)
+    for n in range(ncorr):
+        ax = plt.subplot(grid1[n])
+        pos = ax.get_position().bounds
+        nn = ex_tuns[n].shape[0]
+        ax.set_position([pos[0]-(n)*0.005-0.01, pos[1]+0.15*pos[3], pos[2], pos[3]*0.85])
+        rgb = 1 - (1 - cols[n]) * np.clip(ex_tuns[n].copy(), 0, 1)[..., None]
+        ax.imshow(rgb, vmin=0, vmax=1, cmap='gray_r', aspect='auto', extent=[0, 1, 0, nn])
+        ax.spines['left'].set_visible(False)
+        ax.set_yticks([])
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_xticklabels(['0', '0.5', '1'])
+        axin = ax.inset_axes([-0.05, 0, 0.015, 1])
+        axin.plot(-0.05*np.ones(2), [0, 1000], color='k')
+        axin.set_ylim([0, nn])
+        axin.axis('off')
+        if n==0:
+            axin.text(-0.05, 0.0, '1,000 neurons', transform=ax.transAxes, rotation=90, ha='right', va='bottom')
+            transl = mtransforms.ScaledTranslation(-17/72, 3/72, fig.dpi_scale_trans)
+            il = plot_label(ltr, il, ax, transl)      
+            ax.set_title('Single-neuron tuning curves for each corridor (test trials)', 
+                            fontstyle='italic', loc='left')
+            ax.set_xlabel('interpolated position')
+        
+        
+    ax = plt.subplot(grid[-2:, -1])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0], pos[1]+0.25*pos[3], pos[2], pos[3]*0.85])
+    nb, bins = np.histogram(csig, bins=np.arange(-0.2, 1.05, 0.05))
+    nb = nb.astype('float32') / nb.sum()
+    bdiff = np.diff(bins)[0]
+    ax.bar(bins[:-1]+bdiff, nb, width=bdiff, color=0.65*np.ones(3), 
+            edgecolor='k', lw=0.5)
+    ax.set_xlabel('Tuning correlation\n(train vs test trials)')
+    ax.set_ylabel('Fraction of neurons')
+    transl = mtransforms.ScaledTranslation(-45/72, -12/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)      
+        
     return fig 
     
 
-def suppfig_planes(max_proj_all, masks_all, Xemb, corr_starts, corr_ends, istims, running, isort):
-    fig = plt.figure(figsize=(14,8), dpi=150, facecolor=None)
-    grid = plt.GridSpec(2, 4, wspace=0.1, hspace=0.1, figure=fig, 
+def suppfig_planes(max_proj_all, masks_all, Xemb, corr_starts, corr_ends, istims, running, isort,
+                   ex_tuns, csig, cc01s):
+    
+    fig = plt.figure(figsize=(14,10), dpi=150, facecolor=None)
+    grid = plt.GridSpec(3, 4, wspace=0.1, hspace=0.1, figure=fig, 
                             bottom=0.04, top=0.93, left=0.02, right=0.98)
-
+    il = 0
     nplanes = 7
     for i in range(nplanes):
         alpha = 0.7
@@ -244,8 +282,74 @@ def suppfig_planes(max_proj_all, masks_all, Xemb, corr_starts, corr_ends, istims
         #ax.set_ylim(ylim)
         #ax.set_xlim(xlim)
         ax.axis('off')
-        ax.set_title(f'plane {i}')
+        ax.set_title(f'plane {i+1}')
+        if i==0:
+            transl = mtransforms.ScaledTranslation(-25/72, 0/72, fig.dpi_scale_trans)
+            il = plot_label(ltr, il, ax, transl)      
+                
 
+    Ly, Lx = max_proj_all[0].shape
+    rgb = np.zeros((Ly, Lx, 3))
+
+    iplane = 1
+    from cellpose import transforms, utils
+    mipl0 = np.clip(transforms.normalize99(max_proj_all[iplane]), 0, 1)
+    mipl1 = np.clip(transforms.normalize99(max_proj_all[iplane+1]), 0, 1)
+    rgb[:,:,0] = mipl0
+    rgb[:,:,2] =  mipl0 * 0.5 + mipl1 * 0.5
+    rgb[:,:,1] = mipl1
+
+
+    ylim = [600, 700]
+    xlim = [350, 450]
+    ax = plt.subplot(grid[-1, 0])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0], pos[1]-0.05*pos[3], pos[2], pos[3]*0.95])
+    ax.imshow(rgb[ylim[0]:ylim[1], xlim[0]:xlim[1], :])
+    ax.axis('off')
+    ax.text(0.2, 1.05, f'plane {iplane+1}', color='m', transform=ax.transAxes, va='center')
+    ax.text(0.6, 1.05, f'plane {iplane+2}', color='c', transform=ax.transAxes, va='center')
+    transl = mtransforms.ScaledTranslation(-25/72, 0/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)      
+            
+    ax = plt.subplot(grid[-1, 1])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0], pos[1]-0.05*pos[3], pos[2], pos[3]*0.95])
+    pad = 10
+    for ipl in [iplane, iplane+1]:
+        out0 = utils.outlines_list(masks_all[ipl][ylim[0]-pad:ylim[1]+pad, xlim[0]-pad:xlim[1]+pad])
+        for o in out0:
+            if len(o) < 5:
+                continue
+            o = np.vstack((o, o[0,:]))
+            ax.plot(o[:,0]-pad, o[:,1]-pad, 'm' if ipl == iplane else 'c', lw=0.5, ls='--' if ipl == iplane else '-')
+    ax.set_ylim([0, ylim[1]-ylim[0]])
+    ax.set_xlim([0, xlim[1]-xlim[0]])
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.text(0.1, 1.05, f'plane {iplane+1} cells', color='m', transform=ax.transAxes, va='center')
+    ax.text(0.6, 1.05, f'plane {iplane+2} cells', color='c', transform=ax.transAxes, va='center')
+    transl = mtransforms.ScaledTranslation(-25/72, 0/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)      
+    
+    ax = plt.subplot(grid[-1, 2])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]+0.05, pos[1]-0.0*pos[3], pos[2], pos[3]*0.95])
+    ax.scatter(csig[:len(cc01s)], cc01s, s=1, color=0.5*np.ones(3), alpha=0.1,
+               rasterized=True)
+    ax.plot([0, 1], [0, 1], color='k', lw=0.5)
+    ax.axis('square')
+    ax.spines['left'].set_position('zero')
+    ax.spines['bottom'].set_position('zero')
+    ax.set_xticks([0, 0.5, 1])
+    ax.set_yticks([0, 0.5, 1])
+    ax.set_xlabel('Tuning correlation (odd vs even trials)',
+                  labelpad=50)
+    ax.set_ylabel('Tuning correlation across planes\n(within 10$\mu$m)',
+                  labelpad=25)
+    transl = mtransforms.ScaledTranslation(-60/72, -10/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)      
+        
     return fig
 
 
@@ -268,7 +372,6 @@ def zstack_fig(imgs, shear_x=150, by=75, rsz=0.2):
             [0, h*rsz]
         ]).astype('float32')
 
-
         M = cv2.getPerspectiveTransform(src_points, dst_points)
         dst = cv2.warpPerspective(src, M, (int(output_w), int(output_h)))
         dst = dst[:int(h*rsz)]
@@ -282,7 +385,8 @@ def zstack_fig(imgs, shear_x=150, by=75, rsz=0.2):
 
 
 def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all, 
-                  f_init, threshold, masks_all, mask_pic, mask_id, iou, traces, colors):
+                  f_init, threshold, masks_all, mask_pic, mask_id, iou, 
+                  traces, colors, var_exp, var_exp_init, var_start, th):
     
     fig = plt.figure(figsize=(14, 9), dpi=150)
     il = 0
@@ -346,42 +450,43 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
             cb = plt.colorbar(im, cax=cax, orientation='horizontal')    
             cb.ax.set_xlim([0, vmax])
 
-    ax = plt.subplot(grid[1, 0])
-    pos = ax.get_position().bounds
-    ax.set_position([pos[0]+0.1*pos[2], pos[1]+0.1*pos[3], pos[2]*0.82, pos[3]*0.82])
+    # ax = plt.subplot(grid[1, 0])
+    # pos = ax.get_position().bounds
+    # ax.set_position([pos[0]+0.1*pos[2], pos[1]+0.1*pos[3], pos[2]*0.82, pos[3]*0.82])
+    # med = [np.median(ypix_all[iex][0]).astype(int), np.median(xpix_all[iex][0]).astype(int)]
+    # mask = np.zeros((ly, ly), 'float32')
+    # mask[ypix_all[iex][0].copy() - med[0] + ly//2, 
+    #             xpix_all[iex][0].copy() - med[1] + ly//2] = lam_all[iex][0].copy()
+    # ax.imshow(mask, cmap='seismic', vmin=-mask.max(), vmax=mask.max())
+    # ax.spines['top'].set_visible(True)
+    # ax.spines['right'].set_visible(True)
+    # ax.set_xticks([])
+    # ax.set_yticks([])
+    # transl = mtransforms.ScaledTranslation(-20/72, 21/72, fig.dpi_scale_trans)
+    # il = plot_label(ltr, il, ax, transl)        
+    # ax.text(0, 1.1, 'initialization\ntemplate', 
+    #             fontsize='large', fontstyle='italic', transform=ax.transAxes)
+            
     iex = 0
     ly = 40
-    med = [np.median(ypix_all[iex][0]).astype(int), np.median(xpix_all[iex][0]).astype(int)]
-    mask = np.zeros((ly, ly), 'float32')
-    mask[ypix_all[iex][0].copy() - med[0] + ly//2, 
-                xpix_all[iex][0].copy() - med[1] + ly//2] = lam_all[iex][0].copy()
-    ax.imshow(mask, cmap='seismic', vmin=-mask.max(), vmax=mask.max())
-    ax.spines['top'].set_visible(True)
-    ax.spines['right'].set_visible(True)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    transl = mtransforms.ScaledTranslation(-20/72, 21/72, fig.dpi_scale_trans)
-    il = plot_label(ltr, il, ax, transl)        
-    ax.text(0, 1.1, 'initialization\ntemplate', 
-                fontsize='large', fontstyle='italic', transform=ax.transAxes)
-            
-    ax = plt.subplot(grid[1, 1:3])
+    ax = plt.subplot(grid[1, 0:2])
     pos = ax.get_position().bounds
-    ax.set_position([pos[0]-0.05*pos[2], pos[1]+0.05*pos[3], pos[2]*1.1, pos[3]*0.9])
+    ax.set_position([pos[0]-0.02*pos[2], pos[1]+0.05*pos[3], pos[2]*1.06, pos[3]*0.9])
     ax.plot(f_init[iex], lw=1, color='k')
     ax.plot([-80, len(f_init[iex])+80], [threshold, threshold], lw=1, color='r')
     ax.axis('off')
-    transl = mtransforms.ScaledTranslation(-20/72, 1/72, fig.dpi_scale_trans)
+    transl = mtransforms.ScaledTranslation(-10/72, 1/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl)        
-    ax.text(0, 1.03, 'initial time trace', 
+    ax.text(0.02, 1.03, 'initial time trace', 
                 fontsize='large', fontstyle='italic', transform=ax.transAxes)
     ax.text(0.5, 0.96, 'threshold', transform=ax.transAxes, color='r')
-    
-    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(4, 10, subplot_spec=grid[1, 3:],
+
+    nplots = 7
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(4, 7, subplot_spec=grid[1, 2:-2],
                                                                 wspace=0.2, hspace=0.1)
     for j, iex in enumerate([4, 11, 2330, 372]): #372, 514]):#, 22, 30, 37, 21]):
         med = [np.median(ypix_all[iex][0]).astype(int), np.median(xpix_all[iex][0]).astype(int)]
-        ti = np.linspace(0, len(ypix_all[iex])-1, 10).astype(int)
+        ti = np.linspace(0, len(ypix_all[iex])-1, 7).astype(int)
         for i, t in enumerate(ti):
             mask = np.zeros((ly, ly), 'float32')
             yp = ypix_all[iex][t].copy() - med[0] + ly//2
@@ -394,7 +499,7 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
 
             ax = plt.subplot(grid1[j, i])
             pos = ax.get_position().bounds
-            ax.set_position([pos[0], pos[1]+0.02, *pos[2:]])
+            ax.set_position([pos[0]-0.02, pos[1]+0.02, *pos[2:]])
             ax.imshow(mask, cmap='seismic', vmin=-mask.max(), vmax=mask.max())
             ax.spines['top'].set_visible(True)
             ax.spines['right'].set_visible(True)
@@ -405,7 +510,35 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
                 transl = mtransforms.ScaledTranslation(-20/72, 5/72, fig.dpi_scale_trans)
                 il = plot_label(ltr, il, ax, transl)        
                 ax.text(0, 1.18, 'ROI refinement (4 examples)', 
-                            fontsize='large', fontstyle='italic', transform=ax.transAxes)       
+                            fontsize='large', fontstyle='italic', transform=ax.transAxes) 
+
+    ax = plt.subplot(grid[1, -2])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]+0.07*pos[2], pos[1]+0.15*pos[3], pos[2]*0.9, pos[3]*0.95])
+    x = np.arange(1, len(var_exp)+1)
+    ax.plot(x, np.array(var_exp) + th, color='r', lw=0.5)
+    ax.plot(x, np.array(var_exp_init) + th, color=[0.5, 0, 0])
+    ax.plot(x, th * np.ones_like(x), color='k', lw=2, ls='--', zorder=30)
+    ax.set_yscale('log')
+    ax.legend(['refined', 'initial'], frameon=False)
+    for i, text in enumerate(ax.get_legend().get_texts()):
+        text.set_color(ax.get_lines()[i].get_color())
+        ax.get_legend().get_lines()[i].set_visible(False)
+    ax.text(0.05, 0.07, 'threshold', transform=ax.transAxes)
+    ax.set_xlabel('ROI #')
+    ax.set_ylabel('variance explained per ROI', labelpad=2)
+    transl = mtransforms.ScaledTranslation(-40/72, 0/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)                        
+    
+
+    ax = plt.subplot(grid[1, -1])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]+0.1*pos[2], pos[1]+0.15*pos[3], pos[2]*0.9, pos[3]*0.95])
+    ax.plot(x, var_start + np.cumsum(-np.array(var_exp) + th), color='r')
+    ax.set_xlabel('ROI #')
+    ax.set_ylabel('loss function', labelpad=2)
+    transl = mtransforms.ScaledTranslation(-40/72, 0/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl)                        
     
     grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=grid[-1, :2],
                                                                 wspace=0.2, hspace=0.1)
@@ -479,14 +612,16 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
                              
     return fig
 
-def detectmetrics_fig(max_proj, cp_outlines, dF_gt, neu_ex, ell_ex, f_ex, 
+def detectmetrics_fig(max_proj, cp_outlines, dF_gt, igood_gt,
+                      snr_gt, neu_ex, ell_ex, f_ex, 
                       d_out, masks_gt, outlines_gt, outlines_all, 
                       tps, fps, fns, idef):
-    fig = plt.figure(figsize=(14,6), dpi=150)
-    yratio = 6./14
+    
+    fig = plt.figure(figsize=(14,9), dpi=150)
+    yratio = 9./14
     il = 0
-    grid = plt.GridSpec(2, 5, wspace=0.25, hspace=0.3, figure=fig, 
-                            bottom=0.055, top=0.925, left=0.02, right=0.98)
+    grid = plt.GridSpec(3, 5, wspace=0.25, hspace=0.4, figure=fig, 
+                            bottom=0.055, top=0.925, left=0.02, right=0.97)
 
     grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 6, subplot_spec=grid[0, :],
                                                                     wspace=0.3, hspace=0.1)
@@ -513,7 +648,7 @@ def detectmetrics_fig(max_proj, cp_outlines, dF_gt, neu_ex, ell_ex, f_ex,
 
     ax = plt.subplot(grid1[1])
     pos = ax.get_position().bounds 
-    ax.set_position([pos[0] + 0.05, *pos[1:]])
+    ax.set_position([pos[0] + 0.05, pos[1]-0.02, pos[2]*1.15, pos[3]*1.15])
     ax.imshow(transforms.normalize99(max_proj, 0.1, 98), cmap='gray', vmin=0, vmax=0.6)
     ax.axis('off')
     for outline in cp_outlines:
@@ -527,7 +662,7 @@ def detectmetrics_fig(max_proj, cp_outlines, dF_gt, neu_ex, ell_ex, f_ex,
 
     ax = plt.subplot(grid1[2])
     pos = ax.get_position().bounds 
-    ax.set_position([pos[0] + 0.015, pos[1]+0.07*pos[3], pos[2]*0.9, pos[3]*0.86])
+    ax.set_position([pos[0] + 0.04, pos[1]+0.07*pos[3], pos[2]*0.7, pos[3]*0.86])
     iexs = np.arange(0, len(dF_gt), 100)
     for i, iex in enumerate(iexs):
         f0 = dF_gt[iex, 3000:6000]
@@ -582,12 +717,35 @@ def detectmetrics_fig(max_proj, cp_outlines, dF_gt, neu_ex, ell_ex, f_ex,
     ax.set_title('simulated recording')
     ax.axis('off')
 
+
+    ax = plt.subplot(grid[1, :2])
+    pos = ax.get_position().bounds 
+    ax.set_position([pos[0] -0.0, pos[1]-0.04, pos[2]*0.75, pos[3]*1.2])
+    isort = snr_gt.argsort()[1::100]
+    cmap = plt.cm.hot(np.linspace(0, 0.65, len(isort)))
+    for i, iex in enumerate(isort):
+        f0 = dF_gt[iex].copy()
+        f0 = f0[4000:6000]
+        f0 -= f0.mean()
+        ax.plot(f0 + i*900, lw=0.5, alpha=1, color=cmap[i], zorder=i)
+        ax.text(len(f0)*1.05, i*900 - 200, f'{snr_gt[iex]:.2f}', color=cmap[i], 
+                fontsize='small', ha='center')
+        if i==len(isort)-1:
+            ax.text(len(f0)*1.05, i*900 + 700, 'SNR',
+                    fontsize='small', ha='center')
+    ax.set_ylim([-700, (len(isort))*900+100])
+    ax.plot([0, 6.76*30], -500*np.ones(2), lw=2, color='k')
+    ax.text(3.38*30, -650, '30 sec.', fontsize='small', ha='center', va='top')
+    ax.axis('off')
+    ax.set_title('GT activity traces sorted by SNR')
+    transl = mtransforms.ScaledTranslation(-8/72, 2/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
     
     ymax = 0.9
 
-    ax = plt.subplot(grid[-1, 0])
+    ax = plt.subplot(grid[1, 1])
     pos = ax.get_position().bounds 
-    ax.set_position([pos[0] - 0.02, pos[1]-0.04, pos[2]*1.2, pos[3]*1.2])
+    ax.set_position([pos[0] + 0.09, pos[1]-0.04, pos[2]*1.2, pos[3]*1.2])
     Ly, Lx = masks_gt.shape
     rgb = np.ones((Ly, Lx, 3), 'float32')
     rgb[masks_gt > 0] = 0.9 * np.ones(3)
@@ -606,122 +764,84 @@ def detectmetrics_fig(max_proj, cp_outlines, dF_gt, neu_ex, ell_ex, f_ex,
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title('segmentation results')
-    transl = mtransforms.ScaledTranslation(-15/72, 2/72, fig.dpi_scale_trans)
+    transl = mtransforms.ScaledTranslation(-25/72, 2/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl) 
     
-    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=grid[1, 1:3],
-                                                                wspace=0.8, hspace=0.2)
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=grid[1, -3:],
+                                                                wspace=1., hspace=0.2)
 
     f1 = tps[0][:,:,:,idef] / (tps[0][:,:,:,idef] + 0.5 * (fns[0][:,:,:,idef] + fps[0][:,:,:,idef]))
-    fnr = fns[0][:,:,:,idef] / (fns[0][:,:,:,idef] + tps[0][:,:,:,idef])
-    fpr = fps[0][:,:,:,idef] / (fps[0][:,:,:,idef] + tps[0][:,:,:,idef])
     metrics = [f1, fns[0][:,:,:,idef], fps[0][:,:,:,idef]]
     ylabels = ['F1 score', 'false negatives', 'false positives']
+    algs = ['Suite2p\nSparsery', 'Suite2p\nSourcery', 'Caiman']
+    ipairs = [[0, 1], [0, 2], [1, 2]]
     for k in range(3):
         ax = plt.subplot(grid1[k])
         pos = ax.get_position().bounds 
-        ax.set_position([pos[0] - 0.012*k, pos[1] + 0.03, pos[2]*0.8, pos[3]])
-        axin = ax.inset_axes([0, 1.0, 1, 0.1])
+        ax.set_position([pos[0] + 0.05*(2-k)+0.0, pos[1] + 0.01, pos[2], pos[3]])
+        axin = ax.inset_axes([0, 1.0, 1, 0.14])
         ax.set_ylabel(ylabels[k], fontsize='medium')
         nalg = metrics[k].shape[-1]
         ax.set_xticks(np.arange(nalg))
-        ax.set_xticklabels(['Suite2p', 'Caiman'], rotation=0)
-        ax.plot(metrics[k].reshape(-1, 2).T, color=0.7*np.ones(3), lw=1)
+        ax.set_xticklabels(algs, rotation=0)
+        ax.plot(metrics[k].reshape(-1, 3).T, color=0.7*np.ones(3), lw=1)
         for i in range(nalg):
             ax.scatter(i*np.ones(12), metrics[k][:,:,i].flatten(), 
-                       color=alg_cols[i], s=15, alpha=0.5, zorder=30)
-            ax.get_xticklabels()[i].set_color(alg_cols[i])
-            if i > 0:
-                p = wilcoxon(metrics[k][:,:,0].flatten(), metrics[k][:,:,i].flatten()).pvalue 
-                print(p)
-                pstr = "n.s." if p > 0.05 else ("*" if p >= 0.01 else "**" if p >= 0.001 else "***")
-                axin.plot([0, i], np.ones(2)*(0.95 + i * 0.015), lw=1, color="k")
-                axin.text(i/2, 0.95 + i*0.015, pstr, ha="center", va="center")
-        # p = wilcoxon(metrics[k][:,:,1].flatten(), metrics[k][:,:,2].flatten()).pvalue 
-        # print(p)
-        # pstr = "n.s." if p > 0.05 else ("*" if p >= 0.01 else "**" if p >= 0.001 else "***")
-        # axin.plot([1, 2], np.ones(2)*(0.95 + 3 * 0.015), lw=1, color="k")
-        # axin.text(1.5, 0.95 + 3*0.015, pstr, ha="center", va="center")
-        ax.set_ylim([0, ymax] if k==0 else [0, 720])
+                       color=alg_cols[i>1], s=15, alpha=0.5, zorder=30)
+            ax.get_xticklabels()[i].set_color(alg_cols[i>1])
+
+            p = wilcoxon(metrics[k][:,:,ipairs[i][0]].flatten(), metrics[k][:,:,ipairs[i][1]].flatten()).pvalue 
+            print(p)
+            pstr = "n.s." if p > 0.05 else ("*" if p >= 0.01 else "**" if p >= 0.001 else "***")
+            axin.plot([ipairs[i][0], ipairs[i][1]], np.ones(2)*(0.95 + i * 0.015), lw=1, color="k")
+            axin.text((ipairs[i][0]+ipairs[i][1])/2, 0.95 + i*0.015, pstr, ha="center", 
+                      va="bottom" if pstr=="n.s." else "center")
+        ax.set_ylim([0, ymax] if k==0 else [0, 650])
         axin.axis('off')
         if k==0:
             transl = mtransforms.ScaledTranslation(-35/72, 2/72, fig.dpi_scale_trans)
             il = plot_label(ltr, il, ax, transl) 
-    
-    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=grid[1, -2:],
-                                                                wspace=0.4, hspace=0.2)
+
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 9, subplot_spec=grid[2, :],
+                                                                wspace=0.55, hspace=0.2)
 
     vars = ['# of dendrites', 'neuropil fraction', 'Poisson noise scale']
-    xvars = [np.arange(0, 4001, 500), np.arange(0, 0.81, 0.1), 
-            [0, 5, 10, 20, 50, 100, 200]]
+    xvars = [np.arange(0, 4001, 500), np.arange(0, 0.91, 0.1), 
+            [0, 5, 10, 20, 50, 100, 200, 400]]
 
-    lss = ['--','-.',':']
-    for i in range(3):
-        ax = plt.subplot(grid1[i])
-        pos = ax.get_position().bounds 
-        ax.set_position([pos[0] -0.01, pos[1] + 0.03, pos[2]*1.05, pos[3]])
-        for j in range(tps[i].shape[-2]):
-            for m in range(3):
-                f1s = tps[i][m,:,j] / (tps[i][m,:,j] + 0.5 * (fps[i][m,:,j] + fns[i][m,:,j]))
-                ax.plot(xvars[i], f1s.T, 
-                        color=alg_cols[j], lw=0.75, ls=lss[m])
-        ax.set_ylim([0, ymax])
-        ax.set_xlabel(vars[i])
-        if i==2:
-            ax.set_xticks([0, 100, 200])
-        elif i==0:
-            ax.set_ylabel('F1 score')
-            handles = [Line2D([0], [0], color='k', linestyle=ls, markerfacecolor='none') for ls in lss]
-            ax.legend(handles, ['mouse 1', 'mouse 2', 'mouse 3'], frameon=False,
-                    handletextpad=0.2, handlelength=1.0,
-                    bbox_to_anchor=(0.05, 0.02), loc='lower left', borderaxespad=0.)
-            # transl = mtransforms.ScaledTranslation(-15/72, 5/72, fig.dpi_scale_trans)
-            il = plot_label(ltr, il, ax, transl) 
+    lss = ['-','--','-']
+    for k in range(3):
+        for i in range(3):
+            ax = plt.subplot(grid1[3*k + i])
+            pos = ax.get_position().bounds 
+            ax.set_position([pos[0]+0.025 - i*0.01, pos[1] + 0.0, pos[2]*1.0, pos[3]])
+            for j in range(tps[i].shape[-2]):
+                if k==0:
+                    y = tps[i][:,:,j] / (tps[i][:,:,j] + 0.5 * (fps[i][:,:,j] + fns[i][:,:,j]))
+                elif k==1:
+                    y = fns[i][:,:,j]
+                elif k==2:
+                    y = fps[i][:,:,j]                
+                ax.errorbar(xvars[i], y.mean(axis=(0,1)), y.std(axis=(0,1)) / np.sqrt(y.shape[0]*y.shape[1]-1), 
+                            color=alg_cols[j>1], lw=1.5, ls=lss[j])
+            ax.set_ylim([0, ymax] if k==0 else [0, 650])
+            ax.set_xlabel(vars[i])
+            if i==2:
+                ax.set_xticks([0, 200, 400])
+            elif i==0:
+                ax.set_ylabel(ylabels[k], labelpad=3)
+                if k==0:
+                    handles = [Line2D([0], [0], color=alg_cols[j>1], lw=1.5, ls=lss[j]) for j in range(tps[i].shape[-2])]
+                    ax.legend(handles, algs, frameon=False,
+                            handletextpad=0.2, handlelength=1.0,
+                            bbox_to_anchor=(0.01, -0.02), loc='lower left', borderaxespad=0.)
+                    for j, text in enumerate(ax.get_legend().get_texts()):
+                        text.set_color(alg_cols[j>1])
+                # transl = mtransforms.ScaledTranslation(-15/72, 5/72, fig.dpi_scale_trans)
+                il = plot_label(ltr, il, ax, transl) 
      
     return fig
 
-def suppfig_detect(fns, fps):
-    fig = plt.figure(figsize=(10,3), dpi=150)
-    yratio = 3./10
-    il = 0
-    grid = plt.GridSpec(1, 6, wspace=0.5, hspace=0.3, figure=fig, 
-                            bottom=0.17, top=0.86, left=0.05, right=0.98)
-
-    vars = ['# of dendrites', 'neuropil fraction', 'Poisson noise scale']
-    xvars = [np.arange(0, 4001, 500), np.arange(0, 0.81, 0.1), 
-            [0, 5, 10, 20, 50, 100, 200]]
-
-    lss = ['--','-.',':']
-    ylabels = ['false negatives', 'false positives']
-    for l in range(2):
-        metric = fns.copy() if l==0 else fps.copy()
-        for i in range(3):
-            ax = plt.subplot(grid[i + 3*l])
-            pos = ax.get_position().bounds 
-            ax.set_position([pos[0] + 0.01*(2-i), pos[1], *pos[2:]])
-            for j in range(metric[i].shape[-2]):
-                for m in range(3):
-                    ax.plot(xvars[i], metric[i][m,:,j].T, 
-                            color=alg_cols[j], lw=0.75, ls=lss[m])
-            ax.set_ylim([0, 800])
-            ax.set_xlabel(vars[i])
-            if i==2:
-                ax.set_xticks([0, 100, 200])            
-            elif i==0:
-                ax.set_ylabel(ylabels[l])
-                transl = mtransforms.ScaledTranslation(-50/72, 5/72, fig.dpi_scale_trans)
-                il = plot_label(ltr, il, ax, transl) 
-                if l==0:
-                    handles = [Line2D([0], [0], color='k', linestyle=ls, markerfacecolor='none') for ls in lss]
-                    ax.legend(handles, ['mouse 1', 'mouse 2', 'mouse 3'], frameon=False,
-                            handletextpad=0.2, handlelength=1.0,
-                            bbox_to_anchor=(0.02, 0.85), loc='lower left', borderaxespad=0.)   
-            elif i==1:
-                if l==0:
-                    for j in range(2):
-                        ax.text(0.05, 1.1-j*0.1, ['Suite2p', 'Caiman'][j], color=alg_cols[j], 
-                                transform=ax.transAxes)
-    return fig
 
 def registration_fig(frand, freg, refImg, cc_ex, yoff, xoff, yblock, xblock, nblocks,
                      cc_nr_ex, cc_up_ex, yxup, u, v, tPC, regPC, regDX):
@@ -1333,5 +1453,645 @@ def regmetrics_fig(fr0, fr_20, regPCs, regDXs, tPCs, timings, alg_names):
     return fig
 
 
+def suppfig_otherdsets(dat_interneurons, dat_voltage, dat_onep):
+    mimg = dat_interneurons['mimg']
+    mimg_chan2 = dat_interneurons['mimg_chan2']
+    outlines = dat_interneurons['outlines']
+    ired = dat_interneurons['ired']
+    dF = dat_interneurons['dF']
+    xrange = dat_interneurons['xrange']
+    yrange = dat_interneurons['yrange']
+
+    fig = plt.figure(figsize=(14,14), dpi=150)
+    il = 0
+    grid = plt.GridSpec(6, 9, wspace=0.25, hspace=0.3, figure=fig, 
+                            bottom=0.02, top=0.98, left=0.02, right=0.98)
+
+    ax = plt.subplot(grid[:2, :2])
+    ax = plt.subplot(grid[:2, :2])
+    ax.imshow(transforms.normalize99(mimg), vmin=0, vmax=1., cmap='gray', aspect=0.75/0.5)
+    for i, o in enumerate(outlines): 
+        ax.plot(np.hstack([o[-1:,0], o[:, 0]]), np.hstack([o[-1:,1], o[:, 1]]), 
+                color=[0,1,0], lw=0.5, ls='--', alpha=0.35)
+    ax.axis('off')
+    ax.set_title('RiboL1-jGCaMP8s', fontsize='medium')
+    ax.set_ylim(yrange)
+    ax.set_xlim(xrange)
+    ax.invert_yaxis()
+    transl = mtransforms.ScaledTranslation(-8/72, 10/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[:2, 2:4])
+    ax.imshow(transforms.normalize99(mimg_chan2), vmin=0, vmax=1.1, cmap='gray', aspect=0.75/0.5)
+    for i, o in enumerate(outlines): 
+        if i in ired:
+            ax.plot(np.hstack([o[-1:,0], o[:, 0]]), np.hstack([o[-1:,1], o[:, 1]]), 
+                    color=[1,0,0], lw=0.5, ls='--', alpha=1)
+    ax.axis('off')
+    ax.set_title('VGAT-cre x tdTomato', fontsize='medium')
+    ax.set_ylim(yrange)
+    ax.set_xlim(xrange)
+    ax.invert_yaxis()
+
+    ax = plt.subplot(grid[:2, 4:])
+    for i in range(20):
+        ax.plot(zscore(dF[i, :5000]) - 7*i, color='r', lw=0.25)
+    ax.plot([0, 150], [-7*20, -7*20], 'k', lw=1.5)
+    ax.text(75, -7*20 - 7, '5 sec.', color='k', ha='center')
+    ax.set_title('VGAT-expressing neurons ordered by SNR, z-scored', y=0.97, fontsize='medium')
+    ax.axis('off')
+    ax.plot([-50, -50], -7*20 + 5 + np.array([0, 5]), 'k', lw=1.5)
+    ax.text(-50, -7*20 + 5 + 2.5, '5 s.d.', color='k', va='center', ha='right', rotation=90)
+    transl = mtransforms.ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
 
 
+    dmean_s2p = dat_onep['dmean_s2p']
+    dmean_caiman = dat_onep['dmean_caiman']
+    outlines_s2p = dat_onep['outlines_s2p']
+    outlines_caiman = dat_onep['outlines_caiman']
+    dF_s2p = dat_onep['dF_s2p']
+    dF_caiman = dat_onep['dF_caiman']
+    skew_s2p = dat_onep['skew_s2p']
+    skew_caiman = dat_onep['skew_caiman']
+
+    ylim = [90, 530]
+    xlim = [50, 530]
+
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(2, 5, subplot_spec=grid[2:4,:],
+                                                                    wspace=0.1, hspace=0.15)
+    transl = mtransforms.ScaledTranslation(-24/72, 3/72, fig.dpi_scale_trans)
+    for k in range(2):
+        for j in range(2):
+            ax = plt.subplot(grid1[j, k])
+            if j==0:
+                ax.imshow(dmean_s2p, cmap='gray', vmin=0, vmax=6)
+            else:
+                ax.imshow(dmean_caiman, cmap='gray', vmin=0, vmax=6)
+            if k > 0:
+                for o in [outlines_s2p, outlines_caiman][j]:
+                    ax.plot(o[:, 0], o[:, 1], color=alg_cols[j], linewidth=1, ls='--')
+            ax.axis('off')
+            ax.set_ylim(ylim)
+            ax.set_xlim(xlim)
+            ax.invert_yaxis()
+            if k==0:
+                if j==0:
+                    ax.set_title(f"dF/F mean image\nafter Suite2p registration", fontsize='medium')
+                    il = plot_label(ltr, il, ax, transl)        
+                else:
+                    ax.set_title('after Caiman registration', fontsize='medium')
+
+            else:
+                ax.set_title(f"Neurons detected by {['Suite2p', 'Caiman'][j]}", fontsize='medium')
+
+    np.random.seed(4)
+    tmin = 11500
+    tmax = tmin + 16000
+    transl = mtransforms.ScaledTranslation(-8/72, 3/72, fig.dpi_scale_trans)
+    for j in range(2):
+        ax = plt.subplot(grid1[j, 2:4])
+        dF = dF_s2p.copy() if j==0 else dF_caiman.copy()
+        irand = np.random.choice(len(dF), 20, replace=False)
+        dF_z = zscore(dF[irand], axis=1)
+        for i in range(20):
+            ax.plot(dF_z[i, tmin:tmax] - i*7, zorder=i, lw=0.5, color=alg_cols[j])
+        ax.axis('off')
+        ax.set_ylim([-20*7, 10])
+        if j==0:
+            il = plot_label(ltr, il, ax, transl)        
+            ax.set_title('20 random example neuron traces', fontsize='medium')
+            ax.plot([0, 30*60], -19.5*7*np.ones(2), 'k', lw=1.5)
+            ax.text(0.05, -0., '1 min.', ha='left', va='top', transform=ax.transAxes, fontsize='small')
+
+
+    transl = mtransforms.ScaledTranslation(-50/72, 3/72, fig.dpi_scale_trans)
+    ax = plt.subplot(grid1[0, -1])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]+0.2*pos[2], pos[1], pos[2]*0.7, pos[3]*0.9])
+    il = plot_label(ltr, il, ax, transl)        
+    bins0 = np.arange(-4, 4.01, 0.1)
+    binsi = bins0.copy()
+    binsi[0] = -np.inf
+    binsi[-1] = np.inf
+    for i, sk in enumerate([skew_s2p, skew_caiman]):
+        nb, bins = np.histogram(sk, binsi);
+        nb = nb.astype('float32')
+        nb /= nb.sum()
+        ax.plot(bins0[:-1] + 0.05, nb.cumsum(), color=alg_cols[i])
+    ax.set_xlim([-4, 4])
+    ax.set_ylabel('Cumulative fraction')
+    ax.set_xlabel('Skewness of F - Fneu')
+    for i, txt in enumerate(['Suite2p', 'Caiman']):
+        ax.text(0.95 - 0.5*i, 0.2, txt, color=alg_cols[i], transform=ax.transAxes, ha='right')
+    p = mannwhitneyu(skew_s2p, skew_caiman).pvalue
+    pexp = np.floor(np.log10(p))
+    ax.set_title(f'p = {p/(10**pexp):.1f}$\\times$10$^{{{int(pexp)}}}$', fontsize='small', y=0.95)
+    ax.text(0.5, 0.9, '***', ha='center', va='center', fontsize='large', transform=ax.transAxes) 
+
+
+    outlines = dat_voltage['outlines']
+    mimg = dat_voltage['mimg']
+    dF = dat_voltage['dF']
+
+    cmap = plt.get_cmap('hsv')(np.linspace(0, 1, len(outlines)))
+    np.random.seed(0)
+    cmap = cmap[np.random.permutation(len(cmap))]
+    ax = plt.subplot(grid[-2, :4])
+    ax.imshow(mimg, cmap='gray', vmin=0, vmax=1000)
+    for i, o in enumerate(outlines):
+        ax.plot(np.hstack([o[-1:,0], o[:, 0]]), np.hstack([o[-1:,1], o[:, 1]]), 
+                color=cmap[i], lw=0.5)
+    ax.set_title('Cellpose detection in Suite2p', fontsize='medium')
+    ax.axis('off')
+    transl = mtransforms.ScaledTranslation(-14/72, 8/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+        
+    ax = plt.subplot(grid[-2:, -5:])
+    for i in range(20):
+        ax.plot(zscore(dF[i, :10000]) - 8*i, color=cmap[i], lw=0.25)
+    ax.plot([0, 1000], [-8*20, -8*20], 'k', lw=1.5)
+    ax.text(500, -8*20 - 8, '1 sec.', color='k', ha='center')
+    ax.set_title('Neurons sorted by negative skewness, z-scored', y=0.97, fontsize='medium')
+    ax.axis('off')
+    ax.plot([-50, -50], -8*20 + 5 + np.array([0, 5]), 'k', lw=1.5)
+    ax.text(-50, -8*20 + 5 + 2.5, '5 s.d.', color='k', va='center', ha='right', rotation=90)
+    transl = mtransforms.ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[-1, :4])
+    ax.imshow(mimg, cmap='gray', vmin=0, vmax=1000)
+    ax.set_title('Volpy detection (no neurons found)', fontsize='medium')
+    ax.axis('off')
+
+    return fig
+
+
+def tracking_fig(results):
+    fig = plt.figure(figsize=(14,7), dpi=150)
+    il = 0
+    grid = plt.GridSpec(5, 8, wspace=0.55, hspace=0.65, figure=fig, 
+                            bottom=0.1, top=0.95, left=0.05, right=0.95)
+
+    mname = 'GP39'
+    mimg = results[mname]['mimg']
+    Ly, Lx = mimg.shape
+    nn_s2p = len(results[mname]['stats'])
+    hsv = np.zeros((Ly, Lx, 3))
+    np.random.seed(1)
+    hs = np.random.rand(nn_s2p)
+    for i, s in enumerate(results[mname]['stats'][::-1]):
+        ypix = s['ypix']
+        xpix = s['xpix']
+        lam = s['lam']
+        lam /= lam.max()
+        hsv[ypix, xpix, 0] = hs[nn_s2p-1-i]
+        hsv[ypix, xpix, 1] = lam
+        hsv[ypix, xpix, 2] = lam
+
+    rgb = matplotlib.colors.hsv_to_rgb(hsv)
+
+    ax = plt.subplot(grid[:3, :2])
+    pos =  ax.get_position().bounds
+    ax.set_position([pos[0]-0.05*pos[2], pos[1]-pos[3]*0.1, pos[2]*1.1, pos[3]*1.1])
+    ax.imshow(rgb.transpose(1, 0, 2))
+    ax.axis('off')
+    ax.set_title(f'{nn_s2p:,d} neurons detected across 7 sessions', fontsize='medium')
+    transl = matplotlib.transforms.ScaledTranslation(-30/72, 3/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[:3, 2:5])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]-0.05*pos[2], pos[1]-0.04*pos[3], pos[2]*1.1, pos[3]])
+    spks = results[mname]['spks'].copy()
+    fpf = results[mname]['fpf']
+    np.random.seed(1)
+    irand = np.random.choice(spks.shape[0], 20, replace=False)
+    dy = 30
+    for i, ii in enumerate(irand):
+        ax.plot(zscore(spks[ii]) - dy*i, color=matplotlib.colors.hsv_to_rgb([hs[ii], 1, 1]), 
+                lw=0.5)
+    fpf = results[mname]['fpf']
+    for i in range(1, len(fpf)):
+        if i < len(fpf)-1:
+            ax.axvline(fpf[i], color='k', lw=0.5, ls='--')
+        ax.text((fpf[i] - fpf[i-1])/2 + fpf[i-1], dy*1.6, i if i > 1 else 'Session 1', 
+                va='bottom', ha='center', fontsize='small')
+    ax.plot([0, 20*60*10], -dy*(len(irand)-0.6)*np.ones(2), 'k', lw=1)
+    ax.text(20*60*10, -dy*len(irand)+dy/3, '10 min.', va='top', ha='center', fontsize='small')
+    ax.plot(-20*60*4*np.ones(2), -dy*(len(irand)-1)+np.array([0, 10]), 'k', lw=1)
+    ax.text(-20*60*4, -dy*(len(irand)-1), '10 std.', rotation=90, fontsize='small', ha='right')
+    ax.set_ylim([-dy*len(irand), 50])
+    ax.set_xlim([-20*60*6, spks.shape[1]])
+    ax.set_title('Random neurons, zscored', fontsize='medium', y=1.03)
+    ax.axis('off')
+    transl = matplotlib.transforms.ScaledTranslation(0/72, 8/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ylims = [[4000, 12000], [3500, 8500], [7000, 17000]]
+    for i, mname in enumerate(['GP39', 'GP41', 'GP9']):
+        nn_per_exp = results[mname]['nn_per_exp']
+        nn_s2p = results[mname]['ccs_s2p'].shape[1]
+        nn_t2p = results[mname]['ccs_t2p'].shape[1]
+        ax = plt.subplot(grid[:3, i+5])
+        pos =  ax.get_position().bounds 
+        ax.set_position([pos[0]+0.015*(2-i), pos[1]+0.12*pos[3], pos[2]*0.95, pos[3]*0.85])
+        ndays = len(nn_per_exp)
+        ax.plot(np.arange(1, ndays+1), nn_per_exp, color='k', label='Per day')
+        ax.plot(np.arange(1, ndays+1), [nn_s2p]*ndays, alg_cols[0], ls='--', label='Suite2p\nmultiday')
+        ax.plot(np.arange(1, ndays+1), [nn_t2p]*ndays, color='orange', ls='--', label='Track2p')
+        ax.set_ylim([0, 17000])
+        ax.set_xlabel('Session')
+        ax.set_xticks(np.arange(1, ndays+1))
+        ax.set_yticks([0, 5000, 10000, 15000])
+        ax.set_yticklabels(['0', '5k', '10k', '15k'])
+        ax.set_title(f'Mouse {i+1}', fontsize='medium')
+        if i==0:
+            ax.set_ylabel('Neurons detected')
+            ax.legend(fontsize='small', loc='upper left', frameon=False)#, bbox_to_anchor=(1.05, 1))
+            for text, line in zip(ax.get_legend().get_texts(), ax.get_legend().get_lines()):
+                text.set_color(line.get_color())
+            transl = matplotlib.transforms.ScaledTranslation(-40/72, 4/72, fig.dpi_scale_trans)
+            il = plot_label(ltr, il, ax, transl) 
+
+    mname = 'GP39'    
+
+    ax = plt.subplot(grid[3:, 0])
+    iex = irand #np.arange(0, 8*20, 8)
+    cc0 = results[mname]['ex_cc0_s2p'][np.ix_(iex, iex)]
+    cc1 = results[mname]['ex_cc1_s2p'][np.ix_(iex, iex)]
+    vmax = max(abs(cc0).max(), abs(cc1).max())
+    im = ax.imshow(cc0, vmin=-vmax, vmax=vmax, cmap='bwr')
+    ax.set_title(f'Correlation matrices\nSession 1', fontsize='medium')
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_ylabel('\u2190 Neurons', fontsize='small')
+    ax.set_xlabel('Neurons \u2192', fontsize='small')
+    transl = matplotlib.transforms.ScaledTranslation(-32/72, 16/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[3:, 1])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]-0.02, pos[1], pos[2], pos[3]])
+    ax.imshow(cc1, vmin=-vmax, vmax=vmax, cmap='bwr')
+    ax.set_title(f'Session 2', fontsize='medium') 
+    ax.axis('off')
+    cax = ax.inset_axes([-0., 0.1, 0.5, 0.4])
+    cbar = plt.colorbar(im, ax=cax, orientation='horizontal', aspect=8)
+    cax.axis('off')
+    cbar.ax.tick_params(labelsize='small')
+    print(vmax)
+    cbar.ax.set_xticks([-0.05, 0.05])
+
+    ax = plt.subplot(grid[3:, 2])
+    ex_s2p = results[mname]['ccs_s2p'][0]
+    ex_t2p = results[mname]['ccs_t2p'][0]
+    bwid = 0.025
+    nb2, bins = np.histogram(ex_s2p, bins=np.arange(-0.4, 1.0, bwid))
+    nb2 = nb2.astype('float')
+    nb2 /= nb2.sum()
+    ax.bar(bins[:-1]+bwid/2, nb2, width=bwid, label='Suite2p\nmultiday', color=alg_cols[0], alpha=0.5)
+    nb, bins = np.histogram(ex_t2p, bins=np.arange(-0.4, 1.0, bwid))
+    nb = nb.astype('float')
+    nb /= nb.sum()
+    ax.bar(bins[:-1]+bwid/2, nb, width=bwid, label='Track2p', alpha=0.5, color='orange', zorder=-30)
+    ax.set_xlabel('Correlation of pairwise-corr\n(Session 1 and 2)')
+    ax.set_ylabel('Fraction of neurons')
+    ax.legend(loc='upper right', fontsize='small', frameon=False, bbox_to_anchor=(1.1, 1.1),
+            handlelength=0, handletextpad=0)
+    for text in ax.get_legend().get_texts():
+        text.set_color(alg_cols[0] if 'Suite2p' in text.get_text() else 'orange')
+    transl = matplotlib.transforms.ScaledTranslation(-50/72, -10/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[3:, 3])
+    lss = ['-.', '--', ':']
+    #for i, mname in enumerate(['GP39', 'GP41', 'GP9']):
+    cs2p = np.array([results[mname]['ccs_s2p'].mean(axis=1)[:6] for mname in ['GP39', 'GP41', 'GP9']])
+    ct2p = np.array([results[mname]['ccs_t2p'].mean(axis=1)[:6] for mname in ['GP39', 'GP41', 'GP9']])
+    ax.errorbar(np.arange(2,8), cs2p.mean(axis=0), yerr=cs2p.std(axis=0)/2**0.5, color=alg_cols[0], lw=1)
+    ax.errorbar(np.arange(2,8)+0.15, ct2p.mean(axis=0), yerr=ct2p.std(axis=0)/2**0.5, color='orange', lw=1)
+    ax.set_ylim([0, 0.37])
+    ax.set_xlabel('Session')
+    ax.set_ylabel('Mean correlation\nto Session 1', labelpad=0)
+    ax.set_xticks(np.arange(2,8))
+
+
+    mname = 'GP39'
+    ax = plt.subplot(grid[3:, 4])
+    pos = ax.get_position().bounds
+    dy = 0.02
+    ax.set_position([pos[0], pos[1]-dy, pos[2], pos[3]])
+    ctun0 = results[mname]['ex_ctun0_s2p']
+    ctun1 = results[mname]['ex_ctun1_s2p']
+    def make_hsv_imshow(data, hues):
+        data = zscore(data, axis=1)
+        n_rows, n_cols = data.shape
+        data = np.clip(data, 0, 2) / 2.
+        # Evenly spaced hues around the HSV wheel, one per row
+        hsv_colors = np.stack([hues, np.ones(n_rows), np.ones(n_rows)], axis=1)  # full saturation/value
+        row_colors = matplotlib.colors.hsv_to_rgb(hsv_colors)  # convert to RGB for blending
+
+        # Blend white -> row color based on data value
+        rgb_image = np.ones((n_rows, n_cols, 3))
+        for i in range(n_rows):
+            color = row_colors[i]
+            rgb_image[i] = 1 - (1 - color) * data[i][:, None]
+
+        return rgb_image
+
+    ax.imshow(make_hsv_imshow(ctun0[0,iex].copy(), hs[iex]), aspect='auto')
+    ax.set_title(f'Tuning curves z-scored\nSession 1', fontsize='medium')
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_ylabel('\u2190 Neurons', fontsize='small')
+    ax.set_xlabel('Corridor position', fontsize='small')
+    transl = matplotlib.transforms.ScaledTranslation(-35/72, 16/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[3:, 5])
+    pos = ax.get_position().bounds
+    ax.set_position([pos[0]-0.02, pos[1]-dy, pos[2], pos[3]])
+    im = ax.imshow(zscore(ctun1[0,iex], axis=1), vmin=0.0, vmax=2.0, cmap='gray_r', aspect='auto')
+    ax.imshow(make_hsv_imshow(ctun1[0,iex].copy(), hs[iex]), aspect='auto')
+    ax.set_title(f'Session 2', fontsize='medium')
+    ax.axis('off')
+    cax = ax.inset_axes([-0., -0.1, 0.5, 0.4])
+    cbar = plt.colorbar(im, ax=cax, orientation='horizontal', aspect=8)
+    cax.axis('off')
+    cbar.ax.tick_params(labelsize='small')
+
+    ax = plt.subplot(grid[3:, 6])
+    ex_s2p = results[mname]['ctuns_s2p'][0]
+    ex_t2p = results[mname]['ctuns_t2p'][0]
+    bwid = 0.05
+    nb2, bins = np.histogram(ex_s2p, bins=np.arange(-1, 1.0, bwid))
+    nb2 = nb2.astype('float')
+    nb2 /= nb2.sum()
+    ax.bar(bins[:-1]+bwid/2, nb2, width=bwid, label='Suite2p\nmultiday', color=alg_cols[0], alpha=0.5)
+    nb, bins = np.histogram(ex_t2p, bins=np.arange(-1, 1.0, bwid))
+    nb = nb.astype('float')
+    nb /= nb.sum()
+    ax.bar(bins[:-1]+bwid/2, nb, width=bwid, label='Track2p', alpha=0.5, color='orange', zorder=-30)
+    ax.set_xlabel('Correlation of tuning curves\n(Session 1 and 2)')
+    ax.set_ylabel('Fraction of neurons', labelpad=0)
+    transl = matplotlib.transforms.ScaledTranslation(-50/72, -10/72, fig.dpi_scale_trans)
+    il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[3:, 7])
+    cs2p = np.array([results[mname]['ctuns_s2p'].mean(axis=1)[:6] for mname in ['GP39', 'GP41', 'GP9']])
+    ct2p = np.array([results[mname]['ctuns_t2p'].mean(axis=1)[:6] for mname in ['GP39', 'GP41', 'GP9']])
+    ax.errorbar(np.arange(2,8), cs2p.mean(axis=0), yerr=cs2p.std(axis=0)/2**0.5, color=alg_cols[0], lw=1)
+    ax.errorbar(np.arange(2,8)+0.15, ct2p.mean(axis=0), yerr=ct2p.std(axis=0)/2**0.5, color='orange', lw=1)
+    ax.set_ylim([0, 0.4])
+    ax.legend(loc='upper right', fontsize='small', frameon=False, bbox_to_anchor=(1.2, 1.1))
+    ax.set_xlabel('Session')
+    ax.set_xticks(np.arange(2, 8))
+    ax.set_ylabel('Mean tuning correlation\nto Session 1', labelpad=0)
+
+    return fig
+
+
+def suppfig_gtcaiman(results):
+    dsets = list(results.keys())
+    
+    fig = plt.figure(figsize=(14,10))
+    grid = plt.GridSpec(3, 8, wspace=0.3, hspace=0.3, 
+                        top=0.95, bottom=0.05, left=0.03, right=0.97)
+    il = 0
+
+    titles = ['J115: Hippocampal CA1\n50 min recording @ 30Hz', 
+            'K53: Posterior parietal cortex\n65 min recording @ 30Hz', 
+            'YST: Visual cortex\n5 min recording @ 10Hz']
+    vmins = [0, 0, 0]
+    vmaxs = [500, 2000, 10000]
+
+    for d, dset in enumerate(dsets):
+        stat_gt, stat_caiman = results[dset]['stat_gt'], results[dset]['stat_caiman']
+        stat_s2p = results[dset]['stat_s2p'] if dset != 'YST' else results[dset]['stat_s2p_sourcery']
+        max_proj = results[dset]['max_proj']
+        Ly, Lx = max_proj.shape
+        masks_gt = np.zeros((Ly, Lx), 'uint16')
+        for i, s in enumerate(stat_gt):
+            masks_gt[s['ypix'], s['xpix']] = i + 1
+        outlines_gt_list = utils.outlines_list(masks_gt)
+
+        masks_s2p = np.zeros((Ly, Lx), 'uint16')
+        for i, s in enumerate(stat_s2p):
+            masks_s2p[s['ypix'], s['xpix']] = i + 1
+        outlines_s2p = utils.outlines_list(masks_s2p)
+
+        masks_caiman = np.zeros((Ly, Lx), 'uint16')
+        for i, s in enumerate(stat_caiman):
+            masks_caiman[s['ypix'], s['xpix']] = i + 1
+        outlines_caiman = utils.outlines_list(masks_caiman)
+
+        if d < 2:
+            ylim = [100, 300]
+            xlim = [150, 350]
+        else:
+            ylim = [0, Ly]
+            xlim = [0, Lx]
+
+        transl = mtransforms.ScaledTranslation(-14/72, 12/72, fig.dpi_scale_trans)
+
+        ax = plt.subplot(grid[d, :2])
+        if d==0:
+            il = plot_label(ltr, il, ax, transl) 
+        ax.imshow(max_proj, cmap='gray', vmin=vmins[d], vmax=vmaxs[d])
+        if d < 2:
+            # add inset gray square for zoom in
+            ax.add_patch(plt.Rectangle((xlim[0], ylim[0]), xlim[1]-xlim[0], ylim[1]-ylim[0], 
+                                    edgecolor=0.75*np.ones(3), facecolor='none', lw=2))
+        ax.axis('off')
+        ax.set_title(titles[d], fontsize='medium')
+
+        dy = 0.02
+
+        # draw lines from square to subplot 2
+        ax0 = ax
+        ax = plt.subplot(grid[d, 2:4])
+        if d==0:
+            il = plot_label(ltr, il, ax, transl) 
+        pos = ax.get_position().bounds
+        ax.set_position([pos[0]-dy, *pos[1:]])
+
+        if d < 2:
+            for xy_a, xy_b in [((xlim[1], ylim[0]), (0, 1)), ((xlim[1], ylim[1]), (0, 0))]:
+                con = ConnectionPatch(xyA=xy_a, coordsA=ax0.transData,
+                                    xyB=xy_b, coordsB=ax.transAxes,
+                                    color=0.75*np.ones(3), lw=2)
+                fig.add_artist(con)
+
+        ax.imshow(max_proj, cmap='gray', vmin=vmins[d], vmax=vmaxs[d])
+        for o in outlines_gt_list:
+            ax.plot(o[:,0], o[:,1], 'y', lw=1.5, zorder=1)
+        ax.set_ylim(ylim)
+        ax.set_xlim(xlim)
+        if d < 2:
+            ax.set_xticks([])
+            ax.set_yticks([])
+            spines = ['top', 'right', 'bottom', 'left']
+            for spine in spines:
+                ax.spines[spine].set_visible(True)
+                ax.spines[spine].set_color(0.75*np.ones(3))
+                ax.spines[spine].set_linewidth(2)
+        else:
+            ax.axis('off')
+            ax.invert_yaxis()
+        ax.set_title('Ground-truth from annotators\n(instructions+QC by Giovanucci et al)', fontsize='medium', color='y')
+
+        ax = plt.subplot(grid[d, 4:6])
+        if d==0:
+            il = plot_label(ltr, il, ax, transl) 
+        pos = ax.get_position().bounds
+        ax.set_position([pos[0]-2*dy, *pos[1:]])
+        outlines_gt = utils.masks_to_outlines(masks_gt)
+        rgb = np.ones((Ly, Lx, 3), 'float32')
+        rgb[masks_gt > 0] = 0.9 * np.ones(3)
+        rgb[outlines_gt > 0] = 0.8 * np.ones(3)
+        plt.imshow(rgb)
+        for i in range(2):
+            for o in [outlines_s2p, outlines_caiman][i]:
+                oy = np.hstack((o[:,0], o[:1,0]))
+                ox = np.hstack((o[:,1], o[:1,1]))
+                ax.plot(oy, ox, color=alg_cols[i], lw=1.5, ls='--' if i == 1 else '-')
+        ax.set_title('Segmentation results\n ', fontsize='medium')
+        ax.text(0.55, 1.02, f'Suite2p {["Sparsery", "Sourcery"][dset == "YST"]}', color=alg_cols[0], ha='right', fontsize='medium', transform=ax.transAxes)
+        ax.text(0.65, 1.02, 'Caiman', color=alg_cols[1], fontsize='medium', ha='left', transform=ax.transAxes)
+        ax.set_ylim(ylim)
+        ax.set_xlim(xlim)
+        if d < 2:
+            ax.set_xticks([])
+            ax.set_yticks([])
+            spines = ['top', 'right', 'bottom', 'left']
+            for spine in spines:
+                ax.spines[spine].set_visible(True)
+                ax.spines[spine].set_color(0.75*np.ones(3))
+                ax.spines[spine].set_linewidth(2)
+        else:
+            ax.axis('off')
+            ax.invert_yaxis()
+
+        transl = mtransforms.ScaledTranslation(-45/72, 5/72, fig.dpi_scale_trans)
+        ax = plt.subplot(grid[d, -2])
+        if d==0:
+            il = plot_label(ltr, il, ax, transl) 
+        pos = ax.get_position().bounds
+        ax.set_position([pos[0]-0.02, pos[1]+0.01, *pos[2:]])
+        ax.plot(results[dset]['iou_thresholds'], results[dset]['scores_s2ps'][:,0], color=alg_cols[0], lw=2, label='Suite2p\nSparsery\n(test data)')
+        ax.plot(results[dset]['iou_thresholds'], results[dset]['scores_s2p_sourcerys'][:,0], color=alg_cols[0], lw=2, label='Suite2p\nSourcery\n(test data)', ls='--')
+        ax.plot(results[dset]['iou_thresholds'], results[dset]['scores_caimans'][:,0], color=alg_cols[1], lw=2, label='Caiman\n(train data)')
+        ax.set_xlabel('IoU threshold', fontsize='medium')
+        ax.set_ylabel('F1 score', fontsize='medium')
+        ax.set_ylim([0.42, 0.86])
+        ax.set_xticks([0.2, 0.5])
+        # ax.set_yticks(np.arange(0.5, 1.0, 0.1))
+        if d==0:
+            ax.legend(loc='lower left', frameon=False, handlelength=1.5, handletextpad=0.3)
+            # color legend text
+            for text, line in zip(ax.get_legend().get_texts(), ax.get_legend().get_lines()):
+                text.set_color(line.get_color())
+
+        ax = plt.subplot(grid[d, -1])
+        if d==0:
+            il = plot_label(ltr, il, ax, transl) 
+        pos = ax.get_position().bounds
+        ax.set_position([pos[0]-0.0, pos[1]+0.01, *pos[2:]])
+        ax.plot(results[dset]['scores_s2ps'][1,1:], color=alg_cols[0], lw=2, label='Suite2p\n(test data)')
+        ax.plot(results[dset]['scores_s2p_sourcerys'][1,1:], color=alg_cols[0], lw=2, label='Suite2p\n(test data)', ls='--')
+        ax.plot(results[dset]['scores_caimans'][1,1:], color=alg_cols[1], lw=2, label='Caiman\n(train data)')
+        ax.set_xlabel('IoU threshold', fontsize='medium')
+        ax.set_ylabel('Number of ROIs', fontsize='medium')
+        ax.set_xticks(np.arange(3))
+        ax.set_xticklabels(['TP', 'FP', 'FN'])
+        # ax.set_ylim([0, 600] if dset!='YST' else [0, 250])
+        
+    return fig
+
+def suppfig_neuropil(db, stat, max_proj, F, Fneu, cc, iscell, ar, npix):
+    fig = plt.figure(figsize=(14,14*2/3))
+    il = 0
+    grid = plt.GridSpec(4, 6, wspace=0.6, hspace=0.7, figure=fig, 
+                                bottom=0.06, top=0.96, left=0.03, right=0.97)
+
+    iexs = [ 251, 384, 21, 189,] # 21, 812, 382
+    for i, iex in enumerate(iexs):
+        ax = plt.subplot(grid[i, 0])
+        cmask = np.zeros((db['Ly'], db['Lx']), 'float32')
+        cmask[stat[iex]['ypix'], stat[iex]['xpix']] = stat[iex]['lam'] / stat[iex]['lam'].max()
+        # crop around cell 
+        med = stat[iex]['med']
+        mimg = transforms.normalize99(max_proj[med[0]-20:med[0]+20, med[1]-20:med[1]+20].copy())
+        cmask = cmask[med[0]-20:med[0]+20, med[1]-20:med[1]+20]
+        outlines = utils.outlines_list(cmask>0)
+        ax.imshow(mimg, cmap='gray', vmin=0, vmax=1)
+        for ol in outlines:
+            ax.plot(ol[:, 0], ol[:, 1], color=alg_cols[0], lw=3)
+        ax.axis('off')
+        if i==0:
+            transl = mtransforms.ScaledTranslation(-20/72, 4/72, fig.dpi_scale_trans)
+            il = plot_label(ltr, il, ax, transl) 
+
+        ax = plt.subplot(grid[i, 1:3])
+        pos = ax.get_position().bounds 
+        ax.set_position([pos[0]-0.005, *pos[1:]])
+        ax.plot(F[iex, :10000], label='ROI', lw=0.5, color=alg_cols[0])
+        ax.plot(Fneu[iex, :10000], label='Neuropil', alpha=1, lw=0.5, color='m')
+        ax.set_ylim([min(F[iex].min(), Fneu[iex].min()), np.percentile(F[iex, :10000], 99.9)])
+        ax.set_xlim([0, 10000])
+        if i==0:
+            ax.legend(frameon=False, handlelength=0, loc='upper left', bbox_to_anchor=(0.81, 1.15))
+            for text, line in zip(ax.get_legend().get_texts(), ax.get_legend().get_lines()):
+                text.set_color(line.get_color())
+                text.set_fontweight('bold')
+            transl = mtransforms.ScaledTranslation(-50/72, 2/72, fig.dpi_scale_trans)
+            il = plot_label(ltr, il, ax, transl) 
+            
+        ax.set_title('Activity', fontsize='medium')
+        ax.set_xlabel('Time (frames)')
+        ax.set_ylabel('Fluorescence')
+        
+        ax = plt.subplot(grid[i, 3])
+        ax.scatter(Fneu[iex], F[iex], s=1, alpha=0.1, color=0.5*np.ones(3), rasterized=True)
+        x = np.array([Fneu[iex].min(), Fneu[iex].max()])
+        ax.plot(x, x * cc[iex], color='k', lw=3, ls='--')
+        ax.set_ylabel('ROI')
+        ax.set_xlabel('Neuropil')
+        ax.set_title(f'Coefficient = {cc[iex]:.2f}', fontsize='medium')
+        if i==0:
+            il = plot_label(ltr, il, ax, transl) 
+
+        ax = plt.subplot(grid[i, 4])
+        Fcorr = F[iex].copy() - cc[iex] * Fneu[iex]
+        ax.scatter(Fneu[iex], Fcorr, s=1, alpha=0.1, color=0.5*np.ones(3), rasterized=True)
+        ax.set_ylabel('Corrected')
+        ax.set_xlabel('Neuropil')
+        if i==0:
+            il = plot_label(ltr, il, ax, transl) 
+
+    ax = plt.subplot(grid[0, -1])
+    ax.hist(np.clip(cc, 0, 1.5), bins=np.arange(0., 1.51, 0.05), color=0.5*np.ones(3));
+    ax.scatter(np.mean(np.clip(cc, 0, 1.5)), 350, marker='v', color=0.5*np.ones(3), s=100)
+    ax.text(np.mean(np.clip(cc, 0, 1.5)), 380, 
+            f'mean = {np.mean(np.clip(cc, 0, 1.5)):.2f}', fontsize='small', ha='center', va='bottom')
+    ax.set_xlabel('Estimated Neuropil\nCoefficient')
+    ax.set_ylabel('Number of ROIs')
+    il = plot_label(ltr, il, ax, transl) 
+
+    labels = ['Cell probability', 'Aspect ratio', 'Number of pixels']
+    for i, prop in enumerate([iscell, ar, npix]):
+        ax = plt.subplot(grid[i+1, -1])
+        ax.scatter(prop, cc, s=3, alpha=0.1, color=0.5*np.ones(3))
+        ax.set_xlabel(labels[i])
+        ax.set_ylabel('Coefficient')
+        ax.set_ylim([0., 1.5])
+        if i==1:
+            ax.set_xlim([0.95, 2.05])
+        elif i==2:
+            ax.set_xlim([0, 270])
+        il = plot_label(ltr, il, ax, transl) 
+
+    return fig

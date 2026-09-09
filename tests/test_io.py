@@ -7,8 +7,9 @@ import numpy as np
 import pytest
 from natsort import natsorted
 from pynwb import NWBHDF5IO
-from suite2p import io
+from suite2p import default_db, default_settings, io
 from suite2p.io.nwb import read_nwb, save_nwb
+from suite2p.run_s2p import files_to_binary
 from suite2p.io.utils import get_suite2p_path
 from suite2p.detection.detect import bin_movie
 
@@ -258,3 +259,101 @@ def test_get_suite2p_path(input_path, expected_path, success):
     else:
         with pytest.raises(FileNotFoundError):
             get_suite2p_path(Path(input_path))
+
+
+def _convert_to_binary(db, settings):
+    """Runs the file -> binary conversion block of run_s2p for db["input_format"]."""
+    import contextlib
+
+    fs, first_files = io.get_file_list(db)
+    db["file_list"] = fs
+    db["first_files"] = first_files
+    dbs = io.init_dbs(db)
+    Path(db["save_path0"]).joinpath(db["save_folder"]).mkdir(parents=True, exist_ok=True)
+    with contextlib.ExitStack() as stack:
+        files = [stack.enter_context(open(d["reg_file"], "wb")) for d in dbs]
+        files_chan2 = None
+        if db["nchannels"] > 1:
+            files_chan2 = [stack.enter_context(open(d["reg_file_chan2"], "wb")) for d in dbs]
+        return files_to_binary[db["input_format"]](dbs, settings, files, files_chan2)
+
+
+def _install_fake_nd2(monkeypatch, sizes, arr):
+    """Makes suite2p.io.nd2 read `arr` (axes in `sizes` order) without the nd2 package."""
+    da = pytest.importorskip("dask.array")
+    from suite2p.io import nd2 as nd2_module
+
+    class FakeND2File:
+        def __init__(self, path):
+            self.sizes = dict(sizes)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def to_dask(self):
+            return da.from_array(arr, chunks=(1,) * (arr.ndim - 2) + arr.shape[-2:])
+
+    monkeypatch.setattr(nd2_module, "nd2", type("nd2", (), {"ND2File": FakeND2File}),
+                        raising=False)
+    monkeypatch.setattr(nd2_module, "HAS_ND2", True)
+
+
+def _nd2_db(tmp_path, **overrides):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "rec.nd2").touch()
+    return {**default_db(), "data_path": [str(data_dir)], "input_format": "nd2",
+            "save_path0": str(tmp_path / "out"), "batch_size": 3, **overrides}
+
+
+def test_nd2_to_binary_reorders_axes_and_splits_planes_and_channels(tmp_path, monkeypatch):
+    T, Z, C, Y, X = 7, 2, 2, 5, 6
+    arr = np.random.default_rng(0).integers(0, 65535, size=(Z, T, C, Y, X), dtype=np.uint16)
+    _install_fake_nd2(monkeypatch, {"Z": Z, "T": T, "C": C, "Y": Y, "X": X}, arr)
+
+    db = _nd2_db(tmp_path, nplanes=Z, nchannels=C, functional_chan=2)
+    dbs = _convert_to_binary(db, default_settings())
+
+    for j in range(Z):
+        func = np.fromfile(dbs[j]["reg_file"], np.int16).reshape(T, Y, X)
+        chan2 = np.fromfile(dbs[j]["reg_file_chan2"], np.int16).reshape(T, Y, X)
+        np.testing.assert_array_equal(func, (arr[j, :, 1] // 2).astype(np.int16))
+        np.testing.assert_array_equal(chan2, (arr[j, :, 0] // 2).astype(np.int16))
+        np.testing.assert_allclose(dbs[j]["meanImg"], func.mean(axis=0), atol=1e-3)
+        assert dbs[j]["nframes"] == T
+        assert list(dbs[j]["frames_per_file"]) == [T]
+        assert Path(dbs[j]["db_path"]).exists()
+
+
+def test_nd2_to_binary_rejects_plane_count_mismatch(tmp_path, monkeypatch):
+    arr = np.zeros((4, 2, 5, 6), dtype=np.uint16)
+    _install_fake_nd2(monkeypatch, {"T": 4, "Z": 2, "Y": 5, "X": 6}, arr)
+
+    with pytest.raises(ValueError, match="nplanes"):
+        _convert_to_binary(_nd2_db(tmp_path, nplanes=1, nchannels=1), default_settings())
+
+
+def test_nd2_to_binary_rejects_float_data(tmp_path, monkeypatch):
+    arr = np.zeros((4, 5, 6), dtype=np.float32)
+    _install_fake_nd2(monkeypatch, {"T": 4, "Y": 5, "X": 6}, arr)
+
+    with pytest.raises(ValueError, match="dtype"):
+        _convert_to_binary(_nd2_db(tmp_path), default_settings())
+
+
+@pytest.mark.parametrize("value, fits", [(65535, True), (65536, False),
+                                         (-65536, True), (-65537, False)])
+def test_nd2_to_binary_checks_int32_range(tmp_path, monkeypatch, value, fits):
+    arr = np.full((2, 5, 6), value, dtype=np.int32)
+    _install_fake_nd2(monkeypatch, {"T": 2, "Y": 5, "X": 6}, arr)
+
+    if fits:
+        dbs = _convert_to_binary(_nd2_db(tmp_path), default_settings())
+        got = np.fromfile(dbs[0]["reg_file"], np.int16)
+        assert got.min() == got.max() == value // 2
+    else:
+        with pytest.raises(ValueError, match="int32"):
+            _convert_to_binary(_nd2_db(tmp_path), default_settings())

@@ -32,6 +32,9 @@ def dcimg_to_binary(dbs, settings, reg_file, reg_file_chan2):
             "nframes", "meanImg", "meanImg_chan2"
     """
 
+    if not DCIMG:
+        raise ImportError("dcimg is required for this file type, please 'pip install dcimg'")
+
     t0 = time.time()
     # # copy settings to list where each element is settings for each plane
     # settings1 = utils.init_settings(settings)

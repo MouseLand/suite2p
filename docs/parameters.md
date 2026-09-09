@@ -8,7 +8,7 @@ Suite2p can be run with different configurations using the db and settings dicti
 |---|---|---|---|---|
 | `data_path` | Data path | `<class 'list'>` | `[]` | List of folders with tiffs or other files to process. |
 | `look_one_level_down` | Look one level down | `<class 'bool'>` | `False` | Whether to look in all subfolders of all data_path folders when searching for tiffs. |
-| `input_format` | Input format | `<class 'str'>` | `tif` | Can be ['tif', 'h5', 'nwb', 'bruker', 'movie', 'dcimg']. |
+| `input_format` | Input format | `<class 'str'>` | `tif` | Can be ['tif', 'h5', 'nwb', 'nd2', 'bruker', 'movie', 'dcimg']. |
 | `keep_movie_raw` | Keep movie raw | `<class 'bool'>` | `False` | Whether to keep binary file of non-registered frames. |
 | `nplanes` | Number of planes | `<class 'int'>` | `1` | Each tiff / file has this many planes in sequence. |
 | `nrois` | Number of ScanImage ROIs | `<class 'int'>` | `1` | Each tiff / file has this many different ROIs. |

@@ -1,7 +1,7 @@
 from fig_utils import *
 from scipy.stats import wilcoxon, ttest_rel
 import os 
-from matplotlib.patches import Ellipse, Rectangle, ConnectionPatch
+from matplotlib.patches import Ellipse, Rectangle, ConnectionPatch, FancyBboxPatch
 from matplotlib.lines import Line2D
 from scipy.stats import zscore, mannwhitneyu
 import cv2
@@ -9,7 +9,7 @@ import fastremap
 from cellpose import transforms, utils
 
 def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, iperm, colors, masks, 
-                 F, Fneu, masks_all, max_proj_all, Xemb, 
+                 F, Fneu, spks, masks_all, max_proj_all, Xemb, 
                  corr_starts, corr_ends, istims, running, isort, 
                  ex_tuns, csig, cc01s):
     il = 0
@@ -17,28 +17,48 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     yratio = 14./9
     grid = plt.GridSpec(7, 6, wspace=0.3, hspace=0.4, figure=fig, 
                             bottom=0.02, top=0.99, left=0.03, right=0.99)
-    
+
+    grid1 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 7, subplot_spec=grid[:2, :],
+                                                                 wspace=0.5, hspace=0.2)    
     by = 30
-    n, ly, lx = raw_ex.shape
-    img = 3 * np.ones((by*(n-1) + ly, by*(n-1) + lx), "float32")
+    n = 3
+    ylim = [50, 220]
+    xlim = [250+15, 420-15]
+    ly = ylim[1] - ylim[0]
+    lx = xlim[1] - xlim[0]
+
+    pcol = 0.9*np.ones(3)
+    img = np.nan * np.zeros((by*(n-1) + ly, by*(n-1) + lx), "float32")
     for i in range(n):
         img[by*i : by*i + ly, 
-            by*(n-i-1) : by*(n-i-1) + lx] = raw_ex[i]
-        
-    ax = plt.subplot(grid[:2,0])
-    ax.imshow(img, vmin=0, vmax=1, cmap="gray")
+            by*(n-i-1) : by*(n-i-1) + lx] = raw_ex[i, ylim[0]:ylim[1], xlim[0]:xlim[1]]
+    img = np.clip(img - 0.2, 0, 1.) / 1.
+    rgb = np.zeros((img.shape[0], img.shape[1], 4), 'float32')
+    rgb[:,:,:3] = np.tile(img[::-1, :, np.newaxis], (1, 1, 3))
+    rgb[:,:,3] = ~np.isnan(img)
+
+    ax = plt.subplot(grid1[0,0])
+    pos = ax.get_position().bounds  
+    ax.set_position([pos[0]+0.02, pos[1], pos[2], pos[3]])
+    # put a box around the axis and the title
+    dx = 0.02
+    dy = 0.04
+    ax.imshow(rgb)
     ax.axis("off")
-    ax.set_title('tiff, h5, nwb, etc inputs', fontstyle='italic')
+    ax.set_title('inputs (tiff, h5, nwb)', fontstyle='italic')
     ax.text(0.85, -0.1, 'x10,000+ frames', transform=ax.transAxes, ha='right')
     transl = mtransforms.ScaledTranslation(-24/72, 3/72, fig.dpi_scale_trans)
     il = plot_label(ltr, il, ax, transl)        
-
+    posi = ax.get_position().bounds
+    fig.patches.append(FancyBboxPatch((-dx+posi[0], -dy+posi[1]), posi[2]+2*dx, posi[3]+2*dy, 
+                                transform=fig.transFigure, fill=True, edgecolor='k', 
+                                color=pcol, lw=2, boxstyle="round,pad=0,rounding_size=0.01", zorder=-30))
+    
     Ly, Lx = reg_ex.shape[-2:]
-
-    ylim = [50, 220]
-    xlim = [250, 420]
     for j, fr in enumerate(reg_ex):
-        ax = plt.subplot(grid[:2,j+1])
+        ax = plt.subplot(grid1[0,j+1])
+        pos = ax.get_position().bounds
+        ax.set_position([pos[0]+0.02-0.02*(j==1), pos[1]+0.07*pos[3], pos[2]*0.9, pos[3]*0.9])
         rgb = np.zeros((Ly, Lx, 3))
         rgb[:,:,0] = fr[0]
         rgb[:,:,2] = fr[0]
@@ -52,23 +72,31 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
         ax.text(1, -0.1, 'frame t', transform=ax.transAxes, color=[1,0,1], ha="right")
         ax.text(1, -0.2, 'frame t+1', transform=ax.transAxes, color=[0,1,0], ha="right")
         if j==0:
-            ax.set_title('motion correction (> 100 frames per sec.)', fontstyle='italic',
+            ax.set_title('motion correction', fontstyle='italic',
                          loc='left')
             transl = mtransforms.ScaledTranslation(-18/72, 3/72, fig.dpi_scale_trans)
             il = plot_label(ltr, il, ax, transl)        
-            
+
+    fig.patches.append(FancyBboxPatch((-dx+0.2, -dy+posi[1]), 0.2+2*dx, posi[3]+2*dy, 
+                                    transform=fig.transFigure, fill=True, edgecolor='k', 
+                                    color=pcol, lw=2, boxstyle="round,pad=0,rounding_size=0.01", zorder=-30))
+                
 
     alpha = 0.4
     masks0 = masks.copy().astype('float32')
     masks0[masks0==0] = np.nan
-    ax = plt.subplot(grid[:2, 3])
+    ax = plt.subplot(grid1[0, 3])
     ax.imshow(max_proj, cmap='gray', vmin=2000, vmax=8000)
     ax.imshow(masks0, cmap='hsv', alpha=alpha, vmin=1, vmax=len(stat)+1)
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     ax.axis('off')
-    ax.set_title('cell detection + extraction (< 10 min.)', fontstyle='italic',
+    ax.set_title('cell detection', fontstyle='italic',
                          loc='left')
+    pos = ax.get_position().bounds
+    fig.patches.append(FancyBboxPatch((-dx+pos[0], -dy+posi[1]), posi[2]+2*dx, posi[3]+2*dy, 
+                                        transform=fig.transFigure, fill=True, edgecolor='k', 
+                                        color=pcol, lw=2, boxstyle="round,pad=0,rounding_size=0.01", zorder=-30))
     il = plot_label(ltr, il, ax, transl)        
 
     masks_filt = fastremap.mask(masks.copy(), np.nonzero(~(iscell0>0.5))[0]+1).astype('float32')
@@ -77,23 +105,31 @@ def pipeline_fig(gui_img, planes_img, raw_ex, reg_ex, max_proj, stat, iscell0, i
     inds = np.unique(masks_filt[ylim[0] : ylim[1], ylim[0] : ylim[1]])[:-1].astype('int') - 1
     iinds = np.array([np.nonzero(iperm==i)[0][0] for i in inds])
     iinds = np.sort(iinds)[8:16]
-    ax = plt.subplot(grid[:2, 4])
+    ax = plt.subplot(grid1[0, 4])
     pos = ax.get_position().bounds
-    ax.set_position([pos[0], pos[1]+0.5*(pos[3]-pos[2]*yratio), pos[2], pos[2]*yratio])
+    ax.set_position([pos[0], pos[1]+0.25*(pos[3]-pos[2]*yratio), pos[2], pos[2]*yratio*1.25])
+    pos = ax.get_position().bounds
     for i, n in enumerate(iinds):
         Fi = F[n, 3000:7000].copy()
         Fneui = Fneu[n, 3000:7000].copy()
         Fneui = (Fneui - Fi.min()) / (Fi.max() - Fi.min())
         Fi = (Fi - Fi.min()) / (Fi.max() - Fi.min())
-        ax.plot(Fneui + i*1.1, color=0.7*np.ones(3), lw=0.5)
-        ax.plot(Fi + i*1.1, color=colors[n], lw=0.25)
+        ax.plot(Fneui + i*1.1, color='k', lw=0.5, zorder=30)
+        ax.plot(Fi + i*1.1, color=colors[n], lw=0.5)
     ax.axis('off')
     ax.set_xlim([0, len(Fi)])
     ax.set_ylim([0, len(iinds)*1.05])
-    ax.text(1, -0.1, 'fluorescence traces', transform=ax.transAxes, ha='right')
-    ax.text(1, -0.2, 'neuropil traces', color=0.7*np.ones(3), transform=ax.transAxes, ha='right')
-
-    ax = plt.subplot(grid[:2, 5])
+    ax.text(1, -0.1, 'neuropil traces', color=0.*np.ones(3), transform=ax.transAxes, ha='right')
+    ax.set_title('extraction', fontstyle='italic',
+                         loc='left')
+    fig.patches.append(FancyBboxPatch((-dx+pos[0], -dy+posi[1]), posi[2]+2*dx, posi[3]+2*dy, 
+                                            transform=fig.transFigure, fill=True, edgecolor='k', 
+                                            color=pcol, lw=2, boxstyle="round,pad=0,rounding_size=0.01", zorder=-30))
+        
+    ax = plt.subplot(grid1[0, 5])
+    ax.set_title('deconvolution', fontstyle='italic', loc='left')
+    
+    ax = plt.subplot(grid1[0, 6])
     ax.imshow(max_proj, cmap='gray', vmin=2000, vmax=8000)
     ax.imshow(masks_filt, cmap='hsv', alpha=alpha, vmin=1, vmax=len(stat)+1)
     ax.set_ylim(ylim)
@@ -384,7 +420,7 @@ def zstack_fig(imgs, shear_x=150, by=75, rsz=0.2):
     return zstack
 
 
-def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all, 
+def detection_fig(ylim, xlim, mov, mov_filt, pred,v_map, ypix_all, xpix_all, lam_all, 
                   f_init, threshold, masks_all, mask_pic, mask_id, iou, 
                   traces, colors, var_exp, var_exp_init, var_start, th):
     
@@ -400,11 +436,12 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
         lx = Lx - 20
         by = 75
         #iex = np.arange(0, len(frand), 10)
-        iex = [10, 20, 30, 40]
+        iex = [10, 20, 40, 0]
         n = len(iex)
-        img = 3 * np.ones((by*(n-1) + ly, by*(n-1) + lx), "float32")
-        fmin, fmax = np.percentile(frand, 0.1), np.percentile(frand, 98)
-        frand = np.clip((frand.astype("float32") - fmin) / (fmax - fmin), 0, 1)
+        img = np.nan * np.ones((by*(n-1) + ly, by*(n-1) + lx), "float32")
+        if j==0:
+            fmin, fmax = np.percentile(frand, 0.1), np.percentile(frand, 99)
+            frand = np.clip((frand.astype("float32") - fmin) / (fmax - fmin), 0, 1)
         for i, ix in enumerate(iex):
             img[by*i : by*i + ly, 
                 by*(n-i-1) : by*(n-i-1) + lx] = frand[ix, 10:10+ly, 10:10+lx]
@@ -413,7 +450,7 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
         pos = ax.get_position().bounds
         ax.set_position([pos[0] + j*0.03, pos[1], pos[2], pos[3]*1.1])
         
-        ax.imshow(img, vmin=0, vmax=1, cmap="gray")
+        ax.imshow(img, vmin=0 if j==0 else -3, vmax=1 if j==0 else 3, cmap="gray" if j==0 else "RdBu_r")
         ax.axis("off")
         ax.set_title(["bin frames in time", 'high-pass filter in\nspace and time'][j], fontsize="medium")
         if j==0:
@@ -611,6 +648,46 @@ def detection_fig(ylim, xlim, mov, mov_filt, v_map, ypix_all, xpix_all, lam_all,
             ax.text(0.5, 0.5, '(no ROIs\ndetected)', ha='center', va='center', transform=ax.transAxes)
                              
     return fig
+
+
+def suppfig_pred(ylim, xlim, mov_filt, pred):
+    iexs = np.arange(0, 80, 10)
+
+    fig = plt.figure(figsize=(14, 6))
+    grid = plt.GridSpec(2, len(iexs), wspace=0.1, hspace=0.1, figure=fig)
+
+    vmax = 3
+    il = 0
+    transl = mtransforms.ScaledTranslation(-16/72, 5/72, fig.dpi_scale_trans)
+    Lyc, Lxc = mov_filt.shape[1:]
+    for i, iex in enumerate(iexs):
+        ax = plt.subplot(grid[0, i])
+        im = ax.imshow(mov_filt[iex, ylim[0]:ylim[1], xlim[0]:xlim[1]], vmin=-vmax, vmax=vmax, cmap='RdBu_r')
+        ax.axis('off')
+        fstr = 'frame = ' if i==0 else ''
+        ax.text(1, -0.1, f'{fstr}{iex*50}', transform=ax.transAxes, ha='right')
+        if i==0:
+            ax.set_title('high-pass filtered and binned movie', fontstyle='italic', loc='left')
+            il = plot_label(ltr, il, ax, transl)
+        elif i==len(iexs)-1:
+            cax = ax.inset_axes([0.5, 0.93, 0.5, 0.2])
+            cbar = plt.colorbar(im, ax=cax, orientation='horizontal', aspect=8)
+            cax.axis('off')
+            cbar.ax.tick_params(labelsize='small', pad=2)
+            cbar.ax.set_xticks([-vmax, 0, vmax])
+            cbar.ax.xaxis.set_ticks_position('top')
+        
+        ax = plt.subplot(grid[1, i])
+        ax.imshow(pred[iex].reshape(Lyc, Lxc)[ylim[0]:ylim[1], xlim[0]:xlim[1]], 
+                  vmin=-vmax, vmax=vmax, cmap='RdBu_r')
+        ax.axis('off')
+        ax.text(1, -0.1, f'{fstr}{iex*50}', transform=ax.transAxes, ha='right')
+        if i==0:
+            ax.set_title('prediction from Sparsery', fontstyle='italic', loc='left')
+            il = plot_label(ltr, il, ax, transl)
+
+    return fig
+
 
 def detectmetrics_fig(max_proj, cp_outlines, dF_gt, igood_gt,
                       snr_gt, neu_ex, ell_ex, f_ex, 

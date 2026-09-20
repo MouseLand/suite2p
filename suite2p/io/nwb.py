@@ -58,7 +58,95 @@ except ModuleNotFoundError:
                    "will not work. Install with: pip install pynwb")
 
 
-def nwb_to_binary(settings):
+def nwb_to_binary(dbs, settings, reg_file, reg_file_chan2):
+    """finds nwb files and writes them to binaries
+
+    Parameters
+    ----------
+    settings: dictionary
+        "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
+        "nchannels", "keep_movie_raw", "look_one_level_down"
+
+    Returns
+    -------
+        settings : dictionary of first plane
+            settings["reg_file"] or settings["raw_file"] is created binary
+            assigns keys "Ly", "Lx", "tiffreader", "first_tiffs",
+            "nframes", "meanImg", "meanImg_chan2"
+    """
+    
+    fs = dbs[0]["file_list"]
+
+    nwb_driver = None
+    if dbs[0].get("nwb_driver") and isinstance(dbs[0]["nwb_driver"], str):
+        nwb_driver = dbs[0]["nwb_driver"]
+
+    # force 1 plane 1 chan for now
+    nplanes = 1
+    nchannels = 1
+
+    nwb_series = "TwoPhotonSeries"
+    if dbs[0].get("nwb_series") and isinstance(dbs[0]["nwb_series"], str):
+        nwb_series = dbs[0]["nwb_series"]
+    
+    # TODO: add support for multi-plane multi-channel and multiple files
+    file_name = fs[0]
+    # open nwb
+    batch_size = dbs[0]["batch_size"]
+
+    t0 = time.time()
+                
+    with NWBHDF5IO(file_name, "r", driver=nwb_driver) as fio:
+        nwb_file = fio.read()
+        # get TwoPhotonSeries
+        series = nwb_file.acquisition[nwb_series]
+        nframes, Ly, Lx = series.data.shape
+        dbs[0]["nframes"] = nframes
+        dbs[0]["frames_per_file"] = np.array([dbs[0]["nframes"]])
+        dbs[0]["frames_per_folder"] = np.array([dbs[0]["nframes"]])
+        dbs[0]["meanImg"] = np.zeros((Ly, Lx), np.float32)
+        dbs[0]["Ly"], dbs[0]["Lx"] = Ly, Lx
+
+        for ik in np.arange(0, dbs[0]["nframes"], batch_size):
+            ikend = min(ik + batch_size, dbs[0]["nframes"])
+            im = series.data[ik:ikend]
+
+            # check if uint16
+            if im.dtype.type == np.uint16:
+                im = (im // 2).astype(np.int16)
+            elif im.dtype.type == np.int32:
+                im = (im // 2).astype(np.int16)
+            # elif im.dtype.type != np.int16:
+            #     im = im.astype(np.int16)
+
+            reg_file[0].write(bytearray(im))
+            dbs[0]["meanImg"] += im.astype(np.float32).sum(axis=0)
+
+            if ikend % (batch_size * 4) == 0:
+                logger.info("%d frames of binary, time %0.2f sec." %
+                    (ikend, time.time() - t0))
+        gc.collect()
+
+    # write settings files
+    for db in dbs[:1]:
+        db["meanImg"] /= db["nframes"]
+        if nchannels > 1:
+            db["meanImg_chan2"] /= db["nframes"]
+        np.save(db["db_path"], db)
+        np.save(db["settings_path"], settings)
+    
+    # close all binary files and write settings files
+    for j in range(0, nplanes):
+        reg_file[j].close()
+        if nchannels > 1:
+            reg_file_chan2[j].close()
+
+    return dbs
+
+
+
+def old_nwb_to_binary(settings):  # noqa: F811
+    #(settings):
     """convert nwb file to binary (experimental)
 
     converts single plane single channel nwb file to binary for suite2p processing

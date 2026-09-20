@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import zscore
+from scipy.stats import zscore, skew
 from tqdm import trange
 from pathlib import Path
 
@@ -14,9 +14,7 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
     # filter ground-truth and predicted ROIs
     min_size = np.percentile(npix_gt, 5)
     max_size = np.percentile(npix_gt, 95)
-    # snr_threshold = 0.4
     igood_gt = (snr_gt > snr_threshold) * (npix_gt > min_size) * (npix_gt < max_size)
-    # snr_threshold = 0.25
     igood = (snr > snr_threshold) * (npix > min_size) * (npix < max_size)
     print(igood_gt.sum(), igood.sum())
 
@@ -30,7 +28,7 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
         snr = snr[igood]
 
         # correlate activity traces
-        cc = (zscore(dF_gt, axis=1) @ zscore(dF, axis=1).T) / dF.shape[1]
+        # cc = (zscore(dF_gt, axis=1) @ zscore(dF, axis=1).T) / dF.shape[1]
 
         # find overlapping ROIs
         matched = np.zeros((len(stat_gt), len(stat)), 'float32')
@@ -69,14 +67,14 @@ def detect_f1_score(dF, dF_gt, stat, stat_gt, Ly=512, Lx=512,
                     matched[j, i] = (intersection / mac.sum() > 0.5) * (intersection / mfc.sum() > 0.5)
                     iou[j, i] = intersection / (mac.sum() + mfc.sum() - intersection)
 
-        cc_filt = cc.copy() 
-        #cc_filt *= (matched > 0.5)
-        cc_filt *= iou > 0.5
+        # cc_filt = cc.copy() 
+        # cc_filt *= (matched > 0.5)
+        # cc_filt *= iou > 0.5
         
         # print((cc_filt.max(axis=1) > 0.5).sum(), len(np.unique(cc_filt[cc_filt.max(axis=1)>0.5].argmax(axis=1))))
 
-        imatch_gt = cc_filt.max(axis=1) > 0.5
-        imatch_uq = len(np.unique(cc_filt[imatch_gt].argmax(axis=1)))
+        imatch_gt = iou.max(axis=1) > 0.5
+        imatch_uq = len(np.unique(iou[imatch_gt].argmax(axis=1)))
         print(imatch_uq, imatch_gt.sum() / igood_gt.sum())
 
         tp = imatch_uq

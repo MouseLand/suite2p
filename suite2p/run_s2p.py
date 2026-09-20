@@ -401,6 +401,8 @@ def run_s2p(db={}, settings=default_settings(), server={}):
             "F.npy", "Fneu.npy", "F_chan2.npy", "Fneu_chan2.npy", 
             "spks.npy", "iscell.npy", "redcell.npy"
         ]
+        # import pdb
+        # pdb.set_trace()
         for f in plane_folders:
             np.save(os.path.join(f, "settings.npy"), settings)
             for fname in files_to_remove:

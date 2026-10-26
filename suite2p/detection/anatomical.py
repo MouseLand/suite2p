@@ -251,7 +251,6 @@ def select_rois(mean_img, max_proj, settings,
     if settings.get("highpass_spatial", 0):
         img = np.clip(normalize99(img), 0, 1)
         img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
-        img -= gaussian_filter(img, diameter[1] * settings["highpass_spatial"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
         img, diameter=diameter, settings=settings, device=device)

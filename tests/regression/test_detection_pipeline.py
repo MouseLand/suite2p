@@ -39,12 +39,7 @@ def test_detection_output_1plane1chan(test_settings):
     )[()]
 
     # Compare outputs
-    assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, expected['cell_masks']))
-    assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, expected['neuropil_masks']))
-    for gt_dict, output_dict in zip(stat, expected['stat']):
-        for k in gt_dict.keys():
-            if k in ['ypix', 'xpix', 'lam']:
-                assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
+    utils.DetectionTestUtils.check_output(stat, cell_masks, neuropil_masks, expected)
 
 
 def test_detection_output_2plane2chan(test_settings):
@@ -86,9 +81,4 @@ def test_detection_output_2plane2chan(test_settings):
         )[()]
 
         # Compare outputs
-        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(cell_masks, expected['cell_masks']))
-        assert all(np.allclose(a, b, rtol=1e-4, atol=5e-2) for a, b in zip(neuropil_masks, expected['neuropil_masks']))
-        for gt_dict, output_dict in zip(stat, expected['stat']):
-            for k in gt_dict.keys():
-                if k in ['ypix', 'xpix', 'lam']:
-                    assert np.allclose(gt_dict[k], output_dict[k], rtol=1e-4, atol=5e-2)
+        utils.DetectionTestUtils.check_output(stat, cell_masks, neuropil_masks, expected)

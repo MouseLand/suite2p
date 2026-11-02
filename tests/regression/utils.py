@@ -112,6 +112,44 @@ class FullPipelineTestUtils:
         return db, settings
 
 class DetectionTestUtils:
+    # detection is not bit-identical across platforms (BLAS / float32 summation order), so
+    # pixels near the ROI threshold can flip; this shifts an ROI's edge and its neighbors' masks
+    MIN_FRAC_EXACT = 0.9  # fraction of ROIs that must match the reference exactly
+    MIN_IOU = 0.9  # pixel overlap every ROI must have with its reference
+
+    @staticmethod
+    def check_output(stat, cell_masks, neuropil_masks, expected):
+        """
+        Compares detection output to expected output ROI by ROI. Requires the same number of ROIs,
+        at least MIN_FRAC_EXACT of them matching exactly, and every ROI overlapping its reference
+        with IoU >= MIN_IOU.
+        """
+        def close(a, b):
+            return np.shape(a) == np.shape(b) and np.allclose(a, b, rtol=1e-4, atol=5e-2)
+
+        def iou(a, b):
+            a, b = set(a), set(b)
+            return len(a & b) / max(len(a | b), 1)
+
+        assert len(stat) == len(expected['stat']), \
+            f"found {len(stat)} ROIs, expected {len(expected['stat'])}"
+        n_exact = 0
+        for j, (s, e) in enumerate(zip(stat, expected['stat'])):
+            cell, cell_exp = cell_masks[j], expected['cell_masks'][j]
+            neu, neu_exp = neuropil_masks[j], expected['neuropil_masks'][j]
+            n_exact += (close(cell, cell_exp) and close(neu, neu_exp)
+                        and all(close(s[k], e[k]) for k in ['ypix', 'xpix', 'lam']))
+            ious = {
+                'stat': iou(zip(s['ypix'], s['xpix']), zip(e['ypix'], e['xpix'])),
+                'cell_mask': iou(cell[0], cell_exp[0]),
+                'neuropil_mask': iou(neu, neu_exp),
+            }
+            for k, v in ious.items():
+                assert v >= DetectionTestUtils.MIN_IOU, f"ROI {j} {k} IoU {v:.3f}"
+        frac_exact = n_exact / len(stat)
+        assert frac_exact >= DetectionTestUtils.MIN_FRAC_EXACT, \
+            f"only {n_exact}/{len(stat)} ROIs match exactly"
+
     @staticmethod
     def prepare(op, input_file_name_list, dimensions):
         """

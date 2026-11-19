@@ -1,140 +1,268 @@
 """
-Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu.
+Copyright © 2026 Purdue University, Authored by Jacob Gilpin.
 """
-import os
-
+import logging
 import numpy as np
-import logging 
-logger = logging.getLogger(__name__)
-
-
-from .utils import init_settings, find_files_open_binaries
 
 try:
     from sbxreader import sbx_memmap
     HAS_SBX = True
-except:
+except ImportError:
+    sbx_memmap = None
     HAS_SBX = False
-    
 
-def sbx_to_binary(settings, ndeadcols=-1, ndeadrows=0):
-    """  finds scanbox files and writes them to binaries
+logger = logging.getLogger(__name__)
+
+
+def _require_sbxreader():
+    """Raise an informative ImportError if sbxreader is not installed."""
+    if not HAS_SBX:
+        raise ImportError(
+            "sbxreader is required to read Scanbox (.sbx) files. "
+            "Install it with: pip install 'suite2p[io]' (or pip install sbxreader)"
+        )
+
+
+def _close_memmap(mm):
+    """Safely release underlying mmap handles (prevents file-lock errors on Windows)."""
+    if mm is None:
+        return
+    base = getattr(mm, "base", None)
+    if hasattr(mm, "_mmap") and mm._mmap is not None:
+        mm._mmap.close()
+    elif hasattr(base, "_mmap") and base._mmap is not None:
+        base._mmap.close()
+
+
+def sbx_get_shape(sbxfile):
+    """Return (nframes, nplanes, nchannels, Ly, Lx) for a Scanbox .sbx file.
 
     Parameters
     ----------
-    settings : dictionary
-        "nplanes", "data_path", "save_path", "save_folder", "fast_disk",
-        "nchannels", "keep_movie_raw", "look_one_level_down"
+    sbxfile : str or Path
+        Path to the .sbx file.
 
     Returns
     -------
-        settings : dictionary of first plane
-            "Ly", "Lx", settings["reg_file"] or settings["raw_file"] is created binary
-
+    shape : tuple of int
+        (nframes, nplanes, nchannels, Ly, Lx)
     """
-    if not HAS_SBX:
-        raise ImportError("sbxreader is required for this file type, please 'pip install sbxreader'")
+    _require_sbxreader()
+    mm = sbx_memmap(sbxfile)
+    try:
+        return tuple(int(dim) for dim in mm.shape)
+    finally:
+        _close_memmap(mm)
 
-    settings1 = init_settings(settings)
-    # the following should be taken from the metadata and not needed but the files are initialized before...
-    nplanes = settings1[0]["nplanes"]
-    nchannels = settings1[0]["nchannels"]
-    # open all binary files for writing
-    settings1, sbxlist, reg_file, reg_file_chan2 = find_files_open_binaries(settings1)
-    iall = 0
-    for j in range(settings1[0]["nplanes"]):
-        settings1[j]["nframes_per_folder"] = np.zeros(len(sbxlist), np.int32)
-    ik = 0
-    if "sbx_ndeadcols" in settings1[0].keys():
-        ndeadcols = int(settings1[0]["sbx_ndeadcols"])
-    if "sbx_ndeadrows" in settings1[0].keys():
-        ndeadrows = int(settings1[0]["sbx_ndeadrows"])
 
-    if ndeadcols == -1 or ndeadrows == -1:
-        # compute dead rows and cols from the first file
-        tmpsbx = sbx_memmap(sbxlist[0])
-        # do not remove dead rows in non-multiplane mode
-        # This number should be different for each plane since the artifact is larger
-        # for larger ETL jumps.
-        if nplanes > 1 and ndeadrows == -1:
-            colprofile = np.array(np.mean(tmpsbx[0][0][0], axis=1))
-            ndeadrows = np.argmax(np.diff(colprofile)) + 1
+def sbx_get_info(sbxfile):
+    """Return the parsed Scanbox metadata object via sbxreader.
+
+    Parameters
+    ----------
+    sbxfile : str or Path
+        Path to the .sbx file.
+
+    Returns
+    -------
+    info : object
+        Metadata object parsed from the companion .mat file.
+    """
+    _require_sbxreader()
+    mm = sbx_memmap(sbxfile)
+    try:
+        return mm.metadata
+    finally:
+        _close_memmap(mm)
+
+
+def _estimate_dead_cols(mm, scanmode=0, n_sample_frames=20):
+    """Estimate leading dead columns for bidirectional Scanbox acquisitions.
+
+    Averages across up to `n_sample_frames` frames rather than frame 0 alone
+    to avoid resonant-scanner startup artifacts.
+    """
+    if scanmode != 0 or mm.shape[0] == 0:
+        return 0
+    n_avail = min(int(mm.shape[0]), n_sample_frames)
+    # Sum along frames and Y in float64 to avoid uint16 overflow
+    col_profile = np.sum(mm[:n_avail, 0, 0], axis=(0, 1), dtype=np.float64)
+    zero_cols = np.flatnonzero(col_profile == 0)
+    if zero_cols.size > 0:
+        return int(zero_cols[-1]) + 1
+    return 0
+
+
+def sbx_to_binary(dbs, settings, reg_file, reg_file_chan2, ndeadcols=-1, ndeadrows=0):
+    """Convert Scanbox (.sbx) files into Suite2p binary files.
+
+    Parameters
+    ----------
+    dbs : list of dict
+        Per-plane database dictionaries initialized by `suite2p.io.init_dbs`.
+    settings : dict
+        Suite2p pipeline settings dictionary.
+    reg_file : list of file-like
+        Pre-opened writable binary file handles for the functional channel (one per plane).
+    reg_file_chan2 : list of file-like or None
+        Pre-opened writable binary file handles for the second channel (one per plane),
+        or None/empty if `nchannels == 1`.
+    ndeadcols : int, optional (default -1)
+        Number of leading columns to crop. -1 auto-detects for bidirectional scans.
+    ndeadrows : int, optional (default 0)
+        Number of top rows to crop (e.g., ETL flyback lines in multi-plane scans).
+
+    Returns
+    -------
+    dbs : list of dict
+        Updated per-plane database dictionaries with cropped Ly, Lx, nframes, and mean images.
+    """
+    _require_sbxreader()
+
+    if not dbs:
+        raise ValueError("`dbs` must contain at least one plane dictionary.")
+
+    db0 = dbs[0]
+    nplanes = int(db0["nplanes"])
+    nchannels = int(db0["nchannels"])
+    io_settings = settings.get("io", {})
+    batch_size = int(io_settings.get("batch_size", 500))
+    functional_chan = int(io_settings.get("functional_chan", 1))
+    nfunc = (functional_chan - 1) if nchannels > 1 else 0
+
+    if nfunc < 0 or nfunc >= nchannels:
+        raise ValueError(
+            f"Invalid functional_chan={functional_chan} for nchannels={nchannels}."
+        )
+
+    file_list = db0.get("file_list", [])
+    if len(file_list) == 0:
+        raise FileNotFoundError(f"No .sbx files found in {db0.get('data_path')}")
+
+    # Inspect first file to validate geometry and resolve dead-pixel cropping
+    first_mm = sbx_memmap(file_list[0])
+    try:
+        _, file_planes, file_chans, raw_Ly, raw_Lx = (int(d) for d in first_mm.shape)
+        if file_planes != nplanes or len(dbs) != file_planes:
+            raise ValueError(
+                f"Plane count mismatch: .sbx file has {file_planes} planes, "
+                f"but db/dbs initialized with {nplanes} ({len(dbs)} dicts)."
+            )
+        if file_chans != nchannels:
+            raise ValueError(
+                f"Channel count mismatch: .sbx file has {file_chans} channels, "
+                f"but db initialized with nchannels={nchannels}."
+            )
+        if nchannels > 1 and (not reg_file_chan2 or len(reg_file_chan2) < nplanes):
+            raise ValueError(
+                f"Expected {nplanes} channel-2 binary handles in `reg_file_chan2` "
+                f"for nchannels={nchannels}."
+            )
+
+        scanmode = int(getattr(first_mm.metadata, "scanmode", 1))
+        if ndeadcols == -1:
+            ndeadcols = _estimate_dead_cols(first_mm, scanmode=scanmode)
+        ndeadcols = max(0, int(ndeadcols))
+        ndeadrows = max(0, int(ndeadrows))
+    finally:
+        _close_memmap(first_mm)
+
+    Ly = raw_Ly - ndeadrows
+    Lx = raw_Lx - ndeadcols
+    if Ly <= 0 or Lx <= 0:
+        raise ValueError(
+            f"Invalid cropped frame shape ({Ly}, {Lx}) from raw ({raw_Ly}, {raw_Lx}) "
+            f"with ndeadrows={ndeadrows}, ndeadcols={ndeadcols}."
+        )
+
+    # Initialize per-plane metadata and float64 mean accumulators
+    mean_acc = [np.zeros((Ly, Lx), dtype=np.float64) for _ in range(nplanes)]
+    mean_acc_chan2 = (
+        [np.zeros((Ly, Lx), dtype=np.float64) for _ in range(nplanes)]
+        if nchannels > 1
+        else None
+    )
+
+    for j in range(nplanes):
+        dbs[j]["Ly"] = Ly
+        dbs[j]["Lx"] = Lx
+        dbs[j]["nframes"] = 0
+        dbs[j]["nframes_per_folder"] = np.zeros(len(file_list), dtype=np.int32)
+
+        if hasattr(reg_file[j], "Ly"):
+            reg_file[j].Ly = Ly
+            reg_file[j].Lx = Lx
+        if nchannels > 1 and hasattr(reg_file_chan2[j], "Ly"):
+            reg_file_chan2[j].Ly = Ly
+            reg_file_chan2[j].Lx = Lx
+
+    # Number of volumes per chunk, scaled so total frames per chunk stays near batch_size
+    frames_per_batch = max(1, batch_size // max(1, nplanes))
+    # Single reusable contiguous buffer to avoid per-batch allocations
+    work_buf = np.empty((frames_per_batch, Ly, Lx), dtype=np.uint16)
+
+    for ifile, sbxfile in enumerate(file_list):
+        logger.info("Converting %s to binary...", sbxfile)
+        mm = sbx_memmap(sbxfile)
+        try:
+            nframes_file, f_planes, f_chans, f_Ly, f_Lx = (int(d) for d in mm.shape)
+            if (f_planes, f_chans, f_Ly, f_Lx) != (nplanes, nchannels, raw_Ly, raw_Lx):
+                raise ValueError(
+                    f"Inconsistent shape in {sbxfile}: expected "
+                    f"({nplanes}, {nchannels}, {raw_Ly}, {raw_Lx}), "
+                    f"got ({f_planes}, {f_chans}, {f_Ly}, {f_Lx})."
+                )
+            if nframes_file == 0:
+                logger.warning("Skipping empty .sbx file (0 frames): %s", sbxfile)
+                continue
+
+            for i in range(0, nframes_file, frames_per_batch):
+                iend = min(i + frames_per_batch, nframes_file)
+                n_chunk = iend - i
+
+                # Single sequential disk read for the entire batch
+                raw_batch = mm[i:iend, :, :, ndeadrows:, ndeadcols:]
+
+                for j in range(nplanes):
+                    for ichan in range(nchannels):
+                        # Scanbox stores raw PMT values inverted in uint16 (65535 = dark).
+                        # Invert and right-shift in-place into contiguous scratch buffer,
+                        # then zero-copy view as int16 (MSB is guaranteed 0 after >> 1).
+                        work = work_buf[:n_chunk]
+                        np.invert(raw_batch[:, j, ichan], out=work)
+                        np.right_shift(work, 1, out=work)
+                        im2write = work.view(np.int16)
+
+                        if ichan == nfunc:
+                            reg_file[j].write(memoryview(im2write))
+                            mean_acc[j] += np.sum(im2write, axis=0, dtype=np.float64)
+                        else:
+                            reg_file_chan2[j].write(memoryview(im2write))
+                            mean_acc_chan2[j] += np.sum(im2write, axis=0, dtype=np.float64)
+
+                    # Increment frame counters once per plane per batch (outside channel loop)
+                    dbs[j]["nframes"] += n_chunk
+                    dbs[j]["nframes_per_folder"][ifile] += n_chunk
+        finally:
+            _close_memmap(mm)
+
+    # Finalize mean images and persist per-plane metadata
+    for j in range(nplanes):
+        n_tot = dbs[j]["nframes"]
+        if n_tot > 0:
+            dbs[j]["meanImg"] = (mean_acc[j] / n_tot).astype(np.float32)
+            if nchannels > 1:
+                dbs[j]["meanImg_chan2"] = (mean_acc_chan2[j] / n_tot).astype(np.float32)
         else:
-            ndeadrows = 0
-        # do not remove dead columns in unidirectional scanning mode
-        # do this only if ndeadcols is -1
-        if tmpsbx.metadata["scanning_mode"] == "bidirectional" and ndeadcols == -1:
-            ndeadcols = tmpsbx.ndeadcols
-        else:
-            ndeadcols = 0
-        del tmpsbx
-        logger.info("Removing {0} dead columns while loading sbx data.".format(ndeadcols))
-        logger.info("Removing {0} dead rows while loading sbx data.".format(ndeadrows))
+            dbs[j]["meanImg"] = np.zeros((Ly, Lx), dtype=np.float32)
+            if nchannels > 1:
+                dbs[j]["meanImg_chan2"] = np.zeros((Ly, Lx), dtype=np.float32)
 
-    settings1[0]["sbx_ndeadcols"] = ndeadcols
-    settings1[0]["sbx_ndeadrows"] = ndeadrows
+        if "settings_path" in dbs[j]:
+            np.save(dbs[j]["settings_path"], settings)
+        if "db_path" in dbs[j]:
+            np.save(dbs[j]["db_path"], dbs[j])
+        if "ops_path" in dbs[j]:
+            np.save(dbs[j]["ops_path"], dbs[j])
 
-    for ifile, sbxfname in enumerate(sbxlist):
-        f = sbx_memmap(sbxfname)
-        nplanes = f.shape[1]
-        nchannels = f.shape[2]
-        nframes = f.shape[0]
-        iblocks = np.arange(0, nframes, settings1[0]["batch_size"])
-        if iblocks[-1] < nframes:
-            iblocks = np.append(iblocks, nframes)
-
-        # data = nframes x nplanes x nchannels x pixels x pixels
-        if nchannels > 1:
-            nfunc = settings1[0]["functional_chan"] - 1
-        else:
-            nfunc = 0
-        # loop over all frames
-        for ichunk, onset in enumerate(iblocks[:-1]):
-            offset = iblocks[ichunk + 1]
-            im = np.array(f[onset:offset, :, :, ndeadrows:, ndeadcols:]) // 2
-            im = im.astype(np.int16)
-            im2mean = im.mean(axis=0).astype(np.float32) / len(iblocks)
-            for ichan in range(nchannels):
-                nframes = im.shape[0]
-                im2write = im[:, :, ichan, :, :]
-                for j in range(0, nplanes):
-                    if iall == 0:
-                        settings1[j]["meanImg"] = np.zeros((im.shape[3], im.shape[4]),
-                                                      np.float32)
-                        if nchannels > 1:
-                            settings1[j]["meanImg_chan2"] = np.zeros(
-                                (im.shape[3], im.shape[4]), np.float32)
-                        settings1[j]["nframes"] = 0
-                    if ichan == nfunc:
-                        settings1[j]["meanImg"] += np.squeeze(im2mean[j, ichan, :, :])
-                        reg_file[j].write(
-                            bytearray(im2write[:, j, :, :].astype("int16")))
-                    else:
-                        settings1[j]["meanImg_chan2"] += np.squeeze(im2mean[j, ichan, :, :])
-                        reg_file_chan2[j].write(
-                            bytearray(im2write[:, j, :, :].astype("int16")))
-
-                    settings1[j]["nframes"] += im2write.shape[0]
-                    settings1[j]["nframes_per_folder"][ifile] += im2write.shape[0]
-            ik += nframes
-            iall += nframes
-
-    # write settings files
-    do_registration = settings1[0]["do_registration"]
-    do_nonrigid = settings1[0]["nonrigid"]
-    for settings in settings1:
-        settings["Ly"] = im.shape[3]
-        settings["Lx"] = im.shape[4]
-        if not do_registration:
-            settings["yrange"] = np.array([0, settings["Ly"]])
-            settings["xrange"] = np.array([0, settings["Lx"]])
-        #settings["meanImg"] /= settings["nframes"]
-        #if nchannels>1:
-        #    settings["meanImg_chan2"] /= settings["nframes"]
-        np.save(settings["settings_path"], settings)
-    # close all binary files and write settings files
-    for j in range(0, nplanes):
-        reg_file[j].close()
-        if nchannels > 1:
-            reg_file_chan2[j].close()
-    return settings1[0]
+    return dbs

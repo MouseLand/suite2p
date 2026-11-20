@@ -85,8 +85,9 @@ def _estimate_dead_cols(mm, scanmode=0, n_sample_frames=20):
     if scanmode != 0 or mm.shape[0] == 0:
         return 0
     n_avail = min(int(mm.shape[0]), n_sample_frames)
+    sample = np.asarray(mm[:n_avail, 0, 0])
     # Sum along frames and Y in float64 to avoid uint16 overflow
-    col_profile = np.sum(mm[:n_avail, 0, 0], axis=(0, 1), dtype=np.float64)
+    col_profile = np.sum(sample, axis=(0, 1), dtype=np.float64)
     zero_cols = np.flatnonzero(col_profile == 0)
     if zero_cols.size > 0:
         return int(zero_cols[-1]) + 1
@@ -159,7 +160,11 @@ def sbx_to_binary(dbs, settings, reg_file, reg_file_chan2, ndeadcols=-1, ndeadro
                 f"for nchannels={nchannels}."
             )
 
-        scanmode = int(getattr(first_mm.metadata, "scanmode", 1))
+        meta = getattr(first_mm, "metadata", {})
+        if isinstance(meta, dict):
+            scanmode = 0 if str(meta.get("scanning_mode", "")).lower().startswith("bi") else 1
+        else:
+            scanmode = int(getattr(meta, "scanmode", 1))
         if ndeadcols == -1:
             ndeadcols = _estimate_dead_cols(first_mm, scanmode=scanmode)
         ndeadcols = max(0, int(ndeadcols))
